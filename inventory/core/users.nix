@@ -56,13 +56,6 @@ _: {
     machines = {
       britton-fw = {
         role = "owner";
-        groups = [
-          "wheel"
-          "networkmanager"
-          "video"
-          "input"
-          "testgroup"
-        ];
         shell = "fish";
       };
       britton-desktop = {
