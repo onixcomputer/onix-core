@@ -1,8 +1,10 @@
 {
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = false;
-  boot.loader.efi.efiSysMountPoint = "/boot";
-  boot.loader.grub.enable = false;
+  boot.loader = {
+    systemd-boot.enable = true;
+    efi.canTouchEfiVariables = false;
+    efi.efiSysMountPoint = "/boot";
+    grub.enable = false;
+  };
   disko.devices = {
     disk = {
       main = {
