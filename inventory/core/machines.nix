@@ -15,6 +15,7 @@ _: {
       name = "britton-desktop";
       tags = [
         "tailnet"
+        "desktop"
         "home-manager"
       ];
       deploy = {

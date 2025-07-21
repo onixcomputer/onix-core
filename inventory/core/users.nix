@@ -63,12 +63,15 @@ _: {
           "input"
           "testgroup"
         ];
+        shell = "fish";
       };
       britton-desktop = {
         role = "owner";
+        shell = "fish";
       };
       britton-dev = {
         role = "owner";
+        shell = "fish";
       };
     };
   };

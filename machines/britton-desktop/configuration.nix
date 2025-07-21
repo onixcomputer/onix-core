@@ -5,13 +5,13 @@
 {
   imports = [
   ];
-  boot = {
-    loader = {
-      systemd-boot.enable = true;
-      efi.canTouchEfiVariables = true;
-      grub.enable = false;
-    };
-  };
+  # boot = {
+  #   loader = {
+  #     systemd-boot.enable = true;
+  #     efi.canTouchEfiVariables = true;
+  #     grub.enable = false;
+  #   };
+  # };
 
   networking = {
     hostName = "britton-desktop";
