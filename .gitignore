@@ -1,0 +1,91 @@
+# Nix build artifacts
+result
+result-*
+
+# Direnv cache
+.direnv/
+
+# Claude
+.claude/
+CLAUDE.md
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Screenshots and temporary files
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.tiff
+
+# Logs
+*.log
+
+# Backup files
+*.bak
+*.backup
+
+# Temporary directories
+tmp/
+temp/
+
+# Age keys (should be managed by SOPS)
+*.age
+age.key
+
+# Local environment files
+.env
+.env.local
+
+# Build outputs
+dist/
+build/
+
+# Node modules (if any JS tooling)
+node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Rust build artifacts
+target/
+Cargo.lock
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test coverage
+coverage/
+*.cover
+
+# IDE specific
+.fleet/
+.vscode/settings.json
+
+# Generated pre-commit config
+.pre-commit-config.yaml
+
+# Terraform/OpenTofu
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform.lock.hcl
+terraform-provider-*
+.terraform/
