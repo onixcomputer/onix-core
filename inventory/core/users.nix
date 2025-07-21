@@ -72,29 +72,4 @@ _: {
       };
     };
   };
-
-  testuser = {
-    description = "Test User";
-    defaultUid = 2001;
-    defaultGroups = [ "users" ];
-    sshAuthorizedKeys = [ ];
-    machines = {
-      britton-fw = {
-        role = "tester";
-        uid = 2002;
-      };
-    };
-  };
-
-  demouser = {
-    description = "Demo User";
-    defaultUid = 2002;
-    defaultGroups = [ "users" ];
-    sshAuthorizedKeys = [ ];
-    machines = {
-      britton-fw = {
-        role = "limited";
-      };
-    };
-  };
 }
