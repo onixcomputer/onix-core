@@ -19,7 +19,7 @@ _: {
         "home-manager"
       ];
       deploy = {
-        targetHost = "root@britton-desktop";
+        targetHost = "root@britton-desktop-1";
         buildHost = "";
       };
     };
