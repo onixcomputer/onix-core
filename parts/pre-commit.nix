@@ -29,6 +29,8 @@
             "\\.age$" # Age-encrypted files
             "\\.png$|\\.jpg$|\\.svg$" # Images
             "flake\\.lock$" # Generated file
+            "^archive/" # Legacy code
+            "\\.md$" # Markdown files
           ];
         };
       };

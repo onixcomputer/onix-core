@@ -4,11 +4,12 @@ let
   users = import ./users.nix { inherit inputs; };
 
   instances = {
-    user-assignments = {
-      module.name = "user-assignments";
+    roster = {
+      module.name = "roster";
       roles.default.tags.all = { };
       roles.default.settings = {
         inherit users;
+        homeProfilesPath = ../home-profiles;
       };
     };
   };

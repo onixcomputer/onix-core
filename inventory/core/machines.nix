@@ -72,12 +72,12 @@ _: {
       name = "alex-mu";
       tags = [
         "tailnet"
+        "dev"
         "home-manager"
         "desktop"
-        "dev"
       ];
       deploy = {
-        targetHost = "root@192.168.50.166";
+        targetHost = "root@192.168.50.173";
         buildHost = "";
       };
     };
