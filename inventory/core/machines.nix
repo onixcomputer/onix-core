@@ -17,6 +17,7 @@ _: {
         "tailnet"
         "desktop"
         "home-manager"
+        "dev"
       ];
       deploy = {
         targetHost = "root@britton-desktop-1";
