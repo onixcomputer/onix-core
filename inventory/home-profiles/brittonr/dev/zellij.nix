@@ -1,5 +1,5 @@
 {
-  programs.helix = {
+  programs.zellij = {
     enable = true;
   };
 }
