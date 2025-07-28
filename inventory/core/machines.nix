@@ -4,7 +4,6 @@ _: {
       name = "britton-dev";
       tags = [
         "tailnet"
-        "home-manager"
       ];
       deploy = {
         targetHost = "root@192.168.1.146";
@@ -15,8 +14,6 @@ _: {
       name = "britton-desktop";
       tags = [
         "tailnet"
-        "desktop"
-        "home-manager"
         "dev"
       ];
       deploy = {
@@ -28,7 +25,6 @@ _: {
       name = "britton-fw";
       tags = [
         "tailnet"
-        "home-manager"
       ];
       deploy = {
         targetHost = "root@127.0.0.1?IdentityFile=~/.ssh/framework&IdentitiesOnly=yes";
@@ -39,7 +35,6 @@ _: {
       name = "alex-dev";
       tags = [
         "tailnet"
-        "home-manager"
       ];
       deploy = {
         targetHost = "root@100.92.205.115";
@@ -50,10 +45,11 @@ _: {
       name = "alex-fw";
       tags = [
         "tailnet"
-        "home-manager"
+        "laptop"
+        "hyprland"
       ];
       deploy = {
-        targetHost = "root@100.123.238.88";
+        targetHost = "root@192.168.50.167";
         buildHost = "";
       };
     };
@@ -61,7 +57,6 @@ _: {
       name = "alex-wsl";
       tags = [
         "tailnet"
-        "home-manager"
         "wsl"
       ];
       deploy = {
@@ -74,8 +69,6 @@ _: {
       tags = [
         "tailnet"
         "dev"
-        "home-manager"
-        "desktop"
       ];
       deploy = {
         targetHost = "root@192.168.50.173";

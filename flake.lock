@@ -15,16 +15,16 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1753237335,
-        "narHash": "sha256-w+vQ9gES25xBjBUNztQucdR/U7lEvD9ncemx8Q5nhmU=",
-        "ref": "adeci-unstable",
-        "rev": "84c25e6c83ec55a569ab036f978b515ec2793960",
-        "revCount": 8589,
+        "lastModified": 1753369677,
+        "narHash": "sha256-C5cZr2CQX0FXfqwe3JdtmXImv8VIqWw+TW82oQZWy2E=",
+        "ref": "adeci-stable",
+        "rev": "bd443a04762c4ebd49a0f6fbffddae4c8fc4341a",
+        "revCount": 8660,
         "type": "git",
         "url": "https://git.clan.lol/adeci/clan-core"
       },
       "original": {
-        "ref": "adeci-unstable",
+        "ref": "adeci-stable",
         "type": "git",
         "url": "https://git.clan.lol/adeci/clan-core"
       }
@@ -169,6 +169,26 @@
         "type": "github"
       }
     },
+    "grub2-themes": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1753279958,
+        "narHash": "sha256-EJ1udnwKYgWeAJzncAccbLPtbSWiuIANryXTGI9nY6w=",
+        "owner": "vinceliuice",
+        "repo": "grub2-themes",
+        "rev": "6c26f99622cb1c705b3fe2dbe1eb88521096b25a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "vinceliuice",
+        "repo": "grub2-themes",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -247,11 +267,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1752682362,
-        "narHash": "sha256-ZNIpqCG/CfhmV+TgIeyO/XbhDjSWpwWokHM44j0Mn0w=",
+        "lastModified": 1753642709,
+        "narHash": "sha256-J/xPmOfKRX/4UtBIVa5qkKuwN6FrHQBmo5bIPmcPeck=",
         "owner": "nix-community",
         "repo": "NixOS-WSL",
-        "rev": "20001f9bf0aaf2b1c307e43a5eec8cf8f800fe14",
+        "rev": "e1e0999d45ba66d2d66ac061c27ce680814d14b1",
         "type": "github"
       },
       "original": {
@@ -291,11 +311,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1753151930,
-        "narHash": "sha256-XSQy6wRKHhRe//iVY5lS/ZpI/Jn6crWI8fQzl647wCg=",
+        "lastModified": 1753432016,
+        "narHash": "sha256-cnL5WWn/xkZoyH/03NNUS7QgW5vI7D1i74g48qplCvg=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "83e677f31c84212343f4cc553bab85c2efcad60a",
+        "rev": "6027c30c8e9810896b92429f0092f624f7b1aace",
         "type": "github"
       },
       "original": {
@@ -303,26 +323,6 @@
         "ref": "nixpkgs-unstable",
         "repo": "nixpkgs",
         "type": "github"
-      }
-    },
-    "onix-modules": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1753063976,
-        "narHash": "sha256-elMcQ+fE9VFwNiVOAZLKHYxxx/G0qQvD+kRZ+yWYSeM=",
-        "ref": "refs/heads/main",
-        "rev": "252d7b09643f4184f93acc78393c50d9bb9e46f3",
-        "revCount": 4,
-        "type": "git",
-        "url": "ssh://git@github.com/onixcomputer/onix-modules.git"
-      },
-      "original": {
-        "type": "git",
-        "url": "ssh://git@github.com/onixcomputer/onix-modules.git"
       }
     },
     "pre-commit-hooks-nix": {
@@ -351,11 +351,32 @@
       "inputs": {
         "clan-core": "clan-core",
         "flake-parts": "flake-parts_2",
+        "grub2-themes": "grub2-themes",
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs_2",
-        "onix-modules": "onix-modules",
         "pre-commit-hooks-nix": "pre-commit-hooks-nix",
+        "sddm-sugar-candy-nix": "sddm-sugar-candy-nix",
         "treefmt-nix": "treefmt-nix_2"
+      }
+    },
+    "sddm-sugar-candy-nix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1753672152,
+        "narHash": "sha256-i/qsMNjo021IJxNoTnN1jNwtd9TJ5lGZeOvrfommueI=",
+        "owner": "adeci",
+        "repo": "sddm-sugar-candy-nix",
+        "rev": "211cb7ba8744c5de2c6abad33df538de7dee2cdb",
+        "type": "github"
+      },
+      "original": {
+        "owner": "adeci",
+        "repo": "sddm-sugar-candy-nix",
+        "type": "github"
       }
     },
     "sops-nix": {
@@ -422,11 +443,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1753006367,
-        "narHash": "sha256-tzbhc4XttkyEhswByk5R38l+ztN9UDbnj0cTcP6Hp9A=",
+        "lastModified": 1753439394,
+        "narHash": "sha256-Bv9h1AJegLI8uAhiJ1sZ4XAndYxhgf38tMgCQwiEpmc=",
         "owner": "numtide",
         "repo": "treefmt-nix",
-        "rev": "421b56313c65a0815a52b424777f55acf0b56ddf",
+        "rev": "2673921c03d6e75fdf4aa93e025772608d1482cf",
         "type": "github"
       },
       "original": {

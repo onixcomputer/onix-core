@@ -4,7 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
-    clan-core.url = "git+https://git.clan.lol/adeci/clan-core?ref=adeci-unstable";
+    clan-core.url = "git+https://git.clan.lol/adeci/clan-core?ref=adeci-stable";
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -17,8 +17,12 @@
       url = "github:nix-community/NixOS-WSL/main";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    onix-modules = {
-      url = "git+ssh://git@github.com/onixcomputer/onix-modules.git";
+    grub2-themes = {
+      url = "github:vinceliuice/grub2-themes";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    sddm-sugar-candy-nix = {
+      url = "github:adeci/sddm-sugar-candy-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

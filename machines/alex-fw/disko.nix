@@ -1,15 +1,10 @@
-# ---
-# schema = "single-disk"
-# [placeholders]
-# mainDisk = "/dev/disk/by-id/nvme-Samsung_SSD_990_PRO_2TB_S73WNJ0XC01424X" 
-# ---
-# This file was automatically generated!
-# CHANGING this configuration requires wiping and reinstalling the machine
 {
-
-  boot.loader.grub.efiSupport = true;
-  boot.loader.grub.efiInstallAsRemovable = true;
-  boot.loader.grub.enable = true;
+  boot.loader.grub = {
+    enable = true;
+    efiSupport = true;
+    efiInstallAsRemovable = true;
+    device = "nodev";
+  };
   disko.devices = {
     disk = {
       main = {
@@ -19,19 +14,21 @@
         content = {
           type = "gpt";
           partitions = {
-            "boot" = {
-              size = "1M";
-              type = "EF02"; # for grub MBR
-              priority = 1;
-            };
             ESP = {
               type = "EF00";
-              size = "500M";
+              size = "1G";
               content = {
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
                 mountOptions = [ "umask=0077" ];
+              };
+            };
+            swap = {
+              name = "swap";
+              size = "8G";
+              content = {
+                type = "swap";
               };
             };
             root = {
