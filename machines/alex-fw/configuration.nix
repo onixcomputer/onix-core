@@ -29,6 +29,8 @@ in
     claude-code
   ];
 
+  home-manager.backupFileExtension = "backup";
+
   boot.loader = {
     timeout = 1;
     grub = {

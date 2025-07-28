@@ -15,11 +15,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1753369677,
-        "narHash": "sha256-C5cZr2CQX0FXfqwe3JdtmXImv8VIqWw+TW82oQZWy2E=",
+        "lastModified": 1753726326,
+        "narHash": "sha256-YJnfF9+l7KDduW29IiPaG4RJq6wal9BxnKSPPEA8NmU=",
         "ref": "adeci-stable",
-        "rev": "bd443a04762c4ebd49a0f6fbffddae4c8fc4341a",
-        "revCount": 8660,
+        "rev": "998e99149be897b3662d0a2ba470821348f7e93e",
+        "revCount": 8705,
         "type": "git",
         "url": "https://git.clan.lol/adeci/clan-core"
       },
@@ -289,11 +289,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1753642709,
-        "narHash": "sha256-J/xPmOfKRX/4UtBIVa5qkKuwN6FrHQBmo5bIPmcPeck=",
+        "lastModified": 1753704990,
+        "narHash": "sha256-5E14xuNWy2Un1nFR55k68hgbnD8U2x/rE5DXJtYKusw=",
         "owner": "nix-community",
         "repo": "NixOS-WSL",
-        "rev": "e1e0999d45ba66d2d66ac061c27ce680814d14b1",
+        "rev": "58c814cc6d4a789191f9c12e18277107144b0c91",
         "type": "github"
       },
       "original": {
