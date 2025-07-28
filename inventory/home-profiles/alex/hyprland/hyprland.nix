@@ -11,7 +11,10 @@
 
       # ===== MONITORS =====
       # Default monitor configuration - users can override in their own config
-      monitor = ",preferred,auto,2";
+      monitor = [
+        "eDP-1,2880x1920@120,auto,2"
+        "DP-3, preferred, auto, 1, mirror, eDP-1"
+      ];
 
       # ===== AUTOSTART =====
       exec-once = [
