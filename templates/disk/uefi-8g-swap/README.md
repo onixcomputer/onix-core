@@ -1,7 +1,7 @@
 ---
-description = "UEFI with 4GB swap for heavy workloads (systemd-boot)"
+description = "UEFI with 8GB swap for heavy workloads (GRUB)"
 ---
-# UEFI 4GB Swap Template
+# UEFI 8GB Swap Template
 
 Custom template for systems needing extra swap space for compilation or data processing
 
@@ -17,7 +17,7 @@ Custom template for systems needing extra swap space for compilation or data pro
    - Mount Point: `/boot`
 
 2. Swap Partition
-   - Size: `4G`
+   - Size: `8G`
    - Type: Linux swap
 
 3. Root Partition
@@ -27,6 +27,4 @@ Custom template for systems needing extra swap space for compilation or data pro
 
 ### Notes
 
-- Large swap for comfortable hibernation on 4GB+ RAM systems
 - Extra ESP space (1G) for multiple kernels
-- Custom template from infra repository

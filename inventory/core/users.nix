@@ -42,8 +42,8 @@ _: {
           enable = true;
           profiles = [
             "base"
-            "desktop"
             "dev"
+            "hyprland"
           ];
         };
       };

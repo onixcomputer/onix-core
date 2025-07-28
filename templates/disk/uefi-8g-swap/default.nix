@@ -1,13 +1,9 @@
 {
-  boot = {
-    loader = {
-      systemd-boot.enable = true;
-      efi = {
-        canTouchEfiVariables = false;
-        efiSysMountPoint = "/boot";
-      };
-      grub.enable = false;
-    };
+  boot.loader.grub = {
+    enable = true;
+    efiSupport = true;
+    efiInstallAsRemovable = true;
+    device = "nodev";
   };
   disko.devices = {
     disk = {
@@ -18,9 +14,9 @@
           type = "gpt";
           partitions = {
             ESP = {
+              name = "ESP";
               type = "EF00";
               size = "1G";
-              priority = 1;
               content = {
                 type = "filesystem";
                 format = "vfat";
@@ -29,13 +25,14 @@
               };
             };
             swap = {
-              size = "4G";
+              name = "swap";
+              size = "8G";
               content = {
                 type = "swap";
-                randomEncryption = false;
               };
             };
             root = {
+              name = "root";
               size = "100%";
               content = {
                 type = "filesystem";
