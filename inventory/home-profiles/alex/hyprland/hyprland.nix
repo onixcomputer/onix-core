@@ -13,7 +13,7 @@
       # Default monitor configuration - users can override in their own config
       monitor = [
         "eDP-1,2880x1920@120,auto,2"
-        "DP-3, preferred, auto, 1, mirror, eDP-1"
+        "DP-3, preferred, auto, 1, mirror, eDP-1" # monitor 2 mirror for presentation/jetkvm
       ];
 
       # ===== AUTOSTART =====
@@ -25,7 +25,6 @@
         "${pkgs.mako}/bin/mako"
         "${pkgs.swayosd}/bin/swayosd-server"
         "${pkgs.hypridle}/bin/hypridle"
-        # Hyprpaper is now managed by home-manager service
       ];
 
       # ===== GENERAL =====
