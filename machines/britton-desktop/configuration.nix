@@ -1,17 +1,26 @@
 {
+  inputs,
+  pkgs,
   config,
   ...
 }:
+let
+  grubWallpaper = pkgs.fetchurl {
+    name = "nixos-grub-wallpaper.jpg";
+    url = "https://github.com/adeci/wallpapers/blob/main/nix-grub-3840x2160.png";
+    sha256 = "04bjgcvxk04ccl21a55a9kxdy2jnzgz1grsmkqg42w7ixfmx929h";
+  };
+  streetWallpaper = pkgs.fetchurl {
+    name = "street-wallpaper.png";
+    url = "https://github.com/adeci/wallpapers/blob/main/street-full.jpg";
+    sha256 = "1zv32lgnk3ivb0nf666bnmqhs9kzfzzb5gixa6bsn75khl9mwxbw";
+  };
+in
 {
   imports = [
+    inputs.grub2-themes.nixosModules.default
+    inputs.sddm-sugar-candy-nix.nixosModules.default
   ];
-  # boot = {
-  #   loader = {
-  #     systemd-boot.enable = true;
-  #     efi.canTouchEfiVariables = true;
-  #     grub.enable = false;
-  #   };
-  # };
 
   networking = {
     hostName = "britton-desktop";
@@ -24,62 +33,96 @@
 
   time.timeZone = "America/New_York";
 
+  environment.systemPackages = with pkgs; [
+    imagemagick # required for grub2-theme
+    claude-code
+  ];
+
+  # grub menu only lasts 1 sec, press anything to stay on it
+  # nixos generations are in the second menu slot collapsed
+  boot.loader = {
+    timeout = 1;
+    grub = {
+      timeoutStyle = "menu";
+    };
+    grub2-theme = {
+      enable = true;
+      theme = "stylish";
+      footer = true;
+      customResolution = "3840x2160";
+      splashImage = grubWallpaper;
+    };
+  };
+
   services = {
     xserver = {
-      xkb = {
-        layout = "us";
-        variant = "";
-      };
       enable = true;
       videoDrivers = [ "nvidia" ];
     };
-    openssh.enable = true;
+
     printing.enable = true;
+
+    # consider desktop tag and common audio file
+    # see inventory/tags/common/gui-base.nix reference for common
     pulseaudio.enable = false;
+
     pipewire = {
       enable = true;
       alsa.enable = true;
       alsa.support32Bit = true;
       pulse.enable = true;
     };
+
+    #custom tokyo night theme
+    displayManager.sddm = {
+      enable = true;
+      wayland.enable = true;
+      sugarCandyNix = {
+        enable = true;
+        settings = {
+          Background = streetWallpaper;
+          ScreenWidth = 3840;
+          ScreenHeight = 2160;
+          FormPosition = "left";
+          HaveFormBackground = true;
+          PartialBlur = true;
+
+          MainColor = "white";
+          AccentColor = "#668ac4";
+          BackgroundColor = "#1a1b26";
+          OverrideLoginButtonTextColor = "white";
+
+          HeaderText = "";
+          DateFormat = "dddd, MMMM d";
+          HourFormat = "HH:mm";
+
+          ForceLastUser = true;
+          ForceHideCompletePassword = true;
+          ForcePasswordFocus = true;
+        };
+      };
+    };
   };
 
-  system.stateVersion = "25.05";
-  hardware.graphics = {
-    enable = true;
+  hardware = {
+    graphics = {
+      enable = true;
+    };
+    # consider an nvidia inventory tag and include xserver graphics as well
+    # just make sure it's general settings and not too specific
+    nvidia = {
+      modesetting.enable = true;
+      powerManagement.enable = false;
+      powerManagement.finegrained = false;
+      open = true;
+      nvidiaSettings = true;
+      package = config.boot.kernelPackages.nvidiaPackages.latest;
+    };
   };
 
-  hardware.nvidia = {
-
-    # Modesetting is required.
-    modesetting.enable = true;
-
-    # Nvidia power management. Experimental, and can cause sleep/suspend to fail.
-    # Enable this if you have graphical corruption issues or application crashes after waking
-    # up from sleep. This fixes it by saving the entire VRAM memory to /tmp/ instead
-    # of just the bare essentials.
-    powerManagement.enable = false;
-
-    # Fine-grained power management. Turns off GPU when not in use.
-    # Experimental and only works on modern Nvidia GPUs (Turing or newer).
-    powerManagement.finegrained = false;
-
-    # Use the NVidia open source kernel module (not to be confused with the
-    # independent third-party "nouveau" open source driver).
-    # Support is limited to the Turing and later architectures. Full list of
-    # supported GPUs is at:
-    # https://github.com/NVIDIA/open-gpu-kernel-modules#compatible-gpus
-    # Only available from driver 515.43.04+
-    open = true;
-
-    # Enable the Nvidia settings menu,
-    # accessible via `nvidia-settings`.
-    nvidiaSettings = true;
-
-    # Optionally, you may need to select the appropriate driver version for your specific GPU.
-    package = config.boot.kernelPackages.nvidiaPackages.latest;
-  };
+  home-manager.backupFileExtension = "backup";
 
   security.rtkit.enable = true;
 
+  system.stateVersion = "25.05";
 }
