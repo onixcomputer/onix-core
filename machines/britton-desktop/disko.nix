@@ -9,7 +9,7 @@
     disk = {
       main = {
         # Configure your disk schema section of https://docs.clan.lol/guides/getting-started/deploy/ to get the mainDisk value to replace this with, use single-disk template as dummy for now (also 1g esp partition for multiple kernels in the future)
-        device = "{{mainDisk}}";
+        device = "/dev/disk/by-id/nvme-Samsung_SSD_9100_PRO_2TB_S7YCNJ0Y202518L";
         type = "disk";
         content = {
           type = "gpt";
