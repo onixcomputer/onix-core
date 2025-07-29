@@ -43,7 +43,7 @@ _: {
           profiles = [
             "base"
             "dev"
-            "hyprland"
+            "laptop"
           ];
         };
       };
