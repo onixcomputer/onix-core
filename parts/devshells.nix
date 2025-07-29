@@ -27,6 +27,10 @@
               fi
               nix build .#nixosConfigurations.$1.config.system.build.toplevel
             '')
+            (pkgs.writeShellScriptBin "validate" ''
+              echo "Running nix fmt..."
+              nix fmt && echo "Running pre-commit checks..." && pre-commit run --all-files
+            '')
           ];
 
           shellHook = ''
@@ -34,7 +38,7 @@
             echo "Available commands:"
             echo "  clan             - Clan CLI for infrastructure management"
             echo "  build            - Build a machine configuration (test locally)"
-            echo "  pre-commit       - Code quality checks and formatting"
+            echo "  validate         - Run nix fmt and pre-commit checks"
             echo "  nix-prefetch-sri - Get SRI hash for a URL"
             echo ""
             ${config.pre-commit.installationScript}
