@@ -49,7 +49,7 @@ _: {
         "hyprland"
       ];
       deploy = {
-        targetHost = "root@192.168.50.167";
+        targetHost = "root@100.97.151.9";
         buildHost = "";
       };
     };
