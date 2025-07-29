@@ -17,7 +17,6 @@ _: {
           "network"
           "pulseaudio"
           "cpu"
-          "battery"
         ];
 
         "hyprland/workspaces" = {
@@ -75,47 +74,6 @@ _: {
           interval = 3;
           nospacing = 1;
           on-click = "alacritty -e nmtui";
-        };
-
-        battery = {
-          format = "{capacity}% {icon}";
-          format-discharging = "{icon}";
-          format-charging = "{icon}";
-          format-plugged = "";
-          format-icons = {
-            charging = [
-              "󰢜"
-              "󰂆"
-              "󰂇"
-              "󰂈"
-              "󰢝"
-              "󰂉"
-              "󰢞"
-              "󰂊"
-              "󰂋"
-              "󰂅"
-            ];
-            default = [
-              "󰁺"
-              "󰁻"
-              "󰁼"
-              "󰁽"
-              "󰁾"
-              "󰁿"
-              "󰂀"
-              "󰂁"
-              "󰂂"
-              "󰁹"
-            ];
-          };
-          format-full = "󰂅";
-          tooltip-format-discharging = "{power:>1.0f}W↓ {capacity}%";
-          tooltip-format-charging = "{power:>1.0f}W↑ {capacity}%";
-          interval = 5;
-          states = {
-            warning = 20;
-            critical = 10;
-          };
         };
 
         bluetooth = {
@@ -195,7 +153,6 @@ _: {
 
       #tray,
       #cpu,
-      #battery,
       #network,
       #bluetooth,
       #pulseaudio,
@@ -203,18 +160,6 @@ _: {
         min-width: 12px;
         margin: 0 7.5px;
         color: #a9b1d6;
-      }
-
-      #battery.charging {
-        color: #9ece6a; /* Tokyo Night green */
-      }
-
-      #battery.warning {
-        color: #e0af68; /* Tokyo Night yellow */
-      }
-
-      #battery.critical {
-        color: #f7768e; /* Tokyo Night red */
       }
 
       tooltip {
