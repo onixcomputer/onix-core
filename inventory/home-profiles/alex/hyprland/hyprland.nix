@@ -2,6 +2,8 @@
 {
   wayland.windowManager.hyprland = {
     enable = true;
+    # Enable systemd integration for proper service management
+    systemd.enable = true;
     settings = {
       # ===== VARIABLES =====
       "$mod" = "SUPER";
@@ -17,6 +19,7 @@
       ];
 
       # ===== AUTOSTART =====
+      # Note: With UWSM, environment variables are managed automatically
       exec-once = [
         # Core services
         "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
@@ -32,7 +35,8 @@
         gaps_in = 5;
         gaps_out = 10;
         border_size = 2;
-        "col.active_border" = "rgba(33ccffee) rgba(00ff99ee) 45deg";
+        # Tokyo Night inspired colors: blue (#7aa2f7) and purple (#bb9af7)
+        "col.active_border" = "rgba(7aa2f7ee) rgba(bb9af7ee) 45deg";
         "col.inactive_border" = "rgba(595959aa)";
         resize_on_border = false;
         allow_tearing = false;
