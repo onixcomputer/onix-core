@@ -7,13 +7,13 @@
 let
   grubWallpaper = pkgs.fetchurl {
     name = "nixos-grub-wallpaper.jpg";
-    url = "https://github.com/adeci/wallpapers/blob/main/nix-grub-3840x2160.png";
-    sha256 = "04bjgcvxk04ccl21a55a9kxdy2jnzgz1grsmkqg42w7ixfmx929h";
+    url = "https://raw.githubusercontent.com/adeci/wallpapers/main/nix-grub-3840x2160.png";
+    sha256 = "sha256-d+sXYC74KL90wh06bLYTgebF6Ai7ac6Qsd+6qj57yyE=";
   };
   streetWallpaper = pkgs.fetchurl {
     name = "street-wallpaper.png";
-    url = "https://github.com/adeci/wallpapers/blob/main/street-full.jpg";
-    sha256 = "1zv32lgnk3ivb0nf666bnmqhs9kzfzzb5gixa6bsn75khl9mwxbw";
+    url = "https://raw.githubusercontent.com/adeci/wallpapers/main/street-full.jpg";
+    sha256 = "sha256-XlSm8RzGwowJMT/DQBNwfsU4V6QuvP4kvwVm1pzw6SM=";
   };
 in
 {

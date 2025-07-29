@@ -3,7 +3,7 @@ let
   darkForestWallpaper = pkgs.fetchurl {
     name = "dark-forest-wallpaper.jxl";
     url = "https://raw.githubusercontent.com/adeci/wallpapers/main/dark-forest.jxl";
-    sha256 = "0v0if5mai05k24n611xs4qz6rmfaj15xcqd6mnddfbfa9fkkkdld";
+    sha256 = "sha256-jbY5p0vKLdearaZh1kuQytVsPia6h2AsEbOAqGpxEWw=";
   };
 in
 {
