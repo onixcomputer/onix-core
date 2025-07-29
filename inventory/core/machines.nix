@@ -15,6 +15,8 @@ _: {
       tags = [
         "tailnet"
         "dev"
+        "desktop"
+        "nvidia"
       ];
       deploy = {
         targetHost = "root@britton-desktop-1";
