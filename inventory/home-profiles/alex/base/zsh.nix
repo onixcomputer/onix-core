@@ -50,24 +50,14 @@
 
   # Shell utilities
   home.packages = with pkgs; [
-    # Better cat with syntax highlighting
     bat
-
-    # Better ls
     eza
-
-    # Fuzzy finder for general use
     fzf
-
-    # Git enhancements
-    delta # Better git diff
-
-    # JSON/YAML tools
+    delta
     jq
     yq
   ];
 
-  # Shell aliases
   home.shellAliases = {
     # Eza (better ls)
     ll = "eza -la --icons --git";
@@ -103,49 +93,8 @@
     nrs = "sudo nixos-rebuild switch";
     nfu = "nix flake update";
     ncg = "nix-collect-garbage -d";
-  };
 
-  # Starship prompt
-  programs.starship = {
-    enable = true;
-    enableZshIntegration = true;
-
-    settings = {
-      format = "$username$hostname$directory$git_branch$git_status$nix_shell$character ";
-
-      username = {
-        show_always = false;
-        format = "[$user]($style) ";
-      };
-
-      hostname = {
-        ssh_only = true;
-        format = "[@$hostname]($style) ";
-      };
-
-      directory = {
-        truncation_length = 3;
-        truncate_to_repo = true;
-        format = "[$path]($style)[$read_only]($read_only_style) ";
-      };
-
-      git_branch = {
-        format = "[$symbol$branch]($style) ";
-      };
-
-      git_status = {
-        format = "[$all_status$ahead_behind]($style) ";
-      };
-
-      nix_shell = {
-        format = "[$symbol$state]($style) ";
-        symbol = "❄️ ";
-      };
-
-      character = {
-        success_symbol = "[➜](bold green)";
-        error_symbol = "[➜](bold red)";
-      };
-    };
+    # Clan shortcuts
+    cufw = "clan machines update alex-fw";
   };
 }

@@ -44,6 +44,7 @@ _: {
             "base"
             "dev"
             "laptop"
+            "creative"
           ];
         };
       };
