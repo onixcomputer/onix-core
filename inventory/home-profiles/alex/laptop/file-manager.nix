@@ -1,57 +1,36 @@
 { pkgs, ... }:
 {
   home.packages = with pkgs; [
-    nautilus
-    sushi # Quick file previewer
+    xfce.thunar
+    xfce.thunar-volman # Volume management
+    xfce.thunar-archive-plugin # Archive support
+    xfce.tumbler # Thumbnail support
 
-    # Thumbnail support
-    ffmpegthumbnailer
-
-    # Archive support
-    file-roller
-
-    # Tokyo Night GTK theme
-    tokyo-night-gtk
+    # Additional file management tools
+    xfce.xfconf # Thunar settings backend
+    ffmpegthumbnailer # Video thumbnails
+    webp-pixbuf-loader # WebP image support
+    file-roller # Archive manager (works with Thunar)
   ];
 
-  # GTK theme configuration
-  gtk = {
-    enable = true;
-    theme = {
-      name = "Tokyonight-Dark-B";
-      package = pkgs.tokyo-night-gtk;
-    };
-    gtk3.extraConfig = {
-      gtk-application-prefer-dark-theme = 1;
-    };
-    gtk4.extraConfig = {
-      gtk-application-prefer-dark-theme = 1;
+  # File chooser settings (works across GTK apps)
+  dconf.settings = {
+    "org/gtk/settings/file-chooser" = {
+      sort-directories-first = true;
+      show-hidden = false;
     };
   };
 
-  # dconf settings for GNOME/Nautilus dark mode
-  dconf = {
-    enable = true;
-    settings = {
-      "org/gnome/desktop/interface" = {
-        color-scheme = "prefer-dark";
-        gtk-theme = "Tokyonight-Dark-B";
-      };
-
-      # Nautilus specific settings
-      "org/gnome/nautilus/preferences" = {
-        default-folder-viewer = "list-view";
-        search-filter-time-type = "last_modified";
-      };
-
-      # File chooser (used by Nautilus dialogs)
-      "org/gtk/settings/file-chooser" = {
-        sort-directories-first = true;
-      };
+  # Thunar configuration via xfconf
+  xfconf.settings = {
+    xsettings = {
+      "Net/ThemeName" = "Tokyonight-Dark";
+      "Net/IconThemeName" = "Papirus-Dark";
+      "Gtk/CursorThemeName" = "Adwaita";
     };
   };
 
   xdg.mimeApps.defaultApplications = {
-    "inode/directory" = [ "org.gnome.Nautilus.desktop" ];
+    "inode/directory" = [ "thunar.desktop" ];
   };
 }

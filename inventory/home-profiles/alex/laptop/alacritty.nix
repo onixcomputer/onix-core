@@ -6,15 +6,15 @@ _: {
 
       font = {
         normal = {
-          family = "CaskaydiaMono Nerd Font";
+          family = "CaskaydiaMono Nerd Font Mono";
           style = "Regular";
         };
         bold = {
-          family = "CaskaydiaMono Nerd Font";
+          family = "CaskaydiaMono Nerd Font Mono";
           style = "Bold";
         };
         italic = {
-          family = "CaskaydiaMono Nerd Font";
+          family = "CaskaydiaMono Nerd Font Mono";
           style = "Italic";
         };
         size = 14;
