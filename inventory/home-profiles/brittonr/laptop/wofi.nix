@@ -24,7 +24,7 @@
     style = ''
       /* Tokyo Night theme - official folke colors */
       * {
-        font-family: "JetBrainsMono Nerd Font";
+        font-family: "CaskaydiaMono Nerd Font";
         color: #c0caf5;
       }
 
