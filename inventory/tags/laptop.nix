@@ -23,7 +23,6 @@
       enable = true;
       touchpad = {
         tapping = true;
-        naturalScrolling = false;
         disableWhileTyping = true;
       };
     };

@@ -27,6 +27,7 @@ in
   environment.systemPackages = with pkgs; [
     imagemagick # required for grub2-theme
     claude-code
+    comma
   ];
 
   home-manager.backupFileExtension = "backup";
