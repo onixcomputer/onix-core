@@ -18,6 +18,7 @@ _: {
         "desktop"
         "nvidia"
         "hyprland"
+        "creative"
       ];
       deploy = {
         targetHost = "root@britton-desktop-2";
