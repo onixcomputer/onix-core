@@ -15,13 +15,13 @@
       # Default monitor configuration - users can override in their own config
       monitor = [
         # Primary display (auto-detect)
-        ",preferred,auto,2"
+        ",preferred,auto,1.5"
         # Mirror the primary display for JetKVM
         # Format: name,resolution,position,scale,mirror,target
         # This mirrors the first detected monitor to any second connected display
         "HDMI-A-1,preferred,auto,2,mirror,eDP-1"
         "HDMI-A-2,preferred,auto,2,mirror,DP-1"
-        "DP-2,preferred,auto,2,mirror,DP-1"
+
       ];
 
       # ===== AUTOSTART =====
