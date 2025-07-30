@@ -5,8 +5,8 @@
       set fish_greeting # Disable greeting
     '';
     shellAliases = {
-      ll = "ls -l";
-      la = "ls -la";
+      # ll = "ls -l";
+      # la = "ls -la";
       ".." = "cd ..";
       "..." = "cd ../..";
     };
