@@ -28,6 +28,8 @@ _: {
       name = "britton-fw";
       tags = [
         "tailnet"
+        "laptop"
+        "hyprland"
       ];
       deploy = {
         targetHost = "root@127.0.0.1?IdentityFile=~/.ssh/framework&IdentitiesOnly=yes";
