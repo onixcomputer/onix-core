@@ -63,7 +63,7 @@ _: {
 
   brittonr = {
     description = "Britton";
-    defaultUid = 1000;
+    defaultUid = 1555;
     defaultGroups = [
       "wheel"
       "networkmanager"
@@ -83,7 +83,7 @@ _: {
           profiles = [
             "base"
             "dev"
-            "desktop"
+            "laptop"
           ];
         };
       };
@@ -96,6 +96,7 @@ _: {
             "base"
             "dev"
             "desktop"
+            "creative"
           ];
         };
       };
