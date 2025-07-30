@@ -18,6 +18,9 @@
 
       # Autostart
       exec-once = [
+        # Fix slow app startup - update D-Bus environment first
+        "${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
+
         "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
         "${pkgs.wl-clip-persist}/bin/wl-clip-persist --clipboard regular --all-mime-type-regex '^(?!x-kde-passwordManagerHint).+'"
         "${pkgs.waybar}/bin/waybar"
@@ -107,6 +110,7 @@
 
         follow_mouse = 1;
         sensitivity = 0;
+        mouse_refocus = false;
 
         touchpad = {
           natural_scroll = true;
@@ -140,16 +144,30 @@
       bind = [
         # Window management
         "$mod, Q, killactive"
-        "$mod, J, togglesplit"
+        "$mod, S, togglesplit"
         "$mod, P, pseudo"
         "$mod, V, togglefloating"
         ", F11, fullscreen, 0"
 
+        # Vim bindings for focus
+        "$mod, H, movefocus, l"
+        "$mod, L, movefocus, r"
+        "$mod, K, movefocus, u"
+        "$mod, J, movefocus, d"
+
+        # Keep arrow keys for compatibility
         "$mod, left, movefocus, l"
         "$mod, right, movefocus, r"
         "$mod, up, movefocus, u"
         "$mod, down, movefocus, d"
 
+        # Vim bindings for swap
+        "$mod SHIFT, H, swapwindow, l"
+        "$mod SHIFT, L, swapwindow, r"
+        "$mod SHIFT, K, swapwindow, u"
+        "$mod SHIFT, J, swapwindow, d"
+
+        # Keep arrow keys for compatibility
         "$mod SHIFT, left, swapwindow, l"
         "$mod SHIFT, right, swapwindow, r"
         "$mod SHIFT, up, swapwindow, u"
@@ -187,15 +205,15 @@
         "$mod, Return, exec, $terminal"
         "$mod, F, exec, $fileManager"
         "$mod, B, exec, $browser"
-        "$mod, R, exec, wofi --show run"
-        "$mod, space, exec, wofi --show drun"
+        "$mod, R, exec, pkill wofi || wofi --show run"
+        "$mod, space, exec, pkill wofi || wofi --show drun"
 
         "$mod, comma, exec, makoctl dismiss"
         "$mod SHIFT, comma, exec, makoctl dismiss --all"
 
-        ", PRINT, exec, hyprshot -m region"
+        ", PRINT, exec, hyprshot -m output"
         "SHIFT, PRINT, exec, hyprshot -m window"
-        "CTRL, PRINT, exec, hyprshot -m output"
+        "$mod SHIFT, S, exec, hyprshot -m region"
 
         "$mod, PRINT, exec, hyprpicker -a"
 
