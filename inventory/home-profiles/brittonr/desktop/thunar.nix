@@ -2,18 +2,15 @@
 {
   home.packages = with pkgs; [
     xfce.thunar
-    xfce.thunar-volman # Volume management
-    xfce.thunar-archive-plugin # Archive support
-    xfce.tumbler # Thumbnail support
-
-    # Additional file management tools
-    xfce.xfconf # Thunar settings backend
-    ffmpegthumbnailer # Video thumbnails
-    webp-pixbuf-loader # WebP image support
-    file-roller # Archive manager (works with Thunar)
+    xfce.thunar-volman
+    xfce.thunar-archive-plugin
+    xfce.tumbler
+    xfce.xfconf
+    ffmpegthumbnailer
+    webp-pixbuf-loader
+    file-roller
   ];
 
-  # File chooser settings (works across GTK apps)
   dconf.settings = {
     "org/gtk/settings/file-chooser" = {
       sort-directories-first = true;
@@ -21,7 +18,6 @@
     };
   };
 
-  # Thunar configuration via xfconf
   xfconf.settings = {
     xsettings = {
       "Net/ThemeName" = "Tokyonight-Dark";

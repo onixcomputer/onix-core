@@ -3,27 +3,33 @@ _: {
     enable = true;
     settings = {
       mainBar = {
-        reload_style_on_change = true;
         layer = "top";
         position = "top";
+        height = 38;
         spacing = 0;
-        height = 26;
+        margin = "0";
 
         modules-left = [ "hyprland/workspaces" ];
         modules-center = [ "clock" ];
         modules-right = [
           "tray"
-          "bluetooth"
-          "network"
           "pulseaudio"
-          "cpu"
+          "group/resources"
         ];
+
+        "group/resources" = {
+          orientation = "horizontal";
+          modules = [
+            "cpu"
+            "memory"
+            "temperature"
+          ];
+        };
 
         "hyprland/workspaces" = {
           on-click = "activate";
           format = "{icon}";
           format-icons = {
-            default = "";
             "1" = "1";
             "2" = "2";
             "3" = "3";
@@ -33,8 +39,11 @@ _: {
             "7" = "7";
             "8" = "8";
             "9" = "9";
-            active = "󱓻";
+            active = "●";
+            default = "";
           };
+          on-scroll-up = "hyprctl dispatch workspace e+1";
+          on-scroll-down = "hyprctl dispatch workspace e-1";
           persistent-workspaces = {
             "1" = [ ];
             "2" = [ ];
@@ -44,129 +53,212 @@ _: {
           };
         };
 
-        cpu = {
-          interval = 5;
-          format = "󰍛";
-          on-click = "alacritty -e btop";
-        };
-
         clock = {
-          format = "{:%A %H:%M}";
-          format-alt = "{:%d %B %Y}";
-          tooltip = false;
-        };
-
-        network = {
-          format-icons = [
-            "󰤯"
-            "󰤟"
-            "󰤢"
-            "󰤥"
-            "󰤨"
-          ];
-          format = "{icon}";
-          format-wifi = "{icon}";
-          format-ethernet = "󰀂";
-          format-disconnected = "󰖪";
-          tooltip-format-wifi = "{essid} ({frequency} GHz)\n⇣{bandwidthDownBytes}  ⇡{bandwidthUpBytes}";
-          tooltip-format-ethernet = "⇣{bandwidthDownBytes}  ⇡{bandwidthUpBytes}";
-          tooltip-format-disconnected = "Disconnected";
-          interval = 3;
-          nospacing = 1;
-          on-click = "alacritty -e nmtui";
-        };
-
-        bluetooth = {
-          format = "";
-          format-disabled = "󰂲";
-          format-connected = "";
-          tooltip-format = "Devices connected: {num_connections}";
-          on-click = "blueman-manager";
-        };
-
-        pulseaudio = {
-          format = "{icon}";
-          on-click = "pavucontrol";
-          on-click-right = "pamixer -t";
-          tooltip-format = "Playing at {volume}%";
-          scroll-step = 5;
-          format-muted = "󰝟";
-          format-icons = {
-            default = [
-              ""
-              ""
-              ""
-            ];
+          interval = 1;
+          format = "{:%I:%M %p}";
+          format-alt = "{:%A, %B %d, %Y}";
+          tooltip-format = "<tt><small>{calendar}</small></tt>";
+          calendar = {
+            mode = "year";
+            mode-mon-col = 3;
+            weeks-pos = "right";
+            on-scroll = 1;
+            format = {
+              months = "<span color='#ffead3'><b>{}</b></span>";
+              days = "<span color='#ecc6d9'><b>{}</b></span>";
+              weeks = "<span color='#99ffdd'><b>W{}</b></span>";
+              weekdays = "<span color='#ffcc66'><b>{}</b></span>";
+              today = "<span color='#ff6699'><b><u>{}</u></b></span>";
+            };
           };
         };
 
+        cpu = {
+          interval = 1;
+          format = "󰍛 {usage:02}%";
+          tooltip = true;
+          on-click = "alacritty -e btop";
+        };
+
+        memory = {
+          interval = 1;
+          format = "󰘚 {used:0.1f}G/{total:0.1f}G";
+          tooltip-format = "Memory: {percentage}%\nUsed: {used:0.2f}GB\nTotal: {total:0.2f}GB";
+          on-click = "alacritty -e btop";
+        };
+
+        temperature = {
+          interval = 1;
+          format = "󰔏 {temperatureC}°C";
+          thermal-zone = 0;
+          critical-threshold = 80;
+          format-critical = "󰸁 {temperatureC}°C";
+          tooltip-format = "CPU Temperature: {temperatureC}°C / {temperatureF}°F";
+          on-click = "alacritty -e btop";
+        };
+
+        pulseaudio = {
+          format = "{icon} {volume}%";
+          format-muted = "󰝟";
+          format-icons = {
+            default = [
+              "󰕿"
+              "󰖀"
+              "󰕾"
+            ];
+          };
+          on-click = "pavucontrol";
+          on-click-right = "pamixer -t";
+          scroll-step = 5;
+        };
+
         tray = {
-          icon-size = 12;
-          spacing = 12;
+          icon-size = 20;
+          spacing = 6;
+          show-passive-items = true;
         };
       };
     };
 
     style = ''
-      /* Tokyo Night theme */
-      @define-color foreground #cdd6f4;
-      @define-color background #1a1b26;
-
       * {
         border: none;
         border-radius: 0;
-        min-height: 0;
         font-family: "CaskaydiaMono Nerd Font";
-        font-size: 12px;
+        font-size: 15px;
+        min-height: 0;
       }
 
       window#waybar {
-        background-color: rgba(26, 27, 38, 0.9); /* #1a1b26 with transparency */
-        color: #a9b1d6;
-      }
-
-      .modules-left {
-        margin-left: 8px;
-      }
-
-      .modules-right {
-        margin-right: 8px;
-      }
-
-      #workspaces button {
-        all: initial;
-        padding: 0 6px;
-        margin: 0 1.5px;
-        min-width: 9px;
-        color: #565f89; /* Tokyo Night inactive */
-      }
-
-      #workspaces button:hover {
-        background: rgba(122, 162, 247, 0.2); /* Tokyo Night blue with transparency */
-        color: #a9b1d6;
-      }
-
-      #workspaces button.active {
-        background-color: #7aa2f7; /* Tokyo Night blue */
-        color: #1a1b26;
-      }
-
-      #tray,
-      #cpu,
-      #network,
-      #bluetooth,
-      #pulseaudio,
-      #clock {
-        min-width: 12px;
-        margin: 0 7.5px;
-        color: #a9b1d6;
+        background: transparent;
+        color: #c0caf5;
       }
 
       tooltip {
-        background: rgba(26, 27, 38, 0.95);
-        border: 1px solid #33ccff; /* Tokyo Night cyan border */
-        padding: 8px;
+        background: #24283b;
+        border-radius: 0.6em;
+        border-width: 2px;
+        border-style: solid;
+        border-color: #16161e;
+        padding: 0.5em;
       }
+
+      tooltip label {
+        color: #c0caf5;
+        font-size: 0.9em;
+      }
+
+      #workspaces {
+        background: #16161e;
+        border-radius: 0.7em;
+        margin: 0.3em;
+        margin-left: 0.8em;
+        padding: 0.2em;
+      }
+
+      #workspaces button {
+        padding: 0 0.5em;
+        margin: 0 0.1em;
+        border-radius: 0.6em;
+        color: #7aa2f7;
+        background: transparent;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      #workspaces button:first-child {
+        margin-left: 0;
+      }
+
+      #workspaces button:last-child {
+        margin-right: 0;
+      }
+
+      #workspaces button.active {
+        background: #7aa2f7;
+        color: #16161e;
+        border-radius: 0.6em;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 1.6em;
+        padding: 0 0.6em;
+        margin: 0 0.15em;
+      }
+
+      #workspaces button:hover {
+        background: #7aa2f7;
+        color: #16161e;
+        border-radius: 0.6em;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      #clock {
+        color: #7aa2f7;
+        background: #16161e;
+        border-radius: 0.7em;
+        margin: 0.3em;
+        padding: 0 0.8em;
+      }
+
+      .modules-right {
+        margin-right: 0.8em;
+      }
+
+      #tray {
+        background: #16161e;
+        border-radius: 0.7em;
+        padding: 0.3em 0.6em;
+        margin: 0.3em 0.2em;
+      }
+
+      #tray > .passive {
+        -gtk-icon-effect: dim;
+      }
+
+      #tray > .needs-attention {
+        -gtk-icon-effect: highlight;
+      }
+
+      #pulseaudio {
+        background: #16161e;
+        color: #7aa2f7;
+        border-radius: 0.7em;
+        padding: 0 0.8em;
+        margin: 0.3em 0.2em;
+      }
+
+      #pulseaudio.muted {
+        color: #313244;
+      }
+
+      box#resources {
+        background: #16161e;
+        border-radius: 0.7em;
+        margin: 0.3em 0.2em;
+        padding: 0 0.4em;
+      }
+
+      #cpu {
+        color: #7aa2f7;
+        padding: 0 0.2em;
+        background: transparent;
+      }
+
+      #memory {
+        color: #7aa2f7;
+        padding: 0 0.6em;
+        background: transparent;
+      }
+
+      #temperature {
+        color: #7aa2f7;
+        padding: 0 0.4em;
+        background: transparent;
+      }
+
+      #temperature.critical {
+        color: #f7768e;
+      }
+
+
     '';
   };
 }

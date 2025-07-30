@@ -15,7 +15,7 @@
     }
 
     label {
-      font-family: 'JetBrainsMono Nerd Font', monospace;
+      font-family: 'CaskaydiaMono Nerd Font', monospace;
       font-size: 11pt;
       color: #cdd6f4;
     }
