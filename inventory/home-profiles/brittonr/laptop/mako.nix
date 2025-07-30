@@ -11,7 +11,7 @@ _: {
       border-size = 2;
       border-radius = 0; # Tokyo Night uses no rounding
       anchor = "top-right";
-      font = "Liberation Sans 11";
+      font = "CaskaydiaMono Nerd Font 11";
       icons = true;
       max-icon-size = 32;
 

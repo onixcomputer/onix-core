@@ -63,8 +63,6 @@ _: {
         <family>monospace</family>
         <prefer>
           <family>CaskaydiaMono Nerd Font</family>
-          <family>JetBrainsMono Nerd Font</family>
-          <family>JetBrains Mono</family>
           <family>Liberation Mono</family>
           <family>DejaVu Sans Mono</family>
         </prefer>

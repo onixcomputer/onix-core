@@ -56,7 +56,7 @@ _: {
 
         clock = {
           interval = 1;
-          format = "{:%H:%M}";
+          format = "{:%I:%M %p}";
           format-alt = "{:%A, %B %d, %Y}";
           tooltip-format = "<tt><small>{calendar}</small></tt>";
           calendar = {
@@ -204,8 +204,8 @@ _: {
         border-radius: 0.6em;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         font-size: 1.6em;
-        padding: 0 0.4em;
-        margin: 0 0.1em;
+        padding: 0 0.6em;
+        margin: 0 0.15em;
       }
 
       #workspaces button:hover {
