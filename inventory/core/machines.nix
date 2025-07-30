@@ -17,9 +17,10 @@ _: {
         "dev"
         "desktop"
         "nvidia"
+        "hyprland"
       ];
       deploy = {
-        targetHost = "root@britton-desktop-1";
+        targetHost = "root@britton-desktop-2";
         buildHost = "";
       };
     };
