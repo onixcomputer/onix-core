@@ -5,6 +5,7 @@
     ripgrep
     fd
     bat
+    nixos-generators
 
     # Archive tools
     unzip
