@@ -109,7 +109,7 @@
         sensitivity = 0;
 
         touchpad = {
-          natural_scroll = true;
+          natural_scroll = false;
         };
       };
 
