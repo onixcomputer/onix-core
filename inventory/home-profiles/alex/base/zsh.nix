@@ -95,6 +95,6 @@
     ncg = "nix-collect-garbage -d";
 
     # Clan shortcuts
-    cufw = "clan machines update alex-fw";
+    cu = "clan machines update alex-fw";
   };
 }
