@@ -4,6 +4,7 @@ let
 
   module_definitions = {
     "tailscale" = import ./tailscale;
+    "prometheus" = import ./prometheus;
   };
 
 in
