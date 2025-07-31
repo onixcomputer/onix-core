@@ -86,5 +86,20 @@
     (writeShellScriptBin "wofi-emoji" ''
       ${wofi}/bin/wofi -d -i --show dmenu | wl-copy
     '')
+
+    (writeShellScriptBin "wofi-power" ''
+      entries="⇠ Logout\n⭮ Reboot\n⏻ Shutdown"
+
+      selected=$(echo -e $entries | ${wofi}/bin/wofi --width 250 --height 150 --dmenu --cache-file /dev/null | ${gawk}/bin/awk '{print tolower($2)}')
+
+      case $selected in
+        logout)
+          ${pkgs.hyprland}/bin/hyprctl dispatch exit;;
+        reboot)
+          exec ${pkgs.systemd}/bin/systemctl reboot;;
+        shutdown)
+          exec ${pkgs.systemd}/bin/systemctl poweroff -i;;
+      esac
+    '')
   ];
 }

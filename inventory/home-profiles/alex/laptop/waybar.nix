@@ -16,6 +16,7 @@ _: {
           "pulseaudio"
           "group/resources"
           "battery"
+          "custom/power"
         ];
 
         "group/resources" = {
@@ -141,6 +142,12 @@ _: {
           icon-size = 20;
           spacing = 6;
           show-passive-items = true;
+        };
+
+        "custom/power" = {
+          format = "󰐥";
+          tooltip = false;
+          on-click = "wofi-power";
         };
       };
     };
@@ -310,6 +317,15 @@ _: {
           background-color: #1e1e2e;
           color: #f38ba8;
         }
+      }
+
+      #custom-power {
+        background: #16161e;
+        color: #7aa2f7;
+        border-radius: 0.7em;
+        padding: 0 0.8em;
+        margin: 0.3em 0.2em;
+        margin-right: 0.8em;
       }
 
     '';

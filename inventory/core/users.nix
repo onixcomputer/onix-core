@@ -45,6 +45,7 @@ _: {
             "dev"
             "laptop"
             "creative"
+            "social"
           ];
         };
       };
