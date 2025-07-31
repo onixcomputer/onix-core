@@ -14,17 +14,34 @@ _:
     enableBashIntegration = true;
     enableFishIntegration = true;
     enableZshIntegration = true;
-    enableNushellIntegration = false;
-    enableIonIntegration = false;
-
     settings = {
-      format = ''
-        [░▒▓](#a3aed2)[ ](bg:#a3aed2 fg:#090c0c)[](bg:#769ff0 fg:#a3aed2)$directory[](fg:#769ff0 bg:#394260)$git_branch$git_status[](fg:#394260 bg:#212736)$nodejs$rust$golang$php[](fg:#212736 bg:#1d2230)$time[ ](fg:#1d2230)
-        $character
-      '';
+      format = "[](color_pink)$username[](bg:color_purple fg:color_pink)$directory[](fg:color_purple bg:color_blue)$git_branch$git_status[](fg:color_blue bg:color_green)$c$rust$golang$nodejs$php$python[](fg:color_green bg:color_bg3)$docker_context[](fg:color_bg3 bg:color_bg1)$time[ ](fg:color_bg1)\n$line_break$character";
+
+      palette = "everblush";
+
+      palettes.everblush = {
+        color_pink = "#e57474";
+        color_purple = "#c47fd5";
+        color_blue = "#67b0e8";
+        color_green = "#8ccf7e";
+        color_yellow = "#e5c76b";
+        color_orange = "#fcb163";
+        color_bg1 = "#2d2d2d";
+        color_bg3 = "#3d3d3d";
+        color_fg0 = "#dadada";
+      };
+
+      right_format = "$cmd_duration";
+
+      username = {
+        show_always = true;
+        style_user = "bg:color_pink fg:color_bg1";
+        style_root = "bg:color_pink fg:color_bg1";
+        format = "[ $user ]($style)";
+      };
 
       directory = {
-        style = "fg:#e3e5e5 bg:#769ff0";
+        style = "fg:color_bg1 bg:color_purple";
         format = "[ $path ]($style)";
         truncation_length = 3;
         truncation_symbol = "…/";
@@ -32,63 +49,73 @@ _:
 
       git_branch = {
         symbol = "";
-        style = "bg:#394260";
-        format = "[[ $symbol $branch ](fg:#769ff0 bg:#394260)]($style)";
+        style = "bg:color_blue fg:color_bg1";
+        format = "[ $symbol $branch ]($style)";
       };
 
       git_status = {
-        style = "bg:#394260";
-        format = "[[($all_status$ahead_behind )](fg:#769ff0 bg:#394260)]($style)";
+        style = "bg:color_blue fg:color_bg1";
+        format = "[$all_status$ahead_behind ]($style)";
       };
 
       nodejs = {
         symbol = "";
-        style = "bg:#212736";
-        format = "[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)";
+        style = "bg:color_green fg:color_bg1";
+        format = "[ $symbol ($version) ]($style)";
       };
 
       rust = {
         symbol = "";
-        style = "bg:#212736";
-        format = "[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)";
+        style = "bg:color_green fg:color_bg1";
+        format = "[ $symbol ($version) ]($style)";
       };
 
       golang = {
         symbol = "";
-        style = "bg:#212736";
-        format = "[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)";
+        style = "bg:color_green fg:color_bg1";
+        format = "[ $symbol ($version) ]($style)";
       };
 
       php = {
         symbol = "";
-        style = "bg:#212736";
-        format = "[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)";
+        style = "bg:color_green fg:color_bg1";
+        format = "[ $symbol ($version) ]($style)";
+      };
+
+      python = {
+        symbol = "";
+        style = "bg:color_green fg:color_bg1";
+        format = "[ $symbol ($version) ]($style)";
+      };
+
+      c = {
+        symbol = "";
+        style = "bg:color_green fg:color_bg1";
+        format = "[ $symbol ($version) ]($style)";
+      };
+
+      docker_context = {
+        symbol = "";
+        style = "bg:color_bg3 fg:#83a598";
+        format = "[ $symbol $context ]($style)";
       };
 
       time = {
         disabled = false;
         time_format = "%R";
-        style = "bg:#1d2230";
-        format = "[[  $time ](fg:#a0a9cb bg:#1d2230)]($style)";
+        style = "bg:color_bg1 fg:color_fg0";
+        format = "[  $time ]($style)";
       };
 
       character = {
-        success_symbol = "[➜](bold fg:#86b300)";
-        error_symbol = "[✗](bold fg:#ff6c6b)";
+        success_symbol = "[➜](bold fg:#8ccf7e)";
+        error_symbol = "[✗](bold fg:#e57474)";
       };
 
       cmd_duration = {
-        min_time = 2000;
-        format = "took [$duration](bold yellow)";
-      };
-
-      battery = {
-        display = [
-          {
-            threshold = 30;
-            style = "bold red";
-          }
-        ];
+        min_time = 0;
+        format = " [$duration](fg:#808080)";
+        show_milliseconds = true;
       };
     };
   };
