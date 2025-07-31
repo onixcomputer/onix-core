@@ -20,9 +20,10 @@ _: {
         "hyprland"
         "creative"
         "media"
+        "prometheus"
       ];
       deploy = {
-        targetHost = "root@britton-desktop-2";
+        targetHost = "root@britton-desktop";
         buildHost = "";
       };
     };
@@ -32,6 +33,7 @@ _: {
         "tailnet"
         "laptop"
         "hyprland"
+        "prometheus"
       ];
       deploy = {
         targetHost = "root@britton-fw";
