@@ -144,19 +144,41 @@ in
                 grafanaConfig
                 {
                   # Configure datasources if any
-                  provision = lib.mkIf (allDatasources != [ ] || dashboards != [ ] || notifiers != [ ]) {
-                    enable = true;
+                  provision =
+                    lib.mkIf
+                      (allDatasources != [ ] || dashboards != [ ] || notifiers != [ ] || enablePrometheusIntegration)
+                      {
+                        enable = true;
 
-                    datasources.settings = lib.mkIf (allDatasources != [ ]) {
-                      apiVersion = 1;
-                      datasources = allDatasources;
-                      deleteDatasources = [ ];
-                    };
+                        datasources.settings = lib.mkIf (allDatasources != [ ]) {
+                          apiVersion = 1;
+                          datasources = allDatasources;
+                          deleteDatasources = [ ];
+                        };
 
-                    dashboards = lib.mkIf (dashboards != [ ]) dashboards;
+                        dashboards.settings =
+                          let
+                            userDashboards =
+                              if dashboards != [ ] then
+                                {
+                                  apiVersion = 1;
+                                  providers = dashboards;
+                                }
+                              else
+                                null;
+                            defaultDashboards = null;
+                          in
+                          if userDashboards != null && defaultDashboards != null then
+                            userDashboards // { providers = userDashboards.providers ++ defaultDashboards.providers; }
+                          else if userDashboards != null then
+                            userDashboards
+                          else if defaultDashboards != null then
+                            defaultDashboards
+                          else
+                            null;
 
-                    notifiers = lib.mkIf (notifiers != [ ]) notifiers;
-                  };
+                        notifiers = lib.mkIf (notifiers != [ ]) notifiers;
+                      };
                 }
               ];
 
