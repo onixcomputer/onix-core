@@ -38,12 +38,12 @@ _: {
 
           # Dashboard provisioning
           dashboards = [
-            # Example: provision dashboards from a directory
-            # {
-            #   name = "System Dashboards";
-            #   options.path = ./dashboards;
-            #   options.foldersFromFilesStructure = true;
-            # }
+            {
+              name = "System Dashboards";
+              type = "file";
+              options.path = ./grafana;
+              options.foldersFromFilesStructure = false;
+            }
           ];
 
           # Database configuration (defaults to SQLite)
