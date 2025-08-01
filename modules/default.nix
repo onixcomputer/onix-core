@@ -6,6 +6,7 @@ let
     "tailscale" = import ./tailscale;
     "prometheus" = import ./prometheus;
     "grafana" = import ./grafana;
+    "loki" = import ./loki;
   };
 
 in
