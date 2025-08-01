@@ -8,6 +8,7 @@ let
     "grafana" = import ./grafana;
     "loki" = import ./loki;
     "vaultwarden" = import ./vaultwarden;
+    "homepage-dashboard" = import ./homepage-dashboard;
   };
 
 in

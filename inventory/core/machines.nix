@@ -23,6 +23,7 @@ _: {
         "prometheus"
         "monitoring"
         "vaultwarden-server"
+        "homepage-server"
       ];
       deploy = {
         targetHost = "root@britton-desktop";
