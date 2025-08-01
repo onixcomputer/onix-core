@@ -21,6 +21,7 @@ _: {
               "*.json"
               "*.json5"
               "*.jsx"
+              "*.md"
               "*.mdx"
               "*.mjs"
               "*.scss"
@@ -31,18 +32,6 @@ _: {
               "*.yml"
             ];
             excludes = [ "*/asciinema-player/*" ];
-          };
-          mdformat = {
-            enable = true;
-            # Use mdformat with essential plugins for documentation
-            package = pkgs.mdformat.withPlugins (
-              p: with p; [
-                mdformat-gfm # GitHub Flavored Markdown
-                mdformat-frontmatter # YAML/TOML frontmatter support
-                mdformat-footnote # Footnote support
-                mdformat-tables # Table formatting
-              ]
-            );
           };
           ruff = {
             check = true;
@@ -89,15 +78,6 @@ _: {
               "*/clan_lib/nix_models/*"
             ];
             shellcheck.includes = [ "scripts/pre-commit" ];
-            # Custom formatter to remove trailing whitespace from markdown files only
-            md-trim = {
-              command = "${pkgs.gnused}/bin/sed";
-              options = [
-                "-i"
-                "s/[[:space:]]*$//"
-              ];
-              includes = [ "*.md" ];
-            };
           };
         };
       };
