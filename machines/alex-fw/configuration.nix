@@ -47,6 +47,8 @@ in
   };
 
   services = {
+    gnome.gnome-keyring.enable = true;
+
     #custom tokyo night theme
     displayManager.sddm = {
       enable = true;
@@ -79,6 +81,8 @@ in
 
     fwupd.enable = true; # framework bios/firmware updates
   };
+
+  security.pam.services.sddm.enableGnomeKeyring = true;
 
   system.stateVersion = "25.05";
 }

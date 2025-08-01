@@ -9,12 +9,14 @@ This repository manages NixOS machines with a holistic approach to user and home
 ### Core Components
 
 **User Management**: Unified user management across all machines, combining:
+
 - Centralized user definitions with global attributes (UID, groups, SSH keys)
 - Per-machine user customization (roles, shells, home-manager profiles)
 - Modular home-manager configurations organized by user and profile type
 - Role-based access control (owner, admin, basic, service)
 
 **Tag-Based System**: Services and configurations deploy based on machine tags:
+
 - `all` - Base configurations for every machine
 - `tailnet` - Tailscale VPN connectivity
 - `home-manager` - User home environment management
@@ -23,6 +25,7 @@ This repository manages NixOS machines with a holistic approach to user and home
 - `wsl` - Windows Subsystem for Linux specific settings
 
 **Infrastructure Components**:
+
 - Manages physical, virtual, and WSL environments
 - Multi-user support with distinct preferences and toolchains
 - Tailscale mesh networking for zero-config connectivity
@@ -50,6 +53,7 @@ This repository manages NixOS machines with a holistic approach to user and home
 The infrastructure enables sophisticated user management patterns:
 
 1. **Global User Definition** (`inventory/core/users.nix`):
+
    ```nix
    username = {
      defaultUid = 1000;
@@ -58,7 +62,8 @@ The infrastructure enables sophisticated user management patterns:
    };
    ```
 
-2. **Per-Machine Configuration**:
+1. **Per-Machine Configuration**:
+
    ```nix
    machines.hostname = {
      role = "owner";
@@ -70,7 +75,8 @@ The infrastructure enables sophisticated user management patterns:
    };
    ```
 
-3. **Modular Home Profiles** (`inventory/home-profiles/<user>/<profile>/`):
+1. **Modular Home Profiles** (`inventory/home-profiles/<user>/<profile>/`):
+
    - `base/` - Core utilities (editor, shell, git)
    - `dev/` - Development tools (direnv, language toolchains)
    - `desktop/` - GUI applications (browsers, desktop apps)

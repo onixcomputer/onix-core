@@ -32,6 +32,18 @@ _: {
             ];
             excludes = [ "*/asciinema-player/*" ];
           };
+          mdformat = {
+            enable = true;
+            # Use mdformat with essential plugins for documentation
+            package = pkgs.mdformat.withPlugins (
+              p: with p; [
+                mdformat-gfm # GitHub Flavored Markdown
+                mdformat-frontmatter # YAML/TOML frontmatter support
+                mdformat-footnote # Footnote support
+                mdformat-tables # Table formatting
+              ]
+            );
+          };
           ruff = {
             check = true;
             format = true;
@@ -61,8 +73,6 @@ _: {
             "*/gnupg-home/*"
             "*/sops/secrets/*"
             "vars/*"
-            # prettier messes up our mkdocs flavoured markdown
-            "*.md"
             "**/node_modules/*"
             "**/.mypy_cache/*"
 
@@ -79,6 +89,15 @@ _: {
               "*/clan_lib/nix_models/*"
             ];
             shellcheck.includes = [ "scripts/pre-commit" ];
+            # Custom formatter to remove trailing whitespace from markdown files only
+            md-trim = {
+              command = "${pkgs.gnused}/bin/sed";
+              options = [
+                "-i"
+                "s/[[:space:]]*$//"
+              ];
+              includes = [ "*.md" ];
+            };
           };
         };
       };
