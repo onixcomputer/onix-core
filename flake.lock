@@ -169,6 +169,21 @@
         "type": "github"
       }
     },
+    "grafana-dashboards": {
+      "locked": {
+        "lastModified": 1754011598,
+        "narHash": "sha256-stewYE7cnE4Lslkim3toKhU+Cpz5ot/M7fP28FTSfH4=",
+        "owner": "onixcomputer",
+        "repo": "grafana-dashboards",
+        "rev": "a8bfa1287ea8cf393851e9dc126f30056f0e9cf7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "onixcomputer",
+        "repo": "grafana-dashboards",
+        "type": "github"
+      }
+    },
     "grub2-themes": {
       "inputs": {
         "nixpkgs": [
@@ -351,6 +366,7 @@
       "inputs": {
         "clan-core": "clan-core",
         "flake-parts": "flake-parts_2",
+        "grafana-dashboards": "grafana-dashboards",
         "grub2-themes": "grub2-themes",
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs_2",
