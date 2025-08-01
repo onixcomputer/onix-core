@@ -5,15 +5,29 @@ _: {
       module.name = "grafana";
       module.input = "self";
       roles.server = {
-        tags."desktop" = { };
+        tags."monitoring" = { };
         settings = {
           enablePrometheusIntegration = true;
           prometheusUrl = "http://localhost:9090";
-          port = 3000;
-          domain = "grafana.local";
+
+          # Add Loki datasource
+          additionalDatasources = [
+            {
+              name = "Loki";
+              type = "loki";
+              access = "proxy";
+              url = "http://localhost:3100";
+              jsonData = {
+                maxLines = 1000;
+              };
+            }
+          ];
+
           settings = {
             server = {
               http_addr = "0.0.0.0";
+              http_port = 3000;
+              domain = "grafana.local";
               root_url = "https://%(domain)s/";
               enable_gzip = true;
             };
@@ -31,8 +45,14 @@ _: {
               allow_sign_up = false;
               default_theme = "dark";
             };
+
             feature_toggles = {
               enable = "publicDashboards";
+            };
+
+            database = {
+              type = "sqlite3";
+              path = "/var/lib/grafana/data/grafana.db";
             };
           };
 
@@ -45,13 +65,6 @@ _: {
               options.foldersFromFilesStructure = false;
             }
           ];
-
-          # Database configuration (defaults to SQLite)
-          database = {
-            type = "sqlite3";
-            path = "/var/lib/grafana/data/grafana.db";
-          };
-
         };
       };
     };
