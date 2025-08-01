@@ -8,6 +8,7 @@ let
     prometheus = import ./prometheus.nix { inherit inputs; };
     grafana = import ./grafana.nix { inherit inputs; };
     loki = import ./loki.nix { inherit inputs; };
+    vaultwarden = import ./vaultwarden.nix { inherit inputs; };
   };
 in
 lib.foldr lib.recursiveUpdate { } (lib.attrValues services)
