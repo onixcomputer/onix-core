@@ -21,7 +21,6 @@ _: {
         "creative"
         "media"
         "prometheus"
-        "log-collector"
         "monitoring"
       ];
       deploy = {

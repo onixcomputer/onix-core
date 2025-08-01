@@ -274,9 +274,66 @@ in
                 { enable = true; }
                 prometheusConfig
                 {
-                  scrapeConfigs = lib.mkIf (
-                    autoDiscoveredConfigs != [ ] || additionalScrapeConfigs != [ ] || staticConfigs != [ ]
-                  ) (autoDiscoveredConfigs ++ staticConfigs ++ additionalScrapeConfigs);
+                  scrapeConfigs =
+                    let
+                      # Merge local exporters into the discovered configs
+                      mergedConfigs =
+                        let
+                          # Add local node exporter to tailscale job if enabled
+                          nodeExporterConfig = lib.optionals (config.services.prometheus.exporters.node.enable or false) [
+                            {
+                              targets = [ "localhost" ]; # Port will be added by relabel_configs
+                              labels = {
+                                instance = config.networking.hostName;
+                                __meta_tailscale_device_name = config.networking.hostName;
+                                __meta_tailscale_device_hostname = config.networking.hostName;
+                                __meta_tailscale_device_os = "nixos";
+                                source = "local";
+                              };
+                            }
+                          ];
+
+                          # Add local systemd exporter to tailscale job if enabled
+                          systemdExporterConfig =
+                            lib.optionals (config.services.prometheus.exporters.systemd.enable or false)
+                              [
+                                {
+                                  targets = [ "localhost" ]; # Port will be added by relabel_configs
+                                  labels = {
+                                    instance = config.networking.hostName;
+                                    __meta_tailscale_device_name = config.networking.hostName;
+                                    source = "local";
+                                  };
+                                }
+                              ];
+
+                          # Function to merge local configs into discovery configs
+                          mergeLocalIntoDiscovery =
+                            configs:
+                            map (
+                              job:
+                              if job.job_name == "tailscale-node-exporter" && nodeExporterConfig != [ ] then
+                                job
+                                // {
+                                  static_configs = (job.static_configs or [ ]) ++ nodeExporterConfig;
+                                }
+                              else if job.job_name == "tailscale-systemd-exporter" && systemdExporterConfig != [ ] then
+                                job
+                                // {
+                                  static_configs = (job.static_configs or [ ]) ++ systemdExporterConfig;
+                                }
+                              else
+                                job
+                            ) configs;
+                        in
+                        if enableAutoDiscovery && discoveryMethod == "tailscale" then
+                          mergeLocalIntoDiscovery autoDiscoveredConfigs
+                        else
+                          autoDiscoveredConfigs;
+
+                      allConfigs = mergedConfigs ++ staticConfigs ++ additionalScrapeConfigs;
+                    in
+                    lib.mkIf (allConfigs != [ ]) allConfigs;
                 }
               ];
 
