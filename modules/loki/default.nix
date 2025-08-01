@@ -115,7 +115,9 @@ in
               # Enable Promtail if requested
               services.promtail = lib.mkIf enablePromtail {
                 enable = true;
-                configuration = lib.recursiveUpdate defaultPromtailConfig promtailConfig;
+                configuration = lib.recursiveUpdate defaultPromtailConfig promtailConfig // {
+                  scrape_configs = defaultPromtailConfig.scrape_configs ++ (promtailConfig.scrape_configs or [ ]);
+                };
               };
 
               # Open firewall for Loki and Promtail
