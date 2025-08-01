@@ -21,6 +21,8 @@ _: {
         "creative"
         "media"
         "prometheus"
+        "log-collector"
+        "monitoring"
       ];
       deploy = {
         targetHost = "root@britton-desktop";
@@ -34,6 +36,7 @@ _: {
         "laptop"
         "hyprland"
         "prometheus"
+        "log-collector"
       ];
       deploy = {
         targetHost = "root@britton-fw";

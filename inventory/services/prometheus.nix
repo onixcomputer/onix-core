@@ -5,9 +5,9 @@ _: {
       module.name = "prometheus";
       module.input = "self";
 
-      # Prometheus server on machines with 'desktop' tag
+      # Prometheus server on machines with 'monitoring' tag
       roles.server = {
-        tags."desktop" = { };
+        tags."monitoring" = { };
         settings = {
           # Enable auto-discovery of exporters in the clan
           enableAutoDiscovery = true;

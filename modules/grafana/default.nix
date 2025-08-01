@@ -36,19 +36,6 @@ in
             description = "URL of the Prometheus server (defaults to http://localhost:9090)";
           };
 
-          # Common settings as a convenience
-          port = mkOption {
-            type = lib.types.port;
-            default = 3000;
-            description = "Port for Grafana to listen on";
-          };
-
-          domain = mkOption {
-            type = nullOr str;
-            default = null;
-            description = "Domain name for Grafana";
-          };
-
           # Additional datasources beyond Prometheus
           additionalDatasources = mkOption {
             type = listOf anything;
@@ -131,10 +118,6 @@ in
                 {
                   enable = true;
                   settings = {
-                    server = {
-                      http_port = grafanaConfig.port or 3000;
-                      domain = lib.mkIf (grafanaConfig.domain != null) grafanaConfig.domain;
-                    };
                     security = {
                       admin_password = "$__file{${adminPasswordFile}}";
                       secret_key = "$__file{${secretKeyFile}}";
