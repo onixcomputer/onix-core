@@ -7,6 +7,7 @@ let
     "prometheus" = import ./prometheus;
     "grafana" = import ./grafana;
     "loki" = import ./loki;
+    "vaultwarden" = import ./vaultwarden;
   };
 
 in
