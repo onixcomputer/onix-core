@@ -1,15 +1,17 @@
 # ---
 # schema = "single-disk"
 # [placeholders]
-# mainDisk = "/dev/disk/by-id/nvme-AirDisk_512GB_SSD_PL6005R000232P1103" 
+# mainDisk = "/dev/disk/by-id/nvme-AirDisk_512GB_SSD_PL6005R000232P1103"
 # ---
 # This file was automatically generated!
 # CHANGING this configuration requires wiping and reinstalling the machine
 {
 
-  boot.loader.grub.efiSupport = true;
-  boot.loader.grub.efiInstallAsRemovable = true;
-  boot.loader.grub.enable = true;
+  boot.loader.grub = {
+    efiSupport = true;
+    efiInstallAsRemovable = true;
+    enable = true;
+  };
   disko.devices = {
     disk = {
       main = {

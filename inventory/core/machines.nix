@@ -44,6 +44,48 @@ _: {
         buildHost = "";
       };
     };
+    "gmk1" = {
+      name = "gmk1";
+      tags = [
+        "tailnet"
+        "desktop"
+        "hyprland"
+        "prometheus"
+        "log-collector"
+      ];
+      deploy = {
+        targetHost = "root@gmk1";
+        buildHost = "";
+      };
+    };
+    "gmk2" = {
+      name = "gmk2";
+      tags = [
+        "tailnet"
+        "desktop"
+        "hyprland"
+        "prometheus"
+        "log-collector"
+      ];
+      deploy = {
+        targetHost = "root@gmk2";
+        buildHost = "";
+      };
+    };
+    "gmk3" = {
+      name = "gmk3";
+      tags = [
+        "tailnet"
+        "desktop"
+        "hyprland"
+        "prometheus"
+        "log-collector"
+      ];
+      deploy = {
+        targetHost = "root@gmk3";
+        buildHost = "";
+      };
+    };
     "alex-dev" = {
       name = "alex-dev";
       tags = [
