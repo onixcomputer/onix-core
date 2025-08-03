@@ -5,7 +5,7 @@ _: {
 
   xdg.desktopEntries.element-desktop = {
     name = "Element";
-    exec = "element-desktop --password-store=gnome-libsecret %u";
+    exec = "element-desktop --password-store=gnome-libsecret --enable-features=WaylandWindowDecorations --ozone-platform-hint=wayland %u";
     icon = "element";
     type = "Application";
     categories = [
