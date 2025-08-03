@@ -4,6 +4,7 @@ result-*
 
 # Direnv cache
 .direnv/
+.ruff_cache/
 
 # Claude
 .claude/
