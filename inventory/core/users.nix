@@ -102,6 +102,42 @@ _: {
           ];
         };
       };
+      gmk1 = {
+        role = "owner";
+        shell = "fish";
+        homeManager = {
+          enable = true;
+          profiles = [
+            "base"
+            "dev"
+            "desktop"
+          ];
+        };
+      };
+      gmk2 = {
+        role = "owner";
+        shell = "fish";
+        homeManager = {
+          enable = true;
+          profiles = [
+            "base"
+            "dev"
+            "desktop"
+          ];
+        };
+      };
+      gmk3 = {
+        role = "owner";
+        shell = "fish";
+        homeManager = {
+          enable = true;
+          profiles = [
+            "base"
+            "dev"
+            "desktop"
+          ];
+        };
+      };
       britton-dev = {
         role = "owner";
         shell = "fish";
