@@ -208,6 +208,52 @@ _: {
                       annotations:
                         summary: "File descriptors exhausted on {{ $labels.instance }}"
                         description: "File descriptor usage is above 90% ({{ $value | humanizePercentage }})"
+                    
+                    # Power and Thermal Alerts
+                    - alert: HighTemperature
+                      expr: node_hwmon_temp_celsius > 80
+                      for: 5m
+                      labels:
+                        severity: warning
+                      annotations:
+                        summary: "High temperature on {{ $labels.instance }}"
+                        description: "Temperature sensor {{ $labels.sensor }}/{{ $labels.chip }} is {{ $value }}°C"
+                    
+                    - alert: CriticalTemperature
+                      expr: node_hwmon_temp_celsius > 95
+                      for: 1m
+                      labels:
+                        severity: critical
+                      annotations:
+                        summary: "Critical temperature on {{ $labels.instance }}"
+                        description: "Temperature sensor {{ $labels.sensor }}/{{ $labels.chip }} is {{ $value }}°C"
+                    
+                    - alert: HighPowerConsumption
+                      expr: node_rapl_package_joules_total > 100
+                      for: 10m
+                      labels:
+                        severity: info
+                      annotations:
+                        summary: "High power consumption on {{ $labels.instance }}"
+                        description: "CPU package {{ $labels.index }} consuming high power"
+                    
+                    - alert: BatteryLow
+                      expr: node_power_supply_capacity < 20 and node_power_supply_online == 0
+                      for: 5m
+                      labels:
+                        severity: warning
+                      annotations:
+                        summary: "Low battery on {{ $labels.instance }}"
+                        description: "Battery level is {{ $value }}% and not charging"
+                    
+                    - alert: ThermalThrottling
+                      expr: rate(node_cpu_frequency_hertz[5m]) < 0
+                      for: 5m
+                      labels:
+                        severity: warning
+                      annotations:
+                        summary: "CPU thermal throttling on {{ $labels.instance }}"
+                        description: "CPU {{ $labels.cpu }} frequency is decreasing, indicating thermal throttling"
             ''
           ];
         };
@@ -229,6 +275,11 @@ _: {
             "loadavg"
             "filesystem"
             "cpu"
+            "hwmon" # Hardware monitoring sensors (temperature, voltage, fans, power)
+            "thermal" # Thermal zone information
+            "cpufreq" # CPU frequency scaling
+            "powersupplyclass" # Power supply information (battery, AC)
+            "rapl" # Intel RAPL energy consumption (if available)
           ];
         };
       };
