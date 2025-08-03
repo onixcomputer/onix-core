@@ -21,7 +21,6 @@ _: {
               "*.json"
               "*.json5"
               "*.jsx"
-              "*.md"
               "*.mdx"
               "*.mjs"
               "*.scss"
@@ -67,6 +66,9 @@ _: {
 
             # onix-core specific
             "archive/*"
+
+            # exclude markdown files to prevent timestamp changes
+            "*.md"
           ];
           formatter = {
             ruff-format.includes = [
