@@ -39,6 +39,7 @@ _: {
         "prometheus"
         "log-collector"
         "pixiecore-server"
+        "matrix"
       ];
       deploy = {
         targetHost = "root@britton-fw";
