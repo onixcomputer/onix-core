@@ -10,6 +10,7 @@ let
     "vaultwarden" = import ./vaultwarden;
     "homepage-dashboard" = import ./homepage-dashboard;
     "pixiecore" = import ./pixiecore;
+    "jitsi-meet" = import ./jitsi-meet;
   };
 
 in
