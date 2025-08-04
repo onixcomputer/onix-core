@@ -24,11 +24,23 @@
             }
           ];
 
+          # Traefik integration - will auto-configure if Traefik is available
+          traefik = {
+            enable = true;
+            host = "grafana.bison-tailor.ts.net"; # Tailscale domain
+            # NOTE: Ensure DNS resolves this hostname to your machine's IP
+            # Options: Tailscale DNS aliases, /etc/hosts, or use machine's actual Tailscale name
+            enableAuth = true; # Enable Tailscale authentication
+            authType = "tailscale"; # Use Tailscale auth
+            tailscaleDomain = "bison-tailor.ts.net"; # Your tailnet domain
+            middlewares = [ ]; # Additional middlewares beyond defaults
+          };
+
           settings = {
             server = {
               http_addr = "0.0.0.0";
               http_port = 3000;
-              domain = "grafana.local";
+              domain = "grafana.bison-tailor.ts.net";
               root_url = "https://%(domain)s/";
               enable_gzip = true;
             };

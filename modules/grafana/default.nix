@@ -9,6 +9,9 @@ let
     attrsOf
     anything
     ;
+
+  # Import Traefik integration helpers
+  traefikLib = import ../traefik/lib.nix { inherit lib; };
 in
 {
   _class = "clan.service";
@@ -56,6 +59,9 @@ in
             default = [ ];
             description = "Notification channel configurations";
           };
+
+          # Traefik integration using shared options
+          traefik = traefikLib.mkTraefikOptions;
         };
       };
 
@@ -78,6 +84,7 @@ in
               additionalDatasources = settings.additionalDatasources or [ ];
               dashboards = settings.dashboards or [ ];
               notifiers = settings.notifiers or [ ];
+              traefikConfig = settings.traefik or { };
 
               # Remove clan-specific options before passing to services.grafana
               grafanaConfig = builtins.removeAttrs settings [
@@ -86,6 +93,7 @@ in
                 "additionalDatasources"
                 "dashboards"
                 "notifiers"
+                "traefik"
               ];
 
               # Use clan vars for secrets
@@ -165,6 +173,13 @@ in
                 }
               ];
 
+              # Use the reusable Traefik integration helper
+              services.traefik = traefikLib.mkTraefikIntegration {
+                serviceName = "grafana";
+                servicePort = config.services.grafana.settings.server.http_port;
+                inherit traefikConfig config;
+              };
+
               # Open firewall for Grafana
               networking.firewall.allowedTCPPorts = [
                 config.services.grafana.settings.server.http_port
@@ -184,37 +199,56 @@ in
   # Common configuration for all machines in this service
   perMachine = _: {
     nixosModule =
-      { pkgs, ... }:
+      { pkgs, config, ... }:
+      let
+        # Use the helper to check if Traefik auth is needed
+        needsAuth = traefikLib.needsTraefikAuth {
+          serviceName = "grafana";
+          inherit config;
+        };
+      in
       {
         # Ensure grafana package is available
         environment.systemPackages = [ pkgs.grafana ];
 
         # Create vars generator for Grafana secrets
-        clan.core.vars.generators.grafana = {
-          files.admin_password = {
-            owner = "grafana";
-            group = "grafana";
-            mode = "0400";
-          };
-          files.secret_key = {
-            owner = "grafana";
-            group = "grafana";
-            mode = "0400";
-          };
-          runtimeInputs = [ pkgs.coreutils ];
-          prompts.admin_password = {
-            description = "Grafana admin password";
-            type = "hidden";
-            persist = true;
-          };
-          script = ''
-            cat "$prompts"/admin_password > "$out"/admin_password
-            # Generate a random secret key if not provided
-            if [ ! -f "$out"/secret_key ]; then
-              dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 > "$out"/secret_key
-            fi
-          '';
-        };
+        clan.core.vars.generators = lib.mkMerge [
+          {
+            grafana = {
+              files.admin_password = {
+                owner = "grafana";
+                group = "grafana";
+                mode = "0400";
+              };
+              files.secret_key = {
+                owner = "grafana";
+                group = "grafana";
+                mode = "0400";
+              };
+              runtimeInputs = [ pkgs.coreutils ];
+              prompts.admin_password = {
+                description = "Grafana admin password";
+                type = "hidden";
+                persist = true;
+              };
+              script = ''
+                cat "$prompts"/admin_password > "$out"/admin_password
+                # Generate a random secret key if not provided
+                if [ ! -f "$out"/secret_key ]; then
+                  dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64 > "$out"/secret_key
+                fi
+              '';
+            };
+          }
+
+          # Use the helper to create Traefik auth generator if needed
+          (lib.mkIf needsAuth (
+            traefikLib.mkTraefikAuthGenerator {
+              serviceName = "grafana";
+              inherit pkgs;
+            }
+          ))
+        ];
       };
   };
 }

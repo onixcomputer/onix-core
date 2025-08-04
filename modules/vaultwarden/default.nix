@@ -7,6 +7,9 @@ let
     anything
     str
     ;
+
+  # Import Traefik integration helpers
+  traefikLib = import ../traefik/lib.nix { inherit lib; };
 in
 {
   _class = "clan.service";
@@ -25,6 +28,9 @@ in
             default = null;
             description = "Path to file containing the admin token";
           };
+
+          # Traefik integration using shared options
+          traefik = traefikLib.mkTraefikOptions;
         };
       };
 
@@ -46,9 +52,13 @@ in
 
               # Extract known options from freeform settings
               inherit (localSettings) adminTokenFile;
+              traefikConfig = localSettings.traefik or { };
 
               # Everything else is a Vaultwarden environment variable
-              environment = removeAttrs localSettings [ "adminTokenFile" ];
+              environment = removeAttrs localSettings [
+                "adminTokenFile"
+                "traefik"
+              ];
             in
             {
               services.vaultwarden = {
@@ -64,6 +74,38 @@ in
                 environment.ADMIN_TOKEN_FILE = "%d/admin_token";
               };
 
+              # Use the reusable Traefik integration helper
+              services.traefik = lib.mkMerge [
+                (traefikLib.mkTraefikIntegration {
+                  serviceName = "vaultwarden";
+                  servicePort = environment.ROCKET_PORT;
+                  inherit traefikConfig config;
+                  # Vaultwarden needs websocket support
+                  extraRouterConfig = mkIf (environment.WEBSOCKET_ENABLED or false) {
+                    middlewares = (traefikConfig.middlewares or [ ]) ++ [ "vaultwarden-websocket" ];
+                  };
+                })
+
+                # Add websocket middleware if needed
+                {
+                  dynamicConfigOptions.http.middlewares =
+                    mkIf
+                      (
+                        (environment.WEBSOCKET_ENABLED or false)
+                        && (config.services.traefik.enable or false)
+                        && (traefikConfig.enable or true)
+                        && (traefikConfig.host or null) != null
+                      )
+                      {
+                        vaultwarden-websocket = {
+                          headers.customRequestHeaders = {
+                            "X-Forwarded-Proto" = "https";
+                          };
+                        };
+                      };
+                }
+              ];
+
               # Open firewall ports if configured
               networking.firewall.allowedTCPPorts =
                 lib.optional (environment ? ROCKET_PORT) environment.ROCKET_PORT
@@ -76,19 +118,38 @@ in
   # Common configuration for all machines with vaultwarden
   perMachine = _: {
     nixosModule =
-      { pkgs, ... }:
+      { pkgs, config, ... }:
+      let
+        # Use the helper to check if Traefik auth is needed
+        needsAuth = traefikLib.needsTraefikAuth {
+          serviceName = "vaultwarden";
+          inherit config;
+        };
+      in
       {
         # Create vars generator for Vaultwarden admin token
-        clan.core.vars.generators.vaultwarden = {
-          files.admin_token = { };
-          runtimeInputs = with pkgs; [
-            coreutils
-            openssl
-          ];
-          script = ''
-            openssl rand -base64 48 > "$out/admin_token"
-          '';
-        };
+        clan.core.vars.generators = lib.mkMerge [
+          {
+            vaultwarden = {
+              files.admin_token = { };
+              runtimeInputs = with pkgs; [
+                coreutils
+                openssl
+              ];
+              script = ''
+                openssl rand -base64 48 > "$out/admin_token"
+              '';
+            };
+          }
+
+          # Use the helper to create Traefik auth generator if needed
+          (lib.mkIf needsAuth (
+            traefikLib.mkTraefikAuthGenerator {
+              serviceName = "vaultwarden";
+              inherit pkgs;
+            }
+          ))
+        ];
       };
   };
 }
