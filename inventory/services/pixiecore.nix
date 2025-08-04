@@ -5,7 +5,7 @@
       module.name = "pixiecore";
       module.input = "self";
       roles.server = {
-        machines."britton-fw" = { };
+        # machines."britton-fw" = { };  # Removed to avoid port conflict with Traefik
         settings = {
           # Enable pixiecore
           enable = true;

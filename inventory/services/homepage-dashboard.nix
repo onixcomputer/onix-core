@@ -6,8 +6,11 @@ _: {
       roles.server = {
         tags."homepage-server" = { };
         settings = {
-          # Allow access from multiple hosts
-          allowedHosts = "localhost:8082,127.0.0.1:8082,100.110.43.11:8082,britton-desktop:8082";
+          # Port configuration
+          listenPort = 8082;
+
+          # Allow access from multiple hosts (using the port above)
+          allowedHosts = "localhost:8082,home.blr.dev";
 
           # Dashboard configuration
           settings = {

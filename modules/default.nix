@@ -4,6 +4,7 @@ let
 
   module_definitions = {
     "tailscale" = import ./tailscale;
+    "tailscale-traefik" = import ./tailscale-traefik;
     "prometheus" = import ./prometheus;
     "grafana" = import ./grafana;
     "loki" = import ./loki;
