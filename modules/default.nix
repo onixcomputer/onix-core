@@ -9,6 +9,7 @@ let
     "loki" = import ./loki;
     "vaultwarden" = import ./vaultwarden;
     "homepage-dashboard" = import ./homepage-dashboard;
+    "pixiecore" = import ./pixiecore;
   };
 
 in

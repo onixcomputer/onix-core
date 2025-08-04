@@ -38,6 +38,7 @@ _: {
         "hyprland"
         "prometheus"
         "log-collector"
+        "pixiecore-server"
       ];
       deploy = {
         targetHost = "root@britton-fw";
@@ -48,10 +49,15 @@ _: {
       name = "gmk1";
       tags = [
         "tailnet"
+        "dev"
         "desktop"
         "hyprland"
+        "creative"
+        "media"
         "prometheus"
-        "log-collector"
+        "monitoring"
+        "vaultwarden-server"
+        "homepage-server"
       ];
       deploy = {
         targetHost = "root@gmk1";
