@@ -167,6 +167,12 @@ in
             description = "Enable security headers middleware";
           };
 
+          publicMode = mkOption {
+            type = bool;
+            default = false;
+            description = "Use public IP instead of Tailscale IP for DNS records. Requires port forwarding.";
+          };
+
           tailscaleAuthKeyFile = mkOption {
             type = nullOr str;
             default = null;
@@ -237,6 +243,9 @@ in
               getTailscaleIP = pkgs.writeShellScript "get-tailscale-ip" ''
                 ${pkgs.tailscale}/bin/tailscale ip -4 | head -n1
               '';
+
+              # Public mode configuration
+              publicMode = cfg.publicMode or false;
 
               # Generate Traefik routes
               serviceRouters = lib.mapAttrs' (
@@ -383,7 +392,7 @@ in
                   passwordFile = cloudflareTokenFile;
                   zone = domain;
                   domains = map (subdomain: "${subdomain}.${domain}") allSubdomains;
-                  use = "cmd, cmd='${getTailscaleIP}'";
+                  use = if publicMode then "web, web=ipinfo.io/ip" else "cmd, cmd='${getTailscaleIP}'";
                   verbose = true;
                   interval = "${toString ddclientInterval}s";
                 };
@@ -457,22 +466,30 @@ in
               };
 
               # Firewall configuration - ONLY on Tailscale interface
-              networking.firewall = {
-                enable = mkDefault true;
+              networking.firewall = mkMerge [
+                {
+                  enable = mkDefault true;
+                  checkReversePath = "loose";
+                  trustedInterfaces = [ "tailscale0" ];
+                  allowedUDPPorts = [ tailscalePort ];
 
-                interfaces = {
-                  tailscale0 = {
-                    allowedTCPPorts = [
-                      80
-                      443
-                    ];
+                  interfaces = {
+                    tailscale0 = {
+                      allowedTCPPorts = [
+                        80
+                        443
+                      ];
+                    };
                   };
-                };
-
-                checkReversePath = "loose";
-                trustedInterfaces = [ "tailscale0" ];
-                allowedUDPPorts = [ tailscalePort ];
-              };
+                }
+                (mkIf publicMode {
+                  # Also open ports on all interfaces for public access
+                  allowedTCPPorts = [
+                    80
+                    443
+                  ];
+                })
+              ];
 
               # NAT configuration for exit nodes
               networking.nat = mkIf tailscaleExitNode {
@@ -486,7 +503,7 @@ in
                 after = [ "tailscale.service" ];
                 wants = [ "tailscale.service" ];
 
-                preStart = ''
+                preStart = mkIf (!publicMode) ''
                   echo "Waiting for Tailscale to be ready..."
                   for i in {1..30}; do
                     if ${getTailscaleIP} >/dev/null 2>&1; then

@@ -43,11 +43,20 @@ _: {
           domain = "blr.dev";
           email = "admin@blr.dev";
 
-          # Services to expose (homepage will run locally)
+          # Test public mode - REMEMBER TO SET UP PORT FORWARDING!
+          publicMode = true;
+
+          # Services to expose
           services = {
+            # Homepage - auto-detected port
             homepage = {
-              # Port will be auto-detected from homepage-dashboard service
-              subdomain = "traefik";
+              subdomain = "home";
+            };
+
+            # Static test server
+            test = {
+              port = 8888;
+              subdomain = "test";
             };
           };
 

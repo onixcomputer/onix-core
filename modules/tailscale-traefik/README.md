@@ -4,12 +4,13 @@ This clan service provides a complete solution for exposing services via Tailsca
 
 ## Features
 
-- **Tailscale-only access**: Services are only accessible when connected to your Tailscale network
+- **Tailscale-only access**: Services are only accessible when connected to your Tailscale network (default)
+- **Public mode option**: Expose services to the internet using your public IP (requires port forwarding)
 - **Automatic SSL certificates**: Let's Encrypt certificates via DNS challenge (works with private IPs!)
-- **Dynamic DNS updates**: Automatically updates Cloudflare DNS with your Tailscale IP
+- **Dynamic DNS updates**: Automatically updates Cloudflare DNS with your Tailscale IP or public IP
 - **Service discovery**: Easy configuration for multiple services
 - **Automatic port detection**: Automatically detects ports for common services (homepage, grafana, vaultwarden, etc.)
-- **Security by default**: Firewall rules restrict access to Tailscale interface only
+- **Security by default**: Firewall rules restrict access to Tailscale interface only (unless publicMode is enabled)
 
 ## Usage
 
@@ -117,6 +118,36 @@ This will:
   };
 }
 ```
+
+### Public Mode Configuration
+
+To expose services publicly to the internet instead of only via Tailscale:
+
+```nix
+{
+  clan.services.tailscale-traefik.server = {
+    publicMode = true;  # Use public IP instead of Tailscale IP
+    domain = "example.com";
+    email = "admin@example.com";
+    
+    services = {
+      website = {
+        port = 8080;
+        subdomain = "www";  # Accessible at www.example.com
+      };
+      blog = {
+        port = 3000;
+        # Accessible at blog.example.com
+      };
+    };
+  };
+}
+```
+
+**Public Mode Requirements:**
+- Port forwarding on your router (80 → machine:80, 443 → machine:443)
+- ISP that allows incoming connections
+- Static IP or dynamic DNS (handled automatically)
 
 ## Required Secrets
 
