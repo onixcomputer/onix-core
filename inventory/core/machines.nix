@@ -39,6 +39,7 @@ _: {
         "log-collector"
         "homepage-server"
         "traefik-homepage"
+        "static-test"
       ];
       deploy = {
         targetHost = "root@britton-fw";
