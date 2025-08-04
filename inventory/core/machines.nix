@@ -39,6 +39,8 @@ _: {
         "prometheus"
         "log-collector"
         "pixiecore-server"
+        "git"
+        "web"
       ];
       deploy = {
         targetHost = "root@britton-fw";
