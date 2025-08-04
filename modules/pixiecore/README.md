@@ -5,9 +5,11 @@ This module provides a Pixiecore-based PXE boot server for network booting NixOS
 ## Features
 
 - **Automatic SSH Key Injection**: When SSH keys are configured, the module automatically builds a custom NixOS netboot image with the keys embedded
-- **Multiple Boot Modes**: Supports API mode for dynamic configuration or boot mode for static kernel/initrd
+- **Multiple Boot Modes**: Supports both static boot mode and dynamic API mode
 - **DHCP Proxy**: Works alongside existing DHCP servers without conflicts
 - **Minimal Configuration**: Simple setup with sensible defaults
+- **Kexec Support**: Optional kexec-tools for fast provisioning workflows
+- **Dynamic Configuration**: API mode allows per-MAC customization
 
 ## Configuration
 
@@ -26,6 +28,33 @@ This module provides a Pixiecore-based PXE boot server for network booting NixOS
     };
   };
 }
+```
+
+### API Mode Configuration
+
+For dynamic per-client configuration:
+
+```nix
+{
+  roles.server = {
+    machines = [ "britton-fw" ];
+    settings = {
+      enable = true;
+      mode = "api";  # Enable API mode
+      sshAuthorizedKeys = [ "ssh-ed25519 ..." ];
+      
+      # Optional: disable kexec if not needed
+      kexecEnabled = false;
+    };
+  };
+}
+```
+
+The API server runs on port 8080 and can be customized by editing the Python script in the module. You can add MAC-specific logic like:
+
+```python
+if mac == "aa:bb:cc:dd:ee:ff":
+    response["cmdline"] += " custom_param=value"
 ```
 
 ### Advanced Configuration with Freeform Options
@@ -92,6 +121,7 @@ The custom netboot always includes:
 - Password authentication disabled
 - Basic utilities (vim, curl, wget, htop, tmux)
 - **nixos-facter** for generating hardware configuration
+- **kexec-tools** for fast reprovisioning (optional, enabled by default)
 - DHCP networking enabled
 - Firewall disabled for easy access
 

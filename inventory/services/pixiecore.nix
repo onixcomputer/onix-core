@@ -1,29 +1,78 @@
-_: {
+{ inputs, ... }:
+{
   instances = {
     "pixiecore" = {
       module.name = "pixiecore";
       module.input = "self";
       roles.server = {
-        tags."pixiecore-server" = { };
+        machines."britton-fw" = { };
         settings = {
-          # Enable pixiecore by default for tagged machines
+          # Enable pixiecore
           enable = true;
 
-          # Back to API mode
-          mode = "api";
-          apiServer = "http://localhost:8080";
+          # Use boot mode by default (can switch to "api" for dynamic config)
+          mode = "boot";
 
-          # Let pixiecore handle DHCP fully
+          # Network configuration
+          listenAddr = "0.0.0.0";
+          port = 80;
           dhcpNoBind = false;
 
           # Enable debug logging
           extraOptions = [ "--debug" ];
 
-          # SSH keys to serve to netboot clients
+          # SSH keys to embed in netboot image
           sshAuthorizedKeys = [
             "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILYzh3yIsSTOYXkJMFHBKzkakoDfonm3/RED5rqMqhIO britton@framework"
           ];
 
+          # Enable kexec support
+          kexecEnabled = true;
+
+          # Additional packages for the netboot environment
+          netbootPackages = with inputs.nixpkgs.legacyPackages.x86_64-linux; [
+            git
+            nmap
+            tcpdump
+            dig
+            traceroute
+            pciutils
+            usbutils
+            dmidecode
+            smartmontools
+            iotop
+            iftop
+            lsof
+            strace
+            parted
+            gptfdisk
+            nvme-cli
+          ];
+
+          # Additional netboot configuration
+          netbootConfig = {
+            # Serial console support
+            boot.kernelParams = [
+              "console=ttyS0,115200"
+              "console=tty0"
+            ];
+
+            # Set a custom hostname
+            networking.hostName = "nixos-installer";
+
+            # Ensure IPv6 is enabled
+            networking.enableIPv6 = true;
+
+            # Enable mDNS for easier discovery
+            services.avahi = {
+              enable = true;
+              publish = {
+                enable = true;
+                addresses = true;
+                workstation = true;
+              };
+            };
+          };
         };
       };
     };
