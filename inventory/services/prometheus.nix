@@ -276,7 +276,6 @@ _: {
             "filesystem"
             "cpu"
             "hwmon" # Hardware monitoring sensors (temperature, voltage, fans, power)
-            "thermal" # Thermal zone information
             "cpufreq" # CPU frequency scaling
             "powersupplyclass" # Power supply information (battery, AC)
             "rapl" # Intel RAPL energy consumption (if available)
