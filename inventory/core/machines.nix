@@ -13,7 +13,7 @@ _: {
     "britton-desktop" = {
       name = "britton-desktop";
       tags = [
-        "tailnet"
+        # "tailnet"
         "dev"
         "desktop"
         "nvidia"
@@ -33,12 +33,12 @@ _: {
     "britton-fw" = {
       name = "britton-fw";
       tags = [
-        "tailnet"
         "laptop"
         "hyprland"
         "prometheus"
         "log-collector"
-        "pixiecore-server"
+        "homepage-server"
+        "traefik-homepage"
       ];
       deploy = {
         targetHost = "root@britton-fw";
