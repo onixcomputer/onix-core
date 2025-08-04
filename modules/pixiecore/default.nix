@@ -5,6 +5,7 @@ let
     mkDefault
     mkEnableOption
     mkIf
+    mkMerge
     ;
   inherit (lib.types)
     str
@@ -47,21 +48,20 @@ in
             description = "Whether to avoid binding to the DHCP port";
           };
 
-          # Deprecated options kept for compatibility
           mode = mkOption {
             type = enum [
               "quick"
               "api"
               "boot"
             ];
-            default = "api";
-            description = "DEPRECATED: Mode is always 'boot' now. This option is ignored.";
+            default = "boot";
+            description = "Boot mode: 'boot' serves static kernel/initrd, 'api' queries an API server for dynamic configuration";
           };
 
           apiServer = mkOption {
             type = str;
             default = "http://localhost:8080";
-            description = "DEPRECATED: API server is no longer used. This option is ignored.";
+            description = "API server URL when using API mode";
           };
 
           extraOptions = mkOption {
@@ -70,29 +70,16 @@ in
             description = "Extra command line options for pixiecore";
           };
 
-          # Deprecated boot mode options
-          kernel = mkOption {
-            type = str;
-            default = "";
-            description = "DEPRECATED: Custom netboot is always built. This option is ignored.";
-          };
-
-          initrd = mkOption {
-            type = listOf str;
-            default = [ ];
-            description = "DEPRECATED: Custom netboot is always built. This option is ignored.";
-          };
-
-          cmdline = mkOption {
-            type = str;
-            default = "";
-            description = "DEPRECATED: Kernel cmdline is auto-generated. Use netbootConfig.boot.kernelParams instead.";
-          };
-
           sshAuthorizedKeys = mkOption {
             type = listOf str;
             default = [ ];
             description = "SSH authorized keys to embed in netboot image";
+          };
+
+          kexecEnabled = mkOption {
+            type = bool;
+            default = true;
+            description = "Include kexec-tools in the netboot image for fast kexec-based provisioning";
           };
 
           # Freeform netboot configuration options
@@ -189,6 +176,7 @@ in
                                   tmux
                                   nixos-facter
                                 ]
+                                ++ (if cfg.kexecEnabled then [ kexec-tools ] else [ ])
                                 ++ netbootPackages;
                             }
                             # Merge in any additional netboot configuration
@@ -201,57 +189,196 @@ in
                 in
                 sys.config.system.build;
             in
-            mkIf cfg.enable {
-              # Create pixiecore user
-              users.users.pixiecore = {
-                isSystemUser = true;
-                group = "pixiecore";
-                description = "Pixiecore PXE boot server";
-              };
-
-              users.groups.pixiecore = { };
-
-              # Main pixiecore service
-              systemd.services.pixiecore = {
-                description = "Pixiecore network boot server";
-                after = [ "network.target" ];
-                wantedBy = [ "multi-user.target" ];
-
-                serviceConfig = {
-                  ExecStart =
-                    let
-                      # Always use boot mode with custom netboot
-                      actualMode = "boot";
-                      actualKernel = "${customNetboot.kernel}/bzImage";
-                      actualInitrd = [ "${customNetboot.netbootRamdisk}/initrd" ];
-                      actualCmdline = "init=${customNetboot.toplevel}/init loglevel=4";
-
-                      baseCmd = "${pkgs.pixiecore}/bin/pixiecore ${actualMode}";
-                      modeArgs = "${actualKernel} ${lib.concatStringsSep " " actualInitrd}${
-                        lib.optionalString (actualCmdline != "") " --cmdline \"${actualCmdline}\""
-                      }";
-                    in
-                    "${baseCmd} ${modeArgs} --listen-addr ${cfg.listenAddr} --port ${toString cfg.port} ${lib.optionalString cfg.dhcpNoBind "--dhcp-no-bind"} ${lib.concatStringsSep " " cfg.extraOptions}";
-                  Restart = "always";
-                  User = "root"; # Needs root for DHCP
-                  AmbientCapabilities = [
-                    "CAP_NET_BIND_SERVICE"
-                    "CAP_NET_RAW"
-                  ];
+            mkMerge [
+              # Base configuration
+              (mkIf cfg.enable {
+                # Create pixiecore user
+                users.users.pixiecore = {
+                  isSystemUser = true;
+                  group = "pixiecore";
+                  description = "Pixiecore PXE boot server";
                 };
-              };
 
-              # Enable required ports in firewall
-              networking.firewall = {
-                allowedTCPPorts = [ cfg.port ]; # Pixiecore HTTP
-                allowedUDPPorts = [
-                  67
-                  68
-                  69
-                  4011
-                ]; # DHCP, TFTP, PXE
-              };
-            };
+                users.groups.pixiecore = { };
+
+                # Main pixiecore service
+                systemd.services.pixiecore = {
+                  description = "Pixiecore network boot server";
+                  after = [ "network.target" ];
+                  wantedBy = [ "multi-user.target" ];
+
+                  serviceConfig = {
+                    ExecStart =
+                      let
+                        actualMode = cfg.mode;
+
+                        baseCmd = "${pkgs.pixiecore}/bin/pixiecore ${actualMode}";
+
+                        modeArgs =
+                          if actualMode == "api" then
+                            cfg.apiServer
+                          else if actualMode == "boot" then
+                            let
+                              actualKernel = "${customNetboot.kernel}/bzImage";
+                              actualInitrd = [ "${customNetboot.netbootRamdisk}/initrd" ];
+                              actualCmdline = "init=${customNetboot.toplevel}/init loglevel=4";
+                            in
+                            "${actualKernel} ${lib.concatStringsSep " " actualInitrd}${
+                              lib.optionalString (actualCmdline != "") " --cmdline \"${actualCmdline}\""
+                            }"
+                          else
+                            ""; # quick mode or other
+                      in
+                      "${baseCmd} ${modeArgs} --listen-addr ${cfg.listenAddr} --port ${toString cfg.port} ${lib.optionalString cfg.dhcpNoBind "--dhcp-no-bind"} ${lib.concatStringsSep " " cfg.extraOptions}";
+                    Restart = "always";
+                    User = "root"; # Needs root for DHCP
+                    AmbientCapabilities = [
+                      "CAP_NET_BIND_SERVICE"
+                      "CAP_NET_RAW"
+                    ];
+                  };
+                };
+
+                # Enable required ports in firewall
+                networking.firewall = {
+                  allowedTCPPorts = [
+                    cfg.port
+                  ]
+                  ++ (
+                    if cfg.mode == "api" then
+                      [
+                        8080
+                        8081
+                      ]
+                    else
+                      [ ]
+                  ); # API and file server ports
+                  allowedUDPPorts = [
+                    67
+                    68
+                    69
+                    4011
+                  ]; # DHCP, TFTP, PXE
+                };
+              })
+
+              # API mode specific configuration
+              (mkIf (cfg.enable && cfg.mode == "api") {
+                systemd = {
+                  services = {
+                    pixiecore-api = {
+                      description = "Pixiecore API server";
+                      after = [ "network.target" ];
+                      wantedBy = [ "multi-user.target" ];
+
+                      script =
+                        let
+                          apiScript = pkgs.writeText "pixiecore-api-server.py" ''
+                            import json
+                            import http.server
+                            import socketserver
+                            from urllib.parse import urlparse, parse_qs
+
+                            class PixiecoreAPIHandler(http.server.BaseHTTPRequestHandler):
+                                def do_GET(self):
+                                    parsed_path = urlparse(self.path)
+                                    
+                                    if parsed_path.path.startswith('/v1/boot'):
+                                        # Handle both /v1/boot?mac=XX and /v1/boot/XX formats
+                                        if '/' in parsed_path.path[9:]:  # Check for MAC in path
+                                            mac = parsed_path.path.split('/')[-1]
+                                        else:
+                                            mac_list = parse_qs(parsed_path.query).get('mac', None)
+                                            mac = mac_list[0] if mac_list else ""
+                                        
+                                        # Use the actual IP instead of 0.0.0.0 for client access
+                                        server_ip = "${cfg.listenAddr}"
+                                        if server_ip == "0.0.0.0":
+                                            # Get the IP from the request
+                                            server_ip = self.headers.get('Host', '192.168.1.140').split(':')[0]
+                                        
+                                        # Get kernel params from the built system (empty by default in netboot)
+                                        kernel_params = []
+                                        
+                                        # Build cmdline string
+                                        cmdline_parts = []
+                                        for param in kernel_params:
+                                            if not param.startswith("root="):
+                                                cmdline_parts.append(param)
+                                        
+                                        # Add init parameter
+                                        cmdline_parts.append("init=${customNetboot.toplevel}/init")
+                                        
+                                        # Add any custom kernel params from netbootConfig
+                                        if hasattr(config, 'boot') and hasattr(config.boot, 'kernelParams'):
+                                            cmdline_parts.extend(${
+                                              builtins.toJSON (cfg.netbootConfig.boot.kernelParams or [ ])
+                                            })
+                                        
+                                        cmdline = " ".join(cmdline_parts)
+                                        
+                                        # Return standard response that pixiecore will convert to iPXE
+                                        response = {
+                                            "kernel": f"http://{server_ip}:8081/kernel",
+                                            "initrd": [f"http://{server_ip}:8081/initrd"],
+                                            "cmdline": cmdline
+                                        }
+                                        
+                                        # You can customize response based on MAC address here
+                                        # Example:
+                                        # if mac == "aa:bb:cc:dd:ee:ff":
+                                        #     response["cmdline"] += " custom_param=value"
+                                        
+                                        self.send_response(200)
+                                        self.send_header('Content-Type', 'application/json')
+                                        self.end_headers()
+                                        self.wfile.write(json.dumps(response).encode())
+                                    else:
+                                        self.send_error(404)
+                                
+                                def log_message(self, format, *args):
+                                    # Log to systemd journal
+                                    print(f"pixiecore-api: {format % args}")
+
+                            PORT = 8080
+                            with socketserver.TCPServer(("", PORT), PixiecoreAPIHandler) as httpd:
+                                print(f"API server listening on port {PORT}")
+                                httpd.serve_forever()
+                          '';
+                        in
+                        ''
+                          ${pkgs.python3}/bin/python3 ${apiScript}
+                        '';
+
+                      serviceConfig = {
+                        Restart = "always";
+                        RestartSec = "10s";
+                        WorkingDirectory = "/var/lib/pixiecore";
+                      };
+                    };
+
+                    pixiecore-files = {
+                      description = "Pixiecore file server";
+                      after = [ "network.target" ];
+                      wantedBy = [ "multi-user.target" ];
+
+                      serviceConfig = {
+                        ExecStart = "${pkgs.python3}/bin/python3 -m http.server 8081";
+                        Restart = "always";
+                        RestartSec = "10s";
+                        WorkingDirectory = "/var/lib/pixiecore";
+                      };
+                    };
+                  }; # end services
+
+                  tmpfiles.rules = [
+                    "d /var/lib/pixiecore 0755 root root -"
+                    "L+ /var/lib/pixiecore/kernel - - - - ${customNetboot.kernel}/bzImage"
+                    "L+ /var/lib/pixiecore/initrd - - - - ${customNetboot.netbootRamdisk}/initrd"
+                  ];
+                }; # end systemd
+              })
+            ];
         };
     };
   };
