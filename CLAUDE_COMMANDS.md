@@ -4,10 +4,18 @@
 
 ### Slash Command Usage (Preferred):
 ```
+# Using NixOS documentation URL:
 /create-clan-service gitea https://nixos.org/manual/nixos/stable/options#opt-services.gitea.enable
+
+# Using GitHub source URL (recommended for understanding implementation):
+/create-clan-service pixiecore https://github.com/NixOS/nixpkgs/blob/nixos-unstable/nixos/modules/services/networking/pixiecore.nix
 ```
 
 This slash command is available in the `.claude/slash_commands/` directory and will automatically create a new clan service following the modern pattern.
+
+The command supports both:
+- NixOS documentation URLs for understanding available options
+- GitHub source URLs for examining the actual implementation (preferred)
 
 ### Manual Command (Alternative):
 If the slash command is not available, you can use this manual command:
@@ -101,3 +109,45 @@ When creating a new service, use this template as a starting point:
 - **Monitoring**: Prometheus metrics export configuration
 - **Backup**: Integration with clan backup system
 - **Networking**: Firewall rules and port management
+
+### Clan Vars and Generators
+
+For secret management, use clan.core.vars.generators (see [Clan Generators Documentation](https://docs.clan.lol/concepts/generators/) and [Clan Vars Reference](https://docs.clan.lol/reference/clan.core/vars/)):
+
+```nix
+clan.core.vars.generators = {
+  "service-name-secret" = {
+    prompts = { };  # Empty for auto-generation
+    migrateFact = "service-name-secret";  # For migration from facts
+    script = { pkgs, ... }: ''
+      # Generate password
+      ${pkgs.pwgen}/bin/pwgen -s 32 1 > "$out"/password
+      
+      # Generate API key
+      ${pkgs.openssl}/bin/openssl rand -hex 32 > "$out"/api-key
+      
+      # Generate signing key
+      ${pkgs.service-name}/bin/generate-key > "$out"/signing-key
+    '';
+    files = {
+      "password" = { };
+      "api-key" = { };
+      "signing-key" = { };
+    };
+  };
+};
+```
+
+Reference generated secrets in your service configuration:
+```nix
+passwordFile = config.clan.core.vars.generators.service-name-secret.files."password".path;
+
+# Or in systemd preStart:
+systemd.services.service-name = {
+  preStart = lib.mkAfter ''
+    install -m 0600 -o service-user -g service-group \
+      ${config.clan.core.vars.generators.service-name-secret.files."api-key".path} \
+      /run/service-name/api-key
+  '';
+};
+```
