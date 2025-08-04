@@ -11,6 +11,7 @@ let
     "homepage-dashboard" = import ./homepage-dashboard;
     "pixiecore" = import ./pixiecore;
     "traefik" = import ./traefik;
+    "ddclient" = import ./ddclient;
   };
 
 in
