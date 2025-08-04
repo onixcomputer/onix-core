@@ -2,9 +2,16 @@
 
 ## Create New Clan Service with Freeform Options
 
-Use this command to create a new clan service that follows the modern pattern with freeform configuration support.
+### Slash Command Usage (Preferred):
+```
+/create-clan-service gitea https://nixos.org/manual/nixos/stable/options#opt-services.gitea.enable
+```
 
-### Command:
+This slash command is available in the `.claude/slash_commands/` directory and will automatically create a new clan service following the modern pattern.
+
+### Manual Command (Alternative):
+If the slash command is not available, you can use this manual command:
+
 ```
 Create a new clan service with freeform options. 
 Service name: [SERVICE_NAME]
@@ -14,21 +21,6 @@ Please:
 1. Create the module at modules/[SERVICE_NAME]/default.nix using the modern perInstance pattern with freeformType
 2. Register it in modules/default.nix
 3. Create an inventory instance at inventory/services/[SERVICE_NAME].nix
-4. Add it to inventory/services/default.nix
-5. Identify key configuration options that should have clan-specific conveniences
-6. Ensure proper separation between clan options and freeform NixOS service options
-```
-
-### Example Usage:
-```
-Create a new clan service with freeform options.
-Service name: gitea
-NixOS service documentation: https://nixos.org/manual/nixos/stable/options#opt-services.gitea.enable
-
-Please:
-1. Create the module at modules/gitea/default.nix using the modern perInstance pattern with freeformType
-2. Register it in modules/default.nix
-3. Create an inventory instance at inventory/services/gitea.nix
 4. Add it to inventory/services/default.nix
 5. Identify key configuration options that should have clan-specific conveniences
 6. Ensure proper separation between clan options and freeform NixOS service options
