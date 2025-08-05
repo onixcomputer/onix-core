@@ -41,7 +41,7 @@ _: {
         "traefik-homepage"
         "static-test"
         "static-demo"
-        "vault-dev"
+        "vault-production"
       ];
       deploy = {
         targetHost = "root@britton-fw";

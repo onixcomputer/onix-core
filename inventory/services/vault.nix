@@ -43,18 +43,34 @@ _: {
 
           # Storage backend
           storageType = "file";
-          storagePath = "/var/lib/vault";
+          # storagePath is handled by the module based on storageType
 
           # Domain configuration for reverse proxy
-          domain = "example.com";
-          subdomain = "vault";
+          domain = "blr.dev";
+          subdomain = "vault1";
           enableACME = true;
 
           # TLS is handled by reverse proxy
           tlsDisable = true;
 
-          # Bind to localhost when using reverse proxy
-          address = "127.0.0.1:8200";
+          # Bind to all interfaces for Traefik
+          address = "0.0.0.0:8200";
+
+          # Enable auto-initialization
+          autoInit = {
+            enable = true;
+          };
+
+          # HSM configuration (disabled for now - enable when ready)
+          hsmSeal = {
+            enable = false; # Enable when HSM is connected to britton-fw
+            lib = "/run/current-system/sw/lib/opensc-pkcs11.so";
+            slot = "0";
+            keyLabel = "vault-unseal-key";
+            mechanism = "0x1087";
+            generateKey = true;
+            pinFile = "/etc/vault/hsm-pin.env";
+          };
 
           # Additional Vault configuration
           extraConfig = ''
@@ -62,6 +78,12 @@ _: {
               prometheus_retention_time = "30s"
               disable_hostname = true
             }
+
+            # Disable mlock for compatibility
+            disable_mlock = true
+
+            # Set cluster name
+            cluster_name = "vault-prod"
           '';
         };
       };
