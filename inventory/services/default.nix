@@ -13,6 +13,7 @@ let
     vaultwarden = import ./vaultwarden.nix { inherit inputs; };
     homepage-dashboard = import ./homepage-dashboard.nix { inherit inputs; };
     pixiecore = import ./pixiecore.nix { inherit inputs; };
+    vault = import ./vault.nix { inherit inputs; };
   };
 in
 lib.foldr lib.recursiveUpdate { } (lib.attrValues services)

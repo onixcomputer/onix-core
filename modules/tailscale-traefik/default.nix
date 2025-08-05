@@ -530,7 +530,8 @@ in
                     };
 
                     restartTriggers = [
-                      (builtins.toString privateSubdomainsList)
+                      (builtins.hashString "sha256" (builtins.toJSON privateSubdomainsList))
+                      config.services.traefik.dynamicConfigFile
                     ];
 
                     script = ''
@@ -601,7 +602,7 @@ in
                     };
 
                     restartTriggers = [
-                      (builtins.toString publicSubdomainsList)
+                      (builtins.hashString "sha256" (builtins.toJSON publicSubdomainsList))
                     ];
 
                     script = ''

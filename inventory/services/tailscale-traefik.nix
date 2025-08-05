@@ -31,6 +31,13 @@ _: {
               public = false; # This service is only accessible via Tailscale
             };
 
+            # Vault dev instance - private access (Tailscale only)
+            vault = {
+              port = 8200;
+              subdomain = "vault1";
+              public = false; # This service is only accessible via Tailscale
+            };
+
           };
 
           # Enable Tailscale features
