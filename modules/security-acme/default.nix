@@ -242,7 +242,9 @@ in
                       # Trigger clan vars generation
                       if [ -n "$(ls -A /var/lib/acme-sync/)" ]; then
                         echo "Certificates synced to /var/lib/acme-sync"
-                        echo "Run 'clan vars generate --generator security-acme-certs' to store in clan vars"
+                        # Note: Automatic clan vars generation would require clan-cli in PATH
+                        # and proper permissions. For now, manual generation is needed.
+                        echo "Run 'sudo clan vars generate britton-fw --generator security-acme-certs' to store in clan vars"
                       fi
                     '';
                   };
@@ -406,8 +408,20 @@ in
         # Create vars generator for ACME certificates
         clan.core.vars.generators.security-acme-certs = {
           files = {
-            # We'll dynamically create files in the script
-            # No need to pre-define them
+            # Define expected certificate files as placeholders
+            # These will be populated when certificates are generated
+            "onix.computer.crt" = {
+              mode = "0640";
+            };
+            "onix.computer.key" = {
+              mode = "0600";
+            };
+            "blr.dev.crt" = {
+              mode = "0640";
+            };
+            "blr.dev.key" = {
+              mode = "0600";
+            };
           };
 
           runtimeInputs = with pkgs; [
@@ -418,30 +432,36 @@ in
           prompts = { };
 
           script = ''
-            # Copy all certificates from staging to output
-            if [ -d /var/lib/acme-sync ] && [ -n "$(ls -A /var/lib/acme-sync/)" ]; then
-              echo "Found certificates to sync:"
-              ls -la /var/lib/acme-sync/
-              
-              for file in /var/lib/acme-sync/*; do
-                if [ -f "$file" ]; then
-                  basename=$(basename "$file")
-                  echo "Copying $basename to clan vars..."
-                  cp "$file" "$out/$basename"
-                  
-                  # Set proper permissions
-                  if [[ "$basename" == *.key ]]; then
-                    chmod 0600 "$out/$basename"
-                  else
-                    chmod 0640 "$out/$basename"
+            # Check if we can read from the sync directory
+            if [ -r /var/lib/acme-sync ] && [ -d /var/lib/acme-sync ]; then
+              # Copy all certificates from staging to output
+              if [ -n "$(ls -A /var/lib/acme-sync/ 2>/dev/null)" ]; then
+                echo "Found certificates to sync:"
+                ls -la /var/lib/acme-sync/ 2>/dev/null || true
+                
+                for file in /var/lib/acme-sync/*; do
+                  if [ -f "$file" ] && [ -r "$file" ]; then
+                    basename=$(basename "$file")
+                    echo "Copying $basename to clan vars..."
+                    cp "$file" "$out/$basename"
+                  elif [ -f "$file" ]; then
+                    echo "Warning: Cannot read $file (permission denied)"
                   fi
-                fi
-              done
+                done
+              else
+                echo "No certificates found in /var/lib/acme-sync"
+              fi
             else
-              echo "No certificates found in /var/lib/acme-sync"
-              # Create placeholder so generator doesn't fail
-              touch "$out/.placeholder"
+              echo "Cannot access /var/lib/acme-sync directory (expected on first run)"
             fi
+
+            # Create placeholders for any missing certificate files
+            for cert_file in "onix.computer.crt" "onix.computer.key" "blr.dev.crt" "blr.dev.key"; do
+              if [ ! -f "$out/$cert_file" ]; then
+                echo "Creating placeholder for $cert_file"
+                echo "# Certificate placeholder - will be populated after ACME generation" > "$out/$cert_file"
+              fi
+            done
           '';
         };
 
