@@ -12,6 +12,7 @@ let
     "vaultwarden" = import ./vaultwarden;
     "homepage-dashboard" = import ./homepage-dashboard;
     "pixiecore" = import ./pixiecore;
+    "wiki-js" = import ./wiki-js;
   };
 
 in
