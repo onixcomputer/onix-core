@@ -11,19 +11,31 @@ _: {
           directory = "/var/www/test";
           createTestPage = true;
           testPageTitle = "Tailscale-Traefik Public Mode Test";
-          testPageContent = ''
-            <h2>🔒 Testing Public vs Private Access</h2>
-            <p>This page is served by the static-server clan service to test Tailscale-Traefik.</p>
+          serviceSuffix = "test";
+          isPublic = true;
+          domain = "blr.dev";
+          subdomain = "test";
+          testPageContent = "";
+        };
+      };
+    };
 
-            <div class="info">
-              <p><strong>Test Instructions:</strong></p>
-              <ol>
-                <li>Configure tailscale-traefik with <code>publicMode = true</code></li>
-                <li>Set up port forwarding on your router (80 → machine:80, 443 → machine:443)</li>
-                <li>Access this page via your domain (e.g., test.blr.dev)</li>
-              </ol>
-            </div>
-          '';
+    # Demo instance for britton-fw (private access only)
+    "static-server-demo" = {
+      module.name = "static-server";
+      module.input = "self";
+      roles.server = {
+        tags."static-demo" = { };
+        settings = {
+          port = 8889;
+          directory = "/var/www/demo";
+          createTestPage = true;
+          testPageTitle = "Private Demo Server (Tailscale Only)";
+          serviceSuffix = "demo";
+          isPublic = false;
+          domain = "blr.dev";
+          subdomain = "demo";
+          testPageContent = "";
         };
       };
     };

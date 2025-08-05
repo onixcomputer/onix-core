@@ -40,6 +40,7 @@ _: {
         "homepage-server"
         "traefik-homepage"
         "static-test"
+        "static-demo"
       ];
       deploy = {
         targetHost = "root@britton-fw";

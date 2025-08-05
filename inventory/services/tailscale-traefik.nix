@@ -1,39 +1,5 @@
 _: {
   instances = {
-    # Instance for britton-desktop (running the actual services)
-    "tailscale-traefik-onix" = {
-      module.name = "tailscale-traefik";
-      module.input = "self";
-      roles.server = {
-        machines."britton-desktop" = { };
-        settings = {
-          domain = "blr.dev";
-          email = "admin@blr.dev";
-
-          # Services to expose (running locally on britton-desktop)
-          services = {
-            grafana = {
-              port = 3000;
-            };
-            vaultwarden = {
-              port = 8222;
-            };
-          };
-
-          # Enable Tailscale features
-          tailscaleSSH = true;
-          tailscaleExitNode = false;
-
-          # Enable Traefik dashboard
-          traefikDashboard = true;
-
-          # Security headers enabled by default
-          securityHeaders = true;
-        };
-      };
-    };
-
-    # Instance for britton-fw (just homepage)
     "tailscale-traefik-fw" = {
       module.name = "tailscale-traefik";
       module.input = "self";
@@ -43,29 +9,36 @@ _: {
           domain = "blr.dev";
           email = "admin@blr.dev";
 
-          # Test public mode - REMEMBER TO SET UP PORT FORWARDING!
-          publicMode = true;
-
           # Services to expose
           services = {
-            # Homepage - auto-detected port
+            # Homepage - private access
             homepage = {
               subdomain = "home";
+              public = false;
             };
 
-            # Static test server
+            # Static test server - public access
             test = {
               port = 8888;
               subdomain = "test";
+              public = true; # This service is accessible from the internet
             };
+
+            # Demo static server - private access (Tailscale only)
+            demo = {
+              port = 8889;
+              subdomain = "demo";
+              public = false; # This service is only accessible via Tailscale
+            };
+
           };
 
           # Enable Tailscale features
           tailscaleSSH = true;
           tailscaleExitNode = false;
 
-          # Enable Traefik dashboard
-          traefikDashboard = false; # Avoid conflict with britton-desktop
+          # Enable Traefik dashboard (private by default)
+          traefikDashboard = true;
 
           # Security headers enabled by default
           securityHeaders = true;
