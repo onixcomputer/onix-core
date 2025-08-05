@@ -162,6 +162,23 @@ in
               # Create group for certificate syncing
               users.groups.acme-sync = { };
 
+              # Add likely users to acme-sync group for certificate access
+              users.users =
+                lib.genAttrs
+                  (lib.filter (u: builtins.pathExists "/home/${u}") [
+                    "root"
+                    "brittonr"
+                    "admin"
+                  ])
+                  (_: {
+                    extraGroups = [ "acme-sync" ];
+                  });
+
+              # Ensure sync directory exists with proper permissions
+              systemd.tmpfiles.rules = mkIf (certsToManage != [ ]) [
+                "d /var/lib/acme-sync 0755 root acme-sync -"
+              ];
+
               # Service configurations
               systemd.services = mkMerge [
                 # Control whether ACME services block system activation
@@ -223,7 +240,8 @@ in
                     script = ''
                       echo "Syncing ACME certificates to clan vars..."
 
-                      # Create staging directories
+                      # Create staging directories with world-readable permissions
+                      # This matches how vault creates /var/lib/vault/init-keys
                       mkdir -p /var/lib/acme-sync
                       chmod 755 /var/lib/acme-sync
                       chown root:acme-sync /var/lib/acme-sync
@@ -251,21 +269,42 @@ in
                           echo "Copying certificate for ${cert}..."
                           cp /var/lib/acme/${cert}/fullchain.pem /var/lib/acme-sync/${cert}.crt
                           cp /var/lib/acme/${cert}/key.pem /var/lib/acme-sync/${cert}.key
+                          # Make certificate files readable by all users (like vault does)
+                          # Certificate files don't contain secrets, private keys do
                           chmod 644 /var/lib/acme-sync/${cert}.crt
+                          # Private keys should be readable by acme-sync group but not world-readable
                           chmod 640 /var/lib/acme-sync/${cert}.key
                           chown root:acme-sync /var/lib/acme-sync/${cert}.*
                           
                           # Also copy to user cache directories
                           for user_home in /home/*; do
-                            if [ -d "$user_home/.cache/clan-acme-sync" ]; then
+                            if [ -d "$user_home" ]; then
                               user=$(basename "$user_home")
-                              echo "Copying ${cert} certificates to $user's cache..."
-                              cp /var/lib/acme/${cert}/fullchain.pem "$user_home/.cache/clan-acme-sync/${cert}.crt"
-                              cp /var/lib/acme/${cert}/key.pem "$user_home/.cache/clan-acme-sync/${cert}.key"
-                              # Make certs readable by user, keys only by owner
-                              chown $user:$user "$user_home/.cache/clan-acme-sync/${cert}.*"
-                              chmod 644 "$user_home/.cache/clan-acme-sync/${cert}.crt"
-                              chmod 600 "$user_home/.cache/clan-acme-sync/${cert}.key"
+                              user_cache="$user_home/.cache/clan-acme-sync"
+                              
+                              # Create cache directory if it doesn't exist
+                              if [ ! -d "$user_cache" ]; then
+                                echo "Creating cache directory for user $user..."
+                                mkdir -p "$user_cache" 2>/dev/null || continue
+                              fi
+                              
+                              if [ -d "$user_cache" ]; then
+                                echo "Copying ${cert} certificates to $user's cache..."
+                                # Copy files
+                                if cp /var/lib/acme/${cert}/fullchain.pem "$user_cache/${cert}.crt" 2>/dev/null; then
+                                  # Make cert readable by user
+                                  chown $user:$user "$user_cache/${cert}.crt" 2>/dev/null || true
+                                  chmod 644 "$user_cache/${cert}.crt" 2>/dev/null || true
+                                  echo "  Successfully copied ${cert}.crt to $user's cache"
+                                fi
+                                
+                                if cp /var/lib/acme/${cert}/key.pem "$user_cache/${cert}.key" 2>/dev/null; then
+                                  # Make key readable only by user
+                                  chown $user:$user "$user_cache/${cert}.key" 2>/dev/null || true
+                                  chmod 600 "$user_cache/${cert}.key" 2>/dev/null || true
+                                  echo "  Successfully copied ${cert}.key to $user's cache"
+                                fi
+                              fi
                             fi
                           done
                         else
@@ -304,6 +343,7 @@ in
                   Unit = "sync-acme-certs.service";
                 };
               };
+
             };
         };
     };
@@ -515,6 +555,7 @@ in
 
           runtimeInputs = with pkgs; [
             coreutils
+            util-linux # for groups command
           ];
 
           prompts = { };
@@ -523,13 +564,18 @@ in
             # This generator retrieves ACME certificates from local files
             # Run on the machine where certificates are generated
 
-            # Try multiple locations for certificates
+            # Try multiple locations for certificates, prioritizing user cache
             SYNC_DIRS=(
               "$HOME/.cache/clan-acme-sync"
               "/var/lib/acme-sync"
             )
 
-            echo "Syncing ACME certificates..."
+            echo "Syncing ACME certificates..." >&2
+            echo "Current user: $(whoami), groups: $(groups)" >&2
+            echo "Checking sync directories in order of preference:" >&2
+            for dir in "''${SYNC_DIRS[@]}"; do
+              echo "  - $dir" >&2
+            done
 
             # Copy certificates if they exist
             for cert in "onix.computer" "blr.dev"; do
@@ -539,37 +585,65 @@ in
               for sync_dir in "''${SYNC_DIRS[@]}"; do
                 cert_file="$sync_dir/$cert.crt"
                 key_file="$sync_dir/$cert.key"
+                
+                echo "Checking $sync_dir for $cert certificates..." >&2
+                
+                # Check directory exists and is accessible
+                if [ ! -d "$sync_dir" ]; then
+                  echo "  Directory $sync_dir does not exist" >&2
+                  continue
+                fi
+                
+                if [ ! -r "$sync_dir" ]; then
+                  echo "  Directory $sync_dir is not readable" >&2
+                  echo "  Directory permissions:" >&2
+                  ls -ld "$sync_dir" >&2 || true
+                  continue
+                fi
               
                 # Certificate files
                 if [ -f "$cert_file" ] && [ -r "$cert_file" ] && [ "$cert_copied" = false ]; then
-                  echo "Copying $cert.crt from $sync_dir..." >&2
-                  cp "$cert_file" "$out/$cert.crt" && cert_copied=true || {
-                    echo "Failed to copy $cert_file" >&2
-                  }
+                  echo "  Found readable $cert.crt in $sync_dir" >&2
+                  if cp "$cert_file" "$out/$cert.crt"; then
+                    cert_copied=true
+                    echo "  Successfully copied $cert.crt" >&2
+                  else
+                    echo "  Failed to copy $cert_file" >&2
+                  fi
+                elif [ -f "$cert_file" ]; then
+                  echo "  Found $cert.crt in $sync_dir but it's not readable" >&2
+                  ls -la "$cert_file" >&2 || true
                 fi
                 
-                # Key files
+                # Key files - these are more sensitive so provide more debugging
                 if [ -f "$key_file" ] && [ -r "$key_file" ] && [ "$key_copied" = false ]; then
-                  echo "Copying $cert.key from $sync_dir..." >&2
-                  cp "$key_file" "$out/$cert.key" && key_copied=true || {
-                    echo "Failed to copy $key_file" >&2
-                  }
+                  echo "  Found readable $cert.key in $sync_dir" >&2
+                  if cp "$key_file" "$out/$cert.key"; then
+                    key_copied=true
+                    echo "  Successfully copied $cert.key" >&2
+                  else
+                    echo "  Failed to copy $key_file" >&2
+                  fi
+                elif [ -f "$key_file" ]; then
+                  echo "  Found $cert.key in $sync_dir but it's not readable" >&2
+                  echo "  File permissions:" >&2
+                  ls -la "$key_file" >&2 || true
                 fi
               done
               
               # Create placeholders if not copied
               if [ "$cert_copied" = false ]; then
-                echo "Warning: $cert.crt not found in any sync directory" >&2
-                echo "# Certificate not found - ensure ACME generation completed" > "$out/$cert.crt"
+                echo "Warning: $cert.crt not found in any accessible sync directory" >&2
+                echo "# Certificate not found - ensure ACME generation completed and sync service ran" > "$out/$cert.crt"
               fi
               
               if [ "$key_copied" = false ]; then
-                echo "Warning: $cert.key not found in any sync directory" >&2
-                echo "# Key not found - ensure ACME generation completed or check permissions" > "$out/$cert.key"
+                echo "Warning: $cert.key not found in any accessible sync directory" >&2
+                echo "# Key not found - ensure ACME generation completed, sync service ran, and user has proper permissions" > "$out/$cert.key"
               fi
             done
 
-            echo "Certificate sync complete"
+            echo "Certificate sync complete" >&2
           '';
         };
 
