@@ -18,14 +18,14 @@ _: {
             user = "wikijs";
           };
 
-          # Git synchronization (optional)
+          # Git synchronization
           gitSync = {
-            enable = false; # Set to true to enable git sync
-            repository = null; # e.g., "git@github.com:myorg/wiki-content.git"
+            enable = true;
+            repository = "git@github.com:myorg/wiki-content.git"; # TODO: Update with your repository
             branch = "main";
             # sshKeyFile = null; # Auto-generated if not specified
             authorName = "Wiki.js";
-            authorEmail = "wiki-js@example.com";
+            authorEmail = "wiki-js@blr.dev";
           };
 
           # Wiki.js specific settings (freeform)
