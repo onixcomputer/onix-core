@@ -31,6 +31,13 @@ _: {
               public = false; # This service is only accessible via Tailscale
             };
 
+            # Wiki.js - private access (Tailscale only)
+            wiki = {
+              port = 3000;
+              subdomain = "wiki";
+              public = false; # This service is only accessible via Tailscale
+            };
+
           };
 
           # Enable Tailscale features
