@@ -5,7 +5,7 @@
       module.name = "pixiecore";
       module.input = "self";
       roles.server = {
-        # machines."britton-fw" = { };  # Removed to avoid port conflict with Traefik
+        machines."britton-fw" = { }; # Removed to avoid port conflict with Traefik
         settings = {
           # Enable pixiecore
           enable = true;
@@ -15,7 +15,7 @@
 
           # Network configuration
           listenAddr = "0.0.0.0";
-          port = 80;
+          port = 9095;
           dhcpNoBind = false;
 
           # Enable debug logging
