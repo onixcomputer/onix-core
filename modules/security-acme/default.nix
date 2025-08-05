@@ -56,12 +56,6 @@ in
             description = "Path to environment file with DNS provider credentials";
           };
 
-          renewalCheckInterval = mkOption {
-            type = types.str;
-            default = "daily";
-            description = "How often to check for certificate renewal and sync to clan vars";
-          };
-
           blockOnCertGeneration = mkOption {
             type = types.bool;
             default = false;
@@ -94,7 +88,6 @@ in
                 "shareWildcard"
                 "wildcardDomain"
                 "certificatesToShare"
-                "renewalCheckInterval"
                 "dnsProvider"
                 "environmentFile"
                 "blockOnCertGeneration"
@@ -124,15 +117,20 @@ in
                         cfg.environmentFile
                       else
                         config.clan.core.vars.generators.security-acme-dns.files.cloudflare_env.path;
-                    # Ensure certificates are readable by sync service
-                    group = "acme-sync";
-                    # Trigger sync after successful certificate generation
+                    # Make certificates readable by acme group
+                    group = "acme";
+                    # Notify about successful generation
                     postRun = ''
-                      echo "Certificate generated successfully for ${domain}, triggering sync..."
-                      ls -la /var/lib/acme/${domain}/ || echo "Directory not found"
-                      # Don't use systemctl start as it creates a dependency deadlock
-                      # Instead, just notify that sync is needed
-                      echo "Certificate ready for syncing to clan vars"
+                      echo "Certificate generated successfully for ${domain}"
+                      echo ""
+                      echo "To store in clan vars:"
+                      echo ""
+                      echo "Option 1 - Manual (run from controller):"
+                      echo "  ssh ${config.networking.hostName} 'sudo cat /var/lib/acme/${domain}/fullchain.pem' | clan vars set ${config.networking.hostName} security-acme-certs/${domain}.crt"
+                      echo "  ssh ${config.networking.hostName} 'sudo cat /var/lib/acme/${domain}/key.pem' | clan vars set ${config.networking.hostName} security-acme-certs/${domain}.key"
+                      echo ""
+                      echo "Option 2 - Systemd service (if configured):"
+                      echo "  sudo systemctl start acme-cert-sync.service"
                     '';
                   }
                   # Allow per-cert overrides from freeform config
@@ -157,26 +155,6 @@ in
                 {
                   certs = certConfigs;
                 }
-              ];
-
-              # Create group for certificate syncing
-              users.groups.acme-sync = { };
-
-              # Add likely users to acme-sync group for certificate access
-              users.users =
-                lib.genAttrs
-                  (lib.filter (u: builtins.pathExists "/home/${u}") [
-                    "root"
-                    "brittonr"
-                    "admin"
-                  ])
-                  (_: {
-                    extraGroups = [ "acme-sync" ];
-                  });
-
-              # Ensure sync directory exists with proper permissions
-              systemd.tmpfiles.rules = mkIf (certsToManage != [ ]) [
-                "d /var/lib/acme-sync 0755 root acme-sync -"
               ];
 
               # Service configurations
@@ -225,125 +203,188 @@ in
                   };
                 })
 
-                # Sync service
-                (mkIf (certsToManage != [ ]) {
-                  sync-acme-certs = {
-                    description = "Sync ACME certificates to clan vars";
-                    after = map (cert: "acme-${cert}.service") certsToManage;
-
-                    serviceConfig = {
-                      Type = "oneshot";
-                      User = "root";
-                      Group = "acme-sync";
-                    };
-
-                    script = ''
-                      echo "Syncing ACME certificates to clan vars..."
-
-                      # Create staging directories with world-readable permissions
-                      # This matches how vault creates /var/lib/vault/init-keys
-                      mkdir -p /var/lib/acme-sync
-                      chmod 755 /var/lib/acme-sync
-                      chown root:acme-sync /var/lib/acme-sync
-
-                      # Also create user-accessible directory for clan vars generator
-                      # Use XDG_CACHE_HOME or fallback to ~/.cache
-                      CACHE_DIR="''${XDG_CACHE_HOME:-$HOME/.cache}"
-                      USER_SYNC_DIR="$CACHE_DIR/clan-acme-sync"
-
-                      # Try to create in cache dir for each likely user
-                      for user_home in /home/*; do
-                        if [ -d "$user_home" ]; then
-                          user=$(basename "$user_home")
-                          user_cache="$user_home/.cache/clan-acme-sync"
-                          if mkdir -p "$user_cache" 2>/dev/null; then
-                            chmod 755 "$user_cache"
-                            echo "Created cache dir for user $user"
-                          fi
-                        fi
-                      done
-
-                      # Copy certificates to staging
-                      ${lib.concatMapStrings (cert: ''
-                        if [ -f "/var/lib/acme/${cert}/fullchain.pem" ] && [ -f "/var/lib/acme/${cert}/key.pem" ]; then
-                          echo "Copying certificate for ${cert}..."
-                          cp /var/lib/acme/${cert}/fullchain.pem /var/lib/acme-sync/${cert}.crt
-                          cp /var/lib/acme/${cert}/key.pem /var/lib/acme-sync/${cert}.key
-                          # Make certificate files readable by all users (like vault does)
-                          # Certificate files don't contain secrets, private keys do
-                          chmod 644 /var/lib/acme-sync/${cert}.crt
-                          # Private keys should be readable by acme-sync group but not world-readable
-                          chmod 640 /var/lib/acme-sync/${cert}.key
-                          chown root:acme-sync /var/lib/acme-sync/${cert}.*
-                          
-                          # Also copy to user cache directories
-                          for user_home in /home/*; do
-                            if [ -d "$user_home" ]; then
-                              user=$(basename "$user_home")
-                              user_cache="$user_home/.cache/clan-acme-sync"
-                              
-                              # Create cache directory if it doesn't exist
-                              if [ ! -d "$user_cache" ]; then
-                                echo "Creating cache directory for user $user..."
-                                mkdir -p "$user_cache" 2>/dev/null || continue
-                              fi
-                              
-                              if [ -d "$user_cache" ]; then
-                                echo "Copying ${cert} certificates to $user's cache..."
-                                # Copy files
-                                if cp /var/lib/acme/${cert}/fullchain.pem "$user_cache/${cert}.crt" 2>/dev/null; then
-                                  # Make cert readable by user
-                                  chown $user:$user "$user_cache/${cert}.crt" 2>/dev/null || true
-                                  chmod 644 "$user_cache/${cert}.crt" 2>/dev/null || true
-                                  echo "  Successfully copied ${cert}.crt to $user's cache"
-                                fi
-                                
-                                if cp /var/lib/acme/${cert}/key.pem "$user_cache/${cert}.key" 2>/dev/null; then
-                                  # Make key readable only by user
-                                  chown $user:$user "$user_cache/${cert}.key" 2>/dev/null || true
-                                  chmod 600 "$user_cache/${cert}.key" 2>/dev/null || true
-                                  echo "  Successfully copied ${cert}.key to $user's cache"
-                                fi
-                              fi
-                            fi
-                          done
-                        else
-                          echo "Certificate files for ${cert} not found, skipping..."
-                        fi
-                      '') certsToManage}
-
-                      # Trigger clan vars generation
-                      if [ -n "$(ls -A /var/lib/acme-sync/)" ]; then
-                        echo "Certificates synced to /var/lib/acme-sync"
-                        echo "To store in clan vars, run:"
-                        echo "  clan vars generate ${config.networking.hostName} --generator security-acme-certs-sync"
-                      fi
-                    '';
-                  };
-                })
-
-                # No need for explicit ordering - path watcher handles it
-                { }
               ];
 
-              # Timer to periodically sync certificates
-              systemd.timers.sync-acme-certs = mkIf (certsToManage != [ ]) {
+            };
+        };
+    };
+
+    # Certificate controller - syncs certificates to clan vars
+    controller = {
+      interface = {
+        options = {
+          syncMachines = mkOption {
+            type = types.attrsOf (
+              types.submodule {
+                options = {
+                  certificates = mkOption {
+                    type = types.listOf types.str;
+                    description = "List of certificate domains to sync";
+                    example = [
+                      "onix.computer"
+                      "blr.dev"
+                    ];
+                  };
+                };
+              }
+            );
+            default = { };
+            description = "Machines to sync certificates from";
+          };
+
+          syncInterval = mkOption {
+            type = types.str;
+            default = "daily";
+            description = "How often to sync certificates (systemd timer format)";
+          };
+        };
+      };
+
+      perInstance =
+        { extendSettings, ... }:
+        {
+          nixosModule =
+            {
+              config,
+              pkgs,
+              lib,
+              ...
+            }:
+            let
+              cfg = extendSettings { };
+
+              syncScript = pkgs.writeShellScript "acme-cert-sync" ''
+                set -euo pipefail
+
+                echo "[acme-cert-sync] Starting certificate synchronization"
+                HOSTNAME=$(hostname)
+
+                ${lib.concatStringsSep "\n" (
+                  lib.mapAttrsToList (machine: machineConfig: ''
+                    echo "[acme-cert-sync] Syncing certificates from ${machine}..."
+                    ${lib.concatMapStrings (cert: ''
+                      echo "[acme-cert-sync] - Retrieving ${cert}..."
+
+                      # Check if we're on the same machine
+                      if [ "$HOSTNAME" = "${machine}" ]; then
+                        # Local read (use sudo since we're not running as root)
+                        if /run/wrappers/bin/sudo /run/current-system/sw/bin/test -f "/var/lib/acme/${cert}/fullchain.pem"; then
+                          if /run/wrappers/bin/sudo /run/current-system/sw/bin/cat "/var/lib/acme/${cert}/fullchain.pem" | clan vars set ${machine} security-acme-certs/${cert}.crt; then
+                            echo "[acme-cert-sync]   ✓ Certificate stored"
+                          else
+                            echo "[acme-cert-sync]   ✗ Failed to store certificate"
+                          fi
+                        else
+                          echo "[acme-cert-sync]   ✗ Certificate file not found"
+                        fi
+                        
+                        if /run/wrappers/bin/sudo /run/current-system/sw/bin/test -f "/var/lib/acme/${cert}/key.pem"; then
+                          if /run/wrappers/bin/sudo /run/current-system/sw/bin/cat "/var/lib/acme/${cert}/key.pem" | clan vars set ${machine} security-acme-certs/${cert}.key; then
+                            echo "[acme-cert-sync]   ✓ Key stored"
+                          else
+                            echo "[acme-cert-sync]   ✗ Failed to store key"
+                          fi
+                        else
+                          echo "[acme-cert-sync]   ✗ Key file not found"
+                        fi
+                      else
+                        # Remote SSH
+                        if ssh ${machine} "sudo cat /var/lib/acme/${cert}/fullchain.pem 2>/dev/null" > /tmp/${cert}.crt; then
+                          if [ -s /tmp/${cert}.crt ]; then
+                            cat /tmp/${cert}.crt | clan vars set ${machine} security-acme-certs/${cert}.crt && \
+                              echo "[acme-cert-sync]   ✓ Certificate stored"
+                          fi
+                        else
+                          echo "[acme-cert-sync]   ✗ Failed to retrieve certificate"
+                        fi
+                        
+                        if ssh ${machine} "sudo cat /var/lib/acme/${cert}/key.pem 2>/dev/null" > /tmp/${cert}.key; then
+                          if [ -s /tmp/${cert}.key ]; then
+                            cat /tmp/${cert}.key | clan vars set ${machine} security-acme-certs/${cert}.key && \
+                              echo "[acme-cert-sync]   ✓ Key stored"
+                          fi
+                        else
+                          echo "[acme-cert-sync]   ✗ Failed to retrieve key"
+                        fi
+                        
+                        rm -f /tmp/${cert}.crt /tmp/${cert}.key
+                      fi
+                    '') machineConfig.certificates}
+                  '') cfg.syncMachines
+                )}
+
+                echo "[acme-cert-sync] Synchronization complete"
+              '';
+            in
+            mkIf (cfg.syncMachines != { }) {
+              # Allow brittonr to read ACME certificates without password
+              security.sudo.extraRules = [
+                {
+                  users = [ "brittonr" ];
+                  commands = [
+                    {
+                      command = "/run/current-system/sw/bin/cat /var/lib/acme/*/fullchain.pem";
+                      options = [ "NOPASSWD" ];
+                    }
+                    {
+                      command = "/run/current-system/sw/bin/cat /var/lib/acme/*/key.pem";
+                      options = [ "NOPASSWD" ];
+                    }
+                    {
+                      command = "/run/current-system/sw/bin/test -f /var/lib/acme/*/fullchain.pem";
+                      options = [ "NOPASSWD" ];
+                    }
+                    {
+                      command = "/run/current-system/sw/bin/test -f /var/lib/acme/*/key.pem";
+                      options = [ "NOPASSWD" ];
+                    }
+                  ];
+                }
+              ];
+
+              # Sync service (system service)
+              systemd.services.acme-cert-sync = {
+                description = "Sync ACME certificates to clan vars";
+                path = with pkgs; [
+                  openssh
+                  coreutils
+                  hostname
+                  git
+                  nix
+                  config.clan.core.clanPkgs.clan-cli
+                  "/run/wrappers" # For sudo with setuid
+                ];
+                after = [ "network-online.target" ];
+                wants = [ "network-online.target" ];
+
+                serviceConfig = {
+                  Type = "oneshot";
+                  ExecStart = syncScript;
+
+                  # Run as brittonr user who has SOPS keys
+                  User = "brittonr";
+                  Group = "users";
+
+                  # Environment for clan command
+                  Environment = [
+                    "HOME=/home/brittonr"
+                    # Use the actual git repo path, not the nix store path
+                    "CLAN_DIR=/home/brittonr/git/onix-core"
+                  ];
+                };
+              };
+
+              # Timer for automatic sync
+              systemd.timers.acme-cert-sync = {
+                description = "Timer for ACME certificate sync";
                 wantedBy = [ "timers.target" ];
+
                 timerConfig = {
-                  OnCalendar = cfg.renewalCheckInterval;
+                  OnCalendar = cfg.syncInterval;
                   Persistent = true;
+                  RandomizedDelaySec = "1h";
                 };
               };
-
-              # Path unit to watch for certificate changes
-              systemd.paths.sync-acme-certs = mkIf (certsToManage != [ ]) {
-                wantedBy = [ "paths.target" ];
-                pathConfig = {
-                  PathChanged = map (cert: "/var/lib/acme/${cert}/fullchain.pem") certsToManage;
-                  Unit = "sync-acme-certs.service";
-                };
-              };
-
             };
         };
     };
@@ -482,7 +523,6 @@ in
         clan.core.vars.generators.security-acme-certs = {
           files = {
             # Define expected certificate files with proper ownership
-            # These will be populated when certificates are generated
             "onix.computer.crt" = {
               owner = "root";
               group = "root";
@@ -509,53 +549,6 @@ in
 
           runtimeInputs = with pkgs; [
             coreutils
-          ];
-
-          prompts = { };
-
-          script = ''
-            # This is the placeholder generator - creates initial placeholder files
-            # Use security-acme-certs-sync generator to populate with actual certificates
-
-            echo "Creating placeholder certificate files..."
-            echo "# Certificate placeholder - run security-acme-certs-sync generator after ACME generation" > "$out/onix.computer.crt"
-            echo "# Key placeholder - run security-acme-certs-sync generator after ACME generation" > "$out/onix.computer.key"
-            echo "# Certificate placeholder - run security-acme-certs-sync generator after ACME generation" > "$out/blr.dev.crt"
-            echo "# Key placeholder - run security-acme-certs-sync generator after ACME generation" > "$out/blr.dev.key"
-          '';
-        };
-
-        # Generator to retrieve actual certificates from the machine
-        clan.core.vars.generators.security-acme-certs-sync = {
-          files = {
-            # Same files as above - must match exactly
-            "onix.computer.crt" = {
-              owner = "root";
-              group = "root";
-              mode = "0644";
-            };
-            "onix.computer.key" = {
-              secret = true;
-              owner = "root";
-              group = "root";
-              mode = "0600";
-            };
-            "blr.dev.crt" = {
-              owner = "root";
-              group = "root";
-              mode = "0644";
-            };
-            "blr.dev.key" = {
-              secret = true;
-              owner = "root";
-              group = "root";
-              mode = "0600";
-            };
-          };
-
-          runtimeInputs = with pkgs; [
-            coreutils
-            util-linux # for groups command
           ];
 
           prompts = { };
@@ -563,87 +556,21 @@ in
           script = ''
             # This generator retrieves ACME certificates from local files
             # Run on the machine where certificates are generated
+            # Following the same pattern as vault-keys generator
 
-            # Try multiple locations for certificates, prioritizing user cache
-            SYNC_DIRS=(
-              "$HOME/.cache/clan-acme-sync"
-              "/var/lib/acme-sync"
-            )
-
-            echo "Syncing ACME certificates..." >&2
-            echo "Current user: $(whoami), groups: $(groups)" >&2
-            echo "Checking sync directories in order of preference:" >&2
-            for dir in "''${SYNC_DIRS[@]}"; do
-              echo "  - $dir" >&2
-            done
-
-            # Copy certificates if they exist
             for cert in "onix.computer" "blr.dev"; do
-              cert_copied=false
-              key_copied=false
-              
-              for sync_dir in "''${SYNC_DIRS[@]}"; do
-                cert_file="$sync_dir/$cert.crt"
-                key_file="$sync_dir/$cert.key"
-                
-                echo "Checking $sync_dir for $cert certificates..." >&2
-                
-                # Check directory exists and is accessible
-                if [ ! -d "$sync_dir" ]; then
-                  echo "  Directory $sync_dir does not exist" >&2
-                  continue
-                fi
-                
-                if [ ! -r "$sync_dir" ]; then
-                  echo "  Directory $sync_dir is not readable" >&2
-                  echo "  Directory permissions:" >&2
-                  ls -ld "$sync_dir" >&2 || true
-                  continue
-                fi
-              
-                # Certificate files
-                if [ -f "$cert_file" ] && [ -r "$cert_file" ] && [ "$cert_copied" = false ]; then
-                  echo "  Found readable $cert.crt in $sync_dir" >&2
-                  if cp "$cert_file" "$out/$cert.crt"; then
-                    cert_copied=true
-                    echo "  Successfully copied $cert.crt" >&2
-                  else
-                    echo "  Failed to copy $cert_file" >&2
-                  fi
-                elif [ -f "$cert_file" ]; then
-                  echo "  Found $cert.crt in $sync_dir but it's not readable" >&2
-                  ls -la "$cert_file" >&2 || true
-                fi
-                
-                # Key files - these are more sensitive so provide more debugging
-                if [ -f "$key_file" ] && [ -r "$key_file" ] && [ "$key_copied" = false ]; then
-                  echo "  Found readable $cert.key in $sync_dir" >&2
-                  if cp "$key_file" "$out/$cert.key"; then
-                    key_copied=true
-                    echo "  Successfully copied $cert.key" >&2
-                  else
-                    echo "  Failed to copy $key_file" >&2
-                  fi
-                elif [ -f "$key_file" ]; then
-                  echo "  Found $cert.key in $sync_dir but it's not readable" >&2
-                  echo "  File permissions:" >&2
-                  ls -la "$key_file" >&2 || true
-                fi
-              done
-              
-              # Create placeholders if not copied
-              if [ "$cert_copied" = false ]; then
-                echo "Warning: $cert.crt not found in any accessible sync directory" >&2
-                echo "# Certificate not found - ensure ACME generation completed and sync service ran" > "$out/$cert.crt"
+              if [ -f "/var/lib/acme/$cert/fullchain.pem" ]; then
+                cat "/var/lib/acme/$cert/fullchain.pem" > "$out/$cert.crt"
+              else
+                echo "# Certificate placeholder - waiting for ACME generation" > "$out/$cert.crt"
               fi
               
-              if [ "$key_copied" = false ]; then
-                echo "Warning: $cert.key not found in any accessible sync directory" >&2
-                echo "# Key not found - ensure ACME generation completed, sync service ran, and user has proper permissions" > "$out/$cert.key"
+              if [ -f "/var/lib/acme/$cert/key.pem" ]; then
+                cat "/var/lib/acme/$cert/key.pem" > "$out/$cert.key"
+              else
+                echo "# Key placeholder - waiting for ACME generation" > "$out/$cert.key"
               fi
             done
-
-            echo "Certificate sync complete" >&2
           '';
         };
 

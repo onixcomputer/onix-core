@@ -26,9 +26,6 @@ _: {
           dnsProvider = "cloudflare";
           # The module will automatically use security-acme-dns credentials
 
-          # Check for renewal twice daily
-          renewalCheckInterval = "*-*-* 00,12:00:00";
-
           # Additional certificates to share if needed
           certificatesToShare = [
             # Add specific certificates here if needed
@@ -108,6 +105,29 @@ _: {
       #     };
       #   };
       # };
+
+      # Certificate controller - runs on your local machine to sync certificates
+      roles.controller = {
+        # Deploy on your local development machine
+        # Update this to match your actual local machine name in the clan
+        tags."controller" = { };
+        # Or use a specific machine:
+        # machines."your-desktop-hostname" = { };
+
+        settings = {
+          syncMachines = {
+            britton-fw = {
+              certificates = [
+                "onix.computer"
+                # "blr.dev"
+              ];
+            };
+          };
+
+          # Sync daily by default, can be changed to "hourly", "*:0/15" (every 15 min), etc.
+          syncInterval = "*:0/15";
+        };
+      };
     };
   };
 }
