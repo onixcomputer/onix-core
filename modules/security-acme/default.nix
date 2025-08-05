@@ -223,10 +223,27 @@ in
                     script = ''
                       echo "Syncing ACME certificates to clan vars..."
 
-                      # Create staging directory  
+                      # Create staging directories
                       mkdir -p /var/lib/acme-sync
                       chmod 755 /var/lib/acme-sync
                       chown root:acme-sync /var/lib/acme-sync
+
+                      # Also create user-accessible directory for clan vars generator
+                      # Use XDG_CACHE_HOME or fallback to ~/.cache
+                      CACHE_DIR="''${XDG_CACHE_HOME:-$HOME/.cache}"
+                      USER_SYNC_DIR="$CACHE_DIR/clan-acme-sync"
+
+                      # Try to create in cache dir for each likely user
+                      for user_home in /home/*; do
+                        if [ -d "$user_home" ]; then
+                          user=$(basename "$user_home")
+                          user_cache="$user_home/.cache/clan-acme-sync"
+                          if mkdir -p "$user_cache" 2>/dev/null; then
+                            chmod 755 "$user_cache"
+                            echo "Created cache dir for user $user"
+                          fi
+                        fi
+                      done
 
                       # Copy certificates to staging
                       ${lib.concatMapStrings (cert: ''
@@ -237,6 +254,20 @@ in
                           chmod 644 /var/lib/acme-sync/${cert}.crt
                           chmod 640 /var/lib/acme-sync/${cert}.key
                           chown root:acme-sync /var/lib/acme-sync/${cert}.*
+                          
+                          # Also copy to user cache directories
+                          for user_home in /home/*; do
+                            if [ -d "$user_home/.cache/clan-acme-sync" ]; then
+                              user=$(basename "$user_home")
+                              echo "Copying ${cert} certificates to $user's cache..."
+                              cp /var/lib/acme/${cert}/fullchain.pem "$user_home/.cache/clan-acme-sync/${cert}.crt"
+                              cp /var/lib/acme/${cert}/key.pem "$user_home/.cache/clan-acme-sync/${cert}.key"
+                              # Make certs readable by user, keys only by owner
+                              chown $user:$user "$user_home/.cache/clan-acme-sync/${cert}.*"
+                              chmod 644 "$user_home/.cache/clan-acme-sync/${cert}.crt"
+                              chmod 600 "$user_home/.cache/clan-acme-sync/${cert}.key"
+                            fi
+                          done
                         else
                           echo "Certificate files for ${cert} not found, skipping..."
                         fi
@@ -492,24 +523,49 @@ in
             # This generator retrieves ACME certificates from local files
             # Run on the machine where certificates are generated
 
-            echo "Syncing ACME certificates from /var/lib/acme-sync..."
+            # Try multiple locations for certificates
+            SYNC_DIRS=(
+              "$HOME/.cache/clan-acme-sync"
+              "/var/lib/acme-sync"
+            )
+
+            echo "Syncing ACME certificates..."
 
             # Copy certificates if they exist
             for cert in "onix.computer" "blr.dev"; do
-              if [ -f "/var/lib/acme-sync/$cert.crt" ]; then
-                echo "Copying $cert.crt..."
-                cat "/var/lib/acme-sync/$cert.crt" > "$out/$cert.crt"
-              else
-                echo "Warning: $cert.crt not found in /var/lib/acme-sync"
+              cert_copied=false
+              key_copied=false
+              
+              for sync_dir in "''${SYNC_DIRS[@]}"; do
+                cert_file="$sync_dir/$cert.crt"
+                key_file="$sync_dir/$cert.key"
+              
+                # Certificate files
+                if [ -f "$cert_file" ] && [ -r "$cert_file" ] && [ "$cert_copied" = false ]; then
+                  echo "Copying $cert.crt from $sync_dir..." >&2
+                  cp "$cert_file" "$out/$cert.crt" && cert_copied=true || {
+                    echo "Failed to copy $cert_file" >&2
+                  }
+                fi
+                
+                # Key files
+                if [ -f "$key_file" ] && [ -r "$key_file" ] && [ "$key_copied" = false ]; then
+                  echo "Copying $cert.key from $sync_dir..." >&2
+                  cp "$key_file" "$out/$cert.key" && key_copied=true || {
+                    echo "Failed to copy $key_file" >&2
+                  }
+                fi
+              done
+              
+              # Create placeholders if not copied
+              if [ "$cert_copied" = false ]; then
+                echo "Warning: $cert.crt not found in any sync directory" >&2
                 echo "# Certificate not found - ensure ACME generation completed" > "$out/$cert.crt"
               fi
               
-              if [ -f "/var/lib/acme-sync/$cert.key" ]; then
-                echo "Copying $cert.key..."
-                cat "/var/lib/acme-sync/$cert.key" > "$out/$cert.key"
-              else
-                echo "Warning: $cert.key not found in /var/lib/acme-sync"
-                echo "# Key not found - ensure ACME generation completed" > "$out/$cert.key"
+              if [ "$key_copied" = false ]; then
+                echo "Warning: $cert.key not found in any sync directory" >&2
+                echo "# Key not found - ensure ACME generation completed or check permissions" > "$out/$cert.key"
               fi
             done
 
