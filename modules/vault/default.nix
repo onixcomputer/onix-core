@@ -240,7 +240,7 @@ in
                   serviceConfig = {
                     ExecStart = lib.mkForce "${pkgs.vault-bin}/bin/vault server -dev -dev-listen-address=${
                       settings.address or "0.0.0.0:8200"
-                    } -dev-root-token-id=${settings.devRootTokenID or "dev-root-token"} -config=/etc/vault.hcl";
+                    } -dev-root-token-id=${settings.devRootTokenID or "dev-root-token"}";
                   };
                 })
 
