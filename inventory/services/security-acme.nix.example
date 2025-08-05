@@ -1,0 +1,275 @@
+# Example configuration for the security-acme clan service
+#
+# This example shows various usage patterns for certificate management
+# across multiple machines using ACME (Let's Encrypt).
+
+{ config, ... }:
+{
+  # Example 1: Simple single-machine setup
+  # Machine generates and uses its own certificates
+  roles.provider = {
+    machines."web-server" = {
+      settings = {
+        email = "admin@example.com";
+        acceptTerms = true;
+        
+        # Standard certificate with multiple domains
+        certs."example.com" = {
+          extraDomainNames = [ 
+            "www.example.com"
+            "api.example.com"
+          ];
+        };
+      };
+    };
+  };
+
+  # Example 2: Multi-machine with shared wildcard certificate
+  # One machine generates, multiple machines consume
+  roles.provider = {
+    machines."cert-manager" = {
+      settings = {
+        email = "admin@onix.computer";
+        acceptTerms = true;
+        
+        # Generate and share a wildcard certificate
+        shareWildcard = true;
+        wildcardDomain = "*.onix.computer";
+        
+        # Use Cloudflare for DNS challenge
+        dnsProvider = "cloudflare";
+        environmentFile = config.clan.core.vars.generators.security-acme-dns.files.cloudflare_env.path;
+        
+        # Also share these specific certificates
+        certificatesToShare = [
+          "onix.computer"      # Root domain
+          "api.onix.computer"  # API subdomain with specific config
+        ];
+        
+        # Configure the root domain cert
+        certs."onix.computer" = {
+          # Include both root and www
+          extraDomainNames = [ "www.onix.computer" ];
+        };
+        
+        # Configure the API cert with specific settings
+        certs."api.onix.computer" = {
+          extraDomainNames = [ 
+            "api-v1.onix.computer"
+            "api-v2.onix.computer" 
+          ];
+          # Use stronger key for API
+          keyType = "ec384";
+        };
+        
+        # Check for renewal twice daily
+        renewalCheckInterval = "*-*-* 00,12:00:00";
+      };
+    };
+  };
+  
+  # Consumer configuration for web servers
+  roles.consumer = {
+    tags."web-server" = {
+      settings = {
+        certificates = {
+          # Use the shared wildcard for web services
+          wildcard = {
+            domain = "*.onix.computer";
+            group = "nginx";
+            reloadServices = [ "nginx.service" ];
+          };
+        };
+      };
+    };
+  };
+  
+  # Consumer configuration for API servers
+  roles.consumer = {
+    tags."api-server" = {
+      settings = {
+        certificates = {
+          # Use the specific API certificate
+          api = {
+            domain = "api.onix.computer";
+            user = "api-service";
+            group = "api-service";
+            reloadServices = [ "api.service" ];
+          };
+        };
+      };
+    };
+  };
+
+  # Example 3: Integration with Traefik
+  # Replace Traefik's built-in ACME with external certificates
+  roles.provider = {
+    tags."traefik-server" = {
+      settings = {
+        email = "admin@onix.computer";
+        acceptTerms = true;
+        
+        # Share wildcard for all Traefik services
+        shareWildcard = true;
+        wildcardDomain = "*.onix.computer";
+        dnsProvider = "cloudflare";
+        environmentFile = config.clan.core.vars.generators.security-acme-dns.files.cloudflare_env.path;
+        
+        # Freeform options for advanced configuration
+        defaults = {
+          # Use elliptic curve keys for all certs
+          keyType = "ec256";
+          # Custom DNS resolvers for challenge
+          extraLegoFlags = [ "--dns.resolvers=1.1.1.1:53" ];
+        };
+      };
+    };
+  };
+  
+  roles.consumer = {
+    tags."traefik-server" = {
+      settings = {
+        certificates = {
+          traefik-wildcard = {
+            domain = "*.onix.computer";
+            group = "traefik";
+            reloadServices = [ "traefik.service" ];
+          };
+        };
+      };
+    };
+  };
+
+  # Example 4: Multiple providers with different DNS services
+  roles.provider = {
+    machines."multi-dns-provider" = {
+      settings = {
+        email = "admin@company.com";
+        acceptTerms = true;
+        
+        # Share these certificates
+        certificatesToShare = [
+          "public.company.com"
+          "internal.company.local"
+          "aws-app.company.io"
+        ];
+        
+        # Public domain using Cloudflare
+        certs."public.company.com" = {
+          dnsProvider = "cloudflare";
+          credentialsFile = config.clan.core.vars.generators.security-acme-dns.files.cloudflare_env.path;
+          extraDomainNames = [ "www.public.company.com" ];
+        };
+        
+        # Internal domain using PowerDNS
+        certs."internal.company.local" = {
+          dnsProvider = "pdns";
+          credentialsFile = "/var/lib/acme/pdns-creds";
+          # Don't check propagation for internal DNS
+          dnsPropagationCheck = false;
+          extraLegoFlags = [ "--dns.resolvers=10.0.0.1:53" ];
+        };
+        
+        # AWS domain using Route53
+        certs."aws-app.company.io" = {
+          dnsProvider = "route53";
+          credentialsFile = "/var/lib/acme/aws-creds";
+          extraDomainNames = [ "*.aws-app.company.io" ];
+        };
+      };
+    };
+  };
+
+  # Example 5: HTTP challenge for public-facing servers
+  roles.provider = {
+    machines."public-web" = {
+      settings = {
+        email = "webmaster@example.com";
+        acceptTerms = true;
+        
+        # Use HTTP challenge instead of DNS
+        certs."shop.example.com" = {
+          webroot = "/var/lib/acme/acme-challenge";
+          extraDomainNames = [ 
+            "www.shop.example.com"
+            "checkout.shop.example.com"
+          ];
+        };
+        
+        # Still share this certificate
+        certificatesToShare = [ "shop.example.com" ];
+      };
+    };
+  };
+
+  # Example 6: Using with an internal ACME server (step-ca, boulder, etc.)
+  roles.provider = {
+    tags."internal-services" = {
+      settings = {
+        email = "admin@internal.corp";
+        acceptTerms = true;
+        
+        # Point to internal ACME server
+        server = "https://ca.internal.corp/acme/acme/directory";
+        
+        # Trust internal CA
+        extraLegoFlags = [ 
+          "--cert.timeout=180"
+          # Point to internal CA certificate
+          "--server.cacert=/etc/ssl/certs/internal-ca.pem"
+        ];
+        
+        # Generate internal certificates
+        shareWildcard = true;
+        wildcardDomain = "*.internal.corp";
+        
+        # Internal DNS challenge
+        dnsProvider = "exec";
+        credentialsFile = "/var/lib/acme/internal-dns-hook.sh";
+      };
+    };
+  };
+
+  # Example 7: Advanced certificate options with freeform config
+  roles.provider = {
+    machines."advanced-cert-manager" = {
+      settings = {
+        email = "security@company.com";
+        acceptTerms = true;
+        
+        # Global defaults for all certificates
+        defaults = {
+          keyType = "rsa4096";  # Use RSA keys
+          daysBeforeExpiry = 45;  # Renew earlier than default
+          extraLegoFlags = [
+            "--dns.propagation-wait=300"  # Wait 5 minutes for propagation
+            "--dns.ttl=60"  # Use shorter TTL
+          ];
+        };
+        
+        # Use staging server for testing
+        # server = "https://acme-staging-v02.api.letsencrypt.org/directory";
+        
+        # Specific certificate with overrides
+        certs."secure.company.com" = {
+          # This one needs ECC key
+          keyType = "ec384";
+          extraDomainNames = [ "secure-api.company.com" ];
+          
+          # Post-renewal hook
+          postRun = ''
+            # Custom actions after renewal
+            echo "Certificate renewed for secure.company.com"
+            # Could notify monitoring, update external systems, etc.
+          '';
+          
+          # Specific DNS provider for this cert
+          dnsProvider = "cloudflare";
+          credentialsFile = config.clan.core.vars.generators.security-acme-dns.files.cloudflare_env.path;
+        };
+        
+        certificatesToShare = [ "secure.company.com" ];
+      };
+    };
+  };
+}
