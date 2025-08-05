@@ -223,9 +223,10 @@ in
                     script = ''
                       echo "Syncing ACME certificates to clan vars..."
 
-                      # Create staging directory
+                      # Create staging directory  
                       mkdir -p /var/lib/acme-sync
-                      chmod 750 /var/lib/acme-sync
+                      chmod 755 /var/lib/acme-sync
+                      chown root:acme-sync /var/lib/acme-sync
 
                       # Copy certificates to staging
                       ${lib.concatMapStrings (cert: ''
@@ -233,7 +234,9 @@ in
                           echo "Copying certificate for ${cert}..."
                           cp /var/lib/acme/${cert}/fullchain.pem /var/lib/acme-sync/${cert}.crt
                           cp /var/lib/acme/${cert}/key.pem /var/lib/acme-sync/${cert}.key
-                          chmod 640 /var/lib/acme-sync/${cert}.*
+                          chmod 644 /var/lib/acme-sync/${cert}.crt
+                          chmod 640 /var/lib/acme-sync/${cert}.key
+                          chown root:acme-sync /var/lib/acme-sync/${cert}.*
                         else
                           echo "Certificate files for ${cert} not found, skipping..."
                         fi
@@ -436,18 +439,26 @@ in
             if [ -r /var/lib/acme-sync ] && [ -d /var/lib/acme-sync ]; then
               # Copy all certificates from staging to output
               if [ -n "$(ls -A /var/lib/acme-sync/ 2>/dev/null)" ]; then
-                echo "Found certificates to sync:"
+                echo "Found certificates in /var/lib/acme-sync:"
                 ls -la /var/lib/acme-sync/ 2>/dev/null || true
                 
+                copied=0
                 for file in /var/lib/acme-sync/*; do
                   if [ -f "$file" ] && [ -r "$file" ]; then
                     basename=$(basename "$file")
                     echo "Copying $basename to clan vars..."
                     cp "$file" "$out/$basename"
+                    copied=$((copied + 1))
                   elif [ -f "$file" ]; then
+                    basename=$(basename "$file")
                     echo "Warning: Cannot read $file (permission denied)"
+                    echo "Note: Run 'sudo clan vars generate britton-fw --generator security-acme-certs' to copy all certificates"
                   fi
                 done
+                
+                if [ $copied -gt 0 ]; then
+                  echo "Successfully copied $copied certificate file(s)"
+                fi
               else
                 echo "No certificates found in /var/lib/acme-sync"
               fi
