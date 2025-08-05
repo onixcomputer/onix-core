@@ -41,6 +41,7 @@ _: {
         "traefik-homepage"
         "static-test"
         "static-demo"
+        "wiki-js"
       ];
       deploy = {
         targetHost = "root@britton-fw";

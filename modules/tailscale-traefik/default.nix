@@ -506,9 +506,11 @@ in
                     after = [
                       "network-online.target"
                       "tailscale.service"
+                      "traefik.service"
                     ];
                     wants = [ "network-online.target" ];
                     wantedBy = [ "multi-user.target" ];
+                    partOf = [ "traefik.service" ]; # Restart when traefik restarts
 
                     preStart = ''
                       echo "Waiting for Tailscale to be ready..."
@@ -531,6 +533,7 @@ in
 
                     restartTriggers = [
                       (builtins.toString privateSubdomainsList)
+                      (builtins.hashString "sha256" (builtins.toJSON services))
                     ];
 
                     script = ''
@@ -589,9 +592,13 @@ in
                 (mkIf (publicSubdomainsList != [ ]) {
                   ddclient-public = {
                     description = "Dynamic DNS Client (Public domains)";
-                    after = [ "network-online.target" ];
+                    after = [
+                      "network-online.target"
+                      "traefik.service"
+                    ];
                     wants = [ "network-online.target" ];
                     wantedBy = [ "multi-user.target" ];
+                    partOf = [ "traefik.service" ]; # Restart when traefik restarts
 
                     serviceConfig = {
                       Type = "forking";
@@ -602,6 +609,7 @@ in
 
                     restartTriggers = [
                       (builtins.toString publicSubdomainsList)
+                      (builtins.hashString "sha256" (builtins.toJSON services))
                     ];
 
                     script = ''
