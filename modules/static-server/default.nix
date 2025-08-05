@@ -27,11 +27,19 @@ in
                 createTestPage = mkDefault true;
                 testPageTitle = mkDefault "Static Server Test";
                 testPageContent = mkDefault "";
+                serviceSuffix = mkDefault ""; # Used to create unique service names
+                isPublic = mkDefault false; # Whether this service is publicly accessible
+                domain = mkDefault ""; # Domain name if available
+                subdomain = mkDefault ""; # Subdomain for this service
               };
+              serviceName =
+                if cfg.serviceSuffix != "" then "static-server-${cfg.serviceSuffix}" else "static-server";
             in
             {
-              systemd.services.static-server = {
-                description = "Static file server";
+              systemd.services.${serviceName} = {
+                description = "Static file server${
+                  if cfg.serviceSuffix != "" then " (${cfg.serviceSuffix})" else ""
+                }";
                 after = [ "network.target" ];
                 wantedBy = [ "multi-user.target" ];
 
@@ -81,24 +89,50 @@ in
                               border-radius: 3px;
                               font-family: 'Courier New', monospace;
                           }
+                          .warning {
+                              background: #fff5f5;
+                              border-left: 4px solid #f56565;
+                              padding: 20px;
+                              border-radius: 8px;
+                              margin: 20px 0;
+                          }
+                          .debug-info {
+                              background: #f0f0f0;
+                              padding: 15px;
+                              border-radius: 8px;
+                              margin: 20px 0;
+                              font-family: monospace;
+                          }
+                          .access-public {
+                              color: #d73502;
+                              font-weight: bold;
+                          }
+                          .access-private {
+                              color: #1971c2;
+                              font-weight: bold;
+                          }
                       </style>
                   </head>
                   <body>
                       <div class="container">
-                          <h1>🚀 ${cfg.testPageTitle}</h1>
-                          <p class="success">✓ Static server is running successfully!</p>
+                          <h1>${cfg.testPageTitle}</h1>
+                          <p class="success">Static server is running successfully!</p>
                           
                           <div class="info">
                               <p><strong>Server Details:</strong></p>
-                              <p>📁 Serving from: <code>${cfg.directory}</code></p>
-                              <p>🔌 Port: <code>${toString cfg.port}</code></p>
-                              <p>📅 Generated: <script>document.write(new Date().toLocaleString());</script></p>
-                              <p>🖥️ Hostname: <code>${config.networking.hostName}</code></p>
+                              <p>Serving from: <code>${cfg.directory}</code></p>
+                              <p>Port: <code>${toString cfg.port}</code></p>
+                              <p>Hostname: <code>${config.networking.hostName}</code></p>
+                              <p>Service Name: <code>${serviceName}</code></p>
+                              <p>Access Mode: <span class="${
+                                if cfg.isPublic then "access-public" else "access-private"
+                              }">${if cfg.isPublic then "PUBLIC" else "PRIVATE (Tailscale Only)"}</span></p>
+                              ${lib.optionalString (cfg.domain != "" && cfg.subdomain != "") ''
+                                <p>URL: <code>https://${cfg.subdomain}.${cfg.domain}</code></p>
+                              ''}
                           </div>
                           
                           ${cfg.testPageContent}
-                          
-                          <p>You can place any static files in <code>${cfg.directory}</code> and they will be served.</p>
                       </div>
                   </body>
                   </html>
@@ -106,8 +140,11 @@ in
                 '';
 
                 script = ''
-                  cd ${cfg.directory}
-                  ${pkgs.python3}/bin/python -m http.server ${toString cfg.port}
+                  ${pkgs.static-web-server}/bin/static-web-server \
+                    --host 0.0.0.0 \
+                    --port ${toString cfg.port} \
+                    --root ${cfg.directory} \
+                    --log-level info
                 '';
 
                 serviceConfig = {
@@ -133,8 +170,6 @@ in
               # Open firewall port if needed
               networking.firewall.allowedTCPPorts = [ cfg.port ];
 
-              # Add python3 to system packages
-              environment.systemPackages = [ pkgs.python3 ];
             };
         };
     };
