@@ -279,6 +279,7 @@ in
                           -ip=${if filerDomain != null then "0.0.0.0" else "127.0.0.1"} \
                           -port=8888 \
                           -master=${lib.concatStringsSep "," masterServersList} \
+                          -defaultStoreDir=/var/lib/seaweedfs-filer \
                           ${lib.optionalString s3Enabled "-s3 -s3.port=${toString s3Port}"} \
                           ${lib.optionalString authEnabled "-auth.jwt.signing.key=$(cat ${jwtSigningKeyFile})"} \
                           ${lib.optionalString (dataCenter != null) "-dataCenter=${dataCenter}"} \
