@@ -137,7 +137,7 @@ _: {
           };
 
           # Use different filer port to avoid conflict with static-web-server
-          filerPort = 8889;
+          filerPort = 8890;
         };
       };
     };
