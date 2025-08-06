@@ -138,6 +138,9 @@ _: {
 
           # Use different filer port to avoid conflict with static-web-server
           filerPort = 8890;
+
+          # Use Traefik for private access
+          useTraefik = true;
         };
       };
     };
