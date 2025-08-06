@@ -7,7 +7,7 @@ result-*
 .ruff_cache/
 
 # Claude
-.claude/
+.claude/settings.local.json
 CLAUDE.md
 
 # Editor files
