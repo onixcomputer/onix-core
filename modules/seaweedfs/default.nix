@@ -225,7 +225,7 @@ in
                       RuntimeDirectory = "seaweedfs-master";
                       ExecStart = ''
                         ${pkgs.seaweedfs}/bin/weed master \
-                          -ip=${if masterDomain != null then "0.0.0.0" else "127.0.0.1"} \
+                          -ip=0.0.0.0 \
                           -port=9333 \
                           -mdir=/var/lib/seaweedfs-master \
                           -defaultReplication=${replication} \
