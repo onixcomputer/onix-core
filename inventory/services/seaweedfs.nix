@@ -121,7 +121,7 @@ _: {
       module.name = "seaweedfs";
       module.input = "self";
       roles.server = {
-        tags."seaweedfs-dev" = { };
+        tags."seaweedfs-master" = { };
         settings = {
           mode = "all"; # Master + Volume + Filer on this machine
           replication = "001"; # Replicate to 1 other server
@@ -154,7 +154,7 @@ _: {
       module.name = "seaweedfs";
       module.input = "self";
       roles.server = {
-        tags."seaweedfs-dev" = { };
+        tags."seaweedfs-volume" = { };
         settings = {
           mode = "volume"; # Only volume server
 

@@ -27,7 +27,7 @@ _: {
         "traefik-desktop"
         "static-test"
         "static-demo"
-        "seaweedfs-dev"
+        "seaweedfs-volume"
       ];
       deploy = {
         targetHost = "root@192.168.1.252";
@@ -46,7 +46,7 @@ _: {
         "static-test"
         "static-demo"
         "wiki-js"
-        "seaweedfs-dev"
+        "seaweedfs-master"
       ];
       deploy = {
         targetHost = "root@britton-fw";
