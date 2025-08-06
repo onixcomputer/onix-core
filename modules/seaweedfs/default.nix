@@ -79,6 +79,12 @@ in
             description = "Maximum volume size in MB";
           };
 
+          filerPort = mkOption {
+            type = int;
+            default = 8888;
+            description = "Port for the filer server";
+          };
+
           dataCenter = mkOption {
             type = nullOr str;
             default = null;
@@ -160,6 +166,7 @@ in
                 enableSSL
                 replication
                 volumeSize
+                filerPort
                 dataCenter
                 rack
                 masterServers
@@ -277,7 +284,7 @@ in
                       ExecStart = ''
                         ${pkgs.seaweedfs}/bin/weed filer \
                           -ip=${if filerDomain != null then "0.0.0.0" else "127.0.0.1"} \
-                          -port=8888 \
+                          -port=${toString filerPort} \
                           -master=${lib.concatStringsSep "," masterServersList} \
                           -defaultStoreDir=/var/lib/seaweedfs-filer \
                           ${lib.optionalString s3Enabled "-s3 -s3.port=${toString s3Port}"} \
@@ -383,7 +390,7 @@ in
                       forceSSL = enableSSL;
                       enableACME = enableSSL;
                       locations."/" = {
-                        proxyPass = "http://127.0.0.1:8888";
+                        proxyPass = "http://127.0.0.1:${toString filerPort}";
                         proxyWebsockets = true;
                         extraConfig = ''
                           proxy_set_header Host $host;
@@ -438,7 +445,7 @@ in
                   # Volume ports
                   (lib.optional runVolume 8080)
                   # Filer ports
-                  (lib.optional (runFiler && filerDomain == null) 8888)
+                  (lib.optional (runFiler && filerDomain == null) filerPort)
                   # S3 ports
                   (lib.optional (s3Enabled && s3Domain == null) s3Port)
                   # HTTP/HTTPS for nginx
