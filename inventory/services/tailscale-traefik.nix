@@ -70,6 +70,12 @@ _: {
 
           # Security headers enabled by default
           securityHeaders = true;
+
+          # Disable DNS propagation check to fix ACME challenges
+          dnsPropagationCheck = false;
+
+          # Increase propagation delay if re-enabling propagation check
+          # dnsPropagationDelay = 300; # 5 minutes instead of default 2 minutes
         };
       };
     };
@@ -143,6 +149,12 @@ _: {
 
           # Security headers enabled by default
           securityHeaders = true;
+
+          # Disable DNS propagation check to fix ACME challenges
+          dnsPropagationCheck = false;
+
+          # Increase propagation delay if re-enabling propagation check
+          # dnsPropagationDelay = 300; # 5 minutes instead of default 2 minutes
         };
       };
     };
