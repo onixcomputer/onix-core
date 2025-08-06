@@ -116,16 +116,16 @@ _: {
       };
     };
 
-    # Example: Simple local development instance
-    "seaweedfs-dev" = {
+    # Distributed SeaweedFS: Master + Filer + Volume (britton-fw)
+    "seaweedfs-master-fw" = {
       module.name = "seaweedfs";
       module.input = "self";
       roles.server = {
         tags."seaweedfs-dev" = { };
         settings = {
-          mode = "all";
-          replication = "000"; # No replication for dev
-          volumeSize = 10000; # 10GB volumes
+          mode = "all"; # Master + Volume + Filer on this machine
+          replication = "001"; # Replicate to 1 other server
+          volumeSize = 20000; # 20GB volumes
 
           # No authentication for development
           auth.enable = false;
@@ -141,6 +141,31 @@ _: {
 
           # Use Traefik for private access
           useTraefik = true;
+
+          # Cluster configuration
+          dataCenter = "home";
+          rack = "fw";
+        };
+      };
+    };
+
+    # Distributed SeaweedFS: Volume Server (britton-desktop)
+    "seaweedfs-volume-desktop" = {
+      module.name = "seaweedfs";
+      module.input = "self";
+      roles.server = {
+        tags."seaweedfs-dev" = { };
+        settings = {
+          mode = "volume"; # Only volume server
+
+          # Connect to master on britton-fw (via Tailscale)
+          masterServers = [ "100.92.36.3:9333" ]; # britton-fw Tailscale IP
+
+          # Cluster configuration
+          dataCenter = "home";
+          rack = "desktop";
+
+          volumeSize = 20000; # 20GB volumes
         };
       };
     };
