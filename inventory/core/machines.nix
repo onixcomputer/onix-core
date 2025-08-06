@@ -46,6 +46,7 @@ _: {
         "static-test"
         "static-demo"
         "wiki-js"
+        "nix-cache"
         "seaweedfs-master"
       ];
       deploy = {

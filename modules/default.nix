@@ -8,6 +8,7 @@ let
     "static-server" = import ./static-server;
     "prometheus" = import ./prometheus;
     "grafana" = import ./grafana;
+    "harmonia" = import ./harmonia;
     "loki" = import ./loki;
     "vaultwarden" = import ./vaultwarden;
     "homepage-dashboard" = import ./homepage-dashboard;
