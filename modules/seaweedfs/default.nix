@@ -227,6 +227,7 @@ in
                         ${pkgs.seaweedfs}/bin/weed master \
                           -ip=0.0.0.0 \
                           -port=9333 \
+                          -port.grpc=19333 \
                           -mdir=/var/lib/seaweedfs-master \
                           -defaultReplication=${replication} \
                           -volumeSizeLimitMB=${toString volumeSize} \
@@ -449,6 +450,8 @@ in
                 allowedTCPPorts = lib.flatten [
                   # Master ports
                   (lib.optional (runMaster && masterDomain == null) 9333)
+                  # Master gRPC port (for volume server communication)
+                  (lib.optional runMaster 19333)
                   # Volume ports
                   (lib.optional runVolume 8080)
                   # Filer ports

@@ -124,7 +124,7 @@ _: {
         tags."seaweedfs-master" = { };
         settings = {
           mode = "all"; # Master + Volume + Filer on this machine
-          replication = "001"; # Replicate to 1 other server
+          replication = "010"; # Replicate to different rack (perfect for 2-rack setup)
           volumeSize = 20000; # 20GB volumes
 
           # No authentication for development
