@@ -38,6 +38,27 @@ _: {
               public = false; # This service is only accessible via Tailscale
             };
 
+            # SeaweedFS Filer - private access (Tailscale only)
+            seaweed = {
+              port = 8890;
+              subdomain = "seaweed";
+              public = false; # This service is only accessible via Tailscale
+            };
+
+            # SeaweedFS Master - private access (Tailscale only)
+            seaweed-master = {
+              port = 9333;
+              subdomain = "seaweed-master";
+              public = false; # This service is only accessible via Tailscale
+            };
+
+            # SeaweedFS S3 API - private access (Tailscale only)
+            seaweed-s3 = {
+              port = 8333;
+              subdomain = "s3";
+              public = false; # This service is only accessible via Tailscale
+            };
+
           };
 
           # Enable Tailscale features

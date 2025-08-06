@@ -141,6 +141,12 @@ in
               example = "s3.example.com";
             };
           };
+
+          useTraefik = mkOption {
+            type = bool;
+            default = false;
+            description = "Use Traefik for reverse proxy instead of nginx (for private Tailscale access)";
+          };
         };
       };
 
@@ -170,6 +176,7 @@ in
                 dataCenter
                 rack
                 masterServers
+                useTraefik
                 ;
               auth = settings.auth or { };
               authEnabled = auth.enable or false;
@@ -358,84 +365,86 @@ in
               ];
 
               # Nginx reverse proxy configuration
-              services.nginx = mkIf (masterDomain != null || filerDomain != null || s3Domain != null) {
-                enable = true;
-                virtualHosts = lib.mkMerge [
-                  # Master server proxy
-                  (mkIf (masterDomain != null) {
-                    ${masterDomain} = {
-                      forceSSL = enableSSL;
-                      enableACME = enableSSL;
-                      locations."/" = {
-                        proxyPass = "http://127.0.0.1:9333";
-                        proxyWebsockets = true;
-                        extraConfig = ''
-                          proxy_set_header Host $host;
-                          proxy_set_header X-Real-IP $remote_addr;
-                          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                          proxy_set_header X-Forwarded-Proto $scheme;
+              services.nginx =
+                mkIf ((masterDomain != null || filerDomain != null || s3Domain != null) && !useTraefik)
+                  {
+                    enable = true;
+                    virtualHosts = lib.mkMerge [
+                      # Master server proxy
+                      (mkIf (masterDomain != null) {
+                        ${masterDomain} = {
+                          forceSSL = enableSSL;
+                          enableACME = enableSSL;
+                          locations."/" = {
+                            proxyPass = "http://127.0.0.1:9333";
+                            proxyWebsockets = true;
+                            extraConfig = ''
+                              proxy_set_header Host $host;
+                              proxy_set_header X-Real-IP $remote_addr;
+                              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                              proxy_set_header X-Forwarded-Proto $scheme;
 
-                          # Increase timeouts for large file operations
-                          proxy_read_timeout 300s;
-                          proxy_connect_timeout 75s;
-                          client_max_body_size 0;
-                        '';
-                      };
-                    };
-                  })
+                              # Increase timeouts for large file operations
+                              proxy_read_timeout 300s;
+                              proxy_connect_timeout 75s;
+                              client_max_body_size 0;
+                            '';
+                          };
+                        };
+                      })
 
-                  # Filer server proxy
-                  (mkIf (filerDomain != null) {
-                    ${filerDomain} = {
-                      forceSSL = enableSSL;
-                      enableACME = enableSSL;
-                      locations."/" = {
-                        proxyPass = "http://127.0.0.1:${toString filerPort}";
-                        proxyWebsockets = true;
-                        extraConfig = ''
-                          proxy_set_header Host $host;
-                          proxy_set_header X-Real-IP $remote_addr;
-                          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                          proxy_set_header X-Forwarded-Proto $scheme;
+                      # Filer server proxy
+                      (mkIf (filerDomain != null) {
+                        ${filerDomain} = {
+                          forceSSL = enableSSL;
+                          enableACME = enableSSL;
+                          locations."/" = {
+                            proxyPass = "http://127.0.0.1:${toString filerPort}";
+                            proxyWebsockets = true;
+                            extraConfig = ''
+                              proxy_set_header Host $host;
+                              proxy_set_header X-Real-IP $remote_addr;
+                              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                              proxy_set_header X-Forwarded-Proto $scheme;
 
-                          # Increase limits for file uploads
-                          proxy_read_timeout 300s;
-                          proxy_connect_timeout 75s;
-                          client_max_body_size 0;
-                          proxy_buffering off;
-                          proxy_request_buffering off;
-                        '';
-                      };
-                    };
-                  })
+                              # Increase limits for file uploads
+                              proxy_read_timeout 300s;
+                              proxy_connect_timeout 75s;
+                              client_max_body_size 0;
+                              proxy_buffering off;
+                              proxy_request_buffering off;
+                            '';
+                          };
+                        };
+                      })
 
-                  # S3 API proxy
-                  (mkIf (s3Domain != null && s3Enabled) {
-                    ${s3Domain} = {
-                      forceSSL = enableSSL;
-                      enableACME = enableSSL;
-                      locations."/" = {
-                        proxyPass = "http://127.0.0.1:${toString s3Port}";
-                        extraConfig = ''
-                          proxy_set_header Host $host;
-                          proxy_set_header X-Real-IP $remote_addr;
-                          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                          proxy_set_header X-Forwarded-Proto $scheme;
+                      # S3 API proxy
+                      (mkIf (s3Domain != null && s3Enabled) {
+                        ${s3Domain} = {
+                          forceSSL = enableSSL;
+                          enableACME = enableSSL;
+                          locations."/" = {
+                            proxyPass = "http://127.0.0.1:${toString s3Port}";
+                            extraConfig = ''
+                              proxy_set_header Host $host;
+                              proxy_set_header X-Real-IP $remote_addr;
+                              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                              proxy_set_header X-Forwarded-Proto $scheme;
 
-                          # S3 compatibility headers
-                          proxy_set_header Authorization $http_authorization;
-                          proxy_pass_header Authorization;
+                              # S3 compatibility headers
+                              proxy_set_header Authorization $http_authorization;
+                              proxy_pass_header Authorization;
 
-                          # Increase limits for S3 operations
-                          client_max_body_size 0;
-                          proxy_buffering off;
-                          proxy_request_buffering off;
-                        '';
-                      };
-                    };
-                  })
-                ];
-              };
+                              # Increase limits for S3 operations
+                              client_max_body_size 0;
+                              proxy_buffering off;
+                              proxy_request_buffering off;
+                            '';
+                          };
+                        };
+                      })
+                    ];
+                  };
 
               # Open firewall ports
               networking.firewall = {
@@ -456,7 +465,7 @@ in
 
               # ACME email configuration
               security.acme =
-                mkIf ((masterDomain != null || filerDomain != null || s3Domain != null) && enableSSL)
+                mkIf ((masterDomain != null || filerDomain != null || s3Domain != null) && enableSSL && !useTraefik)
                   {
                     acceptTerms = true;
                     defaults.email = mkDefault "admin@${
