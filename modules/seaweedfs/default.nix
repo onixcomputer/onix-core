@@ -230,9 +230,7 @@ in
                           -mdir=/var/lib/seaweedfs-master \
                           -defaultReplication=${replication} \
                           -volumeSizeLimitMB=${toString volumeSize} \
-                          ${lib.optionalString authEnabled "-auth.jwt.signing.key=$(cat ${jwtSigningKeyFile})"} \
-                          ${lib.optionalString (dataCenter != null) "-dataCenter=${dataCenter}"} \
-                          ${lib.optionalString (rack != null) "-rack=${rack}"}
+                          ${lib.optionalString authEnabled "-auth.jwt.signing.key=$(cat ${jwtSigningKeyFile})"}
                       '';
                       Restart = "on-failure";
                       RestartSec = "5s";
