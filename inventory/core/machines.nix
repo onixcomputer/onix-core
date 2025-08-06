@@ -24,9 +24,13 @@ _: {
         "monitoring"
         "vaultwarden-server"
         "homepage-server"
+        "traefik-desktop"
+        "static-test"
+        "static-demo"
+        "seaweedfs-dev"
       ];
       deploy = {
-        targetHost = "root@britton-desktop";
+        targetHost = "root@192.168.1.252";
         buildHost = "";
       };
     };
