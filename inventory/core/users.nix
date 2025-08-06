@@ -24,6 +24,17 @@ _: {
           ];
         };
       };
+      sequoia = {
+        role = "owner";
+        shell = "zsh";
+        homeManager = {
+          enable = true;
+          profiles = [
+            "base"
+            "dev"
+          ];
+        };
+      };
       alex-dev = {
         role = "owner";
         shell = "zsh";

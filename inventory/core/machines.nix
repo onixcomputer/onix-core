@@ -106,7 +106,7 @@ _: {
         "tailnet"
       ];
       deploy = {
-        targetHost = "root@100.92.205.115";
+        targetHost = "root@alex-dev";
         buildHost = "";
       };
     };
@@ -118,7 +118,7 @@ _: {
         "hyprland"
       ];
       deploy = {
-        targetHost = "root@100.97.151.9";
+        targetHost = "root@alex-fw";
         buildHost = "";
       };
     };
@@ -129,7 +129,7 @@ _: {
         "wsl"
       ];
       deploy = {
-        targetHost = "root@100.112.158.103";
+        targetHost = "root@alex-wsl";
         buildHost = "";
       };
     };
@@ -140,7 +140,19 @@ _: {
         "dev"
       ];
       deploy = {
-        targetHost = "root@192.168.50.173";
+        targetHost = "root@alex-mu";
+        buildHost = "";
+      };
+    };
+    "sequoia" = {
+      name = "sequoia";
+      tags = [
+        "tailnet"
+        "dev"
+        "vaultwarden-server"
+      ];
+      deploy = {
+        targetHost = "root@sequoia";
         buildHost = "";
       };
     };
