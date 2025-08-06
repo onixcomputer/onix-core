@@ -191,7 +191,7 @@ in
 
               # Master servers list for volume/filer nodes
               masterServersList =
-                if runMaster && (mode == "all" || mode == "master") then [ "localhost:9333" ] else masterServers;
+                if runMaster && (mode == "all" || mode == "master") then [ "127.0.0.1:9333" ] else masterServers;
 
             in
             {
