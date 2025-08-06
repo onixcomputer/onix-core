@@ -147,6 +147,13 @@ in
             default = false;
             description = "Use Traefik for reverse proxy instead of nginx (for private Tailscale access)";
           };
+
+          publicIp = mkOption {
+            type = nullOr str;
+            default = null;
+            description = "Public IP address to advertise to master (defaults to binding IP if not set)";
+            example = "100.92.36.3";
+          };
         };
       };
 
@@ -177,6 +184,7 @@ in
                 rack
                 masterServers
                 useTraefik
+                publicIp
                 ;
               auth = settings.auth or { };
               authEnabled = auth.enable or false;
@@ -225,7 +233,8 @@ in
                       RuntimeDirectory = "seaweedfs-master";
                       ExecStart = ''
                         ${pkgs.seaweedfs}/bin/weed master \
-                          -ip=0.0.0.0 \
+                          -ip=${if publicIp != null then publicIp else "0.0.0.0"} \
+                          -ip.bind=0.0.0.0 \
                           -port=9333 \
                           -port.grpc=19333 \
                           -mdir=/var/lib/seaweedfs-master \
@@ -260,7 +269,7 @@ in
                       RuntimeDirectory = "seaweedfs-volume";
                       ExecStart = ''
                         ${pkgs.seaweedfs}/bin/weed volume \
-                          -ip=0.0.0.0 \
+                          -ip=${if publicIp != null then publicIp else "0.0.0.0"} \
                           -port=8080 \
                           -dir=/var/lib/seaweedfs-volume \
                           -max=100 \
