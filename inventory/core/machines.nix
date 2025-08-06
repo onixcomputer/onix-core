@@ -42,6 +42,7 @@ _: {
         "static-test"
         "static-demo"
         "wiki-js"
+        "seaweedfs-dev"
       ];
       deploy = {
         targetHost = "root@britton-fw";
