@@ -680,17 +680,10 @@ in
             runtimeInputs = with pkgs; [
               pwgen
             ];
-            prompts.admin_email = {
-              description = "Wiki.js admin email address";
-              type = "line";
-            };
+            prompts = { };
             script = ''
-                            # Get admin email with default fallback
-                            if [ -f "$prompts"/admin_email ] && [ -s "$prompts"/admin_email ]; then
-                              cat "$prompts"/admin_email > "$out"/email
-                            else
-                              echo "admin@localhost" > "$out"/email
-                            fi
+                            # Use proper admin email
+                            echo "admin@blr.dev" > "$out"/email
                             
                             # Generate secure password
                             ${pkgs.pwgen}/bin/pwgen -s 20 1 > "$out"/password
