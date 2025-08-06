@@ -483,18 +483,10 @@ in
             pwgen
             openssl
           ];
-          prompts.admin_password = {
-            description = "SeaweedFS admin password";
-            type = "hidden";
-            persist = true;
-          };
+          prompts = { }; # No prompts, auto-generate
           script = ''
-            # Use provided password or generate one
-            if [ -f "$prompts"/admin_password ]; then
-              cat "$prompts"/admin_password > "$out"/admin_password
-            else
-              ${pkgs.pwgen}/bin/pwgen -s 32 1 > "$out"/admin_password
-            fi
+            # Generate password
+            ${pkgs.pwgen}/bin/pwgen -s 32 1 > "$out"/admin_password
 
             # Generate JWT signing key
             ${pkgs.openssl}/bin/openssl rand -base64 32 > "$out"/jwt_signing_key
