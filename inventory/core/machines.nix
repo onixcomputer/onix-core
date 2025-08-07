@@ -3,7 +3,7 @@ _: {
     "britton-dev" = {
       name = "britton-dev";
       tags = [
-        "tailnet"
+        "tailnet-brittonrobitzsch@gmail.com"
       ];
       deploy = {
         targetHost = "root@192.168.1.146";
@@ -30,7 +30,7 @@ _: {
         "seaweedfs-volume"
       ];
       deploy = {
-        targetHost = "root@192.168.1.252";
+        targetHost = "root@britton-desktop";
         buildHost = "";
       };
     };
@@ -57,7 +57,7 @@ _: {
     "gmk1" = {
       name = "gmk1";
       tags = [
-        "tailnet"
+        "tailnet-brittonrobitzsch@gmail.com"
         "dev"
         "desktop"
         "hyprland"
@@ -76,7 +76,7 @@ _: {
     "gmk2" = {
       name = "gmk2";
       tags = [
-        "tailnet"
+        "tailnet-brittonrobitzsch@gmail.com"
         "desktop"
         "hyprland"
         "prometheus"
@@ -90,7 +90,7 @@ _: {
     "gmk3" = {
       name = "gmk3";
       tags = [
-        "tailnet"
+        "tailnet-brittonrobitzsch@gmail.com"
         "desktop"
         "hyprland"
         "prometheus"
