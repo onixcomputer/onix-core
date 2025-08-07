@@ -48,7 +48,7 @@ _: {
       module.name = "harmonia";
       module.input = "self";
       roles.client = {
-        tags."desktop" = { }; # Apply to machines with desktop tag
+        tags."onix-cache" = { }; # Apply to machines with desktop tag
         settings = {
           serverUrl = "http://britton-fw:5000";
           priority = 30; # Default cache priority

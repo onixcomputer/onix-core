@@ -27,6 +27,7 @@ _: {
         "traefik-desktop"
         "static-test"
         "static-demo"
+        "onix-cache"
         "seaweedfs-volume"
       ];
       deploy = {
@@ -48,6 +49,7 @@ _: {
         "wiki-js"
         "nix-cache"
         "seaweedfs-master"
+        "onix-cache"
       ];
       deploy = {
         targetHost = "root@britton-fw";
@@ -57,47 +59,45 @@ _: {
     "gmk1" = {
       name = "gmk1";
       tags = [
-        "tailnet-brittonrobitzsch@gmail.com"
-        "dev"
-        "desktop"
-        "hyprland"
-        "creative"
-        "media"
+        "tailnet"
+        # "desktop"
+        # "hyprland"
         "prometheus"
-        "monitoring"
-        "vaultwarden-server"
-        "homepage-server"
+        "log-collector"
+        "onix-cache"
       ];
       deploy = {
-        targetHost = "root@gmk1";
+        targetHost = "root@192.168.8.201";
         buildHost = "";
       };
     };
     "gmk2" = {
       name = "gmk2";
       tags = [
-        "tailnet-brittonrobitzsch@gmail.com"
-        "desktop"
-        "hyprland"
+        "tailnet"
+        # "desktop"
+        # "hyprland"
         "prometheus"
         "log-collector"
+        "onix-cache"
       ];
       deploy = {
-        targetHost = "root@gmk2";
+        targetHost = "root@192.168.8.122";
         buildHost = "";
       };
     };
     "gmk3" = {
       name = "gmk3";
       tags = [
-        "tailnet-brittonrobitzsch@gmail.com"
-        "desktop"
-        "hyprland"
+        "tailnet"
+        # "desktop"
+        # "hyprland"
         "prometheus"
         "log-collector"
+        "onix-cache"
       ];
       deploy = {
-        targetHost = "root@gmk3";
+        targetHost = "root@192.168.8.167";
         buildHost = "";
       };
     };
