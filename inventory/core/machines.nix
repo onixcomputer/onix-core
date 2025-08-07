@@ -1,6 +1,6 @@
 _: {
   machines = {
-    "alex-dev" = {
+    alex-dev = {
       name = "alex-dev";
       tags = [
         "tailnet"
@@ -10,7 +10,7 @@ _: {
         buildHost = "";
       };
     };
-    "alex-fw" = {
+    alex-fw = {
       name = "alex-fw";
       tags = [
         "tailnet"
@@ -22,7 +22,7 @@ _: {
         buildHost = "";
       };
     };
-    "alex-wsl" = {
+    alex-wsl = {
       name = "alex-wsl";
       tags = [
         "tailnet"
@@ -33,7 +33,7 @@ _: {
         buildHost = "";
       };
     };
-    "alex-mu" = {
+    alex-mu = {
       name = "alex-mu";
       tags = [
         "tailnet"
@@ -44,7 +44,7 @@ _: {
         buildHost = "";
       };
     };
-    "britton-dev" = {
+    britton-dev = {
       name = "britton-dev";
       tags = [
         "tailnet"
@@ -54,7 +54,7 @@ _: {
         buildHost = "";
       };
     };
-    "britton-desktop" = {
+    britton-desktop = {
       name = "britton-desktop";
       tags = [
         # "tailnet"
@@ -78,7 +78,7 @@ _: {
         buildHost = "";
       };
     };
-    "britton-fw" = {
+    britton-fw = {
       name = "britton-fw";
       tags = [
         "laptop"
@@ -97,7 +97,7 @@ _: {
         buildHost = "";
       };
     };
-    "gmk1" = {
+    gmk1 = {
       name = "gmk1";
       tags = [
         "tailnet"
@@ -116,7 +116,7 @@ _: {
         buildHost = "";
       };
     };
-    "gmk2" = {
+    gmk2 = {
       name = "gmk2";
       tags = [
         "tailnet"
@@ -130,7 +130,7 @@ _: {
         buildHost = "";
       };
     };
-    "gmk3" = {
+    gmk3 = {
       name = "gmk3";
       tags = [
         "tailnet"
@@ -144,7 +144,7 @@ _: {
         buildHost = "";
       };
     };
-    "sequoia" = {
+    sequoia = {
       name = "sequoia";
       tags = [
         "tailnet"
@@ -156,7 +156,7 @@ _: {
         buildHost = "";
       };
     };
-    "zenith" = {
+    zenith = {
       name = "zenith";
       tags = [
         "tailnet"
