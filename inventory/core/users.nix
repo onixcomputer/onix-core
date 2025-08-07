@@ -71,6 +71,20 @@ _: {
           ];
         };
       };
+      zenith = {
+        role = "owner";
+        shell = "zsh";
+        homeManager = {
+          enable = true;
+          profiles = [
+            "base"
+            "dev"
+            "laptop"
+            "creative"
+            "social"
+          ];
+        };
+      };
     };
   };
 
@@ -173,4 +187,35 @@ _: {
       };
     };
   };
+  dima = {
+    description = "Dima";
+    defaultUid = 8070;
+    defaultGroups = [
+      "audio"
+      "networkmanager"
+      "video"
+      "input"
+      "plugdev"
+    ];
+    sshAuthorizedKeys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP++JHcHDQfP5wcPxtb8o4liBWo+DFS13I4a9UgSTFec dima@nixos"
+    ];
+    machines = {
+      zenith = {
+        role = "owner";
+        shell = "zsh";
+        homeManager = {
+          enable = true;
+          profiles = [
+            "base"
+            "dev"
+            "laptop"
+            "creative"
+            "social"
+          ];
+        };
+      };
+    };
+  };
+
 }

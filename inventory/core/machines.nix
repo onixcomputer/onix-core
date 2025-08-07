@@ -1,5 +1,49 @@
 _: {
   machines = {
+    "alex-dev" = {
+      name = "alex-dev";
+      tags = [
+        "tailnet"
+      ];
+      deploy = {
+        targetHost = "root@alex-dev";
+        buildHost = "";
+      };
+    };
+    "alex-fw" = {
+      name = "alex-fw";
+      tags = [
+        "tailnet"
+        "laptop"
+        "hyprland"
+      ];
+      deploy = {
+        targetHost = "root@alex-fw";
+        buildHost = "";
+      };
+    };
+    "alex-wsl" = {
+      name = "alex-wsl";
+      tags = [
+        "tailnet"
+        "wsl"
+      ];
+      deploy = {
+        targetHost = "root@alex-wsl";
+        buildHost = "";
+      };
+    };
+    "alex-mu" = {
+      name = "alex-mu";
+      tags = [
+        "tailnet"
+        "dev"
+      ];
+      deploy = {
+        targetHost = "root@alex-mu";
+        buildHost = "";
+      };
+    };
     "britton-dev" = {
       name = "britton-dev";
       tags = [
@@ -100,50 +144,6 @@ _: {
         buildHost = "";
       };
     };
-    "alex-dev" = {
-      name = "alex-dev";
-      tags = [
-        "tailnet"
-      ];
-      deploy = {
-        targetHost = "root@alex-dev";
-        buildHost = "";
-      };
-    };
-    "alex-fw" = {
-      name = "alex-fw";
-      tags = [
-        "tailnet"
-        "laptop"
-        "hyprland"
-      ];
-      deploy = {
-        targetHost = "root@alex-fw";
-        buildHost = "";
-      };
-    };
-    "alex-wsl" = {
-      name = "alex-wsl";
-      tags = [
-        "tailnet"
-        "wsl"
-      ];
-      deploy = {
-        targetHost = "root@alex-wsl";
-        buildHost = "";
-      };
-    };
-    "alex-mu" = {
-      name = "alex-mu";
-      tags = [
-        "tailnet"
-        "dev"
-      ];
-      deploy = {
-        targetHost = "root@alex-mu";
-        buildHost = "";
-      };
-    };
     "sequoia" = {
       name = "sequoia";
       tags = [
@@ -153,6 +153,18 @@ _: {
       ];
       deploy = {
         targetHost = "root@sequoia";
+        buildHost = "";
+      };
+    };
+    "zenith" = {
+      name = "zenith";
+      tags = [
+        "tailnet"
+        "laptop"
+        "hyprland"
+      ];
+      deploy = {
+        targetHost = "root@192.168.8.207";
         buildHost = "";
       };
     };
