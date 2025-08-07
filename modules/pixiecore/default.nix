@@ -164,6 +164,20 @@ in
                               # Ensure networking works
                               networking.useDHCP = lib.mkDefault true;
                               networking.firewall.enable = false;
+                              nix = {
+                                settings = {
+                                  substituters = [
+                                    "http://192.168.8.219:5000"
+                                    "https://nix-community.cachix.org"
+                                    "https://cache.nixos.org/"
+                                  ];
+                                  trusted-public-keys = [
+                                    "harmonia-britton-fw-1754546107:0pCCyAUUwazFUo06BevArMsbvjbC3DZd0a0lhU49lbQ="
+                                    "binarycache.example.com-1:dsafdafDFW123fdasfa123124FADSAD"
+                                    "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+                                  ];
+                                };
+                              };
 
                               # Add useful packages
                               environment.systemPackages =
