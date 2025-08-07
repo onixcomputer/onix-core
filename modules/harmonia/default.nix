@@ -12,6 +12,77 @@ in
   manifest.name = "harmonia";
 
   roles = {
+    client = {
+      interface =
+        { lib, ... }:
+        {
+          options = {
+            serverUrl = lib.mkOption {
+              type = lib.types.str;
+              description = "The URL of the harmonia server";
+              example = "http://britton-fw:5000";
+            };
+
+            priority = lib.mkOption {
+              type = lib.types.int;
+              default = 30;
+              description = "Priority of this binary cache (lower is higher priority)";
+            };
+
+            extraSubstituters = lib.mkOption {
+              type = lib.types.listOf lib.types.str;
+              default = [
+                "https://nix-community.cachix.org"
+                "https://cache.nixos.org/"
+              ];
+              description = "Additional substituters to use";
+            };
+
+            extraTrustedPublicKeys = lib.mkOption {
+              type = lib.types.listOf lib.types.str;
+              default = [
+                "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+              ];
+              description = "Additional trusted public keys";
+            };
+          };
+        };
+
+      perInstance =
+        { extendSettings, ... }:
+        {
+          nixosModule =
+            { config, lib, ... }:
+            let
+              settings = extendSettings { };
+            in
+            {
+              # Declare the shared generator on the client
+              clan.core.vars.generators.harmonia-signing-key = {
+                share = true;
+                prompts = { }; # No prompts needed for clients
+                migrateFact = "harmonia-signing-key";
+                # Clients don't need the generation script - they just reference the shared key
+                files = {
+                  "signing-key.pub" = {
+                    secret = false;
+                  };
+                };
+              };
+
+              nix.settings = {
+                substituters = lib.mkBefore ([ settings.serverUrl ] ++ settings.extraSubstituters);
+                trusted-public-keys = lib.mkBefore (
+                  [
+                    config.clan.core.vars.generators.harmonia-signing-key.files."signing-key.pub".value
+                  ]
+                  ++ settings.extraTrustedPublicKeys
+                );
+              };
+            };
+        };
+    };
+
     server = {
       interface =
         { lib, ... }:
@@ -99,6 +170,7 @@ in
               # Generate signing key if requested
               clan.core.vars.generators = lib.mkIf generateSigningKey {
                 harmonia-signing-key = {
+                  share = true;
                   prompts = { }; # No prompts for auto-generation
                   migrateFact = "harmonia-signing-key";
                   runtimeInputs = [
@@ -113,6 +185,10 @@ in
                       "$out"/signing-key.sec \
                       "$out"/signing-key.pub
                       
+                    # Remove trailing newline from public key
+                    ${pkgs.coreutils}/bin/tr -d '\n' < "$out"/signing-key.pub > "$out"/signing-key.pub.tmp
+                    mv "$out"/signing-key.pub.tmp "$out"/signing-key.pub
+
                     # Also store the public key separately for easy access
                     cp "$out"/signing-key.pub "$out"/public-key
                   '';
@@ -122,8 +198,9 @@ in
                       group = "harmonia";
                       mode = "0400";
                     };
-                    "signing-key.pub" = { };
-                    "public-key" = { };
+                    "signing-key.pub" = {
+                      secret = false;
+                    };
                   };
                 };
               };

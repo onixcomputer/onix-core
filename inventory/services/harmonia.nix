@@ -43,6 +43,24 @@ _: {
       };
     };
 
+    # Harmonia client configuration for desktop machines
+    "harmonia-client" = {
+      module.name = "harmonia";
+      module.input = "self";
+      roles.client = {
+        tags."desktop" = { }; # Apply to machines with desktop tag
+        settings = {
+          serverUrl = "http://britton-fw:5000";
+          priority = 30; # Default cache priority
+
+          # The signing key is automatically pulled from the shared vars
+          # Using default extra substituters:
+          # - https://nix-community.cachix.org
+          # - https://cache.nixos.org/
+        };
+      };
+    };
+
     # Example: Secondary cache with different priority
     # "harmonia-secondary" = {
     #   module.name = "harmonia";
