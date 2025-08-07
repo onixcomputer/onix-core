@@ -165,7 +165,7 @@ _: {
         "hyprland"
       ];
       deploy = {
-        targetHost = "root@192.168.8.207";
+        targetHost = "root@zenith";
         buildHost = "";
       };
     };
