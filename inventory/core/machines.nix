@@ -47,7 +47,7 @@ _: {
     britton-dev = {
       name = "britton-dev";
       tags = [
-        "tailnet"
+        "tailnet-brittonrobitzsch@gmail.com"
       ];
       deploy = {
         targetHost = "root@192.168.1.146";
@@ -71,10 +71,11 @@ _: {
         "traefik-desktop"
         "static-test"
         "static-demo"
+        "onix-cache"
         "seaweedfs-volume"
       ];
       deploy = {
-        targetHost = "root@192.168.1.252";
+        targetHost = "root@britton-desktop";
         buildHost = "";
       };
     };
@@ -90,7 +91,9 @@ _: {
         "static-test"
         "static-demo"
         "wiki-js"
+        "nix-cache"
         "seaweedfs-master"
+        "onix-cache"
       ];
       deploy = {
         targetHost = "root@britton-fw";
@@ -101,18 +104,14 @@ _: {
       name = "gmk1";
       tags = [
         "tailnet"
-        "dev"
-        "desktop"
-        "hyprland"
-        "creative"
-        "media"
+        # "desktop"
+        # "hyprland"
         "prometheus"
-        "monitoring"
-        "vaultwarden-server"
-        "homepage-server"
+        "log-collector"
+        "onix-cache"
       ];
       deploy = {
-        targetHost = "root@gmk1";
+        targetHost = "root@192.168.8.201";
         buildHost = "";
       };
     };
@@ -120,13 +119,14 @@ _: {
       name = "gmk2";
       tags = [
         "tailnet"
-        "desktop"
-        "hyprland"
+        # "desktop"
+        # "hyprland"
         "prometheus"
         "log-collector"
+        "onix-cache"
       ];
       deploy = {
-        targetHost = "root@gmk2";
+        targetHost = "root@192.168.8.122";
         buildHost = "";
       };
     };
@@ -134,13 +134,14 @@ _: {
       name = "gmk3";
       tags = [
         "tailnet"
-        "desktop"
-        "hyprland"
+        # "desktop"
+        # "hyprland"
         "prometheus"
         "log-collector"
+        "onix-cache"
       ];
       deploy = {
-        targetHost = "root@gmk3";
+        targetHost = "root@192.168.8.167";
         buildHost = "";
       };
     };

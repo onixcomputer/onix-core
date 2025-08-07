@@ -9,6 +9,7 @@ let
     sshd = import ./sshd.nix { inherit inputs; };
     prometheus = import ./prometheus.nix { inherit inputs; };
     grafana = import ./grafana.nix { inherit inputs; };
+    harmonia = import ./harmonia.nix { inherit inputs; };
     loki = import ./loki.nix { inherit inputs; };
     vaultwarden = import ./vaultwarden.nix { inherit inputs; };
     homepage-dashboard = import ./homepage-dashboard.nix { inherit inputs; };
