@@ -50,7 +50,6 @@
 
   # Shell utilities
   home.packages = with pkgs; [
-    bat
     eza
     fzf
     delta
@@ -84,7 +83,6 @@
     gl = "git log --oneline --graph";
 
     # Better defaults
-    cat = "bat";
     grep = "grep --color=auto";
     df = "df -h";
     du = "du -h";

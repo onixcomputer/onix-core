@@ -10,7 +10,7 @@ _: {
       "git.clan.lol" = {
         hostname = "git.clan.lol";
         user = "gitea";
-        identityFile = "~/.ssh/id_ed25519";
+        identityFile = "~/.ssh/nixos_key";
         identitiesOnly = true;
         addressFamily = "inet"; # Force IPv4
       };
@@ -18,7 +18,7 @@ _: {
       "github.com" = {
         hostname = "github.com";
         user = "git";
-        identityFile = "~/.ssh/id_ed25519";
+        identityFile = "~/.ssh/nixos_key";
         identitiesOnly = true;
       };
     };
