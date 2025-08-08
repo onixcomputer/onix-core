@@ -25,7 +25,7 @@ except ImportError:
 
 
 class SOPSHierarchyAnalyzer:
-    def __init__(self, sops_root: Path):
+    def __init__(self, sops_root: Path) -> None:
         self.sops_root = Path(sops_root)
         self.users = {}  # user -> {keys: [...]}
         self.machines = {}  # machine -> {key: ...}
@@ -34,7 +34,7 @@ class SOPSHierarchyAnalyzer:
             lambda: {"users": set(), "machines": set(), "age_recipients": []}
         )
 
-    def scan_structure(self):
+    def scan_structure(self) -> None:
         """Scan the SOPS directory structure and build relationships"""
         # Scan users
         users_dir = self.sops_root / "users"
@@ -214,12 +214,13 @@ class SOPSHierarchyAnalyzer:
 
         return table
 
-    def create_graphviz_graph(self, output_format="png", filename="sops_hierarchy"):
+    def create_graphviz_graph(
+        self, output_format: str = "png", filename: str = "sops_hierarchy"
+    ) -> str:
         """Create a Graphviz graph visualization"""
         if not HAS_GRAPHVIZ:
-            raise ImportError(
-                "graphviz package is not installed. Run: pip install graphviz"
-            )
+            msg = "graphviz package is not installed. Run: pip install graphviz"
+            raise ImportError(msg)
 
         dot = graphviz.Digraph(comment="SOPS Access Control Hierarchy")
         dot.attr(rankdir="TB")
@@ -289,7 +290,7 @@ class SOPSHierarchyAnalyzer:
         return filename + "." + output_format
 
 
-def main():
+def main() -> int | None:
     parser = argparse.ArgumentParser(
         description="Visualize SOPS access control hierarchy",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -387,6 +388,7 @@ Examples:
     stats.append(f"  Groups: {len(analyzer.groups)}\n")
     stats.append(f"  Secrets: {len(analyzer.secrets)}\n")
     console.print(Panel(stats, border_style="dim"))
+    return None
 
 
 if __name__ == "__main__":
