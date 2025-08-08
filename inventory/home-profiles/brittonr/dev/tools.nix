@@ -6,6 +6,7 @@
     fd
     bat
     nixos-generators
+    glow
 
     # Archive tools
     unzip
