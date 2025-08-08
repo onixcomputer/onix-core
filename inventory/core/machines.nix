@@ -83,6 +83,7 @@ _: {
       name = "britton-fw";
       tags = [
         "laptop"
+        "nixvegas"
         "hyprland"
         "prometheus"
         "log-collector"
