@@ -9,6 +9,8 @@
       # la = "ls -la";
       ".." = "cd ..";
       "..." = "cd ../..";
+      "lg" = "lazygit";
+      "cu" = "clan m update $hostname";
     };
   };
 }
