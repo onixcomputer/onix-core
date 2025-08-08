@@ -14,6 +14,9 @@
             inputs.clan-core.packages.${system}.clan-cli
             config.pre-commit.settings.package
             config.packages.sops-viz
+            config.packages.sops-ownership
+            config.packages.machines-analyzer
+            config.packages.users-analyzer
             (pkgs.writeShellScriptBin "nix-prefetch-sri" ''
               if [ -z "$1" ]; then
                 echo "Usage: nix-prefetch-sri <url>"
@@ -46,6 +49,16 @@
             echo "  sops-viz         - Simple text-based SOPS hierarchy viewer"
             echo "  sops-viz-rich    - Rich TUI SOPS hierarchy viewer with colors"
             echo "  sops-viz-dot     - Convert DOT files to images (PNG/SVG/PDF)"
+            echo "  sops-ownership   - Analyze SOPS variable ownership (simple text)"
+            echo "  sops-ownership-rich - Analyze SOPS variable ownership (rich formatting)"
+            echo ""
+            echo "Machine analysis commands:"
+            echo "  machines-analyzer     - Analyze machine configurations (simple text)"
+            echo "  machines-analyzer-rich - Analyze machine configurations (rich formatting)"
+            echo ""
+            echo "User analysis commands:"
+            echo "  users-analyzer        - Analyze user configurations (simple text)"
+            echo "  users-analyzer-rich   - Analyze user configurations (rich formatting)"
             echo ""
             ${config.pre-commit.installationScript}
           '';

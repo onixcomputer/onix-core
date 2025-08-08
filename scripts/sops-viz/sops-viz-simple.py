@@ -9,14 +9,14 @@ from pathlib import Path
 
 
 class SimpleSOPSVisualizer:
-    def __init__(self, sops_root):
+    def __init__(self, sops_root: str | Path) -> None:
         self.sops_root = Path(sops_root)
         self.users = set()
         self.machines = set()
         self.groups = defaultdict(lambda: {"users": set(), "machines": set()})
         self.secrets = defaultdict(lambda: {"users": set(), "machines": set()})
 
-    def scan_structure(self):
+    def scan_structure(self) -> None:
         """Scan the SOPS directory structure"""
         # Scan users
         users_dir = self.sops_root / "users"
@@ -70,7 +70,9 @@ class SimpleSOPSVisualizer:
                         for machine_link in machines_subdir.iterdir():
                             self.secrets[secret_name]["machines"].add(machine_link.name)
 
-    def print_tree(self, name, items, prefix="", is_last=True):
+    def print_tree(
+        self, name: str, items: list, prefix: str = "", is_last: bool = True
+    ) -> None:
         """Print a tree structure"""
         connector = "└── " if is_last else "├── "
         print(prefix + connector + name)
@@ -90,7 +92,7 @@ class SimpleSOPSVisualizer:
             else:
                 self.print_tree(str(item), [], prefix + extension, is_last_item)
 
-    def display_hierarchy(self):
+    def display_hierarchy(self) -> None:
         """Display the full hierarchy"""
         print("\n🔐 SOPS ACCESS CONTROL HIERARCHY")
         print("=" * 50)
@@ -181,7 +183,7 @@ class SimpleSOPSVisualizer:
                         )
                         print(f"{prefix}{entity}")
 
-    def display_access_matrix(self):
+    def display_access_matrix(self) -> None:
         """Display access matrix as a table"""
         print("\n📊 SECRET ACCESS MATRIX")
         print("=" * 80)
@@ -206,7 +208,7 @@ class SimpleSOPSVisualizer:
 
         print("-" * 80)
 
-    def display_summary(self):
+    def display_summary(self) -> None:
         """Display summary statistics"""
         print("\n📈 SUMMARY STATISTICS")
         print("=" * 30)
@@ -224,9 +226,9 @@ class SimpleSOPSVisualizer:
         print(f"\n  User Access Grants:    {total_user_access}")
         print(f"  Machine Access Grants: {total_machine_access}")
 
-    def generate_dot_file(self, filename="sops_hierarchy.dot"):
+    def generate_dot_file(self, filename: str = "sops_hierarchy.dot") -> str:
         """Generate a Graphviz DOT file for external processing"""
-        with open(filename, "w") as f:
+        with Path(filename).open("w") as f:
             f.write("digraph SOPS_Hierarchy {\n")
             f.write("  rankdir=TB;\n")
             f.write("  node [shape=box, style=rounded];\n\n")
@@ -284,7 +286,7 @@ class SimpleSOPSVisualizer:
         return filename
 
 
-def main():
+def main() -> int | None:
     parser = argparse.ArgumentParser(
         description="Simple SOPS Hierarchy Visualizer (no dependencies required)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -343,6 +345,7 @@ Examples:
 
     # Always show summary
     visualizer.display_summary()
+    return None
 
 
 if __name__ == "__main__":
