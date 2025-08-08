@@ -57,11 +57,10 @@ in
             {
               # Create vars generator for Tailscale auth keys (per instance)
               clan.core.vars.generators.tailscale = {
-                share = true;
                 files.auth_key = { };
                 runtimeInputs = [ pkgs.coreutils ];
                 prompts.auth_key = {
-                  description = "Tailscale auth key";
+                  description = "Tailscale auth key for this instance";
                   type = "hidden";
                   persist = true;
                 };
