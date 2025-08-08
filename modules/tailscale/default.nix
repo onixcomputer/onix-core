@@ -71,7 +71,7 @@ in
                 runtimeInputs = [ pkgs.coreutils ];
                 prompts.auth_key = {
                   description = "Tailscale auth key for instance${
-                    if cfg.instanceId != "" then " '${cfg.instanceId}'" else ""
+                    if localSettings.instanceId != "" then " '${localSettings.instanceId}'" else ""
                   }";
                   type = "hidden";
                   persist = true;
