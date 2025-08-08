@@ -39,6 +39,7 @@
         ./parts/devshells.nix
         ./parts/formatter.nix
         ./parts/pre-commit.nix
+        ./parts/sops-viz.nix
       ];
 
       systems = [
