@@ -45,26 +45,43 @@ in
         };
       };
       perInstance =
-        { extendSettings, ... }:
+        { instanceName, extendSettings, ... }:
         {
           nixosModule =
-            { config, ... }:
+            { config, pkgs, ... }:
             let
-              localSettings = extendSettings {
-                authKeyFile = lib.mkDefault config.clan.core.vars.generators.tailscale.files.auth_key.path;
+              localSettings = extendSettings { };
+              # Create generator name based on instance name
+              generatorName = "tailscale-${instanceName}";
+              # Override authKeyFile to use the instance-specific generator
+              settings = localSettings // {
+                authKeyFile = lib.mkDefault config.clan.core.vars.generators."${generatorName}".files.auth_key.path;
               };
             in
             {
+              # Create vars generator for Tailscale auth keys (per instance)
+              clan.core.vars.generators."${generatorName}" = {
+                share = true;
+                files.auth_key = { };
+                runtimeInputs = [ pkgs.coreutils ];
+                prompts.auth_key = {
+                  description = "Tailscale auth key for instance '${instanceName}'";
+                  type = "hidden";
+                  persist = true;
+                };
+                script = ''
+                  cat "$prompts"/auth_key > "$out"/auth_key
+                '';
+              };
+
               services.tailscale = {
                 enable = true;
                 useRoutingFeatures = "both";
-                inherit (localSettings) authKeyFile;
+                inherit (settings) authKeyFile;
                 extraUpFlags =
-                  (lib.optional localSettings.autoconnect "--ssh=${
-                    if localSettings.enableSSH then "true" else "false"
-                  }")
-                  ++ (lib.optional localSettings.exitNode "--advertise-exit-node")
-                  ++ localSettings.extraFlags;
+                  (lib.optional settings.autoconnect "--ssh=${if settings.enableSSH then "true" else "false"}")
+                  ++ (lib.optional settings.exitNode "--advertise-exit-node")
+                  ++ settings.extraFlags;
               };
 
               # Open firewall ports for Tailscale
@@ -76,7 +93,7 @@ in
               };
 
               # Configure NAT for exit nodes
-              networking.nat = lib.mkIf localSettings.exitNode {
+              networking.nat = lib.mkIf settings.exitNode {
                 enable = true;
                 # If already configured, preserve the existing settings
                 externalInterface = lib.mkDefault (lib.mkIf (config.networking.interfaces ? "eth0") "eth0");
@@ -93,20 +110,6 @@ in
       {
         # Install Tailscale package on all machines
         environment.systemPackages = [ pkgs.tailscale ];
-
-        # Create vars generator for Tailscale auth keys
-        clan.core.vars.generators.tailscale = {
-          files.auth_key = { };
-          runtimeInputs = [ pkgs.coreutils ];
-          prompts.auth_key = {
-            description = "Tailscale auth key";
-            type = "hidden";
-            persist = true;
-          };
-          script = ''
-            cat "$prompts"/auth_key > "$out"/auth_key
-          '';
-        };
 
         # Make the Tailscale service persistent
         systemd.services.tailscaled.wantedBy = [ "multi-user.target" ];

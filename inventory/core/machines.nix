@@ -3,7 +3,7 @@ _: {
     alex-dev = {
       name = "alex-dev";
       tags = [
-        "tailnet"
+        "tailnet-adeci"
       ];
       deploy = {
         targetHost = "root@alex-dev";
@@ -13,7 +13,7 @@ _: {
     alex-fw = {
       name = "alex-fw";
       tags = [
-        "tailnet"
+        "tailnet-adeci"
         "laptop"
         "hyprland"
       ];
@@ -25,7 +25,7 @@ _: {
     alex-wsl = {
       name = "alex-wsl";
       tags = [
-        "tailnet"
+        "tailnet-adeci"
         "wsl"
       ];
       deploy = {
@@ -36,7 +36,7 @@ _: {
     alex-mu = {
       name = "alex-mu";
       tags = [
-        "tailnet"
+        "tailnet-adeci"
         "dev"
       ];
       deploy = {
@@ -47,7 +47,7 @@ _: {
     britton-dev = {
       name = "britton-dev";
       tags = [
-        "tailnet-brittonrobitzsch@gmail.com"
+        # No tailnet for now
       ];
       deploy = {
         targetHost = "root@192.168.1.146";
@@ -103,7 +103,7 @@ _: {
     gmk1 = {
       name = "gmk1";
       tags = [
-        "tailnet"
+        "tailnet-brittonr"
         # "desktop"
         # "hyprland"
         "prometheus"
@@ -118,9 +118,7 @@ _: {
     gmk2 = {
       name = "gmk2";
       tags = [
-        "tailnet"
-        # "desktop"
-        # "hyprland"
+        "tailnet-brittonr"
         "prometheus"
         "log-collector"
         "onix-cache"
@@ -133,7 +131,7 @@ _: {
     gmk3 = {
       name = "gmk3";
       tags = [
-        "tailnet"
+        "tailnet-brittonr"
         # "desktop"
         # "hyprland"
         "prometheus"
