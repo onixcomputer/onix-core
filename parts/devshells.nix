@@ -13,6 +13,7 @@
           packages = [
             inputs.clan-core.packages.${system}.clan-cli
             config.pre-commit.settings.package
+            config.packages.sops-viz
             (pkgs.writeShellScriptBin "nix-prefetch-sri" ''
               if [ -z "$1" ]; then
                 echo "Usage: nix-prefetch-sri <url>"
@@ -40,6 +41,11 @@
             echo "  build            - Build a machine configuration (test locally)"
             echo "  validate         - Run nix fmt and pre-commit checks"
             echo "  nix-prefetch-sri - Get SRI hash for a URL"
+            echo ""
+            echo "SOPS visualization commands:"
+            echo "  sops-viz         - Simple text-based SOPS hierarchy viewer"
+            echo "  sops-viz-rich    - Rich TUI SOPS hierarchy viewer with colors"
+            echo "  sops-viz-dot     - Convert DOT files to images (PNG/SVG/PDF)"
             echo ""
             ${config.pre-commit.installationScript}
           '';

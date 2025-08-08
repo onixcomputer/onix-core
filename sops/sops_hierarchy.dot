@@ -1,0 +1,55 @@
+digraph SOPS_Hierarchy {
+  rankdir=TB;
+  node [shape=box, style=rounded];
+
+  // Users
+  "user_alex" [label="alex", style="rounded,filled", fillcolor="lightblue"];
+  "user_brittonr" [label="brittonr", style="rounded,filled", fillcolor="lightblue"];
+
+  // Machines
+  "machine_alex-fw" [label="alex-fw", style="rounded,filled", fillcolor="lightyellow"];
+  "machine_britton-desktop" [label="britton-desktop", style="rounded,filled", fillcolor="lightyellow"];
+  "machine_britton-fw" [label="britton-fw", style="rounded,filled", fillcolor="lightyellow"];
+  "machine_gmk1" [label="gmk1", style="rounded,filled", fillcolor="lightyellow"];
+  "machine_gmk2" [label="gmk2", style="rounded,filled", fillcolor="lightyellow"];
+  "machine_gmk3" [label="gmk3", style="rounded,filled", fillcolor="lightyellow"];
+  "machine_sequoia" [label="sequoia", style="rounded,filled", fillcolor="lightyellow"];
+
+  // Groups
+  "group_admins" [label="admins", shape="diamond", style="filled", fillcolor="lightgreen"];
+  "group_cert-blr_dev" [label="cert-blr_dev", shape="diamond", style="filled", fillcolor="lightgreen"];
+  "group_cert-onix_computer" [label="cert-onix_computer", shape="diamond", style="filled", fillcolor="lightgreen"];
+
+  // Secrets
+  "secret_alex-fw-age.key" [label="alex-fw-age.key", shape="cylinder", style="filled", fillcolor="lightcoral"];
+  "secret_britton-desktop-age.key" [label="britton-desktop-age.key", shape="cylinder", style="filled", fillcolor="lightcoral"];
+  "secret_britton-fw-age.key" [label="britton-fw-age.key", shape="cylinder", style="filled", fillcolor="lightcoral"];
+  "secret_gmk1" [label="gmk1", shape="cylinder", style="filled", fillcolor="lightcoral"];
+  "secret_gmk1-age.key" [label="gmk1-age.key", shape="cylinder", style="filled", fillcolor="lightcoral"];
+  "secret_gmk2-age.key" [label="gmk2-age.key", shape="cylinder", style="filled", fillcolor="lightcoral"];
+  "secret_gmk3-age.key" [label="gmk3-age.key", shape="cylinder", style="filled", fillcolor="lightcoral"];
+  "secret_sequoia-age.key" [label="sequoia-age.key", shape="cylinder", style="filled", fillcolor="lightcoral"];
+
+  // Group memberships
+  "machine_britton-fw" -> "group_cert-blr_dev" [label="member", color="orange"];
+  "machine_britton-desktop" -> "group_cert-blr_dev" [label="member", color="orange"];
+  "user_alex" -> "group_admins" [label="member", color="blue"];
+  "user_brittonr" -> "group_admins" [label="member", color="blue"];
+  "machine_gmk2" -> "group_cert-onix_computer" [label="member", color="orange"];
+  "machine_gmk1" -> "group_cert-onix_computer" [label="member", color="orange"];
+  "machine_gmk3" -> "group_cert-onix_computer" [label="member", color="orange"];
+
+  // Secret access
+  "user_brittonr" -> "secret_britton-fw-age.key" [label="access", color="green", style="dashed"];
+  "user_alex" -> "secret_gmk3-age.key" [label="access", color="green", style="dashed"];
+  "user_brittonr" -> "secret_gmk3-age.key" [label="access", color="green", style="dashed"];
+  "user_alex" -> "secret_gmk1-age.key" [label="access", color="green", style="dashed"];
+  "user_brittonr" -> "secret_gmk1-age.key" [label="access", color="green", style="dashed"];
+  "machine_britton-fw" -> "secret_gmk1-age.key" [label="access", color="purple", style="dashed"];
+  "user_alex" -> "secret_gmk1" [label="access", color="green", style="dashed"];
+  "user_alex" -> "secret_sequoia-age.key" [label="access", color="green", style="dashed"];
+  "user_alex" -> "secret_alex-fw-age.key" [label="access", color="green", style="dashed"];
+  "user_alex" -> "secret_gmk2-age.key" [label="access", color="green", style="dashed"];
+  "user_brittonr" -> "secret_gmk2-age.key" [label="access", color="green", style="dashed"];
+  "user_brittonr" -> "secret_britton-desktop-age.key" [label="access", color="green", style="dashed"];
+}
