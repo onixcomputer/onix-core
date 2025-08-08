@@ -48,13 +48,28 @@ in
         { extendSettings, ... }:
         {
           nixosModule =
-            { config, ... }:
+            { config, pkgs, ... }:
             let
               localSettings = extendSettings {
                 authKeyFile = lib.mkDefault config.clan.core.vars.generators.tailscale.files.auth_key.path;
               };
             in
             {
+              # Create vars generator for Tailscale auth keys (per instance)
+              clan.core.vars.generators.tailscale = {
+                share = true;
+                files.auth_key = { };
+                runtimeInputs = [ pkgs.coreutils ];
+                prompts.auth_key = {
+                  description = "Tailscale auth key";
+                  type = "hidden";
+                  persist = true;
+                };
+                script = ''
+                  cat "$prompts"/auth_key > "$out"/auth_key
+                '';
+              };
+
               services.tailscale = {
                 enable = true;
                 useRoutingFeatures = "both";
@@ -93,21 +108,6 @@ in
       {
         # Install Tailscale package on all machines
         environment.systemPackages = [ pkgs.tailscale ];
-
-        # Create vars generator for Tailscale auth keys
-        clan.core.vars.generators.tailscale = {
-          share = true;
-          files.auth_key = { };
-          runtimeInputs = [ pkgs.coreutils ];
-          prompts.auth_key = {
-            description = "Tailscale auth key";
-            type = "hidden";
-            persist = true;
-          };
-          script = ''
-            cat "$prompts"/auth_key > "$out"/auth_key
-          '';
-        };
 
         # Make the Tailscale service persistent
         systemd.services.tailscaled.wantedBy = [ "multi-user.target" ];
