@@ -255,6 +255,18 @@ def print_users_report(
         print(f"  UID: {user['defaultUid']}")
         print(f"  Groups: {', '.join(user['defaultGroups'])}")
         print(f"  SSH Keys: {len(user['sshAuthorizedKeys'])} key(s)")
+        if user["sshAuthorizedKeys"]:
+            for key in user["sshAuthorizedKeys"]:
+                # Extract key type and comment
+                parts = key.split()
+                if len(parts) >= 2:
+                    key_type = parts[0]
+                    # Show full key
+                    key_data = parts[1]
+                    comment = parts[2] if len(parts) > 2 else "no comment"
+                    print(f"    - {key_type} {key_data} ({comment})")
+                else:
+                    print(f"    - {key[:50]}..." if len(key) > 50 else f"    - {key}")
         print(f"  Machines: {len(user['machines'])} machine(s)")
 
         # Show machine details

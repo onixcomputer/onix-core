@@ -26,11 +26,27 @@ def parse_machines_nix(file_path: Path) -> dict[str, dict]:
 
     machines_content = machines_match.group(1)
 
-    # Parse each machine block
-    machine_pattern = r"(\w+)\s*=\s*{([^}]+)};"
-    for match in re.finditer(machine_pattern, machines_content, re.DOTALL):
-        machine_name = match.group(1)
-        machine_content = match.group(2)
+    # Parse each machine block - need to handle nested braces properly
+    lines = machines_content.split("\n")
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        # Look for machine definition start
+        match = re.match(r"([\w-]+)\s*=\s*{", line)
+        if match:
+            machine_name = match.group(1)
+            machine_content_lines = []
+            brace_count = 1
+            i += 1
+
+            # Collect all lines until we balance the braces
+            while i < len(lines) and brace_count > 0:
+                line = lines[i]
+                machine_content_lines.append(line)
+                brace_count += line.count("{") - line.count("}")
+                i += 1
+
+            machine_content = "\n".join(machine_content_lines)
 
         machine_info = {
             "name": machine_name,
@@ -51,20 +67,37 @@ def parse_machines_nix(file_path: Path) -> dict[str, dict]:
             tags = re.findall(r'"([^"]+)"', tags_content)
             machine_info["tags"] = tags
 
-        # Extract deploy info
-        deploy_match = re.search(r"deploy\s*=\s*{([^}]+)};", machine_content, re.DOTALL)
-        if deploy_match:
-            deploy_content = deploy_match.group(1)
+        # Extract deploy info - look for the deploy block more carefully
+        # Find where deploy starts and extract until its closing brace
+        deploy_start = machine_content.find("deploy = {")
+        if deploy_start != -1:
+            deploy_content = machine_content[deploy_start:]
+            # Find the matching closing brace
+            brace_count = 0
+            deploy_end = -1
+            for idx, char in enumerate(deploy_content):
+                if char == "{":
+                    brace_count += 1
+                elif char == "}":
+                    brace_count -= 1
+                    if brace_count == 0:
+                        deploy_end = idx
+                        break
 
-            target_match = re.search(r'targetHost\s*=\s*"([^"]+)"', deploy_content)
-            if target_match:
-                machine_info["deploy"]["targetHost"] = target_match.group(1)
+            if deploy_end != -1:
+                deploy_block = deploy_content[: deploy_end + 1]
 
-            build_match = re.search(r'buildHost\s*=\s*"([^"]+)"', deploy_content)
-            if build_match:
-                machine_info["deploy"]["buildHost"] = build_match.group(1)
+                target_match = re.search(r'targetHost\s*=\s*"([^"]+)"', deploy_block)
+                if target_match:
+                    machine_info["deploy"]["targetHost"] = target_match.group(1)
+
+                build_match = re.search(r'buildHost\s*=\s*"([^"]*)"', deploy_block)
+                if build_match:
+                    machine_info["deploy"]["buildHost"] = build_match.group(1)
 
         machines[machine_name] = machine_info
+    else:
+        i += 1
 
     return machines
 
@@ -97,6 +130,9 @@ def print_machines_report(
             print(f"  Build Host: {info['deploy']['buildHost']}")
         if info["tags"]:
             print(f"  Tags: {', '.join(sorted(info['tags']))}")
+            # Highlight SSH access
+            if "sshd" in info["tags"]:
+                print("  SSH Access: ✓ Enabled")
         else:
             print("  Tags: (none)")
 

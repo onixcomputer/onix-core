@@ -343,17 +343,6 @@ def main() -> int | None:
         console.print(groups_panel)
         console.print()
 
-    # Interactive mode hint
-    console.print(
-        Panel(
-            "[dim]💡 Tip: You can filter by user or machine by passing arguments\n"
-            "Example: sops-ownership-rich --user brittonr\n"
-            "         sops-ownership-rich --machine gmk1[/dim]",
-            box=box.ROUNDED,
-            style="dim",
-        )
-    )
-
 
 if __name__ == "__main__":
     import argparse
