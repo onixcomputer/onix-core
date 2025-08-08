@@ -1,6 +1,6 @@
 _: {
   instances = {
-    "onix-tailnet" = {
+    "br-tailnet" = {
       module.name = "tailscale";
       module.input = "self";
       roles.peer = {
