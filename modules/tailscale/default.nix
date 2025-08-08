@@ -55,12 +55,12 @@ in
           nixosModule =
             { config, pkgs, ... }:
             let
-              # Get the instance settings first to access instanceId
-              cfg = extendSettings { };
-              # Create generator name based on instanceId
-              generatorName = if cfg.instanceId != "" then "tailscale-${cfg.instanceId}" else "tailscale";
-
-              localSettings = extendSettings {
+              localSettings = extendSettings { };
+              # Create generator name based on instanceId from localSettings
+              generatorName =
+                if localSettings.instanceId != "" then "tailscale-${localSettings.instanceId}" else "tailscale";
+              # Override authKeyFile to use the instance-specific generator
+              settings = localSettings // {
                 authKeyFile = lib.mkDefault config.clan.core.vars.generators."${generatorName}".files.auth_key.path;
               };
             in
@@ -84,13 +84,11 @@ in
               services.tailscale = {
                 enable = true;
                 useRoutingFeatures = "both";
-                inherit (localSettings) authKeyFile;
+                inherit (settings) authKeyFile;
                 extraUpFlags =
-                  (lib.optional localSettings.autoconnect "--ssh=${
-                    if localSettings.enableSSH then "true" else "false"
-                  }")
-                  ++ (lib.optional localSettings.exitNode "--advertise-exit-node")
-                  ++ localSettings.extraFlags;
+                  (lib.optional settings.autoconnect "--ssh=${if settings.enableSSH then "true" else "false"}")
+                  ++ (lib.optional settings.exitNode "--advertise-exit-node")
+                  ++ settings.extraFlags;
               };
 
               # Open firewall ports for Tailscale
@@ -102,7 +100,7 @@ in
               };
 
               # Configure NAT for exit nodes
-              networking.nat = lib.mkIf localSettings.exitNode {
+              networking.nat = lib.mkIf settings.exitNode {
                 enable = true;
                 # If already configured, preserve the existing settings
                 externalInterface = lib.mkDefault (lib.mkIf (config.networking.interfaces ? "eth0") "eth0");
