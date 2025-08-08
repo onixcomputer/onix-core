@@ -61,12 +61,12 @@ in
               generatorName = if cfg.instanceId != "" then "tailscale-${cfg.instanceId}" else "tailscale";
 
               localSettings = extendSettings {
-                authKeyFile = lib.mkDefault config.clan.core.vars.generators.${generatorName}.files.auth_key.path;
+                authKeyFile = lib.mkDefault config.clan.core.vars.generators."${generatorName}".files.auth_key.path;
               };
             in
             {
               # Create vars generator for Tailscale auth keys (per instance)
-              clan.core.vars.generators.${generatorName} = {
+              clan.core.vars.generators."${generatorName}" = {
                 files.auth_key = { };
                 runtimeInputs = [ pkgs.coreutils ];
                 prompts.auth_key = {
