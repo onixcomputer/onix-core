@@ -8,6 +8,7 @@ _: {
         settings = {
           enableSSH = false;
           exitNode = false;
+          instanceId = "br-tailnet";
         };
       };
     };
