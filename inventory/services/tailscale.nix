@@ -4,25 +4,23 @@ _: {
       module.name = "tailscale";
       module.input = "self";
       roles.peer = {
-        tags."tailnet" = { };
+        tags."tailnet-brittonr" = { };
         settings = {
           enableSSH = false;
           exitNode = false;
-          instanceId = "br-tailnet";
         };
       };
     };
 
-    # Personal Gmail tailnet
-    "gmail-tailnet" = {
+    # Alex's tailnet for adeci machines
+    "adeci-tailnet" = {
       module.name = "tailscale";
       module.input = "self";
       roles.peer = {
-        tags."tailnet-brittonrobitzsch@gmail.com" = { };
+        tags."tailnet-adeci" = { };
         settings = {
           enableSSH = false;
           exitNode = false;
-          instanceId = "gmail-tailnet";
         };
       };
     };

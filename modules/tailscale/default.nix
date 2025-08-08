@@ -42,23 +42,17 @@ in
             default = [ ];
             description = "Additional flags to pass to the Tailscale daemon";
           };
-          instanceId = mkOption {
-            type = str;
-            default = "";
-            description = "Unique identifier for this Tailscale instance (used for auth key generation)";
-          };
         };
       };
       perInstance =
-        { extendSettings, ... }:
+        { instanceName, extendSettings, ... }:
         {
           nixosModule =
             { config, pkgs, ... }:
             let
               localSettings = extendSettings { };
-              # Create generator name based on instanceId from localSettings
-              generatorName =
-                if localSettings.instanceId != "" then "tailscale-${localSettings.instanceId}" else "tailscale";
+              # Create generator name based on instance name
+              generatorName = "tailscale-${instanceName}";
               # Override authKeyFile to use the instance-specific generator
               settings = localSettings // {
                 authKeyFile = lib.mkDefault config.clan.core.vars.generators."${generatorName}".files.auth_key.path;
@@ -67,12 +61,11 @@ in
             {
               # Create vars generator for Tailscale auth keys (per instance)
               clan.core.vars.generators."${generatorName}" = {
+                share = true;
                 files.auth_key = { };
                 runtimeInputs = [ pkgs.coreutils ];
                 prompts.auth_key = {
-                  description = "Tailscale auth key for instance${
-                    if localSettings.instanceId != "" then " '${localSettings.instanceId}'" else ""
-                  }";
+                  description = "Tailscale auth key for instance '${instanceName}'";
                   type = "hidden";
                   persist = true;
                 };
