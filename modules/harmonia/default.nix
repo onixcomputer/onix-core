@@ -57,6 +57,7 @@ in
               settings = extendSettings { };
             in
             {
+              #I dont think this is needed - need to test and confirm.
               # Declare the shared generator on the client
               clan.core.vars.generators.harmonia-signing-key = {
                 share = true;
