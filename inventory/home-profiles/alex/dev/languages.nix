@@ -8,8 +8,8 @@
     go
 
     # Rust development
-    rustc
-    cargo
+    # rustc
+    # cargo
 
     # Node.js development
     nodejs
