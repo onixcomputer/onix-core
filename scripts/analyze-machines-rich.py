@@ -10,7 +10,6 @@ from collections import defaultdict
 from pathlib import Path
 
 from rich import box
-from rich.columns import Columns
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -36,45 +35,80 @@ def parse_machines_nix(file_path: Path) -> dict[str, dict]:
 
     machines_content = machines_match.group(1)
 
-    # Parse each machine block
-    machine_pattern = r"(\w+)\s*=\s*{([^}]+)};"
-    for match in re.finditer(machine_pattern, machines_content, re.DOTALL):
-        machine_name = match.group(1)
-        machine_content = match.group(2)
+    # Parse each machine block - need to handle nested braces properly
+    lines = machines_content.split("\n")
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        # Look for machine definition start
+        match = re.match(r"([\w-]+)\s*=\s*{", line)
+        if match:
+            machine_name = match.group(1)
+            machine_content_lines = []
+            brace_count = 1
+            i += 1
 
-        machine_info = {
-            "name": machine_name,
-            "tags": [],
-            "deploy": {"targetHost": "", "buildHost": ""},
-        }
+            # Collect all lines until we balance the braces
+            while i < len(lines) and brace_count > 0:
+                line = lines[i]
+                machine_content_lines.append(line)
+                brace_count += line.count("{") - line.count("}")
+                i += 1
 
-        # Extract name
-        name_match = re.search(r'name\s*=\s*"([^"]+)"', machine_content)
-        if name_match:
-            machine_info["name"] = name_match.group(1)
+            machine_content = "\n".join(machine_content_lines)
 
-        # Extract tags
-        tags_match = re.search(r"tags\s*=\s*\[(.*?)\];", machine_content, re.DOTALL)
-        if tags_match:
-            tags_content = tags_match.group(1)
-            # Extract all quoted strings as tags
-            tags = re.findall(r'"([^"]+)"', tags_content)
-            machine_info["tags"] = tags
+            machine_info = {
+                "name": machine_name,
+                "tags": [],
+                "deploy": {"targetHost": "", "buildHost": ""},
+            }
 
-        # Extract deploy info
-        deploy_match = re.search(r"deploy\s*=\s*{([^}]+)};", machine_content, re.DOTALL)
-        if deploy_match:
-            deploy_content = deploy_match.group(1)
+            # Extract name
+            name_match = re.search(r'name\s*=\s*"([^"]+)"', machine_content)
+            if name_match:
+                machine_info["name"] = name_match.group(1)
 
-            target_match = re.search(r'targetHost\s*=\s*"([^"]+)"', deploy_content)
-            if target_match:
-                machine_info["deploy"]["targetHost"] = target_match.group(1)
+            # Extract tags
+            tags_match = re.search(r"tags\s*=\s*\[(.*?)\];", machine_content, re.DOTALL)
+            if tags_match:
+                tags_content = tags_match.group(1)
+                # Extract all quoted strings as tags
+                tags = re.findall(r'"([^"]+)"', tags_content)
+                machine_info["tags"] = tags
 
-            build_match = re.search(r'buildHost\s*=\s*"([^"]+)"', deploy_content)
-            if build_match:
-                machine_info["deploy"]["buildHost"] = build_match.group(1)
+            # Extract deploy info - look for the deploy block more carefully
+            # Find where deploy starts and extract until its closing brace
+            deploy_start = machine_content.find("deploy = {")
+            if deploy_start != -1:
+                deploy_content = machine_content[deploy_start:]
+                # Find the matching closing brace
+                brace_count = 0
+                deploy_end = -1
+                for idx, char in enumerate(deploy_content):
+                    if char == "{":
+                        brace_count += 1
+                    elif char == "}":
+                        brace_count -= 1
+                        if brace_count == 0:
+                            deploy_end = idx
+                            break
 
-        machines[machine_name] = machine_info
+                if deploy_end != -1:
+                    deploy_block = deploy_content[: deploy_end + 1]
+
+                    target_match = re.search(
+                        r'targetHost\s*=\s*"([^"]+)"', deploy_block
+                    )
+                    if target_match:
+                        machine_info["deploy"]["targetHost"] = target_match.group(1)
+
+                    build_match = re.search(r'buildHost\s*=\s*"([^"]*)"', deploy_block)
+                    if build_match:
+                        machine_info["deploy"]["buildHost"] = build_match.group(1)
+
+            machines[machine_name] = machine_info
+        else:
+            i += 1
 
     return machines
 
@@ -96,85 +130,91 @@ def create_machines_tree(
     """Create a rich tree structure for machine display."""
     tree = Tree("🖥️  Machines", style="bold cyan")
 
-    # Group by owner prefix
-    grouped = defaultdict(list)
+    # Show all machines directly without grouping by owner
+    filtered_machines = []
     for machine_name, info in machines.items():
         # Apply tag filter if specified
         if filter_tag and filter_tag not in info["tags"]:
             continue
+        filtered_machines.append((machine_name, info))
 
-        if "-" in machine_name:
-            owner = machine_name.split("-")[0]
-        else:
-            owner = "other"
-        grouped[owner].append((machine_name, info))
+    # Build tree - show machines directly
+    for machine_name, info in sorted(filtered_machines):
+        # Machine node with deployment target
+        target_host = info["deploy"]["targetHost"]
 
-    # Build tree
-    for owner in sorted(grouped.keys()):
-        owner_node = tree.add(f"👤 {owner}", style="bold yellow")
-
-        for machine_name, info in sorted(grouped[owner]):
-            # Machine node with deployment target
-            target = info["deploy"]["targetHost"].replace("root@", "")
-            if re.match(r"^\d+\.\d+\.\d+\.\d+$", target):
-                target_style = "red"
+        if target_host:
+            # Check if it contains an IP address
+            target_clean = target_host.replace("root@", "")
+            if re.match(r"^\d+\.\d+\.\d+\.\d+$", target_clean):
+                target_style = "yellow"
                 target_icon = "🌐"
             else:
                 target_style = "green"
                 target_icon = "📍"
+            target_display = target_host
+        else:
+            target_style = "dim"
+            target_icon = "❓"
+            target_display = "(no target)"
 
-            machine_text = Text(f"💻 {machine_name} ", style="bold blue")
-            machine_text.append(f"{target_icon} {target}", style=target_style)
-            machine_node = owner_node.add(machine_text)
+        machine_text = Text(f"💻 {machine_name} ", style="bold blue")
+        machine_text.append(f"{target_icon} {target_display}", style=target_style)
 
-            # Add tags
-            if info["tags"]:
-                tags_by_type = {
-                    "tailnet": [],
-                    "hardware": [],
-                    "ui": [],
-                    "service": [],
-                    "other": [],
-                }
+        # Add SSH indicator
+        if "sshd" in info["tags"]:
+            machine_text.append(" 🔐", style="green")
 
-                for tag in info["tags"]:
-                    if tag.startswith("tailnet-"):
-                        tags_by_type["tailnet"].append(tag)
-                    elif tag in ["laptop", "desktop", "wsl", "nvidia"]:
-                        tags_by_type["hardware"].append(tag)
-                    elif tag in ["hyprland"]:
-                        tags_by_type["ui"].append(tag)
-                    elif "server" in tag or tag in [
-                        "prometheus",
-                        "monitoring",
-                        "log-collector",
-                        "nix-cache",
-                        "onix-cache",
-                        "wiki-js",
-                    ]:
-                        tags_by_type["service"].append(tag)
-                    else:
-                        tags_by_type["other"].append(tag)
+        machine_node = tree.add(machine_text)
 
-                tags_text = Text()
-                tag_icons = {
-                    "tailnet": ("🔗", "cyan"),
-                    "hardware": ("🖥️", "yellow"),
-                    "ui": ("🎨", "magenta"),
-                    "service": ("⚙️", "green"),
-                    "other": ("🏷️", "dim"),
-                }
+        # Add tags
+        if info["tags"]:
+            tags_by_type = {
+                "tailnet": [],
+                "hardware": [],
+                "ui": [],
+                "service": [],
+                "other": [],
+            }
 
-                for tag_type, tags in tags_by_type.items():
-                    if tags:
-                        icon, color = tag_icons[tag_type]
-                        for tag in sorted(tags):
-                            if tags_text:
-                                tags_text.append(" ", style="dim")
-                            tags_text.append(f"{icon} {tag}", style=color)
+            for tag in info["tags"]:
+                if tag.startswith("tailnet-"):
+                    tags_by_type["tailnet"].append(tag)
+                elif tag in ["laptop", "desktop", "wsl", "nvidia"]:
+                    tags_by_type["hardware"].append(tag)
+                elif tag in ["hyprland"]:
+                    tags_by_type["ui"].append(tag)
+                elif "server" in tag or tag in [
+                    "prometheus",
+                    "monitoring",
+                    "log-collector",
+                    "nix-cache",
+                    "onix-cache",
+                    "wiki-js",
+                ]:
+                    tags_by_type["service"].append(tag)
+                else:
+                    tags_by_type["other"].append(tag)
 
-                if tags_text:
-                    machine_node.add(tags_text)
+            tags_text = Text()
+            tag_icons = {
+                "tailnet": ("🔗", "cyan"),
+                "hardware": ("🖥️", "yellow"),
+                "ui": ("🎨", "magenta"),
+                "service": ("⚙️", "green"),
+                "other": ("🏷️", "dim"),
+            }
+
+            for tag_type, tags in tags_by_type.items():
+                if tags:
+                    icon, color = tag_icons[tag_type]
+                    for tag in sorted(tags):
+                        if tags_text:
+                            tags_text.append(" ", style="dim")
+                        tags_text.append(f"{icon} {tag}", style=color)
+
+            if tags_text:
+                machine_node.add(tags_text)
 
     return tree
 
@@ -238,96 +278,38 @@ def create_tag_table(tag_machines: dict[str, list[str]]) -> Table:
     return table
 
 
-def create_stats_panel(
-    machines: dict[str, dict], tag_machines: dict[str, list[str]]
-) -> Panel:
-    """Create a statistics panel."""
-    # Calculate statistics
-    total_machines = len(machines)
-    total_tags = len(tag_machines)
-
-    # Count by owner
-    owner_counts = defaultdict(int)
-    for machine_name in machines:
-        if "-" in machine_name:
-            owner = machine_name.split("-")[0]
-            owner_counts[owner] += 1
-        else:
-            owner_counts["other"] += 1
-
-    # Count deployment types
-    hostname_count = 0
-    ip_count = 0
-    for info in machines.values():
-        target = info["deploy"]["targetHost"].replace("root@", "")
-        if re.match(r"^\d+\.\d+\.\d+\.\d+$", target):
-            ip_count += 1
-        else:
-            hostname_count += 1
-
-    # Most popular tags
-    popular_tags = sorted(
-        [(tag, len(machines)) for tag, machines in tag_machines.items()],
-        key=lambda x: x[1],
-        reverse=True,
-    )[:5]
-
-    # Build stats text
-    stats = Text()
-    stats.append("📊 Summary Statistics\n\n", style="bold cyan")
-
-    stats.append("Total Machines: ", style="dim")
-    stats.append(f"{total_machines}\n", style="bold magenta")
-
-    stats.append("Total Tags: ", style="dim")
-    stats.append(f"{total_tags}\n\n", style="bold magenta")
-
-    stats.append("Machines by Owner:\n", style="bold yellow")
-    for owner in sorted(owner_counts.keys()):
-        stats.append(f"  {owner}: ", style="dim")
-        stats.append(f"{owner_counts[owner]}\n", style="cyan")
-
-    stats.append("\nDeployment Targets:\n", style="bold yellow")
-    stats.append("  Hostname-based: ", style="dim")
-    stats.append(f"{hostname_count}\n", style="green")
-    stats.append("  IP-based: ", style="dim")
-    stats.append(f"{ip_count}\n", style="red")
-
-    stats.append("\nMost Used Tags:\n", style="bold yellow")
-    for tag, count in popular_tags:
-        stats.append(f"  {tag}: ", style="dim")
-        stats.append(f"{count} machines\n", style="cyan")
-
-    return Panel(stats, box=box.ROUNDED)
-
-
 def create_deployment_table(machines: dict[str, dict]) -> Table:
     """Create a table showing deployment information."""
     table = Table(title="🚀 Deployment Configuration", box=box.ROUNDED)
     table.add_column("Machine", style="cyan", no_wrap=True)
-    table.add_column("Target Type", style="yellow")
-    table.add_column("Target", style="green")
-    table.add_column("Build Host", style="magenta")
+    table.add_column("targetHost", style="green")
+    table.add_column("buildHost", style="magenta")
 
     # Sort machines by name
     sorted_machines = sorted(machines.items())
 
     for machine_name, info in sorted_machines:
-        target = info["deploy"]["targetHost"].replace("root@", "")
-
-        # Determine target type
-        if re.match(r"^\d+\.\d+\.\d+\.\d+$", target):
-            target_type = "IP Address"
-            target_style = "red"
-        else:
-            target_type = "Hostname"
-            target_style = "green"
-
-        build_host = info["deploy"]["buildHost"] or "(local)"
-
-        table.add_row(
-            machine_name, target_type, Text(target, style=target_style), build_host
+        target_host = info["deploy"]["targetHost"]
+        build_host = (
+            info["deploy"]["buildHost"] if info["deploy"]["buildHost"] else '""'
         )
+
+        # Style the targetHost based on type
+        if target_host:
+            # Check if it's an IP address (after removing root@)
+            target_clean = target_host.replace("root@", "")
+            if re.match(r"^\d+\.\d+\.\d+\.\d+$", target_clean):
+                target_style = "yellow"
+            else:
+                target_style = "green"
+            target_text = Text(target_host, style=target_style)
+        else:
+            target_text = Text('""', style="dim")
+
+        # Style the buildHost
+        build_text = Text(build_host, style="dim" if build_host == '""' else "magenta")
+
+        table.add_row(machine_name, target_text, build_text)
 
     return table
 
@@ -378,30 +360,18 @@ def main() -> int | None:
     console.print()
 
     # Display machines tree
-    console.print(create_machines_tree(machines))
+    machines_tree = create_machines_tree(machines)
+    console.print(machines_tree)
     console.print()
 
-    # Display statistics and tag table in columns
-    stats_panel = create_stats_panel(machines, tag_machines)
+    # Display tag table
     tag_table = create_tag_table(tag_machines)
-
-    console.print(Columns([stats_panel, tag_table], equal=False))
+    console.print(tag_table)
     console.print()
 
     # Display deployment table
     console.print(create_deployment_table(machines))
     console.print()
-
-    # Interactive mode hint
-    console.print(
-        Panel(
-            "[dim]💡 Tip: You can filter machines by tag\n"
-            "Example: analyze-machines-rich --tag prometheus\n"
-            "         analyze-machines-rich --tag laptop[/dim]",
-            box=box.ROUNDED,
-            style="dim",
-        )
-    )
 
 
 if __name__ == "__main__":

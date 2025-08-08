@@ -3,8 +3,9 @@ _: {
     { pkgs, ... }:
     {
       packages = {
-        sops-viz = pkgs.stdenv.mkDerivation {
-          pname = "sops-viz";
+        # Main ACL (Access Control List) viewer - replaces old sops-viz
+        acl = pkgs.stdenv.mkDerivation {
+          pname = "acl";
           version = "1.0.0";
 
           src = ../scripts/sops-viz;
@@ -21,55 +22,86 @@ _: {
           installPhase = ''
             mkdir -p $out/bin
 
-            # Copy Python scripts
-            cp $src/sops-viz-simple.py $out/bin/sops-viz
-            cp $src/sops-viz-rich.py $out/bin/sops-viz-rich
+            # Copy Python scripts and implementation files
+            cp $src/acl.py $out/bin/acl
+            cp $src/sops_viz_simple_impl.py $out/bin/
+            cp $src/sops_viz_rich_impl.py $out/bin/
 
-            # Make them executable
-            chmod +x $out/bin/sops-viz
-            chmod +x $out/bin/sops-viz-rich
+            # Make main script executable
+            chmod +x $out/bin/acl
 
-            # Wrap with Python environment
-            wrapProgram $out/bin/sops-viz \
-              --prefix PATH : ${pkgs.python3}/bin
-
-            wrapProgram $out/bin/sops-viz-rich \
+            # Wrap with Python environment including all dependencies
+            wrapProgram $out/bin/acl \
               --prefix PATH : ${pkgs.python3}/bin \
-              --prefix PYTHONPATH : ${pkgs.python3Packages.rich}/${pkgs.python3.sitePackages}:${pkgs.python3Packages.graphviz}/${pkgs.python3.sitePackages}
+              --prefix PYTHONPATH : $out/bin:${pkgs.python3Packages.rich}/${pkgs.python3.sitePackages}:${pkgs.python3Packages.graphviz}/${pkgs.python3.sitePackages}
 
-            # Create sops-viz-dot helper
-            cat > $out/bin/sops-viz-dot << 'EOF'
-            #!/usr/bin/env bash
-            if [ -z "$1" ]; then
-              echo "Usage: sops-viz-dot <dot-file> [output-format]"
-              echo "  Converts DOT file to image format (default: png)"
-              echo "  Supported formats: png, svg, pdf"
-              echo ""
-              echo "Example:"
-              echo "  sops-viz-dot sops_hierarchy.dot       # Creates sops_hierarchy.png"
-              echo "  sops-viz-dot sops_hierarchy.dot svg   # Creates sops_hierarchy.svg"
-              exit 1
-            fi
 
-            DOT_FILE="$1"
-            FORMAT="''${2:-png}"
-            OUTPUT="''${DOT_FILE%.dot}.$FORMAT"
+          '';
+        };
 
-            if [ ! -f "$DOT_FILE" ]; then
-              echo "Error: DOT file '$DOT_FILE' not found"
-              exit 1
-            fi
+        vars = pkgs.stdenv.mkDerivation {
+          pname = "vars";
+          version = "1.0.0";
 
-            ${pkgs.graphviz}/bin/dot -T"$FORMAT" "$DOT_FILE" -o "$OUTPUT"
-            echo "✓ Generated $OUTPUT"
+          src = ../scripts;
+
+          nativeBuildInputs = [ pkgs.makeWrapper ];
+
+          buildInputs = with pkgs; [
+            python3
+            python3Packages.rich
+          ];
+
+          installPhase = ''
+                        mkdir -p $out/bin
+
+                        # Copy the ownership analysis scripts and create unified command
+                        cp $src/analyze-var-ownership-rich.py $out/bin/vars
+                        cp $src/analyze-var-ownership.py $out/bin/vars-simple-impl.py
+
+                        # Make them executable
+                        chmod +x $out/bin/vars
+
+                        # Create unified vars command that handles --basic flag
+                        cat > $out/bin/vars-raw << 'EOF'
+            #!/usr/bin/env python3
+            import sys
+            import subprocess
+            import os
+            from pathlib import Path
+
+            # Check for --basic flag
+            use_basic = '--basic' in sys.argv
+            if use_basic:
+                sys.argv.remove('--basic')
+
+            # Get the directory where this script is located
+            script_dir = Path(__file__).parent
+
+            if use_basic:
+                # Use simple implementation
+                simple_script = script_dir / "vars-simple-impl.py"
+                subprocess.run([sys.executable, str(simple_script)] + sys.argv[1:])
+            else:
+                # Use rich implementation (default)
+                rich_script = script_dir / "vars-rich-impl.py"
+                subprocess.run([sys.executable, str(rich_script)] + sys.argv[1:])
             EOF
 
-            chmod +x $out/bin/sops-viz-dot
+                        # Replace the vars command with the wrapper
+                        mv $out/bin/vars $out/bin/vars-rich-impl.py
+                        mv $out/bin/vars-raw $out/bin/vars
+                        chmod +x $out/bin/vars
+
+                        # Wrap with Python environment
+                        wrapProgram $out/bin/vars \
+                          --prefix PATH : ${pkgs.python3}/bin \
+                          --prefix PYTHONPATH : ${pkgs.python3Packages.rich}/${pkgs.python3.sitePackages}
           '';
         };
 
-        sops-ownership = pkgs.stdenv.mkDerivation {
-          pname = "sops-ownership";
+        tags = pkgs.stdenv.mkDerivation {
+          pname = "tags";
           version = "1.0.0";
 
           src = ../scripts;
@@ -82,28 +114,55 @@ _: {
           ];
 
           installPhase = ''
-            mkdir -p $out/bin
+                        mkdir -p $out/bin
 
-            # Copy the ownership analysis scripts
-            cp $src/analyze-var-ownership.py $out/bin/sops-ownership
-            cp $src/analyze-var-ownership-rich.py $out/bin/sops-ownership-rich
+                        # Copy the machine analysis scripts and create unified command
+                        cp $src/analyze-machines-rich.py $out/bin/tags
+                        cp $src/analyze-machines.py $out/bin/tags-simple-impl.py
 
-            # Make them executable
-            chmod +x $out/bin/sops-ownership
-            chmod +x $out/bin/sops-ownership-rich
+                        # Make them executable
+                        chmod +x $out/bin/tags
 
-            # Wrap with Python environment
-            wrapProgram $out/bin/sops-ownership \
-              --prefix PATH : ${pkgs.python3}/bin
+                        # Create unified tags command that handles --basic flag
+                        cat > $out/bin/tags-raw << 'EOF'
+            #!/usr/bin/env python3
+            import sys
+            import subprocess
+            import os
+            from pathlib import Path
 
-            wrapProgram $out/bin/sops-ownership-rich \
-              --prefix PATH : ${pkgs.python3}/bin \
-              --prefix PYTHONPATH : ${pkgs.python3Packages.rich}/${pkgs.python3.sitePackages}
+            # Check for --basic flag
+            use_basic = '--basic' in sys.argv
+            if use_basic:
+                sys.argv.remove('--basic')
+
+            # Get the directory where this script is located
+            script_dir = Path(__file__).parent
+
+            if use_basic:
+                # Use simple implementation
+                simple_script = script_dir / "tags-simple-impl.py"
+                subprocess.run([sys.executable, str(simple_script)] + sys.argv[1:])
+            else:
+                # Use rich implementation (default)
+                rich_script = script_dir / "tags-rich-impl.py"
+                subprocess.run([sys.executable, str(rich_script)] + sys.argv[1:])
+            EOF
+
+                        # Replace the tags command with the wrapper
+                        mv $out/bin/tags $out/bin/tags-rich-impl.py
+                        mv $out/bin/tags-raw $out/bin/tags
+                        chmod +x $out/bin/tags
+
+                        # Wrap with Python environment
+                        wrapProgram $out/bin/tags \
+                          --prefix PATH : ${pkgs.python3}/bin \
+                          --prefix PYTHONPATH : ${pkgs.python3Packages.rich}/${pkgs.python3.sitePackages}
           '';
         };
 
-        machines-analyzer = pkgs.stdenv.mkDerivation {
-          pname = "machines-analyzer";
+        roster = pkgs.stdenv.mkDerivation {
+          pname = "roster";
           version = "1.0.0";
 
           src = ../scripts;
@@ -116,57 +175,50 @@ _: {
           ];
 
           installPhase = ''
-            mkdir -p $out/bin
+                        mkdir -p $out/bin
 
-            # Copy the machine analysis scripts
-            cp $src/analyze-machines.py $out/bin/machines-analyzer
-            cp $src/analyze-machines-rich.py $out/bin/machines-analyzer-rich
+                        # Copy the user analysis scripts and create unified command
+                        cp $src/analyze-users-rich.py $out/bin/roster
+                        cp $src/analyze-users.py $out/bin/roster-simple-impl.py
 
-            # Make them executable
-            chmod +x $out/bin/machines-analyzer
-            chmod +x $out/bin/machines-analyzer-rich
+                        # Make them executable
+                        chmod +x $out/bin/roster
 
-            # Wrap with Python environment
-            wrapProgram $out/bin/machines-analyzer \
-              --prefix PATH : ${pkgs.python3}/bin
+                        # Create unified roster command that handles --basic flag
+                        cat > $out/bin/roster-raw << 'EOF'
+            #!/usr/bin/env python3
+            import sys
+            import subprocess
+            import os
+            from pathlib import Path
 
-            wrapProgram $out/bin/machines-analyzer-rich \
-              --prefix PATH : ${pkgs.python3}/bin \
-              --prefix PYTHONPATH : ${pkgs.python3Packages.rich}/${pkgs.python3.sitePackages}
-          '';
-        };
+            # Check for --basic flag
+            use_basic = '--basic' in sys.argv
+            if use_basic:
+                sys.argv.remove('--basic')
 
-        users-analyzer = pkgs.stdenv.mkDerivation {
-          pname = "users-analyzer";
-          version = "1.0.0";
+            # Get the directory where this script is located
+            script_dir = Path(__file__).parent
 
-          src = ../scripts;
+            if use_basic:
+                # Use simple implementation
+                simple_script = script_dir / "roster-simple-impl.py"
+                subprocess.run([sys.executable, str(simple_script)] + sys.argv[1:])
+            else:
+                # Use rich implementation (default)
+                rich_script = script_dir / "roster-rich-impl.py"
+                subprocess.run([sys.executable, str(rich_script)] + sys.argv[1:])
+            EOF
 
-          nativeBuildInputs = [ pkgs.makeWrapper ];
+                        # Replace the roster command with the wrapper
+                        mv $out/bin/roster $out/bin/roster-rich-impl.py
+                        mv $out/bin/roster-raw $out/bin/roster
+                        chmod +x $out/bin/roster
 
-          buildInputs = with pkgs; [
-            python3
-            python3Packages.rich
-          ];
-
-          installPhase = ''
-            mkdir -p $out/bin
-
-            # Copy the user analysis scripts
-            cp $src/analyze-users.py $out/bin/users-analyzer
-            cp $src/analyze-users-rich.py $out/bin/users-analyzer-rich
-
-            # Make them executable
-            chmod +x $out/bin/users-analyzer
-            chmod +x $out/bin/users-analyzer-rich
-
-            # Wrap with Python environment
-            wrapProgram $out/bin/users-analyzer \
-              --prefix PATH : ${pkgs.python3}/bin
-
-            wrapProgram $out/bin/users-analyzer-rich \
-              --prefix PATH : ${pkgs.python3}/bin \
-              --prefix PYTHONPATH : ${pkgs.python3Packages.rich}/${pkgs.python3.sitePackages}
+                        # Wrap with Python environment
+                        wrapProgram $out/bin/roster \
+                          --prefix PATH : ${pkgs.python3}/bin \
+                          --prefix PYTHONPATH : ${pkgs.python3Packages.rich}/${pkgs.python3.sitePackages}
           '';
         };
       };

@@ -7,6 +7,7 @@ between users, groups, machines, and secrets using Rich (TUI) or Graphviz.
 """
 
 import argparse
+import json
 from collections import defaultdict
 from pathlib import Path
 
@@ -27,11 +28,16 @@ except ImportError:
 class SOPSHierarchyAnalyzer:
     def __init__(self, sops_root: Path) -> None:
         self.sops_root = Path(sops_root)
-        self.users = {}  # user -> {keys: [...]}
-        self.machines = {}  # machine -> {key: ...}
+        self.users = {}  # user -> {"keys": [...]}
+        self.machines = {}  # machine -> {"keys": [...]}
         self.groups = defaultdict(lambda: {"users": set(), "machines": set()})
         self.secrets = defaultdict(
-            lambda: {"users": set(), "machines": set(), "age_recipients": []}
+            lambda: {
+                "users": set(),
+                "machines": set(),
+                "groups": set(),
+                "age_recipients": [],
+            }
         )
 
     def scan_structure(self) -> None:
@@ -42,10 +48,20 @@ class SOPSHierarchyAnalyzer:
             for user_dir in users_dir.iterdir():
                 if user_dir.is_dir():
                     user_name = user_dir.name
+                    self.users[user_name] = {"keys": []}
                     key_file = user_dir / "key.json"
                     if key_file.exists():
-                        # In real implementation, we'd parse the JSON to get age keys
-                        self.users[user_name] = {"keys": []}
+                        try:
+                            with key_file.open() as f:
+                                keys_data = json.load(f)
+                                age_keys = [
+                                    k["publickey"]
+                                    for k in keys_data
+                                    if k.get("type") == "age"
+                                ]
+                                self.users[user_name]["keys"] = age_keys
+                        except (json.JSONDecodeError, KeyError):
+                            pass
 
         # Scan machines
         machines_dir = self.sops_root / "machines"
@@ -53,9 +69,20 @@ class SOPSHierarchyAnalyzer:
             for machine_dir in machines_dir.iterdir():
                 if machine_dir.is_dir():
                     machine_name = machine_dir.name
+                    self.machines[machine_name] = {"keys": []}
                     key_file = machine_dir / "key.json"
                     if key_file.exists():
-                        self.machines[machine_name] = {"key": None}
+                        try:
+                            with key_file.open() as f:
+                                keys_data = json.load(f)
+                                age_keys = [
+                                    k["publickey"]
+                                    for k in keys_data
+                                    if k.get("type") == "age"
+                                ]
+                                self.machines[machine_name]["keys"] = age_keys
+                        except (json.JSONDecodeError, KeyError):
+                            pass
 
         # Scan groups
         groups_dir = self.sops_root / "groups"
@@ -99,6 +126,12 @@ class SOPSHierarchyAnalyzer:
                         for machine_link in machines_subdir.iterdir():
                             self.secrets[secret_name]["machines"].add(machine_link.name)
 
+                    # Check for group access
+                    groups_subdir = secret_dir / "groups"
+                    if groups_subdir.exists():
+                        for group_link in groups_subdir.iterdir():
+                            self.secrets[secret_name]["groups"].add(group_link.name)
+
                     # Check for secret file
                     secret_file = secret_dir / "secret"
                     if secret_file.exists():
@@ -115,6 +148,11 @@ class SOPSHierarchyAnalyzer:
             users_branch = tree.add("👥 [bold green]Users[/bold green]")
             for user in sorted(self.users.keys()):
                 user_node = users_branch.add(f"[cyan]{user}[/cyan]")
+                # Show age public keys
+                if self.users[user]["keys"]:
+                    keys_node = user_node.add("[dim]Age public keys:[/dim]")
+                    for key in self.users[user]["keys"]:
+                        keys_node.add(f"[dim italic]{key}[/dim italic]")
                 # Show which groups the user belongs to
                 user_groups = [
                     g for g, data in self.groups.items() if user in data["users"]
@@ -135,6 +173,11 @@ class SOPSHierarchyAnalyzer:
             machines_branch = tree.add("🖥️  [bold yellow]Machines[/bold yellow]")
             for machine in sorted(self.machines.keys()):
                 machine_node = machines_branch.add(f"[magenta]{machine}[/magenta]")
+                # Show age public keys
+                if self.machines[machine]["keys"]:
+                    keys_node = machine_node.add("[dim]Age public keys:[/dim]")
+                    for key in self.machines[machine]["keys"]:
+                        keys_node.add(f"[dim italic]{key}[/dim italic]")
                 # Show which groups the machine belongs to
                 machine_groups = [
                     g for g, data in self.groups.items() if machine in data["machines"]
@@ -168,6 +211,15 @@ class SOPSHierarchyAnalyzer:
                     for machine in sorted(self.groups[group]["machines"]):
                         machines_sub.add(f"🖥️  [magenta]{machine}[/magenta]")
 
+                # Add secrets the group has access to
+                group_secrets = [
+                    s for s, data in self.secrets.items() if group in data["groups"]
+                ]
+                if group_secrets:
+                    secrets_sub = group_node.add("[dim]Secrets:[/dim]")
+                    for secret in sorted(group_secrets):
+                        secrets_sub.add(f"🔓 [yellow]{secret}[/yellow]")
+
         # Add secrets section
         if self.secrets:
             secrets_branch = tree.add("🔒 [bold red]Secrets[/bold red]")
@@ -182,6 +234,9 @@ class SOPSHierarchyAnalyzer:
                 if self.secrets[secret]["machines"]:
                     for machine in sorted(self.secrets[secret]["machines"]):
                         access_list.append(f"🖥️  [magenta]{machine}[/magenta]")
+                if self.secrets[secret]["groups"]:
+                    for group in sorted(self.secrets[secret]["groups"]):
+                        access_list.append(f"🏢 [blue]{group}[/blue]")
 
                 if access_list:
                     access_node = secret_node.add("[dim]Access granted to:[/dim]")
@@ -198,6 +253,7 @@ class SOPSHierarchyAnalyzer:
         table.add_column("Secret", style="red", no_wrap=True)
         table.add_column("Users", style="cyan")
         table.add_column("Machines", style="magenta")
+        table.add_column("Groups", style="blue")
 
         for secret in sorted(self.secrets.keys()):
             users = (
@@ -210,7 +266,35 @@ class SOPSHierarchyAnalyzer:
                 if self.secrets[secret]["machines"]
                 else "-"
             )
-            table.add_row(secret, users, machines)
+            groups = (
+                ", ".join(sorted(self.secrets[secret]["groups"]))
+                if self.secrets[secret]["groups"]
+                else "-"
+            )
+            table.add_row(secret, users, machines, groups)
+
+        return table
+
+    def create_key_table(self) -> Table:
+        """Create a table showing all age public keys"""
+        table = Table(
+            title="Age Public Keys", show_header=True, header_style="bold blue"
+        )
+        table.add_column("Entity", style="green", no_wrap=True)
+        table.add_column("Type", style="yellow")
+        table.add_column("Age Public Key(s)", style="cyan")
+
+        # Add users
+        for user in sorted(self.users.keys()):
+            if self.users[user]["keys"]:
+                keys_str = "\n".join(self.users[user]["keys"])
+                table.add_row(user, "User", keys_str)
+
+        # Add machines
+        for machine in sorted(self.machines.keys()):
+            if self.machines[machine]["keys"]:
+                keys_str = "\n".join(self.machines[machine]["keys"])
+                table.add_row(machine, "Machine", keys_str)
 
         return table
 
@@ -233,13 +317,23 @@ class SOPSHierarchyAnalyzer:
         with dot.subgraph(name="cluster_users") as c:
             c.attr(label="Users", style="filled", color="lightgrey")
             for user in sorted(self.users.keys()):
-                c.node(f"user_{user}", user, fillcolor="lightblue", shape="ellipse")
+                label = user
+                if self.users[user]["keys"]:
+                    # Show first 8 chars of first key for brevity
+                    key_preview = self.users[user]["keys"][0][:8] + "..."
+                    label = f"{user}\n[{key_preview}]"
+                c.node(f"user_{user}", label, fillcolor="lightblue", shape="ellipse")
 
         with dot.subgraph(name="cluster_machines") as c:
             c.attr(label="Machines", style="filled", color="lightgrey")
             for machine in sorted(self.machines.keys()):
+                label = machine
+                if self.machines[machine]["keys"]:
+                    # Show first 8 chars of first key for brevity
+                    key_preview = self.machines[machine]["keys"][0][:8] + "..."
+                    label = f"{machine}\n[{key_preview}]"
                 c.node(
-                    f"machine_{machine}", machine, fillcolor="lightyellow", shape="box"
+                    f"machine_{machine}", label, fillcolor="lightyellow", shape="box"
                 )
 
         with dot.subgraph(name="cluster_groups") as c:
@@ -298,6 +392,7 @@ def main() -> int | None:
 Examples:
   %(prog)s                     # Show tree view in terminal
   %(prog)s --table            # Show access matrix table
+  %(prog)s --keys             # Show age public keys table
   %(prog)s --graph            # Generate graph visualization (requires graphviz)
   %(prog)s --all              # Show all visualizations
         """,
@@ -306,6 +401,9 @@ Examples:
         "--sops-root", default="./sops", help="Path to SOPS root directory"
     )
     parser.add_argument("--table", action="store_true", help="Show access matrix table")
+    parser.add_argument(
+        "--keys", action="store_true", help="Show age public keys table"
+    )
     parser.add_argument(
         "--graph",
         action="store_true",
@@ -329,11 +427,12 @@ Examples:
     args = parser.parse_args()
 
     # If no specific visualization is requested, default to tree
-    if not any([args.table, args.graph, args.all]):
+    if not any([args.table, args.keys, args.graph, args.all]):
         args.tree = True
     else:
         args.tree = args.all
         args.table = args.table or args.all
+        args.keys = args.keys or args.all
         args.graph = args.graph or args.all
 
     # Initialize analyzer
@@ -360,6 +459,12 @@ Examples:
     if args.table:
         table = analyzer.create_access_matrix_table()
         console.print(table)
+        console.print()
+
+    # Show keys table
+    if args.keys:
+        key_table = analyzer.create_key_table()
+        console.print(key_table)
         console.print()
 
     # Generate graph

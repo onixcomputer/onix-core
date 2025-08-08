@@ -6,7 +6,6 @@ Shows user details, roles, machines, home-manager profiles, and relationships.
 
 import re
 import sys
-from collections import defaultdict
 from pathlib import Path
 
 from rich import box
@@ -207,7 +206,7 @@ def create_user_tree(
     filter_profile: str | None = None,
 ) -> Tree:
     """Create a rich tree structure for user display."""
-    tree = Tree("👥 Users", style="bold cyan")
+    tree = Tree("👥 Roster", style="bold cyan")
 
     for username in sorted(users.keys()):
         user = users[username]
@@ -243,7 +242,23 @@ def create_user_tree(
             ssh_text.append(
                 f"{len(user['sshAuthorizedKeys'])} authorized", style="magenta"
             )
-            user_node.add(ssh_text)
+            ssh_node = user_node.add(ssh_text)
+
+            # Show SSH key details
+            for key in user["sshAuthorizedKeys"]:
+                parts = key.split()
+                if len(parts) >= 2:
+                    key_type = parts[0]
+                    # Show full key
+                    key_data = parts[1]
+                    comment = parts[2] if len(parts) > 2 else "no comment"
+                    key_text = Text("   └─ ", style="dim")
+                    key_text.append(f"{key_type} ", style="cyan")
+                    key_text.append(f"{key_data} ", style="dim italic")
+                    key_text.append(f"({comment})", style="yellow")
+                    ssh_node.add(key_text)
+                else:
+                    ssh_node.add(Text(f"   └─ {key[:60]}...", style="dim"))
 
         # Add machines
         if user["machines"]:
@@ -304,56 +319,6 @@ def create_user_tree(
     return tree
 
 
-def create_machine_access_panel(users: dict[str, dict]) -> Panel:
-    """Create a panel showing machine access summary."""
-    # Collect machine access data
-    machine_access = defaultdict(list)
-    cross_access = []
-
-    for username, user in users.items():
-        for machine_name, machine_info in user["machines"].items():
-            machine_access[machine_name].append((username, machine_info["role"]))
-
-            # Check for cross-machine access
-            if (
-                not machine_name.startswith(username.replace("r", ""))
-                and machine_info["role"] != "owner"
-            ):
-                cross_access.append(
-                    {
-                        "user": username,
-                        "machine": machine_name,
-                        "role": machine_info["role"],
-                    }
-                )
-
-    # Build text
-    text = Text()
-    text.append("🖥️  Machine Access Overview\n\n", style="bold cyan")
-
-    # Machines with multiple users
-    multi_user_machines = [
-        (m, users) for m, users in machine_access.items() if len(users) > 1
-    ]
-    if multi_user_machines:
-        text.append("Shared Machines:\n", style="bold yellow")
-        for machine, users_list in sorted(multi_user_machines):
-            text.append(f"  {machine}: ", style="bold")
-            user_texts = []
-            for user, role in sorted(users_list):
-                user_texts.append(f"{user}[{role}]")
-            text.append(", ".join(user_texts) + "\n")
-
-    # Cross-machine access
-    if cross_access:
-        text.append("\nCross-Machine Access:\n", style="bold yellow")
-        for access in cross_access:
-            text.append(f"  {access['user']} → {access['machine']} ", style="cyan")
-            text.append(f"[{access['role']}]\n", style="yellow")
-
-    return Panel(text, box=box.ROUNDED)
-
-
 def main() -> int | None:
     # Try to find the repository root
     current_dir = Path.cwd()
@@ -395,23 +360,9 @@ def main() -> int | None:
     console.print()
 
     # Display user tree
-    console.print(create_user_tree(users))
+    user_tree = create_user_tree(users)
+    console.print(user_tree)
     console.print()
-
-    # Display machine access panel
-    console.print(create_machine_access_panel(users))
-    console.print()
-
-    # Interactive mode hint
-    console.print(
-        Panel(
-            "[dim]💡 Tips: You can filter the view\n"
-            "• By machine: users-analyzer-rich --machine britton-fw\n"
-            "• By profile: users-analyzer-rich --profile dev[/dim]",
-            box=box.ROUNDED,
-            style="dim",
-        )
-    )
 
 
 if __name__ == "__main__":

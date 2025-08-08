@@ -4,6 +4,7 @@ Simple SOPS Hierarchy Visualizer - No external dependencies required
 """
 
 import argparse
+import json
 from collections import defaultdict
 from pathlib import Path
 
@@ -11,10 +12,12 @@ from pathlib import Path
 class SimpleSOPSVisualizer:
     def __init__(self, sops_root: str | Path) -> None:
         self.sops_root = Path(sops_root)
-        self.users = set()
-        self.machines = set()
+        self.users = {}  # user -> {"keys": [...]}
+        self.machines = {}  # machine -> {"keys": [...]}
         self.groups = defaultdict(lambda: {"users": set(), "machines": set()})
-        self.secrets = defaultdict(lambda: {"users": set(), "machines": set()})
+        self.secrets = defaultdict(
+            lambda: {"users": set(), "machines": set(), "groups": set()}
+        )
 
     def scan_structure(self) -> None:
         """Scan the SOPS directory structure"""
@@ -23,14 +26,42 @@ class SimpleSOPSVisualizer:
         if users_dir.exists():
             for user_dir in users_dir.iterdir():
                 if user_dir.is_dir():
-                    self.users.add(user_dir.name)
+                    user_name = user_dir.name
+                    self.users[user_name] = {"keys": []}
+                    key_file = user_dir / "key.json"
+                    if key_file.exists():
+                        try:
+                            with key_file.open() as f:
+                                keys_data = json.load(f)
+                                age_keys = [
+                                    k["publickey"]
+                                    for k in keys_data
+                                    if k.get("type") == "age"
+                                ]
+                                self.users[user_name]["keys"] = age_keys
+                        except (json.JSONDecodeError, KeyError):
+                            pass
 
         # Scan machines
         machines_dir = self.sops_root / "machines"
         if machines_dir.exists():
             for machine_dir in machines_dir.iterdir():
                 if machine_dir.is_dir():
-                    self.machines.add(machine_dir.name)
+                    machine_name = machine_dir.name
+                    self.machines[machine_name] = {"keys": []}
+                    key_file = machine_dir / "key.json"
+                    if key_file.exists():
+                        try:
+                            with key_file.open() as f:
+                                keys_data = json.load(f)
+                                age_keys = [
+                                    k["publickey"]
+                                    for k in keys_data
+                                    if k.get("type") == "age"
+                                ]
+                                self.machines[machine_name]["keys"] = age_keys
+                        except (json.JSONDecodeError, KeyError):
+                            pass
 
         # Scan groups
         groups_dir = self.sops_root / "groups"
@@ -43,13 +74,17 @@ class SimpleSOPSVisualizer:
                     users_subdir = group_dir / "users"
                     if users_subdir.exists():
                         for user_link in users_subdir.iterdir():
-                            self.groups[group_name]["users"].add(user_link.name)
+                            if user_link.name in self.users:
+                                self.groups[group_name]["users"].add(user_link.name)
 
                     # Check for machines
                     machines_subdir = group_dir / "machines"
                     if machines_subdir.exists():
                         for machine_link in machines_subdir.iterdir():
-                            self.groups[group_name]["machines"].add(machine_link.name)
+                            if machine_link.name in self.machines:
+                                self.groups[group_name]["machines"].add(
+                                    machine_link.name
+                                )
 
         # Scan secrets
         secrets_dir = self.sops_root / "secrets"
@@ -69,6 +104,12 @@ class SimpleSOPSVisualizer:
                     if machines_subdir.exists():
                         for machine_link in machines_subdir.iterdir():
                             self.secrets[secret_name]["machines"].add(machine_link.name)
+
+                    # Check for group access
+                    groups_subdir = secret_dir / "groups"
+                    if groups_subdir.exists():
+                        for group_link in groups_subdir.iterdir():
+                            self.secrets[secret_name]["groups"].add(group_link.name)
 
     def print_tree(
         self, name: str, items: list, prefix: str = "", is_last: bool = True
@@ -101,14 +142,19 @@ class SimpleSOPSVisualizer:
         if self.users:
             print("\n👥 USERS")
             print("─" * 20)
-            for user in sorted(self.users):
+            for user in sorted(self.users.keys()):
                 print(f"  • {user}")
+                # Show age public keys
+                if self.users[user]["keys"]:
+                    print("    ├─ Age public keys:")
+                    for key in self.users[user]["keys"]:
+                        print(f"    │   • {key}")
                 # Show groups
                 user_groups = [
                     g for g, data in self.groups.items() if user in data["users"]
                 ]
                 if user_groups:
-                    print(f"    └─ Groups: {', '.join(user_groups)}")
+                    print(f"    ├─ Groups: {', '.join(user_groups)}")
                 # Show secrets
                 user_secrets = [
                     s for s, data in self.secrets.items() if user in data["users"]
@@ -122,14 +168,19 @@ class SimpleSOPSVisualizer:
         if self.machines:
             print("\n🖥️  MACHINES")
             print("─" * 20)
-            for machine in sorted(self.machines):
+            for machine in sorted(self.machines.keys()):
                 print(f"  • {machine}")
+                # Show age public keys
+                if self.machines[machine]["keys"]:
+                    print("    ├─ Age public keys:")
+                    for key in self.machines[machine]["keys"]:
+                        print(f"    │   • {key}")
                 # Show groups
                 machine_groups = [
                     g for g, data in self.groups.items() if machine in data["machines"]
                 ]
                 if machine_groups:
-                    print(f"    └─ Groups: {', '.join(machine_groups)}")
+                    print(f"    ├─ Groups: {', '.join(machine_groups)}")
                 # Show secrets
                 machine_secrets = [
                     s for s, data in self.secrets.items() if machine in data["machines"]
@@ -150,9 +201,26 @@ class SimpleSOPSVisualizer:
                     for user in sorted(self.groups[group]["users"]):
                         print(f"    │   • {user}")
                 if self.groups[group]["machines"]:
-                    print("    └─ Machines:")
+                    prefix = (
+                        "    ├─"
+                        if any(
+                            s
+                            for s, data in self.secrets.items()
+                            if group in data["groups"]
+                        )
+                        else "    └─"
+                    )
+                    print(f"{prefix} Machines:")
                     for machine in sorted(self.groups[group]["machines"]):
                         print(f"        • {machine}")
+                # Show secrets this group has access to
+                group_secrets = [
+                    s for s, data in self.secrets.items() if group in data["groups"]
+                ]
+                if group_secrets:
+                    print("    └─ Secrets:")
+                    for secret in sorted(group_secrets):
+                        print(f"        • {secret}")
 
         # Secrets section
         if self.secrets:
@@ -172,6 +240,10 @@ class SimpleSOPSVisualizer:
                             for m in sorted(self.secrets[secret]["machines"])
                         ]
                     )
+                if self.secrets[secret]["groups"]:
+                    access_list.extend(
+                        [f"Group: {g}" for g in sorted(self.secrets[secret]["groups"])]
+                    )
 
                 if access_list:
                     print("    └─ Access granted to:")
@@ -186,11 +258,11 @@ class SimpleSOPSVisualizer:
     def display_access_matrix(self) -> None:
         """Display access matrix as a table"""
         print("\n📊 SECRET ACCESS MATRIX")
-        print("=" * 80)
+        print("=" * 100)
 
         # Header
-        print(f"{'Secret':<30} {'Users':<25} {'Machines':<25}")
-        print("-" * 80)
+        print(f"{'Secret':<30} {'Users':<25} {'Machines':<25} {'Groups':<20}")
+        print("-" * 100)
 
         # Rows
         for secret in sorted(self.secrets.keys()):
@@ -204,7 +276,41 @@ class SimpleSOPSVisualizer:
                 if self.secrets[secret]["machines"]
                 else "-"
             )
-            print(f"{secret:<30} {users:<25} {machines:<25}")
+            groups = (
+                ", ".join(sorted(self.secrets[secret]["groups"]))
+                if self.secrets[secret]["groups"]
+                else "-"
+            )
+            print(f"{secret:<30} {users:<25} {machines:<25} {groups:<20}")
+
+        print("-" * 100)
+
+    def display_keys_table(self) -> None:
+        """Display all age public keys in a table"""
+        print("\n🔑 AGE PUBLIC KEYS")
+        print("=" * 80)
+
+        # Header
+        print(f"{'Entity':<20} {'Type':<10} {'Age Public Key'}")
+        print("-" * 80)
+
+        # Users
+        for user in sorted(self.users.keys()):
+            if self.users[user]["keys"]:
+                for i, key in enumerate(self.users[user]["keys"]):
+                    if i == 0:
+                        print(f"{user:<20} {'User':<10} {key}")
+                    else:
+                        print(f"{'':<20} {'':<10} {key}")
+
+        # Machines
+        for machine in sorted(self.machines.keys()):
+            if self.machines[machine]["keys"]:
+                for i, key in enumerate(self.machines[machine]["keys"]):
+                    if i == 0:
+                        print(f"{machine:<20} {'Machine':<10} {key}")
+                    else:
+                        print(f"{'':<20} {'':<10} {key}")
 
         print("-" * 80)
 
@@ -235,15 +341,25 @@ class SimpleSOPSVisualizer:
 
             # Define nodes
             f.write("  // Users\n")
-            for user in sorted(self.users):
+            for user in sorted(self.users.keys()):
+                label = user
+                if self.users[user]["keys"]:
+                    # Show first 8 chars of first key for brevity
+                    key_preview = self.users[user]["keys"][0][:8] + "..."
+                    label = f"{user}\n[{key_preview}]"
                 f.write(
-                    f'  "user_{user}" [label="{user}", style="rounded,filled", fillcolor="lightblue"];\n'
+                    f'  "user_{user}" [label="{label}", style="rounded,filled", fillcolor="lightblue"];\n'
                 )
 
             f.write("\n  // Machines\n")
-            for machine in sorted(self.machines):
+            for machine in sorted(self.machines.keys()):
+                label = machine
+                if self.machines[machine]["keys"]:
+                    # Show first 8 chars of first key for brevity
+                    key_preview = self.machines[machine]["keys"][0][:8] + "..."
+                    label = f"{machine}\n[{key_preview}]"
                 f.write(
-                    f'  "machine_{machine}" [label="{machine}", style="rounded,filled", fillcolor="lightyellow"];\n'
+                    f'  "machine_{machine}" [label="{label}", style="rounded,filled", fillcolor="lightyellow"];\n'
                 )
 
             f.write("\n  // Groups\n")
@@ -294,6 +410,7 @@ def main() -> int | None:
 Examples:
   %(prog)s                  # Show hierarchy tree
   %(prog)s --matrix        # Show access matrix
+  %(prog)s --keys          # Show age public keys
   %(prog)s --dot           # Generate DOT file for Graphviz
   %(prog)s --all           # Show all visualizations
         """,
@@ -303,6 +420,9 @@ Examples:
     )
     parser.add_argument(
         "--matrix", action="store_true", help="Show access matrix table"
+    )
+    parser.add_argument(
+        "--keys", action="store_true", help="Show age public keys table"
     )
     parser.add_argument("--dot", action="store_true", help="Generate Graphviz DOT file")
     parser.add_argument(
@@ -316,7 +436,7 @@ Examples:
 
     # Default to tree view if nothing specified
     show_tree = True
-    if args.matrix or args.dot:
+    if args.matrix or args.keys or args.dot:
         show_tree = args.all
 
     # Initialize and scan
@@ -335,6 +455,9 @@ Examples:
 
     if args.matrix or args.all:
         visualizer.display_access_matrix()
+
+    if args.keys or args.all:
+        visualizer.display_keys_table()
 
     if args.dot or args.all:
         dot_file = visualizer.generate_dot_file(args.dot_output)
