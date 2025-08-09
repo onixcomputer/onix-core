@@ -71,6 +71,11 @@ _: {
               subdomain = "prometheus";
               public = false; # This service is only accessible via Tailscale
             };
+            harmonia = {
+              port = 5000;
+              subdomain = "cache";
+              public = false; # This service is only accessible via Tailscale
+            };
 
           };
 

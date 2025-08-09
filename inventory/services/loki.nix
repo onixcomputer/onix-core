@@ -104,8 +104,7 @@ _: {
         tags."blr-logs" = { };
         settings = {
           # Point to the Loki server on britton-desktop
-          lokiUrl = "http://loki.blr.dev:3100";
-
+          lokiUrl = "http://localhost:3100";
 
           # Additional log sources
           additionalScrapeConfigs = [

@@ -50,7 +50,7 @@ _: {
       roles.client = {
         tags."onix-cache" = { }; # Apply to machines with desktop tag
         settings = {
-          serverUrl = "http://britton-fw:5000";
+          serverUrl = "http://localhost:5000";
           priority = 30; # Default cache priority
 
           # The signing key is automatically pulled from the shared vars

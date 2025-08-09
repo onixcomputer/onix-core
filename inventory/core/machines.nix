@@ -89,7 +89,6 @@ _: {
         "prometheus"
         "monitoring"
         "homepage-server"
-        "traefik-blrdev"
         "static-test"
         "static-demo"
         "nix-cache"
@@ -111,7 +110,6 @@ _: {
         # "hyprland"
         "prometheus"
         "blr-logs"
-        "onix-cache"
       ];
       deploy = {
         targetHost = "root@192.168.8.201";
@@ -125,7 +123,6 @@ _: {
         "tailnet-brittonr"
         "prometheus"
         "blr-logs"
-        "onix-cache"
       ];
       deploy = {
         targetHost = "root@192.168.8.121";
@@ -141,7 +138,6 @@ _: {
         # "hyprland"
         "prometheus"
         "blr-logs"
-        "onix-cache"
       ];
       deploy = {
         targetHost = "root@192.168.8.167";
