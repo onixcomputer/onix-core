@@ -199,20 +199,15 @@ class SOPSHierarchyAnalyzer:
                 all_secrets = set(direct_secrets) | set(inherited_secrets.keys())
                 if all_secrets:
                     for secret in sorted(all_secrets):
-                        if secret in direct_secrets and secret in inherited_secrets:
-                            groups = ", ".join(inherited_secrets[secret])
-                            user_node.add(
-                                f"🔓 [yellow]{secret}[/yellow] [dim](direct + via {groups})[/dim]"
-                            )
-                        elif secret in direct_secrets:
-                            user_node.add(
-                                f"🔓 [yellow]{secret}[/yellow] [dim](direct)[/dim]"
-                            )
-                        else:
-                            groups = ", ".join(inherited_secrets[secret])
-                            user_node.add(
-                                f"🔓 [yellow]{secret}[/yellow] [dim](via {groups})[/dim]"
-                            )
+                        access_info = []
+                        if secret in direct_secrets:
+                            access_info.append("[red]direct[/red]")
+                        if secret in inherited_secrets:
+                            for group in inherited_secrets[secret]:
+                                access_info.append(f"[yellow]{group}[/yellow]")
+                        user_node.add(
+                            f"🔓 [bold]{secret}[/bold] ({', '.join(access_info)})"
+                        )
 
         # Add machines section
         if self.machines:
@@ -240,20 +235,15 @@ class SOPSHierarchyAnalyzer:
                 all_secrets = set(direct_secrets) | set(inherited_secrets.keys())
                 if all_secrets:
                     for secret in sorted(all_secrets):
-                        if secret in direct_secrets and secret in inherited_secrets:
-                            groups = ", ".join(inherited_secrets[secret])
-                            machine_node.add(
-                                f"🔓 [yellow]{secret}[/yellow] [dim](direct + via {groups})[/dim]"
-                            )
-                        elif secret in direct_secrets:
-                            machine_node.add(
-                                f"🔓 [yellow]{secret}[/yellow] [dim](direct)[/dim]"
-                            )
-                        else:
-                            groups = ", ".join(inherited_secrets[secret])
-                            machine_node.add(
-                                f"🔓 [yellow]{secret}[/yellow] [dim](via {groups})[/dim]"
-                            )
+                        access_info = []
+                        if secret in direct_secrets:
+                            access_info.append("[red]direct[/red]")
+                        if secret in inherited_secrets:
+                            for group in inherited_secrets[secret]:
+                                access_info.append(f"[yellow]{group}[/yellow]")
+                        machine_node.add(
+                            f"🔓 [bold]{secret}[/bold] ({', '.join(access_info)})"
+                        )
 
         # Add groups section
         if self.groups:
