@@ -198,13 +198,13 @@ in
                                 after = [ "network-online.target" ];
                                 wants = [ "network-online.target" ];
                                 wantedBy = [ "multi-user.target" ];
-                                
+
                                 serviceConfig = {
                                   Type = "oneshot";
                                   RemainAfterExit = true;
                                   StandardOutput = "journal+console";
                                 };
-                                
+
                                 script = ''
                                   echo "======================================="
                                   echo "Network interfaces and IP addresses:"
