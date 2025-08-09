@@ -215,6 +215,39 @@ _: {
           ];
         };
       };
+      gmk1 = {
+        role = "user";
+        shell = "zsh";
+        homeManager = {
+          enable = true;
+          profiles = [
+            "base"
+            "dev"
+          ];
+        };
+      };
+      gmk2 = {
+        role = "user";
+        shell = "zsh";
+        homeManager = {
+          enable = true;
+          profiles = [
+            "base"
+            "dev"
+          ];
+        };
+      };
+      gmk3 = {
+        role = "user";
+        shell = "zsh";
+        homeManager = {
+          enable = true;
+          profiles = [
+            "base"
+            "dev"
+          ];
+        };
+      };
     };
   };
 
