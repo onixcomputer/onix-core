@@ -84,6 +84,12 @@ in
                   ++ settings.extraFlags;
               };
 
+              # Override the tailscaled-autoconnect service to not block boot
+              systemd.services.tailscaled-autoconnect = lib.mkIf settings.autoconnect {
+                # Don't block boot - remove from multi-user.target
+                wantedBy = lib.mkForce [ ];
+              };
+
               # Open firewall ports for Tailscale
               networking.firewall = {
                 # Enable checksum offload as recommended by Tailscale
