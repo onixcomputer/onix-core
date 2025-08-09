@@ -29,7 +29,7 @@ def find_matching_brace(content: str, start_pos: int) -> int:
 
 
 def parse_users_nix(file_path: Path) -> dict[str, dict]:
-    """Parse the users.nix file to extract user information."""
+    """Parse the roster.nix file to extract user information."""
     users = {}
 
     with file_path.open() as f:
@@ -349,24 +349,24 @@ def main() -> int | None:
     repo_root = None
     check_dir = current_dir
     while check_dir != check_dir.parent:
-        if (check_dir / "inventory" / "core" / "users.nix").exists():
+        if (check_dir / "inventory" / "core" / "roster.nix").exists():
             repo_root = check_dir
             break
         check_dir = check_dir.parent
 
     if repo_root is None:
         # If not found, try current directory
-        if (current_dir / "inventory" / "core" / "users.nix").exists():
+        if (current_dir / "inventory" / "core" / "roster.nix").exists():
             repo_root = current_dir
         else:
-            print("Error: Could not find inventory/core/users.nix")
+            print("Error: Could not find inventory/core/roster.nix")
             print("Please run this command from within the onix-core repository")
             sys.exit(1)
 
-    users_path = repo_root / "inventory" / "core" / "users.nix"
+    users_path = repo_root / "inventory" / "core" / "roster.nix"
 
     # Parse and analyze
-    print("Parsing users.nix...")
+    print("Parsing roster.nix...")
     users = parse_users_nix(users_path)
 
     print("Analyzing user configurations...")

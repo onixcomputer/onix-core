@@ -36,7 +36,7 @@ def find_matching_brace(content: str, start_pos: int) -> int:
 
 
 def parse_users_nix(file_path: Path) -> dict[str, dict]:
-    """Parse the users.nix file to extract user information."""
+    """Parse the roster.nix file to extract user information."""
     users = {}
 
     with file_path.open() as f:
@@ -327,26 +327,26 @@ def main() -> int | None:
     repo_root = None
     check_dir = current_dir
     while check_dir != check_dir.parent:
-        if (check_dir / "inventory" / "core" / "users.nix").exists():
+        if (check_dir / "inventory" / "core" / "roster.nix").exists():
             repo_root = check_dir
             break
         check_dir = check_dir.parent
 
     if repo_root is None:
         # If not found, try current directory
-        if (current_dir / "inventory" / "core" / "users.nix").exists():
+        if (current_dir / "inventory" / "core" / "roster.nix").exists():
             repo_root = current_dir
         else:
-            console.print("[red]Error: Could not find inventory/core/users.nix[/red]")
+            console.print("[red]Error: Could not find inventory/core/roster.nix[/red]")
             console.print(
                 "[yellow]Please run this command from within the onix-core repository[/yellow]"
             )
             sys.exit(1)
 
-    users_path = repo_root / "inventory" / "core" / "users.nix"
+    users_path = repo_root / "inventory" / "core" / "roster.nix"
 
     # Parse and analyze
-    with console.status("[bold green]Parsing users.nix..."):
+    with console.status("[bold green]Parsing roster.nix..."):
         users = parse_users_nix(users_path)
 
     # Display header
@@ -380,19 +380,19 @@ if __name__ == "__main__":
         repo_root = None
         check_dir = current_dir
         while check_dir != check_dir.parent:
-            if (check_dir / "inventory" / "core" / "users.nix").exists():
+            if (check_dir / "inventory" / "core" / "roster.nix").exists():
                 repo_root = check_dir
                 break
             check_dir = check_dir.parent
 
         if (
             repo_root is None
-            and (current_dir / "inventory" / "core" / "users.nix").exists()
+            and (current_dir / "inventory" / "core" / "roster.nix").exists()
         ):
             repo_root = current_dir
 
         if repo_root:
-            users_path = repo_root / "inventory" / "core" / "users.nix"
+            users_path = repo_root / "inventory" / "core" / "roster.nix"
             users = parse_users_nix(users_path)
 
             filter_text = []

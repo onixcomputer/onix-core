@@ -52,7 +52,7 @@ This repository manages NixOS machines with a holistic approach to user and home
 
 The infrastructure enables sophisticated user management patterns:
 
-1. **Global User Definition** (`inventory/core/users.nix`):
+1. **Global User Definition** (`inventory/core/roster.nix`):
 
    ```nix
    username = {
