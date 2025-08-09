@@ -133,6 +133,34 @@ class SimpleSOPSVisualizer:
             else:
                 self.print_tree(str(item), [], prefix + extension, is_last_item)
 
+    def get_inherited_secrets(self, entity_name: str, entity_type: str) -> set:
+        """Get secrets that an entity inherits through group membership
+
+        Args:
+            entity_name: Name of the user or machine
+            entity_type: Either 'users' or 'machines'
+
+        Returns:
+            Set of secret names that the entity has access to through groups
+        """
+        inherited_secrets = set()
+
+        # Find groups this entity belongs to
+        entity_groups = [
+            group
+            for group, data in self.groups.items()
+            if entity_name in data[entity_type]
+        ]
+
+        # Find secrets accessible through those groups
+        for secret, data in self.secrets.items():
+            for group in entity_groups:
+                if group in data["groups"]:
+                    inherited_secrets.add(secret)
+                    break
+
+        return inherited_secrets
+
     def display_hierarchy(self) -> None:
         """Display the full hierarchy"""
         print("\n🔐 SOPS ACCESS CONTROL HIERARCHY")
@@ -155,14 +183,22 @@ class SimpleSOPSVisualizer:
                 ]
                 if user_groups:
                     print(f"    ├─ Groups: {', '.join(user_groups)}")
-                # Show secrets
-                user_secrets = [
+                # Show secrets (both direct and inherited)
+                direct_secrets = [
                     s for s, data in self.secrets.items() if user in data["users"]
                 ]
-                if user_secrets:
+                inherited_secrets = self.get_inherited_secrets(user, "users")
+
+                all_secrets = set(direct_secrets) | inherited_secrets
+                if all_secrets:
                     print("    └─ Secrets:")
-                    for secret in user_secrets:
-                        print(f"        • {secret}")
+                    for secret in sorted(all_secrets):
+                        if secret in direct_secrets and secret in inherited_secrets:
+                            print(f"        • {secret} (direct + inherited)")
+                        elif secret in direct_secrets:
+                            print(f"        • {secret} (direct)")
+                        else:
+                            print(f"        • {secret} (inherited)")
 
         # Machines section
         if self.machines:
@@ -181,14 +217,22 @@ class SimpleSOPSVisualizer:
                 ]
                 if machine_groups:
                     print(f"    ├─ Groups: {', '.join(machine_groups)}")
-                # Show secrets
-                machine_secrets = [
+                # Show secrets (both direct and inherited)
+                direct_secrets = [
                     s for s, data in self.secrets.items() if machine in data["machines"]
                 ]
-                if machine_secrets:
+                inherited_secrets = self.get_inherited_secrets(machine, "machines")
+
+                all_secrets = set(direct_secrets) | inherited_secrets
+                if all_secrets:
                     print("    └─ Secrets:")
-                    for secret in machine_secrets:
-                        print(f"        • {secret}")
+                    for secret in sorted(all_secrets):
+                        if secret in direct_secrets and secret in inherited_secrets:
+                            print(f"        • {secret} (direct + inherited)")
+                        elif secret in direct_secrets:
+                            print(f"        • {secret} (direct)")
+                        else:
+                            print(f"        • {secret} (inherited)")
 
         # Groups section
         if self.groups:
