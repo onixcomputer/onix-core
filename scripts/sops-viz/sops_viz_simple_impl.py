@@ -195,14 +195,13 @@ class SimpleSOPSVisualizer:
                 if all_secrets:
                     print("    └─ Secrets:")
                     for secret in sorted(all_secrets):
-                        if secret in direct_secrets and secret in inherited_secrets:
-                            groups = ", ".join(inherited_secrets[secret])
-                            print(f"        • {secret} (direct + via {groups})")
-                        elif secret in direct_secrets:
-                            print(f"        • {secret} (direct)")
-                        else:
-                            groups = ", ".join(inherited_secrets[secret])
-                            print(f"        • {secret} (via {groups})")
+                        access_info = []
+                        if secret in direct_secrets:
+                            access_info.append("\033[91mdirect\033[0m")  # Red
+                        if secret in inherited_secrets:
+                            for group in inherited_secrets[secret]:
+                                access_info.append(f"\033[93m{group}\033[0m")  # Yellow
+                        print(f"        • {secret} ({', '.join(access_info)})")
 
         # Machines section
         if self.machines:
@@ -231,14 +230,13 @@ class SimpleSOPSVisualizer:
                 if all_secrets:
                     print("    └─ Secrets:")
                     for secret in sorted(all_secrets):
-                        if secret in direct_secrets and secret in inherited_secrets:
-                            groups = ", ".join(inherited_secrets[secret])
-                            print(f"        • {secret} (direct + via {groups})")
-                        elif secret in direct_secrets:
-                            print(f"        • {secret} (direct)")
-                        else:
-                            groups = ", ".join(inherited_secrets[secret])
-                            print(f"        • {secret} (via {groups})")
+                        access_info = []
+                        if secret in direct_secrets:
+                            access_info.append("\033[91mdirect\033[0m")  # Red
+                        if secret in inherited_secrets:
+                            for group in inherited_secrets[secret]:
+                                access_info.append(f"\033[93m{group}\033[0m")  # Yellow
+                        print(f"        • {secret} ({', '.join(access_info)})")
 
         # Groups section
         if self.groups:
