@@ -135,7 +135,6 @@ _: {
           profiles = [
             "base"
             "dev"
-            "desktop"
           ];
         };
       };
@@ -147,7 +146,6 @@ _: {
           profiles = [
             "base"
             "dev"
-            "desktop"
           ];
         };
       };
@@ -159,7 +157,6 @@ _: {
           profiles = [
             "base"
             "dev"
-            "desktop"
           ];
         };
       };
@@ -221,8 +218,8 @@ _: {
         homeManager = {
           enable = true;
           profiles = [
-            "base"
-            "dev"
+            # "base"
+            # "dev"
           ];
         };
       };
@@ -232,8 +229,8 @@ _: {
         homeManager = {
           enable = true;
           profiles = [
-            "base"
-            "dev"
+            # "base"
+            # "dev"
           ];
         };
       };
@@ -243,8 +240,8 @@ _: {
         homeManager = {
           enable = true;
           profiles = [
-            "base"
-            "dev"
+            # "base"
+            # "dev"
           ];
         };
       };
