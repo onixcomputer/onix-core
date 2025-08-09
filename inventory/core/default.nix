@@ -1,14 +1,14 @@
 { inputs, ... }:
 let
   machines = import ./machines.nix { inherit inputs; };
-  users = import ./users.nix { inherit inputs; };
+  roster = import ./roster.nix { inherit inputs; };
 
   instances = {
     roster = {
       module.name = "roster";
       roles.default.tags.all = { };
       roles.default.settings = {
-        inherit users;
+        users = roster;
         homeProfilesPath = ../home-profiles;
       };
     };
