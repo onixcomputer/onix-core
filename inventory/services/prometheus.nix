@@ -4,7 +4,7 @@ _: {
     "monitoring" = {
       module.name = "prometheus";
       module.input = "self";
-
+      #
       # Prometheus server on machines with 'monitoring' tag
       roles.server = {
         tags."monitoring" = { };
@@ -14,19 +14,6 @@ _: {
 
           # Use Tailscale for discovery
           discoveryMethod = "tailscale";
-
-          # Alternative discovery methods:
-          # discoveryMethod = "dns";
-          # dnsDiscovery = {
-          #   node = { names = [ "*.monitoring.local" ]; type = "A"; port = 9100; };
-          #   systemd = { names = [ "*.monitoring.local" ]; type = "A"; port = 9558; };
-          # };
-
-          # discoveryMethod = "static";
-          # staticTargets = {
-          #   node = [ "192.168.1.10:9100" "192.168.1.11:9100" ];
-          #   systemd = [ "192.168.1.10:9558" "192.168.1.11:9558" ];
-          # };
 
           # Basic Prometheus configuration using freeform
           port = 9090;

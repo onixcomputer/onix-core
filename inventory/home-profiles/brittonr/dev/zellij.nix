@@ -16,6 +16,9 @@
           "bind \"Alt x\"" = {
             CloseTab = { };
           };
+          "bind \"Alt p\"" = {
+            NewPane = { };
+          };
         };
       };
     };

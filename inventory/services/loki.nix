@@ -1,7 +1,7 @@
 _: {
   instances = {
     # Loki log aggregation server
-    "loki-server" = {
+    "loki-blr" = {
       module.name = "loki";
       module.input = "self";
       roles.server = {
@@ -97,18 +97,15 @@ _: {
     };
 
     # Promtail log collector (for non-monitoring machines)
-    "promtail-collector" = {
+    "blr-promtail-collector" = {
       module.name = "loki";
       module.input = "self";
       roles.promtail = {
-        tags."log-collector" = { };
+        tags."blr-logs" = { };
         settings = {
           # Point to the Loki server on britton-desktop
-          # Using Tailscale hostname (you may need to adjust this)
-          lokiUrl = "http://britton-desktop:3100";
+          lokiUrl = "http://loki.blr.dev:3100";
 
-          # Alternative: Use Tailscale IP if hostname doesn't work
-          # lokiUrl = "http://100.x.x.x:3100";
 
           # Additional log sources
           additionalScrapeConfigs = [

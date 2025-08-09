@@ -4,7 +4,7 @@ _: {
       module.name = "tailscale-traefik";
       module.input = "self";
       roles.server = {
-        tags."traefik-homepage" = { }; # Any machine with this tag will run this instance
+        tags."traefik-blrdev" = { }; # Any machine with this tag will run this instance
         settings = {
           domain = "blr.dev";
           email = "admin@blr.dev";
@@ -56,6 +56,19 @@ _: {
             seaweed-s3 = {
               port = 8333;
               subdomain = "s3";
+              public = false; # This service is only accessible via Tailscale
+            };
+            loki = {
+              port = 3100;
+              subdomain = "loki";
+              public = false; # This service is only accessible via Tailscale
+            };
+            grafana = {
+              subdomain = "grafana";
+              public = false; # This service is only accessible via Tailscale
+            };
+            prometheus = {
+              subdomain = "prometheus";
               public = false; # This service is only accessible via Tailscale
             };
 

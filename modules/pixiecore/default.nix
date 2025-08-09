@@ -167,13 +167,12 @@ in
                               nix = {
                                 settings = {
                                   substituters = [
-                                    "http://192.168.8.219:5000"
+                                    "https://cache.blr.dev"
                                     "https://nix-community.cachix.org"
                                     "https://cache.nixos.org/"
                                   ];
                                   trusted-public-keys = [
-                                    "harmonia-britton-fw-1754546107:0pCCyAUUwazFUo06BevArMsbvjbC3DZd0a0lhU49lbQ="
-                                    "binarycache.example.com-1:dsafdafDFW123fdasfa123124FADSAD"
+                                    "harmonia-britton-fw-1754726891:8p0Zry0lnJOoAmNyv3cVSBHENop6DCwm3ymUPf0a0BQ="
                                     "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
                                   ];
                                 };
@@ -192,6 +191,28 @@ in
                                 ]
                                 ++ (if cfg.kexecEnabled then [ kexec-tools ] else [ ])
                                 ++ netbootPackages;
+
+                              # Display IP addresses on login
+                              systemd.services.show-ip-addresses = {
+                                description = "Display IP addresses on console";
+                                after = [ "network-online.target" ];
+                                wants = [ "network-online.target" ];
+                                wantedBy = [ "multi-user.target" ];
+                                
+                                serviceConfig = {
+                                  Type = "oneshot";
+                                  RemainAfterExit = true;
+                                  StandardOutput = "journal+console";
+                                };
+                                
+                                script = ''
+                                  echo "======================================="
+                                  echo "Network interfaces and IP addresses:"
+                                  echo "======================================="
+                                  ${pkgs.iproute2}/bin/ip -a
+                                  echo "======================================="
+                                '';
+                              };
                             }
                             # Merge in any additional netboot configuration
                             netbootConfig
