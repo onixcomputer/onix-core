@@ -93,6 +93,7 @@ _: {
         "static-demo"
         "nix-cache"
         "seaweedfs-master"
+        "traefik-blr"
         "tailnet-brittonr"
         "onix-cache"
       ];
@@ -106,8 +107,6 @@ _: {
       tags = [
         "nv"
         "tailnet-brittonr"
-        # "desktop"
-        # "hyprland"
         "prometheus"
         "blr-logs"
       ];
@@ -134,8 +133,6 @@ _: {
       tags = [
         "nv"
         "tailnet-brittonr"
-        # "desktop"
-        # "hyprland"
         "prometheus"
         "blr-logs"
       ];

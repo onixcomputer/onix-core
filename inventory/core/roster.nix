@@ -216,7 +216,7 @@ _: {
         };
       };
       gmk1 = {
-        role = "user";
+        role = "basic";
         shell = "zsh";
         homeManager = {
           enable = true;
@@ -227,7 +227,7 @@ _: {
         };
       };
       gmk2 = {
-        role = "user";
+        role = "basic";
         shell = "zsh";
         homeManager = {
           enable = true;
@@ -238,7 +238,7 @@ _: {
         };
       };
       gmk3 = {
-        role = "user";
+        role = "basic";
         shell = "zsh";
         homeManager = {
           enable = true;

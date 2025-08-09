@@ -167,7 +167,7 @@ in
                               nix = {
                                 settings = {
                                   substituters = [
-                                    "https://cache.blr.dev"
+                                    "http://192.168.8.227:5000"
                                     "https://nix-community.cachix.org"
                                     "https://cache.nixos.org/"
                                   ];
