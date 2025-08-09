@@ -138,7 +138,7 @@ class SOPSHierarchyAnalyzer:
                         # In real implementation, we'd parse age recipients
                         pass
 
-    def get_inherited_secrets(self, entity_name: str, entity_type: str) -> set:
+    def get_inherited_secrets(self, entity_name: str, entity_type: str) -> dict:
         """Get secrets that an entity inherits through group membership
 
         Args:
@@ -146,9 +146,9 @@ class SOPSHierarchyAnalyzer:
             entity_type: Either 'users' or 'machines'
 
         Returns:
-            Set of secret names that the entity has access to through groups
+            Dict mapping secret names to list of groups they're inherited from
         """
-        inherited_secrets = set()
+        inherited_secrets = {}
 
         # Find groups this entity belongs to
         entity_groups = [
@@ -159,10 +159,12 @@ class SOPSHierarchyAnalyzer:
 
         # Find secrets accessible through those groups
         for secret, data in self.secrets.items():
+            groups_with_access = []
             for group in entity_groups:
                 if group in data["groups"]:
-                    inherited_secrets.add(secret)
-                    break
+                    groups_with_access.append(group)
+            if groups_with_access:
+                inherited_secrets[secret] = groups_with_access
 
         return inherited_secrets
 
@@ -194,20 +196,22 @@ class SOPSHierarchyAnalyzer:
                 ]
                 inherited_secrets = self.get_inherited_secrets(user, "users")
 
-                all_secrets = set(direct_secrets) | inherited_secrets
+                all_secrets = set(direct_secrets) | set(inherited_secrets.keys())
                 if all_secrets:
                     for secret in sorted(all_secrets):
                         if secret in direct_secrets and secret in inherited_secrets:
+                            groups = ", ".join(inherited_secrets[secret])
                             user_node.add(
-                                f"🔓 [yellow]{secret}[/yellow] [dim](direct + inherited)[/dim]"
+                                f"🔓 [yellow]{secret}[/yellow] [dim](direct + via {groups})[/dim]"
                             )
                         elif secret in direct_secrets:
                             user_node.add(
                                 f"🔓 [yellow]{secret}[/yellow] [dim](direct)[/dim]"
                             )
                         else:
+                            groups = ", ".join(inherited_secrets[secret])
                             user_node.add(
-                                f"🔓 [yellow]{secret}[/yellow] [dim](inherited)[/dim]"
+                                f"🔓 [yellow]{secret}[/yellow] [dim](via {groups})[/dim]"
                             )
 
         # Add machines section
@@ -233,20 +237,22 @@ class SOPSHierarchyAnalyzer:
                 ]
                 inherited_secrets = self.get_inherited_secrets(machine, "machines")
 
-                all_secrets = set(direct_secrets) | inherited_secrets
+                all_secrets = set(direct_secrets) | set(inherited_secrets.keys())
                 if all_secrets:
                     for secret in sorted(all_secrets):
                         if secret in direct_secrets and secret in inherited_secrets:
+                            groups = ", ".join(inherited_secrets[secret])
                             machine_node.add(
-                                f"🔓 [yellow]{secret}[/yellow] [dim](direct + inherited)[/dim]"
+                                f"🔓 [yellow]{secret}[/yellow] [dim](direct + via {groups})[/dim]"
                             )
                         elif secret in direct_secrets:
                             machine_node.add(
                                 f"🔓 [yellow]{secret}[/yellow] [dim](direct)[/dim]"
                             )
                         else:
+                            groups = ", ".join(inherited_secrets[secret])
                             machine_node.add(
-                                f"🔓 [yellow]{secret}[/yellow] [dim](inherited)[/dim]"
+                                f"🔓 [yellow]{secret}[/yellow] [dim](via {groups})[/dim]"
                             )
 
         # Add groups section

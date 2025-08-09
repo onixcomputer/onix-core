@@ -48,7 +48,9 @@ _: {
     britton-dev = {
       name = "britton-dev";
       tags = [
-        # No tailnet for now
+        "wiki-js"
+        "nixvegas"
+        "traefik-blrdev"
       ];
       deploy = {
         targetHost = "root@192.168.1.146";
@@ -72,7 +74,6 @@ _: {
         "traefik-desktop"
         "static-test"
         "static-demo"
-        "onix-cache"
         "seaweedfs-volume"
       ];
       deploy = {
@@ -84,32 +85,32 @@ _: {
       name = "britton-fw";
       tags = [
         "laptop"
-        "nixvegas"
         "hyprland"
         "prometheus"
-        "log-collector"
+        "monitoring"
         "homepage-server"
-        "traefik-homepage"
+        "traefik-blrdev"
         "static-test"
         "static-demo"
-        "wiki-js"
         "nix-cache"
         "seaweedfs-master"
+        "tailnet-brittonr"
         "onix-cache"
       ];
       deploy = {
-        targetHost = "root@britton-fw";
+        targetHost = "root@127.0.0.1";
         buildHost = "";
       };
     };
     gmk1 = {
       name = "gmk1";
       tags = [
+        "nv"
         "tailnet-brittonr"
         # "desktop"
         # "hyprland"
         "prometheus"
-        "log-collector"
+        "blr-logs"
         "onix-cache"
       ];
       deploy = {
@@ -120,24 +121,26 @@ _: {
     gmk2 = {
       name = "gmk2";
       tags = [
+        "nv"
         "tailnet-brittonr"
         "prometheus"
-        "log-collector"
+        "blr-logs"
         "onix-cache"
       ];
       deploy = {
-        targetHost = "root@192.168.8.122";
+        targetHost = "root@192.168.8.121";
         buildHost = "";
       };
     };
     gmk3 = {
       name = "gmk3";
       tags = [
+        "nv"
         "tailnet-brittonr"
         # "desktop"
         # "hyprland"
         "prometheus"
-        "log-collector"
+        "blr-logs"
         "onix-cache"
       ];
       deploy = {

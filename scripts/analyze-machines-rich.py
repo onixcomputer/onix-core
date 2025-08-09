@@ -370,8 +370,8 @@ def main() -> int | None:
     console.print()
 
     # Display deployment table
-    console.print(create_deployment_table(machines))
-    console.print()
+    # console.print(create_deployment_table(machines))
+    # console.print()
 
 
 if __name__ == "__main__":

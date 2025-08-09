@@ -7,6 +7,7 @@
     bat
     nixos-generators
     glow
+    comma
 
     # Archive tools
     unzip
