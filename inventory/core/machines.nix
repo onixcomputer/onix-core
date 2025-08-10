@@ -96,6 +96,7 @@ _: {
         "traefik-blr"
         "tailnet-brittonr"
         "onix-cache"
+        "openpgp"
       ];
       deploy = {
         targetHost = "root@127.0.0.1";
