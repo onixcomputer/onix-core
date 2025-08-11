@@ -19,6 +19,13 @@ _: {
         identityFile = "~/.ssh/framework";
         identitiesOnly = true;
       };
+      "git.clan.lol" = {
+        hostname = "git.clan.lol";
+        user = "gitea";
+        identityFile = "~/.ssh/framework";
+        identitiesOnly = true;
+        addressFamily = "inet"; # Force IPv4
+      };
 
       "gitlab.com" = {
         hostname = "gitlab.com";
