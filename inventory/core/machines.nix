@@ -72,9 +72,9 @@ _: {
         "vaultwarden-server"
         "homepage-server"
         "traefik-desktop"
-        "static-test"
+        # "static-test"
         "static-demo"
-        "seaweedfs-volume"
+        # "seaweedfs-volume"
       ];
       deploy = {
         targetHost = "root@britton-desktop";
