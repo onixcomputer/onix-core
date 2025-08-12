@@ -5,16 +5,10 @@ let
     url = "https://raw.githubusercontent.com/adeci/wallpapers/main/nix-grub-2880x1920.jpg";
     sha256 = "sha256-Xu3KlpNMiZzS2fXYGGx0u0Qch7CoEus6ODwNVL4Bq4U=";
   };
-  streetWallpaper = pkgs.fetchurl {
-    name = "street-wallpaper.png";
-    url = "https://raw.githubusercontent.com/adeci/wallpapers/main/street-full.jpg";
-    sha256 = "sha256-XlSm8RzGwowJMT/DQBNwfsU4V6QuvP4kvwVm1pzw6SM=";
-  };
 in
 {
   imports = [
     inputs.grub2-themes.nixosModules.default
-    inputs.sddm-sugar-candy-nix.nixosModules.default
   ];
 
   networking = {
@@ -27,7 +21,11 @@ in
   environment.systemPackages = with pkgs; [
     imagemagick # required for grub2-theme
     claude-code
+    signal-desktop
+    nix-output-monitor
+    gh
   ];
+
   zramSwap = {
     enable = true;
     algorithm = "lz4"; # Fast compression
@@ -35,7 +33,6 @@ in
     priority = 100; # Higher priority than disk swap
   };
 
-  # AIDEV-NOTE: Kernel tuning for compilation workloads
   # - Swappiness 60: Balanced between keeping working set in RAM vs using ZRAM
   # - Dirty ratios reduced: Prevent large write bursts that stall compilation
   # - Overcommit enabled: Allow memory-hungry compilers to allocate optimistically
@@ -48,8 +45,6 @@ in
     "vm.overcommit_memory" = 1; # Allow overcommit for compilation
     "vm.page-cluster" = 0; # Optimize for ZRAM
   };
-
-  home-manager.backupFileExtension = "backup";
 
   boot.loader = {
     timeout = 1;
@@ -66,37 +61,28 @@ in
   };
 
   services = {
-    #custom tokyo night theme
-    displayManager.sddm = {
+    gnome.gnome-keyring.enable = true;
+
+    fprintd.enable = true;
+
+    greetd = {
       enable = true;
-      wayland.enable = true;
-      sugarCandyNix = {
-        enable = true;
-        settings = {
-          Background = streetWallpaper;
-          ScreenWidth = 2880;
-          ScreenHeight = 1920;
-          FormPosition = "left";
-          HaveFormBackground = true;
-          PartialBlur = true;
-
-          MainColor = "white";
-          AccentColor = "#668ac4";
-          BackgroundColor = "#1a1b26";
-          OverrideLoginButtonTextColor = "white";
-
-          HeaderText = "";
-          DateFormat = "dddd, MMMM d";
-          HourFormat = "HH:mm";
-
-          ForceLastUser = true;
-          ForceHideCompletePassword = true;
-          ForcePasswordFocus = true;
+      settings = {
+        default_session = {
+          command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd Hyprland";
+          user = "greeter";
         };
       };
     };
-
     fwupd.enable = true; # framework bios/firmware updates
+  };
+
+  home-manager.backupFileExtension = "backup";
+
+  security.pam.services = {
+    login.enableGnomeKeyring = true;
+    greetd.enableGnomeKeyring = true;
+    sudo.fprintAuth = false;
   };
 
   system.stateVersion = "25.05";

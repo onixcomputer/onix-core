@@ -33,6 +33,11 @@
 
     # Additional ZSH options
     initContent = ''
+      # Import systemd environment (for SSH_AUTH_SOCK from gnome-keyring)
+      if command -v systemctl &> /dev/null; then
+        export $(systemctl --user show-environment | grep SSH_AUTH_SOCK | xargs)
+      fi
+
       # Better history search with arrow keys
       bindkey '^[[A' history-search-backward
       bindkey '^[[B' history-search-forward

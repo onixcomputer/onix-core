@@ -29,7 +29,11 @@
                 echo "Usage: build <machine-name>"
                 exit 1
               fi
-              nix build .#nixosConfigurations.$1.config.system.build.toplevel
+              if command -v nom &> /dev/null; then
+                nom build .#nixosConfigurations.$1.config.system.build.toplevel
+              else
+                nix build .#nixosConfigurations.$1.config.system.build.toplevel
+              fi
             '')
             (pkgs.writeShellScriptBin "validate" ''
               echo "Running nix fmt..."

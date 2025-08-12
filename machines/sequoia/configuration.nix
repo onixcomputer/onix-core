@@ -11,6 +11,7 @@
     claude-code
     comma
     gh
+    nix-output-monitor
   ];
 
   home-manager.backupFileExtension = "backup";

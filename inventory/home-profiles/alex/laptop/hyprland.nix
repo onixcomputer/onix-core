@@ -26,6 +26,9 @@
         # Fix slow app startup - update D-Bus environment first
         "${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
 
+        # Start gnome-keyring SSH agent and export SSH_AUTH_SOCK
+        "eval $(${pkgs.gnome-keyring}/bin/gnome-keyring-daemon --start --components=ssh) && systemctl --user import-environment SSH_AUTH_SOCK"
+
         "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
         "${pkgs.wl-clip-persist}/bin/wl-clip-persist --clipboard regular --all-mime-type-regex '^(?!x-kde-passwordManagerHint).+'"
         "${pkgs.waybar}/bin/waybar"

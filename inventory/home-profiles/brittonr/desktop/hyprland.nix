@@ -23,6 +23,7 @@
       exec-once = [
         "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
         "${pkgs.wl-clip-persist}/bin/wl-clip-persist --clipboard regular --all-mime-type-regex '^(?!x-kde-passwordManagerHint).+'"
+        "eval $(${pkgs.gnome-keyring}/bin/gnome-keyring-daemon --start --components=ssh) && systemctl --user import-environment SSH_AUTH_SOCK"
         "${pkgs.waybar}/bin/waybar"
         "${pkgs.mako}/bin/mako"
         "${pkgs.swayosd}/bin/swayosd-server"

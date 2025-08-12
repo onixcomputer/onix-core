@@ -16,18 +16,6 @@ in
     ./pmods/macrand.nix # MAC address randomization utilities
   ];
 
-  nixpkgs.overlays = [
-    (_self: super: {
-      # disable greeter reuse, force fresh greeter every time seems to fix issue
-      gdm = super.gdm.overrideAttrs (oldAttrs: {
-        patches = (oldAttrs.patches or [ ]) ++ [
-          # Look for ALEXDEBUG in journalctl -fu display-manager
-          ./pmods/gdm-stop-greeter-reuse.patch
-        ];
-      });
-    })
-  ];
-
   networking = {
     hostName = "alex-fw";
     networkmanager.enable = true;
@@ -41,12 +29,17 @@ in
     comma
     os-prober
     gh
-    teamviewer
     signal-desktop
+    nix-output-monitor
   ];
-  services.teamviewer.enable = true;
 
-  home-manager.backupFileExtension = "backup";
+  boot.kernel.sysctl = {
+    "vm.swappiness" = 60; # Balanced swapping
+    "vm.dirty_ratio" = 15; # Reduce dirty pages
+    "vm.dirty_background_ratio" = 5; # Earlier writeback
+    "vm.overcommit_memory" = 1; # Allow overcommit for compilation
+    "vm.page-cluster" = 0; # Optimize for ZRAM
+  };
 
   boot.loader = {
     timeout = 1;
@@ -63,20 +56,34 @@ in
     };
   };
 
-  services = {
-    gnome.gnome-keyring.enable = true;
-    displayManager.gdm = {
-      enable = true;
-      debug = true;
-      wayland = true;
-    };
-    fprintd.enable = true;
-    fwupd.enable = true; # framework bios/firmware updates
+  zramSwap = {
+    enable = true;
+    algorithm = "lz4"; # compression
+    memoryPercent = 87; # ~56GB of 64GB RAM
+    priority = 100; # prio over disk swap
   };
 
+  services = {
+    gnome.gnome-keyring.enable = true;
+    fprintd.enable = true;
+    fwupd.enable = true; # framework bios/firmware updates
+
+    greetd = {
+      enable = true;
+      settings = {
+        default_session = {
+          command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd Hyprland";
+          user = "greeter";
+        };
+      };
+    };
+  };
+
+  home-manager.backupFileExtension = "backup";
+
   security.pam.services = {
-    gdm.enableGnomeKeyring = true;
-    # Disable fingerprint for sudo - password only
+    login.enableGnomeKeyring = true;
+    greetd.enableGnomeKeyring = true;
     sudo.fprintAuth = false;
   };
 
