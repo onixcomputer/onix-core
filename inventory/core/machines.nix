@@ -19,7 +19,7 @@ _: {
         "nixvegas"
       ];
       deploy = {
-        targetHost = "root@alex-fw";
+        targetHost = "root@alex-fw.cymric-daggertooth.ts.net";
         buildHost = "";
       };
     };
@@ -145,25 +145,25 @@ _: {
     sequoia = {
       name = "sequoia";
       tags = [
-        "tailnet"
+        "tailnet-adeci"
         "dev"
         "vaultwarden-server"
       ];
       deploy = {
-        targetHost = "root@sequoia";
+        targetHost = "root@sequoia.cymric-daggertooth.ts.net";
         buildHost = "";
       };
     };
     zenith = {
       name = "zenith";
       tags = [
-        "tailnet"
+        "tailnet-dima"
         "laptop"
         "hyprland"
         "nixvegas"
       ];
       deploy = {
-        targetHost = "root@zenith";
+        targetHost = "root@zenith.clouded-hammerhead.ts.net";
         buildHost = "";
       };
     };

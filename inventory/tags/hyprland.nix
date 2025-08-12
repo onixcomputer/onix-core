@@ -5,7 +5,7 @@
   programs.hyprland = {
     enable = true;
     xwayland.enable = true;
-    withUWSM = true; # Universal Wayland Session Manager - prevents Xwayland crashes on fast login
+    withUWSM = false; # Disabled for GDM compatibility - fixes first-launch crash issue
   };
 
   # Hyprland-specific portals

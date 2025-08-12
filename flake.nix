@@ -21,10 +21,6 @@
       url = "github:vinceliuice/grub2-themes";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    sddm-sugar-candy-nix = {
-      url = "github:adeci/sddm-sugar-candy-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     grafana-dashboards = {
       url = "github:onixcomputer/grafana-dashboards";
     };

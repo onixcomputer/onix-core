@@ -10,6 +10,11 @@
       "$browser" = "firefox";
       "$fileManager" = "thunar";
 
+      # Environment variables
+      env = [
+        "ELECTRON_OZONE_PLATFORM_HINT,auto"
+      ];
+
       # Monitors
       monitor = [
         "eDP-1,2880x1920@120,auto,2"
@@ -148,6 +153,7 @@
         "$mod, P, pseudo"
         "$mod, V, togglefloating"
         ", F11, fullscreen, 0"
+        "$mod, bracketright, exec, hyprctl dispatch exit"
 
         # Vim bindings for focus
         "$mod, H, movefocus, l"

@@ -3,7 +3,6 @@ _: {
     { pkgs, ... }:
     {
       treefmt = {
-        projectRootFile = "flake.nix";
         programs = {
           shellcheck.enable = true;
           mypy.enable = true;

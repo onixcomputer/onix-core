@@ -10,6 +10,7 @@
   environment.systemPackages = with pkgs; [
     claude-code
     comma
+    gh
   ];
 
   home-manager.backupFileExtension = "backup";
