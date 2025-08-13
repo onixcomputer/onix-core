@@ -33,6 +33,13 @@ in
     nix-output-monitor
   ];
 
+  # Use nom as default nix wrapper
+  environment.shellAliases = {
+    nix = "nom";
+    nix-build = "nom-build";
+    nixos-rebuild = "nom build --log-format internal-json -v --no-nom-exit-code -- nixos-rebuild";
+  };
+
   boot.kernel.sysctl = {
     "vm.swappiness" = 60; # Balanced swapping
     "vm.dirty_ratio" = 15; # Reduce dirty pages
