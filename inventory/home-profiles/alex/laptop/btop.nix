@@ -5,6 +5,8 @@ _: {
       color_theme = "tokyo-night";
       theme_background = false;
       vim_keys = true;
+      cpu_sensor = "k10temp/Tctl";
+      update_ms = 1000;
     };
   };
 

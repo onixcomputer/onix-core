@@ -92,7 +92,12 @@ _: {
         temperature = {
           interval = 1;
           format = "󰔏 {temperatureC}°C";
-          thermal-zone = 0;
+          hwmon-path-abs = [
+            "/sys/devices/pci0000:00/0000:00:18.3/hwmon" # AMD k10temp typical path
+            "/sys/devices/platform/coretemp.0/hwmon" # Intel coretemp typical path
+            "/sys/devices/pci0000:00/0000:00:01.3/0000:*/0000:*/hwmon" # AMD chipset path
+          ];
+          input-filename = "temp1_input";
           critical-threshold = 80;
           format-critical = "󰸁 {temperatureC}°C";
           tooltip-format = "CPU Temperature: {temperatureC}°C / {temperatureF}°F";
