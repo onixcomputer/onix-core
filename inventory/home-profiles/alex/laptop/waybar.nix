@@ -107,7 +107,7 @@ _: {
           };
           format = "{icon} {capacity}%";
           format-charging = "󰂄 {capacity}%";
-          format-plugged = "󰚥 {capacity}%";
+          format-plugged = "󰂄 {capacity}%";
           format-icons = [
             "󰂎"
             "󰁺"
@@ -298,24 +298,49 @@ _: {
         margin: 0.3em 0.2em;
       }
 
-      #battery.charging, #battery.plugged {
-        color: #a6e3a1;
+      #battery.charging,
+      #battery.plugged {
+        color: #0b8e37;
       }
 
       #battery.warning {
         color: #f9e2af;
+        animation: warning-blink 0.5s linear 3;
       }
 
       #battery.critical {
         background-color: #f38ba8;
         color: #1e1e2e;
-        animation: blink 0.5s linear infinite alternate;
+        animation: critical-blink 0.5s linear 3;
       }
 
-      @keyframes blink {
-        to {
+      @keyframes warning-blink {
+        0% {
+          background-color: #16161e;
+          color: #f9e2af;
+        }
+        50% {
+          background-color: #f9e2af;
+          color: #16161e;
+        }
+        100% {
+          background-color: #16161e;
+          color: #f9e2af;
+        }
+      }
+
+      @keyframes critical-blink {
+        0% {
+          background-color: #f38ba8;
+          color: #1e1e2e;
+        }
+        50% {
           background-color: #1e1e2e;
           color: #f38ba8;
+        }
+        100% {
+          background-color: #f38ba8;
+          color: #1e1e2e;
         }
       }
 
