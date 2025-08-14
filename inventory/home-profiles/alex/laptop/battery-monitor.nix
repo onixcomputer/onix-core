@@ -13,8 +13,9 @@
       # -w: warning level (20%)
       # -c: critical level (10%)
       # -d: danger level (5%)
-      # -f: full battery notification
-      ExecStart = "${pkgs.batsignal}/bin/batsignal -w 20 -c 10 -d 5 -f 95";
+      # -e: make notifications expire (auto-dismiss)
+      # -m: check interval in seconds
+      ExecStart = "${pkgs.batsignal}/bin/batsignal -w 20 -c 10 -d 5 -e -m 120";
       Restart = "on-failure";
       RestartSec = "10s";
     };
