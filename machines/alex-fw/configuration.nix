@@ -31,14 +31,8 @@ in
     gh
     signal-desktop
     nix-output-monitor
+    pamtester
   ];
-
-  # Use nom as default nix wrapper
-  environment.shellAliases = {
-    nix = "nom";
-    nix-build = "nom-build";
-    nixos-rebuild = "nom build --log-format internal-json -v --no-nom-exit-code -- nixos-rebuild";
-  };
 
   boot.kernel.sysctl = {
     "vm.swappiness" = 60; # Balanced swapping
@@ -79,7 +73,7 @@ in
       enable = true;
       settings = {
         default_session = {
-          command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd Hyprland";
+          command = "${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd Hyprland";
           user = "greeter";
         };
       };
@@ -87,6 +81,25 @@ in
   };
 
   home-manager.backupFileExtension = "backup";
+
+  # Configure pam-any for simultaneous auth
+  # security.pam-any = {
+  #   enable = true;
+  #   services = {
+  #     # Test service for pam-any
+  #     "pam-any-test" = {
+  #       enable = true;
+  #       mode = "One";  # Accept either method
+  #       control = "required";
+  #       order = 10000;
+  #       modules = {
+  #         # These are PAM service names that pam-any will call
+  #         "test-fingerprint" = "Fingerprint";
+  #         "test-password" = "Password";
+  #       };
+  #     };
+  #   };
+  # };
 
   security.pam.services = {
     login.enableGnomeKeyring = true;

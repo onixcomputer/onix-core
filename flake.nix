@@ -2,6 +2,8 @@
   description = "Onix Infrastructure";
 
   inputs = {
+    # Temporarily using local nixpkgs for pam-any testing
+    # nixpkgs.url = "path:/home/alex/dev/nixpkgs";
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
     clan-core.url = "git+https://git.clan.lol/adeci/clan-core?ref=adeci-stable";
