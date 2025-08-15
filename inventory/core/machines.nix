@@ -60,7 +60,6 @@ _: {
     britton-desktop = {
       name = "britton-desktop";
       tags = [
-        # "tailnet"
         "dev"
         "desktop"
         "nvidia"
@@ -71,7 +70,8 @@ _: {
         "monitoring"
         "vaultwarden-server"
         "homepage-server"
-        "traefik-desktop"
+        # "tailnet-brittonr"
+        # "traefik-desktop"
         # "static-test"
         "static-demo"
         # "seaweedfs-volume"

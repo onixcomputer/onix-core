@@ -15,16 +15,16 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1755004039,
-        "narHash": "sha256-koeJWOQJsVabRppX4Td1b4y4YzkaLzRM9Y4HadLcCJ4=",
-        "ref": "main",
-        "rev": "0259492c97a3f62fc486ce7f611a9f7af86cdfa7",
-        "revCount": 9056,
+        "lastModified": 1755152211,
+        "narHash": "sha256-YxMXok6DdHSI2COcTOQOuRk1taFEU3d73XLaC0HBprs=",
+        "ref": "roster-pr-fixes",
+        "rev": "4e453115aa8dc3d10b09ce43107b38b03468cf3f",
+        "revCount": 9102,
         "type": "git",
         "url": "https://git.clan.lol/brittonr/clan-core"
       },
       "original": {
-        "ref": "main",
+        "ref": "roster-pr-fixes",
         "type": "git",
         "url": "https://git.clan.lol/brittonr/clan-core"
       }
@@ -191,11 +191,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1753279958,
-        "narHash": "sha256-EJ1udnwKYgWeAJzncAccbLPtbSWiuIANryXTGI9nY6w=",
+        "lastModified": 1755072091,
+        "narHash": "sha256-FCkbELHIFXlVREaopW13QFMzwLPr/otjucmyNLQQXeg=",
         "owner": "vinceliuice",
         "repo": "grub2-themes",
-        "rev": "6c26f99622cb1c705b3fe2dbe1eb88521096b25a",
+        "rev": "03d8c9cf0d1bcf67765ac5fa35263f1b08c584fa",
         "type": "github"
       },
       "original": {
@@ -282,11 +282,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1755003123,
-        "narHash": "sha256-NjnuwHezrp40mFgdnVvZlUAeMsX+bbHINxATORch9z0=",
+        "lastModified": 1755171343,
+        "narHash": "sha256-h6bbfhqWcHlx9tcyYa7dhaEiNpusLCcFYkJ/AnltLW8=",
         "owner": "nix-community",
         "repo": "NixOS-WSL",
-        "rev": "f2b01cd5df637258642f310fd5beebe3bf1c04b2",
+        "rev": "e37cfef071466a9ca649f6899aff05226ce17e9e",
         "type": "github"
       },
       "original": {
@@ -326,11 +326,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1754990257,
-        "narHash": "sha256-eEq2wlYNF2t89PsNyEv5Sz4lSxdukZCj4SdhZBVAGpI=",
+        "lastModified": 1755175540,
+        "narHash": "sha256-V0j2S1r25QnbqBLzN2Rg/dKKil789bI3P3id7bDPVc4=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "372d9eeeafa5b15913201e2b92e8e539ac7c64d1",
+        "rev": "a595dde4d0d31606e19dcec73db02279db59d201",
         "type": "github"
       },
       "original": {

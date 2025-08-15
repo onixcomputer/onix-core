@@ -90,7 +90,7 @@ _: {
 
   brittonr = {
     description = "Britton";
-    defaultUid = 1555;
+    defaultUid = 1000;
     defaultGroups = [
       "wheel"
       "networkmanager"
