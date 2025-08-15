@@ -7,6 +7,7 @@ _: {
     addKeysToAgent = "yes";
 
     matchBlocks = {
+
       "git.clan.lol" = {
         hostname = "git.clan.lol";
         user = "gitea";
@@ -21,6 +22,14 @@ _: {
         identityFile = "~/.ssh/id_ed25519";
         identitiesOnly = true;
       };
+
+      "gitlab.com" = {
+        hostname = "gitlab.com";
+        user = "git";
+        identityFile = "~/.ssh/id_ed25519";
+        identitiesOnly = true;
+      };
+
     };
   };
 }

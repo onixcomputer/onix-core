@@ -65,6 +65,21 @@ in
 
     fprintd.enable = true;
 
+    # Keyd for dual-function keys (Caps Lock = Esc on tap, Ctrl on hold)
+    keyd = {
+      enable = true;
+      keyboards = {
+        default = {
+          ids = [ "*" ];
+          settings = {
+            main = {
+              capslock = "overload(control, esc)";
+            };
+          };
+        };
+      };
+    };
+
     greetd = {
       enable = true;
       settings = {
@@ -77,7 +92,17 @@ in
     fwupd.enable = true; # framework bios/firmware updates
   };
 
-  home-manager.backupFileExtension = "backup";
+  home-manager = {
+    backupFileExtension = "backup";
+    sharedModules = [
+      {
+        wayland.windowManager.hyprland.settings.monitor = [
+          "eDP-1,2880x1920@120,auto,2"
+          "DP-3,preferred,auto,1,mirror,eDP-1"
+        ];
+      }
+    ];
+  };
 
   security.pam.services = {
     login.enableGnomeKeyring = true;

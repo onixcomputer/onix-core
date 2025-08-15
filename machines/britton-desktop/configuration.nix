@@ -51,6 +51,21 @@ in
 
     gnome.gnome-keyring.enable = true;
 
+    # Keyd for dual-function keys (Caps Lock = Esc on tap, Ctrl on hold)
+    keyd = {
+      enable = true;
+      keyboards = {
+        default = {
+          ids = [ "*" ];
+          settings = {
+            main = {
+              capslock = "overload(control, esc)";
+            };
+          };
+        };
+      };
+    };
+
     printing.enable = true;
 
     pulseaudio.enable = false;
@@ -74,7 +89,18 @@ in
 
   };
 
-  home-manager.backupFileExtension = "backup";
+  home-manager = {
+    backupFileExtension = "backup";
+    sharedModules = [
+      {
+        wayland.windowManager.hyprland.settings.monitor = [
+          ",preferred,auto,1.5"
+          "HDMI-A-1,preferred,auto,2,mirror,eDP-1"
+          "HDMI-A-2,preferred,auto,2,mirror,DP-1"
+        ];
+      }
+    ];
+  };
 
   security = {
     rtkit.enable = true;

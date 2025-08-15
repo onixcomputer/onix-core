@@ -3,6 +3,8 @@ _: {
   programs.atuin = {
     enable = true;
     enableZshIntegration = true;
+    enableFishIntegration = true;
+    enableBashIntegration = true;
 
     settings = {
       # UI settings

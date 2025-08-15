@@ -1,8 +1,4 @@
-{
-  inputs,
-  pkgs,
-  ...
-}:
+{ inputs, pkgs, ... }:
 let
   grubWallpaper = pkgs.fetchurl {
     name = "nixos-grub-wallpaper.jpg";
@@ -69,6 +65,21 @@ in
     fprintd.enable = true;
     fwupd.enable = true; # framework bios/firmware updates
 
+    # Keyd for dual-function keys (Caps Lock = Esc on tap, Ctrl on hold)
+    keyd = {
+      enable = true;
+      keyboards = {
+        default = {
+          ids = [ "*" ];
+          settings = {
+            main = {
+              capslock = "overload(control, esc)";
+            };
+          };
+        };
+      };
+    };
+
     greetd = {
       enable = true;
       settings = {
@@ -80,26 +91,17 @@ in
     };
   };
 
-  home-manager.backupFileExtension = "backup";
-
-  # Configure pam-any for simultaneous auth
-  # security.pam-any = {
-  #   enable = true;
-  #   services = {
-  #     # Test service for pam-any
-  #     "pam-any-test" = {
-  #       enable = true;
-  #       mode = "One";  # Accept either method
-  #       control = "required";
-  #       order = 10000;
-  #       modules = {
-  #         # These are PAM service names that pam-any will call
-  #         "test-fingerprint" = "Fingerprint";
-  #         "test-password" = "Password";
-  #       };
-  #     };
-  #   };
-  # };
+  home-manager = {
+    backupFileExtension = "backup";
+    sharedModules = [
+      {
+        wayland.windowManager.hyprland.settings.monitor = [
+          "eDP-1,2880x1920@120,auto,2"
+          "DP-3,preferred,auto,1,mirror,eDP-1"
+        ];
+      }
+    ];
+  };
 
   security.pam.services = {
     login.enableGnomeKeyring = true;
