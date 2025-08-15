@@ -207,9 +207,9 @@
         "$mod, comma, exec, makoctl dismiss"
         "$mod SHIFT, comma, exec, makoctl dismiss --all"
 
-        ", PRINT, exec, hyprshot -m output"
-        "SHIFT, PRINT, exec, hyprshot -m window"
-        "$mod SHIFT, S, exec, hyprshot -m region"
+        ", PRINT, exec, hyprshot -m output -o ~/Screenshots"
+        "SHIFT, PRINT, exec, hyprshot -m window -o ~/Screenshots"
+        "$mod SHIFT, S, exec, hyprshot -m region -o ~/Screenshots"
 
         "$mod, PRINT, exec, hyprpicker -a"
 

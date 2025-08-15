@@ -6,6 +6,10 @@ _: {
     enable = true;
     addKeysToAgent = "yes";
 
+    extraConfig = ''
+      AddressFamily inet
+    '';
+
     matchBlocks = {
 
       "git.clan.lol" = {
@@ -13,7 +17,6 @@ _: {
         user = "gitea";
         identityFile = "~/.ssh/id_ed25519";
         identitiesOnly = true;
-        addressFamily = "inet"; # Force IPv4
       };
 
       "github.com" = {

@@ -5,6 +5,9 @@ _: {
   programs.ssh = {
     enable = true;
     addKeysToAgent = "yes";
+    extraConfig = ''
+      AddressFamily inet
+    '';
 
     matchBlocks = {
       "github.com" = {
@@ -13,14 +16,6 @@ _: {
         identityFile = "~/.ssh/nixos_key";
         identitiesOnly = true;
       };
-      "git.clan.lol" = {
-        hostname = "git.clan.lol";
-        user = "gitea";
-        identityFile = "~/.ssh/nixos_key";
-        identitiesOnly = true;
-        addressFamily = "inet"; # Force IPv4
-      };
-
       "gitlab.com" = {
         hostname = "gitlab.com";
         user = "git";

@@ -1,5 +1,4 @@
 _: {
-  # Make programs use XDG directories whenever supported
   home.preferXdgDirectories = true;
 
   xdg.userDirs = {
@@ -11,8 +10,8 @@ _: {
     pictures = "$HOME/Pictures";
     videos = "$HOME/Videos";
     extraConfig = {
-      XDG_SCREENSHOTS_DIR = "$HOME/Pictures/Screenshots";
-      XDG_PROJECTS_DIR = "$HOME/git";
+      XDG_SCREENSHOTS_DIR = "$HOME/Screenshots";
+      XDG_PROJECTS_DIR = "$HOME/dev";
     };
   };
 }

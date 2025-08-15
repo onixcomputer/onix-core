@@ -29,13 +29,6 @@ _: {
         opacity = 0.98;
       };
 
-      keyboard.bindings = [
-        {
-          key = "F12";
-          action = "ToggleFullscreen";
-        }
-      ];
-
       # Tokyo Night theme colors
       colors = {
         primary = {

@@ -10,6 +10,7 @@ _: {
     controlPersist = "10m";
     extraConfig = ''
       IdentityFile ~/.ssh/framework
+      AddressFamily inet
     '';
 
     matchBlocks = {
@@ -24,7 +25,6 @@ _: {
         user = "gitea";
         identityFile = "~/.ssh/framework";
         identitiesOnly = true;
-        addressFamily = "inet"; # Force IPv4
       };
 
       "gitlab.com" = {
