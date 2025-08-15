@@ -30,7 +30,7 @@ _: {
       };
       sequoia = {
         role = "owner";
-        shell = "zsh";
+        shell = "fish";
         homeManager = {
           enable = true;
           profiles = [
@@ -41,7 +41,7 @@ _: {
       };
       alex-mu = {
         role = "owner";
-        shell = "zsh";
+        shell = "fish";
         homeManager = {
           enable = true;
           profiles = [
@@ -52,7 +52,7 @@ _: {
       };
       alex-dev = {
         role = "owner";
-        shell = "zsh";
+        shell = "fish";
         homeManager = {
           enable = true;
           profiles = [
@@ -63,7 +63,7 @@ _: {
       };
       alex-wsl = {
         role = "owner";
-        shell = "zsh";
+        shell = "fish";
         homeManager = {
           enable = true;
           profiles = [
@@ -74,13 +74,14 @@ _: {
       };
       zenith = {
         role = "owner";
-        shell = "zsh";
+        shell = "fish";
         homeManager = {
           enable = true;
           profiles = [
             "base"
             "dev"
-            "laptop"
+            "hyprland"
+            "hypr-laptop"
             "creative"
             "social"
           ];
@@ -173,7 +174,7 @@ _: {
           ];
         };
       };
-      alex-mu = {
+      alex-fw = {
         role = "admin";
         shell = "fish";
         homeManager = {
@@ -202,7 +203,7 @@ _: {
     machines = {
       zenith = {
         role = "owner";
-        shell = "zsh";
+        shell = "fish";
         homeManager = {
           enable = true;
           profiles = [

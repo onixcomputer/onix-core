@@ -38,7 +38,7 @@
     ncg = "nix-collect-garbage -d";
 
     # Clan shortcuts
-    cu = "clan m update $hostname";
+    cu = "clan machines update $hostname";
   };
 
   # Fish shell configuration
