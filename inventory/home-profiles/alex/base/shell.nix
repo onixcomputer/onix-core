@@ -22,6 +22,7 @@
     g = "git";
     gs = "git status";
     ga = "git add";
+    gaa = "git add -A";
     gc = "git commit";
     gp = "git push";
     gl = "git log --oneline --graph";
@@ -37,8 +38,13 @@
     nfu = "nix flake update";
     ncg = "nix-collect-garbage -d";
 
-    # Clan shortcuts
+    # general shortcuts
+    c = "clear";
+    v = "validate";
+    cmu = "clan machines update";
     cu = "clan machines update $hostname";
+    coc = "cd $HOME/dev/onix-core";
+    cocn = "cd $HOME/dev/onix-core && nvim .";
   };
 
   # Fish shell configuration
@@ -54,6 +60,20 @@
         for var in (systemctl --user show-environment | string match 'SSH_AUTH_SOCK=*')
           set -gx (string split -m 1 '=' $var)
         end
+      end
+
+      # Compare home-profile directories
+      function comp
+        if test (count $argv) -ne 2
+          echo "Usage: comp <user1/profile> <user2/profile>"
+          echo "Example: comp alex/hyprland brittonr/hyprland"
+          return 1
+        end
+        echo "Files only in $argv[1]:"
+        comm -23 (cd ~/dev/onix-core/inventory/home-profiles/$argv[1] 2>/dev/null && ls -1 | sort | psub) (cd ~/dev/onix-core/inventory/home-profiles/$argv[2] 2>/dev/null && ls -1 | sort | psub)
+        echo ""
+        echo "Files only in $argv[2]:"
+        comm -13 (cd ~/dev/onix-core/inventory/home-profiles/$argv[1] 2>/dev/null && ls -1 | sort | psub) (cd ~/dev/onix-core/inventory/home-profiles/$argv[2] 2>/dev/null && ls -1 | sort | psub)
       end
 
       # Better colors for suggestions (subtle gray)

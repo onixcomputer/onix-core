@@ -198,6 +198,7 @@
 
         # Applications
         "$mod, Return, exec, $terminal"
+        "$mod SHIFT, Return, exec, terminal-cwd"
         "$mod, F, exec, $fileManager"
         "$mod, B, exec, $browser"
         "$mod, R, exec, pkill wofi || wofi --show run"
@@ -207,11 +208,15 @@
         "$mod, comma, exec, makoctl dismiss"
         "$mod SHIFT, comma, exec, makoctl dismiss --all"
 
-        ", PRINT, exec, hyprshot -m output -o ~/Screenshots"
-        "SHIFT, PRINT, exec, hyprshot -m window -o ~/Screenshots"
-        "$mod SHIFT, S, exec, hyprshot -m region -o ~/Screenshots"
+        # Instant fullscreen screenshot
+        ", F11, exec, grim ~/Screenshots/$(date +'screenshot_%Y-%m-%d_%H-%M-%S.png') && notify-send 'Screenshot' 'Saved to ~/Screenshots' -i camera-photo"
+        # Region selection screenshot (defined in screenshot.nix with lock)
+        "$mod SHIFT, S, exec, screenshot-wrapper -m region -o ~/Screenshots"
+        # Window selection screenshot (defined in screenshot.nix with lock)
+        "$mod SHIFT, W, exec, screenshot-wrapper -m window -o ~/Screenshots"
 
-        "$mod, PRINT, exec, hyprpicker -a"
+        # Color picker
+        "$mod SHIFT, P, exec, hyprpicker -a"
 
         "$mod, mouse_down, workspace, e+1"
         "$mod, mouse_up, workspace, e-1"
