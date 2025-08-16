@@ -24,6 +24,7 @@
     ga = "git add";
     gaa = "git add -A";
     gc = "git commit";
+    gll = "git pull";
     gp = "git push";
     gl = "git log --oneline --graph";
 
