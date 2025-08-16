@@ -4,6 +4,8 @@
   programs.waybar.settings.mainBar = {
     modules-right = lib.mkForce [
       "tray"
+      "network"
+      "bluetooth"
       "pulseaudio"
       "group/resources"
       "battery"

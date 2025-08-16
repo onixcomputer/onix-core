@@ -13,6 +13,8 @@ _: {
         modules-center = [ "clock" ];
         modules-right = [
           "tray"
+          "network"
+          "bluetooth"
           "pulseaudio"
           "group/resources"
           "custom/power"
@@ -20,10 +22,15 @@ _: {
 
         "group/resources" = {
           orientation = "horizontal";
+          drawer = {
+            transition-duration = 400;
+            children-class = "drawer-child";
+            transition-left-to-right = false; # Expands right, keeping CPU in place
+          };
           modules = [
             "cpu"
-            "memory"
             "temperature"
+            "memory"
           ];
         };
 
@@ -122,6 +129,35 @@ _: {
           icon-size = 20;
           spacing = 6;
           show-passive-items = true;
+        };
+
+        network = {
+          interval = 5;
+          format-wifi = "󰖩 {signalStrength}%";
+          format-ethernet = "󰈁 Wired";
+          format-linked = "󰈁 No IP";
+          format-disconnected = "󰖪";
+          format-disabled = "󰖪";
+          tooltip-format = "{ifname}: {ipaddr}/{cidr}";
+          tooltip-format-wifi = "WiFi: {essid} ({signalStrength}%)\n{ifname}: {ipaddr}/{cidr}\n↑ {bandwidthUpBytes} ↓ {bandwidthDownBytes}";
+          tooltip-format-ethernet = "Ethernet: {ifname}\n{ipaddr}/{cidr}\n↑ {bandwidthUpBytes} ↓ {bandwidthDownBytes}";
+          tooltip-format-disconnected = "Disconnected";
+          on-click = "rofi-wifi";
+          on-click-right = "alacritty -e nmtui";
+        };
+
+        bluetooth = {
+          format-on = "󰂯";
+          format-off = "󰂲";
+          format-disabled = "󰂲";
+          format-connected = "󰂱 {num_connections}";
+          format-connected-battery = "󰂱 {device_battery_percentage}%";
+          tooltip-format = "{controller_alias}\t{controller_address}";
+          tooltip-format-connected = "{controller_alias}\t{controller_address}\n\n{device_enumerate}";
+          tooltip-format-enumerate-connected = "{device_alias}\t{device_address}";
+          tooltip-format-enumerate-connected-battery = "{device_alias}\t{device_address}\t{device_battery_percentage}%";
+          on-click = "rfkill toggle bluetooth";
+          on-click-right = "alacritty -e bluetoothctl";
         };
 
         "custom/power" = {
@@ -229,6 +265,50 @@ _: {
         -gtk-icon-effect: highlight;
       }
 
+      #network {
+        background: #16161e;
+        color: #7aa2f7;
+        border-radius: 0.7em;
+        padding: 0 0.8em;
+        margin: 0.3em 0.2em;
+      }
+
+      #network.wifi {
+        color: #7aa2f7;
+      }
+
+      #network.ethernet {
+        color: #bb9af7;  /* Purple for wired to distinguish */
+      }
+
+      #network.linked {
+        color: #f7768e;  /* Red-ish for linked but no internet */
+      }
+
+      #network.disconnected,
+      #network.disabled {
+        color: #313244;
+        background: #16161e;
+      }
+
+      #bluetooth {
+        background: #16161e;
+        color: #7aa2f7;
+        border-radius: 0.7em;
+        padding: 0 0.8em;
+        margin: 0.3em 0.2em;
+      }
+
+      #bluetooth.off,
+      #bluetooth.disabled {
+        color: #313244;
+        background: #16161e;
+      }
+
+      #bluetooth.connected {
+        color: #9ece6a;
+      }
+
       #pulseaudio {
         background: #16161e;
         color: #7aa2f7;
@@ -278,6 +358,10 @@ _: {
         margin: 0.3em 0.2em;
         margin-right: 0.8em;
       }
+
+      /* Group drawer styling - matching dotfiles approach */
+      /* The drawer transition is handled by waybar internally */
+      /* We just style the modules consistently */
 
     '';
   };

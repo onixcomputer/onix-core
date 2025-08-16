@@ -201,9 +201,9 @@
         "$mod SHIFT, Return, exec, terminal-cwd"
         "$mod, F, exec, $fileManager"
         "$mod, B, exec, $browser"
-        "$mod, R, exec, pkill wofi || wofi --show run"
-        "$mod, space, exec, pkill wofi || wofi --show drun"
-        "$mod, bracketleft, exec, pkill wofi || wofi-power"
+        "$mod, R, exec, rofi -show run"
+        "$mod, space, exec, rofi -show drun"
+        "$mod, bracketleft, exec, rofi-power"
 
         "$mod, comma, exec, makoctl dismiss"
         "$mod SHIFT, comma, exec, makoctl dismiss --all"
