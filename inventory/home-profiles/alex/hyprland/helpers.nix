@@ -46,6 +46,7 @@ in
     screenshot-wrapper
     networkmanager
     networkmanagerapplet # Provides nm-connection-editor binary only
+    hyprlock # Screen locker for Hyprland
   ];
 
   # Explicitly disable nm-applet service (we use waybar + rofi instead)

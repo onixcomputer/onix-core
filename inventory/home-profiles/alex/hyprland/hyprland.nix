@@ -27,11 +27,11 @@
 
       # General
       general = {
-        gaps_in = 3; # Reduced from 5
-        gaps_out = 6; # Reduced from 10
+        gaps_in = 3; # Between windows
+        gaps_out = 3; # Consistent 3px gaps everywhere
         border_size = 2;
         "col.active_border" = "rgba(7aa2f7ee) rgba(bb9af7ee) 45deg";
-        "col.inactive_border" = "rgba(595959aa)";
+        "col.inactive_border" = "rgba(414868aa)"; # Subtle gray with transparency
         resize_on_border = false;
         allow_tearing = false;
         layout = "dwindle";
@@ -208,13 +208,13 @@
         "$mod, B, exec, $browser"
         "$mod, R, exec, rofi -show run"
         "$mod, space, exec, rofi -show drun"
-        "$mod, bracketleft, exec, rofi-power"
+        "$mod, Delete, exec, wlogout --protocol layer-shell -b 2"
 
         "$mod, comma, exec, makoctl dismiss"
         "$mod SHIFT, comma, exec, makoctl dismiss --all"
 
-        # Instant fullscreen screenshot
-        ", F11, exec, grim ~/Screenshots/$(date +'screenshot_%Y-%m-%d_%H-%M-%S.png') && notify-send 'Screenshot' 'Saved to ~/Screenshots' -i camera-photo"
+        # Instant fullscreen screenshot (Fn+F11 or Print key)
+        ", Print, exec, grim ~/Screenshots/$(date +'screenshot_%Y-%m-%d_%H-%M-%S.png') && notify-send 'Screenshot' 'Saved to ~/Screenshots' -i camera-photo"
         # Region selection screenshot (defined in screenshot.nix with lock)
         "$mod SHIFT, S, exec, screenshot-wrapper -m region -o ~/Screenshots"
         # Window selection screenshot (defined in screenshot.nix with lock)

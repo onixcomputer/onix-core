@@ -107,6 +107,7 @@ in
     login.enableGnomeKeyring = true;
     greetd.enableGnomeKeyring = true;
     sudo.fprintAuth = false;
+    hyprlock = { }; # Enable PAM authentication for hyprlock (uses 'su' as fallback)
   };
 
   system.stateVersion = "25.05";

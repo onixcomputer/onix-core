@@ -7,7 +7,7 @@ _: {
         position = "top";
         height = 28; # Slightly taller for larger font
         spacing = 0;
-        margin = "0"; # No margins - maximize screen space
+        margin = "3 0 0 0"; # 3px top margin only
 
         modules-left = [ "hyprland/workspaces" ];
         modules-center = [ "clock" ];
@@ -36,28 +36,11 @@ _: {
 
         "hyprland/workspaces" = {
           on-click = "activate";
-          format = "{icon}";
-          format-icons = {
-            "1" = "1";
-            "2" = "2";
-            "3" = "3";
-            "4" = "4";
-            "5" = "5";
-            "6" = "6";
-            "7" = "7";
-            "8" = "8";
-            "9" = "9";
-            active = "●";
-            default = "";
-          };
+          format = "{name}";
           on-scroll-up = "hyprctl dispatch workspace e+1";
           on-scroll-down = "hyprctl dispatch workspace e-1";
           persistent-workspaces = {
-            "1" = [ ];
-            "2" = [ ];
-            "3" = [ ];
-            "4" = [ ];
-            "5" = [ ];
+            "*" = 10; # Show all 10 workspaces on all monitors
           };
         };
 
@@ -163,7 +146,7 @@ _: {
         "custom/power" = {
           format = "󰐥";
           tooltip = false;
-          on-click = "wofi-power";
+          on-click = "wlogout --protocol layer-shell -b 2";
         };
       };
     };
@@ -197,20 +180,23 @@ _: {
       }
 
       #workspaces {
-        background: rgba(22, 22, 30, 0.8);  /* Semi-transparent */
-        border-radius: 0.5em;
+        background: transparent;
         margin: 0 0.2em;  /* No top/bottom margins */
         margin-left: 0.5em;
-        padding: 0.1em;
+        padding: 0;
       }
 
       #workspaces button {
-        padding: 0 0.5em;
+        padding: 0 0.4em;
         margin: 0 0.1em;
-        border-radius: 0.6em;
+        border-radius: 0.4em;
         color: #7aa2f7;
-        background: transparent;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        background: rgba(22, 22, 30, 0.7);
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+        font-weight: 500;
+        min-width: 24px;
+        font-size: 14px;
       }
 
       #workspaces button:first-child {
@@ -222,20 +208,40 @@ _: {
       }
 
       #workspaces button.active {
-        background: #7aa2f7;
+        background: linear-gradient(45deg, rgba(122, 162, 247, 0.9), rgba(187, 154, 247, 0.9));
         color: #16161e;
-        border-radius: 0.6em;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        font-size: 1.6em;
-        padding: 0 0.6em;
-        margin: 0 0.15em;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 0 8px rgba(122, 162, 247, 0.3), inset 0 0 12px rgba(255, 255, 255, 0.1);
+        font-weight: 600;
+        transition: all 0.2s ease;
+      }
+
+      #workspaces button.urgent {
+        background: #f7768e;
+        color: #16161e;
+        animation: pulse 1s infinite;
       }
 
       #workspaces button:hover {
-        background: #7aa2f7;
-        color: #16161e;
-        border-radius: 0.6em;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        background: rgba(122, 162, 247, 0.2);
+        border: 1px solid rgba(122, 162, 247, 0.3);
+        transition: all 0.15s ease;
+      }
+
+      #workspaces button.active:hover {
+        box-shadow: 0 0 10px rgba(122, 162, 247, 0.4), inset 0 0 12px rgba(255, 255, 255, 0.15);
+      }
+
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(247, 118, 142, 0.7);
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(247, 118, 142, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(247, 118, 142, 0);
+        }
       }
 
       #clock {
