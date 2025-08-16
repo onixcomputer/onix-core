@@ -41,8 +41,13 @@ let
   '';
 in
 {
-  home.packages = [
+  home.packages = with pkgs; [
     terminal-cwd
     screenshot-wrapper
+    networkmanager
+    networkmanagerapplet # Provides nm-connection-editor binary only
   ];
+
+  # Explicitly disable nm-applet service (we use waybar + rofi instead)
+  services.network-manager-applet.enable = false;
 }

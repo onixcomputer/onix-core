@@ -10,7 +10,7 @@
       fg1:    #a9b1d6;
       accent: #7aa2f7;
       urgent: #f7768e;
-      
+
       background-color: @bg0;
       text-color:       @fg0;
       font:             "CaskaydiaMono Nerd Font 12";
@@ -103,8 +103,38 @@
     };
   };
 
-  # Add rofi scripts
   home.packages = with pkgs; [
+    # Unified network menu that handles both WiFi and Ethernet
+    (writeShellScriptBin "rofi-network-menu" ''
+      # Detect active connection type
+      active_type=$(nmcli -t -f TYPE,STATE con show --active | grep activated | cut -d: -f1)
+
+      if [ "$active_type" = "802-3-ethernet" ]; then
+        # Ethernet is connected - show ethernet options
+        menu="
+          󰢾  Network Settings
+          󰖩  Switch to WiFi
+
+          󰈁  Ethernet Connected"
+
+        chosen=$(echo -e "$menu" | ${rofi-wayland}/bin/rofi -dmenu -p "Network" \
+          -theme-str 'window {width: 400px;} listview {lines: 4;}' \
+          -theme-str 'element {font: "CaskaydiaMono Nerd Font 11";}')
+
+        case "$chosen" in
+          *"Network Settings")
+            nm-connection-editor &
+            ;;
+          *"Switch to WiFi")
+            rofi-wifi
+            ;;
+        esac
+      else
+        # WiFi or disconnected - show WiFi menu
+        rofi-wifi
+      fi
+    '')
+
     # Network manager for rofi
     (writeShellScriptBin "rofi-network" ''
       # Simple network menu using nmcli
@@ -118,11 +148,12 @@
       }
     '')
 
-    # Power menu (replacing wofi-power)
     (writeShellScriptBin "rofi-power" ''
       entries="⇠ Logout\n⭮ Reboot\n⏻ Shutdown"
 
-      selected=$(echo -e "$entries" | ${rofi-wayland}/bin/rofi -dmenu -p "Power" -theme-str 'window {width: 250px;} listview {lines: 3;}')
+      selected=$(echo -e "$entries" | ${rofi-wayland}/bin/rofi -dmenu -p "Power" \
+        -theme-str 'window {width: 250px;} listview {lines: 3;}' \
+        -theme-str 'element {font: "CaskaydiaMono Nerd Font 11";}')
 
       case $selected in
         *Logout)
@@ -134,25 +165,64 @@
       esac
     '')
 
-    # WiFi selector with better functionality
     (writeShellScriptBin "rofi-wifi" ''
-      # Get list of available wifi networks
-      nmcli dev wifi rescan 2>/dev/null
+            # Check if WiFi is enabled
+            wifi_status=$(nmcli radio wifi)
+            # Menu options
+            if [ "$wifi_status" = "enabled" ]; then
+              toggle_text="󰖪  Disable WiFi"
+            else
+              toggle_text="󰖩  Enable WiFi"
+            fi
 
-      networks=$(nmcli -f SSID,SIGNAL,BARS,SECURITY dev wifi list | tail -n +2)
-      chosen=$(echo "$networks" | ${rofi-wayland}/bin/rofi -dmenu -p "WiFi" -theme-str 'window {width: 600px;}')
+            # Add special menu items at the top
+            menu_items="󰢾  Network Settings
+      $toggle_text"
 
-      [ -z "$chosen" ] && exit
+            # Only scan if WiFi is enabled
+            if [ "$wifi_status" = "enabled" ]; then
+              nmcli dev wifi rescan 2>/dev/null
+              # Filter out hidden networks (empty SSID) and duplicates
+              networks=$(nmcli -f SSID,SIGNAL,BARS,SECURITY dev wifi list | tail -n +2 | grep -v '^--' | awk '!seen[$1]++ && $1 != ""' | head -20)
+              if [ -n "$networks" ]; then
+                full_menu=$(echo -e "$menu_items\n\n$networks")
+              else
+                full_menu="$menu_items"
+              fi
+            else
+              full_menu="$menu_items"
+            fi
 
-      ssid=$(echo "$chosen" | awk '{print $1}')
+            chosen=$(echo -e "$full_menu" | ${rofi-wayland}/bin/rofi -dmenu -p "Network" \
+              -theme-str 'window {width: 600px;} listview {lines: 12;}' \
+              -theme-str 'element {font: "CaskaydiaMono Nerd Font 11";}')
 
-      # Try to connect
-      nmcli dev wifi connect "$ssid" || {
-        # Need password
-        password=$(${rofi-wayland}/bin/rofi -dmenu -p "Password for $ssid" -password)
-        [ -z "$password" ] && exit
-        nmcli dev wifi connect "$ssid" password "$password"
-      }
+            [ -z "$chosen" ] && exit
+
+            case "$chosen" in
+              *"Network Settings")
+                nm-connection-editor &
+                ;;
+              *"Enable WiFi")
+                nmcli radio wifi on
+                notify-send "WiFi" "WiFi enabled" -i network-wireless
+                ;;
+              *"Disable WiFi")
+                nmcli radio wifi off
+                notify-send "WiFi" "WiFi disabled" -i network-wireless-disconnected
+                ;;
+              *)
+                # Connecting to a network
+                ssid=$(echo "$chosen" | awk '{print $1}')
+
+                # Just try to connect - let gnome-keyring handle passwords
+                nmcli dev wifi connect "$ssid" && {
+                  notify-send "WiFi" "Connected to $ssid" -i network-wireless
+                } || {
+                  notify-send "WiFi" "Could not connect to $ssid" -i dialog-information
+                }
+                ;;
+            esac
     '')
   ];
 }

@@ -27,8 +27,8 @@
 
       # General
       general = {
-        gaps_in = 5;
-        gaps_out = 10;
+        gaps_in = 3; # Reduced from 5
+        gaps_out = 6; # Reduced from 10
         border_size = 2;
         "col.active_border" = "rgba(7aa2f7ee) rgba(bb9af7ee) 45deg";
         "col.inactive_border" = "rgba(595959aa)";
@@ -131,6 +131,11 @@
         "nofocus,class:^$,title:^$,xwayland:1,floating:1,fullscreen:0,pinned:0"
 
         "opacity 0.97 0.97, class:^(Alacritty|alacritty)$"
+
+        # Network settings - float and center
+        "float, class:^(nm-connection-editor)$"
+        "center, class:^(nm-connection-editor)$"
+        "size 800 600, class:^(nm-connection-editor)$"
 
       ];
 

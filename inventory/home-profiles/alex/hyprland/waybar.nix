@@ -5,9 +5,9 @@ _: {
       mainBar = {
         layer = "top";
         position = "top";
-        height = 38;
+        height = 28; # Slightly taller for larger font
         spacing = 0;
-        margin = "0";
+        margin = "0"; # No margins - maximize screen space
 
         modules-left = [ "hyprland/workspaces" ];
         modules-center = [ "clock" ];
@@ -136,14 +136,14 @@ _: {
           format-wifi = "󰖩 {signalStrength}%";
           format-ethernet = "󰈁 Wired";
           format-linked = "󰈁 No IP";
-          format-disconnected = "󰖪";
-          format-disabled = "󰖪";
+          format-disconnected = "󰖪 Off";
+          format-disabled = "󰖪 Off";
           tooltip-format = "{ifname}: {ipaddr}/{cidr}";
           tooltip-format-wifi = "WiFi: {essid} ({signalStrength}%)\n{ifname}: {ipaddr}/{cidr}\n↑ {bandwidthUpBytes} ↓ {bandwidthDownBytes}";
           tooltip-format-ethernet = "Ethernet: {ifname}\n{ipaddr}/{cidr}\n↑ {bandwidthUpBytes} ↓ {bandwidthDownBytes}";
           tooltip-format-disconnected = "Disconnected";
-          on-click = "rofi-wifi";
-          on-click-right = "alacritty -e nmtui";
+          on-click = "rofi-network-menu"; # New unified menu
+          on-click-right = "nm-connection-editor";
         };
 
         bluetooth = {
@@ -173,7 +173,7 @@ _: {
         border: none;
         border-radius: 0;
         font-family: "CaskaydiaMono Nerd Font";
-        font-size: 15px;
+        font-size: 16px;  /* Increased from 15px */
         min-height: 0;
       }
 
@@ -197,11 +197,11 @@ _: {
       }
 
       #workspaces {
-        background: #16161e;
-        border-radius: 0.7em;
-        margin: 0.3em;
-        margin-left: 0.8em;
-        padding: 0.2em;
+        background: rgba(22, 22, 30, 0.8);  /* Semi-transparent */
+        border-radius: 0.5em;
+        margin: 0 0.2em;  /* No top/bottom margins */
+        margin-left: 0.5em;
+        padding: 0.1em;
       }
 
       #workspaces button {
@@ -240,10 +240,10 @@ _: {
 
       #clock {
         color: #7aa2f7;
-        background: #16161e;
-        border-radius: 0.7em;
-        margin: 0.3em;
-        padding: 0 0.8em;
+        background: rgba(22, 22, 30, 0.8);
+        border-radius: 0.5em;
+        margin: 0 0.2em;  /* No top/bottom margins */
+        padding: 0 0.6em;
       }
 
       .modules-right {
@@ -251,10 +251,10 @@ _: {
       }
 
       #tray {
-        background: #16161e;
-        border-radius: 0.7em;
-        padding: 0.3em 0.6em;
-        margin: 0.3em 0.2em;
+        background: rgba(22, 22, 30, 0.8);
+        border-radius: 0.5em;
+        padding: 0.2em 0.4em;
+        margin: 0 0.15em;  /* No top/bottom margins */
       }
 
       #tray > .passive {
@@ -266,11 +266,11 @@ _: {
       }
 
       #network {
-        background: #16161e;
+        background: rgba(22, 22, 30, 0.8);
         color: #7aa2f7;
-        border-radius: 0.7em;
-        padding: 0 0.8em;
-        margin: 0.3em 0.2em;
+        border-radius: 0.5em;
+        padding: 0 0.6em;
+        margin: 0 0.15em;  /* No top/bottom margins */
       }
 
       #network.wifi {
@@ -292,11 +292,11 @@ _: {
       }
 
       #bluetooth {
-        background: #16161e;
+        background: rgba(22, 22, 30, 0.8);
         color: #7aa2f7;
-        border-radius: 0.7em;
-        padding: 0 0.8em;
-        margin: 0.3em 0.2em;
+        border-radius: 0.5em;
+        padding: 0 0.6em;
+        margin: 0 0.15em;  /* No top/bottom margins */
       }
 
       #bluetooth.off,
@@ -310,11 +310,11 @@ _: {
       }
 
       #pulseaudio {
-        background: #16161e;
+        background: rgba(22, 22, 30, 0.8);
         color: #7aa2f7;
-        border-radius: 0.7em;
-        padding: 0 0.8em;
-        margin: 0.3em 0.2em;
+        border-radius: 0.5em;
+        padding: 0 0.6em;
+        margin: 0 0.15em;  /* No top/bottom margins */
       }
 
       #pulseaudio.muted {
@@ -322,10 +322,10 @@ _: {
       }
 
       box#resources {
-        background: #16161e;
-        border-radius: 0.7em;
-        margin: 0.3em 0.2em;
-        padding: 0 0.4em;
+        background: rgba(22, 22, 30, 0.8);
+        border-radius: 0.5em;
+        margin: 0 0.15em;  /* No top/bottom margins */
+        padding: 0 0.3em;
       }
 
       #cpu {
@@ -351,12 +351,12 @@ _: {
       }
 
       #custom-power {
-        background: #16161e;
+        background: rgba(22, 22, 30, 0.8);
         color: #7aa2f7;
-        border-radius: 0.7em;
-        padding: 0 0.8em;
-        margin: 0.3em 0.2em;
-        margin-right: 0.8em;
+        border-radius: 0.5em;
+        padding: 0 0.6em;
+        margin: 0 0.15em;  /* No top/bottom margins */
+        margin-right: 0.5em;
       }
 
       /* Group drawer styling - matching dotfiles approach */
