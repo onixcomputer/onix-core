@@ -70,11 +70,25 @@
           echo "Example: comp alex/hyprland brittonr/hyprland"
           return 1
         end
+        
+        set -l dir1 ~/dev/onix-core/inventory/home-profiles/$argv[1]
+        set -l dir2 ~/dev/onix-core/inventory/home-profiles/$argv[2]
+        
+        if not test -d $dir1
+          echo "Error: Directory $argv[1] does not exist"
+          return 1
+        end
+        
+        if not test -d $dir2
+          echo "Error: Directory $argv[2] does not exist"
+          return 1
+        end
+        
         echo "Files only in $argv[1]:"
-        comm -23 (cd ~/dev/onix-core/inventory/home-profiles/$argv[1] 2>/dev/null && ls -1 | sort | psub) (cd ~/dev/onix-core/inventory/home-profiles/$argv[2] 2>/dev/null && ls -1 | sort | psub)
+        comm -23 (ls -1 $dir1 | sort | psub) (ls -1 $dir2 | sort | psub)
         echo ""
         echo "Files only in $argv[2]:"
-        comm -13 (cd ~/dev/onix-core/inventory/home-profiles/$argv[1] 2>/dev/null && ls -1 | sort | psub) (cd ~/dev/onix-core/inventory/home-profiles/$argv[2] 2>/dev/null && ls -1 | sort | psub)
+        comm -13 (ls -1 $dir1 | sort | psub) (ls -1 $dir2 | sort | psub)
       end
 
       # Better colors for suggestions (subtle gray)

@@ -125,7 +125,7 @@ _: {
           tooltip-format-wifi = "WiFi: {essid} ({signalStrength}%)\n{ifname}: {ipaddr}/{cidr}\n↑ {bandwidthUpBytes} ↓ {bandwidthDownBytes}";
           tooltip-format-ethernet = "Ethernet: {ifname}\n{ipaddr}/{cidr}\n↑ {bandwidthUpBytes} ↓ {bandwidthDownBytes}";
           tooltip-format-disconnected = "Disconnected";
-          on-click = "rofi-network-menu"; # New unified menu
+          on-click = "notify-send -t 1000 'WiFi 󰤨' 'Scanning networks...' && rofi-network-menu"; # Show notification then menu
           on-click-right = "nm-connection-editor";
         };
 
@@ -146,7 +146,7 @@ _: {
         "custom/power" = {
           format = "󰐥";
           tooltip = false;
-          on-click = "wlogout --protocol layer-shell -b 2";
+          on-click = "rofi-power";
         };
       };
     };
@@ -180,20 +180,21 @@ _: {
       }
 
       #workspaces {
-        background: transparent;
+        background: rgba(22, 22, 30, 0.8);
+        border-radius: 0.5em;
         margin: 0 0.2em;  /* No top/bottom margins */
         margin-left: 0.5em;
-        padding: 0;
+        padding: 0.15em 0.3em;
       }
 
       #workspaces button {
         padding: 0 0.4em;
-        margin: 0 0.1em;
+        margin: 0 0.05em;
         border-radius: 0.4em;
         color: #7aa2f7;
-        background: rgba(22, 22, 30, 0.7);
+        background: transparent;
         border: 1px solid transparent;
-        transition: all 0.2s ease;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         font-weight: 500;
         min-width: 24px;
         font-size: 14px;
@@ -213,19 +214,21 @@ _: {
         border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 0 8px rgba(122, 162, 247, 0.3), inset 0 0 12px rgba(255, 255, 255, 0.1);
         font-weight: 600;
-        transition: all 0.2s ease;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       #workspaces button.urgent {
         background: #f7768e;
         color: #16161e;
-        animation: pulse 1s infinite;
+        animation-name: pulse;
+        animation-duration: 1s;
+        animation-iteration-count: infinite;
       }
 
       #workspaces button:hover {
-        background: rgba(122, 162, 247, 0.2);
-        border: 1px solid rgba(122, 162, 247, 0.3);
-        transition: all 0.15s ease;
+        background: rgba(122, 162, 247, 0.15);
+        border: 1px solid rgba(122, 162, 247, 0.25);
+        transition: all 0.25s ease-out;
       }
 
       #workspaces button.active:hover {

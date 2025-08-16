@@ -20,8 +20,7 @@
         "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
         "${pkgs.wl-clip-persist}/bin/wl-clip-persist --clipboard regular --all-mime-type-regex '^(?!x-kde-passwordManagerHint).+'"
         "${pkgs.waybar}/bin/waybar"
-        "${pkgs.mako}/bin/mako"
-        "${pkgs.swayosd}/bin/swayosd-server"
+        "${pkgs.dunst}/bin/dunst"
         "${pkgs.hypridle}/bin/hypridle"
       ];
 
@@ -66,6 +65,8 @@
           "linear,0,0,1,1"
           "almostLinear,0.5,0.5,0.75,1.0"
           "quick,0.15,0,0.1,1"
+          "easeOutBack,0.34,1.3,0.64,1" # Subtle bounce for notifications
+          "easeInBack,0.36,0,0.66,-0.3" # Gentle exit anticipation
         ];
 
         animation = [
@@ -78,8 +79,8 @@
           "fadeOut, 1, 1.46, almostLinear"
           "fade, 1, 3.03, quick"
           "layers, 1, 3.81, easeOutQuint"
-          "layersIn, 1, 4, easeOutQuint, fade"
-          "layersOut, 1, 1.5, linear, fade"
+          "layersIn, 1, 4, easeOutQuint, fade" # Normal fade for layers
+          "layersOut, 1, 1.5, linear, fade" # Normal fade out
           "fadeLayersIn, 1, 1.79, almostLinear"
           "fadeLayersOut, 1, 1.39, almostLinear"
           "workspaces, 0, 0, default"
@@ -88,8 +89,13 @@
 
       # Layer rules
       layerrule = [
-        "noanim,wofi"
+        "noanim, rofi" # Disable animations for rofi
         "noanim, selection"
+
+        # Notification animations only for dunst
+        "animation slide, notifications"
+        "animation fadeIn, notifications"
+        "ignorezero, notifications"
       ];
 
       # Layout
@@ -208,10 +214,10 @@
         "$mod, B, exec, $browser"
         "$mod, R, exec, rofi -show run"
         "$mod, space, exec, rofi -show drun"
-        "$mod, Delete, exec, wlogout --protocol layer-shell -b 2"
+        "$mod, Delete, exec, rofi-power"
 
-        "$mod, comma, exec, makoctl dismiss"
-        "$mod SHIFT, comma, exec, makoctl dismiss --all"
+        "$mod, comma, exec, dunstctl close"
+        "$mod SHIFT, comma, exec, dunstctl close-all"
 
         # Instant fullscreen screenshot (Fn+F11 or Print key)
         ", Print, exec, grim ~/Screenshots/$(date +'screenshot_%Y-%m-%d_%H-%M-%S.png') && notify-send 'Screenshot' 'Saved to ~/Screenshots' -i camera-photo"

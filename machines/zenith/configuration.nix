@@ -91,6 +91,7 @@ in
   security.pam.services = {
     login.enableGnomeKeyring = true;
     greetd.enableGnomeKeyring = true;
+    hyprlock = { };
   };
 
   system.stateVersion = "25.05";

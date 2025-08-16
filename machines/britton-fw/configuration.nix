@@ -108,6 +108,7 @@ in
     login.enableGnomeKeyring = true;
     greetd.enableGnomeKeyring = true;
     sudo.fprintAuth = false;
+    hyprlock = { };
   };
 
   system.stateVersion = "25.05";

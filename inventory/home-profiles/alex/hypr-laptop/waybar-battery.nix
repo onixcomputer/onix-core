@@ -15,14 +15,12 @@
     battery = {
       interval = 1;
       states = {
-        warning = 30;
-        critical = 15;
+        warning = 20;
+        critical = 10;
+        plugordie = 5;
       };
       format = "{icon} {capacity}%";
-      format-charging = "󰂄 {capacity}%";
-      format-plugged = "󰂄 {capacity}%";
       format-icons = [
-        "󰂎"
         "󰁺"
         "󰁻"
         "󰁼"
@@ -34,62 +32,67 @@
         "󰂂"
         "󰁹"
       ];
+      format-charging = "󰂄 {capacity}%";
+      format-plugged = "󰂄 {capacity}%";
+      format-plugordie = "󰂃 {capacity}%";
+      tooltip = true;
+      tooltip-format = "{timeTo}, {capacity}%";
     };
   };
 
-  # Add battery-specific CSS styles
+  # Add battery-specific CSS styles matching our theme
   programs.waybar.style = lib.mkAfter ''
     #battery {
-      background: #16161e;
+      background: rgba(22, 22, 30, 0.8);
       color: #7aa2f7;
-      border-radius: 0.7em;
-      padding: 0 0.8em;
-      margin: 0.3em 0.2em;
-    }
-
-    #battery.charging,
-    #battery.plugged {
-      color: #0b8e37;
+      border-radius: 0.5em;
+      padding: 0 0.6em;
+      margin: 0 0.15em;  /* No top/bottom margins */
     }
 
     #battery.warning {
-      color: #f9e2af;
-      animation: warning-blink 0.5s linear 3;
+      color: #e0af68;  /* Yellow/orange for warning */
     }
 
     #battery.critical {
-      background-color: #f38ba8;
-      color: #1e1e2e;
-      animation: critical-blink 0.5s linear 3;
+      color: #f7768e;  /* Red for critical */
+      background: rgba(247, 118, 142, 0.2);
     }
 
-    @keyframes warning-blink {
-      0% {
-        background-color: #16161e;
-        color: #f9e2af;
-      }
-      50% {
-        background-color: #f9e2af;
-        color: #16161e;
-      }
-      100% {
-        background-color: #16161e;
-        color: #f9e2af;
-      }
+    #battery.plugordie {
+      color: #f7768e;  /* Red for emergency */
+      background: rgba(247, 118, 142, 0.3);
+      animation-name: battery-critical-pulse;
+      animation-duration: 2s;
+      animation-iteration-count: infinite;
     }
 
-    @keyframes critical-blink {
+    /* Charging and plugged always override everything - must come AFTER plugordie */
+    #battery.charging,
+    #battery.plugged,
+    #battery.charging.warning,
+    #battery.charging.critical,
+    #battery.charging.plugordie,
+    #battery.plugged.warning,
+    #battery.plugged.critical,
+    #battery.plugged.plugordie {
+      color: #9ece6a;  /* Green for charging/plugged */
+      background: rgba(22, 22, 30, 0.8);  /* Normal background */
+      /* Override animation by setting duration to 0 */
+      animation-duration: 0s;
+      animation-name: none;
+    }
+
+    /* Slow pulsing animation for critical battery */
+    @keyframes battery-critical-pulse {
       0% {
-        background-color: #f38ba8;
-        color: #1e1e2e;
+        background: rgba(247, 118, 142, 0.2);
       }
       50% {
-        background-color: #1e1e2e;
-        color: #f38ba8;
+        background: rgba(247, 118, 142, 0.4);
       }
       100% {
-        background-color: #f38ba8;
-        color: #1e1e2e;
+        background: rgba(247, 118, 142, 0.2);
       }
     }
   '';
