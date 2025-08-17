@@ -10,7 +10,7 @@ _: {
         margin = "3 0 0 0"; # 3px top margin only
 
         modules-left = [ "hyprland/workspaces" ];
-        modules-center = [ "clock" ];
+        modules-center = [ "group/clock" ];
         modules-right = [
           "tray"
           "network"
@@ -23,7 +23,7 @@ _: {
         "group/resources" = {
           orientation = "horizontal";
           drawer = {
-            transition-duration = 400;
+            transition-duration = 450;
             children-class = "drawer-child";
             transition-left-to-right = false; # Expands right, keeping CPU in place
           };
@@ -31,6 +31,19 @@ _: {
             "cpu"
             "temperature"
             "memory"
+          ];
+        };
+
+        "group/clock" = {
+          orientation = "horizontal";
+          drawer = {
+            transition-duration = 450;
+            children-class = "drawer-child";
+            transition-left-to-right = false; # Expands right from main clock
+          };
+          modules = [
+            "clock#time"
+            "clock#date"
           ];
         };
 
@@ -44,13 +57,20 @@ _: {
           };
         };
 
-        clock = {
-          interval = 1;
-          format = "{:%I:%M %p}";
-          format-alt = "{:%A, %B %d, %Y}";
+        "clock#time" = {
+          interval = 1; # Update every second for smooth time
+          format = "{:%I:%M:%S %p}"; # "03:45:23 PM" - 12 hour format
+          format-alt = "{:%H:%M:%S}"; # "15:45:23" - 24 hour format on click
+          tooltip = false; # No tooltip for time part
+        };
+
+        "clock#date" = {
+          interval = 60; # Update every minute for date
+          format = "{:%a %b %d}"; # "Sat Aug 16"
+          tooltip = true; # Calendar tooltip on date
           tooltip-format = "<tt><small>{calendar}</small></tt>";
           calendar = {
-            mode = "year";
+            mode = "year"; # Always show year view
             mode-mon-col = 3;
             weeks-pos = "right";
             on-scroll = 1;
@@ -67,14 +87,14 @@ _: {
         cpu = {
           interval = 1;
           format = "󰍛 {usage:02}%";
-          tooltip = true;
+          tooltip = false;
           on-click = "alacritty -e btop";
         };
 
         memory = {
           interval = 1;
           format = "󰘚 {used:0.1f}G/{total:0.1f}G";
-          tooltip-format = "Memory: {percentage}%\nUsed: {used:0.2f}GB\nTotal: {total:0.2f}GB";
+          tooltip = false;
           on-click = "alacritty -e btop";
         };
 
@@ -89,7 +109,7 @@ _: {
           input-filename = "temp1_input";
           critical-threshold = 80;
           format-critical = "󰸁 {temperatureC}°C";
-          tooltip-format = "CPU Temperature: {temperatureC}°C / {temperatureF}°F";
+          tooltip = false;
           on-click = "alacritty -e btop";
         };
 
@@ -139,8 +159,8 @@ _: {
           tooltip-format-connected = "{controller_alias}\t{controller_address}\n\n{device_enumerate}";
           tooltip-format-enumerate-connected = "{device_alias}\t{device_address}";
           tooltip-format-enumerate-connected-battery = "{device_alias}\t{device_address}\t{device_battery_percentage}%";
-          on-click = "rfkill toggle bluetooth";
-          on-click-right = "alacritty -e bluetoothctl";
+          on-click = "blueman-manager";
+          on-click-right = "rfkill toggle bluetooth";
         };
 
         "custom/power" = {
@@ -190,7 +210,7 @@ _: {
       #workspaces button {
         padding: 0 0.4em;
         margin: 0 0.05em;
-        border-radius: 0.4em;
+        border-radius: 0.5em;
         color: #7aa2f7;
         background: transparent;
         border: 1px solid transparent;
@@ -212,6 +232,7 @@ _: {
         background: linear-gradient(45deg, rgba(122, 162, 247, 0.9), rgba(187, 154, 247, 0.9));
         color: #16161e;
         border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 0.5em;
         box-shadow: 0 0 8px rgba(122, 162, 247, 0.3), inset 0 0 12px rgba(255, 255, 255, 0.1);
         font-weight: 600;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -247,12 +268,17 @@ _: {
         }
       }
 
-      #clock {
-        color: #7aa2f7;
+      box#clock {
         background: rgba(22, 22, 30, 0.8);
         border-radius: 0.5em;
         margin: 0 0.2em;  /* No top/bottom margins */
-        padding: 0 0.6em;
+        padding: 0 0.3em;
+      }
+
+      #clock {
+        color: #7aa2f7;
+        padding: 0 0.3em;
+        background: transparent;
       }
 
       .modules-right {

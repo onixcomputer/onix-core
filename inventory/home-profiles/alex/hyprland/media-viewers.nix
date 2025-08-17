@@ -54,13 +54,16 @@
     };
   };
 
-  # Other media viewers
+  # Other media viewers and tools
   home.packages = with pkgs; [
     # Image viewer
     gthumb # Feature-rich image viewer with basic editing
 
     # PDF/document viewer
     evince
+
+    # Media processing
+    ffmpeg # Video/audio converter and processor
   ];
 
   # Set default applications

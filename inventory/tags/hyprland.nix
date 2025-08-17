@@ -18,7 +18,6 @@
     hypridle
     hyprlock
     hyprland-qtutils
-    hyprpaper # Native Hyprland wallpaper utility
     swayosd # On-screen display for volume/brightness
     polkit_gnome
     wl-clip-persist

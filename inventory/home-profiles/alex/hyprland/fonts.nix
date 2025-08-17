@@ -24,7 +24,6 @@
         <family>monospace</family>
         <prefer>
           <family>CaskaydiaMono Nerd Font</family>
-          <family>Noto Color Emoji</family>
           <family>Noto Sans CJK</family>
         </prefer>
       </alias>
@@ -33,18 +32,34 @@
         <family>sans-serif</family>
         <prefer>
           <family>Noto Sans</family>
-          <family>Noto Color Emoji</family>
           <family>Noto Sans CJK</family>
         </prefer>
       </alias>
       
-      <!-- Ensure color emoji is used -->
+      <!-- Only use emoji font when explicitly requested -->
       <alias>
         <family>emoji</family>
         <prefer>
           <family>Noto Color Emoji</family>
         </prefer>
       </alias>
+      
+      <!-- Prevent emoji font from being used for regular text/numbers -->
+      <match target="pattern">
+        <test name="family">
+          <string>Noto Color Emoji</string>
+        </test>
+        <edit name="charset" mode="assign">
+          <minus>
+            <charset>
+              <range>
+                <int>0x0030</int> <!-- 0 -->
+                <int>0x0039</int> <!-- 9 -->
+              </range>
+            </charset>
+          </minus>
+        </edit>
+      </match>
     </fontconfig>
   '';
 }

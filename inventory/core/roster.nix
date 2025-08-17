@@ -174,17 +174,6 @@ _: {
           ];
         };
       };
-      alex-fw = {
-        role = "admin";
-        shell = "fish";
-        homeManager = {
-          enable = true;
-          profiles = [
-            "base"
-            "dev"
-          ];
-        };
-      };
     };
   };
   dima = {

@@ -27,10 +27,14 @@ _: {
         horizontal_padding = 15;
         text_icon_padding = 15;
 
-        # Text - Multiple fonts for emoji fallback
-        font = "CaskaydiaMono Nerd Font, Noto Color Emoji 11";
+        # Text - Use Nerd Font for icons and symbols
+        font = "CaskaydiaMono Nerd Font 11";
         markup = "full";
         format = "<b>%s</b>\n%b";
+
+        # Disable any default icon theme that might override text
+        enable_recursive_icon_lookup = false;
+        icon_theme = "";
 
         # Icons
         icon_position = "left";

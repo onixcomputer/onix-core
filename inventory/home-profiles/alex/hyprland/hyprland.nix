@@ -22,13 +22,14 @@
         "${pkgs.waybar}/bin/waybar"
         "${pkgs.dunst}/bin/dunst"
         "${pkgs.hypridle}/bin/hypridle"
+        "restore-wallpaper" # Restore last wallpaper on login
       ];
 
       # General
       general = {
         gaps_in = 3; # Between windows
         gaps_out = 3; # Consistent 3px gaps everywhere
-        border_size = 2;
+        border_size = 3;
         "col.active_border" = "rgba(7aa2f7ee) rgba(bb9af7ee) 45deg";
         "col.inactive_border" = "rgba(414868aa)"; # Subtle gray with transparency
         resize_on_border = false;
@@ -49,9 +50,13 @@
 
         blur = {
           enabled = true;
-          size = 3;
-          passes = 1;
-          vibrancy = 0.1696;
+          size = 8;
+          passes = 2;
+          vibrancy = 0.2;
+          noise = 0.02; # Slight texture for acrylic effect
+          contrast = 1.0;
+          brightness = 0.8;
+          special = true; # Blur on special workspaces too
         };
       };
 
@@ -136,12 +141,18 @@
 
         "nofocus,class:^$,title:^$,xwayland:1,floating:1,fullscreen:0,pinned:0"
 
-        "opacity 0.97 0.97, class:^(Alacritty|alacritty)$"
+        # Terminal transparency (same for active and inactive)
+        "opacity 0.92 0.92, class:^(Alacritty|alacritty)$"
 
         # Network settings - float and center
         "float, class:^(nm-connection-editor)$"
         "center, class:^(nm-connection-editor)$"
         "size 800 600, class:^(nm-connection-editor)$"
+
+        # Bluetooth manager - float and center
+        "float, class:^(\\.blueman-manager-wrapped)$"
+        "center, class:^(\\.blueman-manager-wrapped)$"
+        "size 900 600, class:^(\\.blueman-manager-wrapped)$"
 
       ];
 
@@ -214,6 +225,8 @@
         "$mod, B, exec, $browser"
         "$mod, R, exec, rofi -show run"
         "$mod, space, exec, rofi -show drun"
+        "$mod, W, exec, rofi-wallpaper"
+        "$mod, N, exec, notify-send -t 1000 'WiFi 󰤨' 'Scanning networks...' && rofi-network-menu"
         "$mod, Delete, exec, rofi-power"
 
         "$mod, comma, exec, dunstctl close"
