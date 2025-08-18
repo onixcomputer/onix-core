@@ -74,27 +74,24 @@ in
       TRANSITION_WAVE=${wallpaperConfig.transitionWave}
     '';
     onChange = ''
+      # Clear any temporary testing overrides on rebuild
+      OVERRIDE_FILE="$HOME/.config/wallpaper/override"
+      if [[ -f "$OVERRIDE_FILE" ]]; then
+        rm -f "$OVERRIDE_FILE"
+        echo "Cleared temporary wallpaper testing overrides."
+      fi
       echo "Wallpaper config updated. Changes will apply on next wallpaper change."
     '';
   };
   home = {
     packages = with pkgs; [
-      # Tokyo Night GTK theme for GTK3 apps
-      tokyo-night-gtk
-
-      # Icon themes
-      papirus-icon-theme
-
       # Wallpaper tools
       swww # For GIF support and static images
       mpvpaper # For video wallpapers
-      imagemagick # For generating thumbnails
       jq # For parsing JSON (monitor dimensions)
     ];
 
-    # Set GTK_THEME environment variable and wallpaper config
     sessionVariables = {
-      GTK_THEME = "Tokyonight-Dark";
       WALLPAPER_RESIZE_MODE = wallpaperConfig.resizeMode;
       WALLPAPER_VIDEO_RESIZE_MODE = wallpaperConfig.videoResizeMode;
       WALLPAPER_TRANSITION_TYPE = wallpaperConfig.transitionType;
@@ -103,48 +100,5 @@ in
     };
   };
 
-  # GTK theme configuration
-  gtk = {
-    enable = true;
-
-    theme = {
-      name = "Tokyonight-Dark";
-      package = pkgs.tokyo-night-gtk;
-    };
-
-    iconTheme = {
-      name = "Papirus-Dark";
-      package = pkgs.papirus-icon-theme;
-    };
-
-    gtk3.extraConfig = {
-      gtk-application-prefer-dark-theme = 1;
-    };
-
-    gtk4.extraConfig = {
-      gtk-application-prefer-dark-theme = 1;
-    };
-  };
-
-  # dconf settings for GNOME/GTK apps dark mode
-  dconf = {
-    enable = true;
-    settings = {
-      "org/gnome/desktop/interface" = {
-        color-scheme = "prefer-dark";
-        gtk-theme = "Tokyonight-Dark";
-        icon-theme = "Papirus-Dark";
-      };
-    };
-  };
-
-  # Qt theme configuration to match GTK
-  qt = {
-    enable = true;
-    platformTheme.name = "gtk";
-    style.name = "adwaita-dark";
-  };
-
-  # Explicitly disable hyprpaper service - let waytrogen manage all backends
   services.hyprpaper.enable = false;
 }

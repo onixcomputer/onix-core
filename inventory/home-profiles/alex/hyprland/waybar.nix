@@ -1,4 +1,8 @@
-_: {
+{ config, ... }:
+let
+  theme = config.theme.colors;
+in
+{
   programs.waybar = {
     enable = true;
     settings = {
@@ -75,11 +79,11 @@ _: {
             weeks-pos = "right";
             on-scroll = 1;
             format = {
-              months = "<span color='#ffead3'><b>{}</b></span>";
-              days = "<span color='#ecc6d9'><b>{}</b></span>";
-              weeks = "<span color='#99ffdd'><b>W{}</b></span>";
-              weekdays = "<span color='#ffcc66'><b>{}</b></span>";
-              today = "<span color='#ff6699'><b><u>{}</u></b></span>";
+              months = "<span color='${theme.yellow}'><b>{}</b></span>";
+              days = "<span color='${theme.accent2}'><b>{}</b></span>";
+              weeks = "<span color='${theme.cyan}'><b>W{}</b></span>";
+              weekdays = "<span color='${theme.orange}'><b>{}</b></span>";
+              today = "<span color='${theme.red}'><b><u>{}</u></b></span>";
             };
           };
         };
@@ -88,14 +92,14 @@ _: {
           interval = 1;
           format = "󰍛 {usage:02}%";
           tooltip = false;
-          on-click = "alacritty -e btop";
+          on-click = "kitty -e btop";
         };
 
         memory = {
           interval = 1;
           format = "󰘚 {used:0.1f}G/{total:0.1f}G";
           tooltip = false;
-          on-click = "alacritty -e btop";
+          on-click = "kitty -e btop";
         };
 
         temperature = {
@@ -110,7 +114,7 @@ _: {
           critical-threshold = 80;
           format-critical = "󰸁 {temperatureC}°C";
           tooltip = false;
-          on-click = "alacritty -e btop";
+          on-click = "kitty -e btop";
         };
 
         pulseaudio = {
@@ -182,25 +186,25 @@ _: {
 
       window#waybar {
         background: transparent;
-        color: #c0caf5;
+        color: ${theme.fg};
       }
 
       tooltip {
-        background: #24283b;
+        background: ${theme.base01};
         border-radius: 0.6em;
         border-width: 2px;
         border-style: solid;
-        border-color: #16161e;
+        border-color: ${theme.bg_dark};
         padding: 0.5em;
       }
 
       tooltip label {
-        color: #c0caf5;
+        color: ${theme.fg};
         font-size: 0.9em;
       }
 
       #workspaces {
-        background: rgba(22, 22, 30, 0.8);
+        background: rgba(${theme.bg_dark_rgb}, ${theme.waybar.module_bg_opacity});
         border-radius: 0.5em;
         margin: 0 0.2em;  /* No top/bottom margins */
         margin-left: 0.5em;
@@ -211,7 +215,7 @@ _: {
         padding: 0 0.4em;
         margin: 0 0.05em;
         border-radius: 0.5em;
-        color: #7aa2f7;
+        color: ${theme.accent};
         background: transparent;
         border: 1px solid transparent;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -229,31 +233,31 @@ _: {
       }
 
       #workspaces button.active {
-        background: linear-gradient(45deg, rgba(122, 162, 247, 0.9), rgba(187, 154, 247, 0.9));
-        color: #16161e;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: linear-gradient(45deg, ${theme.accent}, ${theme.accent2});
+        color: ${theme.bg_dark};
+        border: 1px solid rgba(${theme.accent_rgb}, 0.2);  /* Accent with low opacity for subtle border */
         border-radius: 0.5em;
-        box-shadow: 0 0 8px rgba(122, 162, 247, 0.3), inset 0 0 12px rgba(255, 255, 255, 0.1);
+        box-shadow: 0 0 8px rgba(${theme.accent_rgb}, ${theme.waybar.workspace_active_shadow_opacity}), inset 0 0 12px rgba(${theme.accent_rgb}, 0.1);  /* Subtle inset glow */
         font-weight: 600;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       #workspaces button.urgent {
-        background: #f7768e;
-        color: #16161e;
+        background: ${theme.red};  /* Red for urgent */
+        color: ${theme.bg_dark};
         animation-name: pulse;
         animation-duration: 1s;
         animation-iteration-count: infinite;
       }
 
       #workspaces button:hover {
-        background: rgba(122, 162, 247, 0.15);
-        border: 1px solid rgba(122, 162, 247, 0.25);
+        background: rgba(${theme.accent_rgb}, ${theme.waybar.workspace_hover_opacity});
+        border: 1px solid rgba(${theme.accent_rgb}, ${theme.waybar.workspace_hover_border_opacity});
         transition: all 0.25s ease-out;
       }
 
       #workspaces button.active:hover {
-        box-shadow: 0 0 10px rgba(122, 162, 247, 0.4), inset 0 0 12px rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 10px rgba(${theme.accent_rgb}, ${theme.waybar.workspace_active_hover_shadow_opacity}), inset 0 0 12px rgba(${theme.accent_rgb}, 0.15);  /* Stronger inset glow on hover */
       }
 
       @keyframes pulse {
@@ -269,14 +273,14 @@ _: {
       }
 
       box#clock {
-        background: rgba(22, 22, 30, 0.8);
+        background: rgba(${theme.bg_dark_rgb}, ${theme.waybar.module_bg_opacity});
         border-radius: 0.5em;
         margin: 0 0.2em;  /* No top/bottom margins */
         padding: 0 0.3em;
       }
 
       #clock {
-        color: #7aa2f7;
+        color: ${theme.accent};
         padding: 0 0.3em;
         background: transparent;
       }
@@ -286,7 +290,7 @@ _: {
       }
 
       #tray {
-        background: rgba(22, 22, 30, 0.8);
+        background: rgba(${theme.bg_dark_rgb}, ${theme.waybar.module_bg_opacity});
         border-radius: 0.5em;
         padding: 0.2em 0.4em;
         margin: 0 0.15em;  /* No top/bottom margins */
@@ -301,34 +305,34 @@ _: {
       }
 
       #network {
-        background: rgba(22, 22, 30, 0.8);
-        color: #7aa2f7;
+        background: rgba(${theme.bg_dark_rgb}, ${theme.waybar.module_bg_opacity});
+        color: ${theme.accent};
         border-radius: 0.5em;
         padding: 0 0.6em;
         margin: 0 0.15em;  /* No top/bottom margins */
       }
 
       #network.wifi {
-        color: #7aa2f7;
+        color: ${theme.accent};
       }
 
       #network.ethernet {
-        color: #bb9af7;  /* Purple for wired to distinguish */
+        color: ${theme.accent2};  /* Secondary accent for wired to distinguish */
       }
 
       #network.linked {
-        color: #f7768e;  /* Red-ish for linked but no internet */
+        color: ${theme.red};  /* Red for linked but no internet */
       }
 
       #network.disconnected,
       #network.disabled {
-        color: #313244;
-        background: #16161e;
+        color: ${theme.base03};
+        background: ${theme.bg_dark};
       }
 
       #bluetooth {
-        background: rgba(22, 22, 30, 0.8);
-        color: #7aa2f7;
+        background: rgba(${theme.bg_dark_rgb}, ${theme.waybar.module_bg_opacity});
+        color: ${theme.accent};
         border-radius: 0.5em;
         padding: 0 0.6em;
         margin: 0 0.15em;  /* No top/bottom margins */
@@ -336,58 +340,58 @@ _: {
 
       #bluetooth.off,
       #bluetooth.disabled {
-        color: #313244;
-        background: #16161e;
+        color: ${theme.base03};
+        background: ${theme.bg_dark};
       }
 
       #bluetooth.connected {
-        color: #9ece6a;
+        color: ${theme.green};
       }
 
       #pulseaudio {
-        background: rgba(22, 22, 30, 0.8);
-        color: #7aa2f7;
+        background: rgba(${theme.bg_dark_rgb}, ${theme.waybar.module_bg_opacity});
+        color: ${theme.accent};
         border-radius: 0.5em;
         padding: 0 0.6em;
         margin: 0 0.15em;  /* No top/bottom margins */
       }
 
       #pulseaudio.muted {
-        color: #313244;
+        color: ${theme.base03};
       }
 
       box#resources {
-        background: rgba(22, 22, 30, 0.8);
+        background: rgba(${theme.bg_dark_rgb}, ${theme.waybar.module_bg_opacity});
         border-radius: 0.5em;
         margin: 0 0.15em;  /* No top/bottom margins */
         padding: 0 0.3em;
       }
 
       #cpu {
-        color: #7aa2f7;
+        color: ${theme.accent};
         padding: 0 0.2em;
         background: transparent;
       }
 
       #memory {
-        color: #7aa2f7;
+        color: ${theme.accent};
         padding: 0 0.6em;
         background: transparent;
       }
 
       #temperature {
-        color: #7aa2f7;
+        color: ${theme.accent};
         padding: 0 0.4em;
         background: transparent;
       }
 
       #temperature.critical {
-        color: #f7768e;
+        color: ${theme.red};  /* Red for critical temperature */
       }
 
       #custom-power {
-        background: rgba(22, 22, 30, 0.8);
-        color: #7aa2f7;
+        background: rgba(${theme.bg_dark_rgb}, ${theme.waybar.module_bg_opacity});
+        color: ${theme.accent};
         border-radius: 0.5em;
         padding: 0 0.6em;
         margin: 0 0.15em;  /* No top/bottom margins */

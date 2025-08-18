@@ -1,4 +1,10 @@
-_: {
+{ config, lib, ... }:
+let
+  theme = config.theme.colors;
+  # Remove # from hex colors
+  c = color: lib.removePrefix "#" color;
+in
+{
   programs.hyprlock = {
     enable = true;
 
@@ -40,16 +46,16 @@ _: {
         dots_center = true;
         dots_rounding = -1;
 
-        outer_color = "rgba(122, 162, 247, 0.8)";
-        inner_color = "rgba(36, 40, 59, 0.85)";
-        font_color = "rgb(c0caf5)";
-        fail_color = "rgba(247, 118, 142, 0.9)";
-        check_color = "rgba(158, 206, 106, 0.9)";
-        capslock_color = "rgba(224, 175, 104, 0.9)"; # Yellow warning for caps lock
+        outer_color = "rgb(${c theme.accent})";
+        inner_color = "rgb(${c theme.bg_highlight})";
+        font_color = "rgb(${c theme.fg})";
+        fail_color = "rgb(${c theme.red})";
+        check_color = "rgb(${c theme.green})";
+        capslock_color = "rgb(${c theme.yellow})"; # Yellow warning for caps lock
 
         fade_on_empty = true;
         fade_timeout = 2000; # Slower fade for smoother effect
-        placeholder_text = "<span foreground=\"##7aa2f7aa\" font_size=\"13pt\" font_family=\"CaskaydiaMono Nerd Font\">Password</span>";
+        placeholder_text = "<span foreground=\"##${c theme.accent}aa\" font_size=\"13pt\" font_family=\"CaskaydiaMono Nerd Font\">Password</span>";
         hide_input = false;
         rounding = 14; # More rounded
 
@@ -65,7 +71,7 @@ _: {
         {
           monitor = "";
           text = "cmd[update:1000] echo \"$(date +'%I:%M %p')\""; # 12-hour format with AM/PM
-          color = "rgba(192, 202, 245, 0.9)";
+          color = "rgb(${c theme.fg})";
           font_size = 86; # 20% bigger
           font_family = "CaskaydiaMono Nerd Font";
           position = "0, 140";
@@ -76,7 +82,7 @@ _: {
         {
           monitor = "";
           text = "cmd[update:1000] echo \"$(date +'%A, %B %d')\"";
-          color = "rgba(122, 162, 247, 0.7)";
+          color = "rgb(${c theme.accent})";
           font_size = 22; # Also slightly bigger
           font_family = "CaskaydiaMono Nerd Font";
           position = "0, 60";

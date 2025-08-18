@@ -17,13 +17,13 @@ let
       if [ -e "/proc/$TARGET_PID/cwd" ]; then
         DIR=$(readlink "/proc/$TARGET_PID/cwd" 2>/dev/null)
         if [ -n "$DIR" ] && [ -d "$DIR" ]; then
-          exec ${pkgs.alacritty}/bin/alacritty --working-directory "$DIR" "$@"
+          exec ${pkgs.kitty}/bin/kitty --directory="$DIR" "$@"
         fi
       fi
     fi
 
     # Fallback to home directory
-    exec ${pkgs.alacritty}/bin/alacritty "$@"
+    exec ${pkgs.kitty}/bin/kitty "$@"
   '';
 in
 {

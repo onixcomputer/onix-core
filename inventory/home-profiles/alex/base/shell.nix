@@ -52,9 +52,13 @@
   programs.fish = {
     enable = true;
 
+    # Disable cursor changing completely by overriding the function
+    functions.fish_vi_cursor = "";
+
     shellInit = ''
       # Disable greeting
       set -g fish_greeting
+
 
       # Import systemd environment (for SSH_AUTH_SOCK from gnome-keyring)
       if command -q systemctl
@@ -70,20 +74,20 @@
           echo "Example: comp alex/hyprland brittonr/hyprland"
           return 1
         end
-        
+
         set -l dir1 ~/dev/onix-core/inventory/home-profiles/$argv[1]
         set -l dir2 ~/dev/onix-core/inventory/home-profiles/$argv[2]
-        
+
         if not test -d $dir1
           echo "Error: Directory $argv[1] does not exist"
           return 1
         end
-        
+
         if not test -d $dir2
           echo "Error: Directory $argv[2] does not exist"
           return 1
         end
-        
+
         echo "Files only in $argv[1]:"
         comm -23 (ls -1 $dir1 | sort | psub) (ls -1 $dir2 | sort | psub)
         echo ""
@@ -98,8 +102,14 @@
       set -g fish_color_param cyan
       set -g fish_color_quote yellow
 
-      # Vi mode is optional in fish - let's keep normal mode for simplicity
-      fish_default_key_bindings
+      # Set cursor shape to block for all modes
+      set -g fish_cursor_default block
+      set -g fish_cursor_insert block
+      set -g fish_cursor_replace_one underscore
+      set -g fish_cursor_visual block
+
+      # Use vi mode to have proper cursor control
+      fish_vi_key_bindings
     '';
   };
 
@@ -148,6 +158,12 @@
       # Enable vi mode
       bindkey -v
       export KEYTIMEOUT=1
+
+      # Disable cursor shape changes in vi mode
+      function zle-keymap-select() { }
+      function zle-line-init() { echo -ne '\e[2 q'; }
+      zle -N zle-line-init
+      zle -N zle-keymap-select
 
       # Fix common keybindings in vi mode
       bindkey -M viins '^A' beginning-of-line

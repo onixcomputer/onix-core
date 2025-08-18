@@ -18,13 +18,7 @@
     };
   };
 
-  xfconf.settings = {
-    xsettings = {
-      "Net/ThemeName" = "Tokyonight-Dark";
-      "Net/IconThemeName" = "Papirus-Dark";
-      "Gtk/CursorThemeName" = "Adwaita";
-    };
-  };
+  # xfconf settings removed - Thunar will use GTK theme from theme.nix
 
   xdg.mimeApps.defaultApplications = {
     "inode/directory" = [ "thunar.desktop" ];

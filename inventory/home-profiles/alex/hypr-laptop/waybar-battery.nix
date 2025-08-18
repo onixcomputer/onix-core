@@ -1,4 +1,7 @@
-{ lib, ... }:
+{ lib, config, ... }:
+let
+  theme = config.theme.colors;
+in
 {
   # Add battery module to waybar for laptops
   programs.waybar.settings.mainBar = {
@@ -43,9 +46,9 @@
   # Add battery-specific CSS styles matching our theme
   programs.waybar.style = lib.mkAfter ''
     #battery {
-      background: rgba(22, 22, 30, 0.8);
-      color: #7aa2f7;
-      border-radius: 0.5em;
+      background: rgba(${theme.bg_dark_rgb}, ${theme.waybar.module_bg_opacity});
+      color: ${theme.accent};  /* Theme color for normal state */
+      border-radius: ${theme.waybar.module_radius};
       padding: 0 0.6em;
       margin: 0 0.15em;  /* No top/bottom margins */
     }
@@ -77,7 +80,7 @@
     #battery.plugged.critical,
     #battery.plugged.plugordie {
       color: #9ece6a;  /* Green for charging/plugged */
-      background: rgba(22, 22, 30, 0.8);  /* Normal background */
+      background: rgba(${theme.bg_dark_rgb}, ${theme.waybar.module_bg_opacity});  /* Same as normal background */
       /* Override animation by setting duration to 0 */
       animation-duration: 0s;
       animation-name: none;

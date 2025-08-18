@@ -1,11 +1,21 @@
-{ pkgs, ... }:
+{
+  pkgs,
+  config,
+  lib,
+  ...
+}:
+let
+  theme = config.theme.colors;
+  # Helper for colors that still need stripping
+  c = color: lib.removePrefix "#" color;
+in
 {
   wayland.windowManager.hyprland = {
     enable = true;
     systemd.enable = true;
     settings = {
       "$mod" = "SUPER";
-      "$terminal" = "alacritty";
+      "$terminal" = "kitty";
       "$browser" = "firefox";
       "$fileManager" = "thunar";
 
@@ -22,16 +32,14 @@
         "${pkgs.waybar}/bin/waybar"
         "${pkgs.dunst}/bin/dunst"
         "${pkgs.hypridle}/bin/hypridle"
-        "restore-wallpaper" # Restore last wallpaper on login
+        "restore-wallpaper"
       ];
 
       # General
       general = {
-        gaps_in = 3; # Between windows
-        gaps_out = 3; # Consistent 3px gaps everywhere
-        border_size = 3;
-        "col.active_border" = "rgba(7aa2f7ee) rgba(bb9af7ee) 45deg";
-        "col.inactive_border" = "rgba(414868aa)"; # Subtle gray with transparency
+        inherit (theme.hypr) gaps_in gaps_out border_size;
+        "col.active_border" = theme.hypr.active_border;
+        "col.inactive_border" = theme.hypr.inactive_border;
         resize_on_border = false;
         allow_tearing = false;
         layout = "dwindle";
@@ -39,13 +47,17 @@
 
       # Decoration
       decoration = {
-        rounding = 0;
+        inherit (theme.hypr) rounding;
+
+        # Keep window opacity the same for active and inactive windows
+        active_opacity = 1.0;
+        inactive_opacity = 1.0;
 
         shadow = {
           enabled = true;
           range = 2;
           render_power = 3;
-          color = "rgba(1a1a1aee)";
+          color = "rgba(${c theme.bg_dark}ee)";
         };
 
         blur = {
@@ -142,7 +154,7 @@
         "nofocus,class:^$,title:^$,xwayland:1,floating:1,fullscreen:0,pinned:0"
 
         # Terminal transparency (same for active and inactive)
-        "opacity 0.92 0.92, class:^(Alacritty|alacritty)$"
+        "opacity 0.92 0.92, class:^(kitty)$"
 
         # Network settings - float and center
         "float, class:^(nm-connection-editor)$"
