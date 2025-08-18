@@ -119,6 +119,11 @@ in
       inherit rofi-wayland;
     in
     [
+      # rbw integration for password management
+      rofi-rbw-wayland # Rofi frontend for Bitwarden (Wayland version)
+      wl-clipboard # Wayland clipboard support
+      wtype # Wayland typing tool
+
       # Wallpaper testing tool - for temporary testing only
       (writeShellScriptBin "wallpaper-testing" ''
         #!/usr/bin/env bash
@@ -689,5 +694,20 @@ in
                   ;;
               esac
       '')
+
     ];
+
+  # Configuration for rofi-rbw
+  home.file.".config/rofi-rbw.rc".text = ''
+    action = copy
+    selector = rofi
+    clipboarder = wl-copy
+    typer = wtype
+    clear-after = 60
+  '';
+
+  # Add keybinding for password manager in Hyprland
+  wayland.windowManager.hyprland.settings.bind = [
+    "$mod, I, exec, rofi-rbw" # Super+I for password manager
+  ];
 }
