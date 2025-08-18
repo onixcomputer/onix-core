@@ -1,8 +1,6 @@
-# Theme configuration - set your theme choice here
-
-# Autoset matching wallpaper will use suggested wallpaper for the theme you set. Unset to retain your own between theme swaps
+{ lib, ... }:
 
 {
-  theme.active = "solarized-dark";
-  theme.autoSetMatchingWallpaper = true;
+  theme.active = lib.mkDefault "solarized-dark";
+  theme.autoSetMatchingWallpaper = lib.mkDefault true;
 }

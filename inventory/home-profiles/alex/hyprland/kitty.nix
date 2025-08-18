@@ -32,8 +32,6 @@ in
       foreground = theme.fg; # Use normal foreground, not dim
 
       # Color adjustments for better readability
-      # Minimum contrast enforcement - automatically adjusts colors for readability
-      # When foreground/background contrast is too low, Kitty will darken/lighten text
       # Higher values = more aggressive contrast adjustment (max 21)
       minimum_contrast = "7.0";
 
@@ -132,9 +130,6 @@ in
       "ctrl+shift+minus" = "change_font_size all -1.0";
       "ctrl+shift+0" = "change_font_size all 0";
 
-      # Fullscreen
-      "f11" = "toggle_fullscreen";
-
       # Copy/paste
       "ctrl+shift+c" = "copy_to_clipboard";
       "ctrl+shift+v" = "paste_from_clipboard";
@@ -161,9 +156,6 @@ in
 
       # Clear scrollback
       "ctrl+shift+k" = "clear_terminal scrollback active";
-
-      # Reload config
-      "ctrl+shift+f5" = "load_config_file";
     };
 
     # Extra config for advanced features

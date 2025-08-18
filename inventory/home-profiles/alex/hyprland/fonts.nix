@@ -27,7 +27,7 @@
           <family>Noto Sans CJK</family>
         </prefer>
       </alias>
-      
+
       <alias>
         <family>sans-serif</family>
         <prefer>
@@ -35,7 +35,7 @@
           <family>Noto Sans CJK</family>
         </prefer>
       </alias>
-      
+
       <!-- Only use emoji font when explicitly requested -->
       <alias>
         <family>emoji</family>
@@ -43,7 +43,7 @@
           <family>Noto Color Emoji</family>
         </prefer>
       </alias>
-      
+
       <!-- Prevent emoji font from being used for regular text/numbers -->
       <match target="pattern">
         <test name="family">

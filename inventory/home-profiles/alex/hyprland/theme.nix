@@ -1,4 +1,3 @@
-# Theme module - provides a clean interface for color theming
 {
   config,
   lib,
@@ -63,9 +62,8 @@ in
           }
         ) allWallpapers;
 
-      # Update wallpaper state file when theme changes
-      # The actual wallpaper application happens via restore-wallpaper on Hyprland start
-      activation.setThemeWallpaper = lib.hm.dag.entryAfter [ "writeBoundary" ] (
+      # Update wallpaper state file when theme changes and trigger the service
+      activation.setThemeWallpaper = lib.hm.dag.entryAfter [ "linkGeneration" ] (
         mkIf (config.theme.autoSetMatchingWallpaper && config.theme.colors ? wallpapers) ''
           # Simply update the state file that restore-wallpaper uses
           WALLPAPER="$HOME/Pictures/Wallpapers/${config.theme.colors.wallpapers.main}"
@@ -74,6 +72,9 @@ in
           if [[ -e "$WALLPAPER" ]]; then
             mkdir -p "$(dirname "$STATE_FILE")"
             echo "$WALLPAPER" > "$STATE_FILE"
+
+            # Trigger the wallpaper service to apply it immediately
+            ${pkgs.systemd}/bin/systemctl --user restart apply-theme-wallpaper.service || true
           fi
         ''
       );
@@ -87,25 +88,12 @@ in
       Unit = {
         Description = "Apply theme wallpaper";
         After = [ "graphical-session.target" ];
-        PartOf = [ "graphical-session.target" ];
       };
 
       Service = {
         Type = "oneshot";
-        ExecStart = "${pkgs.writeShellScript "apply-theme-wallpaper" ''
-          #!/usr/bin/env bash
-          # Wait a moment for the environment to be ready
-          sleep 1
-
-          # Use restore-wallpaper which handles all the logic
-          if command -v restore-wallpaper >/dev/null 2>&1; then
-            restore-wallpaper
-          fi
-        ''}";
-      };
-
-      Install = {
-        WantedBy = [ "default.target" ];
+        RemainAfterExit = false; # Allow multiple restarts
+        ExecStart = "${pkgs.bash}/bin/bash -c 'PATH=$HOME/.nix-profile/bin:$PATH restore-wallpaper'";
       };
     };
 
@@ -117,16 +105,14 @@ in
       gtk4.extraConfig.gtk-application-prefer-dark-theme = config.theme.colors.gtk.preferDarkTheme;
     };
 
-    # dconf settings for GNOME/GTK apps
-    # FIXME: Commenting out dconf to avoid 26s hang during switches
-    # dconf = {
-    #   enable = true;
-    #   settings."org/gnome/desktop/interface" = {
-    #     color-scheme = if config.theme.colors.gtk.preferDarkTheme then "prefer-dark" else "default";
-    #     gtk-theme = config.theme.colors.gtk.theme.name;
-    #     icon-theme = config.theme.colors.gtk.iconTheme.name;
-    #   };
-    # };
+    dconf = {
+      enable = true;
+      settings."org/gnome/desktop/interface" = {
+        color-scheme = if config.theme.colors.gtk.preferDarkTheme then "prefer-dark" else "default";
+        gtk-theme = config.theme.colors.gtk.theme.name;
+        icon-theme = config.theme.colors.gtk.iconTheme.name;
+      };
+    };
 
     # Qt theme configuration to match GTK
     qt = {
