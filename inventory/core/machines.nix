@@ -77,7 +77,7 @@ _: {
         "seaweedfs-volume"
       ];
       deploy = {
-        targetHost = "root@britton-desktop";
+        targetHost = "192.168.1.252";
         buildHost = "";
       };
     };
@@ -85,6 +85,7 @@ _: {
       name = "britton-fw";
       tags = [
         "laptop"
+        "dev"
         "hyprland"
         "prometheus"
         "monitoring"
@@ -97,6 +98,7 @@ _: {
         "tailnet-brittonr"
         "onix-cache"
         "openpgp"
+        "mcp"
       ];
       deploy = {
         targetHost = "root@britton-fw.bison-tailor.ts.net";

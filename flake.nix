@@ -1,4 +1,5 @@
 {
+  # Testing Claude hooks - should trigger formatting and flake check
   description = "Onix Infrastructure";
 
   inputs = {
@@ -25,6 +26,10 @@
     };
     grafana-dashboards = {
       url = "github:onixcomputer/grafana-dashboards";
+    };
+    mcp-servers-nix = {
+      url = "github:natsukium/mcp-servers-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 

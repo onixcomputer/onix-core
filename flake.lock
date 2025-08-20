@@ -225,6 +225,26 @@
         "type": "github"
       }
     },
+    "mcp-servers-nix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1755595862,
+        "narHash": "sha256-QWWji8gU8s5/YEzfVEHQsudhG3HNrqiuXntRJ5FJc2g=",
+        "owner": "natsukium",
+        "repo": "mcp-servers-nix",
+        "rev": "90b6498d3f279a439a62bfc84549f1476f68da49",
+        "type": "github"
+      },
+      "original": {
+        "owner": "natsukium",
+        "repo": "mcp-servers-nix",
+        "type": "github"
+      }
+    },
     "nix-darwin": {
       "inputs": {
         "nixpkgs": [
@@ -368,6 +388,7 @@
         "flake-parts": "flake-parts_2",
         "grafana-dashboards": "grafana-dashboards",
         "grub2-themes": "grub2-themes",
+        "mcp-servers-nix": "mcp-servers-nix",
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs_2",
         "pre-commit-hooks-nix": "pre-commit-hooks-nix",

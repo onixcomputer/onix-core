@@ -114,6 +114,7 @@ _: {
             "dev"
             "hyprland"
             "hypr-laptop"
+            "social"
           ];
         };
       };
