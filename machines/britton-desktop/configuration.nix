@@ -25,10 +25,13 @@ in
   };
 
   time.timeZone = "America/New_York";
+  time.hardwareClockInLocalTime = true; # Prevent time sync issues with Windows
 
   environment.systemPackages = with pkgs; [
     imagemagick # required for grub2-theme
     claude-code
+    os-prober
+    comma
     nix-output-monitor
     gh
   ];
@@ -37,6 +40,23 @@ in
     timeout = 1;
     grub = {
       timeoutStyle = "menu";
+      enable = true;
+      device = "nodev";
+      efiSupport = true;
+      useOSProber = true;
+      extraConfig = ''
+        GRUB_DISABLE_OS_PROBER=false
+      '';
+      # extraEntries = ''
+      #   menuentry "Windows (Manual)" {
+      #     insmod part_gpt
+      #     insmod ntfs
+      #     insmod search_fs_uuid
+      #     insmod chain
+      #     search --fs-uuid --set=root 12EA42E8EA42C825
+      #     chainloader +1
+      #   }
+      # '';
     };
     grub2-theme = {
       enable = true;
