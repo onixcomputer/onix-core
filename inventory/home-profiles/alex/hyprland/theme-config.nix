@@ -1,6 +1,6 @@
 { lib, ... }:
 
 {
-  theme.active = lib.mkDefault "solarized-dark";
+  theme.active = lib.mkDefault "tokyo-night";
   theme.autoSetMatchingWallpaper = lib.mkDefault true;
 }

@@ -222,10 +222,10 @@ in
                 wave=*) NEW_TRANSITION_WAVE="''${arg#*=}" ;;
               esac
             done
-            
+
             # Load current config as base
             source "$HOME/.config/wallpaper/config" 2>/dev/null
-            
+
             # Write override with updated values (use new values if provided, else keep current)
             mkdir -p "$(dirname "$OVERRIDE_FILE")"
             cat > "$OVERRIDE_FILE" << EOF
@@ -425,16 +425,16 @@ in
           mp4|webm|mkv|avi|mov)
             # Video file - use mpvpaper
             echo "Setting video wallpaper with mpvpaper..."
-            
+
             # Kill swww if running
             if pgrep -x swww-daemon > /dev/null; then
               swww kill
               sleep 0.5  # Brief pause to ensure clean shutdown
             fi
-            
+
             # Kill any existing mpvpaper instances
             pkill -f mpvpaper
-            
+
             # Start new mpvpaper with proper scaling based on video mode
             if [[ "$VIDEO_RESIZE_MODE" == "fit" ]]; then
               mpvpaper -o "loop --video-unscaled=no --panscan=0.0" '*' "$WALLPAPER" &
@@ -443,20 +443,20 @@ in
               mpvpaper -o "loop --video-unscaled=no --panscan=1.0" '*' "$WALLPAPER" &
             fi
             ;;
-            
+
           gif)
             # GIF file - use swww
             echo "Setting GIF wallpaper with swww..."
-            
+
             # Kill mpvpaper if running
             pkill -f mpvpaper
-            
+
             # Ensure swww daemon is running
             if ! pgrep -x swww-daemon > /dev/null; then
               swww-daemon &
               sleep 0.5  # Wait for daemon to start
             fi
-            
+
             # Set the wallpaper with appropriate resize mode (no transition for GIFs)
             case "$RESIZE_MODE" in
               fit)
@@ -474,20 +474,20 @@ in
                 ;;
             esac
             ;;
-            
+
           jpg|jpeg|png|webp|bmp)
             # Static image - use swww
             echo "Setting static wallpaper with swww..."
-            
+
             # Kill mpvpaper if running
             pkill -f mpvpaper
-            
+
             # Ensure swww daemon is running
             if ! pgrep -x swww-daemon > /dev/null; then
               swww-daemon &
               sleep 0.5  # Wait for daemon to start
             fi
-            
+
             # Build swww command with all options
             SWWW_CMD="swww img \"$WALLPAPER\""
             SWWW_CMD="$SWWW_CMD --transition-type \"$TRANSITION_TYPE\""
@@ -495,7 +495,7 @@ in
             SWWW_CMD="$SWWW_CMD --transition-fps \"$TRANSITION_FPS\""
             SWWW_CMD="$SWWW_CMD --transition-step \"$TRANSITION_STEP\""
             SWWW_CMD="$SWWW_CMD --filter \"$FILTER\""
-            
+
             # Add transition-specific options
             case "$TRANSITION_TYPE" in
               wipe|wave)
@@ -509,7 +509,7 @@ in
                 SWWW_CMD="$SWWW_CMD --transition-bezier \"$TRANSITION_BEZIER\""
                 ;;
             esac
-            
+
             # Add resize mode
             case "$RESIZE_MODE" in
               fit)
@@ -525,11 +525,11 @@ in
                 SWWW_CMD="$SWWW_CMD --resize crop"
                 ;;
             esac
-            
+
             # Execute the command
             eval "$SWWW_CMD"
             ;;
-            
+
           *)
             echo "Unsupported file type: $EXT"
             exit 1
@@ -557,12 +557,12 @@ in
         get_video_thumb() {
           local video="$1"
           local thumb="$THUMB_DIR/$(basename "$video").jpg"
-          
+
           # Generate thumbnail if it doesn't exist or is older than video
           if [[ ! -f "$thumb" ]] || [[ "$video" -nt "$thumb" ]]; then
             ${pkgs.ffmpeg}/bin/ffmpeg -i "$video" -ss 00:00:01 -vframes 1 "$thumb" -y &>/dev/null
           fi
-          
+
           echo "$thumb"
         }
 
@@ -618,14 +618,14 @@ in
       (writeShellScriptBin "rofi-wifi" ''
               # Get WiFi status
               wifi_status=$(nmcli radio wifi)
-              
+
               # Build menu options
               if [ "$wifi_status" = "enabled" ]; then
                 toggle_text="󰖪  Disable WiFi"
-                
+
                 # Get current connection
                 current=$(nmcli -t -f NAME,TYPE con show --active | grep wireless | cut -d: -f1)
-                
+
                 # Get available networks (nmcli uses cached results by default, very fast)
                 networks=$(nmcli -t -f SSID,SIGNAL,SECURITY,IN-USE dev wifi | \
                   grep -v '^--' | \
@@ -634,7 +634,7 @@ in
                     printf "%s  %-20s %3s%% %s\n", icon, substr($1,1,20), $2, $3
                   }' | \
                   sort -k3 -rn | head -20)
-                
+
               else
                 toggle_text="󰖩  Enable WiFi"
                 networks="WiFi is disabled"
@@ -644,7 +644,7 @@ in
               menu_items="󰢾  Network Settings
         $toggle_text
         󰑓  Refresh"
-              
+
               if [ -n "$networks" ]; then
                 menu_items="$menu_items
 
@@ -684,7 +684,7 @@ in
                 "󰌾  "*|"󰌿  "*)
                   # Extract SSID from the chosen line (handle both locked and open networks)
                   ssid=$(echo "$chosen" | sed 's/^[󰸞󰌾󰌿]  //' | awk '{print $1}')
-                  
+
                   # Try to connect
                   nmcli dev wifi connect "$ssid" 2>/dev/null && {
                     notify-send "WiFi" "Connected to $ssid" -i network-wireless

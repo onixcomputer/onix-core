@@ -16,7 +16,6 @@ _: {
         "tailnet-adeci"
         "laptop"
         "hyprland"
-        "nixvegas"
       ];
       deploy = {
         targetHost = "root@alex-fw.cymric-daggertooth.ts.net";

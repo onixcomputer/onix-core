@@ -119,10 +119,10 @@ rec {
         url = "https://raw.githubusercontent.com/adeci/wallpapers/main/tokyo-night/tokyo-night_street.jpg";
         sha256 = "sha256-XlSm8RzGwowJMT/DQBNwfsU4V6QuvP4kvwVm1pzw6SM=";
       };
-      "tokyo-night_forest.jxl" = {
-        url = "https://raw.githubusercontent.com/adeci/wallpapers/main/tokyo-night/tokyo-night_forest.jxl";
-        sha256 = "sha256-jbY5p0vKLdearaZh1kuQytVsPia6h2AsEbOAqGpxEWw=";
-      };
+      # "tokyo-night_forest.jxl" = {
+      #   url = "https://raw.githubusercontent.com/adeci/wallpapers/main/tokyo-night/tokyo-night_forest.jxl";
+      #   sha256 = "sha256-jbY5p0vKLdearaZh1kuQytVsPia6h2AsEbOAqGpxEWw=";
+      # };
     };
   };
 }
