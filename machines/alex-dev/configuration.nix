@@ -12,7 +12,6 @@ _: {
 
   networking = {
     hostName = "alex-dev";
-    networkmanager.enable = true;
   };
 
   services = {

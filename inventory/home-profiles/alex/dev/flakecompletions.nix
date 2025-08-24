@@ -6,7 +6,7 @@
     end
   '';
 
-  programs.zsh.initExtra = ''
+  programs.zsh.initContent = ''
     # Source clan-core completions if available
     if [ -e ~/dev/clan-core/pkgs/clan-cli/completions/clan.zsh ]; then
       source ~/dev/clan-core/pkgs/clan-cli/completions/clan.zsh

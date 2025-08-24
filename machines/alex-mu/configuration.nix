@@ -1,7 +1,6 @@
 _: {
   networking = {
     hostName = "alex-mu";
-    networkmanager.enable = true;
   };
 
   time.timeZone = "America/New_York";

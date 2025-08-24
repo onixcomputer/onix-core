@@ -13,7 +13,6 @@ in
 
   networking = {
     hostName = "britton-fw";
-    networkmanager.enable = true;
   };
 
   time.timeZone = "America/New_York";
