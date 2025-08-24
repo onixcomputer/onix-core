@@ -1,15 +1,21 @@
 # ---
 # schema = "single-disk"
 # [placeholders]
-# mainDisk = "/dev/disk/by-id/nvme-Samsung_SSD_990_PRO_4TB_S7KGNU0Y310274E" 
+# mainDisk = "/dev/disk/by-id/nvme-Samsung_SSD_990_PRO_4TB_S7KGNU0Y310274E"
 # ---
 # This file was automatically generated!
 # CHANGING this configuration requires wiping and reinstalling the machine
 {
 
-  boot.loader.grub.efiSupport = true;
-  boot.loader.grub.efiInstallAsRemovable = true;
-  boot.loader.grub.enable = true;
+  boot = {
+    loader = {
+      grub = {
+        efiSupport = true;
+        efiInstallAsRemovable = true;
+        enable = true;
+      };
+    };
+  };
   disko.devices = {
     disk = {
       main = {

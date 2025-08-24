@@ -28,6 +28,17 @@ _: {
           ];
         };
       };
+      aspen1 = {
+        role = "owner";
+        shell = "fish";
+        homeManager = {
+          enable = true;
+          profiles = [
+            "base"
+            "dev"
+          ];
+        };
+      };
       sequoia = {
         role = "owner";
         shell = "fish";
@@ -115,6 +126,17 @@ _: {
             "hyprland"
             "hypr-laptop"
             "social"
+          ];
+        };
+      };
+      aspen1 = {
+        role = "owner";
+        shell = "fish";
+        homeManager = {
+          enable = true;
+          profiles = [
+            "base"
+            "dev"
           ];
         };
       };

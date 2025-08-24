@@ -45,6 +45,25 @@ _: {
         buildHost = "";
       };
     };
+    aspen1 = {
+      name = "aspen1";
+      tags = [
+        "prometheus"
+        "monitoring"
+        "homepage-server"
+        "nix-cache"
+        "seaweedfs-master"
+        "traefik-blr"
+        "tailnet-brittonr"
+        "onix-cache"
+        "openpgp"
+        "mcp"
+      ];
+      deploy = {
+        targetHost = "root@aspen1.bison-tailor.ts.net";
+        buildHost = "root@aspen1.bison-tailor.ts.net";
+      };
+    };
     britton-dev = {
       name = "britton-dev";
       tags = [
@@ -75,6 +94,7 @@ _: {
         "static-test"
         "static-demo"
         "seaweedfs-volume"
+        "mcp"
       ];
       deploy = {
         targetHost = "192.168.1.252";
