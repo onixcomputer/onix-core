@@ -1,7 +1,12 @@
-_: {
+{ pkgs, ... }:
+{
   clan.core.settings.state-version.enable = true;
   services.avahi.enable = true;
   nixpkgs.config.allowUnfree = true;
+
+  environment.systemPackages = with pkgs; [
+    kitty.terminfo
+  ];
 
   i18n.defaultLocale = "en_US.UTF-8";
   i18n.extraLocaleSettings = {
