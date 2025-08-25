@@ -150,6 +150,7 @@ _: {
             "dev"
             "hyprland"
             "creative"
+            "social"
           ];
         };
       };

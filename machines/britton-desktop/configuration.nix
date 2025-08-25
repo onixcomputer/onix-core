@@ -34,6 +34,7 @@ in
     comma
     nix-output-monitor
     gh
+    chromium
   ];
 
   boot.loader = {
@@ -46,6 +47,11 @@ in
       useOSProber = true;
       extraConfig = ''
         GRUB_DISABLE_OS_PROBER=false
+      '';
+      extraEntries = ''
+        menuentry "Reboot" {
+          reboot
+        }
       '';
       # extraEntries = ''
       #   menuentry "Windows (Manual)" {

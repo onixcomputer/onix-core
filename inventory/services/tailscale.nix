@@ -6,7 +6,7 @@ _: {
       roles.peer = {
         tags."tailnet-brittonr" = { };
         settings = {
-          enableSSH = false;
+          enableSSH = true;
           exitNode = false;
         };
       };
