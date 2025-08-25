@@ -12,16 +12,11 @@ in
     ./pmods/macrand.nix # MAC address randomization utilities
   ];
 
-  # AMD GPU support for DaVinci Resolve
   hardware.graphics = {
     enable = true;
     enable32Bit = true;
     extraPackages = with pkgs; [
-      rocmPackages.clr.icd # OpenCL support for AMD GPUs
-      amdvlk # AMD Vulkan driver
-    ];
-    extraPackages32 = with pkgs; [
-      driversi686Linux.amdvlk
+      rocmPackages.clr.icd
     ];
   };
 
@@ -50,14 +45,6 @@ in
     signal-desktop
   ];
 
-  boot.kernel.sysctl = {
-    "vm.swappiness" = 60; # Balanced swapping
-    "vm.dirty_ratio" = 15; # Reduce dirty pages
-    "vm.dirty_background_ratio" = 5; # Earlier writeback
-    "vm.overcommit_memory" = 1; # Allow overcommit for compilation
-    "vm.page-cluster" = 0; # Optimize for ZRAM
-  };
-
   boot.loader = {
     timeout = 1;
     grub = {
@@ -71,6 +58,14 @@ in
       customResolution = "2880x1920";
       splashImage = grubWallpaper;
     };
+  };
+
+  boot.kernel.sysctl = {
+    "vm.swappiness" = 60; # Balanced swapping
+    "vm.dirty_ratio" = 15; # Reduce dirty pages
+    "vm.dirty_background_ratio" = 5; # Earlier writeback
+    "vm.overcommit_memory" = 1; # Allow overcommit for compilation
+    "vm.page-cluster" = 0; # Optimize for ZRAM
   };
 
   zramSwap = {
