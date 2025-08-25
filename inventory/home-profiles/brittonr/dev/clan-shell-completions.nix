@@ -1,5 +1,5 @@
 let
-  localClanCorePath = "~/dev/clan-core";
+  localClanCorePath = "~/git/clan-core";
 in
 {
   programs.fish.shellInit = ''
