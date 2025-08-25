@@ -15,11 +15,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1756093362,
-        "narHash": "sha256-nzPZG+GYyO72swbtpWUTmBK47tk1OAVqw7Q86coqRsM=",
+        "lastModified": 1756098740,
+        "narHash": "sha256-8RiV+MlhlnJZUktiC6UMQY2sTiZ+K7vlAk/Q1HWdRu4=",
         "ref": "adeci-stable",
-        "rev": "5d032ad94cf76aca27f2418fa2d21b9cdf2963a0",
-        "revCount": 9464,
+        "rev": "a04f2db54887a0de6cef6682d8032b2928ff25be",
+        "revCount": 9466,
         "type": "git",
         "url": "https://git.clan.lol/adeci/clan-core"
       },
