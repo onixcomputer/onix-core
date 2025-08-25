@@ -94,8 +94,8 @@ in
       # Disable remote control to prevent permission notifications
       allow_remote_control = "no";
 
-      # Disable shell integration completely to prevent cursor changes
-      shell_integration = "disabled";
+      # Enable shell integration but control cursor ourselves
+      shell_integration = "enabled no-cursor";
 
       # Disable update checking
       update_check_interval = 0;

@@ -1,8 +1,8 @@
 { pkgs, ... }:
 {
-  clan.core.settings.state-version.enable = true;
   services.avahi.enable = true;
   nixpkgs.config.allowUnfree = true;
+  clan.core.settings.state-version.enable = true;
 
   environment.systemPackages = with pkgs; [
     kitty.terminfo

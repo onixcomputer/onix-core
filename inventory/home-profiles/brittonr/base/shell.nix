@@ -2,6 +2,12 @@
 {
   # Shell-agnostic aliases that apply to all shells
   home.shellAliases = {
+    # Eza (better ls)
+    ll = "eza -la --icons --git";
+    la = "eza -la --icons";
+    ls = "eza --icons";
+    lt = "eza --tree --icons";
+
     # Navigation
     ".." = "cd ..";
     "..." = "cd ../..";
@@ -14,7 +20,6 @@
     gc = "git commit";
     gp = "git push";
     gl = "git log --oneline --graph";
-    lg = "lazygit";
 
     # Better defaults
     cat = "bat -pp";
@@ -48,58 +53,33 @@
       function cc
         bat $argv | wl-copy
       end
-    '';
-  };
 
-  # Zsh shell configuration
-  programs.zsh = {
-    enable = true;
+      # Better colors for suggestions (subtle gray)
+      set -g fish_color_autosuggestion 555 brblack
+      set -g fish_color_command green
+      set -g fish_color_error red --bold
+      set -g fish_color_param cyan
+      set -g fish_color_quote yellow
 
-    # Enable directory auto-cd
-    autocd = true;
+      # Force block cursor for all vi modes
+      set -g fish_cursor_default block
+      set -g fish_cursor_insert block
+      set -g fish_cursor_replace_one underscore
+      set -g fish_cursor_visual block
 
-    # Enable autosuggestions
-    autosuggestion = {
-      enable = true;
-      strategy = [
-        "history"
-        "completion"
-      ];
-    };
-
-    # Enable syntax highlighting
-    syntaxHighlighting.enable = true;
-
-    # Enable completions
-    enableCompletion = true;
-
-    # History configuration
-    history = {
-      size = 10000;
-      save = 10000;
-      share = true;
-      extended = true;
-      ignoreDups = true;
-      ignoreSpace = true;
-    };
-
-    # Zsh-specific initialization
-    initContent = ''
-      # Import systemd environment (for SSH_AUTH_SOCK from gnome-keyring)
-      if command -v systemctl &> /dev/null; then
-        export $(systemctl --user show-environment | grep SSH_AUTH_SOCK | xargs)
-      fi
-
-      # Custom function for clipboard copy (zsh version)
-      function cc() {
-        bat "$@" | wl-copy
-      }
+      # Enable vi key bindings
+      fish_vi_key_bindings
     '';
   };
 
   # Shell utilities used by aliases
   home.packages = with pkgs; [
     bat
+    eza
+    fzf
+    delta
+    jq
+    yq
     lazygit
   ];
 }

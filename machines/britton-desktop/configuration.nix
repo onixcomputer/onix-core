@@ -28,11 +28,7 @@ in
 
   environment.systemPackages = with pkgs; [
     imagemagick # required for grub2-theme
-    claude-code
     os-prober
-    comma
-    nix-output-monitor
-    gh
     chromium
   ];
 
@@ -114,19 +110,6 @@ in
 
   };
 
-  home-manager = {
-    backupFileExtension = "backup";
-    sharedModules = [
-      {
-        wayland.windowManager.hyprland.settings.monitor = [
-          ",preferred,auto,1.5"
-          "HDMI-A-1,preferred,auto,2,mirror,eDP-1"
-          "HDMI-A-2,preferred,auto,2,mirror,DP-1"
-        ];
-      }
-    ];
-  };
-
   security = {
     rtkit.enable = true;
     pam.services = {
@@ -136,6 +119,4 @@ in
       hyprlock = { };
     };
   };
-
-  system.stateVersion = "25.05";
 }

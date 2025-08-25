@@ -33,11 +33,7 @@ in
 
   environment.systemPackages = with pkgs; [
     imagemagick # required for grub2-theme
-    claude-code
-    comma
     os-prober
-    nix-output-monitor
-    gh
   ];
 
   boot.loader = {
@@ -89,22 +85,9 @@ in
     };
   };
 
-  home-manager = {
-    backupFileExtension = "backup";
-    sharedModules = [
-      {
-        wayland.windowManager.hyprland.settings.monitor = [
-          "eDP-1, preferred, auto, 1.5"
-        ];
-      }
-    ];
-  };
-
   security.pam.services = {
     login.enableGnomeKeyring = true;
     greetd.enableGnomeKeyring = true;
     hyprlock = { };
   };
-
-  system.stateVersion = "25.05";
 }

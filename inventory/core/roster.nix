@@ -1,268 +1,411 @@
-_: {
-  alex = {
-    description = "Alex";
-    defaultUid = 3801;
-    defaultGroups = [
-      "audio"
-      "networkmanager"
-      "video"
-      "input"
-      "plugdev"
-    ];
-    sshAuthorizedKeys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJeeoL1jwVSachA9GdJxm/5TgCRBULfSDGLyP/nfmkMq alex@DESKTOP-SVRV9Q8"
-    ];
-    machines = {
-      alex-fw = {
-        role = "owner";
-        shell = "fish";
-        homeManager = {
-          enable = true;
-          profiles = [
-            "base"
-            "dev"
-            "hyprland"
-            "hypr-laptop"
-            "creative"
-            "social"
-          ];
-        };
-      };
-      aspen1 = {
-        role = "owner";
-        shell = "fish";
-        homeManager = {
-          enable = true;
-          profiles = [
-            "base"
-            "dev"
-          ];
-        };
-      };
-      sequoia = {
-        role = "owner";
-        shell = "fish";
-        homeManager = {
-          enable = true;
-          profiles = [
-            "base"
-            "dev"
-          ];
-        };
-      };
-      alex-mu = {
-        role = "owner";
-        shell = "fish";
-        homeManager = {
-          enable = true;
-          profiles = [
-            "base"
-            "dev"
-          ];
-        };
-      };
-      alex-dev = {
-        role = "owner";
-        shell = "fish";
-        homeManager = {
-          enable = true;
-          profiles = [
-            "base"
-            "dev"
-          ];
-        };
-      };
-      alex-wsl = {
-        role = "owner";
-        shell = "fish";
-        homeManager = {
-          enable = true;
-          profiles = [
-            "base"
-            "dev"
-          ];
-        };
-      };
-      zenith = {
-        role = "owner";
-        shell = "fish";
-        homeManager = {
-          enable = true;
-          profiles = [
-            "base"
-            "dev"
-            "hyprland"
-            "hypr-laptop"
-            "creative"
-            "social"
-          ];
-        };
-      };
+_:
+let
+  roster-users = {
+    alex = {
+      description = "Alex";
+      defaultUid = 3801;
+      defaultGroups = [
+        "audio"
+        "networkmanager"
+        "video"
+        "input"
+        "plugdev"
+      ];
+      sshAuthorizedKeys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJeeoL1jwVSachA9GdJxm/5TgCRBULfSDGLyP/nfmkMq alex@DESKTOP-SVRV9Q8"
+      ];
+      defaultPosition = "owner";
+      defaultShell = "fish";
+    };
+
+    brittonr = {
+      description = "Britton";
+      defaultUid = 1555;
+      defaultGroups = [
+        "wheel"
+        "networkmanager"
+        "video"
+        "input"
+        "kvm"
+      ];
+      sshAuthorizedKeys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILYzh3yIsSTOYXkJMFHBKzkakoDfonm3/RED5rqMqhIO britton@framework"
+      ];
+      defaultPosition = "owner";
+      defaultShell = "fish";
+    };
+
+    dima = {
+      description = "Dima";
+      defaultUid = 8070;
+      defaultGroups = [
+        "audio"
+        "networkmanager"
+        "video"
+        "input"
+        "plugdev"
+      ];
+      sshAuthorizedKeys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP++JHcHDQfP5wcPxtb8o4liBWo+DFS13I4a9UgSTFec dima@nixos"
+      ];
+      defaultPosition = "owner";
+      defaultShell = "fish";
     };
   };
 
-  brittonr = {
-    description = "Britton";
-    defaultUid = 1555;
-    defaultGroups = [
-      "wheel"
-      "networkmanager"
-      "video"
-      "input"
-      "kvm"
-    ];
-    sshAuthorizedKeys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILYzh3yIsSTOYXkJMFHBKzkakoDfonm3/RED5rqMqhIO britton@framework"
-    ];
-    machines = {
-      britton-fw = {
-        role = "owner";
-        shell = "fish";
-        homeManager = {
-          enable = true;
-          profiles = [
-            "base"
-            "dev"
-            "hyprland"
-            "hypr-laptop"
-            "social"
-          ];
+  roster-machines = {
+    alex-fw = {
+      users = {
+        alex = {
+          position = "owner";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+              "hyprland"
+              "hypr-laptop"
+              "creative"
+              "social"
+            ];
+          };
         };
       };
-      aspen1 = {
-        role = "owner";
-        shell = "fish";
-        homeManager = {
-          enable = true;
-          profiles = [
-            "base"
-            "dev"
-          ];
-        };
-      };
-      britton-desktop = {
-        role = "owner";
-        shell = "fish";
-        homeManager = {
-          enable = true;
-          profiles = [
-            "base"
-            "dev"
-            "hyprland"
-            "creative"
-            "social"
-          ];
-        };
-      };
-      gmk1 = {
-        role = "owner";
-        shell = "fish";
-        homeManager = {
-          enable = true;
-          profiles = [
-            "base"
-            "dev"
-          ];
-        };
-      };
-      gmk2 = {
-        role = "owner";
-        shell = "fish";
-        homeManager = {
-          enable = true;
-          profiles = [
-            "base"
-            "dev"
-          ];
-        };
-      };
-      gmk3 = {
-        role = "owner";
-        shell = "fish";
-        homeManager = {
-          enable = true;
-          profiles = [
-            "base"
-            "dev"
-          ];
-        };
-      };
-      britton-dev = {
-        role = "owner";
-        shell = "fish";
-        homeManager = {
-          enable = true;
-          profiles = [
-            "base"
-            "dev"
-          ];
-        };
+      homeManagerOptions = {
+        sharedModules = [
+          {
+            wayland.windowManager.hyprland.settings.monitor = [
+              "eDP-1,2880x1920@120,auto,2"
+              "DP-3,preferred,auto,1,mirror,eDP-1"
+            ];
+          }
+        ];
       };
     };
-  };
-  dima = {
-    description = "Dima";
-    defaultUid = 8070;
-    defaultGroups = [
-      "audio"
-      "networkmanager"
-      "video"
-      "input"
-      "plugdev"
-    ];
-    sshAuthorizedKeys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP++JHcHDQfP5wcPxtb8o4liBWo+DFS13I4a9UgSTFec dima@nixos"
-    ];
-    machines = {
-      zenith = {
-        role = "owner";
-        shell = "fish";
-        homeManager = {
-          enable = true;
-          profiles = [
-            "base"
-            "dev"
-            "hyprland"
-            "hypr-laptop"
-            "creative"
-            "social"
-          ];
-        };
-      };
-      gmk1 = {
-        role = "basic";
-        shell = "zsh";
-        homeManager = {
-          enable = true;
-          profiles = [
-            # "base"
-            # "dev"
-          ];
-        };
-      };
-      gmk2 = {
-        role = "basic";
-        shell = "zsh";
-        homeManager = {
-          enable = true;
-          profiles = [
-            # "base"
-            # "dev"
-          ];
-        };
-      };
-      gmk3 = {
-        role = "basic";
-        shell = "zsh";
-        homeManager = {
-          enable = true;
-          profiles = [
-            # "base"
-            # "dev"
-          ];
-        };
-      };
-    };
-  };
 
+    britton-fw = {
+      users = {
+        brittonr = {
+          position = "owner";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+              "hyprland"
+              "hypr-laptop"
+              "social"
+            ];
+          };
+        };
+      };
+      homeManagerOptions = {
+        sharedModules = [
+          {
+            wayland.windowManager.hyprland.settings.monitor = [
+              ",preferred,auto,1.5"
+              "HDMI-A-1,preferred,auto,2,mirror,eDP-1"
+              "HDMI-A-2,preferred,auto,2,mirror,DP-1"
+            ];
+          }
+        ];
+      };
+    };
+
+    britton-desktop = {
+      users = {
+        brittonr = {
+          position = "owner";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+              "hyprland"
+              "creative"
+            ];
+          };
+        };
+      };
+      homeManagerOptions = {
+        sharedModules = [
+          {
+            wayland.windowManager.hyprland.settings.monitor = [
+              ",preferred,auto,1.5"
+              "HDMI-A-1,preferred,auto,2,mirror,eDP-1"
+              "HDMI-A-2,preferred,auto,2,mirror,DP-1"
+            ];
+          }
+        ];
+      };
+    };
+
+    britton-dev = {
+      users = {
+        brittonr = {
+          position = "owner";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+      };
+    };
+
+    aspen1 = {
+      users = {
+        alex = {
+          position = "owner";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+        brittonr = {
+          position = "owner";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+      };
+    };
+
+    sequoia = {
+      users = {
+        alex = {
+          position = "owner";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+      };
+    };
+
+    bambrew = {
+      users = {
+        alex = {
+          position = "owner";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+        brittonr = {
+          position = "owner";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+      };
+    };
+
+    marine = {
+      users = {
+        alex = {
+          position = "owner";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+        brittonr = {
+          position = "owner";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+      };
+    };
+
+    alex-wsl = {
+      users = {
+        alex = {
+          position = "owner";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+      };
+    };
+
+    zenith = {
+      users = {
+        alex = {
+          position = "owner";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+              "hyprland"
+              "hypr-laptop"
+              "creative"
+              "social"
+            ];
+          };
+        };
+        dima = {
+          position = "owner";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+              "hyprland"
+              "hypr-laptop"
+              "creative"
+              "social"
+            ];
+          };
+        };
+      };
+      homeManagerOptions = {
+        sharedModules = [
+          {
+            wayland.windowManager.hyprland.settings.monitor = [
+              "eDP-1, preferred, auto, 1.5"
+            ];
+          }
+        ];
+      };
+    };
+
+    # GMK machines
+    gmk1 = {
+      users = {
+        brittonr = {
+          position = "owner";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+        dima = {
+          position = "basic";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+      };
+    };
+
+    gmk2 = {
+      users = {
+        brittonr = {
+          position = "owner";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+        dima = {
+          position = "basic";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [ ];
+          };
+        };
+      };
+    };
+
+    gmk3 = {
+      users = {
+        brittonr = {
+          position = "owner";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+        dima = {
+          position = "basic";
+          shell = "fish";
+          homeManager = {
+            enable = true;
+            profiles = [ ];
+          };
+        };
+      };
+    };
+  };
+in
+{
+  instances = {
+    roster = {
+      module.name = "roster";
+      roles.default.tags.all = { };
+      roles.default.settings = {
+        users = roster-users;
+        machines = roster-machines;
+        homeProfilesPath = ../home-profiles;
+        homeManagerOptions = {
+          backupFileExtension = "bak";
+        };
+      };
+    };
+  };
 }

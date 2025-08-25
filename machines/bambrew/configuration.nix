@@ -1,6 +1,6 @@
 _: {
   networking = {
-    hostName = "alex-mu";
+    hostName = "bambrew";
   };
 
   time.timeZone = "America/New_York";
@@ -9,5 +9,4 @@ _: {
     layout = "us";
     variant = "";
   };
-  system.stateVersion = "25.05";
 }

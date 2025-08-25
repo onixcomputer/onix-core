@@ -9,6 +9,4 @@ _: {
     layout = "us";
     variant = "";
   };
-
-  system.stateVersion = "24.11";
 }

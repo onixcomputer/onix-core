@@ -1,15 +1,17 @@
 # ---
 # schema = "single-disk"
 # [placeholders]
-# mainDisk = "/dev/disk/by-id/mmc-CUTB42_0x95c0cedd" 
+# mainDisk = "/dev/disk/by-id/mmc-CUTB42_0x95c0cedd"
 # ---
 # This file was automatically generated!
 # CHANGING this configuration requires wiping and reinstalling the machine
 {
 
-  boot.loader.grub.efiSupport = true;
-  boot.loader.grub.efiInstallAsRemovable = true;
-  boot.loader.grub.enable = true;
+  boot.loader.grub = {
+    efiSupport = true;
+    efiInstallAsRemovable = true;
+    enable = true;
+  };
   disko.devices = {
     disk = {
       main = {

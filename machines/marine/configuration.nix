@@ -11,7 +11,7 @@ _: {
   time.timeZone = "America/New_York";
 
   networking = {
-    hostName = "alex-dev";
+    hostName = "marine";
   };
 
   services = {
@@ -39,6 +39,4 @@ _: {
     };
     tpm2.enable = false;
   };
-
-  system.stateVersion = "25.05";
 }

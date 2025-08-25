@@ -285,7 +285,7 @@
         "model": "JetKVM Virtual Media",
         "sysfs_id": "/class/block/sr0",
         "sysfs_bus_id": "0:0:0:0",
-        "sysfs_device_link": "/devices/pci0000:00/0000:00:14.0/usb3/3-3/3-3:1.3/host0/target0:0:0/0:0:0:0",
+        "sysfs_device_link": "/devices/pci0000:00/0000:00:14.0/usb3/3-1/3-1:1.3/host0/target0:0:0/0:0:0:0",
         "unix_device_name": "/dev/sr0",
         "unix_device_number": {
           "type": 98,
@@ -296,8 +296,8 @@
         "unix_device_names": [
           "/dev/cdrom",
           "/dev/disk/by-id/usb-JetKVM_Virtual_Media-0:0",
-          "/dev/disk/by-path/pci-0000:00:14.0-usb-0:3:1.3-scsi-0:0:0:0",
-          "/dev/disk/by-path/pci-0000:00:14.0-usbv2-0:3:1.3-scsi-0:0:0:0",
+          "/dev/disk/by-path/pci-0000:00:14.0-usb-0:1:1.3-scsi-0:0:0:0",
+          "/dev/disk/by-path/pci-0000:00:14.0-usbv2-0:1:1.3-scsi-0:0:0:0",
           "/dev/sr0"
         ],
         "unix_device_name2": "/dev/sg0",
@@ -490,7 +490,7 @@
         "fpu_exception": true,
         "cpuid_level": 32,
         "write_protect": false,
-        "tlb_size": 32715,
+        "tlb_size": 32765,
         "clflush_size": 64,
         "cache_alignment": 64,
         "address_sizes": {
@@ -745,25 +745,25 @@
           "value": 0
         },
         "vendor": {
-          "hex": "125f",
-          "name": "ADATA",
-          "value": 4703
+          "hex": "1307",
+          "name": "OCZ",
+          "value": 4871
         },
         "device": {
-          "hex": "db8a",
-          "name": "USB Flash Drive",
-          "value": 56202
+          "hex": "0165",
+          "name": "RALLY2",
+          "value": 357
         },
         "revision": {
           "hex": "0000",
-          "name": "1100",
+          "name": "0.00",
           "value": 0
         },
-        "serial": "AA00000000000489",
-        "model": "A USB Flash Drive",
+        "serial": "00000000002920",
+        "model": "OCZ RALLY2",
         "sysfs_id": "/class/block/sda",
         "sysfs_bus_id": "1:0:0:0",
-        "sysfs_device_link": "/devices/pci0000:00/0000:00:14.0/usb4/4-2/4-2:1.0/host1/target1:0:0/1:0:0:0",
+        "sysfs_device_link": "/devices/pci0000:00/0000:00:14.0/usb3/3-2/3-2:1.0/host1/target1:0:0/1:0:0:0",
         "unix_device_name": "/dev/sda",
         "unix_device_number": {
           "type": 98,
@@ -772,9 +772,9 @@
           "range": 16
         },
         "unix_device_names": [
-          "/dev/disk/by-id/usb-ADATA_USB_Flash_Drive_14A25123719500AB-0:0",
+          "/dev/disk/by-id/usb-OCZ_RALLY2_00000000002920-0:0",
           "/dev/disk/by-path/pci-0000:00:14.0-usb-0:2:1.0-scsi-0:0:0:0",
-          "/dev/disk/by-path/pci-0000:00:14.0-usbv3-0:2:1.0-scsi-0:0:0:0",
+          "/dev/disk/by-path/pci-0000:00:14.0-usbv2-0:2:1.0-scsi-0:0:0:0",
           "/dev/sda"
         ],
         "unix_device_name2": "/dev/sg1",
@@ -786,8 +786,16 @@
         },
         "resources": [
           {
+            "type": "baud",
+            "speed": 480000000,
+            "bits": 0,
+            "stop_bits": 0,
+            "parity": 0,
+            "handshake": 0
+          },
+          {
             "type": "disk_geo",
-            "cylinders": 14800,
+            "cylinders": 15421,
             "heads": 64,
             "sectors": 32,
             "size": "0x0",
@@ -796,7 +804,7 @@
           {
             "type": "size",
             "unit": "sectors",
-            "value_1": 30310400,
+            "value_1": 31582352,
             "value_2": 512
           }
         ],
@@ -804,7 +812,7 @@
         "driver_module": "usb_storage",
         "drivers": ["sd", "usb-storage"],
         "driver_modules": ["sd_mod", "usb_storage"],
-        "module_alias": "usb:v125FpDB8Ad1100dc00dsc00dp00ic08isc06ip50in00"
+        "module_alias": "usb:v1307p0165d0100dc00dsc00dp00ic08isc06ip50in00"
       }
     ],
     "graphics_card": [
@@ -905,7 +913,7 @@
     ],
     "hub": [
       {
-        "index": 41,
+        "index": 39,
         "attached_to": 26,
         "class_list": ["usb", "hub"],
         "bus_type": {
@@ -985,7 +993,7 @@
         "module_alias": "usb:v1D6Bp0002d0615dc09dsc00dp01ic09isc00ip00in00"
       },
       {
-        "index": 44,
+        "index": 42,
         "attached_to": 26,
         "class_list": ["usb", "hub"],
         "bus_type": {
@@ -1055,7 +1063,7 @@
         "module_alias": "usb:v1D6Bp0003d0615dc09dsc00dp03ic09isc00ip00in00"
       },
       {
-        "index": 45,
+        "index": 43,
         "attached_to": 9,
         "class_list": ["usb", "hub"],
         "bus_type": {
@@ -1207,8 +1215,8 @@
     ],
     "keyboard": [
       {
-        "index": 39,
-        "attached_to": 41,
+        "index": 41,
+        "attached_to": 39,
         "class_list": ["keyboard", "usb"],
         "bus_type": {
           "hex": "0086",
@@ -1245,8 +1253,8 @@
           "value": 0
         },
         "model": "JetKVM USB Emulation Device",
-        "sysfs_id": "/devices/pci0000:00/0000:00:14.0/usb3/3-3/3-3:1.0",
-        "sysfs_bus_id": "3-3:1.0",
+        "sysfs_id": "/devices/pci0000:00/0000:00:14.0/usb3/3-1/3-1:1.0",
+        "sysfs_bus_id": "3-1:1.0",
         "unix_device_name": "/dev/input/event0",
         "unix_device_number": {
           "type": 99,
@@ -1256,8 +1264,8 @@
         },
         "unix_device_names": [
           "/dev/input/by-id/usb-JetKVM_USB_Emulation_Device-event-kbd",
-          "/dev/input/by-path/pci-0000:00:14.0-usb-0:3:1.0-event-kbd",
-          "/dev/input/by-path/pci-0000:00:14.0-usbv2-0:3:1.0-event-kbd",
+          "/dev/input/by-path/pci-0000:00:14.0-usb-0:1:1.0-event-kbd",
+          "/dev/input/by-path/pci-0000:00:14.0-usbv2-0:1:1.0-event-kbd",
           "/dev/input/event0"
         ],
         "resources": [
@@ -1329,7 +1337,7 @@
           {
             "type": "mem",
             "base": 0,
-            "range": 8021110784,
+            "range": 8021106688,
             "enabled": true,
             "access": "read_write",
             "prefetch": "unknown"
@@ -1483,8 +1491,8 @@
     ],
     "mouse": [
       {
-        "index": 43,
-        "attached_to": 41,
+        "index": 40,
+        "attached_to": 39,
         "class_list": ["mouse", "usb"],
         "bus_type": {
           "hex": "0086",
@@ -1523,117 +1531,8 @@
         "compat_vendor": "Unknown",
         "compat_device": "Generic USB Mouse",
         "model": "JetKVM USB Emulation Device",
-        "sysfs_id": "/devices/pci0000:00/0000:00:14.0/usb3/3-3/3-3:1.1",
-        "sysfs_bus_id": "3-3:1.1",
-        "unix_device_name": "/dev/input/mice",
-        "unix_device_number": {
-          "type": 99,
-          "major": 13,
-          "minor": 63,
-          "range": 1
-        },
-        "unix_device_names": ["/dev/input/mice"],
-        "unix_device_name2": "/dev/input/mouse0",
-        "unix_device_number2": {
-          "type": 99,
-          "major": 13,
-          "minor": 32,
-          "range": 1
-        },
-        "resources": [
-          {
-            "type": "baud",
-            "speed": 480000000,
-            "bits": 0,
-            "stop_bits": 0,
-            "parity": 0,
-            "handshake": 0
-          }
-        ],
-        "detail": {
-          "device_class": {
-            "hex": "0000",
-            "name": "per_interface",
-            "value": 0
-          },
-          "device_subclass": {
-            "hex": "0000",
-            "name": "per_interface",
-            "value": 0
-          },
-          "device_protocol": 0,
-          "interface_class": {
-            "hex": "0003",
-            "name": "hid",
-            "value": 3
-          },
-          "interface_subclass": {
-            "hex": "0000",
-            "name": "per_interface",
-            "value": 0
-          },
-          "interface_protocol": 2,
-          "interface_number": 1,
-          "interface_alternate_setting": 0
-        },
-        "hotplug": "usb",
-        "driver": "usbhid",
-        "driver_module": "usbhid",
-        "drivers": ["usbhid"],
-        "driver_modules": ["usbhid"],
-        "driver_info": {
-          "type": "mouse",
-          "db_entry_0": ["explorerps/2", "exps2"],
-          "xf86": "explorerps/2",
-          "gpm": "exps2",
-          "buttons": -1,
-          "wheels": -1
-        },
-        "module_alias": "usb:v1D6Bp0104d0040dc00dsc00dp00ic03isc00ip02in01"
-      },
-      {
-        "index": 46,
-        "attached_to": 41,
-        "class_list": ["mouse", "usb"],
-        "bus_type": {
-          "hex": "0086",
-          "name": "USB",
-          "value": 134
-        },
-        "slot": {
-          "bus": 0,
-          "number": 0
-        },
-        "base_class": {
-          "hex": "0105",
-          "name": "Mouse",
-          "value": 261
-        },
-        "sub_class": {
-          "hex": "0003",
-          "name": "USB Mouse",
-          "value": 3
-        },
-        "vendor": {
-          "hex": "1d6b",
-          "name": "JetKVM",
-          "value": 7531
-        },
-        "device": {
-          "hex": "0104",
-          "name": "USB Emulation Device",
-          "value": 260
-        },
-        "revision": {
-          "hex": "0000",
-          "name": "0.40",
-          "value": 0
-        },
-        "compat_vendor": "Unknown",
-        "compat_device": "Generic USB Mouse",
-        "model": "JetKVM USB Emulation Device",
-        "sysfs_id": "/devices/pci0000:00/0000:00:14.0/usb3/3-3/3-3:1.2",
-        "sysfs_bus_id": "3-3:1.2",
+        "sysfs_id": "/devices/pci0000:00/0000:00:14.0/usb3/3-1/3-1:1.2",
+        "sysfs_bus_id": "3-1:1.2",
         "unix_device_name": "/dev/input/mice",
         "unix_device_number": {
           "type": 99,
@@ -1699,6 +1598,115 @@
           "wheels": -1
         },
         "module_alias": "usb:v1D6Bp0104d0040dc00dsc00dp00ic03isc01ip02in02"
+      },
+      {
+        "index": 46,
+        "attached_to": 39,
+        "class_list": ["mouse", "usb"],
+        "bus_type": {
+          "hex": "0086",
+          "name": "USB",
+          "value": 134
+        },
+        "slot": {
+          "bus": 0,
+          "number": 0
+        },
+        "base_class": {
+          "hex": "0105",
+          "name": "Mouse",
+          "value": 261
+        },
+        "sub_class": {
+          "hex": "0003",
+          "name": "USB Mouse",
+          "value": 3
+        },
+        "vendor": {
+          "hex": "1d6b",
+          "name": "JetKVM",
+          "value": 7531
+        },
+        "device": {
+          "hex": "0104",
+          "name": "USB Emulation Device",
+          "value": 260
+        },
+        "revision": {
+          "hex": "0000",
+          "name": "0.40",
+          "value": 0
+        },
+        "compat_vendor": "Unknown",
+        "compat_device": "Generic USB Mouse",
+        "model": "JetKVM USB Emulation Device",
+        "sysfs_id": "/devices/pci0000:00/0000:00:14.0/usb3/3-1/3-1:1.1",
+        "sysfs_bus_id": "3-1:1.1",
+        "unix_device_name": "/dev/input/mice",
+        "unix_device_number": {
+          "type": 99,
+          "major": 13,
+          "minor": 63,
+          "range": 1
+        },
+        "unix_device_names": ["/dev/input/mice"],
+        "unix_device_name2": "/dev/input/mouse0",
+        "unix_device_number2": {
+          "type": 99,
+          "major": 13,
+          "minor": 32,
+          "range": 1
+        },
+        "resources": [
+          {
+            "type": "baud",
+            "speed": 480000000,
+            "bits": 0,
+            "stop_bits": 0,
+            "parity": 0,
+            "handshake": 0
+          }
+        ],
+        "detail": {
+          "device_class": {
+            "hex": "0000",
+            "name": "per_interface",
+            "value": 0
+          },
+          "device_subclass": {
+            "hex": "0000",
+            "name": "per_interface",
+            "value": 0
+          },
+          "device_protocol": 0,
+          "interface_class": {
+            "hex": "0003",
+            "name": "hid",
+            "value": 3
+          },
+          "interface_subclass": {
+            "hex": "0000",
+            "name": "per_interface",
+            "value": 0
+          },
+          "interface_protocol": 2,
+          "interface_number": 1,
+          "interface_alternate_setting": 0
+        },
+        "hotplug": "usb",
+        "driver": "usbhid",
+        "driver_module": "usbhid",
+        "drivers": ["usbhid"],
+        "driver_modules": ["usbhid"],
+        "driver_info": {
+          "type": "mouse",
+          "db_entry_0": ["explorerps/2", "exps2"],
+          "xf86": "explorerps/2",
+          "gpm": "exps2",
+          "buttons": -1,
+          "wheels": -1
+        },
+        "module_alias": "usb:v1D6Bp0104d0040dc00dsc00dp00ic03isc00ip02in01"
       }
     ],
     "network_controller": [
@@ -1753,7 +1761,7 @@
         "resources": [
           {
             "type": "hwaddr",
-            "address": 101
+            "address": 102
           },
           {
             "type": "io",
@@ -1786,7 +1794,7 @@
           },
           {
             "type": "phwaddr",
-            "address": 101
+            "address": 102
           }
         ],
         "detail": {
@@ -1807,25 +1815,6 @@
     "network_interface": [
       {
         "index": 48,
-        "attached_to": 0,
-        "class_list": ["network_interface"],
-        "base_class": {
-          "hex": "0107",
-          "name": "Network Interface",
-          "value": 263
-        },
-        "sub_class": {
-          "hex": "0000",
-          "name": "Loopback",
-          "value": 0
-        },
-        "model": "Loopback network interface",
-        "sysfs_id": "/class/net/lo",
-        "unix_device_name": "lo",
-        "unix_device_names": ["lo"]
-      },
-      {
-        "index": 49,
         "attached_to": 12,
         "class_list": ["network_interface"],
         "base_class": {
@@ -1846,17 +1835,36 @@
         "resources": [
           {
             "type": "hwaddr",
-            "address": 101
+            "address": 102
           },
           {
             "type": "phwaddr",
-            "address": 101
+            "address": 102
           }
         ],
         "driver": "r8169",
         "driver_module": "r8169",
         "drivers": ["r8169"],
         "driver_modules": ["r8169"]
+      },
+      {
+        "index": 49,
+        "attached_to": 0,
+        "class_list": ["network_interface"],
+        "base_class": {
+          "hex": "0107",
+          "name": "Network Interface",
+          "value": 263
+        },
+        "sub_class": {
+          "hex": "0000",
+          "name": "Loopback",
+          "value": 0
+        },
+        "model": "Loopback network interface",
+        "sysfs_id": "/class/net/lo",
+        "unix_device_name": "lo",
+        "unix_device_names": ["lo"]
       }
     ],
     "pci": [
@@ -3248,7 +3256,7 @@
         "name": "Firmware Version Info",
         "handles": [
           304942678086, 309237645383, 313532612680, 317827579977, 425201762378,
-          4488240824419
+          4471060955235
         ]
       }
     ],

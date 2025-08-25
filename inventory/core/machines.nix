@@ -1,24 +1,37 @@
 _: {
   machines = {
-    alex-dev = {
-      name = "alex-dev";
-      tags = [
-        "tailnet-adeci"
-      ];
-      deploy = {
-        targetHost = "root@alex-dev";
-        buildHost = "";
-      };
-    };
     alex-fw = {
       name = "alex-fw";
       tags = [
         "tailnet-adeci"
         "laptop"
+        "dev"
         "hyprland"
       ];
       deploy = {
         targetHost = "root@alex-fw.cymric-daggertooth.ts.net";
+        buildHost = "";
+      };
+    };
+    marine = {
+      name = "marine";
+      tags = [
+        "tailnet-adeci"
+        "dev"
+      ];
+      deploy = {
+        targetHost = "root@marine.cymric-daggertooth.ts.net";
+        buildHost = "";
+      };
+    };
+    bambrew = {
+      name = "bambrew";
+      tags = [
+        "tailnet-adeci"
+        "dev"
+      ];
+      deploy = {
+        targetHost = "root@bambrew.cymric-daggertooth.ts.net";
         buildHost = "";
       };
     };
@@ -27,26 +40,17 @@ _: {
       tags = [
         "tailnet-adeci"
         "wsl"
+        "dev"
       ];
       deploy = {
         targetHost = "root@alex-wsl";
         buildHost = "";
       };
     };
-    alex-mu = {
-      name = "alex-mu";
-      tags = [
-        "tailnet-adeci"
-        "dev"
-      ];
-      deploy = {
-        targetHost = "root@alex-mu";
-        buildHost = "";
-      };
-    };
     aspen1 = {
       name = "aspen1";
       tags = [
+        "dev"
         "prometheus"
         "monitoring"
         "homepage-server"
@@ -66,6 +70,7 @@ _: {
     britton-dev = {
       name = "britton-dev";
       tags = [
+        "dev"
         "wiki-js"
         "nixvegas"
         "traefik-blrdev"
@@ -78,7 +83,6 @@ _: {
     britton-desktop = {
       name = "britton-desktop";
       tags = [
-        # "tailnet"
         "dev"
         "desktop"
         "nvidia"
@@ -103,8 +107,8 @@ _: {
     britton-fw = {
       name = "britton-fw";
       tags = [
-        "laptop"
         "dev"
+        "laptop"
         "hyprland"
         "prometheus"
         "monitoring"
@@ -166,6 +170,7 @@ _: {
     sequoia = {
       name = "sequoia";
       tags = [
+        "dev"
         "tailnet-adeci"
         "dev"
         "vaultwarden-server"
@@ -178,10 +183,10 @@ _: {
     zenith = {
       name = "zenith";
       tags = [
+        "dev"
         "tailnet-dima"
         "laptop"
         "hyprland"
-        "nixvegas"
       ];
       deploy = {
         targetHost = "root@zenith.clouded-hammerhead.ts.net";

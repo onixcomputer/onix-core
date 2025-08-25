@@ -1,15 +1,17 @@
 # ---
 # schema = "single-disk"
 # [placeholders]
-# mainDisk = "/dev/disk/by-id/nvme-THNSN5512GPUK_NVMe_TOSHIBA_512GB_37FB73P1KSHU" 
+# mainDisk = "/dev/disk/by-id/nvme-THNSN5512GPUK_NVMe_TOSHIBA_512GB_37FB73P1KSHU"
 # ---
 # This file was automatically generated!
 # CHANGING this configuration requires wiping and reinstalling the machine
 {
 
-  boot.loader.grub.efiSupport = true;
-  boot.loader.grub.efiInstallAsRemovable = true;
-  boot.loader.grub.enable = true;
+  boot.loader.grub = {
+    efiSupport = true;
+    efiInstallAsRemovable = true;
+    enable = true;
+  };
   disko.devices = {
     disk = {
       main = {
