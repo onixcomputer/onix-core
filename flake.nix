@@ -1,12 +1,10 @@
 {
-  # Testing Claude hooks - should trigger formatting and flake check
   description = "Onix Infrastructure";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
-    #clan-core.url = "git+https://git.clan.lol/adeci/clan-core?ref=adeci-stable";
-    clan-core.url = "path:/home/alex/dev/clan-core";
+    clan-core.url = "git+https://git.clan.lol/adeci/clan-core?ref=adeci-stable";
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";

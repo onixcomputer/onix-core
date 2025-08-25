@@ -2,12 +2,6 @@
 {
   # Shell-agnostic aliases that apply to all shells
   home.shellAliases = {
-    # Eza (better ls)
-    ll = "eza -la --icons --git";
-    la = "eza -la --icons";
-    ls = "eza --icons";
-    lt = "eza --tree --icons";
-
     # Navigation
     ".." = "cd ..";
     "..." = "cd ../..";

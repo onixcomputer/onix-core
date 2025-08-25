@@ -15,14 +15,18 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1756083288,
-        "narHash": "sha256-BC5vbbiYNqrzsDBVhkhgz0hh2zB048HxPPKw9oxAwro=",
-        "path": "/home/alex/dev/clan-core",
-        "type": "path"
+        "lastModified": 1756093362,
+        "narHash": "sha256-nzPZG+GYyO72swbtpWUTmBK47tk1OAVqw7Q86coqRsM=",
+        "ref": "adeci-stable",
+        "rev": "5d032ad94cf76aca27f2418fa2d21b9cdf2963a0",
+        "revCount": 9464,
+        "type": "git",
+        "url": "https://git.clan.lol/adeci/clan-core"
       },
       "original": {
-        "path": "/home/alex/dev/clan-core",
-        "type": "path"
+        "ref": "adeci-stable",
+        "type": "git",
+        "url": "https://git.clan.lol/adeci/clan-core"
       }
     },
     "data-mesher": {
@@ -228,11 +232,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1755876490,
-        "narHash": "sha256-+t28J2RojShTrWvx5fanm8iNFTeHUvrhOA0OtFgSIYk=",
+        "lastModified": 1756060564,
+        "narHash": "sha256-MQoDWTeDcgO2DKTofU5fhqclKiGU4DtC6FeeYpZArmM=",
         "owner": "natsukium",
         "repo": "mcp-servers-nix",
-        "rev": "13bfe9c6ffa51e3a7b171988604cc107d3ce7056",
+        "rev": "b2175db0b8c9f1920758400dc82c8bd43a7ed75f",
         "type": "github"
       },
       "original": {
@@ -249,11 +253,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1755275010,
-        "narHash": "sha256-lEApCoWUEWh0Ifc3k1JdVjpMtFFXeL2gG1qvBnoRc2I=",
+        "lastModified": 1755825449,
+        "narHash": "sha256-XkiN4NM9Xdy59h69Pc+Vg4PxkSm9EWl6u7k6D5FZ5cM=",
         "owner": "nix-darwin",
         "repo": "nix-darwin",
-        "rev": "7220b01d679e93ede8d7b25d6f392855b81dd475",
+        "rev": "8df64f819698c1fee0c2969696f54a843b2231e8",
         "type": "github"
       },
       "original": {
@@ -264,11 +268,11 @@
     },
     "nix-select": {
       "locked": {
-        "lastModified": 1745005516,
-        "narHash": "sha256-IVaoOGDIvAa/8I0sdiiZuKptDldrkDWUNf/+ezIRhyc=",
-        "rev": "69d8bf596194c5c35a4e90dd02c52aa530caddf8",
+        "lastModified": 1755887746,
+        "narHash": "sha256-lzWbpHKX0WAn/jJDoCijIDss3rqYIPawe46GDaE6U3g=",
+        "rev": "92c2574c5e113281591be01e89bb9ddb31d19156",
         "type": "tarball",
-        "url": "https://git.clan.lol/api/v1/repos/clan/nix-select/archive/69d8bf596194c5c35a4e90dd02c52aa530caddf8.tar.gz"
+        "url": "https://git.clan.lol/api/v1/repos/clan/nix-select/archive/92c2574c5e113281591be01e89bb9ddb31d19156.tar.gz"
       },
       "original": {
         "type": "tarball",
@@ -435,11 +439,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1754847726,
-        "narHash": "sha256-2vX8QjO5lRsDbNYvN9hVHXLU6oMl+V/PsmIiJREG4rE=",
+        "lastModified": 1755934250,
+        "narHash": "sha256-CsDojnMgYsfshQw3t4zjRUkmMmUdZGthl16bXVWgRYU=",
         "owner": "numtide",
         "repo": "treefmt-nix",
-        "rev": "7d81f6fb2e19bf84f1c65135d1060d829fae2408",
+        "rev": "74e1a52d5bd9430312f8d1b8b0354c92c17453e5",
         "type": "github"
       },
       "original": {

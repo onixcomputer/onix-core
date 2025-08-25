@@ -5,11 +5,11 @@ let
       description = "Alex";
       defaultUid = 3801;
       defaultGroups = [
-        "audio"
         "networkmanager"
         "video"
+        "audio"
         "input"
-        "plugdev"
+        "kvm"
       ];
       sshAuthorizedKeys = [
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJeeoL1jwVSachA9GdJxm/5TgCRBULfSDGLyP/nfmkMq alex@DESKTOP-SVRV9Q8"
@@ -22,9 +22,9 @@ let
       description = "Britton";
       defaultUid = 1555;
       defaultGroups = [
-        "wheel"
         "networkmanager"
         "video"
+        "audio"
         "input"
         "kvm"
       ];
@@ -39,11 +39,11 @@ let
       description = "Dima";
       defaultUid = 8070;
       defaultGroups = [
-        "audio"
         "networkmanager"
         "video"
+        "audio"
         "input"
-        "plugdev"
+        "kvm"
       ];
       sshAuthorizedKeys = [
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP++JHcHDQfP5wcPxtb8o4liBWo+DFS13I4a9UgSTFec dima@nixos"
@@ -57,8 +57,6 @@ let
     alex-fw = {
       users = {
         alex = {
-          position = "owner";
-          shell = "fish";
           homeManager = {
             enable = true;
             profiles = [
@@ -105,9 +103,8 @@ let
         sharedModules = [
           {
             wayland.windowManager.hyprland.settings.monitor = [
-              ",preferred,auto,1.5"
-              "HDMI-A-1,preferred,auto,2,mirror,eDP-1"
-              "HDMI-A-2,preferred,auto,2,mirror,DP-1"
+              "eDP-1,2880x1920@120,auto,2"
+              "DP-3,preferred,auto,1,mirror,eDP-1"
             ];
           }
         ];
@@ -161,7 +158,7 @@ let
 
     aspen1 = {
       users = {
-        alex = {
+        brittonr = {
           position = "owner";
           shell = "fish";
           homeManager = {
@@ -172,7 +169,7 @@ let
             ];
           };
         };
-        brittonr = {
+        alex = {
           position = "owner";
           shell = "fish";
           homeManager = {
@@ -189,8 +186,6 @@ let
     sequoia = {
       users = {
         alex = {
-          position = "owner";
-          shell = "fish";
           homeManager = {
             enable = true;
             profiles = [
@@ -205,8 +200,6 @@ let
     bambrew = {
       users = {
         alex = {
-          position = "owner";
-          shell = "fish";
           homeManager = {
             enable = true;
             profiles = [
@@ -216,8 +209,6 @@ let
           };
         };
         brittonr = {
-          position = "owner";
-          shell = "fish";
           homeManager = {
             enable = true;
             profiles = [
@@ -232,8 +223,6 @@ let
     marine = {
       users = {
         alex = {
-          position = "owner";
-          shell = "fish";
           homeManager = {
             enable = true;
             profiles = [
@@ -243,8 +232,6 @@ let
           };
         };
         brittonr = {
-          position = "owner";
-          shell = "fish";
           homeManager = {
             enable = true;
             profiles = [
@@ -259,8 +246,6 @@ let
     alex-wsl = {
       users = {
         alex = {
-          position = "owner";
-          shell = "fish";
           homeManager = {
             enable = true;
             profiles = [
@@ -274,7 +259,7 @@ let
 
     zenith = {
       users = {
-        alex = {
+        dima = {
           position = "owner";
           shell = "fish";
           homeManager = {
@@ -289,9 +274,7 @@ let
             ];
           };
         };
-        dima = {
-          position = "owner";
-          shell = "fish";
+        alex = {
           homeManager = {
             enable = true;
             profiles = [
@@ -320,8 +303,6 @@ let
     gmk1 = {
       users = {
         brittonr = {
-          position = "owner";
-          shell = "fish";
           homeManager = {
             enable = true;
             profiles = [
@@ -332,7 +313,6 @@ let
         };
         dima = {
           position = "basic";
-          shell = "fish";
           homeManager = {
             enable = true;
             profiles = [
@@ -347,8 +327,6 @@ let
     gmk2 = {
       users = {
         brittonr = {
-          position = "owner";
-          shell = "fish";
           homeManager = {
             enable = true;
             profiles = [
@@ -359,10 +337,12 @@ let
         };
         dima = {
           position = "basic";
-          shell = "fish";
           homeManager = {
             enable = true;
-            profiles = [ ];
+            profiles = [
+              "base"
+              "dev"
+            ];
           };
         };
       };
@@ -372,7 +352,6 @@ let
       users = {
         brittonr = {
           position = "owner";
-          shell = "fish";
           homeManager = {
             enable = true;
             profiles = [
@@ -383,10 +362,12 @@ let
         };
         dima = {
           position = "basic";
-          shell = "fish";
           homeManager = {
             enable = true;
-            profiles = [ ];
+            profiles = [
+              "base"
+              "dev"
+            ];
           };
         };
       };
