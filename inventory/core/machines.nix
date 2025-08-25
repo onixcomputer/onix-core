@@ -4,6 +4,7 @@ _: {
       name = "alex-fw";
       tags = [
         "tailnet-adeci"
+        "passmanager"
         "laptop"
         "dev"
         "hyprland"

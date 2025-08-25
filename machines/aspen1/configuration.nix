@@ -1,7 +1,7 @@
-{
-  imports = [
+_: {
+  networking = {
+    hostName = "aspen1";
+  };
 
-  ];
-
-  # New machine!
+  time.timeZone = "America/New_York";
 }
