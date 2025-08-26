@@ -6,9 +6,6 @@ _: {
       "--enable-features=UseOzonePlatform"
       "--ozone-platform=wayland"
 
-      # Match Hyprland scaling
-      "--force-device-scale-factor=1.5"
-
       # Enable extensions
       "--enable-extensions"
       "--enable-remote-extensions"
