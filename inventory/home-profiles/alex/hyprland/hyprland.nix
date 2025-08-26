@@ -29,6 +29,9 @@ in
         "eval $(${pkgs.gnome-keyring}/bin/gnome-keyring-daemon --start --components=ssh) && systemctl --user import-environment SSH_AUTH_SOCK"
         "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
         "${pkgs.wl-clip-persist}/bin/wl-clip-persist --clipboard regular --all-mime-type-regex '^(?!x-kde-passwordManagerHint).+'"
+        # Clipboard manager - store both text and images
+        "${pkgs.wl-clipboard}/bin/wl-paste --type text --watch ${pkgs.cliphist}/bin/cliphist store"
+        "${pkgs.wl-clipboard}/bin/wl-paste --type image --watch ${pkgs.cliphist}/bin/cliphist store"
         "${pkgs.waybar}/bin/waybar"
         "${pkgs.dunst}/bin/dunst"
         "${pkgs.hypridle}/bin/hypridle"
@@ -236,6 +239,8 @@ in
         "$mod, F, exec, $fileManager"
         "$mod, B, exec, $browser"
         "$mod, R, exec, rofi -show run"
+        # Clipboard manager - shows history with rofi, hides line numbers
+        "$mod, C, exec, ${pkgs.cliphist}/bin/cliphist list | ${pkgs.rofi-wayland}/bin/rofi -dmenu -display-columns 2 -p 'Clipboard' | ${pkgs.cliphist}/bin/cliphist decode | ${pkgs.wl-clipboard}/bin/wl-copy"
         "$mod, space, exec, rofi -show drun"
         "$mod, W, exec, rofi-wallpaper"
         "$mod, N, exec, notify-send -t 1000 'WiFi 󰤨' 'Scanning networks...' && rofi-network-menu"
