@@ -29,7 +29,6 @@ in
   environment.systemPackages = with pkgs; [
     imagemagick # required for grub2-theme
     os-prober
-    chromium
   ];
 
   boot.loader = {

@@ -27,6 +27,7 @@ let
         "audio"
         "input"
         "kvm"
+        "docker"
       ];
       sshAuthorizedKeys = [
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILYzh3yIsSTOYXkJMFHBKzkakoDfonm3/RED5rqMqhIO britton@framework"
@@ -123,6 +124,7 @@ let
               "dev"
               "hyprland"
               "creative"
+              "social"
             ];
           };
         };

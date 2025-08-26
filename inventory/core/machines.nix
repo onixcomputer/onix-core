@@ -99,9 +99,10 @@ _: {
         "static-demo"
         "seaweedfs-volume"
         "mcp"
+        "docker"
       ];
       deploy = {
-        targetHost = "192.168.1.252";
+        targetHost = "root@127.0.0.1";
         buildHost = "";
       };
     };
