@@ -100,6 +100,7 @@ _: {
         "seaweedfs-volume"
         "mcp"
         "docker"
+        "llm"
       ];
       deploy = {
         targetHost = "root@127.0.0.1";
