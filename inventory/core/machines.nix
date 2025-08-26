@@ -4,7 +4,7 @@ _: {
       name = "alex-fw";
       tags = [
         "tailnet-adeci"
-        "passmanager"
+        "password-manager"
         "laptop"
         "dev"
         "hyprland"
@@ -92,7 +92,6 @@ _: {
         "media"
         "prometheus"
         "monitoring"
-        "vaultwarden-server"
         "homepage-server"
         "traefik-desktop"
         "static-test"
@@ -176,7 +175,7 @@ _: {
         "dev"
         "tailnet-adeci"
         "dev"
-        "vaultwarden-server"
+        "vaultwarden-adeci"
       ];
       deploy = {
         targetHost = "root@sequoia.cymric-daggertooth.ts.net";

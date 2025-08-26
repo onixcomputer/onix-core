@@ -1,13 +1,13 @@
 _: {
   instances = {
-    "vaultwarden" = {
+    "adeci-vault" = {
       module.name = "vaultwarden";
       module.input = "self";
       roles.server = {
-        tags."vaultwarden-server" = { };
+        tags."vaultwarden-adeci" = { };
         settings = {
-          # All settings can be configured here
-          # The module provides sensible defaults
+          enableCloudflare = true;
+          cloudflareHostname = "vault.decio.us";
         };
       };
     };
