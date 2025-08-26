@@ -51,6 +51,8 @@ _: {
     aspen1 = {
       name = "aspen1";
       tags = [
+        "tailnet-brittonr"
+        "vaultwarden-brittonr"
         "dev"
         "prometheus"
         "monitoring"
@@ -58,7 +60,6 @@ _: {
         "nix-cache"
         "seaweedfs-master"
         "traefik-blr"
-        "tailnet-brittonr"
         "onix-cache"
         "openpgp"
         "mcp"
@@ -100,6 +101,7 @@ _: {
         "mcp"
         "docker"
         "llm"
+        "password-manager"
       ];
       deploy = {
         targetHost = "root@127.0.0.1";
@@ -124,6 +126,7 @@ _: {
         "onix-cache"
         "openpgp"
         "mcp"
+        "password-manager"
       ];
       deploy = {
         targetHost = "root@britton-fw.bison-tailor.ts.net";
@@ -189,6 +192,7 @@ _: {
         "tailnet-dima"
         "laptop"
         "hyprland"
+        "password-manager"
       ];
       deploy = {
         targetHost = "root@zenith.clouded-hammerhead.ts.net";
