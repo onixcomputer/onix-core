@@ -58,15 +58,15 @@ _: {
         "monitoring"
         "homepage-server"
         "nix-cache"
-        "seaweedfs-master"
-        "traefik-blr"
-        "onix-cache"
-        "openpgp"
-        "mcp"
+        # "seaweedfs-master"
+        # "traefik-blr"
+        # "onix-cache"
+        # "openpgp"
+        # "mcp"
       ];
       deploy = {
-        targetHost = "root@aspen1.bison-tailor.ts.net";
-        buildHost = "root@aspen1.bison-tailor.ts.net";
+        targetHost = "root@aspen1";
+        buildHost = "";
       };
     };
     britton-dev = {
@@ -98,7 +98,7 @@ _: {
         "static-test"
         "static-demo"
         "seaweedfs-volume"
-        "mcp"
+        # "mcp"
         "docker"
         "llm"
         "password-manager"
