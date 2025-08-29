@@ -43,6 +43,7 @@ in
     imagemagick # required for grub2-theme
     os-prober
     signal-desktop
+    atlauncher
   ];
 
   boot.loader = {
