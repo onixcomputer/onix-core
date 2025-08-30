@@ -14,19 +14,6 @@ _: {
         freeformType = lib.types.attrsOf lib.types.anything;
 
         options = {
-          # We only define options we need to handle specially
-          enableTailscaleFunnel = lib.mkOption {
-            type = lib.types.bool;
-            default = false;
-            description = "Enable Tailscale Funnel for webhooks";
-          };
-
-          funnelPath = lib.mkOption {
-            type = lib.types.str;
-            default = "/change_hook/gitlab";
-            description = "Path for the Tailscale Funnel webhook endpoint";
-          };
-
           # Provide sensible defaults for required buildbot-nix options
           domain = lib.mkOption {
             type = lib.types.str;
@@ -61,11 +48,8 @@ _: {
             # Get cores for each worker from inventory
             workerCores = lib.mapAttrs (_name: machineData: machineData.settings.cores or 4) workerMachines;
 
-            # Remove our special options from settings before passing to buildbot-nix
-            buildbotSettings = builtins.removeAttrs settings [
-              "enableTailscaleFunnel"
-              "funnelPath"
-            ];
+            # All settings pass through directly now (no special options to remove)
+            buildbotSettings = settings;
 
           in
           {
@@ -90,16 +74,6 @@ _: {
                 oauthSecretFile = config.clan.core.vars.generators.buildbot-master.files."oauth-secret".path;
               };
             };
-
-            # TODO: Implement Tailscale Funnel configuration when available
-            # services.tailscale.funnel = lib.mkIf settings.enableTailscaleFunnel {
-            #   enable = true;
-            #   routes = {
-            #     "${settings.funnelPath}" = {
-            #       backend = "http://localhost:${toString (settings.port or 8010)}";
-            #     };
-            #   };
-            # };
 
             # Firewall rules if ports are specified
             networking.firewall.allowedTCPPorts =

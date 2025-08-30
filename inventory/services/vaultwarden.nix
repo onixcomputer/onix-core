@@ -6,10 +6,6 @@ _: {
       module.input = "self";
       roles.server = {
         machines.sequoia = { };
-        settings = {
-          enableCloudflare = true;
-          cloudflareHostname = "vault.decio.us";
-        };
       };
     };
 
@@ -18,10 +14,6 @@ _: {
       module.input = "self";
       roles.server = {
         machines.aspen1 = { };
-        settings = {
-          enableCloudflare = true;
-          cloudflareHostname = "vault.robitzs.ch";
-        };
       };
     };
 

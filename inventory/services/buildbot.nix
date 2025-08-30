@@ -7,7 +7,7 @@ _: {
       roles.master = {
         machines.marine = { };
         settings = {
-          domain = "buildbot.decio.us";
+          domain = "https://buildbot.decio.us";
           gitea = {
             instanceUrl = "https://gitlab.com";
             oauthId = "3d231f22dce4cc2285a88b76c4deda80dbeec4c371e2b10ccc938f4527e74e6c";
@@ -21,9 +21,6 @@ _: {
 
           admins = [ "adeci" ];
           buildSystems = [ "x86_64-linux" ];
-
-          # enableTailscaleFunnel = false;
-          # funnelPath = "/change_hook/gitlab";
         };
       };
 

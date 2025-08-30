@@ -16,6 +16,7 @@ let
     "seaweedfs" = import ./seaweedfs;
     "wiki-js" = import ./wiki-js;
     "buildbot" = import ./buildbot;
+    "cloudflare-tunnel" = import ./cloudflare-tunnel;
   };
 
 in
