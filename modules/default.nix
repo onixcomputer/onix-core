@@ -15,6 +15,7 @@ let
     "pixiecore" = import ./pixiecore;
     "seaweedfs" = import ./seaweedfs;
     "wiki-js" = import ./wiki-js;
+    "buildbot" = import ./buildbot;
   };
 
 in

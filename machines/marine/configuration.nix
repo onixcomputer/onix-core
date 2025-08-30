@@ -20,13 +20,11 @@ _: {
       variant = "";
     };
     logind = {
-      lidSwitch = "ignore";
-      lidSwitchDocked = "ignore";
-      extraConfig = ''
-        HandleLidSwitch=ignore
-        HandleLidSwitchDocked=ignore
-        HandleLidSwitchExternalPower=ignore
-      '';
+      settings.Login = {
+        HandleLidSwitch = "ignore";
+        HandleLidSwitchDocked = "ignore";
+        HandleLidSwitchExternalPower = "ignore";
+      };
     };
   };
 

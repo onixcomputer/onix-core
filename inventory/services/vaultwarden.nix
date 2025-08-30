@@ -5,7 +5,7 @@ _: {
       module.name = "vaultwarden";
       module.input = "self";
       roles.server = {
-        tags."vaultwarden-adeci" = { };
+        machines.sequoia = { };
         settings = {
           enableCloudflare = true;
           cloudflareHostname = "vault.decio.us";
@@ -17,7 +17,7 @@ _: {
       module.name = "vaultwarden";
       module.input = "self";
       roles.server = {
-        tags."vaultwarden-brittonr" = { };
+        machines.aspen1 = { };
         settings = {
           enableCloudflare = true;
           cloudflareHostname = "vault.robitzs.ch";

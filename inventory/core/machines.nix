@@ -52,7 +52,6 @@ _: {
       name = "aspen1";
       tags = [
         "tailnet-brittonr"
-        "vaultwarden-brittonr"
         "dev"
         "prometheus"
         "monitoring"
@@ -177,8 +176,6 @@ _: {
       tags = [
         "dev"
         "tailnet-adeci"
-        "dev"
-        "vaultwarden-adeci"
       ];
       deploy = {
         targetHost = "root@sequoia.cymric-daggertooth.ts.net";
