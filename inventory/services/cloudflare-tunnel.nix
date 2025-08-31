@@ -13,14 +13,14 @@ _: {
             };
           };
         };
-        machines.marine = {
-          settings = {
-            tunnelName = "marine-services";
-            ingress = {
-              "buildbot.decio.us" = "http://localhost:8010";
-            };
-          };
-        };
+        # machines.marine = {
+        #   settings = {
+        #     tunnelName = "marine-services";
+        #     ingress = {
+        #       "buildbot.decio.us" = "http://localhost:8010";
+        #     };
+        #   };
+        # };
       };
     };
 

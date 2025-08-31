@@ -16,8 +16,9 @@ let
     pixiecore = import ./pixiecore.nix { inherit inputs; };
     seaweedfs = import ./seaweedfs.nix { inherit inputs; };
     wiki-js = import ./wiki-js.nix { inherit inputs; };
-    buildbot = import ./buildbot.nix { inherit inputs; };
     cloudflare-tunnel = import ./cloudflare-tunnel.nix { inherit inputs; };
+    gitlab-runner = import ./gitlab-runner.nix { inherit inputs; };
+    #buildbot = import ./buildbot.nix { inherit inputs; };
   };
 in
 lib.foldr lib.recursiveUpdate { } (lib.attrValues services)

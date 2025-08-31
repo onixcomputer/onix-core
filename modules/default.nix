@@ -17,6 +17,7 @@ let
     "wiki-js" = import ./wiki-js;
     "buildbot" = import ./buildbot;
     "cloudflare-tunnel" = import ./cloudflare-tunnel;
+    "gitlab-runner" = import ./gitlab-runner;
   };
 
 in

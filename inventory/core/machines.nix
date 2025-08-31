@@ -176,6 +176,7 @@ _: {
       tags = [
         "dev"
         "tailnet-adeci"
+        "docker"
       ];
       deploy = {
         targetHost = "root@sequoia.cymric-daggertooth.ts.net";

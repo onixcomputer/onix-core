@@ -7,7 +7,8 @@ _: {
       roles.master = {
         machines.marine = { };
         settings = {
-          domain = "https://buildbot.decio.us";
+          domain = "buildbot.decio.us";
+          useHTTPS = true;
           gitea = {
             instanceUrl = "https://gitlab.com";
             oauthId = "3d231f22dce4cc2285a88b76c4deda80dbeec4c371e2b10ccc938f4527e74e6c";
