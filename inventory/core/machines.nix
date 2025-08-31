@@ -57,7 +57,6 @@ _: {
         "monitoring"
         "homepage-server"
         "nix-cache"
-        "gitlab-runner"
         # "seaweedfs-master"
         # "traefik-blr"
         # "onix-cache"

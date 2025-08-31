@@ -4,7 +4,7 @@ _: {
       module.name = "gitlab-runner";
       module.input = "self";
       roles.default = {
-        tags."gitlab-runner" = { };
+        machines.aspen1 = { };
         settings = {
           description = "DPE Project Dedicated Runner";
           executor = "docker";
