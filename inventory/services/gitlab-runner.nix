@@ -4,9 +4,7 @@ _: {
       module.name = "gitlab-runner";
       module.input = "self";
       roles.default = {
-        machines = {
-          sequoia = { };
-        };
+        tags."gitlab-runner" = { };
         settings = {
           description = "DPE Project Dedicated Runner";
           executor = "docker";

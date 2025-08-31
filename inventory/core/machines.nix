@@ -57,6 +57,7 @@ _: {
         "monitoring"
         "homepage-server"
         "nix-cache"
+        "gitlab-runner"
         # "seaweedfs-master"
         # "traefik-blr"
         # "onix-cache"
@@ -177,6 +178,7 @@ _: {
         "dev"
         "tailnet-adeci"
         "docker"
+        "gitlab-runner"
       ];
       deploy = {
         targetHost = "root@sequoia.cymric-daggertooth.ts.net";
