@@ -8,6 +8,7 @@ _: {
         settings = {
           enableSSH = true;
           exitNode = false;
+          enableHostAliases = true;
         };
       };
     };
