@@ -70,10 +70,8 @@ in
                 wants = [ "network-online.target" ];
                 before = [ "cloudflared-tunnel-${tunnelName}.service" ];
 
-                # Only run if credentials don't exist
-                unitConfig = {
-                  ConditionPathExists = "!${tunnelCredentialsFile}";
-                };
+                # Always run to ensure DNS records are up to date
+                # The script will handle existing tunnels gracefully
 
                 serviceConfig = {
                   Type = "oneshot";
@@ -82,6 +80,9 @@ in
                   LoadCredential = [
                     "api_token:${config.clan.core.vars.generators."cloudflare-${instanceName}".files.api_token.path}"
                   ];
+                  # Restart on failure with delay
+                  Restart = "on-failure";
+                  RestartSec = "30s";
                 };
 
                 # Set up environment variables for the script

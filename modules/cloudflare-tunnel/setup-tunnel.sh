@@ -5,6 +5,7 @@ set -euo pipefail
 API_TOKEN=$(tr -d '\n' < "$CREDENTIALS_DIRECTORY/api_token")
 
 echo "Setting up Cloudflare tunnel: $TUNNEL_NAME"
+echo "Ensuring DNS records are up to date for all configured hostnames..."
 
 get_base_domain() {
     local hostname="$1"
@@ -46,48 +47,71 @@ else
   exit 1
 fi
 
-# Step 3: Check if tunnel already exists
-echo "Checking for existing tunnel..."
-EXISTING_TUNNELS=$(curl -sf \
-  "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/cfd_tunnel?name=$TUNNEL_NAME" \
-  -H "Authorization: Bearer $API_TOKEN" \
-  -H "Content-Type: application/json")
-
-# Filter out deleted tunnels (those with a deleted_at field)
-ACTIVE_TUNNELS=$(echo "$EXISTING_TUNNELS" | jq -r '.result | map(select(.deleted_at == null))')
-TUNNEL_COUNT=$(echo "$ACTIVE_TUNNELS" | jq -r 'length')
-
-if [ "$TUNNEL_COUNT" -gt 0 ]; then
-  echo "Tunnel already exists, reusing it..."
-  TUNNEL_ID=$(echo "$ACTIVE_TUNNELS" | jq -r '.[0].id')
-  TUNNEL_SECRET=$(echo "$ACTIVE_TUNNELS" | jq -r '.[0].credentials_file.TunnelSecret // empty')
-
-  if [ -z "$TUNNEL_SECRET" ]; then
-    echo "ERROR: Tunnel exists but credentials not available"
-    echo "Please delete tunnel '$TUNNEL_NAME' at https://one.dash.cloudflare.com"
-    exit 1
+# Step 3: Check if we have existing credentials locally
+if [ -f "${TUNNEL_CREDENTIALS_FILE}" ]; then
+  echo "Found existing tunnel credentials, loading them..."
+  TUNNEL_ID=$(jq -r '.TunnelID' < "${TUNNEL_CREDENTIALS_FILE}")
+  TUNNEL_SECRET=$(jq -r '.TunnelSecret' < "${TUNNEL_CREDENTIALS_FILE}")
+  EXISTING_ACCOUNT_ID=$(jq -r '.AccountTag' < "${TUNNEL_CREDENTIALS_FILE}")
+  
+  # Verify the account ID matches
+  if [ "$EXISTING_ACCOUNT_ID" != "$ACCOUNT_ID" ]; then
+    echo "WARNING: Account ID mismatch. Recreating tunnel..."
+    rm -f "${TUNNEL_CREDENTIALS_FILE}"
+    TUNNEL_ID=""
+    TUNNEL_SECRET=""
+  else
+    echo "Using existing tunnel: $TUNNEL_ID"
   fi
 else
-  echo "Creating new tunnel..."
-  TUNNEL_SECRET=$(openssl rand -base64 32)
-
-  CREATE_RESPONSE=$(curl -sf -X POST \
-    "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/cfd_tunnel" \
-    -H "Authorization: Bearer $API_TOKEN" \
-    -H "Content-Type: application/json" \
-    --data "{\"name\":\"$TUNNEL_NAME\",\"tunnel_secret\":\"$TUNNEL_SECRET\"}")
-
-  if [ "$(echo "$CREATE_RESPONSE" | jq -r '.success')" != "true" ]; then
-    echo "ERROR: Failed to create tunnel"
-    echo "$CREATE_RESPONSE" | jq '.'
-    exit 1
-  fi
-
-  TUNNEL_ID=$(echo "$CREATE_RESPONSE" | jq -r '.result.id')
-  echo "✓ Tunnel created: $TUNNEL_ID"
+  TUNNEL_ID=""
+  TUNNEL_SECRET=""
 fi
 
-# Step 4: Create/Update DNS records for each hostname
+# Step 4: If no local credentials, check if tunnel exists remotely
+if [ -z "$TUNNEL_ID" ]; then
+  echo "Checking for existing tunnel in Cloudflare..."
+  EXISTING_TUNNELS=$(curl -sf \
+    "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/cfd_tunnel?name=$TUNNEL_NAME" \
+    -H "Authorization: Bearer $API_TOKEN" \
+    -H "Content-Type: application/json")
+
+  # Filter out deleted tunnels (those with a deleted_at field)
+  ACTIVE_TUNNELS=$(echo "$EXISTING_TUNNELS" | jq -r '.result | map(select(.deleted_at == null))')
+  TUNNEL_COUNT=$(echo "$ACTIVE_TUNNELS" | jq -r 'length')
+
+  if [ "$TUNNEL_COUNT" -gt 0 ]; then
+    echo "Tunnel already exists in Cloudflare, reusing it..."
+    TUNNEL_ID=$(echo "$ACTIVE_TUNNELS" | jq -r '.[0].id')
+    TUNNEL_SECRET=$(echo "$ACTIVE_TUNNELS" | jq -r '.[0].credentials_file.TunnelSecret // empty')
+
+    if [ -z "$TUNNEL_SECRET" ]; then
+      echo "ERROR: Tunnel exists but credentials not available"
+      echo "Please delete tunnel '$TUNNEL_NAME' at https://one.dash.cloudflare.com"
+      exit 1
+    fi
+  else
+    echo "Creating new tunnel..."
+    TUNNEL_SECRET=$(openssl rand -base64 32)
+
+    CREATE_RESPONSE=$(curl -sf -X POST \
+      "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/cfd_tunnel" \
+      -H "Authorization: Bearer $API_TOKEN" \
+      -H "Content-Type: application/json" \
+      --data "{\"name\":\"$TUNNEL_NAME\",\"tunnel_secret\":\"$TUNNEL_SECRET\"}")
+
+    if [ "$(echo "$CREATE_RESPONSE" | jq -r '.success')" != "true" ]; then
+      echo "ERROR: Failed to create tunnel"
+      echo "$CREATE_RESPONSE" | jq '.'
+      exit 1
+    fi
+
+    TUNNEL_ID=$(echo "$CREATE_RESPONSE" | jq -r '.result.id')
+    echo "✓ Tunnel created: $TUNNEL_ID"
+  fi
+fi
+
+# Step 5: Create/Update DNS records for each hostname
 # Process each hostname from HOSTNAMES environment variable (space-separated)
 # shellcheck disable=SC2153  # HOSTNAMES is provided by Nix module environment
 for HOSTNAME in $HOSTNAMES; do
@@ -154,7 +178,7 @@ for HOSTNAME in $HOSTNAMES; do
   fi
 done
 
-# Step 5: Write credentials file
+# Step 6: Write/Update credentials file
 cat > "${TUNNEL_CREDENTIALS_FILE}" <<EOF
 {
   "AccountTag": "$ACCOUNT_ID",
