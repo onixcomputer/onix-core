@@ -10,7 +10,7 @@ _: {
             tunnelName = "sequoia-services";
             ingress = {
               "vault.decio.us" = "http://localhost:8222";
-              "auth.decio.us" = "http://localhost:9080";
+              #"auth.decio.us" = "http://localhost:9080";
             };
           };
         };
