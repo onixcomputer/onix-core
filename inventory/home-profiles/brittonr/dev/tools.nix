@@ -8,6 +8,7 @@
     nixos-generators
     glow
     comma
+    warp-terminal
 
     # Archive tools
     unzip
