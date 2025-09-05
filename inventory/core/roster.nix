@@ -132,11 +132,16 @@ let
       homeManagerOptions = {
         sharedModules = [
           {
-            wayland.windowManager.hyprland.settings.monitor = [
-              ",preferred,auto,1.5"
-              "HDMI-A-1,preferred,auto,2,mirror,eDP-1"
-              "HDMI-A-2,preferred,auto,2,mirror,DP-1"
-            ];
+            wayland.windowManager.hyprland.settings = {
+              monitor = [
+                ",preferred,auto,1.5"
+                # "HDMI-A-1,preferred,auto,1.5,mirror,eDP-1"
+                # "HDMI-A-2,preferred,auto,2,mirror,DP-1"
+              ];
+              xwayland = {
+                force_zero_scaling = true;
+              };
+            };
           }
         ];
       };
