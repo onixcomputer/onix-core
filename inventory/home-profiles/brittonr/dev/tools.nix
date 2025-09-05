@@ -9,6 +9,14 @@
     glow
     comma
     warp-terminal
+    nh
+    nix-search-tv
+    deadnix
+    statix
+    dix
+    terranix
+    nix-index
+    nix-prefetch
 
     # Archive tools
     unzip
