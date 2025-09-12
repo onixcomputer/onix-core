@@ -1,15 +1,17 @@
 # ---
 # schema = "single-disk"
 # [placeholders]
-# mainDisk = "/dev/disk/by-id/ata-WDC_WD10EZEX-60M2NA0_WD-WCC3F6TCZ526" 
+# mainDisk = "/dev/disk/by-id/ata-WDC_WD10EZEX-60M2NA0_WD-WCC3F6TCZ526"
 # ---
 # This file was automatically generated!
 # CHANGING this configuration requires wiping and reinstalling the machine
 {
 
-  boot.loader.grub.efiSupport = true;
-  boot.loader.grub.efiInstallAsRemovable = true;
-  boot.loader.grub.enable = true;
+  boot.loader.grub = {
+    efiSupport = true;
+    efiInstallAsRemovable = true;
+    enable = true;
+  };
   disko.devices = {
     disk = {
       main = {

@@ -83,6 +83,29 @@ let
       };
     };
 
+    leviathan = {
+      users = {
+        alex = {
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+        brittonr = {
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+      };
+    };
+
     britton-fw = {
       users = {
         brittonr = {

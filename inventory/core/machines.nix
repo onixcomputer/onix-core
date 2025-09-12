@@ -1,5 +1,6 @@
 _: {
   machines = {
+
     alex-fw = {
       name = "alex-fw";
       tags = [
@@ -14,6 +15,19 @@ _: {
         buildHost = "";
       };
     };
+
+    leviathan = {
+      name = "leviathan";
+      tags = [
+        "tailnet-adeci"
+        "dev"
+      ];
+      deploy = {
+        targetHost = "root@alex-fw.cymric-daggertooth.ts.net";
+        buildHost = "";
+      };
+    };
+
     marine = {
       name = "marine";
       tags = [
@@ -25,6 +39,7 @@ _: {
         buildHost = "";
       };
     };
+
     bambrew = {
       name = "bambrew";
       tags = [
@@ -36,6 +51,7 @@ _: {
         buildHost = "";
       };
     };
+
     alex-wsl = {
       name = "alex-wsl";
       tags = [
@@ -48,6 +64,7 @@ _: {
         buildHost = "";
       };
     };
+
     aspen1 = {
       name = "aspen1";
       tags = [
@@ -68,6 +85,7 @@ _: {
         buildHost = "";
       };
     };
+
     britton-dev = {
       name = "britton-dev";
       tags = [
@@ -81,6 +99,7 @@ _: {
         buildHost = "";
       };
     };
+
     britton-desktop = {
       name = "britton-desktop";
       tags = [
@@ -107,6 +126,7 @@ _: {
         buildHost = "";
       };
     };
+
     britton-fw = {
       name = "britton-fw";
       tags = [
@@ -132,6 +152,7 @@ _: {
         buildHost = "";
       };
     };
+
     gmk1 = {
       name = "gmk1";
       tags = [
@@ -145,6 +166,7 @@ _: {
         buildHost = "";
       };
     };
+
     gmk2 = {
       name = "gmk2";
       tags = [
@@ -158,6 +180,7 @@ _: {
         buildHost = "";
       };
     };
+
     gmk3 = {
       name = "gmk3";
       tags = [
@@ -171,6 +194,7 @@ _: {
         buildHost = "";
       };
     };
+
     sequoia = {
       name = "sequoia";
       tags = [
@@ -184,6 +208,7 @@ _: {
         buildHost = "";
       };
     };
+
     zenith = {
       name = "zenith";
       tags = [
@@ -198,5 +223,6 @@ _: {
         buildHost = "";
       };
     };
+
   };
 }
