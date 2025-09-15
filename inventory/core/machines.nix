@@ -1,6 +1,7 @@
 _: {
   machines = {
 
+    # ========== Alex Machines ===========
     alex-fw = {
       name = "alex-fw";
       tags = [
@@ -24,6 +25,20 @@ _: {
       ];
       deploy = {
         targetHost = "root@alex-fw.cymric-daggertooth.ts.net";
+        buildHost = "";
+      };
+    };
+
+    sequoia = {
+      name = "sequoia";
+      tags = [
+        "dev"
+        "tailnet-adeci"
+        "docker"
+        "gitlab-runner"
+      ];
+      deploy = {
+        targetHost = "root@sequoia.cymric-daggertooth.ts.net";
         buildHost = "";
       };
     };
@@ -65,6 +80,31 @@ _: {
       };
     };
 
+    # ========== Britton Machines ===========
+    britton-fw = {
+      name = "britton-fw";
+      tags = [
+        "dev"
+        "laptop"
+        "hyprland"
+        "prometheus"
+        "monitoring"
+        "homepage-server"
+        "static-test"
+        "static-demo"
+        "seaweedfs-master"
+        "traefik-blr"
+        "tailnet-brittonr"
+        "openpgp"
+        "mcp"
+        "password-manager"
+      ];
+      deploy = {
+        targetHost = "root@britton-fw.bison-tailor.ts.net";
+        buildHost = "";
+      };
+    };
+
     aspen1 = {
       name = "aspen1";
       tags = [
@@ -73,12 +113,6 @@ _: {
         "prometheus"
         "monitoring"
         "homepage-server"
-        "nix-cache"
-        # "seaweedfs-master"
-        # "traefik-blr"
-        # "onix-cache"
-        # "openpgp"
-        # "mcp"
       ];
       deploy = {
         targetHost = "root@aspen1";
@@ -91,7 +125,6 @@ _: {
       tags = [
         "dev"
         "wiki-js"
-        "nixvegas"
         "traefik-blrdev"
       ];
       deploy = {
@@ -116,39 +149,12 @@ _: {
         "static-test"
         "static-demo"
         "seaweedfs-volume"
-        # "mcp"
         "docker"
         "llm"
         "password-manager"
       ];
       deploy = {
         targetHost = "root@127.0.0.1";
-        buildHost = "";
-      };
-    };
-
-    britton-fw = {
-      name = "britton-fw";
-      tags = [
-        "dev"
-        "laptop"
-        "hyprland"
-        "prometheus"
-        "monitoring"
-        "homepage-server"
-        "static-test"
-        "static-demo"
-        "nix-cache"
-        "seaweedfs-master"
-        "traefik-blr"
-        "tailnet-brittonr"
-        "onix-cache"
-        "openpgp"
-        "mcp"
-        "password-manager"
-      ];
-      deploy = {
-        targetHost = "root@britton-fw.bison-tailor.ts.net";
         buildHost = "";
       };
     };
@@ -195,20 +201,7 @@ _: {
       };
     };
 
-    sequoia = {
-      name = "sequoia";
-      tags = [
-        "dev"
-        "tailnet-adeci"
-        "docker"
-        "gitlab-runner"
-      ];
-      deploy = {
-        targetHost = "root@sequoia.cymric-daggertooth.ts.net";
-        buildHost = "";
-      };
-    };
-
+    # ========== Dima Machines ===========
     zenith = {
       name = "zenith";
       tags = [

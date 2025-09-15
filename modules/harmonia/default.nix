@@ -1,10 +1,7 @@
 { lib, ... }:
 let
   inherit (lib)
-    mkOption
     mkDefault
-    types
-    removeAttrs
     ;
 in
 {
@@ -49,7 +46,7 @@ in
         };
 
       perInstance =
-        { extendSettings, ... }:
+        { extendSettings, instanceName, ... }:
         {
           nixosModule =
             { config, lib, ... }:
@@ -57,13 +54,9 @@ in
               settings = extendSettings { };
             in
             {
-              #I dont think this is needed - need to test and confirm.
-              # Declare the shared generator on the client
-              clan.core.vars.generators.harmonia-signing-key = {
+              clan.core.vars.generators."harmonia-${instanceName}" = {
                 share = true;
-                prompts = { }; # No prompts needed for clients
-                migrateFact = "harmonia-signing-key";
-                # Clients don't need the generation script - they just reference the shared key
+                prompts = { };
                 files = {
                   "signing-key.pub" = {
                     secret = false;
@@ -75,7 +68,7 @@ in
                 substituters = lib.mkBefore ([ settings.serverUrl ] ++ settings.extraSubstituters);
                 trusted-public-keys = lib.mkBefore (
                   [
-                    config.clan.core.vars.generators.harmonia-signing-key.files."signing-key.pub".value
+                    config.clan.core.vars.generators."harmonia-${instanceName}".files."signing-key.pub".value
                   ]
                   ++ settings.extraTrustedPublicKeys
                 );
@@ -114,11 +107,23 @@ in
               default = true;
               description = "Automatically generate a signing key for the binary cache";
             };
+
+            enableCIPush = lib.mkOption {
+              type = lib.types.bool;
+              default = true;
+              description = "Enable CI push access to this Harmonia cache via SSH";
+            };
+
+            ciDeployUser = lib.mkOption {
+              type = lib.types.str;
+              default = "ci-deploy";
+              description = "Username for CI deployments to push to this cache";
+            };
           };
         };
 
       perInstance =
-        { extendSettings, ... }:
+        { extendSettings, instanceName, ... }:
         {
           nixosModule =
             {
@@ -129,68 +134,97 @@ in
             }:
             let
               settings = extendSettings {
-                # Default settings
                 settings = mkDefault {
                   bind = mkDefault "[::]:5000";
                   priority = mkDefault settings.priority or 30;
                 };
               };
 
-              # Extract clan options
               inherit (settings)
                 subdomain
                 enableNginx
                 priority
                 generateSigningKey
+                enableCIPush
+                ciDeployUser
                 ;
 
-              # Remove clan options from serviceConfig
               serviceConfig = builtins.removeAttrs settings [
                 "subdomain"
                 "enableNginx"
                 "priority"
                 "generateSigningKey"
+                "enableCIPush"
+                "ciDeployUser"
               ];
 
-              # Ensure priority is in the right place and add signing key if needed
               harmoniaConfig = serviceConfig // {
                 settings = (serviceConfig.settings or { }) // {
                   priority = mkDefault priority;
                 };
                 signKeyPaths = lib.mkIf generateSigningKey [
-                  config.clan.core.vars.generators.harmonia-signing-key.files."signing-key.sec".path
+                  config.clan.core.vars.generators."harmonia-${instanceName}".files."signing-key.sec".path
                 ];
               };
             in
             {
-              services.harmonia = lib.mkMerge [
-                { enable = true; }
-                harmoniaConfig
-              ];
+              services = {
+                harmonia = lib.mkMerge [
+                  { enable = true; }
+                  harmoniaConfig
+                ];
 
-              # Generate signing key if requested
+                # Restrict CI deploy user to only nix operations via SSH
+                openssh.extraConfig = lib.mkIf enableCIPush ''
+                  Match User ${ciDeployUser}
+                    ForceCommand ${pkgs.nix}/bin/nix-store --serve --write
+                    AllowTcpForwarding no
+                    X11Forwarding no
+                    PermitTTY no
+                    PermitTunnel no
+                '';
+
+                nginx = lib.mkIf (enableNginx && subdomain == null) {
+                  enable = true;
+                  virtualHosts."harmonia" = {
+                    locations."/" = {
+                      proxyPass = "http://[::1]:5000";
+                      proxyWebsockets = true;
+                      extraConfig = ''
+                        proxy_set_header Host $host;
+                        proxy_set_header X-Real-IP $remote_addr;
+                        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                        proxy_set_header X-Forwarded-Proto $scheme;
+
+                        # Allow large file uploads for nix store paths
+                        client_max_body_size 0;
+
+                        # Increase timeouts for large file transfers
+                        proxy_read_timeout 300s;
+                        proxy_send_timeout 300s;
+                      '';
+                    };
+                  };
+                };
+              };
+
               clan.core.vars.generators = lib.mkIf generateSigningKey {
-                harmonia-signing-key = {
+                "harmonia-${instanceName}" = {
                   share = true;
-                  prompts = { }; # No prompts for auto-generation
-                  migrateFact = "harmonia-signing-key";
+                  prompts = { };
                   runtimeInputs = [
                     pkgs.nix
                     pkgs.hostname
                     pkgs.coreutils
                   ];
                   script = ''
-                    # Generate a new signing key pair for the binary cache
                     ${pkgs.nix}/bin/nix-store --generate-binary-cache-key \
                       "harmonia-$(${pkgs.hostname}/bin/hostname)-$(date +%s)" \
                       "$out"/signing-key.sec \
                       "$out"/signing-key.pub
-                      
                     # Remove trailing newline from public key
                     ${pkgs.coreutils}/bin/tr -d '\n' < "$out"/signing-key.pub > "$out"/signing-key.pub.tmp
                     mv "$out"/signing-key.pub.tmp "$out"/signing-key.pub
-
-                    # Also store the public key separately for easy access
                     cp "$out"/signing-key.pub "$out"/public-key
                   '';
                   files = {
@@ -198,51 +232,83 @@ in
                       owner = "harmonia";
                       group = "harmonia";
                       mode = "0400";
+                      deploy = true;
                     };
                     "signing-key.pub" = {
                       secret = false;
+                      deploy = true;
+                    };
+                  };
+                };
+
+                "harmonia-ci-${instanceName}" = lib.mkIf enableCIPush {
+                  share = false;
+                  runtimeInputs = [
+                    pkgs.openssh
+                    pkgs.coreutils
+                  ];
+                  script = ''
+                    ${pkgs.openssh}/bin/ssh-keygen -t ed25519 -N "" -f "$out"/ci-deploy-key -C "harmonia-ci-${instanceName}"
+
+                    # Also store the public key with .pub extension for consistency
+                    cp "$out"/ci-deploy-key.pub "$out"/ssh-key.pub
+                  '';
+                  files = {
+                    "ci-deploy-key" = {
+                      owner = "root";
+                      group = "root";
+                      mode = "0400";
+                      deploy = false;
+                    };
+                    "ci-deploy-key.pub" = {
+                      secret = false;
+                      deploy = true;
+                    };
+                    "ssh-key.pub" = {
+                      secret = false;
+                      deploy = false;
                     };
                   };
                 };
               };
 
-              # Note: If using subdomain, ensure tailscale-traefik is configured for this machine
-              # and add harmonia to its services configuration
-
-              # Basic nginx configuration if enabled (without tailscale)
-              services.nginx = lib.mkIf (enableNginx && subdomain == null) {
-                enable = true;
-                virtualHosts."harmonia" = {
-                  locations."/" = {
-                    proxyPass = "http://[::1]:5000";
-                    proxyWebsockets = true;
-                    extraConfig = ''
-                      proxy_set_header Host $host;
-                      proxy_set_header X-Real-IP $remote_addr;
-                      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                      proxy_set_header X-Forwarded-Proto $scheme;
-
-                      # Allow large file uploads for nix store paths
-                      client_max_body_size 0;
-
-                      # Increase timeouts for large file transfers
-                      proxy_read_timeout 300s;
-                      proxy_send_timeout 300s;
-                    '';
+              users = {
+                users = {
+                  ${ciDeployUser} = lib.mkIf enableCIPush {
+                    isSystemUser = true;
+                    group = ciDeployUser;
+                    description = "CI deployment user for Harmonia cache";
+                    home = "/var/lib/${ciDeployUser}";
+                    createHome = true;
+                    shell = pkgs.bash;
+                    openssh.authorizedKeys.keys = [
+                      config.clan.core.vars.generators."harmonia-ci-${instanceName}".files."ci-deploy-key.pub".value
+                    ];
                   };
+
+                  harmonia = {
+                    isSystemUser = true;
+                    group = "harmonia";
+                    description = "Harmonia binary cache daemon";
+                  };
+                };
+
+                groups = {
+                  ${ciDeployUser} = lib.mkIf enableCIPush { };
+                  harmonia = { };
                 };
               };
 
-              # Open firewall port
-              networking.firewall.allowedTCPPorts = [ 5000 ];
+              # Allow CI deploy user to write to nix store
+              nix.settings.trusted-users = lib.mkIf enableCIPush [ ciDeployUser ];
 
-              # Ensure harmonia user/group exists
-              users.users.harmonia = {
-                isSystemUser = true;
-                group = "harmonia";
-                description = "Harmonia binary cache daemon";
-              };
-              users.groups.harmonia = { };
+              networking.firewall.allowedTCPPorts =
+                let
+                  bindStr = harmoniaConfig.settings.bind or "[::]:5000";
+                  portStr = lib.last (lib.splitString ":" bindStr);
+                  port = lib.toInt portStr;
+                in
+                [ port ];
             };
         };
     };

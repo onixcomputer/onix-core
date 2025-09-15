@@ -1,17 +1,5 @@
 _: {
   instances = {
-    "br-tailnet" = {
-      module.name = "tailscale";
-      module.input = "self";
-      roles.peer = {
-        tags."tailnet-brittonr" = { };
-        settings = {
-          enableSSH = true;
-          exitNode = false;
-          enableHostAliases = true;
-        };
-      };
-    };
 
     "adeci-tailnet" = {
       module.name = "tailscale";
@@ -21,6 +9,19 @@ _: {
         settings = {
           enableSSH = false;
           exitNode = false;
+        };
+      };
+    };
+
+    "br-tailnet" = {
+      module.name = "tailscale";
+      module.input = "self";
+      roles.peer = {
+        tags."tailnet-brittonr" = { };
+        settings = {
+          enableSSH = true;
+          exitNode = false;
+          enableHostAliases = true;
         };
       };
     };

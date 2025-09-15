@@ -1,6 +1,7 @@
 _:
 let
   roster-users = {
+
     alex = {
       description = "Alex";
       defaultUid = 3801;
@@ -52,9 +53,12 @@ let
       defaultPosition = "owner";
       defaultShell = "fish";
     };
+
   };
 
   roster-machines = {
+
+    # ========== Alex Machines ===========
     alex-fw = {
       users = {
         alex = {
@@ -106,113 +110,6 @@ let
       };
     };
 
-    britton-fw = {
-      users = {
-        brittonr = {
-          position = "owner";
-          shell = "fish";
-          homeManager = {
-            enable = true;
-            profiles = [
-              "base"
-              "dev"
-              "hyprland"
-              "hypr-laptop"
-              "social"
-            ];
-          };
-        };
-      };
-      homeManagerOptions = {
-        sharedModules = [
-          {
-            wayland.windowManager.hyprland.settings.monitor = [
-              "eDP-1,2880x1920@120,auto,2"
-              "DP-3,preferred,auto,1,mirror,eDP-1"
-            ];
-          }
-        ];
-      };
-    };
-
-    britton-desktop = {
-      users = {
-        brittonr = {
-          position = "owner";
-          shell = "fish";
-          homeManager = {
-            enable = true;
-            profiles = [
-              "base"
-              "dev"
-              "hyprland"
-              "creative"
-              "social"
-            ];
-          };
-        };
-      };
-      homeManagerOptions = {
-        sharedModules = [
-          {
-            wayland.windowManager.hyprland.settings = {
-              monitor = [
-                ",preferred,auto,1.5"
-                # "HDMI-A-1,preferred,auto,1.5,mirror,eDP-1"
-                # "HDMI-A-2,preferred,auto,2,mirror,DP-1"
-              ];
-              xwayland = {
-                force_zero_scaling = true;
-              };
-            };
-          }
-        ];
-      };
-    };
-
-    britton-dev = {
-      users = {
-        brittonr = {
-          position = "owner";
-          shell = "fish";
-          homeManager = {
-            enable = true;
-            profiles = [
-              "base"
-              "dev"
-            ];
-          };
-        };
-      };
-    };
-
-    aspen1 = {
-      users = {
-        brittonr = {
-          position = "owner";
-          shell = "fish";
-          homeManager = {
-            enable = true;
-            profiles = [
-              "base"
-              "dev"
-            ];
-          };
-        };
-        alex = {
-          position = "owner";
-          shell = "fish";
-          homeManager = {
-            enable = true;
-            profiles = [
-              "base"
-              "dev"
-            ];
-          };
-        };
-      };
-    };
-
     sequoia = {
       users = {
         alex = {
@@ -227,7 +124,7 @@ let
       };
     };
 
-    bambrew = {
+    marine = {
       users = {
         alex = {
           homeManager = {
@@ -250,7 +147,7 @@ let
       };
     };
 
-    marine = {
+    bambrew = {
       users = {
         alex = {
           homeManager = {
@@ -287,11 +184,10 @@ let
       };
     };
 
-    zenith = {
+    # ========== Britton Machines ===========
+    britton-fw = {
       users = {
-        dima = {
-          position = "owner";
-          shell = "fish";
+        brittonr = {
           homeManager = {
             enable = true;
             profiles = [
@@ -299,20 +195,6 @@ let
               "dev"
               "hyprland"
               "hypr-laptop"
-              "creative"
-              "social"
-            ];
-          };
-        };
-        alex = {
-          homeManager = {
-            enable = true;
-            profiles = [
-              "base"
-              "dev"
-              "hyprland"
-              "hypr-laptop"
-              "creative"
               "social"
             ];
           };
@@ -322,14 +204,82 @@ let
         sharedModules = [
           {
             wayland.windowManager.hyprland.settings.monitor = [
-              "eDP-1, preferred, auto, 1.5"
+              "eDP-1,2880x1920@120,auto,2"
+              "DP-3,preferred,auto,1,mirror,eDP-1"
             ];
           }
         ];
       };
     };
 
-    # GMK machines
+    aspen1 = {
+      users = {
+        brittonr = {
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+        alex = {
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+      };
+    };
+
+    britton-dev = {
+      users = {
+        brittonr = {
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+      };
+    };
+
+    britton-desktop = {
+      users = {
+        brittonr = {
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+              "hyprland"
+              "creative"
+              "social"
+            ];
+          };
+        };
+      };
+      homeManagerOptions = {
+        sharedModules = [
+          {
+            wayland.windowManager.hyprland.settings = {
+              monitor = [
+                ",preferred,auto,1.5"
+              ];
+              xwayland = {
+                force_zero_scaling = true;
+              };
+            };
+          }
+        ];
+      };
+    };
+
     gmk1 = {
       users = {
         brittonr = {
@@ -381,7 +331,6 @@ let
     gmk3 = {
       users = {
         brittonr = {
-          position = "owner";
           homeManager = {
             enable = true;
             profiles = [
@@ -402,6 +351,48 @@ let
         };
       };
     };
+
+    # ========== Dima Machines ===========
+    zenith = {
+      users = {
+        dima = {
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+              "hyprland"
+              "hypr-laptop"
+              "creative"
+              "social"
+            ];
+          };
+        };
+        alex = {
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+              "hyprland"
+              "hypr-laptop"
+              "creative"
+              "social"
+            ];
+          };
+        };
+      };
+      homeManagerOptions = {
+        sharedModules = [
+          {
+            wayland.windowManager.hyprland.settings.monitor = [
+              "eDP-1, preferred, auto, 1.5"
+            ];
+          }
+        ];
+      };
+    };
+
   };
 in
 {
