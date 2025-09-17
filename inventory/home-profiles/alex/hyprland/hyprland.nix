@@ -239,11 +239,11 @@ in
         "$mod, B, exec, $browser"
         "$mod, R, exec, rofi -show run"
         # Clipboard manager - shows history with rofi, hides line numbers
-        "$mod, C, exec, ${pkgs.cliphist}/bin/cliphist list | ${pkgs.rofi-wayland}/bin/rofi -dmenu -display-columns 2 -p 'Clipboard' | ${pkgs.cliphist}/bin/cliphist decode | ${pkgs.wl-clipboard}/bin/wl-copy"
+        "$mod, C, exec, ${pkgs.cliphist}/bin/cliphist list | ${pkgs.rofi}/bin/rofi -dmenu -display-columns 2 -p 'Clipboard' | ${pkgs.cliphist}/bin/cliphist decode | ${pkgs.wl-clipboard}/bin/wl-copy"
         # Clipboard delete menu
-        "$mod SHIFT, C, exec, ${pkgs.cliphist}/bin/cliphist list | ${pkgs.rofi-wayland}/bin/rofi -dmenu -display-columns 2 -p 'Delete Entry' | ${pkgs.cliphist}/bin/cliphist delete"
+        "$mod SHIFT, C, exec, ${pkgs.cliphist}/bin/cliphist list | ${pkgs.rofi}/bin/rofi -dmenu -display-columns 2 -p 'Delete Entry' | ${pkgs.cliphist}/bin/cliphist delete"
         # Wipe entire clipboard history
-        "$mod ALT, C, exec, ${pkgs.rofi-wayland}/bin/rofi -dmenu -p 'Wipe clipboard history? (type yes)' | grep -q '^yes$' && ${pkgs.cliphist}/bin/cliphist wipe && notify-send 'Clipboard' 'History cleared'"
+        "$mod ALT, C, exec, ${pkgs.rofi}/bin/rofi -dmenu -p 'Wipe clipboard history? (type yes)' | grep -q '^yes$' && ${pkgs.cliphist}/bin/cliphist wipe && notify-send 'Clipboard' 'History cleared'"
         "$mod, space, exec, rofi -show drun"
         "$mod, W, exec, rofi-wallpaper"
         "$mod, N, exec, notify-send -t 1000 'WiFi 󰤨' 'Scanning networks...' && rofi-network-menu"

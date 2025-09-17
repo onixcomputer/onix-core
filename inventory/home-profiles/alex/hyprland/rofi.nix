@@ -96,7 +96,7 @@ in
 
   programs.rofi = {
     enable = true;
-    package = pkgs.rofi-wayland; # Wayland-native fork
+    package = pkgs.rofi; # Wayland-native fork
 
     font = "CaskaydiaMono Nerd Font 12";
     terminal = "kitty";
@@ -116,7 +116,7 @@ in
   home.packages =
     with pkgs;
     let
-      inherit rofi-wayland;
+      inherit rofi;
     in
     [
       # rbw integration for password management
@@ -318,7 +318,7 @@ in
 
             󰈁  Ethernet Connected"
 
-          chosen=$(echo -e "$menu" | ${rofi-wayland}/bin/rofi -dmenu -p "Network" \
+          chosen=$(echo -e "$menu" | ${rofi}/bin/rofi -dmenu -p "Network" \
             -theme-str 'window {width: 400px;} listview {lines: 4;}' \
             -theme-str 'element {font: "CaskaydiaMono Nerd Font 11";}')
 
@@ -339,13 +339,13 @@ in
       # Network manager for rofi
       (writeShellScriptBin "rofi-network" ''
         # Simple network menu using nmcli
-        chosen=$(nmcli -t -f NAME connection show | ${rofi-wayland}/bin/rofi -dmenu -p "Network" -theme-str 'window {width: 400px;}')
+        chosen=$(nmcli -t -f NAME connection show | ${rofi}/bin/rofi -dmenu -p "Network" -theme-str 'window {width: 400px;}')
         [ -z "$chosen" ] && exit
 
         # Connect to the chosen network
         nmcli connection up "$chosen" || {
           # If connection fails, might need password
-          ${rofi-wayland}/bin/rofi -e "Failed to connect. Use nmtui for new networks."
+          ${rofi}/bin/rofi -e "Failed to connect. Use nmtui for new networks."
         }
       '')
 
@@ -358,7 +358,7 @@ in
 
         # Show menu without search bar
         selected=$(echo -e "$lock\n$logout\n$shutdown\n$reboot" | \
-          ${rofi-wayland}/bin/rofi -dmenu -p "Power" \
+          ${rofi}/bin/rofi -dmenu -p "Power" \
           -theme-str 'entry { enabled: false; }' \
           -theme-str 'window { width: 300px; }' \
           -theme-str 'listview { lines: 4; }' \
@@ -593,7 +593,7 @@ in
         fi
 
         # Show unified picker with 3x3 grid that fills the window better
-        SELECTED=$(echo -en "$ALL_WALLPAPERS" | ${rofi-wayland}/bin/rofi -dmenu -p "Wallpapers" \
+        SELECTED=$(echo -en "$ALL_WALLPAPERS" | ${rofi}/bin/rofi -dmenu -p "Wallpapers" \
           -theme-str 'window {width: 750px; height: 750px;}' \
           -theme-str 'inputbar {padding: 10px;}' \
           -theme-str 'listview {columns: 3; lines: 3; spacing: 10px; flow: horizontal; padding: 10px;}' \
@@ -651,7 +651,7 @@ in
         $networks"
               fi
 
-              chosen=$(echo "$menu_items" | ${rofi-wayland}/bin/rofi -dmenu -p "WiFi" \
+              chosen=$(echo "$menu_items" | ${rofi}/bin/rofi -dmenu -p "WiFi" \
                 -theme-str 'window {width: 600px;}' \
                 -theme-str 'listview {lines: 15;}' \
                 -theme-str 'element {font: "CaskaydiaMono Nerd Font 11";}')

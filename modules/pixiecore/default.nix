@@ -2,7 +2,6 @@
 let
   inherit (lib)
     mkOption
-    mkDefault
     mkEnableOption
     mkIf
     mkMerge
@@ -116,7 +115,6 @@ in
         {
           nixosModule =
             {
-              config,
               pkgs,
               inputs,
               ...
@@ -139,7 +137,6 @@ in
                     modules = [
                       (
                         {
-                          config,
                           pkgs,
                           lib,
                           modulesPath,

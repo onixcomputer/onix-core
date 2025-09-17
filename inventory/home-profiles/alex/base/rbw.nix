@@ -52,7 +52,7 @@ let
 
           # Use rofi to get the password
           if [[ -n "$MESSAGE" ]]; then
-            PASSWORD=$(echo -e "$MESSAGE" | ${pkgs.rofi-wayland}/bin/rofi -dmenu \
+            PASSWORD=$(echo -e "$MESSAGE" | ${pkgs.rofi}/bin/rofi -dmenu \
               -password \
               -p "$PROMPT" \
               -theme-str 'window {width: 450px;}' \
@@ -60,7 +60,7 @@ let
               -theme-str 'entry {placeholder: "Enter password";}' \
               -markup-rows)
           else
-            PASSWORD=$(${pkgs.rofi-wayland}/bin/rofi -dmenu \
+            PASSWORD=$(${pkgs.rofi}/bin/rofi -dmenu \
               -password \
               -p "$PROMPT" \
               -theme-str 'window {width: 450px;}' \

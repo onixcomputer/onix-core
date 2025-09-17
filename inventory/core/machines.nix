@@ -96,7 +96,6 @@ _: {
         "traefik-blr"
         "tailnet-brittonr"
         "openpgp"
-        "mcp"
         "password-manager"
       ];
       deploy = {
