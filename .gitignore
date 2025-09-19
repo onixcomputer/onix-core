@@ -91,3 +91,4 @@ coverage/
 terraform-provider-*
 .terraform/
 .mcp.json
+.serena/

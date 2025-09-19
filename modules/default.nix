@@ -19,6 +19,9 @@ let
     "cloudflare-tunnel" = import ./cloudflare-tunnel;
     "gitlab-runner" = import ./gitlab-runner;
     "keycloak" = import ./keycloak;
+    "clan-devshell" = import ./clan-devshell;
+    "terranix-devshell" = import ./terranix-devshell;
+    "garage" = import ./garage;
   };
 
 in

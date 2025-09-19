@@ -1,0 +1,18 @@
+# Terraform files
+*.tfplan
+tfplan
+.terraform/
+terraform.tfstate*
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Backend config (contains credentials)
+backend.tf
+
+# Terranix
+config.tf.json

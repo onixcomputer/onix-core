@@ -1,0 +1,21 @@
+{
+  "resource": {
+    "null_resource": {
+      "test": {
+        "provisioner": {
+          "local-exec": {
+            "command": "echo 'Hello from Terraform'"
+          }
+        }
+      }
+    }
+  },
+  "terraform": {
+    "backend": {
+      "local": {
+        "path": ".terraform/terraform.tfstate"
+      }
+    },
+    "required_version": ">= 1.0"
+  }
+}

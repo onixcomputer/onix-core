@@ -93,10 +93,12 @@ _: {
         "static-test"
         "static-demo"
         "seaweedfs-master"
+        "garage-server"
         "traefik-blr"
         "tailnet-brittonr"
         "openpgp"
         "password-manager"
+        "infrastructure-dev" # Development infrastructure environment
       ];
       deploy = {
         targetHost = "root@britton-fw.bison-tailor.ts.net";
@@ -112,6 +114,7 @@ _: {
         "prometheus"
         "monitoring"
         "homepage-server"
+        "infrastructure-prod" # Production infrastructure environment
       ];
       deploy = {
         targetHost = "root@aspen1";
@@ -125,6 +128,7 @@ _: {
         "dev"
         "wiki-js"
         "traefik-blrdev"
+        "infrastructure-staging" # Staging infrastructure environment
       ];
       deploy = {
         targetHost = "root@192.168.1.146";

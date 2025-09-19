@@ -1,0 +1,24 @@
+{
+  "output": {
+    "environment": {
+      "value": "development"
+    },
+    "state_location": {
+      "value": "Encrypted in Clan vars: terraform-state-infrastructure-dev"
+    }
+  },
+  "resource": {
+    "null_resource": {
+      "dev_test": {
+        "provisioner": {
+          "local-exec": {
+            "command": "echo '🔧 Development Environment - Infrastructure as Code'"
+          }
+        }
+      }
+    }
+  },
+  "terraform": {
+    "required_version": ">= 1.0"
+  }
+}
