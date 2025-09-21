@@ -13,7 +13,7 @@
   disko.devices = {
     disk = {
       main = {
-        name = "main-4afa2416e0e2433a98b51283123db23e";
+        name = "main-fed29a0eb14e4540bfc78bc9c7d84e65";
         device = "/dev/disk/by-id/nvme-Samsung_SSD_990_EVO_Plus_4TB_S7U8NJ0Y727452J";
         type = "disk";
         content = {
