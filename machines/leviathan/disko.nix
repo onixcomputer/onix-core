@@ -1,7 +1,7 @@
 # ---
 # schema = "single-disk"
 # [placeholders]
-# mainDisk = "/dev/disk/by-id/nvme-Samsung_SSD_990_EVO_Plus_4TB_S7U8NJ0Y727452J" 
+# mainDisk = "/dev/disk/by-id/usb-DELL_IDSDM_012345678901-0:0" 
 # ---
 # This file was automatically generated!
 # CHANGING this configuration requires wiping and reinstalling the machine
@@ -13,8 +13,8 @@
   disko.devices = {
     disk = {
       main = {
-        name = "main-fed29a0eb14e4540bfc78bc9c7d84e65";
-        device = "/dev/disk/by-id/nvme-Samsung_SSD_990_EVO_Plus_4TB_S7U8NJ0Y727452J";
+        name = "main-c6a6d92cf5ea4061a70606cb5e639869";
+        device = "/dev/disk/by-id/usb-DELL_IDSDM_012345678901-0:0";
         type = "disk";
         content = {
           type = "gpt";
