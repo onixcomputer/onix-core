@@ -24,7 +24,7 @@ _: {
         "dev"
       ];
       deploy = {
-        targetHost = "root@alex-fw.cymric-daggertooth.ts.net";
+        targetHost = "root@leviathan.cymric-daggertooth.ts.net";
         buildHost = "";
       };
     };

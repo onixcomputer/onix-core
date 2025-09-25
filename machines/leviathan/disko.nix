@@ -1,32 +1,32 @@
 # ---
-# schema = "single-disk"
+# schema = "hybrid-boot"
 # [placeholders]
-# mainDisk = "/dev/disk/by-id/usb-DELL_IDSDM_012345678901-0:0" 
+# bootDisk = "/dev/disk/by-id/usb-DELL_IDSDM_012345678901-0:0"
+# mainDisk = "/dev/disk/by-id/nvme-Samsung_SSD_990_EVO_Plus_4TB_S7U8NJ0Y727452J"
 # ---
-# This file was automatically generated!
-# CHANGING this configuration requires wiping and reinstalling the machine
+# Hybrid configuration: IDSDM for /boot, NVMe for root
 {
 
-  boot.loader.grub.efiSupport = true;
-  boot.loader.grub.efiInstallAsRemovable = true;
-  boot.loader.grub.enable = true;
+  boot.loader.grub = {
+    efiSupport = true;
+    efiInstallAsRemovable = true;
+    enable = true;
+    device = "nodev"; # Don't install to MBR, use EFI only
+  };
   disko.devices = {
     disk = {
-      main = {
-        name = "main-c6a6d92cf5ea4061a70606cb5e639869";
+      # IDSDM for boot partition only
+      idsdm = {
+        name = "idsdm-boot";
         device = "/dev/disk/by-id/usb-DELL_IDSDM_012345678901-0:0";
         type = "disk";
         content = {
           type = "gpt";
           partitions = {
-            "boot" = {
-              size = "1M";
-              type = "EF02"; # for grub MBR
-              priority = 1;
-            };
             ESP = {
               type = "EF00";
-              size = "500M";
+              size = "14G"; # Use most of IDSDM for /boot
+              priority = 1;
               content = {
                 type = "filesystem";
                 format = "vfat";
@@ -34,6 +34,17 @@
                 mountOptions = [ "umask=0077" ];
               };
             };
+          };
+        };
+      };
+      # NVMe for root filesystem
+      nvme = {
+        name = "nvme-root";
+        device = "/dev/disk/by-id/nvme-Samsung_SSD_990_EVO_Plus_4TB_S7U8NJ0Y727452J";
+        type = "disk";
+        content = {
+          type = "gpt";
+          partitions = {
             root = {
               size = "100%";
               content = {

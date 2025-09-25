@@ -136,11 +136,6 @@ in
         };
       };
 
-      # Gestures
-      gestures = {
-        workspace_swipe = false;
-      };
-
       # Misc
       misc = {
         disable_hyprland_logo = true;

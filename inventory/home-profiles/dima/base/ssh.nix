@@ -4,12 +4,16 @@ _: {
 
   programs.ssh = {
     enable = true;
-    addKeysToAgent = "yes";
+    enableDefaultConfig = false;
     extraConfig = ''
       AddressFamily inet
     '';
 
     matchBlocks = {
+      "*" = {
+        addKeysToAgent = "yes";
+      };
+
       "github.com" = {
         hostname = "github.com";
         user = "git";

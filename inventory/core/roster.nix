@@ -14,6 +14,7 @@ let
       ];
       sshAuthorizedKeys = [
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJeeoL1jwVSachA9GdJxm/5TgCRBULfSDGLyP/nfmkMq alex@DESKTOP-SVRV9Q8"
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINHzvsWFZdhRzAwWg3vP5g9ke6mYGFOCho4G7AllADbG alex@leviathan"
       ];
       defaultPosition = "owner";
       defaultShell = "fish";
