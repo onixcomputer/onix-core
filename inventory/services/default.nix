@@ -20,6 +20,9 @@ let
     #gitlab-runner = import ./gitlab-runner.nix { inherit inputs; };
     #keycloak = import ./keycloak.nix { inherit inputs; };
     #buildbot = import ./buildbot.nix { inherit inputs; };
+    # microvm-example = import ./microvm-example.nix { inherit inputs; };
+    # Note: MicroVMs are better configured directly in machine configs
+    # See machines/britton-desktop/configuration.nix for the test-vm example
   };
 in
 lib.foldr lib.recursiveUpdate { } (lib.attrValues services)

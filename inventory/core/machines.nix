@@ -43,6 +43,20 @@ _: {
       };
     };
 
+    app-vm-01 = {
+      name = "app-vm-01";
+      tags = [
+        "all"
+        "nixos"
+        "microvm"
+        "app"
+      ];
+      deploy = {
+        targetHost = null;
+        buildHost = "";
+      };
+    };
+
     marine = {
       name = "marine";
       tags = [
