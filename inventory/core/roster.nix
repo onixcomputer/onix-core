@@ -111,6 +111,29 @@ let
       };
     };
 
+    claudia = {
+      users = {
+        alex = {
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+        brittonr = {
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+      };
+    };
+
     sequoia = {
       users = {
         alex = {

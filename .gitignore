@@ -82,12 +82,12 @@ coverage/
 # Generated pre-commit config
 .pre-commit-config.yaml
 
-# Terraform/OpenTofu
-**/.terraform/
-*.tfstate
-*.tfstate.*
-*.tfvars
-.terraform.lock.hcl
-terraform-provider-*
-.terraform/
-.mcp.json
+# Infrastructure / Terraform
+cloud/*.tfstate
+cloud/*.tfstate.*
+cloud/.terraform/
+cloud/.terraform.lock.hcl
+cloud/terraform.tfvars
+cloud/*.tfvars
+cloud/main.tf.json
+cloud/tfplan

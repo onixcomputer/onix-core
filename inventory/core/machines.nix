@@ -29,6 +29,17 @@ _: {
       };
     };
 
+    claudia = {
+      name = "claudia";
+      tags = [
+        "tailnet-adeci"
+      ];
+      deploy = {
+        targetHost = "root@claudia.cymric-daggertooth.ts.net";
+        buildHost = "";
+      };
+    };
+
     sequoia = {
       name = "sequoia";
       tags = [

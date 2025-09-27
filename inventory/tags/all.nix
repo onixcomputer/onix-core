@@ -6,6 +6,7 @@
 
   environment.systemPackages = with pkgs; [
     kitty.terminfo
+    btop
   ];
 
   networking = {
