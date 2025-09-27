@@ -10,6 +10,7 @@ in
   imports = [
     inputs.grub2-themes.nixosModules.default
     ../alex-fw/pmods/macrand.nix
+    # ../alex-fw/pmods/printers.nix
   ];
 
   networking = {
@@ -17,19 +18,6 @@ in
   };
 
   time.timeZone = "America/New_York";
-
-  hardware.printers = {
-    ensurePrinters = [
-      {
-        name = "XeroxWorkCentre";
-        location = "Office";
-        description = "Xerox WorkCentre 6605DN";
-        deviceUri = "ipp://192.168.50.5:631/ipp/print";
-        model = "everywhere";
-      }
-    ];
-    ensureDefaultPrinter = "XeroxWorkCentre";
-  };
 
   environment.systemPackages = with pkgs; [
     imagemagick # required for grub2-theme

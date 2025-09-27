@@ -9,7 +9,8 @@ in
 {
   imports = [
     inputs.grub2-themes.nixosModules.default
-    ./pmods/macrand.nix # MAC address randomization utilities
+    ./pmods/macrand.nix
+    # ./pmods/printers.nix
   ];
 
   hardware.graphics = {
@@ -26,24 +27,11 @@ in
 
   time.timeZone = "America/New_York";
 
-  hardware.printers = {
-    ensurePrinters = [
-      {
-        name = "XeroxWorkCentre";
-        location = "Office";
-        description = "Xerox WorkCentre 6605DN";
-        deviceUri = "ipp://192.168.50.5:631/ipp/print";
-        model = "everywhere";
-      }
-    ];
-    ensureDefaultPrinter = "XeroxWorkCentre";
-  };
-
   environment.systemPackages = with pkgs; [
     imagemagick # required for grub2-theme
     os-prober
     signal-desktop
-    atlauncher
+    prismlauncher
   ];
 
   boot.loader = {
@@ -97,7 +85,7 @@ in
 
     # Auto-configure Xerox WorkCentre 6605DN
     avahi = {
-      enable = true; # Already enabled in tags/all.nix but explicit here for clarity
+      enable = true;
       nssmdns4 = true; # Enable .local domain resolution
       openFirewall = true; # Open firewall for mDNS
     };
