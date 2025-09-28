@@ -184,10 +184,10 @@
       StandardError = "journal+console";
       LoadCredential = [
         "environment:ENVIRONMENT"
-        "hostname:HOSTNAME"
-        "api-key:API_KEY"
-        "db-password:DB_PASSWORD"
-        "jwt-secret:JWT_SECRET"
+        "cluster:CLUSTER"
+        "api-key:HOST-API-KEY"
+        "db-password:HOST-DB-PASSWORD"
+        "jwt-secret:HOST-JWT-SECRET"
       ];
     };
 
@@ -201,7 +201,7 @@
       echo ""
       echo "Static Configuration:"
       echo "  ENVIRONMENT = $(cat $CREDENTIALS_DIRECTORY/environment 2>/dev/null || echo 'N/A')"
-      echo "  HOSTNAME    = $(cat $CREDENTIALS_DIRECTORY/hostname 2>/dev/null || echo 'N/A')"
+      echo "  CLUSTER     = $(cat $CREDENTIALS_DIRECTORY/cluster 2>/dev/null || echo 'N/A')"
       echo ""
       echo "Runtime Secrets (length check):"
       echo "  API_KEY     = $(wc -c < $CREDENTIALS_DIRECTORY/api-key 2>/dev/null || echo '0') bytes"
