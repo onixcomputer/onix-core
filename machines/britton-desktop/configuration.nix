@@ -201,9 +201,9 @@ in
               LoadCredential = [
                 "environment:ENVIRONMENT"
                 "cluster:CLUSTER"
-                "api-key:API_KEY"
-                "db-password:DB_PASSWORD"
-                "jwt-secret:JWT_SECRET"
+                "api-key:HOST-API-KEY"
+                "db-password:HOST-DB-PASSWORD"
+                "jwt-secret:HOST-JWT-SECRET"
               ];
             };
 

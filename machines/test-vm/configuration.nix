@@ -10,10 +10,14 @@
     inputs.microvm.nixosModules.microvm
   ];
 
-  networking.hostName = "test-vm";
   system.stateVersion = "24.05";
-
   nixpkgs.hostPlatform = "x86_64-linux";
+
+  networking = {
+    hostName = "test-vm";
+    interfaces.eth0.useDHCP = lib.mkDefault true;
+    firewall.allowedTCPPorts = [ 22 ];
+  };
 
   clan.core.vars.generators.test-vm-secrets = {
     files = {
@@ -155,11 +159,6 @@
       ''
     );
   };
-
-  networking.interfaces.eth0.useDHCP = lib.mkDefault true;
-  networking.firewall.allowedTCPPorts = [
-    22
-  ];
 
   services.openssh = {
     enable = true;

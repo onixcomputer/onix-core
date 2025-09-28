@@ -10,10 +10,18 @@
     inputs.microvm.nixosModules.microvm
   ];
 
-  networking.hostName = "app-vm-01";
   system.stateVersion = "24.05";
-
   nixpkgs.hostPlatform = "x86_64-linux";
+
+  networking = {
+    hostName = "app-vm-01";
+    interfaces.eth0.useDHCP = lib.mkDefault true;
+    firewall.allowedTCPPorts = [
+      22
+      80
+      443
+    ];
+  };
 
   clan.core.vars.generators.app-vm-secrets = {
     files = {
@@ -227,13 +235,6 @@
       ''
     );
   };
-
-  networking.interfaces.eth0.useDHCP = lib.mkDefault true;
-  networking.firewall.allowedTCPPorts = [
-    22
-    80
-    443
-  ];
 
   services.openssh = {
     enable = true;
