@@ -99,11 +99,29 @@ in
     '';
   };
 
-  systemd.services."microvm@test-vm".serviceConfig.LoadCredential = [
-    "host-api-key:${config.clan.core.vars.generators.test-vm-secrets.files."api-key".path}"
-    "host-db-password:${config.clan.core.vars.generators.test-vm-secrets.files."db-password".path}"
-    "host-jwt-secret:${config.clan.core.vars.generators.test-vm-secrets.files."jwt-secret".path}"
-  ];
+  systemd.services."microvm@test-vm".serviceConfig = {
+    LoadCredential = [
+      "host-api-key:${config.clan.core.vars.generators.test-vm-secrets.files."api-key".path}"
+      "host-db-password:${config.clan.core.vars.generators.test-vm-secrets.files."db-password".path}"
+      "host-jwt-secret:${config.clan.core.vars.generators.test-vm-secrets.files."jwt-secret".path}"
+    ];
+
+    # Harden the microVM service to reduce attack surface
+    ProtectProc = "invisible";
+    ProcSubset = "pid";
+    ProtectKernelTunables = true;
+    ProtectControlGroups = true;
+    RestrictAddressFamilies = [
+      "AF_UNIX"
+      "AF_VSOCK"
+      "AF_INET"
+      "AF_INET6"
+    ];
+
+    # Prevent service information leaks
+    StandardOutput = "journal";
+    StandardError = "journal";
+  };
 
   microvm.vms = {
     test-vm = {
