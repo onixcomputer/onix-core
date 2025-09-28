@@ -230,5 +230,18 @@ _: {
       };
     };
 
+    # ========== MicroVMs ===========
+    test-vm = {
+      name = "test-vm";
+      tags = [
+        "microvm"
+        "all"
+      ];
+      deploy = {
+        targetHost = "root@test-vm";
+        buildHost = "";
+      };
+    };
+
   };
 }

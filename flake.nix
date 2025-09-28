@@ -33,7 +33,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     microvm = {
-      url = "github:astro/microvm.nix";
+      url = "path:/home/brittonr/git/onix-core/microvm.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

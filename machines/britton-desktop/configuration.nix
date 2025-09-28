@@ -115,7 +115,6 @@ in
         {
           pkgs,
           lib,
-          config,
           ...
         }:
         {
@@ -149,89 +148,19 @@ in
             # Enable vsock for systemd notification
             vsock.cid = 3;
 
-            binScripts.microvm-run = lib.mkForce (
-              let
-                microvmCfg = config.microvm;
-              in
-              ''
-                set -eou pipefail
+            # Runtime credentials to inject into OEM strings
+            # These will be read from systemd LoadCredential and injected at runtime
+            credentialFiles = {
+              "host-api-key" = { };
+              "host-db-password" = { };
+              "host-jwt-secret" = { };
+            };
 
-                echo "╔══════════════════════════════════════════════════════════╗"
-                echo "║  MicroVM: test-vm"
-                echo "║  Loading Runtime Secrets via systemd LoadCredential"
-                echo "╚══════════════════════════════════════════════════════════╝"
-
-                # Read secrets from systemd credentials directory
-                if [ -n "''${CREDENTIALS_DIRECTORY:-}" ]; then
-                  if [ -f "$CREDENTIALS_DIRECTORY/host-api-key" ]; then
-                    API_KEY=$(cat "$CREDENTIALS_DIRECTORY/host-api-key" | tr -d '\n')
-                    echo "✓ Loaded API_KEY from credentials"
-                  else
-                    echo "❌ ERROR: host-api-key not found in credentials directory"
-                    exit 1
-                  fi
-
-                  if [ -f "$CREDENTIALS_DIRECTORY/host-db-password" ]; then
-                    DB_PASSWORD=$(cat "$CREDENTIALS_DIRECTORY/host-db-password" | tr -d '\n')
-                    echo "✓ Loaded DB_PASSWORD from credentials"
-                  else
-                    echo "❌ ERROR: host-db-password not found in credentials directory"
-                    exit 1
-                  fi
-
-                  if [ -f "$CREDENTIALS_DIRECTORY/host-jwt-secret" ]; then
-                    JWT_SECRET=$(cat "$CREDENTIALS_DIRECTORY/host-jwt-secret" | tr -d '\n')
-                    echo "✓ Loaded JWT_SECRET from credentials"
-                  else
-                    echo "❌ ERROR: host-jwt-secret not found in credentials directory"
-                    exit 1
-                  fi
-                else
-                  echo "❌ ERROR: CREDENTIALS_DIRECTORY not set"
-                  exit 1
-                fi
-
-                # Build OEM strings with runtime secrets
-                RUNTIME_OEM_STRINGS="io.systemd.credential:API_KEY=$API_KEY"
-                RUNTIME_OEM_STRINGS="$RUNTIME_OEM_STRINGS,io.systemd.credential:DB_PASSWORD=$DB_PASSWORD"
-                RUNTIME_OEM_STRINGS="$RUNTIME_OEM_STRINGS,io.systemd.credential:JWT_SECRET=$JWT_SECRET"
-                RUNTIME_OEM_STRINGS="$RUNTIME_OEM_STRINGS,io.systemd.credential:ENVIRONMENT=test"
-                RUNTIME_OEM_STRINGS="$RUNTIME_OEM_STRINGS,io.systemd.credential:CLUSTER=britton-desktop"
-                RUNTIME_OEM_STRINGS="$RUNTIME_OEM_STRINGS,io.systemd.credential:vmm.notify_socket=vsock-stream:2:8888"
-
-                echo "✓ Runtime secrets loaded and OEM strings prepared"
-                echo "══════════════════════════════════════════════════════════"
-
-                # Run original preStart
-                ${microvmCfg.preStart}
-
-                # Cleanup sockets
-                rm -f test-vm.sock notify.vsock notify.vsock_8888 || true
-
-                # Start socat for vsock notify
-                if [ -n "''${NOTIFY_SOCKET:-}" ]; then
-                  ${pkgs.socat}/bin/socat -T2 UNIX-LISTEN:notify.vsock_8888,fork UNIX-SENDTO:$NOTIFY_SOCKET &
-                fi
-
-                # Execute cloud-hypervisor with runtime-injected secrets
-                exec ${lib.optionalString microvmCfg.prettyProcnames ''-a "microvm@test-vm"''} \
-                  ${pkgs.cloud-hypervisor}/bin/cloud-hypervisor \
-                  --cpus boot=2 \
-                  --watchdog \
-                  --kernel ${microvmCfg.kernel.dev}/vmlinux \
-                  --initramfs ${microvmCfg.initrdPath} \
-                  --cmdline "earlyprintk=ttyS0 console=ttyS0 reboot=t panic=-1 ${toString microvmCfg.kernelParams}" \
-                  --seccomp true \
-                  --memory mergeable=on,shared=on,size=1024M \
-                  --platform "oem_strings=[$RUNTIME_OEM_STRINGS]" \
-                  --console null \
-                  --serial tty \
-                  --vsock cid=3,socket=notify.vsock \
-                  --fs socket=test-vm-virtiofs-ro-store.sock,tag=ro-store \
-                  --api-socket test-vm.sock \
-                  --net mac=02:00:00:01:01:01,num_queues=4,tap=vm-test
-              ''
-            );
+            # Static OEM strings (optional, for non-secret config)
+            cloud-hypervisor.platformOEMStrings = [
+              "io.systemd.credential:ENVIRONMENT=test"
+              "io.systemd.credential:CLUSTER=britton-desktop"
+            ];
           };
 
           # Basic NixOS configuration for the guest

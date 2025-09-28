@@ -234,6 +234,17 @@ let
           };
         };
       };
+      homeManagerOptions = { };
+    };
+
+    app-vm-01 = {
+      users = { };
+      homeManagerOptions = { };
+    };
+
+    test-vm = {
+      users = { };
+      homeManagerOptions = { };
     };
 
     britton-dev = {
