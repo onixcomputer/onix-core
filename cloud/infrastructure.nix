@@ -71,7 +71,7 @@
         # Minecraft server ports
         {
           from_port = 25565;
-          to_port = 25566;
+          to_port = 25567;
           protocol = "tcp";
           cidr_blocks = [ "0.0.0.0/0" ];
           description = "Minecraft server";
@@ -83,7 +83,7 @@
         # Minecraft Voice Chat mod UDP ports
         {
           from_port = 24454;
-          to_port = 24455;
+          to_port = 24456;
           protocol = "udp";
           cidr_blocks = [ "0.0.0.0/0" ];
           description = "Simple Voice Chat";

@@ -27,15 +27,27 @@ _: {
         listen 24455 udp;
         proxy_pass 100.99.42.67:24455;
       }
+
+      # Minecraft atf10
+      server {
+        listen 25567;
+        proxy_pass 100.99.42.67:25567;
+      }
+      server {
+        listen 24456 udp;
+        proxy_pass 100.99.42.67:24456;
+      }
     '';
   };
 
   networking.firewall.allowedTCPPorts = [
     25565
     25566
+    25567
   ];
   networking.firewall.allowedUDPPorts = [
     24454
     24455
+    24456
   ];
 }
