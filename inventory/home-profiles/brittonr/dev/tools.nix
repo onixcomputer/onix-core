@@ -17,6 +17,7 @@
     terranix
     nix-index
     nix-prefetch
+    android-tools
 
     # Archive tools
     unzip

@@ -348,6 +348,26 @@
         "url": "https://git.clan.lol/clan/nix-select/archive/main.tar.gz"
       }
     },
+    "nixos-avf": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1758048506,
+        "narHash": "sha256-I7cLckLwnppaqoUFvTrgGKDevNnIn3qV/3ELxetm6jk=",
+        "owner": "nix-community",
+        "repo": "nixos-avf",
+        "rev": "1b7bf91cef5e3aeada4bc81977eb12b71585b45c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "nixos-avf",
+        "type": "github"
+      }
+    },
     "nixos-facter-modules": {
       "locked": {
         "lastModified": 1755504238,
@@ -459,6 +479,7 @@
         "grafana-dashboards": "grafana-dashboards",
         "grub2-themes": "grub2-themes",
         "mcp-servers-nix": "mcp-servers-nix",
+        "nixos-avf": "nixos-avf",
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs_2",
         "pre-commit-hooks-nix": "pre-commit-hooks-nix",

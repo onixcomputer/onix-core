@@ -32,6 +32,10 @@
       url = "github:nix-community/buildbot-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixos-avf = {
+      url = "github:nix-community/nixos-avf";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
