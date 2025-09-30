@@ -301,8 +301,10 @@ in
                 let
                   destName = if cfg.destination != "" then cfg.destination else name;
                   prefixedName = "${settings.credentialPrefix}${destName}";
+                  # Use the clan vars path at /run/secrets/vars/
+                  sourcePath = "/run/secrets/vars/${instanceName}-secrets/${name}";
                 in
-                "${prefixedName}:${cfg.source}"
+                "${prefixedName}:${sourcePath}"
               ) settings.credentials;
 
               # Build credential file specs for microvm
