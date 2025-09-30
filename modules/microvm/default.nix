@@ -126,8 +126,9 @@ in
             type = attrsOf (submodule {
               options = {
                 source = mkOption {
-                  type = str;
-                  description = "Path to the credential file on the host";
+                  type = nullOr str;
+                  default = null;
+                  description = "Path to the credential file on the host (auto-generated if not provided)";
                 };
                 destination = mkOption {
                   type = str;
@@ -224,6 +225,12 @@ in
           };
 
           # Guest Configuration
+          guestConfig = mkOption {
+            type = nullOr anything;
+            default = null;
+            description = "Path to the guest configuration file or inline configuration module";
+          };
+
           guestModules = mkOption {
             type = listOf anything;
             default = [ ];
@@ -305,8 +312,8 @@ in
                 let
                   destName = if cfg.destination != "" then cfg.destination else name;
                   prefixedName = "${settings.credentialPrefix}${destName}";
-                  # Use the clan vars generator path
-                  sourcePath = config.clan.core.vars.generators."${instanceName}-secrets".files."${name}".path;
+                  # Use the clan vars generator path (under host's path)
+                  sourcePath = config.clan.core.vars.generators."${vmName}-secrets".files."${name}".path;
                 in
                 "${prefixedName}:${sourcePath}"
               ) settings.credentials;
@@ -325,6 +332,7 @@ in
               microvmSettings = removeAttrs settings [
                 "vmName"
                 "autostart"
+                "guestConfig"
                 "guestHostname"
                 "guestStateVersion"
                 "guestModules"
@@ -349,133 +357,139 @@ in
               ];
 
               # Build the complete guest configuration
-              guestConfig = {
-                imports = [ inputs.microvm.nixosModules.microvm ] ++ settings.guestModules;
-
-                # Basic microvm configuration
-                microvm = mkMerge [
-                  microvmSettings
+              guestConfigModule =
+                if settings.guestConfig != null then
+                  # Use provided guest configuration
+                  settings.guestConfig
+                else
+                  # Build inline configuration (backward compatibility)
                   {
-                    hypervisor = settings.hypervisor;
-                    vcpu = settings.vcpu;
-                    mem = settings.mem;
+                    imports = [ inputs.microvm.nixosModules.microvm ] ++ settings.guestModules;
 
-                    shares = settings.shares;
-                    volumes = settings.volumes;
-                    interfaces = settings.interfaces;
+                    # Basic microvm configuration
+                    microvm = mkMerge [
+                      microvmSettings
+                      {
+                        hypervisor = settings.hypervisor;
+                        vcpu = settings.vcpu;
+                        mem = settings.mem;
 
-                    vsock = mkIf (settings.vsockCid != null) {
-                      cid = settings.vsockCid;
+                        shares = settings.shares;
+                        volumes = settings.volumes;
+                        interfaces = settings.interfaces;
+
+                        vsock = mkIf (settings.vsockCid != null) {
+                          cid = settings.vsockCid;
+                        };
+
+                        # Runtime credentials from host
+                        credentialFiles = credentialFiles;
+
+                        # Platform-specific settings
+                        ${settings.hypervisor} = mkIf (settings.hypervisor == "cloud-hypervisor") {
+                          platformOEMStrings = settings.staticOemStrings;
+                        };
+                      }
+                    ];
+
+                    # Basic NixOS configuration for the guest
+                    networking = {
+                      hostName = guestHostname;
+                      firewall.allowedTCPPorts =
+                        (if settings.enableSsh then [ settings.sshPort ] else [ ]) ++ settings.firewallPorts;
                     };
 
-                    # Runtime credentials from host
-                    credentialFiles = credentialFiles;
+                    system.stateVersion = settings.guestStateVersion;
 
-                    # Platform-specific settings
-                    ${settings.hypervisor} = mkIf (settings.hypervisor == "cloud-hypervisor") {
-                      platformOEMStrings = settings.staticOemStrings;
+                    # SSH configuration
+                    services.openssh = mkIf settings.enableSsh {
+                      enable = true;
+                      ports = [ settings.sshPort ];
+                      settings = {
+                        PermitRootLogin =
+                          if settings.rootPassword != null || settings.authorizedKeys != [ ] then
+                            "yes"
+                          else
+                            "prohibit-password";
+                        PasswordAuthentication = settings.rootPassword != null;
+                      };
                     };
-                  }
-                ];
 
-                # Basic NixOS configuration for the guest
-                networking = {
-                  hostName = guestHostname;
-                  firewall.allowedTCPPorts =
-                    (if settings.enableSsh then [ settings.sshPort ] else [ ]) ++ settings.firewallPorts;
-                };
+                    # Root user configuration
+                    users.users.root = mkMerge [
+                      (mkIf (settings.rootPassword != null) {
+                        initialPassword = settings.rootPassword;
+                      })
+                      (mkIf (settings.authorizedKeys != [ ]) {
+                        openssh.authorizedKeys.keys = settings.authorizedKeys;
+                      })
+                    ];
 
-                system.stateVersion = settings.guestStateVersion;
+                    # Additional packages
+                    environment.systemPackages = settings.guestPackages;
 
-                # SSH configuration
-                services.openssh = mkIf settings.enableSsh {
-                  enable = true;
-                  ports = [ settings.sshPort ];
-                  settings = {
-                    PermitRootLogin =
-                      if settings.rootPassword != null || settings.authorizedKeys != [ ] then
-                        "yes"
-                      else
-                        "prohibit-password";
-                    PasswordAuthentication = settings.rootPassword != null;
-                  };
-                };
+                    # Auto-login for testing if password is set
+                    services.getty = mkIf (settings.rootPassword != null) {
+                      autologinUser = "root";
+                    };
 
-                # Root user configuration
-                users.users.root = mkMerge [
-                  (mkIf (settings.rootPassword != null) {
-                    initialPassword = settings.rootPassword;
-                  })
-                  (mkIf (settings.authorizedKeys != [ ]) {
-                    openssh.authorizedKeys.keys = settings.authorizedKeys;
-                  })
-                ];
+                    # Demo credential logging service (for test VMs)
+                    systemd.services.demo-credentials = mkIf (settings.enableDemoCredentialService or false) {
+                      description = "Demo service that logs test credentials to journal";
+                      wantedBy = [ "multi-user.target" ];
+                      after = [ "network.target" ];
 
-                # Additional packages
-                environment.systemPackages = settings.guestPackages;
-
-                # Auto-login for testing if password is set
-                services.getty = mkIf (settings.rootPassword != null) {
-                  autologinUser = "root";
-                };
-
-                # Demo credential logging service (for test VMs)
-                systemd.services.demo-credentials = mkIf (settings.enableDemoCredentialService or false) {
-                  description = "Demo service that logs test credentials to journal";
-                  wantedBy = [ "multi-user.target" ];
-                  after = [ "network.target" ];
-
-                  serviceConfig = {
-                    Type = "oneshot";
-                    RemainAfterExit = true;
-                    StandardOutput = "journal+console";
-                    StandardError = "journal+console";
-                    LoadCredential =
-                      (
-                        if settings ? staticOemStrings then
-                          lib.map (
-                            str:
+                      serviceConfig = {
+                        Type = "oneshot";
+                        RemainAfterExit = true;
+                        StandardOutput = "journal+console";
+                        StandardError = "journal+console";
+                        LoadCredential =
+                          (
+                            if settings ? staticOemStrings then
+                              lib.map (
+                                str:
+                                let
+                                  parts = lib.splitString ":" (lib.removePrefix "io.systemd.credential:" str);
+                                  credName = lib.head parts;
+                                in
+                                "${lib.toLower credName}:${credName}"
+                              ) (lib.filter (lib.hasPrefix "io.systemd.credential:") settings.staticOemStrings)
+                            else
+                              [ ]
+                          )
+                          ++ lib.mapAttrsToList (
+                            name: cfg:
                             let
-                              parts = lib.splitString ":" (lib.removePrefix "io.systemd.credential:" str);
-                              credName = lib.head parts;
+                              destName = if cfg.destination != "" then cfg.destination else name;
                             in
-                            "${lib.toLower credName}:${credName}"
-                          ) (lib.filter (lib.hasPrefix "io.systemd.credential:") settings.staticOemStrings)
-                        else
-                          [ ]
-                      )
-                      ++ lib.mapAttrsToList (
-                        name: cfg:
-                        let
-                          destName = if cfg.destination != "" then cfg.destination else name;
-                        in
-                        "${name}:${settings.credentialPrefix}${destName}"
-                      ) (settings.credentials or { });
+                            "${name}:${settings.credentialPrefix}${destName}"
+                          ) (settings.credentials or { });
+                      };
+
+                      script = ''
+                        echo "=========================================="
+                        echo "CREDENTIAL TEST - SHOWING RAW VALUES"
+                        echo "=========================================="
+                        echo ""
+
+                        echo "All available credentials:"
+                        for cred in "$CREDENTIALS_DIRECTORY"/*; do
+                          if [ -f "$cred" ]; then
+                            name=$(basename "$cred")
+                            value=$(cat "$cred")
+                            echo "  $name = '$value'"
+                          fi
+                        done
+
+                        echo ""
+                        echo "=========================================="
+                        echo "Credential directory contents:"
+                        ls -la "$CREDENTIALS_DIRECTORY/" 2>&1 || echo "  Directory not found"
+                        echo "=========================================="
+                      '';
+                    };
                   };
-
-                  script = ''
-                    echo "=========================================="
-                    echo "CREDENTIAL TEST - SHOWING RAW VALUES"
-                    echo "=========================================="
-                    echo ""
-
-                    echo "All available credentials:"
-                    for cred in "$CREDENTIALS_DIRECTORY"/*; do
-                      if [ -f "$cred" ]; then
-                        name=$(basename "$cred")
-                        value=$(cat "$cred")
-                        echo "  $name = '$value'"
-                      fi
-                    done
-
-                    echo ""
-                    echo "=========================================="
-                    echo "Credential directory contents:"
-                    ls -la "$CREDENTIALS_DIRECTORY/" 2>&1 || echo "  Directory not found"
-                    echo "=========================================="
-                  '';
-                };
-              };
             in
             {
               # Import microvm host module
@@ -484,7 +498,39 @@ in
               # Configure the microVM
               microvm.vms.${vmName} = {
                 inherit (settings) autostart;
-                config = guestConfig;
+                config =
+                  if settings.guestConfig != null then
+                    # Import the guest configuration with microvm module
+                    {
+                      imports = [
+                        inputs.microvm.nixosModules.microvm
+                        settings.guestConfig
+                      ];
+
+                      # Apply microVM hardware configuration
+                      microvm = {
+                        hypervisor = settings.hypervisor;
+                        vcpu = settings.vcpu;
+                        mem = settings.mem;
+                        shares = settings.shares;
+                        volumes = settings.volumes;
+                        interfaces = settings.interfaces;
+
+                        vsock = mkIf (settings.vsockCid != null) {
+                          cid = settings.vsockCid;
+                        };
+
+                        # Runtime credentials from host
+                        credentialFiles = credentialFiles;
+
+                        # Platform-specific settings
+                        ${settings.hypervisor} = mkIf (settings.hypervisor == "cloud-hypervisor") {
+                          platformOEMStrings = settings.staticOemStrings;
+                        };
+                      };
+                    }
+                  else
+                    guestConfigModule;
               };
 
               # Configure systemd service with hardening and credentials
@@ -523,8 +569,8 @@ in
                 ];
               };
 
-              # Generate secrets if using clan vars pattern
-              clan.core.vars.generators."${instanceName}-secrets" = mkIf (settings.credentials != { }) {
+              # Generate secrets if using clan vars pattern (under host's path)
+              clan.core.vars.generators."${vmName}-secrets" = mkIf (settings.credentials != { }) {
                 files = lib.mapAttrs (_name: _: {
                   secret = true;
                   mode = "0400";

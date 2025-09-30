@@ -14,16 +14,12 @@
   nixpkgs.hostPlatform = "x86_64-linux";
 
   networking = {
-    hostName = "app-vm-01";
+    hostName = "test-vm";
     interfaces.eth0.useDHCP = lib.mkDefault true;
-    firewall.allowedTCPPorts = [
-      22
-      80
-      443
-    ];
+    firewall.allowedTCPPorts = [ 22 ];
   };
 
-  clan.core.vars.generators.app-vm-secrets = {
+  clan.core.vars.generators.test-vm-secrets = {
     files = {
       "api-key" = {
         secret = true;
@@ -70,87 +66,26 @@
     interfaces = [
       {
         type = "tap";
-        id = "vm-app01";
-        mac = "02:00:00:01:02:01";
+        id = "vm-test";
+        mac = "02:00:00:01:01:01";
       }
     ];
 
-    vsock.cid = 20;
+    vsock.cid = 3;
 
     binScripts.microvm-run = lib.mkForce (
       let
         microvmCfg = config.microvm;
 
-        apiKeyPath = config.clan.core.vars.generators.app-vm-secrets.files."api-key".path;
-        dbPasswordPath = config.clan.core.vars.generators.app-vm-secrets.files."db-password".path;
-        jwtSecretPath = config.clan.core.vars.generators.app-vm-secrets.files."jwt-secret".path;
+        apiKeyPath = config.clan.core.vars.generators.test-vm-secrets.files."api-key".path;
+        dbPasswordPath = config.clan.core.vars.generators.test-vm-secrets.files."db-password".path;
+        jwtSecretPath = config.clan.core.vars.generators.test-vm-secrets.files."jwt-secret".path;
 
-        kernelPath =
-          if pkgs.stdenv.system == "x86_64-linux" then
-            "${microvmCfg.kernel.dev}/vmlinux"
-          else
-            "${microvmCfg.kernel.out}/${pkgs.stdenv.hostPlatform.linux-kernel.target}";
+        kernelPath = "${microvmCfg.kernel.dev}/vmlinux";
+        kernelCmdLine = "earlyprintk=ttyS0 console=ttyS0 reboot=t panic=-1 ${toString microvmCfg.kernelParams}";
 
-        kernelConsole =
-          if pkgs.stdenv.system == "x86_64-linux" then
-            "earlyprintk=ttyS0 console=ttyS0"
-          else if pkgs.stdenv.system == "aarch64-linux" then
-            "console=ttyAMA0"
-          else
-            "";
-
-        kernelCmdLine = "${kernelConsole} reboot=t panic=-1 ${toString microvmCfg.kernelParams}";
-
-        useVirtiofs = builtins.any ({ proto, ... }: proto == "virtiofs") microvmCfg.shares;
-
-        opsMapped = ops: lib.concatStringsSep "," (lib.mapAttrsToList (k: v: "${k}=${v}") ops);
-
-        memOps = opsMapped {
-          size = "${toString microvmCfg.mem}M";
-          mergeable = "on";
-          shared = if useVirtiofs then "on" else "off";
-        };
-
-        vsockOpts =
-          if microvmCfg.vsock.cid != null then
-            "cid=${toString microvmCfg.vsock.cid},socket=notify.vsock"
-          else
-            "";
-
-        tapMultiQueue = microvmCfg.vcpu > 1;
-
-        netArgs = map (
-          {
-            type,
-            id,
-            mac,
-            ...
-          }:
-          if type == "tap" then
-            opsMapped (
-              {
-                tap = id;
-                inherit mac;
-              }
-              // (if tapMultiQueue then { num_queues = toString (2 * microvmCfg.vcpu); } else { })
-            )
-          else
-            throw "Unsupported interface type ${type}"
-        ) microvmCfg.interfaces;
-
-        fsArgs = map (
-          {
-            proto,
-            socket,
-            tag,
-            ...
-          }:
-          if proto == "virtiofs" then
-            opsMapped { inherit tag socket; }
-          else
-            throw "cloud-hypervisor supports only virtiofs"
-        ) microvmCfg.shares;
-
+        memOps = "size=${toString microvmCfg.mem}M,mergeable=on,shared=on";
+        vsockOpts = "cid=${toString microvmCfg.vsock.cid},socket=notify.vsock";
       in
       ''
         set -eou pipefail
@@ -188,12 +123,9 @@
         RUNTIME_OEM_STRINGS="io.systemd.credential:API_KEY=$API_KEY"
         RUNTIME_OEM_STRINGS="$RUNTIME_OEM_STRINGS,io.systemd.credential:DB_PASSWORD=$DB_PASSWORD"
         RUNTIME_OEM_STRINGS="$RUNTIME_OEM_STRINGS,io.systemd.credential:JWT_SECRET=$JWT_SECRET"
-        RUNTIME_OEM_STRINGS="$RUNTIME_OEM_STRINGS,io.systemd.credential:ENVIRONMENT=production"
+        RUNTIME_OEM_STRINGS="$RUNTIME_OEM_STRINGS,io.systemd.credential:ENVIRONMENT=test"
         RUNTIME_OEM_STRINGS="$RUNTIME_OEM_STRINGS,io.systemd.credential:HOSTNAME=${config.networking.hostName}"
-
-        ${lib.optionalString (microvmCfg.vsock.cid != null) ''
-          RUNTIME_OEM_STRINGS="$RUNTIME_OEM_STRINGS,io.systemd.credential:vmm.notify_socket=vsock-stream:2:8888"
-        ''}
+        RUNTIME_OEM_STRINGS="$RUNTIME_OEM_STRINGS,io.systemd.credential:vmm.notify_socket=vsock-stream:2:8888"
 
         PLATFORM_OPS="oem_strings=[$RUNTIME_OEM_STRINGS]"
 
@@ -202,17 +134,11 @@
 
         ${microvmCfg.preStart}
 
-        ${lib.optionalString (microvmCfg.socket != null) ''
-          rm -f '${microvmCfg.socket}'
-        ''}
+        rm -f notify.vsock notify.vsock_8888
 
-        ${lib.optionalString (microvmCfg.vsock.cid != null) ''
-          rm -f notify.vsock notify.vsock_8888
-
-          if [ -n "''${NOTIFY_SOCKET:-}" ]; then
-            ${pkgs.socat}/bin/socat -T2 UNIX-LISTEN:notify.vsock_8888,fork UNIX-SENDTO:$NOTIFY_SOCKET &
-          fi
-        ''}
+        if [ -n "''${NOTIFY_SOCKET:-}" ]; then
+          ${pkgs.socat}/bin/socat -T2 UNIX-LISTEN:notify.vsock_8888,fork UNIX-SENDTO:$NOTIFY_SOCKET &
+        fi
 
         exec ${lib.optionalString microvmCfg.prettyProcnames ''-a "microvm@${config.networking.hostName}"''} \
           ${pkgs.cloud-hypervisor}/bin/cloud-hypervisor \
@@ -226,12 +152,10 @@
           --platform "$PLATFORM_OPS" \
           --console null \
           --serial tty \
-          ${lib.optionalString (vsockOpts != "") "--vsock ${vsockOpts}"} \
-          ${
-            lib.optionalString (netArgs != [ ]) (lib.concatMapStringsSep " " (arg: "--net ${arg}") netArgs)
-          } \
-          ${lib.optionalString (fsArgs != [ ]) (lib.concatMapStringsSep " " (arg: "--fs ${arg}") fsArgs)} \
-          ${lib.optionalString (microvmCfg.socket != null) "--api-socket ${microvmCfg.socket}"}
+          --vsock ${vsockOpts} \
+          --fs socket=test-vm-virtiofs-ro-store.sock,tag=ro-store \
+          --api-socket test-vm.sock \
+          --net mac=02:00:00:01:01:01,num_queues=4,tap=vm-test
       ''
     );
   };
@@ -239,17 +163,16 @@
   services.openssh = {
     enable = true;
     settings = {
-      PermitRootLogin = "prohibit-password";
-      PasswordAuthentication = false;
+      PermitRootLogin = "yes";
+      PasswordAuthentication = lib.mkForce true;
     };
   };
 
-  users.users.root.openssh.authorizedKeys.keys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJBWRuKC+rVQ9exqHdlu7YZHxCjT5VvNZ9JlMyML9pqj brittonr@britton-desktop"
-  ];
+  users.users.root.initialPassword = "test";
+  services.getty.autologinUser = "root";
 
-  systemd.services.demo-credentials-app = {
-    description = "Demo Application Using OEM Credentials";
+  systemd.services.demo-oem-credentials = {
+    description = "Demo service showing OEM string credentials with runtime secrets";
     wantedBy = [ "multi-user.target" ];
     after = [ "network.target" ];
 
@@ -257,33 +180,40 @@
       Type = "oneshot";
       RemainAfterExit = true;
       StandardOutput = "journal+console";
+      StandardError = "journal+console";
       LoadCredential = [
-        "api-key:API_KEY"
-        "db-password:DB_PASSWORD"
-        "jwt-secret:JWT_SECRET"
         "environment:ENVIRONMENT"
-        "hostname:HOSTNAME"
+        "cluster:CLUSTER"
+        "api-key:HOST-API-KEY"
+        "db-password:HOST-DB-PASSWORD"
+        "jwt-secret:HOST-JWT-SECRET"
       ];
     };
 
     script = ''
       echo "╔═══════════════════════════════════════════════════════════════╗"
-      echo "║            Application Credentials Loaded                    ║"
+      echo "║  OEM String Credentials with Runtime Secrets (test-vm)      ║"
       echo "╚═══════════════════════════════════════════════════════════════╝"
       echo ""
-      echo "✓ Credentials available:"
-      ${pkgs.systemd}/bin/systemd-creds --system list | grep -E "API_KEY|DB_PASSWORD|JWT_SECRET|ENVIRONMENT|HOSTNAME" || true
+      echo "✓ systemd credentials available:"
+      ${pkgs.systemd}/bin/systemd-creds --system list | grep -E "API_KEY|DB_PASSWORD|JWT_SECRET|ENVIRONMENT|HOSTNAME" || echo "  (none found)"
       echo ""
-      echo "Configuration:"
+      echo "Static Configuration:"
       echo "  ENVIRONMENT = $(cat $CREDENTIALS_DIRECTORY/environment 2>/dev/null || echo 'N/A')"
-      echo "  HOSTNAME    = $(cat $CREDENTIALS_DIRECTORY/hostname 2>/dev/null || echo 'N/A')"
+      echo "  CLUSTER     = $(cat $CREDENTIALS_DIRECTORY/cluster 2>/dev/null || echo 'N/A')"
       echo ""
-      echo "Secrets (length check):"
+      echo "Runtime Secrets (length check):"
       echo "  API_KEY     = $(wc -c < $CREDENTIALS_DIRECTORY/api-key 2>/dev/null || echo '0') bytes"
       echo "  DB_PASSWORD = $(wc -c < $CREDENTIALS_DIRECTORY/db-password 2>/dev/null || echo '0') bytes"
       echo "  JWT_SECRET  = $(wc -c < $CREDENTIALS_DIRECTORY/jwt-secret 2>/dev/null || echo '0') bytes"
       echo ""
-      echo "✓ All credentials successfully loaded from OEM strings"
+      if [ $(wc -c < $CREDENTIALS_DIRECTORY/api-key 2>/dev/null || echo '0') -gt 10 ]; then
+        echo "✓ Runtime secrets successfully loaded from HOST clan vars via OEM strings!"
+      else
+        echo "⚠️  Runtime secrets not loaded"
+      fi
+      echo ""
+      echo "✓ OEM string credentials (static + runtime) successfully loaded via SMBIOS Type 11"
       echo "══════════════════════════════════════════════════════════════════"
     '';
   };
@@ -291,7 +221,5 @@
   environment.systemPackages = with pkgs; [
     vim
     htop
-    curl
-    jq
   ];
 }

@@ -36,23 +36,10 @@ _: {
         "tailnet-adeci"
         "docker"
         "gitlab-runner"
+        "microvm-host" # Can host microVMs
       ];
       deploy = {
         targetHost = "root@sequoia.cymric-daggertooth.ts.net";
-        buildHost = "";
-      };
-    };
-
-    app-vm-01 = {
-      name = "app-vm-01";
-      tags = [
-        "all"
-        "nixos"
-        "microvm"
-        "app"
-      ];
-      deploy = {
-        targetHost = null;
         buildHost = "";
       };
     };
@@ -231,14 +218,25 @@ _: {
     };
 
     # ========== MicroVMs ===========
+    # These are registered but not deployed directly - deployed via their host
     test-vm = {
       name = "test-vm";
       tags = [
         "microvm"
-        "all"
       ];
       deploy = {
-        targetHost = "root@test-vm";
+        targetHost = null; # No direct deployment
+        buildHost = "";
+      };
+    };
+
+    monitoring-vm = {
+      name = "monitoring-vm";
+      tags = [
+        "microvm"
+      ];
+      deploy = {
+        targetHost = null; # No direct deployment
         buildHost = "";
       };
     };
