@@ -214,9 +214,8 @@ in
                     "@system-service"
                     "~@privileged"
                     "@resources"
-                    "@kvm"
                   ];
-                  description = "System call filter rules";
+                  description = "System call filter rules (Note: @kvm is not available on all systems)";
                 };
               };
             };
