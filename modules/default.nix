@@ -19,6 +19,7 @@ let
     "cloudflare-tunnel" = import ./cloudflare-tunnel;
     "gitlab-runner" = import ./gitlab-runner;
     "keycloak" = import ./keycloak;
+    "microvm" = import ./microvm;
   };
 
 in
