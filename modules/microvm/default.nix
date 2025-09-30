@@ -287,7 +287,7 @@ in
         { instanceName, extendSettings, ... }:
         {
           nixosModule =
-            { pkgs, inputs, ... }:
+            { config, pkgs, inputs, ... }:
             let
               settings = extendSettings { };
 
@@ -301,8 +301,8 @@ in
                 let
                   destName = if cfg.destination != "" then cfg.destination else name;
                   prefixedName = "${settings.credentialPrefix}${destName}";
-                  # Use the clan vars path at /run/secrets/vars/
-                  sourcePath = "/run/secrets/vars/${instanceName}-secrets/${name}";
+                  # Use the clan vars generator path
+                  sourcePath = config.clan.core.vars.generators."${instanceName}-secrets".files."${name}".path;
                 in
                 "${prefixedName}:${sourcePath}"
               ) settings.credentials;
