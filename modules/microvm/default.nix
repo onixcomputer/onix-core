@@ -286,7 +286,12 @@ in
         { instanceName, extendSettings, ... }:
         {
           nixosModule =
-            { config, pkgs, inputs, ... }:
+            {
+              config,
+              pkgs,
+              inputs,
+              ...
+            }:
             let
               settings = extendSettings { };
 
@@ -426,22 +431,26 @@ in
                     StandardOutput = "journal+console";
                     StandardError = "journal+console";
                     LoadCredential =
-                      (if settings ? staticOemStrings then
-                        lib.map (str:
-                          let
-                            parts = lib.splitString ":" (lib.removePrefix "io.systemd.credential:" str);
-                            credName = lib.head parts;
-                          in
-                          "${lib.toLower credName}:${credName}"
-                        ) (lib.filter (lib.hasPrefix "io.systemd.credential:") settings.staticOemStrings)
-                      else [])
-                      ++
-                      lib.mapAttrsToList (name: cfg:
+                      (
+                        if settings ? staticOemStrings then
+                          lib.map (
+                            str:
+                            let
+                              parts = lib.splitString ":" (lib.removePrefix "io.systemd.credential:" str);
+                              credName = lib.head parts;
+                            in
+                            "${lib.toLower credName}:${credName}"
+                          ) (lib.filter (lib.hasPrefix "io.systemd.credential:") settings.staticOemStrings)
+                        else
+                          [ ]
+                      )
+                      ++ lib.mapAttrsToList (
+                        name: cfg:
                         let
                           destName = if cfg.destination != "" then cfg.destination else name;
                         in
                         "${name}:${settings.credentialPrefix}${destName}"
-                      ) (settings.credentials or {});
+                      ) (settings.credentials or { });
                   };
 
                   script = ''

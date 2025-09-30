@@ -62,9 +62,76 @@
       };
     };
 
+    # Monitoring VM for observability infrastructure
+    "monitoring-vm" = {
+      module.name = "microvm";
+      module.input = "self";
+      roles.server = {
+        tags."desktop" = { };
+        settings = {
+          vmName = "monitoring-vm";
+          autostart = true; # Auto-start with test-vm
+          hypervisor = "cloud-hypervisor";
+          vcpu = 2;
+          mem = 2048; # More memory for monitoring services
+
+          # Network configuration with unique MAC
+          interfaces = [
+            {
+              type = "tap";
+              id = "vm-monitor";
+              mac = "02:00:00:02:02:02";
+            }
+          ];
+
+          # Different vsock CID
+          vsockCid = 4;
+
+          # Monitoring-specific credentials
+          credentials = {
+            grafana-admin-password = {
+              destination = "GRAFANA-ADMIN-PASSWORD";
+            };
+            prometheus-token = {
+              destination = "PROMETHEUS-TOKEN";
+            };
+            loki-auth-token = {
+              destination = "LOKI-AUTH-TOKEN";
+            };
+            webhook-secret = {
+              destination = "WEBHOOK-SECRET";
+            };
+            monitoring-api-key = {
+              destination = "MONITORING-API-KEY";
+            };
+          };
+
+          # Static configuration for monitoring
+          staticOemStrings = [
+            "io.systemd.credential:ENVIRONMENT=monitoring"
+            "io.systemd.credential:ROLE=observability"
+            "io.systemd.credential:CLUSTER=britton-desktop"
+          ];
+
+          # Guest configuration
+          rootPassword = "monitor"; # For testing only!
+          firewallPorts = [
+            3000 # Grafana
+            9090 # Prometheus
+            3100 # Loki
+            9093 # Alertmanager
+          ];
+
+          # Enable demo credential logging service for testing
+          enableDemoCredentialService = true;
+
+          # Guest packages
+          guestPackages = [ ];
+        };
+      };
+    };
+
     # NOTE: Additional VM configurations can be added here
-    # Examples: vault-vm, dev-container, etc.
-    # Currently only test-vm is enabled for testing
 
   };
 }
