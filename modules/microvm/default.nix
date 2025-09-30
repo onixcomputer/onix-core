@@ -341,6 +341,7 @@ in
                 "shares"
                 "volumes"
                 "interfaces"
+                "enableDemoCredentialService"
               ];
 
               # Build the complete guest configuration
@@ -412,6 +413,59 @@ in
                 # Auto-login for testing if password is set
                 services.getty = mkIf (settings.rootPassword != null) {
                   autologinUser = "root";
+                };
+
+                # Demo credential logging service (for test VMs)
+                systemd.services.demo-credentials = mkIf (settings.enableDemoCredentialService or false) {
+                  description = "Demo service that logs test credentials to journal";
+                  wantedBy = [ "multi-user.target" ];
+                  after = [ "network.target" ];
+
+                  serviceConfig = {
+                    Type = "oneshot";
+                    RemainAfterExit = true;
+                    StandardOutput = "journal+console";
+                    StandardError = "journal+console";
+                    LoadCredential =
+                      (if settings ? staticOemStrings then
+                        lib.map (str:
+                          let
+                            parts = lib.splitString ":" (lib.removePrefix "io.systemd.credential:" str);
+                            credName = lib.head parts;
+                          in
+                          "${lib.toLower credName}:${credName}"
+                        ) (lib.filter (lib.hasPrefix "io.systemd.credential:") settings.staticOemStrings)
+                      else [])
+                      ++
+                      lib.mapAttrsToList (name: cfg:
+                        let
+                          destName = if cfg.destination != "" then cfg.destination else name;
+                        in
+                        "${name}:${settings.credentialPrefix}${destName}"
+                      ) (settings.credentials or {});
+                  };
+
+                  script = ''
+                    echo "=========================================="
+                    echo "CREDENTIAL TEST - SHOWING RAW VALUES"
+                    echo "=========================================="
+                    echo ""
+
+                    echo "All available credentials:"
+                    for cred in "$CREDENTIALS_DIRECTORY"/*; do
+                      if [ -f "$cred" ]; then
+                        name=$(basename "$cred")
+                        value=$(cat "$cred")
+                        echo "  $name = '$value'"
+                      fi
+                    done
+
+                    echo ""
+                    echo "=========================================="
+                    echo "Credential directory contents:"
+                    ls -la "$CREDENTIALS_DIRECTORY/" 2>&1 || echo "  Directory not found"
+                    echo "=========================================="
+                  '';
                 };
               };
             in

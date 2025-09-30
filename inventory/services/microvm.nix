@@ -53,6 +53,9 @@
             443
           ];
 
+          # Enable demo credential logging service
+          enableDemoCredentialService = true;
+
           # Guest packages
           guestPackages = [ ];
         };
