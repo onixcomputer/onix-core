@@ -238,9 +238,9 @@ in
               echo "  CLUSTER     = $(cat $CREDENTIALS_DIRECTORY/cluster 2>/dev/null || echo 'N/A')"
               echo ""
               echo "Runtime Secrets (length check):"
-              echo "  API_KEY     = $(wc -c < $CREDENTIALS_DIRECTORY/api-key 2>/dev/null || echo '0') bytes"
-              echo "  DB_PASSWORD = $(wc -c < $CREDENTIALS_DIRECTORY/db-password 2>/dev/null || echo '0') bytes"
-              echo "  JWT_SECRET  = $(wc -c < $CREDENTIALS_DIRECTORY/jwt-secret 2>/dev/null || echo '0') bytes"
+              echo "  API_KEY     = $(cat $CREDENTIALS_DIRECTORY/api-key 2>/dev/null || echo 'n/a')"
+              echo "  DB_PASSWORD = $(cat $CREDENTIALS_DIRECTORY/db-password 2>/dev/null || echo 'n/a')"
+              echo "  JWT_SECRET  = $(cat $CREDENTIALS_DIRECTORY/jwt-secret 2>/dev/null || echo 'n/a')"
               echo ""
               if [ $(wc -c < $CREDENTIALS_DIRECTORY/api-key 2>/dev/null || echo '0') -gt 10 ]; then
                 echo "✓ Runtime secrets successfully loaded from HOST clan vars via OEM strings!"
