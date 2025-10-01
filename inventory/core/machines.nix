@@ -235,8 +235,11 @@ _: {
       name = "monitoring-vm";
       tags = [
         "microvm"
-        "openpgp"
-        "homepage-server"
+        # "openpgp"
+        # "homepage-server"
+        # "tailnet-brittonr"
+        "echo"
+
       ];
       deploy = {
         targetHost = null; # No direct deployment

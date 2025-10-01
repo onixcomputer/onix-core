@@ -16,6 +16,7 @@ let
     "seaweedfs" = import ./seaweedfs;
     "wiki-js" = import ./wiki-js;
     "buildbot" = import ./buildbot;
+    "clan-var-echo" = import ./clan-var-echo;
     "cloudflare-tunnel" = import ./cloudflare-tunnel;
     "gitlab-runner" = import ./gitlab-runner;
     "keycloak" = import ./keycloak;
