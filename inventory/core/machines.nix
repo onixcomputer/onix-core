@@ -223,6 +223,7 @@ _: {
       name = "test-vm";
       tags = [
         "microvm"
+        "dev"
       ];
       deploy = {
         targetHost = null; # No direct deployment
