@@ -55,13 +55,16 @@ _: {
             inputs,
             lib,
             clan-core,
-            config,
             ...
           }:
           let
             clanMachine = settings.clanMachine;
             restartIfChanged = settings.restartIfChanged or false;
             microvmConfig = settings.microvm or { };
+
+            # Get machine imports from the clan configuration (with access to inputs.self)
+            machineImports =
+              inputs.self.clan.clanInternals.inventoryClass.machines.${clanMachine}.machineImports or [ ];
 
             # Set sensible defaults for microvm
             defaultMicrovmSettings = {
@@ -88,10 +91,20 @@ _: {
             finalMicrovmSettings = defaultMicrovmSettings // microvmConfig;
 
             # Build complete machine configuration including clan services
-            # Use the pre-built machine module from clan outputs
+            # Filter out problematic nixpkgs config from imports for microvm compatibility
+            filteredMachineImports = map (
+              importPath:
+              { ... }:
+              {
+                imports = [ importPath ];
+                # Disable nixpkgs config from tags/services to avoid conflict with microvm
+                nixpkgs.config = lib.mkForce { };
+              }
+            ) machineImports;
+
             machineConfigModule =
-              config.outputs.moduleForMachine.${clanMachine} or {
-                # Fallback: build it manually (should not be needed)
+              { ... }:
+              {
                 imports =
                   # Base machine files
                   builtins.filter builtins.pathExists [
@@ -99,14 +112,17 @@ _: {
                     "${inputs.self}/machines/${clanMachine}/hardware-configuration.nix"
                     "${inputs.self}/machines/${clanMachine}/disko.nix"
                   ]
-                  # Add machine-specific service imports (includes tag-based services)
-                  ++ (config.clanInternals.inventoryClass.machines.${clanMachine}.machineImports or [ ]);
+                  # Add filtered machine-specific service imports (includes tag-based services)
+                  ++ filteredMachineImports;
 
                 # Set clan core settings to match the machine
                 clan.core.settings = {
                   machine.name = clanMachine;
                   directory = inputs.self;
                 };
+
+                # Set nixpkgs config at the top level for microvm
+                nixpkgs.config.allowUnfree = true;
               };
           in
           {
