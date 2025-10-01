@@ -247,6 +247,11 @@ let
       homeManagerOptions = { };
     };
 
+    monitoring-vm = {
+      users = { };
+      homeManagerOptions = { };
+    };
+
     britton-dev = {
       users = {
         brittonr = {

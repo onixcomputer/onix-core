@@ -55,6 +55,7 @@ _: {
             inputs,
             lib,
             clan-core,
+            config,
             ...
           }:
           let
@@ -86,15 +87,20 @@ _: {
 
             finalMicrovmSettings = defaultMicrovmSettings // microvmConfig;
 
-            # Build machine configuration module without circular dependency
+            # Build complete machine configuration including clan services
+            # Use the pre-built machine module from clan outputs
             machineConfigModule =
-              { ... }:
-              {
-                imports = builtins.filter builtins.pathExists [
-                  "${inputs.self}/machines/${clanMachine}/configuration.nix"
-                  "${inputs.self}/machines/${clanMachine}/hardware-configuration.nix"
-                  "${inputs.self}/machines/${clanMachine}/disko.nix"
-                ];
+              config.outputs.moduleForMachine.${clanMachine} or {
+                # Fallback: build it manually (should not be needed)
+                imports =
+                  # Base machine files
+                  builtins.filter builtins.pathExists [
+                    "${inputs.self}/machines/${clanMachine}/configuration.nix"
+                    "${inputs.self}/machines/${clanMachine}/hardware-configuration.nix"
+                    "${inputs.self}/machines/${clanMachine}/disko.nix"
+                  ]
+                  # Add machine-specific service imports (includes tag-based services)
+                  ++ (config.clanInternals.inventoryClass.machines.${clanMachine}.machineImports or [ ]);
 
                 # Set clan core settings to match the machine
                 clan.core.settings = {
