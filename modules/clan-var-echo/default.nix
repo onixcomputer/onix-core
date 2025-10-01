@@ -39,7 +39,7 @@ _: {
       { instanceName, settings, ... }:
       {
         nixosModule =
-          { config, pkgs, lib, ... }:
+          { pkgs, lib, ... }:
           let
             message = settings.message or "Simple echo service test";
             interval = settings.interval or "1h";
@@ -70,10 +70,12 @@ _: {
                 echo "${message}" | ${pkgs.systemd}/bin/systemd-cat -t ${serviceName} -p info
                 echo "Service completed successfully!" | ${pkgs.systemd}/bin/systemd-cat -t ${serviceName} -p info
               '';
-            } // lib.optionalAttrs (interval != "") {
+            }
+            // lib.optionalAttrs (interval != "") {
               # If interval is set, make it a timer-based service
-              wantedBy = [ ];  # Don't start automatically, let timer handle it
-            } // lib.optionalAttrs (interval == "") {
+              wantedBy = [ ]; # Don't start automatically, let timer handle it
+            }
+            // lib.optionalAttrs (interval == "") {
               # If no interval, run once at boot
               wantedBy = [ "multi-user.target" ];
             };
@@ -84,8 +86,8 @@ _: {
                 description = "Timer for clan var echo service (${instanceName})";
                 wantedBy = [ "timers.target" ];
                 timerConfig = {
-                  OnBootSec = "1m";  # First run 1 minute after boot
-                  OnUnitActiveSec = interval;  # Repeat every interval
+                  OnBootSec = "1m"; # First run 1 minute after boot
+                  OnUnitActiveSec = interval; # Repeat every interval
                   Persistent = true;
                 };
               };

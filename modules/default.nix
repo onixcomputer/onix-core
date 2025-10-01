@@ -17,6 +17,7 @@ let
     "wiki-js" = import ./wiki-js;
     "buildbot" = import ./buildbot;
     "clan-var-echo" = import ./clan-var-echo;
+    "demo-credentials" = import ./demo-credentials;
     "cloudflare-tunnel" = import ./cloudflare-tunnel;
     "gitlab-runner" = import ./gitlab-runner;
     "keycloak" = import ./keycloak;

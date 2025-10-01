@@ -224,6 +224,7 @@ _: {
       tags = [
         "microvm"
         "dev"
+        "demo"
       ];
       deploy = {
         targetHost = null; # No direct deployment
@@ -236,7 +237,8 @@ _: {
       tags = [
         "microvm"
         # "openpgp"
-        # "homepage-server"
+        "homepage-server"
+        # "demo"
         # "tailnet-brittonr"
         "echo"
 

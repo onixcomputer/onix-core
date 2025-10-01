@@ -341,14 +341,17 @@
         "spectrum": "spectrum"
       },
       "locked": {
-        "lastModified": 1758980752,
-        "narHash": "sha256-kj/lkHwjmXz3dGSi8IfGbnTTnut1iFRIkN1XGqv2rt0=",
-        "path": "/home/brittonr/git/onix-core/microvm.nix",
-        "type": "path"
+        "lastModified": 1758113222,
+        "narHash": "sha256-Q5i/qaj6v6F4N1Q5gI/4aL0IEEUE/LjQuwcA8L5IOMc=",
+        "owner": "microvm-nix",
+        "repo": "microvm.nix",
+        "rev": "b9206e245c07c0782beff58e1e94bb48b2531d15",
+        "type": "github"
       },
       "original": {
-        "path": "/home/brittonr/git/onix-core/microvm.nix",
-        "type": "path"
+        "owner": "microvm-nix",
+        "repo": "microvm.nix",
+        "type": "github"
       }
     },
     "nix-darwin": {
