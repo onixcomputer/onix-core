@@ -8,7 +8,7 @@ _: {
   services.nginx = {
     enable = true;
     streamConfig = ''
-      # Minecraft dj2
+      # Minecraft usf dj2
       server {
         listen 25565;
         proxy_pass 100.99.42.67:25565;
@@ -37,6 +37,16 @@ _: {
         listen 24456 udp;
         proxy_pass 100.99.42.67:24456;
       }
+
+      # Minecraft bros dj2
+      server {
+        listen 25568;
+        proxy_pass 100.99.42.67:25568;
+      }
+      server {
+        listen 24457 udp;
+        proxy_pass 100.99.42.67:24457;
+      }
     '';
   };
 
@@ -44,10 +54,12 @@ _: {
     25565
     25566
     25567
+    25568
   ];
   networking.firewall.allowedUDPPorts = [
     24454
     24455
     24456
+    24457
   ];
 }
