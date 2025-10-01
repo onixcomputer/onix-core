@@ -235,6 +235,8 @@ _: {
       name = "monitoring-vm";
       tags = [
         "microvm"
+        "openpgp"
+        "homepage-server"
       ];
       deploy = {
         targetHost = null; # No direct deployment

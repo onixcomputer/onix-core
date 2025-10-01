@@ -20,6 +20,7 @@ let
     "gitlab-runner" = import ./gitlab-runner;
     "keycloak" = import ./keycloak;
     "microvm" = import ./microvm;
+    "microvm-clan" = import ./microvm-clan;
   };
 
 in

@@ -21,8 +21,10 @@ let
     #keycloak = import ./keycloak.nix { inherit inputs; };
     #buildbot = import ./buildbot.nix { inherit inputs; };
     microvm = import ./microvm.nix { inherit inputs; };
+    microvm-clan = import ./microvm-clan.nix { inherit inputs; };
     # Note: MicroVMs can now be configured declaratively via the clan service module
     # See inventory/services/microvm.nix for example configurations
+    # microvm-clan service uses clan.nixosModules for complete clan machine deployment
   };
 in
 lib.foldr lib.recursiveUpdate { } (lib.attrValues services)
