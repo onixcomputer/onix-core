@@ -108,6 +108,7 @@ _: {
         "tailnet-brittonr"
         "openpgp"
         "password-manager"
+        "typst"
       ];
       deploy = {
         targetHost = "root@britton-fw.bison-tailor.ts.net";
