@@ -137,6 +137,10 @@ let
         fmzakari = {
           homeManager = {
             enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
           };
         };
 
