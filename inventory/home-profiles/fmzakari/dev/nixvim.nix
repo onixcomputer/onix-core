@@ -1,13 +1,16 @@
 { inputs, ... }:
 {
   imports = [
-    inputs.nixvim.homeManagerModules.nixvim
+    inputs.nixvim.homeModules.nixvim
   ];
 
   # Enable the NixOS module for NixVim
   # Many thanks to https://github.com/dc-tec/nixvim
   programs.nixvim = {
     enable = true;
+
+    # Allow unfree packages for copilot
+    nixpkgs.config.allowUnfree = true;
 
     defaultEditor = true;
     viAlias = true;
@@ -18,7 +21,7 @@
       mapleader = " ";
     };
 
-    diagnostics = {
+    diagnostic.settings = {
       virtual_text = true;
     };
 
@@ -266,7 +269,7 @@
           pyright = {
             enable = true;
           };
-          ts-ls = {
+          ts_ls = {
             enable = true;
           };
           gopls = {
