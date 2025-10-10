@@ -55,6 +55,20 @@ let
       defaultShell = "fish";
     };
 
+    fmzakari = {
+      description = "Farid";
+      defaultUid = 3802;
+      defaultGroups = [
+        "networkmanager"
+        "input"
+      ];
+      sshAuthorizedKeys = [
+        "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDruWlzuyOXV0Ltjv0vVoCSkf4/ic4ET4of6NTqLWfvw/wpNFDr3SXRDAftOFcyoKp0ls0z6xy3CH99pUNmVnU19nwPdPfY93FJHaVDmS3VUzhco+e+bd1Azds5bltg06H+2vuHFcFMA28Y1o5h6ISlVY45bUzhKnW6+9whwECGBQo5KSvSW0D50eP557DD1KZlWUuJrcno65iQUz6dZ+R5cwfoTRhCvh4ltzJ6Fel6RuHPzG3u56lHM+upsF1REljHsNGI6XF3bcRuIoSssvaT0ZzVJQz/YnI1+wGZDNSKJI7WE+xmhfhcGLDzVaxNkLuJLMv/goTcDsDBb1BVw0YF YubiKey #8531869 PIV Slot 9a"
+      ];
+      defaultPosition = "owner";
+      defaultShell = "zsh";
+    };
+
   };
 
   roster-machines = {
@@ -99,6 +113,7 @@ let
             ];
           };
         };
+
         brittonr = {
           homeManager = {
             enable = true;
@@ -108,6 +123,23 @@ let
             ];
           };
         };
+
+        dima = {
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+
+        fmzakari = {
+          homeManager = {
+            enable = true;
+          };
+        };
+
       };
     };
 
