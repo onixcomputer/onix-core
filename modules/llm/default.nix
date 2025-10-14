@@ -36,6 +36,7 @@ in
           serviceType = mkOption {
             type = enum [
               "ollama"
+              "vllm"
               "llamacpp"
               "openai-compatible"
             ];
@@ -46,7 +47,7 @@ in
           # Basic server configuration
           port = mkOption {
             type = port;
-            default = 11434;
+            default = 11434; # ollama default, vllm uses 8000
             description = "Port for the LLM service";
           };
 
@@ -60,7 +61,14 @@ in
           models = mkOption {
             type = listOf str;
             default = [ ];
-            description = "List of models to download and serve";
+            description = "List of models to download and serve (ollama) or model path (vllm)";
+          };
+
+          # Primary model for vLLM (first model in the list or separate option)
+          model = mkOption {
+            type = nullOr str;
+            default = null;
+            description = "Primary model to serve (used by vllm, falls back to first item in models list)";
           };
 
           # Resource limits
@@ -87,6 +95,8 @@ in
                 port
                 host
                 enableGPU
+                models
+                model
                 ;
 
               # Remove our wrapper options for service-specific config
@@ -95,6 +105,7 @@ in
                 "port"
                 "host"
                 "models"
+                "model"
                 "enableGPU"
               ];
 
@@ -117,6 +128,10 @@ in
                   };
                 })
 
+                (lib.mkIf (serviceType == "vllm") {
+                  # Custom vLLM systemd service since nixpkgs doesn't have one
+                })
+
                 # Placeholder for other service types
                 (lib.mkIf (serviceType == "llamacpp") {
                   # llamacpp configuration would go here
@@ -126,9 +141,73 @@ in
               # Open firewall for the service
               networking.firewall.allowedTCPPorts = [ port ];
 
+              # Custom vLLM systemd service
+              systemd.services = lib.mkIf (serviceType == "vllm") {
+                vllm = {
+                  description = "vLLM Inference Server";
+                  wantedBy = [ "multi-user.target" ];
+                  after = [ "network.target" ];
+
+                  environment = {
+                    # Set environment variables for vLLM
+                    CUDA_VISIBLE_DEVICES = lib.mkIf enableGPU "0";
+                  };
+
+                  serviceConfig = {
+                    Type = "simple";
+                    User = "vllm";
+                    Group = "vllm";
+                    ExecStart =
+                      let
+                        # Use model parameter or first model from models list
+                        primaryModel =
+                          if model != null then
+                            model
+                          else if models != [ ] then
+                            builtins.head models
+                          else
+                            throw "vLLM requires either 'model' or 'models' to be specified";
+
+                        vllmArgs = [
+                          "${pkgs.vllm}/bin/vllm"
+                          "serve"
+                          primaryModel
+                          "--host"
+                          host
+                          "--port"
+                          (toString port)
+                        ]
+                        ++ lib.optionals enableGPU [
+                          "--tensor-parallel-size=1"
+                          "--gpu-memory-utilization=0.9"
+                        ]
+                        ++ (settings.extraArgs or [ ]);
+                      in
+                      "${lib.concatStringsSep " " vllmArgs}";
+                    Restart = "always";
+                    RestartSec = "10";
+                  };
+                };
+              };
+
+              # Create vllm user for the service
+              users = lib.mkIf (serviceType == "vllm") {
+                users.vllm = {
+                  isSystemUser = true;
+                  group = "vllm";
+                  description = "vLLM service user";
+                };
+                groups.vllm = { };
+              };
+
               # Install client tools
-              environment.systemPackages = lib.mkIf (serviceType == "ollama") [
-                pkgs.ollama
+              environment.systemPackages = lib.mkMerge [
+                (lib.mkIf (serviceType == "ollama") [
+                  pkgs.ollama
+                ])
+                (lib.mkIf (serviceType == "vllm") [
+                  pkgs.vllm
+                ])
               ];
             };
         };
@@ -150,6 +229,7 @@ in
           clientType = mkOption {
             type = enum [
               "ollama"
+              "vllm"
               "openai"
               "curl"
             ];
@@ -188,6 +268,10 @@ in
                   goose-cli-latest
                   pkgs.opencode
                 ])
+                ++ (lib.optionals (clientType == "vllm") [
+                  pkgs.vllm
+                  pkgs.python3Packages.openai # vLLM provides OpenAI-compatible API
+                ])
                 ++ (lib.optionals (clientType == "openai") [ pkgs.python3Packages.openai ])
                 ++ (lib.optionals (clientType == "curl") [
                   pkgs.curl
@@ -205,7 +289,7 @@ in
               # Configure default server if specified
               environment.variables = lib.mkIf (defaultServer != null) {
                 OLLAMA_HOST = lib.mkIf (clientType == "ollama") defaultServer;
-                OPENAI_BASE_URL = lib.mkIf (clientType == "openai") defaultServer;
+                OPENAI_BASE_URL = lib.mkIf (clientType == "openai" || clientType == "vllm") defaultServer;
               };
             };
         };
