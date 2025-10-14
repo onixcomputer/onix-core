@@ -109,6 +109,7 @@ _: {
         "openpgp"
         "password-manager"
         "typst"
+        "llm-client"
       ];
       deploy = {
         targetHost = "root@britton-fw.bison-tailor.ts.net";
@@ -124,6 +125,8 @@ _: {
         "prometheus"
         "monitoring"
         "homepage-server"
+        "llm"
+        "amd-gpu" # AMD Ryzen AI MAX+ 395 with Radeon 8060S
       ];
       deploy = {
         targetHost = "root@aspen1";
@@ -161,7 +164,7 @@ _: {
         "static-demo"
         "seaweedfs-volume"
         "docker"
-        "llm"
+        "llm-client"
         "password-manager"
       ];
       deploy = {
