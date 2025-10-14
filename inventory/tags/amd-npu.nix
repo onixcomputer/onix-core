@@ -3,40 +3,88 @@
   # AMD NPU (Neural Processing Unit) integration for Ryzen AI MAX+ series
   # Enables multi-tier AI inference: NPU for small/fast tasks, GPU for large models
 
-  # Install NPU runtime and development tools
-  environment.systemPackages = with pkgs; [
-    # ONNX Runtime with DirectML support for NPU acceleration
-    onnxruntime
+  # Environment configuration for NPU
+  environment = {
+    # Install NPU runtime and development tools
+    systemPackages = with pkgs; [
+      # ONNX Runtime with DirectML support for NPU acceleration
+      onnxruntime
 
-    # Python packages for NPU development
-    python3Packages.onnx
-    python3Packages.onnxruntime
-    python3Packages.torch
-    python3Packages.transformers
+      # Python packages for NPU development
+      python3Packages.onnx
+      python3Packages.onnxruntime
+      python3Packages.torch
+      python3Packages.transformers
 
-    # AMD AI toolchain (when available in nixpkgs)
-    # rocmPackages.amd-smi  # Already included in amd-gpu tag
+      # AMD AI toolchain (when available in nixpkgs)
+      # rocmPackages.amd-smi  # Already included in amd-gpu tag
 
-    # Monitoring tools for NPU
-    htop
-    iotop
+      # Monitoring tools for NPU
+      htop
+      iotop
 
-    # Development tools for AI workloads
-    python3Packages.numpy
-    python3Packages.scipy
-    python3Packages.matplotlib
-  ];
+      # Development tools for AI workloads
+      python3Packages.numpy
+      python3Packages.scipy
+      python3Packages.matplotlib
+    ];
 
-  # Environment variables for NPU optimization
-  environment.variables = {
-    # ONNX Runtime DirectML provider for NPU
-    ORT_PROVIDERS = "DmlExecutionProvider,CPUExecutionProvider";
+    # Environment variables for NPU optimization
+    variables = {
+      # ONNX Runtime DirectML provider for NPU
+      ORT_PROVIDERS = "DmlExecutionProvider,CPUExecutionProvider";
 
-    # Enable NPU device for inference
-    ONNX_NPU_DEVICE = "0";
+      # Enable NPU device for inference
+      ONNX_NPU_DEVICE = "0";
 
-    # Optimize for low-latency inference on NPU
-    ORT_ENABLE_NPU_OPTIMIZATION = "1";
+      # Optimize for low-latency inference on NPU
+      ORT_ENABLE_NPU_OPTIMIZATION = "1";
+    };
+
+    # Configuration file for NPU inference routing
+    etc."npu-inference/config.yaml".text = ''
+      # NPU Inference Configuration
+      # Routes small/fast inference requests to NPU, large requests to GPU
+
+      server:
+        host: "0.0.0.0"
+        port: 8080
+
+      routing:
+        # Route based on model size and request type
+        small_models:
+          max_parameters: "7B"
+          max_context_length: 4096
+          target: "npu"
+
+        large_models:
+          min_parameters: "7B"
+          target: "gpu"
+          fallback_url: "http://localhost:11434"
+
+      npu:
+        provider: "DirectML"
+        device_id: 0
+        optimization_level: "all"
+
+      models:
+        # Small models optimized for NPU
+        - name: "phi-2"
+          size: "2.7B"
+          format: "onnx"
+          target: "npu"
+
+        - name: "code-completion"
+          size: "1.3B"
+          format: "onnx"
+          target: "npu"
+
+        # Large models routed to GPU
+        - name: "qwen2.5:32b"
+          size: "32B"
+          target: "gpu"
+          url: "http://localhost:11434"
+    '';
   };
 
   # Systemd service for NPU inference serving
@@ -163,51 +211,6 @@
       RestartSec = "30s";
     };
   };
-
-  # Configuration file for NPU inference routing
-  environment.etc."npu-inference/config.yaml".text = ''
-    # NPU Inference Configuration
-    # Routes small/fast inference requests to NPU, large requests to GPU
-
-    server:
-      host: "0.0.0.0"
-      port: 8080
-
-    routing:
-      # Route based on model size and request type
-      small_models:
-        max_parameters: "7B"
-        max_context_length: 4096
-        target: "npu"
-
-      large_models:
-        min_parameters: "7B"
-        target: "gpu"
-        fallback_url: "http://localhost:11434"
-
-    npu:
-      provider: "DirectML"
-      device_id: 0
-      optimization_level: "all"
-
-    models:
-      # Small models optimized for NPU
-      - name: "phi-2"
-        size: "2.7B"
-        format: "onnx"
-        target: "npu"
-
-      - name: "code-completion"
-        size: "1.3B"
-        format: "onnx"
-        target: "npu"
-
-      # Large models routed to GPU
-      - name: "qwen2.5:32b"
-        size: "32B"
-        target: "gpu"
-        url: "http://localhost:11434"
-  '';
 
   # Activation script to set up NPU inference environment
   system.activationScripts.npu-setup = ''

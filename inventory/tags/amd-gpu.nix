@@ -100,9 +100,23 @@
   boot.initrd.kernelModules = [ "amdgpu" ];
   boot.kernelModules = [ "amdgpu" ];
 
-  # Permissions for GPU access
-  users.groups.render = { };
-  users.groups.video = { };
+  # Users and groups for GPU access and monitoring
+  users = {
+    groups = {
+      render = { };
+      video = { };
+      prometheus-amd-gpu = { };
+    };
+    users.prometheus-amd-gpu = {
+      isSystemUser = true;
+      group = "prometheus-amd-gpu";
+      description = "AMD GPU Metrics Exporter User";
+      extraGroups = [
+        "render"
+        "video"
+      ];
+    };
+  };
 
   # Systemd service for GPU monitoring metrics
   systemd.services.amd-gpu-exporter = {
@@ -172,17 +186,5 @@
         done
       '';
     };
-  };
-
-  # Create user for GPU metrics exporter
-  users.groups.prometheus-amd-gpu = { };
-  users.users.prometheus-amd-gpu = {
-    isSystemUser = true;
-    group = "prometheus-amd-gpu";
-    description = "AMD GPU Metrics Exporter User";
-    extraGroups = [
-      "render"
-      "video"
-    ];
   };
 }
