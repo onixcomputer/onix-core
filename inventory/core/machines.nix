@@ -1,6 +1,5 @@
 _: {
   machines = {
-
     # ========== Alex Machines ===========
     alex-fw = {
       name = "alex-fw";
@@ -22,6 +21,7 @@ _: {
       tags = [
         "tailnet-adeci"
         "dev"
+        "pragmatic"
       ];
       deploy = {
         targetHost = "root@leviathan.cymric-daggertooth.ts.net";
@@ -227,6 +227,5 @@ _: {
         buildHost = "";
       };
     };
-
   };
 }
