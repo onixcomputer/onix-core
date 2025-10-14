@@ -9,6 +9,8 @@ _: {
         settings = {
           enableSSH = false;
           exitNode = false;
+          enableHostAliases = true;
+          extraUpFlags = [ "--accept-dns=false" ];
         };
       };
     };
@@ -34,6 +36,7 @@ _: {
         settings = {
           enableSSH = false;
           exitNode = false;
+          enableHostAliases = true;
         };
       };
     };
