@@ -82,6 +82,8 @@ in
                   "database"
                 ]);
 
+                postgresql.enable = true;
+
                 nginx = {
                   enable = true;
                   recommendedTlsSettings = true;
@@ -110,6 +112,20 @@ in
                     };
                   };
                 };
+              };
+
+              # Ensure proper service startup order
+              systemd.services.keycloak = {
+                after = [ "postgresql.service" ];
+                requires = [ "postgresql.service" ];
+
+                # Add database readiness check
+                preStart = ''
+                  while ! ${config.services.postgresql.package}/bin/pg_isready -h localhost; do
+                    echo "Waiting for PostgreSQL to be ready..."
+                    sleep 2
+                  done
+                '';
               };
 
               clan.core.vars.generators."keycloak-${instanceName}" = {
