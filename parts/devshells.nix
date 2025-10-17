@@ -46,16 +46,60 @@
             (pkgs.writeShellScriptBin "cloud" ''
               set -e
 
-              cd cloud
+              # Detect deployment approach (legacy vs integrated)
+              INTEGRATED_MODE=false
 
-              if [ ! -f main.tf.json ] || [ infrastructure.nix -nt main.tf.json ]; then
-                echo "Generating Terraform configuration..."
-                ${pkgs.terranix}/bin/terranix infrastructure.nix > main.tf.json
+              # Check if we have clan service instances with terraform enabled
+              if command -v nix &>/dev/null; then
+                KEYCLOAK_INSTANCES=$(nix eval --json .#nixosConfigurations --apply 'configs: builtins.mapAttrs (name: config: if config.config.clan.inventory.services.keycloak or {} != {} then "service" else "none") configs' 2>/dev/null | jq -r 'to_entries[] | select(.value == "service") | .key' 2>/dev/null || echo "")
+                if [ -n "$KEYCLOAK_INSTANCES" ]; then
+                  INTEGRATED_MODE=true
+                fi
               fi
 
-              if [ ! -d .terraform ]; then
-                echo "Initializing Terraform..."
-                ${pkgs.opentofu}/bin/tofu init
+              # For legacy mode, change to cloud directory
+              if [ "$INTEGRATED_MODE" = false ]; then
+                cd cloud
+              fi
+
+              # Initialize terraform configuration based on mode
+              if [ "$INTEGRATED_MODE" = true ]; then
+                echo "🚀 Integrated mode detected - Using clan service terraform integration"
+                echo "Keycloak instances with terraform: $KEYCLOAK_INSTANCES"
+                echo ""
+
+                # In integrated mode, terraform configs are managed by the service
+                # We don't need to generate main.tf.json here
+              else
+                echo "🔧 Legacy mode - Using cloud/ directory terraform configuration"
+
+                if [ ! -f main.tf.json ] || [ infrastructure.nix -nt main.tf.json ]; then
+                  echo "Generating Terraform configuration..."
+                  ${pkgs.terranix}/bin/terranix infrastructure.nix > main.tf.json
+                fi
+
+                if [ ! -d .terraform ]; then
+                  echo "Initializing Terraform..."
+                  ${pkgs.opentofu}/bin/tofu init
+                fi
+
+                # Load Keycloak admin password from clan vars
+                echo "Loading Keycloak admin password from clan vars..."
+                KEYCLOAK_ADMIN_PASSWORD=$(cd .. && clan vars get aspen1 keycloak-adeci/admin_password)
+                if [ -z "$KEYCLOAK_ADMIN_PASSWORD" ]; then
+                  echo "Error: Failed to load Keycloak admin password from clan vars"
+                  echo "You may need to generate clan vars first: clan vars generate keycloak-adeci aspen1"
+                  exit 1
+                fi
+                echo "Successfully loaded Keycloak admin password from clan vars"
+
+                # Update terraform.tfvars with the actual password
+                if [ -f terraform-admin-cli.tfvars ]; then
+                  cp terraform-admin-cli.tfvars terraform.tfvars.tmp
+                  echo "keycloak_admin_password = \"$KEYCLOAK_ADMIN_PASSWORD\"" >> terraform.tfvars.tmp
+                  mv terraform.tfvars.tmp terraform.tfvars
+                  echo "Updated terraform.tfvars with generated admin password"
+                fi
               fi
 
               build_resource_targets() {
@@ -293,6 +337,130 @@
                 fi
               }
 
+              # Integrated mode functions
+              find_keycloak_terraform_dirs() {
+                # Find terraform directories for Keycloak instances on deployed machines
+                local dirs=""
+                for instance in $KEYCLOAK_INSTANCES; do
+                  # Try to find the machine this instance is deployed to
+                  local machine=$(nix eval --json .#nixosConfigurations.$instance.config.clan.inventory.services.keycloak --apply 'services: builtins.head (builtins.attrNames (builtins.head (builtins.attrValues services)).roles.server.machines)' 2>/dev/null || echo "")
+                  if [ -n "$machine" ]; then
+                    # Get the instance name from the service
+                    local instance_name=$(nix eval --raw .#nixosConfigurations.$machine.config.clan.inventory.services.keycloak --apply 'services: builtins.head (builtins.attrNames services)' 2>/dev/null || echo "")
+                    if [ -n "$instance_name" ]; then
+                      local terraform_dir="/var/lib/keycloak-$instance_name-terraform"
+                      # Note: In a real deployment, these would be on remote machines
+                      # For now, we'll note the expected paths
+                      dirs="$dirs $machine:$terraform_dir"
+                    fi
+                  fi
+                done
+                echo "$dirs"
+              }
+
+              run_integrated_keycloak_command() {
+                local command="$1"
+                local instance="$2"
+                local extra_args="''${3:-}"
+
+                if [ -z "$instance" ]; then
+                  echo "Error: Instance name required for integrated mode"
+                  echo "Available instances: $KEYCLOAK_INSTANCES"
+                  return 1
+                fi
+
+                # Find the machine for this instance
+                local machine=$(echo "$KEYCLOAK_INSTANCES" | tr ' ' '\n' | grep "^$instance$" | head -1)
+                if [ -z "$machine" ]; then
+                  echo "Error: Instance '$instance' not found in Keycloak instances"
+                  echo "Available instances: $KEYCLOAK_INSTANCES"
+                  return 1
+                fi
+
+                local terraform_dir="/var/lib/keycloak-$instance-terraform"
+
+                case "$command" in
+                  status)
+                    echo "🔍 Checking Keycloak instance: $instance on machine: $machine"
+                    echo "📁 Terraform directory: $terraform_dir"
+                    echo ""
+                    echo "To check actual status, SSH to the machine and run:"
+                    echo "  ssh $machine"
+                    echo "  cd $terraform_dir"
+                    echo "  ./manage.sh status"
+                    echo ""
+                    echo "Service status (via clan):"
+                    if command -v clan &>/dev/null; then
+                      clan machines show $machine | grep -A5 -B5 keycloak || echo "No keycloak service info found"
+                    else
+                      echo "clan command not available"
+                    fi
+                    ;;
+                  deploy)
+                    echo "🚀 Deploying Keycloak service and terraform configuration for: $instance"
+                    echo ""
+                    echo "Step 1: Deploy the clan service (includes terraform config generation)"
+                    if command -v clan &>/dev/null; then
+                      echo "Running: clan machines deploy $machine"
+                      clan machines deploy $machine
+                      echo ""
+                      echo "✅ Service deployed successfully"
+                    else
+                      echo "clan command not available"
+                      return 1
+                    fi
+
+                    echo ""
+                    echo "Step 2: Apply terraform configuration"
+                    echo "To complete the deployment, SSH to the machine and run:"
+                    echo "  ssh $machine"
+                    echo "  cd $terraform_dir"
+                    echo "  ./manage.sh init && ./manage.sh apply"
+                    ;;
+                  terraform)
+                    echo "🔧 Terraform operations for instance: $instance"
+                    echo ""
+                    echo "To run terraform commands, SSH to the machine and use the management script:"
+                    echo "  ssh $machine"
+                    echo "  cd $terraform_dir"
+                    echo "  ./manage.sh $extra_args"
+                    echo ""
+                    echo "Available terraform commands:"
+                    echo "  ./manage.sh init     - Initialize terraform"
+                    echo "  ./manage.sh plan     - Show planned changes"
+                    echo "  ./manage.sh apply    - Apply changes"
+                    echo "  ./manage.sh destroy  - Destroy resources"
+                    echo "  ./manage.sh status   - Show current status"
+                    echo "  ./manage.sh refresh  - Refresh variables from clan vars"
+                    ;;
+                  *)
+                    echo "Error: Unknown command '$command'"
+                    return 1
+                    ;;
+                esac
+              }
+
+              show_integrated_help() {
+                echo "🚀 Integrated Keycloak Management (Clan Service Mode)"
+                echo ""
+                echo "Available instances: $KEYCLOAK_INSTANCES"
+                echo ""
+                echo "Usage: cloud keycloak-service <command> <instance> [args...]"
+                echo ""
+                echo "Commands:"
+                echo "  status <instance>      - Show service and terraform status"
+                echo "  deploy <instance>      - Deploy service and show terraform instructions"
+                echo "  terraform <instance>   - Show terraform management instructions"
+                echo ""
+                echo "Examples:"
+                echo "  cloud keycloak-service status keycloak-production"
+                echo "  cloud keycloak-service deploy keycloak-production"
+                echo "  cloud keycloak-service terraform keycloak-production"
+                echo ""
+                echo "For legacy terraform commands, use: cloud keycloak <command>"
+                echo ""
+              }
+
               case "$1" in
                 create)
                   if [ -n "$2" ]; then
@@ -411,7 +579,30 @@
                   fi
                   ;;
 
+                keycloak-service)
+                  if [ "$INTEGRATED_MODE" = true ]; then
+                    case "$2" in
+                      status|deploy|terraform)
+                        run_integrated_keycloak_command "$2" "$3" "$4"
+                        ;;
+                      *)
+                        show_integrated_help
+                        ;;
+                    esac
+                  else
+                    echo "❌ Integrated mode not detected"
+                    echo "This command requires clan service instances with terraform enabled"
+                    echo "Use 'cloud keycloak' for legacy terraform management"
+                  fi
+                  ;;
+
                 keycloak)
+                  if [ "$INTEGRATED_MODE" = true ]; then
+                    echo "🚀 Integrated mode detected - Use 'cloud keycloak-service' for service management"
+                    echo "Or use legacy commands below for manual terraform operations"
+                    echo ""
+                  fi
+
                   case "$2" in
                     create)
                       if [ -n "$3" ] && [ -n "$4" ]; then
@@ -546,21 +737,48 @@
                   ;;
 
                 *)
-                  echo "Cloud Infrastructure Management"
+                  echo "🌩️  Cloud Infrastructure Management"
                   echo ""
-                  echo "Usage: cloud <command> [resource]"
-                  echo ""
-                  echo "Commands:"
+
+                  if [ "$INTEGRATED_MODE" = true ]; then
+                    echo "🚀 Mode: Integrated (Clan Service + Terraform)"
+                    echo "Available Keycloak instances: $KEYCLOAK_INSTANCES"
+                    echo ""
+                    echo "🔧 Integrated Commands:"
+                    echo "  keycloak-service <cmd> <instance> - Manage clan service instances"
+                    echo "    status <instance>              - Show service and terraform status"
+                    echo "    deploy <instance>              - Deploy service and terraform config"
+                    echo "    terraform <instance>           - Terraform management instructions"
+                    echo ""
+                    echo "Examples:"
+                    echo "  cloud keycloak-service status keycloak-production"
+                    echo "  cloud keycloak-service deploy keycloak-production"
+                    echo ""
+                    echo "🔧 Legacy Commands (still available):"
+                  else
+                    echo "🔧 Mode: Legacy (Cloud Directory + Terraform)"
+                    echo ""
+                    echo "Commands:"
+                  fi
+
                   echo "  create [resource]     - Create all infrastructure or specific resource"
                   echo "  status [resource]     - Show infrastructure status (all or specific)"
                   echo "  destroy [resource]    - Destroy all infrastructure or specific resource"
                   echo "  keycloak <subcommand> - Manage Keycloak resources (see 'cloud keycloak' for details)"
                   echo ""
-                  if [ -f main.tf.json ]; then
+
+                  if [ "$INTEGRATED_MODE" = false ] && [ -f main.tf.json ]; then
                     list_resources
+                    echo ""
                   fi
-                  echo ""
-                  echo "For Keycloak-specific commands, use: cloud keycloak"
+
+                  if [ "$INTEGRATED_MODE" = true ]; then
+                    echo "💡 Tip: Use 'cloud keycloak-service' for integrated service management"
+                    echo "💡 Tip: Use 'cloud keycloak' for manual terraform operations"
+                  else
+                    echo "💡 Tip: For integrated service management, configure clan service instances"
+                    echo "💡 Tip: See modules/keycloak/examples/terraform-integration.nix for migration guide"
+                  fi
                   echo ""
                   ;;
               esac
