@@ -1,0 +1,219 @@
+{
+  "terraform": {
+    "required_providers": {
+      "keycloak": {
+        "source": "registry.opentofu.org/mrparkers/keycloak",
+        "version": "~> 4.0"
+      }
+    },
+    "required_version": ">= 1.0.0"
+  },
+  "variable": {
+    "keycloak_url": {
+      "description": "Keycloak server URL",
+      "type": "string",
+      "default": null
+    },
+    "keycloak_realm": {
+      "description": "Keycloak realm for provider authentication",
+      "type": "string",
+      "default": "master"
+    },
+    "keycloak_admin_username": {
+      "description": "Keycloak admin username",
+      "type": "string",
+      "default": "admin"
+    },
+    "keycloak_admin_password": {
+      "description": "Keycloak admin password",
+      "type": "string",
+      "sensitive": true
+    },
+    "keycloak_client_id": {
+      "description": "Keycloak client ID for admin-cli",
+      "type": "string",
+      "default": "admin-cli"
+    }
+  },
+  "provider": {
+    "keycloak": {
+      "client_id": "${var.keycloak_client_id}",
+      "username": "${var.keycloak_admin_username}",
+      "password": "${var.keycloak_admin_password}",
+      "url": "${var.keycloak_url}",
+      "realm": "${var.keycloak_realm}",
+      "initial_login": false,
+      "client_timeout": 60,
+      "tls_insecure_skip_verify": false
+    }
+  },
+  "resource": {
+    "keycloak_realm": {
+      "production": {
+        "realm": "production",
+        "enabled": true,
+        "display_name": "Production Environment",
+        "login_with_email_allowed": true,
+        "registration_allowed": false,
+        "verify_email": true,
+        "ssl_required": "external",
+        "password_policy": "upperCase(1) and lowerCase(1) and length(10) and notUsername and specialChars(1)"
+      },
+      "development": {
+        "realm": "development",
+        "enabled": true,
+        "display_name": "Development Environment",
+        "login_with_email_allowed": true,
+        "registration_allowed": true,
+        "verify_email": false,
+        "ssl_required": "external",
+        "password_policy": "length(8) and notUsername"
+      },
+      "testing": {
+        "realm": "testing",
+        "enabled": true,
+        "display_name": "Testing Environment",
+        "login_with_email_allowed": true,
+        "registration_allowed": true,
+        "verify_email": false,
+        "ssl_required": "none",
+        "password_policy": "length(6)"
+      }
+    },
+    "keycloak_openid_client": {
+      "web-app-prod": {
+        "realm_id": "${keycloak_realm.production.id}",
+        "client_id": "web-app-prod",
+        "name": "Production Web Application",
+        "access_type": "CONFIDENTIAL",
+        "standard_flow_enabled": true,
+        "direct_access_grants_enabled": false,
+        "service_accounts_enabled": false,
+        "valid_redirect_uris": ["https://app.robitzs.ch/auth/callback"],
+        "web_origins": ["https://app.robitzs.ch"]
+      },
+      "api-service": {
+        "realm_id": "${keycloak_realm.production.id}",
+        "client_id": "api-service",
+        "name": "API Service",
+        "access_type": "CONFIDENTIAL",
+        "standard_flow_enabled": false,
+        "direct_access_grants_enabled": false,
+        "service_accounts_enabled": true,
+        "valid_redirect_uris": [],
+        "web_origins": []
+      },
+      "dev-app": {
+        "realm_id": "${keycloak_realm.development.id}",
+        "client_id": "dev-app",
+        "name": "Development Application",
+        "access_type": "PUBLIC",
+        "standard_flow_enabled": true,
+        "direct_access_grants_enabled": true,
+        "service_accounts_enabled": false,
+        "valid_redirect_uris": ["http://localhost:3000/auth/callback"],
+        "web_origins": ["http://localhost:3000"]
+      }
+    },
+    "keycloak_user": {
+      "admin-user": {
+        "realm_id": "${keycloak_realm.production.id}",
+        "username": "admin-user",
+        "email": "admin@robitzs.ch",
+        "first_name": "Admin",
+        "last_name": "User",
+        "enabled": true,
+        "email_verified": true,
+        "initial_password": {
+          "value": "TempAdminPass123!",
+          "temporary": true
+        }
+      },
+      "test-user": {
+        "realm_id": "${keycloak_realm.development.id}",
+        "username": "test-user",
+        "email": "test@robitzs.ch",
+        "first_name": "Test",
+        "last_name": "User",
+        "enabled": true,
+        "email_verified": false,
+        "initial_password": {
+          "value": "TestPass123",
+          "temporary": false
+        }
+      }
+    },
+    "keycloak_group": {
+      "administrators": {
+        "realm_id": "${keycloak_realm.production.id}",
+        "name": "administrators",
+        "parent_id": null,
+        "attributes": {
+          "description": "System administrators",
+          "department": "IT"
+        }
+      },
+      "developers": {
+        "realm_id": "${keycloak_realm.development.id}",
+        "name": "developers",
+        "parent_id": null,
+        "attributes": {
+          "description": "Development team",
+          "department": "Engineering"
+        }
+      },
+      "senior-developers": {
+        "realm_id": "${keycloak_realm.development.id}",
+        "name": "senior-developers",
+        "parent_id": "${keycloak_group.developers.id}",
+        "attributes": {
+          "description": "Senior development team",
+          "level": "senior"
+        }
+      }
+    },
+    "keycloak_role": {
+      "admin": {
+        "realm_id": "${keycloak_realm.production.id}",
+        "name": "admin",
+        "description": "Administrator role with full access"
+      },
+      "user": {
+        "realm_id": "${keycloak_realm.production.id}",
+        "name": "user",
+        "description": "Standard user role"
+      },
+      "api-access": {
+        "realm_id": "${keycloak_realm.production.id}",
+        "client_id": "${keycloak_openid_client.api-service.id}",
+        "name": "api-access",
+        "description": "API access role for service accounts"
+      },
+      "developer": {
+        "realm_id": "${keycloak_realm.development.id}",
+        "name": "developer",
+        "description": "Developer role for development environment"
+      }
+    }
+  },
+  "output": {
+    "keycloak_instance_info": {
+      "value": {
+        "url": "${var.keycloak_url}",
+        "admin_console": "${var.keycloak_url}/admin",
+        "instance_name": "adeci",
+        "realms": {
+          "production": "${keycloak_realm.production.id}",
+          "development": "${keycloak_realm.development.id}",
+          "testing": "${keycloak_realm.testing.id}"
+        },
+        "clients": {
+          "web-app-prod": "${keycloak_openid_client.web-app-prod.id}",
+          "api-service": "${keycloak_openid_client.api-service.id}",
+          "dev-app": "${keycloak_openid_client.dev-app.id}"
+        }
+      },
+      "description": "Keycloak instance information for adeci"
+    }
+  }
+}

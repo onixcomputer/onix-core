@@ -1,7 +1,7 @@
 { lib, ... }:
 let
-  inherit (lib) mkOption mkEnableOption;
-  inherit (lib.types) str attrsOf anything bool listOf submodule;
+  inherit (lib) mkOption;
+  inherit (lib.types) str attrsOf anything;
 in
 {
   _class = "clan.service";
@@ -150,58 +150,129 @@ in
                   LoadCredential = [ "admin_password:${adminPasswordFile}" ];
                 };
 
-                script = let
-                  upgradeScript = pkgs.writeShellScript "upgrade-admin-password" ''
-                    set -e
-                    echo "🔄 Phase 2: Upgrading admin password to clan vars"
+                script =
+                  let
+                    upgradeScript = pkgs.writeShellScript "upgrade-admin-password" ''
+                      set -e
+                      echo "🔄 Phase 2: Upgrading admin password to clan vars"
 
-                    # Wait for Keycloak to be fully ready
-                    for i in {1..30}; do
-                      if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ | grep -q "200"; then
-                        echo "✅ Keycloak is ready"
-                        break
+                      # Wait for Keycloak to be fully ready
+                      for i in {1..30}; do
+                        if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ | grep -q "200"; then
+                          echo "✅ Keycloak is ready"
+                          break
+                        fi
+                        sleep 5
+                      done
+
+                      # Get clan vars password
+                      CLAN_ADMIN_PASS=$(cat $CREDENTIALS_DIRECTORY/admin_password)
+
+                      # Test if password is already upgraded
+                      if curl -s -X POST "http://localhost:8080/realms/master/protocol/openid-connect/token" \
+                          -d "client_id=admin-cli&username=admin&password=$CLAN_ADMIN_PASS&grant_type=password" \
+                          | grep -q "access_token"; then
+                        echo "✅ Password already upgraded to clan vars"
+                        exit 0
                       fi
-                      sleep 5
-                    done
 
-                    # Get clan vars password
-                    CLAN_ADMIN_PASS=$(cat $CREDENTIALS_DIRECTORY/admin_password)
+                      # Get bootstrap token and upgrade password
+                      TOKEN=$(curl -s -X POST "http://localhost:8080/realms/master/protocol/openid-connect/token" \
+                        -d "client_id=admin-cli&username=admin&password=TempAdmin123&grant_type=password" | \
+                        ${pkgs.jq}/bin/jq -r .access_token)
 
-                    # Test if password is already upgraded
-                    if curl -s -X POST "http://localhost:8080/realms/master/protocol/openid-connect/token" \
-                        -d "client_id=admin-cli&username=admin&password=$CLAN_ADMIN_PASS&grant_type=password" \
-                        | grep -q "access_token"; then
-                      echo "✅ Password already upgraded to clan vars"
-                      exit 0
-                    fi
+                      if [ "$TOKEN" = "null" ]; then
+                        echo "❌ Failed to get bootstrap token"
+                        exit 1
+                      fi
 
-                    # Get bootstrap token and upgrade password
-                    TOKEN=$(curl -s -X POST "http://localhost:8080/realms/master/protocol/openid-connect/token" \
-                      -d "client_id=admin-cli&username=admin&password=TempAdmin123&grant_type=password" | \
-                      ${pkgs.jq}/bin/jq -r .access_token)
+                      ADMIN_ID=$(curl -s "http://localhost:8080/admin/realms/master/users?username=admin" \
+                        -H "Authorization: Bearer $TOKEN" | ${pkgs.jq}/bin/jq -r '.[0].id')
 
-                    if [ "$TOKEN" = "null" ]; then
-                      echo "❌ Failed to get bootstrap token"
-                      exit 1
-                    fi
+                      curl -s -X PUT "http://localhost:8080/admin/realms/master/users/$ADMIN_ID/reset-password" \
+                        -H "Authorization: Bearer $TOKEN" \
+                        -H "Content-Type: application/json" \
+                        -d "{\"type\":\"password\",\"value\":\"$CLAN_ADMIN_PASS\",\"temporary\":false}"
 
-                    ADMIN_ID=$(curl -s "http://localhost:8080/admin/realms/master/users?username=admin" \
-                      -H "Authorization: Bearer $TOKEN" | ${pkgs.jq}/bin/jq -r '.[0].id')
-
-                    curl -s -X PUT "http://localhost:8080/admin/realms/master/users/$ADMIN_ID/reset-password" \
-                      -H "Authorization: Bearer $TOKEN" \
-                      -H "Content-Type: application/json" \
-                      -d "{\"type\":\"password\",\"value\":\"$CLAN_ADMIN_PASS\",\"temporary\":false}"
-
-                    echo "✅ Phase 2 Complete: Admin password upgraded to clan vars"
+                      echo "✅ Phase 2 Complete: Admin password upgraded to clan vars"
+                    '';
+                  in
+                  ''
+                    ${upgradeScript}
                   '';
-                in ''
-                  ${upgradeScript}
-                '';
+              };
+
+              # Phase 2: Automatic admin password upgrade to clan vars
+              systemd.services."keycloak-${instanceName}-password-upgrade" = {
+                description = "Upgrade Keycloak admin password to clan vars";
+                after = [ "keycloak.service" ];
+                requires = [ "keycloak.service" ];
+                wantedBy = [ "multi-user.target" ];
+
+                serviceConfig = {
+                  Type = "oneshot";
+                  RemainAfterExit = true;
+                  User = "keycloak";
+                  Group = "keycloak";
+                  LoadCredential = [ "admin_password:${adminPasswordFile}" ];
+                };
+
+                script =
+                  let
+                    upgradeScript = pkgs.writeShellScript "upgrade-admin-password" ''
+                      set -e
+                      echo "🔄 Phase 2: Upgrading admin password to clan vars"
+
+                      # Wait for Keycloak to be ready
+                      for i in {1..30}; do
+                        if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ | grep -q "200"; then
+                          echo "✅ Keycloak is ready"
+                          break
+                        fi
+                        sleep 5
+                      done
+
+                      # Get clan vars password
+                      CLAN_ADMIN_PASS=$(cat $CREDENTIALS_DIRECTORY/admin_password)
+
+                      # Test if already upgraded
+                      if curl -s -X POST "http://localhost:8080/realms/master/protocol/openid-connect/token" \
+                          -d "client_id=admin-cli&username=admin&password=$CLAN_ADMIN_PASS&grant_type=password" \
+                          | grep -q "access_token"; then
+                        echo "✅ Password already upgraded - skipping"
+                        exit 0
+                      fi
+
+                      # Get bootstrap token
+                      TOKEN=$(curl -s -X POST "http://localhost:8080/realms/master/protocol/openid-connect/token" \
+                        -d "client_id=admin-cli&username=admin&password=TempAdmin123&grant_type=password" | \
+                        ${pkgs.jq}/bin/jq -r .access_token)
+
+                      if [ "$TOKEN" = "null" ]; then
+                        echo "❌ Bootstrap token failed"
+                        exit 1
+                      fi
+
+                      # Get admin user ID and upgrade password
+                      ADMIN_ID=$(curl -s "http://localhost:8080/admin/realms/master/users?username=admin" \
+                        -H "Authorization: Bearer $TOKEN" | ${pkgs.jq}/bin/jq -r '.[0].id')
+
+                      curl -s -X PUT "http://localhost:8080/admin/realms/master/users/$ADMIN_ID/reset-password" \
+                        -H "Authorization: Bearer $TOKEN" \
+                        -H "Content-Type: application/json" \
+                        -d "{\"type\":\"password\",\"value\":\"$CLAN_ADMIN_PASS\",\"temporary\":false}"
+
+                      echo "✅ Phase 2 Complete: Admin password upgraded to clan vars"
+                    '';
+                  in
+                  ''
+                    ${upgradeScript}
+                  '';
               };
 
               # Terraform integration with secure password (if enabled)
-            } // lib.optionalAttrs (settings.terraform.enable or false) {
+            }
+            // lib.optionalAttrs (settings.terraform.enable or false) {
               # Create terraform configuration directory
               systemd.tmpfiles.rules = [
                 "d /var/lib/keycloak-${instanceName}-terraform 0755 keycloak keycloak -"
@@ -210,7 +281,7 @@ in
               # Generate terraform configuration with environment variable model
               systemd.services."keycloak-${instanceName}-terraform-init" = {
                 description = "Initialize Terraform configuration for Keycloak ${instanceName}";
-                after = [ "keycloak-${instanceName}-password-upgrade.service" ];  # After password upgrade
+                after = [ "keycloak-${instanceName}-password-upgrade.service" ]; # After password upgrade
                 requires = [ "keycloak-${instanceName}-password-upgrade.service" ];
                 wantedBy = [ "multi-user.target" ];
 
@@ -224,88 +295,88 @@ in
                 };
 
                 script = ''
-                  echo "🔧 Generating terraform configuration with environment variable model"
+                                    echo "🔧 Generating terraform configuration with environment variable model"
 
-                  # Generate basic terraform configuration (no password in files)
-                  cat > main.tf.json <<'EOF'
-{
-  "terraform": {
-    "required_providers": {
-      "keycloak": {
-        "source": "registry.opentofu.org/mrparkers/keycloak",
-        "version": "~> 4.0"
-      }
-    }
-  },
-  "variable": {
-    "keycloak_admin_password": {
-      "type": "string",
-      "sensitive": true,
-      "description": "Keycloak admin password (from TF_VAR_)"
-    },
-    "keycloak_url": {
-      "type": "string",
-      "description": "Keycloak URL (from TF_VAR_)"
-    }
-  },
-  "provider": {
-    "keycloak": {
-      "client_id": "admin-cli",
-      "username": "admin",
-      "password": "''${var.keycloak_admin_password}",
-      "url": "''${var.keycloak_url}",
-      "realm": "master"
-    }
-  }
-}
-EOF
+                                    # Generate basic terraform configuration (no password in files)
+                                    cat > main.tf.json <<'EOF'
+                  {
+                    "terraform": {
+                      "required_providers": {
+                        "keycloak": {
+                          "source": "registry.opentofu.org/mrparkers/keycloak",
+                          "version": "~> 4.0"
+                        }
+                      }
+                    },
+                    "variable": {
+                      "keycloak_admin_password": {
+                        "type": "string",
+                        "sensitive": true,
+                        "description": "Keycloak admin password (from TF_VAR_)"
+                      },
+                      "keycloak_url": {
+                        "type": "string",
+                        "description": "Keycloak URL (from TF_VAR_)"
+                      }
+                    },
+                    "provider": {
+                      "keycloak": {
+                        "client_id": "admin-cli",
+                        "username": "admin",
+                        "password": "''${var.keycloak_admin_password}",
+                        "url": "''${var.keycloak_url}",
+                        "realm": "master"
+                      }
+                    }
+                  }
+                  EOF
 
-                  # NO terraform.tfvars file created - using environment variables only
+                                    # NO terraform.tfvars file created - using environment variables only
 
-                  # Create management script with environment variable loading
-                  cat > manage.sh <<'SCRIPT'
-#!/usr/bin/env bash
-echo "🔑 Keycloak Terraform Management (Environment Variables)"
-echo "🔐 Password source: Clan vars (no files)"
-echo ""
+                                    # Create management script with environment variable loading
+                                    cat > manage.sh <<'SCRIPT'
+                  #!/usr/bin/env bash
+                  echo "🔑 Keycloak Terraform Management (Environment Variables)"
+                  echo "🔐 Password source: Clan vars (no files)"
+                  echo ""
 
-# Load clan vars into terraform environment variables
-export TF_VAR_keycloak_admin_password="$(cat ${adminPasswordFile})"
-export TF_VAR_keycloak_url="https://${domain}"
+                  # Load clan vars into terraform environment variables
+                  export TF_VAR_keycloak_admin_password="$(cat ${adminPasswordFile})"
+                  export TF_VAR_keycloak_url="https://${domain}"
 
-case "''${1:-help}" in
-  init)
-    echo "🚀 Initializing terraform..."
-    ${pkgs.opentofu}/bin/tofu init
-    ;;
-  plan)
-    echo "📋 Planning with clan vars password..."
-    ${pkgs.opentofu}/bin/tofu plan
-    ;;
-  apply)
-    echo "✅ Applying with clan vars password..."
-    ${pkgs.opentofu}/bin/tofu apply
-    ;;
-  destroy)
-    echo "💥 Destroying resources..."
-    ${pkgs.opentofu}/bin/tofu destroy
-    ;;
-  *)
-    echo "Usage: $0 {init|plan|apply|destroy}"
-    echo ""
-    echo "Environment variables loaded from clan vars:"
-    echo "  TF_VAR_keycloak_admin_password=[PROTECTED]"
-    echo "  TF_VAR_keycloak_url=https://${domain}"
-    ;;
-esac
-SCRIPT
+                  case "''${1:-help}" in
+                    init)
+                      echo "🚀 Initializing terraform..."
+                      ${pkgs.opentofu}/bin/tofu init
+                      ;;
+                    plan)
+                      echo "📋 Planning with clan vars password..."
+                      ${pkgs.opentofu}/bin/tofu plan
+                      ;;
+                    apply)
+                      echo "✅ Applying with clan vars password..."
+                      ${pkgs.opentofu}/bin/tofu apply
+                      ;;
+                    destroy)
+                      echo "💥 Destroying resources..."
+                      ${pkgs.opentofu}/bin/tofu destroy
+                      ;;
+                    *)
+                      echo "Usage: $0 {init|plan|apply|destroy}"
+                      echo ""
+                      echo "Environment variables loaded from clan vars:"
+                      echo "  TF_VAR_keycloak_admin_password=[PROTECTED]"
+                      echo "  TF_VAR_keycloak_url=https://${domain}"
+                      ;;
+                  esac
+                  SCRIPT
 
-                  chmod +x manage.sh
+                                    chmod +x manage.sh
 
-                  echo "✅ Terraform configured with environment variable model"
-                  echo "📁 Working directory: /var/lib/keycloak-${instanceName}-terraform"
-                  echo "🔐 Password loaded from: ${adminPasswordFile}"
-                  echo "🚫 No password files created (environment variables only)"
+                                    echo "✅ Terraform configured with environment variable model"
+                                    echo "📁 Working directory: /var/lib/keycloak-${instanceName}-terraform"
+                                    echo "🔐 Password loaded from: ${adminPasswordFile}"
+                                    echo "🚫 No password files created (environment variables only)"
                 '';
               };
             };

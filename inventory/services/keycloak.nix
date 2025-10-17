@@ -91,7 +91,7 @@ _: {
               # Phase 2: Upgrade bootstrap admin password to secure clan vars
               "bootstrap-admin-upgrade" = {
                 realm = "master";
-                username = "admin";  # The bootstrap admin user
+                username = "admin"; # The bootstrap admin user
                 email = "admin@robitzs.ch";
                 firstName = "Bootstrap";
                 lastName = "Administrator";
@@ -99,7 +99,7 @@ _: {
                 emailVerified = true;
                 # This will upgrade to the secure clan vars password
                 initialPassword = "CLAN_ADMIN_PASSWORD_UPGRADE";
-                temporary = false;  # Keep this as permanent password
+                temporary = false; # Keep this as permanent password
               };
 
               "admin-user" = {
