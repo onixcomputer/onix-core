@@ -19,6 +19,21 @@ _: {
 
             # Define realms
             realms = {
+              # Master realm configuration (administrative - secure it)
+              "master" = {
+                enabled = true;
+                displayName = "Administrative Realm";
+                loginWithEmailAllowed = false;
+                registrationAllowed = false;
+                verifyEmail = true;
+                sslRequired = "all";
+                passwordPolicy = "upperCase(1) and lowerCase(1) and length(12) and specialChars(1) and notUsername";
+                ssoSessionIdleTimeout = "15m";
+                ssoSessionMaxLifespan = "1h";
+                rememberMe = false;
+                resetPasswordAllowed = false;
+              };
+
               "production" = {
                 displayName = "Production Environment";
                 loginWithEmailAllowed = true;
@@ -73,6 +88,20 @@ _: {
 
             # Define users
             users = {
+              # Phase 2: Upgrade bootstrap admin password to secure clan vars
+              "bootstrap-admin-upgrade" = {
+                realm = "master";
+                username = "admin";  # The bootstrap admin user
+                email = "admin@robitzs.ch";
+                firstName = "Bootstrap";
+                lastName = "Administrator";
+                enabled = true;
+                emailVerified = true;
+                # This will upgrade to the secure clan vars password
+                initialPassword = "CLAN_ADMIN_PASSWORD_UPGRADE";
+                temporary = false;  # Keep this as permanent password
+              };
+
               "admin-user" = {
                 realm = "production";
                 email = "admin@robitzs.ch";

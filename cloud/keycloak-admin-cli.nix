@@ -322,6 +322,24 @@
       description = "Developer access role";
     };
 
+    # Bootstrap admin password upgrade (Phase 2: Security)
+    keycloak_user.bootstrap_admin_upgrade = {
+      realm_id = "master";  # Master realm admin user
+      username = "admin";   # The bootstrap user created by NixOS
+      enabled = true;
+      email_verified = true;
+
+      email = "admin@robitzs.ch";
+      first_name = "Bootstrap";
+      last_name = "Administrator";
+
+      # Upgrade password to secure clan vars value
+      initial_password = {
+        value = "\${var.clan_admin_password}";  # Secure generated password
+        temporary = false;  # Keep this password permanently
+      };
+    };
+
     # Users
     keycloak_user.admin = {
       realm_id = "\${keycloak_realm.production.id}";
