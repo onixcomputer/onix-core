@@ -10,7 +10,8 @@ _: {
           enableSSH = false;
           exitNode = false;
           enableHostAliases = true;
-          extraUpFlags = [ "--accept-dns=false" ];
+          # disables magicdns, probably not needed
+          # extraUpFlags = [ "--accept-dns=false" ];
         };
       };
     };
