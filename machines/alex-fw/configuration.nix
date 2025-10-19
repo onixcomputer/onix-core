@@ -13,6 +13,42 @@ in
     # ./pmods/printers.nix
   ];
 
+  # Leviathan remote builder configuration
+  nix = {
+    distributedBuilds = true;
+    settings.builders-use-substitutes = true;
+    buildMachines = [
+      {
+        protocol = "ssh-ng";
+        hostName = "leviathan.cymric-daggertooth.ts.net";
+        systems = [ "x86_64-linux" ];
+        maxJobs = 24;
+        speedFactor = 20;
+        supportedFeatures = [
+          "nixos-test"
+          "benchmark"
+          "big-parallel"
+          "kvm"
+        ];
+        mandatoryFeatures = [ ];
+        sshUser = "alex";
+      }
+    ];
+  };
+
+  programs.ssh = {
+    knownHosts = {
+      leviathan = {
+        hostNames = [ "leviathan.cymric-daggertooth.ts.net" ];
+        publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOEtV2xoOv+N4c5sg5oBqM/Xy+aZHf+5GHOhzXKYduXG";
+      };
+    };
+    extraConfig = ''
+      Host leviathan.cymric-daggertooth.ts.net
+        IdentityAgent /run/user/3801/gcr/ssh
+    '';
+  };
+
   hardware.graphics = {
     enable = true;
     enable32Bit = true;

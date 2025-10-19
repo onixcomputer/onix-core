@@ -1,4 +1,5 @@
-{pkgs, ...}: {
+{ pkgs, ... }:
+{
   services = {
     # A fuse filesystem that dynamically populates contents of /bin
     # and /usr/bin/ so that it contains all executables from the PATH
