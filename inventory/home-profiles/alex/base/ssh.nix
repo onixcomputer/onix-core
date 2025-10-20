@@ -14,25 +14,10 @@ _: {
         addKeysToAgent = "yes";
       };
 
-      "git.clan.lol" = {
-        hostname = "git.clan.lol";
-        user = "gitea";
-        identityFile = "~/.ssh/id_ed25519";
-        identitiesOnly = true;
-      };
-
-      "github.com" = {
-        hostname = "github.com";
-        user = "git";
-        identityFile = "~/.ssh/id_ed25519";
-        identitiesOnly = true;
-      };
-
-      "gitlab.com" = {
-        hostname = "gitlab.com";
-        user = "git";
-        identityFile = "~/.ssh/id_ed25519";
-        identitiesOnly = true;
+      "leviathan" = {
+        hostname = "leviathan.cymric-daggertooth.ts.net";
+        user = "alex";
+        forwardAgent = true;
       };
 
     };

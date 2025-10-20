@@ -5,6 +5,7 @@
     claude-code
     comma
     gh
+    nixpkgs-review
     goose-cli
     nix-output-monitor
     pamtester
