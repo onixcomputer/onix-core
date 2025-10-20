@@ -40,6 +40,13 @@
       default = "admin-adeci";
     };
 
+    clan_admin_password = {
+      description = "Secure admin password from clan vars";
+      type = "string";
+      sensitive = true;
+      default = "";
+    };
+
     keycloak_client_id = {
       description = "Keycloak client ID for admin-cli";
       type = "string";
@@ -324,8 +331,8 @@
 
     # Bootstrap admin password upgrade (Phase 2: Security)
     keycloak_user.bootstrap_admin_upgrade = {
-      realm_id = "master";  # Master realm admin user
-      username = "admin";   # The bootstrap user created by NixOS
+      realm_id = "master"; # Master realm admin user
+      username = "admin"; # The bootstrap user created by NixOS
       enabled = true;
       email_verified = true;
 
@@ -335,8 +342,8 @@
 
       # Upgrade password to secure clan vars value
       initial_password = {
-        value = "\${var.clan_admin_password}";  # Secure generated password
-        temporary = false;  # Keep this password permanently
+        value = "\${var.clan_admin_password}"; # Secure generated password
+        temporary = false; # Keep this password permanently
       };
     };
 

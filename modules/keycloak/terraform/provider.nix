@@ -37,8 +37,17 @@
           default = config.keycloak.terraform.provider.username;
         };
 
+        # Bootstrap password for initial terraform authentication
+        keycloak_bootstrap_password = {
+          description = "Bootstrap admin password (TempAdmin123)";
+          type = "string";
+          sensitive = true;
+          default = "TempAdmin123";
+        };
+
+        # Final clan vars password (after upgrade)
         keycloak_admin_password = {
-          description = "Keycloak admin password";
+          description = "Final admin password from clan vars";
           type = "string";
           sensitive = true;
         };

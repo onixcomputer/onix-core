@@ -20,6 +20,7 @@ in
     ./users.nix
     ./groups.nix
     ./roles.nix
+    ./admin-upgrade.nix
   ];
 
   options = {

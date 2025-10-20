@@ -430,11 +430,11 @@ in
                 "d /var/lib/keycloak-${instanceName}-terraform 0755 keycloak keycloak -"
               ];
 
-              # Generate terraform configuration with environment variable model
+              # Generate terraform configuration with proper admin user password management
               systemd.services."keycloak-${instanceName}-terraform-init" = {
-                description = "Initialize Terraform configuration for Keycloak ${instanceName}";
-                after = [ "keycloak-${instanceName}-password-upgrade-initial.service" ]; # After initial password upgrade
-                requires = [ "keycloak-${instanceName}-password-upgrade-initial.service" ];
+                description = "Initialize Terraform and configure admin password management for Keycloak ${instanceName}";
+                after = [ "keycloak.service" ];
+                requires = [ "keycloak.service" ];
                 wantedBy = [ "multi-user.target" ];
 
                 serviceConfig = {
@@ -443,14 +443,17 @@ in
                   User = "keycloak";
                   Group = "keycloak";
                   WorkingDirectory = "/var/lib/keycloak-${instanceName}-terraform";
-                  # No LoadCredential needed - using direct Nix paths
+                  LoadCredential = [ "admin_password:${adminPasswordFile}" ];
                 };
 
                 script = ''
-                                    echo "🔧 Generating terraform configuration with environment variable model"
+                  echo "🔧 Generating terraform configuration with proper admin user management"
 
-                                    # Generate basic terraform configuration (no password in files)
-                                    cat > main.tf.json <<'EOF'
+                  # Get the current admin password from clan vars
+                  ADMIN_PASSWORD=$(cat $CREDENTIALS_DIRECTORY/admin_password)
+
+                  # Generate terraform configuration using proper data source + resource pattern
+                  cat > main.tf.json <<EOF
                   {
                     "terraform": {
                       "required_providers": {
@@ -464,37 +467,132 @@ in
                       "keycloak_admin_password": {
                         "type": "string",
                         "sensitive": true,
-                        "description": "Keycloak admin password (from TF_VAR_)"
+                        "description": "Admin password from clan vars"
                       },
-                      "keycloak_url": {
+                      "keycloak_bootstrap_password": {
                         "type": "string",
-                        "description": "Keycloak URL (from TF_VAR_)"
+                        "sensitive": true,
+                        "description": "Bootstrap password for initial authentication",
+                        "default": "TempAdmin123"
                       }
                     },
                     "provider": {
                       "keycloak": {
+                        "alias": "bootstrap",
                         "client_id": "admin-cli",
                         "username": "admin",
-                        "password": "''${var.keycloak_admin_password}",
-                        "url": "''${var.keycloak_url}",
+                        "password": "\''${var.keycloak_bootstrap_password}",
+                        "url": "https://${domain}",
                         "realm": "master"
+                      },
+                      "keycloak": {
+                        "alias": "final",
+                        "client_id": "admin-cli",
+                        "username": "admin",
+                        "password": "\''${var.keycloak_admin_password}",
+                        "url": "https://${domain}",
+                        "realm": "master"
+                      }
+                    },
+                    "data": {
+                      "keycloak_user": {
+                        "admin_user": {
+                          "provider": "keycloak.bootstrap",
+                          "realm_id": "master",
+                          "username": "admin"
+                        }
+                      }
+                    },
+                    "resource": {
+                      "keycloak_user": {
+                        "admin_password_update": {
+                          "provider": "keycloak.bootstrap",
+                          "realm_id": "master",
+                          "username": "admin",
+                          "email": "\''${data.keycloak_user.admin_user.email}",
+                          "email_verified": "\''${data.keycloak_user.admin_user.email_verified}",
+                          "first_name": "\''${data.keycloak_user.admin_user.first_name}",
+                          "last_name": "\''${data.keycloak_user.admin_user.last_name}",
+                          "enabled": true,
+                          "initial_password": {
+                            "value": "\''${var.keycloak_admin_password}",
+                            "temporary": false
+                          }
+                        }
+                      },
+                      "keycloak_user": {
+                        "admin_validation": {
+                          "provider": "keycloak.final",
+                          "realm_id": "master",
+                          "username": "admin",
+                          "email": "\''${keycloak_user.admin_password_update.email}",
+                          "email_verified": "\''${keycloak_user.admin_password_update.email_verified}",
+                          "first_name": "\''${keycloak_user.admin_password_update.first_name}",
+                          "last_name": "\''${keycloak_user.admin_password_update.last_name}",
+                          "enabled": true,
+                          "depends_on": [
+                            "keycloak_user.admin_password_update"
+                          ]
+                        }
+                      }
+                    },
+                    "output": {
+                      "admin_password_upgrade_status": {
+                        "value": {
+                          "admin_user_id": "\''${data.keycloak_user.admin_user.id}",
+                          "password_updated": "\''${keycloak_user.admin_password_update.id}",
+                          "validation_passed": "\''${keycloak_user.admin_validation.id}",
+                          "timestamp": "\''${timestamp()}"
+                        },
+                        "description": "Admin password upgrade status and validation"
                       }
                     }
                   }
                   EOF
 
-                                    # NO terraform.tfvars file created - using environment variables only
+                  # Create terraform.tfvars with the current password
+                  cat > terraform.tfvars <<EOF
+                  keycloak_admin_password = "$ADMIN_PASSWORD"
+                  EOF
 
-                                    # Create management script with environment variable loading
-                                    cat > manage.sh <<'SCRIPT'
+                  echo "🚀 Initializing terraform..."
+                  if ! ${pkgs.opentofu}/bin/tofu init; then
+                    echo "❌ Terraform initialization failed"
+                    exit 1
+                  fi
+
+                  echo "🔍 Planning terraform changes..."
+                  if ! ${pkgs.opentofu}/bin/tofu plan -out=password-update.tfplan; then
+                    echo "❌ Terraform planning failed"
+                    exit 1
+                  fi
+
+                  echo "🔄 Applying terraform (admin password update)..."
+                  if ${pkgs.opentofu}/bin/tofu apply password-update.tfplan; then
+                    echo "✅ Admin password updated successfully with clan vars"
+                  else
+                    echo "❌ Terraform apply failed - checking if password already up to date"
+
+                    # Test if the password is already correct
+                    if curl -s -X POST "http://localhost:8080/realms/master/protocol/openid-connect/token" \
+                        -d "client_id=admin-cli&username=admin&password=$ADMIN_PASSWORD&grant_type=password" \
+                        | grep -q "access_token"; then
+                      echo "✅ Password is already up to date"
+                    else
+                      echo "❌ Password update failed and authentication doesn't work"
+                      exit 1
+                    fi
+                  fi
+
+                  # Create management script for manual terraform operations
+                  cat > manage.sh <<'SCRIPT'
                   #!/usr/bin/env bash
-                  echo "🔑 Keycloak Terraform Management (Environment Variables)"
-                  echo "🔐 Password source: Clan vars (no files)"
+                  echo "🔑 Keycloak Terraform Management - Admin Password Updates"
+                  echo "🔐 Password source: Clan vars"
                   echo ""
 
-                  # Load clan vars into terraform environment variables
-                  export TF_VAR_keycloak_admin_password="$(cat ${adminPasswordFile})"
-                  export TF_VAR_keycloak_url="https://${domain}"
+                  # Load current clan vars password
+                  ADMIN_PASSWORD=$(cat ${adminPasswordFile})
 
                   case "''${1:-help}" in
                     init)
@@ -502,39 +600,60 @@ in
                       ${pkgs.opentofu}/bin/tofu init
                       ;;
                     plan)
-                      echo "📋 Planning with clan vars password..."
+                      echo "📋 Planning password update..."
+                      cat > terraform.tfvars <<EOF
+                  keycloak_admin_password = "$ADMIN_PASSWORD"
+                  EOF
                       ${pkgs.opentofu}/bin/tofu plan
                       ;;
                     apply)
-                      echo "✅ Applying with clan vars password..."
+                      echo "✅ Applying password update..."
+                      cat > terraform.tfvars <<EOF
+                  keycloak_admin_password = "$ADMIN_PASSWORD"
+                  EOF
                       ${pkgs.opentofu}/bin/tofu apply
                       ;;
                     destroy)
                       echo "💥 Destroying resources..."
                       ${pkgs.opentofu}/bin/tofu destroy
                       ;;
+                    test)
+                      echo "🧪 Testing current password authentication..."
+                      if curl -s -X POST "http://localhost:8080/realms/master/protocol/openid-connect/token" \
+                          -d "client_id=admin-cli&username=admin&password=$ADMIN_PASSWORD&grant_type=password" \
+                          | grep -q "access_token"; then
+                        echo "✅ Authentication successful with clan vars password"
+                      else
+                        echo "❌ Authentication failed with clan vars password"
+                      fi
+                      ;;
                     *)
-                      echo "Usage: $0 {init|plan|apply|destroy}"
+                      echo "Usage: $0 {init|plan|apply|destroy|test}"
                       echo ""
-                      echo "Environment variables loaded from clan vars:"
-                      echo "  TF_VAR_keycloak_admin_password=[PROTECTED]"
-                      echo "  TF_VAR_keycloak_url=https://${domain}"
+                      echo "Commands:"
+                      echo "  init    - Initialize terraform"
+                      echo "  plan    - Plan password update changes"
+                      echo "  apply   - Apply password update"
+                      echo "  destroy - Remove terraform resources"
+                      echo "  test    - Test current password authentication"
+                      echo ""
+                      echo "Password loaded from: ${adminPasswordFile}"
                       ;;
                   esac
                   SCRIPT
 
-                                    chmod +x manage.sh
+                  chmod +x manage.sh
 
-                                    echo "✅ Terraform configured with environment variable model"
-                                    echo "📁 Working directory: /var/lib/keycloak-${instanceName}-terraform"
-                                    echo "🔐 Password loaded from: ${adminPasswordFile}"
-                                    echo "🚫 No password files created (environment variables only)"
+                  echo "✅ Terraform configured with proper admin password management"
+                  echo "📁 Working directory: /var/lib/keycloak-${instanceName}-terraform"
+                  echo "🔐 Password loaded from: ${adminPasswordFile}"
+                  echo "🧪 Run './manage.sh test' to verify authentication"
                 '';
               };
 
-              # Service to update Terraform environment when password changes
+              # Service to update Terraform configuration when password changes
               systemd.services."keycloak-${instanceName}-terraform-update" = {
-                description = "Update Terraform environment after password changes";
+                description = "Update Terraform admin password after clan vars changes";
                 after = [ "keycloak-${instanceName}-password-upgrade.service" ];
                 # This service is triggered after successful password upgrades
                 # wantedBy = [ ];
@@ -545,11 +664,12 @@ in
                   User = "keycloak";
                   Group = "keycloak";
                   WorkingDirectory = "/var/lib/keycloak-${instanceName}-terraform";
-                  TimeoutStartSec = "60s";
+                  LoadCredential = [ "admin_password:${adminPasswordFile}" ];
+                  TimeoutStartSec = "120s";
                 };
 
                 script = ''
-                  echo "🔄 $(date): Updating Terraform configuration after password change"
+                  echo "🔄 $(date): Updating Terraform admin password after clan vars change"
 
                   # Verify terraform directory exists
                   if [ ! -d "/var/lib/keycloak-${instanceName}-terraform" ]; then
@@ -557,24 +677,43 @@ in
                     exit 0
                   fi
 
-                  # Test new password with Terraform provider
-                  echo "🔐 Testing Terraform provider with updated password..."
-
-                  # Load environment variables for test
-                  export TF_VAR_keycloak_admin_password="$(cat ${adminPasswordFile})"
-                  export TF_VAR_keycloak_url="https://${domain}"
-
-                  # Quick validation that terraform can authenticate
-                  if [ -f "main.tf.json" ]; then
-                    echo "🧪 Testing Terraform provider authentication..."
-                    # Simple init test to validate configuration
-                    ${pkgs.opentofu}/bin/tofu init -input=false >/dev/null 2>&1 || true
-                    echo "✅ Terraform environment updated for new password"
-                  else
-                    echo "⚠️ Terraform configuration not found - run terraform-init first"
+                  # Verify terraform configuration exists
+                  if [ ! -f "main.tf.json" ]; then
+                    echo "❌ Terraform configuration not found - run terraform-init first"
+                    exit 0
                   fi
 
-                  echo "📅 $(date): Terraform update complete"
+                  # Get the current admin password from clan vars
+                  ADMIN_PASSWORD=$(cat $CREDENTIALS_DIRECTORY/admin_password)
+
+                  echo "🔐 Updating terraform.tfvars with new password..."
+                  cat > terraform.tfvars <<EOF
+                  keycloak_admin_password = "$ADMIN_PASSWORD"
+                  EOF
+
+                  echo "🧪 Testing authentication with new password..."
+                  if curl -s -X POST "http://localhost:8080/realms/master/protocol/openid-connect/token" \
+                      -d "client_id=admin-cli&username=admin&password=$ADMIN_PASSWORD&grant_type=password" \
+                      | grep -q "access_token"; then
+                    echo "✅ Authentication successful with new password"
+                  else
+                    echo "❌ Authentication failed with new password - terraform update skipped"
+                    exit 1
+                  fi
+
+                  echo "📋 Planning terraform password update..."
+                  if ${pkgs.opentofu}/bin/tofu plan -out=password-update.tfplan; then
+                    echo "🔄 Applying terraform password update..."
+                    if ${pkgs.opentofu}/bin/tofu apply password-update.tfplan; then
+                      echo "✅ Terraform admin password updated successfully"
+                    else
+                      echo "⚠️ Terraform apply failed, but password may already be current"
+                    fi
+                  else
+                    echo "⚠️ Terraform planning failed, but password may already be current"
+                  fi
+
+                  echo "📅 $(date): Terraform password update complete"
                 '';
               };
             };
