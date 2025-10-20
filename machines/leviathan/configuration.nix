@@ -15,11 +15,17 @@ _: {
 
   # Nix build server configuration for 256 logical core EPYC system
   nix.settings = {
-    # Prevent auto (256) which would cause massive overselling
-    max-jobs = 12; # Max parallel derivations locally
-    cores = 16; # Cores per derivation (16 * 12 = 192 cores max, 75% utilization)
 
-    # Trust remote builders and use substitutes
+    # How many derivations can we download from bincaches at the same time
+    # https://bmcgee.ie/posts/2023/12/til-how-to-optimise-substitutions-in-nix/
+    http-connections = 64;
+    max-substitution-jobs = 64;
+
+    max-jobs = 7; # Max parallel derivations locally
+    # Prevent auto (256) which would cause massive overselling
+    cores = 32; # Cores per derivation
+    # 32 cores * 7 simul build jobs = at most 224 cores utilized, for total of ~88% system cpu utilization, leaving room for other processes, with this setup a single build job (SHOULD, some derivations do NOT respect this!) can use at most 12.5% of total system cpu
+
     trusted-users = [
       "root"
       "@wheel"
