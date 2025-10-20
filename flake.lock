@@ -38,16 +38,16 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1757410217,
-        "narHash": "sha256-tYy6/m/ab3JRJVqM91XpLznUuz7Q0kdglnWW45RCPaQ=",
-        "ref": "adeci-stable",
-        "rev": "db6f8e3045b1602ac1901ef10d9f5e69e04c7a72",
-        "revCount": 9467,
+        "lastModified": 1761000065,
+        "narHash": "sha256-V4yoJUigjFrr0tSlOiecUGh4i2N+ylShusrwRxOMEok=",
+        "ref": "adeci-unstable",
+        "rev": "ef7c7c7a530736b9ea6d30247b34555e56d0d6a0",
+        "revCount": 10780,
         "type": "git",
         "url": "https://git.clan.lol/adeci/clan-core"
       },
       "original": {
-        "ref": "adeci-stable",
+        "ref": "adeci-unstable",
         "type": "git",
         "url": "https://git.clan.lol/adeci/clan-core"
       }
