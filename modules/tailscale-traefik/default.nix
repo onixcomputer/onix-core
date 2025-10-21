@@ -20,10 +20,14 @@ let
 in
 {
   _class = "clan.service";
-  manifest.name = "tailscale-traefik";
+  manifest = {
+    name = "tailscale-traefik";
+    readme = "Traefik reverse proxy with Tailscale integration for secure routing";
+  };
 
   roles = {
     server = {
+      description = "Traefik reverse proxy server with Tailscale integration";
       interface = {
         freeformType = attrsOf anything;
 

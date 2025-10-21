@@ -13,10 +13,14 @@ let
 in
 {
   _class = "clan.service";
-  manifest.name = "cloudflare-tunnel";
+  manifest = {
+    name = "cloudflare-tunnel";
+    readme = "Cloudflare tunnel service for secure internet exposure of local services";
+  };
 
   roles = {
     default = {
+      description = "Cloudflare tunnel client that exposes local services to the internet";
       interface = {
         options = {
           tunnelName = mkOption {

@@ -134,19 +134,6 @@ _: {
       };
     };
 
-    britton-dev = {
-      name = "britton-dev";
-      tags = [
-        "dev"
-        "wiki-js"
-        "traefik-blrdev"
-      ];
-      deploy = {
-        targetHost = "root@192.168.1.146";
-        buildHost = "";
-      };
-    };
-
     britton-desktop = {
       name = "britton-desktop";
       tags = [

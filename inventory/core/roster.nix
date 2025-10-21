@@ -295,20 +295,6 @@ let
       };
     };
 
-    britton-dev = {
-      users = {
-        brittonr = {
-          homeManager = {
-            enable = true;
-            profiles = [
-              "base"
-              "dev"
-            ];
-          };
-        };
-      };
-    };
-
     britton-desktop = {
       users = {
         brittonr = {

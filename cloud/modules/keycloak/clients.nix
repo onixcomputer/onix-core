@@ -301,82 +301,84 @@ in
   };
 
   config = mkIf cfg.enable {
-    # Client Scopes
-    resource.keycloak_openid_client_scope = mapAttrs' (
-      scopeId: scopeCfg:
-      nameValuePair scopeId {
-        realm_id = scopeCfg.realmId;
-        name = scopeCfg.name;
-        description = scopeCfg.description;
-        protocol = scopeCfg.protocol;
-        attributes = scopeCfg.attributes;
-        consent_screen_text = scopeCfg.consentScreenText;
-        gui_order = scopeCfg.guiOrder;
-        include_in_token_scope = scopeCfg.includeInTokenScope;
-      }
-    ) cfg.clientScopes;
+    resource = {
+      # Client Scopes
+      keycloak_openid_client_scope = mapAttrs' (
+        scopeId: scopeCfg:
+        nameValuePair scopeId {
+          realm_id = scopeCfg.realmId;
+          inherit (scopeCfg)
+            name
+            description
+            protocol
+            attributes
+            ;
+          consent_screen_text = scopeCfg.consentScreenText;
+          gui_order = scopeCfg.guiOrder;
+          include_in_token_scope = scopeCfg.includeInTokenScope;
+        }
+      ) cfg.clientScopes;
 
-    # Clients
-    resource.keycloak_openid_client = mapAttrs' (
-      clientName: clientCfg:
-      nameValuePair clientName {
-        realm_id = clientCfg.realmId;
-        client_id = clientCfg.clientId;
-        name = clientCfg.name;
-        enabled = clientCfg.enabled;
-        description = clientCfg.description;
-        access_type = clientCfg.accessType;
-        client_secret = clientCfg.clientSecret;
+      # Clients
+      keycloak_openid_client = mapAttrs' (
+        clientName: clientCfg:
+        nameValuePair clientName {
+          realm_id = clientCfg.realmId;
+          client_id = clientCfg.clientId;
+          inherit (clientCfg) name enabled description;
+          access_type = clientCfg.accessType;
+          client_secret = clientCfg.clientSecret;
 
-        standard_flow_enabled = clientCfg.standardFlowEnabled;
-        implicit_flow_enabled = clientCfg.implicitFlowEnabled;
-        direct_access_grants_enabled = clientCfg.directAccessGrantsEnabled;
-        service_accounts_enabled = clientCfg.serviceAccountsEnabled;
+          standard_flow_enabled = clientCfg.standardFlowEnabled;
+          implicit_flow_enabled = clientCfg.implicitFlowEnabled;
+          direct_access_grants_enabled = clientCfg.directAccessGrantsEnabled;
+          service_accounts_enabled = clientCfg.serviceAccountsEnabled;
 
-        valid_redirect_uris = clientCfg.validRedirectUris;
-        valid_post_logout_redirect_uris = clientCfg.validPostLogoutRedirectUris;
-        web_origins = clientCfg.webOrigins;
+          valid_redirect_uris = clientCfg.validRedirectUris;
+          valid_post_logout_redirect_uris = clientCfg.validPostLogoutRedirectUris;
+          web_origins = clientCfg.webOrigins;
 
-        admin_url = clientCfg.adminUrl;
-        base_url = clientCfg.baseUrl;
-        root_url = clientCfg.rootUrl;
+          admin_url = clientCfg.adminUrl;
+          base_url = clientCfg.baseUrl;
+          root_url = clientCfg.rootUrl;
 
-        pkce_code_challenge_method = clientCfg.pkceCodeChallengeMethod;
+          pkce_code_challenge_method = clientCfg.pkceCodeChallengeMethod;
 
-        access_token_lifespan = clientCfg.accessTokenLifespan;
-        client_offline_session_idle_timeout = clientCfg.clientOfflineSessionIdleTimeout;
-        client_offline_session_max_lifespan = clientCfg.clientOfflineSessionMaxLifespan;
-        client_session_idle_timeout = clientCfg.clientSessionIdleTimeout;
-        client_session_max_lifespan = clientCfg.clientSessionMaxLifespan;
+          access_token_lifespan = clientCfg.accessTokenLifespan;
+          client_offline_session_idle_timeout = clientCfg.clientOfflineSessionIdleTimeout;
+          client_offline_session_max_lifespan = clientCfg.clientOfflineSessionMaxLifespan;
+          client_session_idle_timeout = clientCfg.clientSessionIdleTimeout;
+          client_session_max_lifespan = clientCfg.clientSessionMaxLifespan;
 
-        consent_required = clientCfg.consentRequired;
-        display_on_consent_screen = clientCfg.displayOnConsentScreen;
-        frontchannel_logout = clientCfg.frontchannelLogout;
-        full_scope_allowed = clientCfg.fullScopeAllowed;
+          consent_required = clientCfg.consentRequired;
+          display_on_consent_screen = clientCfg.displayOnConsentScreen;
+          frontchannel_logout = clientCfg.frontchannelLogout;
+          full_scope_allowed = clientCfg.fullScopeAllowed;
 
-        attributes = clientCfg.attributes;
-        authentication_flow_binding_overrides = clientCfg.authenticationFlowBindingOverrides;
-      }
-    ) cfg.clients;
+          inherit (clientCfg) attributes;
+          authentication_flow_binding_overrides = clientCfg.authenticationFlowBindingOverrides;
+        }
+      ) cfg.clients;
 
-    # Default Client Scope Mappings
-    resource.keycloak_openid_client_default_scopes = mapAttrs' (
-      clientName: clientCfg:
-      nameValuePair "${clientName}_default_scopes" {
-        realm_id = clientCfg.realmId;
-        client_id = "\${keycloak_openid_client.${clientName}.id}";
-        default_scopes = clientCfg.defaultClientScopes;
-      }
-    ) (lib.filterAttrs (_: clientCfg: clientCfg.defaultClientScopes != [ ]) cfg.clients);
+      # Default Client Scope Mappings
+      keycloak_openid_client_default_scopes = mapAttrs' (
+        clientName: clientCfg:
+        nameValuePair "${clientName}_default_scopes" {
+          realm_id = clientCfg.realmId;
+          client_id = "\${keycloak_openid_client.${clientName}.id}";
+          default_scopes = clientCfg.defaultClientScopes;
+        }
+      ) (lib.filterAttrs (_: clientCfg: clientCfg.defaultClientScopes != [ ]) cfg.clients);
 
-    # Optional Client Scope Mappings
-    resource.keycloak_openid_client_optional_scopes = mapAttrs' (
-      clientName: clientCfg:
-      nameValuePair "${clientName}_optional_scopes" {
-        realm_id = clientCfg.realmId;
-        client_id = "\${keycloak_openid_client.${clientName}.id}";
-        optional_scopes = clientCfg.optionalClientScopes;
-      }
-    ) (lib.filterAttrs (_: clientCfg: clientCfg.optionalClientScopes != [ ]) cfg.clients);
+      # Optional Client Scope Mappings
+      keycloak_openid_client_optional_scopes = mapAttrs' (
+        clientName: clientCfg:
+        nameValuePair "${clientName}_optional_scopes" {
+          realm_id = clientCfg.realmId;
+          client_id = "\${keycloak_openid_client.${clientName}.id}";
+          optional_scopes = clientCfg.optionalClientScopes;
+        }
+      ) (lib.filterAttrs (_: clientCfg: clientCfg.optionalClientScopes != [ ]) cfg.clients);
+    };
   };
 }

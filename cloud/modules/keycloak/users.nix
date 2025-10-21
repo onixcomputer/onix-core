@@ -233,123 +233,122 @@ in
   };
 
   config = mkIf cfg.enable {
-    # Realm Roles
-    resource.keycloak_role = mapAttrs' (
-      roleId: roleCfg:
-      nameValuePair roleId (
-        let
-          baseRole = {
-            realm_id = roleCfg.realmId;
-            name = roleCfg.name;
-            description = roleCfg.description;
-            attributes = roleCfg.attributes;
-            composite_roles = if roleCfg.composite then roleCfg.compositeRoles else null;
+    resource = {
+      # Realm Roles
+      keycloak_role = mapAttrs' (
+        roleId: roleCfg:
+        nameValuePair roleId (
+          let
+            baseRole = {
+              realm_id = roleCfg.realmId;
+              inherit (roleCfg) name description;
+              inherit (roleCfg) attributes;
+              composite_roles = if roleCfg.composite then roleCfg.compositeRoles else null;
+            };
+          in
+          if roleCfg.clientId != null then
+            baseRole
+            // {
+              client_id = roleCfg.clientId;
+            }
+          else
+            baseRole
+        )
+      ) cfg.roles;
+
+      # Groups
+      keycloak_group = mapAttrs' (
+        groupId: groupCfg:
+        nameValuePair groupId {
+          realm_id = groupCfg.realmId;
+          inherit (groupCfg) name;
+          parent_id = groupCfg.parentId;
+          inherit (groupCfg) attributes;
+        }
+      ) cfg.groups;
+
+      # Group Realm Role Mappings
+      keycloak_group_roles = mapAttrs' (
+        groupId: groupCfg:
+        nameValuePair "${groupId}_realm_roles" {
+          realm_id = groupCfg.realmId;
+          group_id = "\${keycloak_group.${groupId}.id}";
+          role_ids = map (roleName: "\${keycloak_role.${roleName}.id}") groupCfg.realmRoles;
+        }
+      ) (lib.filterAttrs (_: groupCfg: groupCfg.realmRoles != [ ]) cfg.groups);
+
+      # Users
+      keycloak_user = mapAttrs' (
+        userId: userCfg:
+        nameValuePair userId {
+          realm_id = userCfg.realmId;
+          inherit (userCfg) username enabled email;
+          email_verified = userCfg.emailVerified;
+          first_name = userCfg.firstName;
+          last_name = userCfg.lastName;
+          inherit (userCfg) attributes;
+          initial_password = mkIf (userCfg.initialPassword != null) {
+            value = userCfg.initialPassword;
+            temporary = userCfg.temporaryPassword;
           };
-        in
-        if roleCfg.clientId != null then
-          baseRole
-          // {
-            client_id = roleCfg.clientId;
-          }
-        else
-          baseRole
-      )
-    ) cfg.roles;
+        }
+      ) cfg.users;
 
-    # Groups
-    resource.keycloak_group = mapAttrs' (
-      groupId: groupCfg:
-      nameValuePair groupId {
-        realm_id = groupCfg.realmId;
-        name = groupCfg.name;
-        parent_id = groupCfg.parentId;
-        attributes = groupCfg.attributes;
-      }
-    ) cfg.groups;
+      # User Group Memberships
+      keycloak_user_groups = mapAttrs' (
+        userId: userCfg:
+        nameValuePair "${userId}_groups" {
+          inherit (userCfg) realm_id;
+          user_id = "\${keycloak_user.${userId}.id}";
+          group_ids = map (groupName: "\${keycloak_group.${groupName}.id}") userCfg.groups;
+        }
+      ) (lib.filterAttrs (_: userCfg: userCfg.groups != [ ]) cfg.users);
 
-    # Group Realm Role Mappings
-    resource.keycloak_group_roles = mapAttrs' (
-      groupId: groupCfg:
-      nameValuePair "${groupId}_realm_roles" {
-        realm_id = groupCfg.realmId;
-        group_id = "\${keycloak_group.${groupId}.id}";
-        role_ids = map (roleName: "\${keycloak_role.${roleName}.id}") groupCfg.realmRoles;
-      }
-    ) (lib.filterAttrs (_: groupCfg: groupCfg.realmRoles != [ ]) cfg.groups);
+      # User Realm Role Mappings
+      keycloak_user_roles = mapAttrs' (
+        userId: userCfg:
+        nameValuePair "${userId}_realm_roles" {
+          inherit (userCfg) realm_id;
+          user_id = "\${keycloak_user.${userId}.id}";
+          role_ids = map (roleName: "\${keycloak_role.${roleName}.id}") userCfg.realmRoles;
+        }
+      ) (lib.filterAttrs (_: userCfg: userCfg.realmRoles != [ ]) cfg.users);
 
-    # Users
-    resource.keycloak_user = mapAttrs' (
-      userId: userCfg:
-      nameValuePair userId {
-        realm_id = userCfg.realmId;
-        username = userCfg.username;
-        enabled = userCfg.enabled;
-        email = userCfg.email;
-        email_verified = userCfg.emailVerified;
-        first_name = userCfg.firstName;
-        last_name = userCfg.lastName;
-        attributes = userCfg.attributes;
-        initial_password = mkIf (userCfg.initialPassword != null) {
-          value = userCfg.initialPassword;
-          temporary = userCfg.temporaryPassword;
-        };
-      }
-    ) cfg.users;
-
-    # User Group Memberships
-    resource.keycloak_user_groups = mapAttrs' (
-      userId: userCfg:
-      nameValuePair "${userId}_groups" {
-        realm_id = userCfg.realmId;
-        user_id = "\${keycloak_user.${userId}.id}";
-        group_ids = map (groupName: "\${keycloak_group.${groupName}.id}") userCfg.groups;
-      }
-    ) (lib.filterAttrs (_: userCfg: userCfg.groups != [ ]) cfg.users);
-
-    # User Realm Role Mappings
-    resource.keycloak_user_roles = mapAttrs' (
-      userId: userCfg:
-      nameValuePair "${userId}_realm_roles" {
-        realm_id = userCfg.realmId;
-        user_id = "\${keycloak_user.${userId}.id}";
-        role_ids = map (roleName: "\${keycloak_role.${roleName}.id}") userCfg.realmRoles;
-      }
-    ) (lib.filterAttrs (_: userCfg: userCfg.realmRoles != [ ]) cfg.users);
-
-    # Client Role Mappings for Users
-    resource.keycloak_user_client_roles = lib.listToAttrs (
-      lib.flatten (
-        lib.mapAttrsToList (
-          userId: userCfg:
+      # Client Role Mappings for Users
+      keycloak_user_client_roles = lib.listToAttrs (
+        lib.flatten (
           lib.mapAttrsToList (
-            clientId: roles:
-            nameValuePair "${userId}_${clientId}_roles" {
-              realm_id = userCfg.realmId;
-              user_id = "\${keycloak_user.${userId}.id}";
-              client_id = clientId;
-              role_ids = map (roleName: "\${keycloak_role.${roleName}.id}") roles;
-            }
-          ) userCfg.clientRoles
-        ) (lib.filterAttrs (_: userCfg: userCfg.clientRoles != { }) cfg.users)
-      )
-    );
+            userId: userCfg:
+            lib.mapAttrsToList (
+              clientId: roles:
+              nameValuePair "${userId}_${clientId}_roles" {
+                inherit (userCfg) realm_id;
+                user_id = "\${keycloak_user.${userId}.id}";
+                inherit clientId;
+                role_ids = map (roleName: "\${keycloak_role.${roleName}.id}") roles;
+              }
+            ) userCfg.clientRoles
+          ) (lib.filterAttrs (_: userCfg: userCfg.clientRoles != { }) cfg.users)
+        )
+      );
 
-    # Client Role Mappings for Groups
-    resource.keycloak_group_client_roles = lib.listToAttrs (
-      lib.flatten (
-        lib.mapAttrsToList (
-          groupId: groupCfg:
+      # Client Role Mappings for Groups
+      keycloak_group_client_roles = lib.listToAttrs (
+        lib.flatten (
           lib.mapAttrsToList (
-            clientId: roles:
-            nameValuePair "${groupId}_${clientId}_roles" {
-              realm_id = groupCfg.realmId;
-              group_id = "\${keycloak_group.${groupId}.id}";
-              client_id = clientId;
-              role_ids = map (roleName: "\${keycloak_role.${roleName}.id}") roles;
-            }
-          ) groupCfg.clientRoles
-        ) (lib.filterAttrs (_: groupCfg: groupCfg.clientRoles != { }) cfg.groups)
-      )
-    );
+            groupId: groupCfg:
+            lib.mapAttrsToList (
+              clientId: roles:
+              nameValuePair "${groupId}_${clientId}_roles" {
+                inherit (groupCfg) realm_id;
+                group_id = "\${keycloak_group.${groupId}.id}";
+                inherit clientId;
+                role_ids = map (roleName: "\${keycloak_role.${roleName}.id}") roles;
+              }
+            ) groupCfg.clientRoles
+          ) (lib.filterAttrs (_: groupCfg: groupCfg.clientRoles != { }) cfg.groups)
+        )
+      );
+    };
   };
 }

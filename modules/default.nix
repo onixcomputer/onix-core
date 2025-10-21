@@ -1,6 +1,5 @@
-{ inputs, ... }:
+_:
 let
-  inherit (inputs.nixpkgs) lib;
 
   module_definitions = {
     "tailscale" = import ./tailscale;
@@ -18,9 +17,8 @@ let
     "buildbot" = import ./buildbot;
     "cloudflare-tunnel" = import ./cloudflare-tunnel;
     "gitlab-runner" = import ./gitlab-runner;
-    "keycloak" = import ./keycloak;
     "llm" = import ./llm;
   };
 
 in
-lib.foldr lib.recursiveUpdate { } [ module_definitions ]
+module_definitions

@@ -18,10 +18,14 @@ let
 in
 {
   _class = "clan.service";
-  manifest.name = "pixiecore";
+  manifest = {
+    name = "pixiecore";
+    readme = "Pixiecore PXE boot server for network-based OS installation";
+  };
 
   roles = {
     server = {
+      description = "Pixiecore PXE boot server for network installation";
       interface = {
         # Allow freeform configuration
         freeformType = attrsOf anything;
