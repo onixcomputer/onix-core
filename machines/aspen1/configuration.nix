@@ -10,4 +10,7 @@
   environment.systemPackages = with pkgs; [
     opentofu # OpenTofu (Terraform fork)
   ];
+
+  # Garage S3-compatible storage for Terraform backend
+  services.garage.package = pkgs.garage_1_0_1;
 }
