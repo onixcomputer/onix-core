@@ -135,6 +135,11 @@ in
                   done
                   echo "PostgreSQL ready. Starting Keycloak."
                 '';
+
+                postStart = lib.mkIf terraformAutoApply (lib.mkAfter ''
+                  # Trigger terraform configuration non-blocking
+                  ${pkgs.systemd}/bin/systemctl start --no-block keycloak-terraform-${instanceName}.service || true
+                '');
               };
 
               # Generate clan vars for database and admin passwords
@@ -380,14 +385,6 @@ in
                       echo "OpenTofu completed successfully"
                     '';
                   };
-
-              # Trigger terraform after keycloak starts
-              systemd.services.keycloak = lib.mkIf terraformAutoApply {
-                postStart = lib.mkAfter ''
-                  # Trigger terraform configuration non-blocking
-                  ${pkgs.systemd}/bin/systemctl start --no-block keycloak-terraform-${instanceName}.service || true
-                '';
-              };
             };
         };
     };
