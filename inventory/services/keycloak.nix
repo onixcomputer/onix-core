@@ -9,6 +9,10 @@ _: {
           domain = "auth.robitzs.ch";
           nginxPort = 9081;
 
+          # Enable automated terraform with S3 backend
+          terraformBackend = "s3";
+          terraformAutoApply = true;
+
           settings = {
             http-port = 8080;
           };
