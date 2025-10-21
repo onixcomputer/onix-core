@@ -12,5 +12,5 @@
   ];
 
   # Garage S3-compatible storage for Terraform backend
-  services.garage.package = pkgs.garage_1_0_1;
+  services.garage.package = pkgs.garage;
 }
