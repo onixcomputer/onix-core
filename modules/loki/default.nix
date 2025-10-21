@@ -11,12 +11,16 @@ let
 in
 {
   _class = "clan.service";
-  manifest.name = "loki";
+  manifest = {
+    name = "loki";
+    readme = "Loki log aggregation system for centralized log storage and querying";
+  };
 
   # Define available roles
   roles = {
     # Loki server role
     server = {
+      description = "Loki log aggregation server that stores and queries logs";
       interface = {
         # Allow freeform configuration that maps directly to services.loki
         freeformType = attrsOf anything;
@@ -136,6 +140,7 @@ in
 
     # Promtail client role for log collection
     promtail = {
+      description = "Promtail log shipper that sends logs to Loki server";
       interface = {
         # Allow freeform configuration that maps directly to services.promtail
         freeformType = attrsOf anything;

@@ -13,12 +13,16 @@ let
 in
 {
   _class = "clan.service";
-  manifest.name = "prometheus";
+  manifest = {
+    name = "prometheus";
+    readme = "Prometheus monitoring system for metrics collection and alerting";
+  };
 
   # Define available roles
   roles = {
     # Prometheus server role
     server = {
+      description = "Prometheus monitoring server that collects and stores metrics";
       interface = {
         # Allow freeform configuration that maps directly to services.prometheus
         freeformType = attrsOf anything;
@@ -347,6 +351,7 @@ in
 
     # Exporter role for various Prometheus exporters
     exporter = {
+      description = "Prometheus exporter that exposes metrics for collection";
       interface = {
         # Allow freeform configuration for the specific exporter
         freeformType = attrsOf anything;

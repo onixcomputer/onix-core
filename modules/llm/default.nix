@@ -18,6 +18,7 @@ in
   manifest = {
     name = "llm";
     description = "LLM Inference Service - Large Language Model serving";
+    readme = "Large Language Model inference service for AI text generation and completion";
     categories = [
       "AI/ML"
       "Inference"
@@ -27,6 +28,7 @@ in
   roles = {
     # LLM server role - runs inference servers
     server = {
+      description = "LLM inference server that provides AI model endpoints";
       interface = {
         # Allow freeform configuration that maps directly to underlying services
         freeformType = attrsOf anything;
@@ -215,6 +217,7 @@ in
 
     # LLM client role - installs client tools and configuration
     client = {
+      description = "LLM client that connects to and uses LLM inference servers";
       interface = {
         freeformType = attrsOf anything;
 

@@ -5,10 +5,14 @@ let
 in
 {
   _class = "clan.service";
-  manifest.name = "homepage-dashboard";
+  manifest = {
+    name = "homepage-dashboard";
+    readme = "Homepage dashboard service for customizable web portal and service links";
+  };
 
   roles = {
     server = {
+      description = "Homepage dashboard server that provides a customizable web portal";
       interface = {
         # Freeform module - any attribute becomes a homepage-dashboard setting
         freeformType = attrsOf anything;

@@ -5,10 +5,14 @@ let
 in
 {
   _class = "clan.service";
-  manifest.name = "static-server";
+  manifest = {
+    name = "static-server";
+    readme = "Static file server for hosting web content and assets";
+  };
 
   roles = {
     server = {
+      description = "Static file server that serves web content and assets";
       interface = {
         # Freeform module - any attribute becomes a static-server setting
         freeformType = attrsOf anything;

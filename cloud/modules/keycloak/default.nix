@@ -66,7 +66,7 @@ in
       client_id = cfg.clientId;
       username = cfg.adminUser;
       password = cfg.adminPassword;
-      url = cfg.url;
+      inherit (cfg) url;
       initial_login = cfg.initialLogin;
       client_timeout = cfg.clientTimeout;
     };
