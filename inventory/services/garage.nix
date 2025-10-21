@@ -6,7 +6,6 @@ _: {
       roles.default = {
         machines.aspen1 = {
           settings = {
-            settings = {
               metadata_dir = "/var/lib/garage/meta";
               data_dir = "/var/lib/garage/data";
               db_engine = "sqlite";
@@ -29,7 +28,6 @@ _: {
               admin = {
                 api_bind_addr = "127.0.0.1:3903";
               };
-            };
           };
         };
       };
