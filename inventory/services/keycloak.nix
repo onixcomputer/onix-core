@@ -11,7 +11,7 @@ _: {
 
           # Enable automated terraform with S3 backend
           terraformBackend = "s3";
-          terraformAutoApply = true;
+          terraformAutoApply = false; # Disable for now to get Garage working first
 
           settings = {
             http-port = 8080;
