@@ -64,7 +64,8 @@ in
               nginxPort = settings.nginxPort or 9080;
               terraformBackend = settings.terraformBackend or "local";
               terraformAutoApply = settings.terraformAutoApply or false;
-              generateTerraformConfig = import ./terraform-generator.nix { inherit lib; };
+              terraformGenerator = import ./terraform-generator.nix { inherit lib; };
+              generateTerraformConfig = terraformGenerator.generateTerraformConfig;
 
               generatorName = "keycloak-${instanceName}";
               dbPasswordFile = config.clan.core.vars.generators.${generatorName}.files.db_password.path;
