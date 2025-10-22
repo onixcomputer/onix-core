@@ -22,5 +22,13 @@ let
     "llm" = import ./llm;
   };
 
+  # Library modules (not clan services, but supporting infrastructure)
+  lib_modules = {
+    "lib/opentofu" = import ./lib/opentofu;
+  };
+
 in
-lib.foldr lib.recursiveUpdate { } [ module_definitions ]
+lib.foldr lib.recursiveUpdate { } [
+  module_definitions
+  lib_modules
+]

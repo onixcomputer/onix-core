@@ -157,6 +157,26 @@ _: {
                 initialPassword = "SecureFinal999!";
                 temporary = true;
               };
+              "finaltest" = {
+                realm = "production";
+                email = "finaltest@robitzs.ch";
+                firstName = "Final";
+                lastName = "Verification";
+                enabled = true;
+                emailVerified = true;
+                initialPassword = "FinalTest789!";
+                temporary = true;
+              };
+              "librarytest" = {
+                realm = "development";
+                email = "librarytest@robitzs.ch";
+                firstName = "Updated Library";
+                lastName = "Testing User";
+                enabled = true;
+                emailVerified = false;
+                initialPassword = "UpdatedLibraryTest456!";
+                temporary = false;
+              };
             };
 
             # Define groups
