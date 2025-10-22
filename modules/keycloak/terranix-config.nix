@@ -4,7 +4,7 @@
 let
   # Helper to generate realm resources
   generateRealm = name: config: {
-    "keycloak_realm.${name}" = {
+    keycloak_realm.${name} = {
       realm = name;
       enabled = config.enabled or true;
       display_name = config.displayName or name;
@@ -45,7 +45,7 @@ let
 
   # Helper to generate client resources
   generateClient = name: config: {
-    "keycloak_openid_client.${name}" = lib.filterAttrs (_: v: v != null) {
+    keycloak_openid_client.${name} = lib.filterAttrs (_: v: v != null) {
       realm_id = "\${keycloak_realm.${config.realm}.id}";
       client_id = name;
       name = config.name or name;
@@ -67,7 +67,7 @@ let
 
   # Helper to generate user resources
   generateUser = name: config: {
-    "keycloak_user.${name}" = {
+    keycloak_user.${name} = {
       realm_id = "\${keycloak_realm.${config.realm}.id}";
       username = name;
       email = config.email or null;
@@ -90,7 +90,7 @@ let
 
   # Helper to generate group resources
   generateGroup = name: config: {
-    "keycloak_group.${name}" = lib.filterAttrs (_: v: v != null) {
+    keycloak_group.${name} = lib.filterAttrs (_: v: v != null) {
       realm_id = "\${keycloak_realm.${config.realm}.id}";
       name = name;
       parent_id =
@@ -104,7 +104,7 @@ let
     name: config:
     if config.client or null != null then
       {
-        "keycloak_role.${name}" = {
+        keycloak_role.${name} = {
           realm_id = "\${keycloak_realm.${config.realm}.id}";
           client_id = "\${keycloak_openid_client.${config.client}.id}";
           name = name;
@@ -113,7 +113,7 @@ let
       }
     else
       {
-        "keycloak_role.${name}" = {
+        keycloak_role.${name} = {
           realm_id = "\${keycloak_realm.${config.realm}.id}";
           name = name;
           description = config.description or null;
