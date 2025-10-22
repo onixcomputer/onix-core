@@ -120,8 +120,30 @@ let
         };
       };
 
+  # Admin user management for password synchronization
+  adminUserResource = {
+    keycloak_user.admin = {
+      realm_id = "master";
+      username = "admin";
+      enabled = true;
+      email = "admin@keycloak.local";
+      email_verified = true;
+      first_name = "Administrator";
+      last_name = "User";
+
+      # Update admin password to clan vars password
+      initial_password = {
+        value = "\${var.keycloak_admin_new_password}";
+        temporary = false;
+      };
+    };
+  };
+
   # Merge all resource generators
   resources = lib.foldl' lib.recursiveUpdate { } [
+    # Add admin user management
+    adminUserResource
+
     # Generate all realms
     (lib.foldl' lib.recursiveUpdate { } (
       lib.mapAttrsToList generateRealm (settings.terraform.realms or { })
@@ -164,7 +186,12 @@ in
   # Variables
   variable = {
     keycloak_admin_password = {
-      description = "Keycloak admin password";
+      description = "Keycloak admin password for provider authentication";
+      type = "string";
+      sensitive = true;
+    };
+    keycloak_admin_new_password = {
+      description = "New admin password to sync with clan vars";
       type = "string";
       sensitive = true;
     };
@@ -175,11 +202,11 @@ in
     client_id = "admin-cli";
     username = "admin";
     password = "\${var.keycloak_admin_password}";
-    url = "https://${settings.domain}";
+    url = "http://localhost:8080";
     realm = "master";
     initial_login = false;
     client_timeout = 60;
-    tls_insecure_skip_verify = false;
+    tls_insecure_skip_verify = true;
   };
 
   # Resources

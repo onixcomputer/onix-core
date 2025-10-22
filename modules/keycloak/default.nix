@@ -86,9 +86,9 @@ in
                 keycloak = {
                   enable = true;
 
-                  # Use clan vars password file for admin password
-                  # Temporarily hardcoded to match clan vars for terraform bootstrap
-                  initialAdminPassword = lib.mkForce "NewTestPass456";
+                  # Use clan vars admin password (terraform will sync this with keycloak)
+                  # Note: We set a temporary password here and terraform updates it to clan vars
+                  initialAdminPassword = "TemporaryBootstrapPassword123!";
 
                   settings = {
                     hostname = domain;
@@ -412,9 +412,10 @@ in
                                               cp ${terraformConfigJson} ./main.tf.json
                                               echo "Loaded main.tf.json ($(wc -c < main.tf.json) bytes)"
 
-                                              # Generate tfvars with hardcoded password
+                                              # Generate tfvars with secure clan vars passwords
                                               cat > terraform.tfvars <<EOF
-                        keycloak_admin_password = "NewTestPass456"
+                        keycloak_admin_password = "$(cat $CREDENTIALS_DIRECTORY/admin_password)"
+                        keycloak_admin_new_password = "$(cat $CREDENTIALS_DIRECTORY/admin_password)"
                         EOF
 
                                               # Initialize Terraform (always reconfigure for S3 backend to handle changes)
@@ -549,9 +550,10 @@ in
                     # Copy the new configuration
                     cp ${terraformConfigJson} ./main.tf.json
 
-                    # Generate tfvars
+                    # Generate tfvars with secure clan vars passwords
                     cat > terraform.tfvars <<EOF
-                  keycloak_admin_password = "NewTestPass456"
+                  keycloak_admin_password = "$(cat $CREDENTIALS_DIRECTORY/admin_password)"
+                  keycloak_admin_new_password = "$(cat $CREDENTIALS_DIRECTORY/admin_password)"
                   EOF
 
                     # Wait for Keycloak to be ready

@@ -51,6 +51,14 @@ _: {
                 sslRequired = "external";
                 passwordPolicy = "length(8) and notUsername";
               };
+              "shadow" = {
+                displayName = "Shadow Realm";
+                loginWithEmailAllowed = true;
+                registrationAllowed = true;
+                verifyEmail = false;
+                sslRequired = "external";
+                passwordPolicy = "length(8) and notUsername";
+              };
             };
 
             # Define OIDC clients
@@ -117,6 +125,36 @@ _: {
                 enabled = true;
                 emailVerified = true;
                 initialPassword = "BlockingTest456!";
+                temporary = true;
+              };
+              "securetester" = {
+                realm = "shadow";
+                email = "secure@robitzs.ch";
+                firstName = "Secure";
+                lastName = "Tester";
+                enabled = true;
+                emailVerified = true;
+                initialPassword = "SecureTest789!";
+                temporary = true;
+              };
+              "passwordtest" = {
+                realm = "shadow";
+                email = "passwordtest@robitzs.ch";
+                firstName = "Password";
+                lastName = "Test";
+                enabled = true;
+                emailVerified = true;
+                initialPassword = "PasswordTest123!";
+                temporary = true;
+              };
+              "securetest" = {
+                realm = "shadow";
+                email = "securetest@robitzs.ch";
+                firstName = "Secure";
+                lastName = "Final";
+                enabled = true;
+                emailVerified = true;
+                initialPassword = "SecureFinal999!";
                 temporary = true;
               };
             };
