@@ -109,6 +109,16 @@ _: {
                 initialPassword = "TestPass123";
                 temporary = false;
               };
+              "bye" = {
+                realm = "development";
+                email = "bye@robitzs.ch";
+                firstName = "bye";
+                lastName = "Test";
+                enabled = true;
+                emailVerified = true;
+                initialPassword = "BlockingTest456!";
+                temporary = true;
+              };
             };
 
             # Define groups

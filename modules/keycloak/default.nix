@@ -254,9 +254,9 @@ in
                       '';
                     };
 
-                # Automated OpenTofu execution (triggered by timer when .needs-apply exists)
+                # Legacy terraform service - now disabled, replaced by keycloak-terraform-deploy service
                 "keycloak-terraform-${instanceName}" =
-                  lib.mkIf (terraformAutoApply && (settings.terraform.enable or false))
+                  lib.mkIf (false && terraformAutoApply && (settings.terraform.enable or false))
                     {
                       description = "Apply Keycloak Terraform configuration";
 
@@ -475,93 +475,166 @@ in
                       '';
                     };
 
-                # Timer service that checks for .needs-apply flag
-                "keycloak-terraform-watcher-${instanceName}" = lib.mkIf terraformAutoApply {
-                  description = "Check if Keycloak terraform needs to be applied";
-
-                  after = [ "keycloak.service" ];
-                  requisite = [ "keycloak.service" ];
-
-                  serviceConfig = {
-                    Type = "oneshot";
-                    ExecCondition = "${pkgs.systemd}/bin/systemctl is-active keycloak.service";
-                    StateDirectory = "keycloak-${instanceName}-terraform";
-                    WorkingDirectory = "/var/lib/keycloak-${instanceName}-terraform";
-                  };
-
-                  script = ''
-                    # Only proceed if .needs-apply flag exists
-                    if [ -f "$STATE_DIRECTORY/.needs-apply" ]; then
-                      echo "Found .needs-apply flag - triggering terraform service"
-
-                      # Check that terraform service isn't already running
-                      if ! ${pkgs.systemd}/bin/systemctl is-active --quiet keycloak-terraform-${instanceName}.service; then
-                        echo "Starting keycloak-terraform-${instanceName}.service"
-                        ${pkgs.systemd}/bin/systemctl start keycloak-terraform-${instanceName}.service
-                      else
-                        echo "Terraform service already running - skipping"
-                      fi
-                    fi
-                  '';
-                };
               };
 
-              # Systemd timer for automatic terraform application
-              systemd.timers = lib.mkIf terraformAutoApply {
-                "keycloak-terraform-watcher-${instanceName}" = {
-                  description = "Watch for Keycloak terraform configuration changes";
-                  wantedBy = [ "timers.target" ];
-                  after = [ "keycloak.service" ];
-
-                  timerConfig = {
-                    # Check every 30 seconds for changes
-                    OnCalendar = "*:*:0/30";
-                    # Start timer 60 seconds after keycloak starts to give it time to stabilize
-                    OnBootSec = "60s";
-                    # Ensure timer starts after keycloak
-                    Unit = "keycloak-terraform-watcher-${instanceName}.service";
-                  };
-                };
-              };
-
-              # Activation script to detect terraform configuration changes and apply them
-              system.activationScripts."keycloak-terraform-${instanceName}" = lib.mkIf terraformAutoApply {
+              # Simple activation script to reset deploy flag when configuration changes
+              system.activationScripts."keycloak-terraform-reset-${instanceName}" = lib.mkIf terraformAutoApply {
                 text = ''
-                  echo "Checking for Keycloak terraform configuration changes..."
-
                   # Create state directory if it doesn't exist
                   mkdir -p /var/lib/keycloak-${instanceName}-terraform
 
+                  # Check if terraform configuration has changed
+                  CURRENT_CONFIG_HASH=$(sha256sum ${terraformConfigJson} | cut -d' ' -f1)
+                  LAST_DEPLOY_HASH=$(cat /var/lib/keycloak-${instanceName}-terraform/.last-deploy-hash 2>/dev/null || echo "")
+
+                  if [ "$CURRENT_CONFIG_HASH" != "$LAST_DEPLOY_HASH" ]; then
+                    echo "Terraform configuration changed - clearing deploy flag"
+                    rm -f /var/lib/keycloak-${instanceName}-terraform/.deploy-complete
+                  fi
+                '';
+                deps = [ "setupSecrets" ];
+              };
+
+              # Oneshot service for synchronous terraform execution during deployment
+              systemd.services."keycloak-terraform-deploy-${instanceName}" = lib.mkIf terraformAutoApply {
+                description = "Deploy Keycloak terraform configuration synchronously";
+
+                # Run after all dependencies are ready
+                after = [
+                  "keycloak.service"
+                ]
+                ++ lib.optionals (terraformBackend == "s3") [ "garage-terraform-init-${instanceName}.service" ];
+
+                requires = [
+                  "keycloak.service"
+                ]
+                ++ lib.optionals (terraformBackend == "s3") [ "garage-terraform-init-${instanceName}.service" ];
+
+                # Make this part of the deployment transaction
+                wantedBy = [ "multi-user.target" ];
+
+                # Ensure it only runs once per configuration change
+                unitConfig = {
+                  ConditionPathExists = "!/var/lib/keycloak-${instanceName}-terraform/.deploy-complete";
+                };
+
+                serviceConfig = {
+                  Type = "oneshot";
+                  RemainAfterExit = true;
+                  StateDirectory = "keycloak-${instanceName}-terraform";
+                  WorkingDirectory = "/var/lib/keycloak-${instanceName}-terraform";
+                  TimeoutStartSec = "10m";
+                  LoadCredential = [
+                    "admin_password:${adminPasswordFile}"
+                  ];
+                };
+
+                path = [
+                  pkgs.opentofu
+                  pkgs.curl
+                  pkgs.jq
+                  pkgs.coreutils
+                ];
+
+                script = ''
+                  echo "Checking for Keycloak terraform configuration changes during deployment..."
+
                   # Generate current terraform configuration hash from the build-time config
                   CURRENT_CONFIG_HASH=$(sha256sum ${terraformConfigJson} | cut -d' ' -f1)
-                  LAST_APPLIED_HASH=$(cat /var/lib/keycloak-${instanceName}-terraform/.last-activation-hash 2>/dev/null || echo "")
+                  LAST_APPLIED_HASH=$(cat .last-deploy-hash 2>/dev/null || echo "")
 
                   if [ "$CURRENT_CONFIG_HASH" != "$LAST_APPLIED_HASH" ]; then
-                    echo "Keycloak terraform configuration changed, scheduling update..."
+                    echo "Terraform configuration changed - applying during deployment..."
 
-                    # Copy the new configuration to the service directory
-                    cp ${terraformConfigJson} /var/lib/keycloak-${instanceName}-terraform/main.tf.json
+                    # Copy the new configuration
+                    cp ${terraformConfigJson} ./main.tf.json
 
-                    # Generate tfvars (matching the service implementation)
-                    cat > /var/lib/keycloak-${instanceName}-terraform/terraform.tfvars <<EOF
+                    # Generate tfvars
+                    cat > terraform.tfvars <<EOF
                   keycloak_admin_password = "NewTestPass456"
                   EOF
 
-                    # Mark that we need to apply changes after services are running
-                    touch /var/lib/keycloak-${instanceName}-terraform/.needs-apply
+                    # Wait for Keycloak to be ready
+                    echo "Waiting for Keycloak to be ready..."
+                    for i in {1..60}; do
+                      HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/ 2>/dev/null || echo "000")
+                      if [ "$HTTP_CODE" = "302" ] || [ "$HTTP_CODE" = "200" ]; then
+                        echo "Keycloak is ready (HTTP $HTTP_CODE)"
+                        break
+                      fi
+                      [ $i -eq 60 ] && { echo "ERROR: Keycloak not ready for terraform deployment"; exit 1; }
+                      echo "Waiting for Keycloak... (attempt $i/60)"
+                      sleep 2
+                    done
 
-                    # Update the hash to reflect what we're about to apply
-                    echo "$CURRENT_CONFIG_HASH" > /var/lib/keycloak-${instanceName}-terraform/.last-activation-hash
+                    # Load backend credentials
+                    ${
+                      if terraformBackend == "s3" then
+                        ''
+                          export AWS_ACCESS_KEY_ID=$(cat /var/lib/garage-terraform-${instanceName}/access_key_id)
+                          export AWS_SECRET_ACCESS_KEY=$(cat /var/lib/garage-terraform-${instanceName}/secret_access_key)
+                          echo "Loaded Garage credentials"
 
-                    echo "Terraform configuration staged for application"
+                          cat > backend.tf <<'EOF'
+                          terraform {
+                            backend "s3" {
+                              endpoint = "http://127.0.0.1:3900"
+                              bucket = "terraform-state"
+                              key = "keycloak/${instanceName}/terraform.tfstate"
+                              region = "garage"
+                              skip_credentials_validation = true
+                              skip_metadata_api_check = true
+                              skip_region_validation = true
+                              force_path_style = true
+                            }
+                          }
+                          EOF
+                        ''
+                      else
+                        ''
+                          cat > backend.tf <<'EOF'
+                          terraform {
+                            backend "local" {
+                              path = "terraform.tfstate"
+                            }
+                          }
+                          EOF
+                        ''
+                    }
+
+                    # Execute terraform
+                    echo "Executing terraform during deployment..."
+                    ${pkgs.opentofu}/bin/tofu init -upgrade -input=false
+
+                    set +e
+                    ${pkgs.opentofu}/bin/tofu plan -var-file=terraform.tfvars -detailed-exitcode -out=tfplan
+                    PLAN_EXIT=$?
+                    set -e
+
+                    case $PLAN_EXIT in
+                      0)
+                        echo "No terraform changes needed"
+                        ;;
+                      1)
+                        echo "ERROR: Terraform plan failed during deployment"
+                        exit 1
+                        ;;
+                      2)
+                        echo "Applying terraform changes during deployment..."
+                        ${pkgs.opentofu}/bin/tofu apply -auto-approve tfplan
+                        echo "Terraform applied successfully during deployment"
+                        ;;
+                    esac
+
+                    # Mark deployment complete
+                    echo "$CURRENT_CONFIG_HASH" > .last-deploy-hash
+                    touch .deploy-complete
+                    echo "Terraform deployment completed"
                   else
-                    echo "Keycloak terraform configuration unchanged"
+                    echo "Terraform configuration unchanged"
+                    touch .deploy-complete
                   fi
                 '';
-                deps = [
-                  "setupSecrets"
-                  "users"
-                ];
               };
 
               # Helper commands for terraform lock management
