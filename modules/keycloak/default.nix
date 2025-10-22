@@ -218,7 +218,7 @@ in
                         description = "Initialize Garage bucket for Keycloak Terraform";
                         after = [ "garage.service" ];
                         requires = [ "garage.service" ];
-                        before = [ "keycloak-terraform-${instanceName}.service" ];
+                        before = [ "keycloak-terraform-deploy-${instanceName}.service" ];
                         wantedBy = [ "multi-user.target" ];
 
                         path = [
@@ -345,7 +345,7 @@ in
                                                 # Check if activation script detected changes that need to be applied
                                                 if [ ! -f "$STATE_DIRECTORY/.needs-apply" ]; then
                                                   echo "No terraform changes detected by activation script"
-                                                  echo "Use 'systemctl start keycloak-terraform-${instanceName}.service' to force execution"
+                                                  echo "Use 'systemctl start keycloak-terraform-deploy-${instanceName}.service' to force execution"
                                                   exit 0
                                                 fi
 
@@ -520,98 +520,11 @@ in
 
               # Note: Activation script and deployment service are now provided by the generic deployment pattern
 
-              # Helper commands for terraform lock management
-              environment.systemPackages = with pkgs; [
-                (writeScriptBin "keycloak-tf-unlock-${instanceName}" ''
-                  #!${pkgs.bash}/bin/bash
-                  LOCK_FILE="/var/lib/keycloak-${instanceName}-terraform/.terraform.lock"
-                  LOCK_INFO="/var/lib/keycloak-${instanceName}-terraform/.terraform.lock.info"
-
-                  if [ ! -f "$LOCK_FILE" ] && [ ! -f "$LOCK_INFO" ]; then
-                    echo "No lock files found"
-                    exit 0
-                  fi
-
-                  echo "Current lock status:"
-                  if [ -f "$LOCK_INFO" ]; then
-                    cat "$LOCK_INFO"
-                  fi
-
-                  read -p "Force unlock terraform state? (y/N) " -n 1 -r
-                  echo
-                  if [[ $REPLY =~ ^[Yy]$ ]]; then
-                    rm -f "$LOCK_FILE" "$LOCK_INFO"
-                    echo "Lock removed"
-                  else
-                    echo "Cancelled"
-                  fi
-                '')
-
-                (writeScriptBin "keycloak-tf-status-${instanceName}" ''
-                  #!${pkgs.bash}/bin/bash
-                  LOCK_FILE="/var/lib/keycloak-${instanceName}-terraform/.terraform.lock"
-                  LOCK_INFO="/var/lib/keycloak-${instanceName}-terraform/.terraform.lock.info"
-
-                  echo "=== Terraform Lock Status for ${instanceName} ==="
-                  if [ -f "$LOCK_FILE" ] || [ -f "$LOCK_INFO" ]; then
-                    echo "Lock is ACTIVE"
-                    if [ -f "$LOCK_INFO" ]; then
-                      echo "Lock details:"
-                      cat "$LOCK_INFO"
-                    fi
-
-                    # Check if the PID is still running
-                    if [ -f "$LOCK_INFO" ]; then
-                      PID=$(grep "^PID:" "$LOCK_INFO" | awk '{print $2}')
-                      if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
-                        echo "Process $PID is still running"
-                      else
-                        echo "WARNING: Process $PID is not running (lock may be stale)"
-                      fi
-                    fi
-                  else
-                    echo "No active lock"
-                  fi
-
-                  echo ""
-                  echo "=== Terraform Service Status ==="
-                  systemctl status --no-pager -l keycloak-terraform-${instanceName}.service || true
-                '')
-
-                (writeScriptBin "keycloak-tf-apply-${instanceName}" ''
-                  #!${pkgs.bash}/bin/bash
-                  echo "Triggering terraform apply for ${instanceName}..."
-                  systemctl start keycloak-terraform-${instanceName}.service
-
-                  # Follow the logs
-                  journalctl -u keycloak-terraform-${instanceName}.service -f
-                '')
-
-                (writeScriptBin "keycloak-tf-watch-${instanceName}" ''
-                  #!${pkgs.bash}/bin/bash
-                  echo "Manually triggering terraform watcher for ${instanceName}..."
-
-                  # Show current status
-                  echo "=== Current Status ==="
-                  echo "Keycloak service: $(systemctl is-active keycloak.service)"
-                  echo "Terraform service: $(systemctl is-active keycloak-terraform-${instanceName}.service)"
-                  echo "Watcher timer: $(systemctl is-active keycloak-terraform-watcher-${instanceName}.timer)"
-
-                  # Check for .needs-apply flag
-                  if [ -f "/var/lib/keycloak-${instanceName}-terraform/.needs-apply" ]; then
-                    echo ".needs-apply flag: EXISTS"
-                  else
-                    echo ".needs-apply flag: NOT FOUND"
-                  fi
-
-                  echo ""
-                  echo "Triggering watcher service manually..."
-                  systemctl start keycloak-terraform-watcher-${instanceName}.service
-
-                  # Follow the logs
-                  journalctl -u keycloak-terraform-watcher-${instanceName}.service -f
-                '')
-              ];
+              # Helper commands for terraform management
+              environment.systemPackages = opentofu.mkHelperScripts {
+                serviceName = "keycloak";
+                inherit instanceName;
+              };
             };
         };
     };

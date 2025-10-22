@@ -93,10 +93,46 @@
           pkgs.curl
           pkgs.jq
           pkgs.coreutils
+          pkgs.util-linux # For flock state locking
         ];
 
         script = ''
           echo "Checking for ${serviceName} terraform configuration changes during deployment..."
+
+          # State locking implementation for concurrent execution safety
+          LOCK_FILE="$STATE_DIRECTORY/.terraform.lock"
+          LOCK_TIMEOUT=300  # 5 minutes default
+
+          echo "Acquiring terraform state lock..."
+
+          # Try to acquire exclusive lock with timeout
+          exec 200>"$LOCK_FILE"
+          if ! ${pkgs.util-linux}/bin/flock -w $LOCK_TIMEOUT -x 200; then
+            echo "ERROR: Failed to acquire terraform lock after $LOCK_TIMEOUT seconds"
+            echo "Another terraform operation may be in progress"
+            echo "Lock file: $LOCK_FILE"
+
+            # Check if lock info file exists and show details
+            if [ -f "$LOCK_FILE.info" ]; then
+              echo "Lock held by:"
+              cat "$LOCK_FILE.info"
+            fi
+
+            echo "To force unlock: systemctl stop ${serviceName}-terraform-deploy-${instanceName} && rm -f $LOCK_FILE $LOCK_FILE.info"
+            exit 1
+          fi
+
+          # Lock acquired - record lock info
+          echo "Lock acquired by PID $$"
+          cat > "$LOCK_FILE.info" <<EOF
+          PID: $$
+          Date: $(date -Iseconds)
+          Service: ${serviceName}-terraform-deploy-${instanceName}
+          User: $(whoami)
+          EOF
+
+          # Ensure lock is released on exit
+          trap "rm -f '$LOCK_FILE.info'; exec 200>&-" EXIT INT TERM
 
           # Generate current terraform configuration hash from the build-time config
           CURRENT_CONFIG_HASH=$(sha256sum ${terraformConfigPath} | cut -d' ' -f1)
@@ -195,6 +231,123 @@
         '';
       };
     };
+
+  # Generate helper scripts for terraform operations
+  mkHelperScripts =
+    { serviceName, instanceName }:
+    let
+      stateDir = "/var/lib/${serviceName}-${instanceName}-terraform";
+      lockFile = "${stateDir}/.terraform.lock";
+      lockInfoFile = "${stateDir}/.terraform.lock.info";
+      deploymentServiceName = "${serviceName}-terraform-deploy-${instanceName}";
+    in
+    [
+      # Unlock script - Force remove terraform state locks
+      (pkgs.writeScriptBin "${serviceName}-tf-unlock-${instanceName}" ''
+        #!${pkgs.bash}/bin/bash
+        LOCK_FILE="${lockFile}"
+        LOCK_INFO="${lockInfoFile}"
+
+        if [ ! -f "$LOCK_FILE" ] && [ ! -f "$LOCK_INFO" ]; then
+          echo "No lock files found"
+          exit 0
+        fi
+
+        echo "Current lock status:"
+        if [ -f "$LOCK_INFO" ]; then
+          cat "$LOCK_INFO"
+        fi
+
+        read -p "Force unlock terraform state? (y/N) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+          rm -f "$LOCK_FILE" "$LOCK_INFO"
+          echo "Lock removed"
+        else
+          echo "Cancelled"
+        fi
+      '')
+
+      # Status script - Show lock status and service health
+      (pkgs.writeScriptBin "${serviceName}-tf-status-${instanceName}" ''
+        #!${pkgs.bash}/bin/bash
+        LOCK_FILE="${lockFile}"
+        LOCK_INFO="${lockInfoFile}"
+
+        echo "=== Terraform Lock Status for ${serviceName}-${instanceName} ==="
+        if [ -f "$LOCK_FILE" ] || [ -f "$LOCK_INFO" ]; then
+          echo "Lock is ACTIVE"
+          if [ -f "$LOCK_INFO" ]; then
+            echo "Lock details:"
+            cat "$LOCK_INFO"
+          fi
+
+          # Check if the PID is still running
+          if [ -f "$LOCK_INFO" ]; then
+            PID=$(grep "^PID:" "$LOCK_INFO" | awk '{print $2}')
+            if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
+              echo "Process $PID is still running"
+            else
+              echo "WARNING: Process $PID is not running (lock may be stale)"
+            fi
+          fi
+        else
+          echo "No active lock"
+        fi
+
+        echo ""
+        echo "=== Terraform Deployment Service Status ==="
+        systemctl status --no-pager -l ${deploymentServiceName}.service || true
+
+        echo ""
+        echo "=== Main Service Status ==="
+        systemctl status --no-pager -l ${serviceName}.service || true
+      '')
+
+      # Apply script - Manual terraform deployment trigger
+      (pkgs.writeScriptBin "${serviceName}-tf-apply-${instanceName}" ''
+        #!${pkgs.bash}/bin/bash
+        echo "Triggering terraform apply for ${serviceName}-${instanceName}..."
+
+        # Remove deploy-complete flag to force re-deployment
+        rm -f ${stateDir}/.deploy-complete
+
+        # Start the deployment service
+        systemctl start ${deploymentServiceName}.service
+
+        # Follow the logs
+        journalctl -u ${deploymentServiceName}.service -f
+      '')
+
+      # Logs script - Monitor terraform execution
+      (pkgs.writeScriptBin "${serviceName}-tf-logs-${instanceName}" ''
+        #!${pkgs.bash}/bin/bash
+        echo "Monitoring terraform logs for ${serviceName}-${instanceName}..."
+
+        echo "=== Current Status ==="
+        echo "Main service: $(systemctl is-active ${serviceName}.service)"
+        echo "Deployment service: $(systemctl is-active ${deploymentServiceName}.service)"
+
+        # Check for deploy-complete flag
+        if [ -f "${stateDir}/.deploy-complete" ]; then
+          echo "Deploy status: COMPLETE"
+        else
+          echo "Deploy status: PENDING"
+        fi
+
+        # Check for lock status
+        if [ -f "${lockFile}" ] || [ -f "${lockInfoFile}" ]; then
+          echo "Lock status: ACTIVE"
+        else
+          echo "Lock status: NONE"
+        fi
+
+        echo ""
+        echo "=== Following Deployment Service Logs ==="
+        echo "Press Ctrl+C to stop following logs"
+        journalctl -u ${deploymentServiceName}.service -f
+      '')
+    ];
 
   # Generate Garage bucket init service for S3 backend
   mkGarageInitService =

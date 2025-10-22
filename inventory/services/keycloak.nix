@@ -162,9 +162,19 @@ _: {
                 email = "finaltest@robitzs.ch";
                 firstName = "Final";
                 lastName = "Verification";
+                enabled = false;  # Changed: disable user to test update
+                emailVerified = false;  # Changed: test attribute change
+                initialPassword = "FinalTest789!";
+                temporary = true;
+              };
+              "abstractiontest" = {
+                realm = "shadow";
+                email = "abstractiontest@robitzs.ch";
+                firstName = "Abstraction";
+                lastName = "Test";
                 enabled = true;
                 emailVerified = true;
-                initialPassword = "FinalTest789!";
+                initialPassword = "AbstractionTest999!";
                 temporary = true;
               };
               "librarytest" = {
