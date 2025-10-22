@@ -92,7 +92,7 @@ let
   generateGroup = name: config: {
     keycloak_group.${name} = lib.filterAttrs (_: v: v != null) {
       realm_id = "\${keycloak_realm.${config.realm}.id}";
-      name = name;
+      inherit name;
       parent_id =
         if config.parentGroup or null != null then "\${keycloak_group.${config.parentGroup}.id}" else null;
       attributes = config.attributes or null;
@@ -107,7 +107,7 @@ let
         keycloak_role.${name} = {
           realm_id = "\${keycloak_realm.${config.realm}.id}";
           client_id = "\${keycloak_openid_client.${config.client}.id}";
-          name = name;
+          inherit name;
           description = config.description or null;
         };
       }
@@ -115,13 +115,13 @@ let
       {
         keycloak_role.${name} = {
           realm_id = "\${keycloak_realm.${config.realm}.id}";
-          name = name;
+          inherit name;
           description = config.description or null;
         };
       };
 
   # Merge all resource generators
-  resources = lib.foldl' lib.recursiveUpdate { } ([
+  resources = lib.foldl' lib.recursiveUpdate { } [
     # Generate all realms
     (lib.foldl' lib.recursiveUpdate { } (
       lib.mapAttrsToList generateRealm (settings.terraform.realms or { })
@@ -146,7 +146,7 @@ let
     (lib.foldl' lib.recursiveUpdate { } (
       lib.mapAttrsToList generateRole (settings.terraform.roles or { })
     ))
-  ]);
+  ];
 
 in
 {

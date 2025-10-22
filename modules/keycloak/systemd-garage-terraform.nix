@@ -217,241 +217,243 @@ in
 
   config = mkIf config.services.garage-terraform.enable {
 
-    # Garage service configuration
-    systemd.services.garage = {
-      description = "Garage S3-compatible distributed storage";
-      after = [ "network.target" ];
-      wantedBy = [ "multi-user.target" ];
+    # Combined systemd services configuration
+    systemd.services = {
+      garage = {
+        description = "Garage S3-compatible distributed storage";
+        after = [ "network.target" ];
+        wantedBy = [ "multi-user.target" ];
 
-      serviceConfig = {
-        Type = "simple";
-        DynamicUser = true;
-        StateDirectory = "garage";
-        RuntimeDirectory = "garage";
+        serviceConfig = {
+          Type = "simple";
+          DynamicUser = true;
+          StateDirectory = "garage";
+          RuntimeDirectory = "garage";
 
-        # Environment variables
-        Environment = [
-          "GARAGE_CONFIG_FILE=${garageConfigDir}/garage.toml"
-          "RUST_LOG=garage=info"
-        ];
+          # Environment variables
+          Environment = [
+            "GARAGE_CONFIG_FILE=${garageConfigDir}/garage.toml"
+            "RUST_LOG=garage=info"
+          ];
 
-        ExecStartPre = pkgs.writeScript "garage-pre-start" ''
-          #!${pkgs.bash}/bin/bash
-          set -euo pipefail
+          ExecStartPre = pkgs.writeScript "garage-pre-start" ''
+            #!${pkgs.bash}/bin/bash
+            set -euo pipefail
 
-          # Create garage configuration
-          cat > ${garageConfigDir}/garage.toml <<EOF
-          ${config.services.garage-terraform.garageConfig}
-          EOF
+            # Create garage configuration
+            cat > ${garageConfigDir}/garage.toml <<EOF
+            ${config.services.garage-terraform.garageConfig}
+            EOF
 
-          # Set appropriate permissions
-          chmod 600 ${garageConfigDir}/garage.toml
-        '';
+            # Set appropriate permissions
+            chmod 600 ${garageConfigDir}/garage.toml
+          '';
 
-        ExecStart = "${pkgs.garage}/bin/garage -c ${garageConfigDir}/garage.toml server";
+          ExecStart = "${pkgs.garage}/bin/garage -c ${garageConfigDir}/garage.toml server";
 
-        Restart = "on-failure";
-        RestartSec = "5s";
+          Restart = "on-failure";
+          RestartSec = "5s";
 
-        # Security settings
-        NoNewPrivileges = true;
-        ProtectSystem = "strict";
-        ProtectHome = true;
-        PrivateTmp = true;
-        PrivateDevices = true;
-        ProtectKernelTunables = true;
-        ProtectKernelModules = true;
-        ProtectControlGroups = true;
-        RestrictSUIDSGID = true;
-        RemoveIPC = true;
-        RestrictRealtime = true;
-        SystemCallFilter = [
-          "@system-service"
-          "~@privileged @resources"
-        ];
+          # Security settings
+          NoNewPrivileges = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          PrivateTmp = true;
+          PrivateDevices = true;
+          ProtectKernelTunables = true;
+          ProtectKernelModules = true;
+          ProtectControlGroups = true;
+          RestrictSUIDSGID = true;
+          RemoveIPC = true;
+          RestrictRealtime = true;
+          SystemCallFilter = [
+            "@system-service"
+            "~@privileged @resources"
+          ];
 
-        # Resource limits
-        MemoryMax = "2G";
-        TasksMax = 4096;
+          # Resource limits
+          MemoryMax = "2G";
+          TasksMax = 4096;
+        };
       };
-    };
 
-    # Garage bucket initialization (oneshot)
-    systemd.services.garage-bucket-init = {
-      description = "Initialize Garage bucket for Terraform state";
-      after = [ "garage.service" ];
-      requires = [ "garage.service" ];
-      wantedBy = [ "multi-user.target" ];
+      # Garage bucket initialization (oneshot)
+      garage-bucket-init = {
+        description = "Initialize Garage bucket for Terraform state";
+        after = [ "garage.service" ];
+        requires = [ "garage.service" ];
+        wantedBy = [ "multi-user.target" ];
 
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        DynamicUser = true;
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          DynamicUser = true;
 
-        ExecStart = garageBucketInit;
+          ExecStart = garageBucketInit;
 
-        # Retry on failure
-        Restart = "on-failure";
-        RestartSec = "10s";
+          # Retry on failure
+          Restart = "on-failure";
+          RestartSec = "10s";
 
-        # Timeout settings
-        TimeoutStartSec = "5min";
+          # Timeout settings
+          TimeoutStartSec = "5min";
 
-        # Security settings
-        NoNewPrivileges = true;
-        ProtectSystem = "strict";
-        ProtectHome = true;
-        PrivateTmp = true;
-        ReadWritePaths = [ garageConfigDir ];
+          # Security settings
+          NoNewPrivileges = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          PrivateTmp = true;
+          ReadWritePaths = [ garageConfigDir ];
+        };
       };
-    };
 
-    # Garage key initialization (oneshot)
-    systemd.services.garage-key-init = {
-      description = "Initialize Garage access keys for Terraform";
-      after = [ "garage-bucket-init.service" ];
-      requires = [ "garage-bucket-init.service" ];
-      wantedBy = [ "multi-user.target" ];
+      # Garage key initialization (oneshot)
+      garage-key-init = {
+        description = "Initialize Garage access keys for Terraform";
+        after = [ "garage-bucket-init.service" ];
+        requires = [ "garage-bucket-init.service" ];
+        wantedBy = [ "multi-user.target" ];
 
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        DynamicUser = true;
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          DynamicUser = true;
 
-        # Create runtime credentials directory
-        RuntimeDirectory = "credentials/garage-terraform";
-        RuntimeDirectoryMode = "0700";
+          # Create runtime credentials directory
+          RuntimeDirectory = "credentials/garage-terraform";
+          RuntimeDirectoryMode = "0700";
 
-        ExecStart = garageKeyInit;
+          ExecStart = garageKeyInit;
 
-        # Retry on failure
-        Restart = "on-failure";
-        RestartSec = "10s";
+          # Retry on failure
+          Restart = "on-failure";
+          RestartSec = "10s";
 
-        # Timeout settings
-        TimeoutStartSec = "5min";
+          # Timeout settings
+          TimeoutStartSec = "5min";
 
-        # Security settings
-        NoNewPrivileges = true;
-        ProtectSystem = "strict";
-        ProtectHome = true;
-        PrivateTmp = true;
-        ReadWritePaths = [
-          garageConfigDir
-          "/run/credentials/garage-terraform"
-        ];
+          # Security settings
+          NoNewPrivileges = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          PrivateTmp = true;
+          ReadWritePaths = [
+            garageConfigDir
+            "/run/credentials/garage-terraform"
+          ];
+        };
       };
-    };
 
-    # Keycloak Terraform automation (oneshot)
-    systemd.services.keycloak-terraform = {
-      description = "Keycloak Terraform Resource Management";
-      after = [
-        "keycloak.service"
-        "garage-key-init.service"
-      ];
-      requires = [
-        "keycloak.service"
-        "garage-key-init.service"
-      ];
-      wantedBy = [ "multi-user.target" ];
-
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        DynamicUser = true;
-
-        # Working directory for Terraform
-        StateDirectory = "keycloak-terraform";
-        WorkingDirectory = terraformWorkDir;
-
-        # Load Garage credentials from runtime directory
-        LoadCredential = [
-          "garage_access_key_id:/run/credentials/garage-terraform/access_key_id"
-          "garage_secret_access_key:/run/credentials/garage-terraform/secret_access_key"
+      # Keycloak Terraform automation (oneshot)
+      keycloak-terraform = {
+        description = "Keycloak Terraform Resource Management";
+        after = [
+          "keycloak.service"
+          "garage-key-init.service"
         ];
-
-        ExecStart = terraformExecutor;
-
-        # Retry on failure with backoff
-        Restart = "on-failure";
-        RestartSec = "30s";
-
-        # Extended timeout for Terraform operations
-        TimeoutStartSec = "20min";
-
-        # Security settings
-        NoNewPrivileges = true;
-        ProtectSystem = "strict";
-        ProtectHome = true;
-        PrivateTmp = true;
-        PrivateDevices = true;
-        ProtectKernelTunables = true;
-        ProtectKernelModules = true;
-        ProtectControlGroups = true;
-        RestrictSUIDSGID = true;
-        RemoveIPC = true;
-        RestrictRealtime = true;
-        SystemCallFilter = [
-          "@system-service"
-          "~@privileged"
+        requires = [
+          "keycloak.service"
+          "garage-key-init.service"
         ];
+        wantedBy = [ "multi-user.target" ];
 
-        # Environment for Terraform
-        Environment = [
-          "TF_INPUT=false"
-          "TF_IN_AUTOMATION=true"
-          "TF_CLI_ARGS=-no-color"
-        ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          DynamicUser = true;
 
-        # Resource limits
-        MemoryMax = "1G";
-        TasksMax = 2048;
+          # Working directory for Terraform
+          StateDirectory = "keycloak-terraform";
+          WorkingDirectory = terraformWorkDir;
+
+          # Load Garage credentials from runtime directory
+          LoadCredential = [
+            "garage_access_key_id:/run/credentials/garage-terraform/access_key_id"
+            "garage_secret_access_key:/run/credentials/garage-terraform/secret_access_key"
+          ];
+
+          ExecStart = terraformExecutor;
+
+          # Retry on failure with backoff
+          Restart = "on-failure";
+          RestartSec = "30s";
+
+          # Extended timeout for Terraform operations
+          TimeoutStartSec = "20min";
+
+          # Security settings
+          NoNewPrivileges = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          PrivateTmp = true;
+          PrivateDevices = true;
+          ProtectKernelTunables = true;
+          ProtectKernelModules = true;
+          ProtectControlGroups = true;
+          RestrictSUIDSGID = true;
+          RemoveIPC = true;
+          RestrictRealtime = true;
+          SystemCallFilter = [
+            "@system-service"
+            "~@privileged"
+          ];
+
+          # Environment for Terraform
+          Environment = [
+            "TF_INPUT=false"
+            "TF_IN_AUTOMATION=true"
+            "TF_CLI_ARGS=-no-color"
+          ];
+
+          # Resource limits
+          MemoryMax = "1G";
+          TasksMax = 2048;
+        };
       };
-    };
 
-    # Service monitoring and restart orchestration
-    systemd.services.garage-terraform-monitor = {
-      description = "Monitor Garage-Terraform service health";
-      after = [ "keycloak-terraform.service" ];
-      wantedBy = [ "multi-user.target" ];
+      # Service monitoring and restart orchestration
+      garage-terraform-monitor = {
+        description = "Monitor Garage-Terraform service health";
+        after = [ "keycloak-terraform.service" ];
+        wantedBy = [ "multi-user.target" ];
 
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
 
-        ExecStart = pkgs.writeScript "garage-terraform-monitor" ''
-          #!${pkgs.bash}/bin/bash
-          set -euo pipefail
+          ExecStart = pkgs.writeScript "garage-terraform-monitor" ''
+            #!${pkgs.bash}/bin/bash
+            set -euo pipefail
 
-          # Check service status
-          if ! systemctl is-active --quiet garage.service; then
-            echo "WARNING: Garage service is not active"
-            exit 1
-          fi
-
-          if ! systemctl is-active --quiet keycloak.service; then
-            echo "WARNING: Keycloak service is not active"
-            exit 1
-          fi
-
-          # Check if oneshot services completed successfully
-          for service in garage-bucket-init garage-key-init keycloak-terraform; do
-            if ! systemctl show "$service.service" --property=ExecMainStatus --value | grep -q "^0$"; then
-              echo "WARNING: $service failed to complete successfully"
+            # Check service status
+            if ! systemctl is-active --quiet garage.service; then
+              echo "WARNING: Garage service is not active"
               exit 1
             fi
-          done
 
-          echo "All Garage-Terraform services are healthy"
-        '';
+            if ! systemctl is-active --quiet keycloak.service; then
+              echo "WARNING: Keycloak service is not active"
+              exit 1
+            fi
 
-        # Run periodically
-        # Note: This would typically be paired with a timer unit
+            # Check if oneshot services completed successfully
+            for service in garage-bucket-init garage-key-init keycloak-terraform; do
+              if ! systemctl show "$service.service" --property=ExecMainStatus --value | grep -q "^0$"; then
+                echo "WARNING: $service failed to complete successfully"
+                exit 1
+              fi
+            done
+
+            echo "All Garage-Terraform services are healthy"
+          '';
+
+          # Run periodically
+          # Note: This would typically be paired with a timer unit
+        };
       };
     };
 
-    # Timer for periodic health checks (optional)
+    # Timer for periodic health checks
     systemd.timers.garage-terraform-monitor = {
       description = "Periodic health check for Garage-Terraform services";
       wantedBy = [ "timers.target" ];

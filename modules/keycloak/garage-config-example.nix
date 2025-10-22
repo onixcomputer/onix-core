@@ -1,7 +1,7 @@
 # Example Garage Configuration for Keycloak-Terraform Integration
 # This provides a complete example of how to configure Garage with the systemd orchestration
 
-{ ... }:
+_:
 
 {
   # Example garage configuration content

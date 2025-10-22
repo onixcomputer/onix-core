@@ -75,7 +75,7 @@ in
               terraformConfigJson = pkgs.writeText "keycloak-terraform-${instanceName}.json" (
                 builtins.toJSON (
                   import ./terranix-config.nix {
-                    lib = pkgs.lib;
+                    inherit (pkgs) lib;
                     inherit settings;
                   }
                 )
@@ -135,27 +135,6 @@ in
                 };
               };
 
-              # Basic service startup order
-              systemd.services.keycloak = {
-                after = [ "postgresql.service" ];
-                requires = [ "postgresql.service" ];
-
-                preStart = ''
-                  while ! ${config.services.postgresql.package}/bin/pg_isready -h localhost; do
-                    echo "Waiting for PostgreSQL to be ready..."
-                    sleep 2
-                  done
-                  echo "PostgreSQL ready. Starting Keycloak."
-                '';
-
-                postStart = lib.mkIf terraformAutoApply (
-                  lib.mkAfter ''
-                    # Trigger terraform configuration non-blocking
-                    ${pkgs.systemd}/bin/systemctl start --no-block keycloak-terraform-${instanceName}.service || true
-                  ''
-                );
-              };
-
               # Generate clan vars for database and admin passwords
               clan.core.vars.generators."keycloak-${instanceName}" = {
                 files = {
@@ -173,293 +152,317 @@ in
                 '';
               };
 
-              # Garage bucket setup for Terraform state (if using S3 backend)
-              systemd.services."garage-terraform-init-${instanceName}" =
-                lib.mkIf (terraformBackend == "s3" && terraformAutoApply)
-                  {
-                    description = "Initialize Garage bucket for Keycloak Terraform";
-                    after = [ "garage.service" ];
-                    requires = [ "garage.service" ];
-                    before = [ "keycloak-terraform-${instanceName}.service" ];
-                    wantedBy = [ "multi-user.target" ];
+              # Combined systemd services
+              systemd.services = {
+                # Basic service startup order
+                keycloak = {
+                  after = [ "postgresql.service" ];
+                  requires = [ "postgresql.service" ];
 
-                    path = [
-                      pkgs.garage
-                      pkgs.curl
-                      pkgs.jq
-                      pkgs.gawk
-                      pkgs.gnugrep
-                    ];
+                  preStart = ''
+                    while ! ${config.services.postgresql.package}/bin/pg_isready -h localhost; do
+                      echo "Waiting for PostgreSQL to be ready..."
+                      sleep 2
+                    done
+                    echo "PostgreSQL ready. Starting Keycloak."
+                  '';
 
-                    serviceConfig = {
-                      Type = "oneshot";
-                      RemainAfterExit = true;
-                      StateDirectory = "garage-terraform-${instanceName}";
-                      WorkingDirectory = "/var/lib/garage-terraform-${instanceName}";
+                  postStart = lib.mkIf terraformAutoApply (
+                    lib.mkAfter ''
+                      # Trigger terraform configuration non-blocking
+                      ${pkgs.systemd}/bin/systemctl start --no-block keycloak-terraform-${instanceName}.service || true
+                    ''
+                  );
+                };
 
-                      LoadCredential =
-                        lib.optionals (config.clan.core.vars.generators ? "garage") [
-                          "admin_token:${config.clan.core.vars.generators.garage.files.admin_token.path}"
-                        ]
-                        ++ lib.optionals (config.clan.core.vars.generators ? "garage-shared") [
-                          "rpc_secret:${config.clan.core.vars.generators.garage-shared.files.rpc_secret.path}"
-                        ];
-                    };
+                # Garage bucket setup for Terraform state (if using S3 backend)
+                "garage-terraform-init-${instanceName}" =
+                  lib.mkIf (terraformBackend == "s3" && terraformAutoApply)
+                    {
+                      description = "Initialize Garage bucket for Keycloak Terraform";
+                      after = [ "garage.service" ];
+                      requires = [ "garage.service" ];
+                      before = [ "keycloak-terraform-${instanceName}.service" ];
+                      wantedBy = [ "multi-user.target" ];
 
-                    script = ''
-                      set -euo pipefail
-
-                      # Wait for Garage to be ready
-                      echo "Waiting for Garage API..."
-                      for i in {1..30}; do
-                        if curl -sf http://127.0.0.1:3903/health 2>/dev/null; then
-                          break
-                        fi
-                        sleep 2
-                      done
-
-                      if [ -f "$CREDENTIALS_DIRECTORY/admin_token" ]; then
-                        export GARAGE_ADMIN_TOKEN=$(cat $CREDENTIALS_DIRECTORY/admin_token)
-                      fi
-
-                      if [ -f "$CREDENTIALS_DIRECTORY/rpc_secret" ]; then
-                        export GARAGE_RPC_SECRET=$(cat $CREDENTIALS_DIRECTORY/rpc_secret)
-                      fi
-
-                      GARAGE="${pkgs.garage}/bin/garage"
-
-                      # Create bucket if doesn't exist
-                      if ! $GARAGE bucket info terraform-state 2>/dev/null; then
-                        echo "Creating terraform-state bucket..."
-                        $GARAGE bucket create terraform-state
-                      fi
-
-                      # Create access key if doesn't exist
-                      KEY_NAME="keycloak-${instanceName}-tf"
-                      if ! $GARAGE key info $KEY_NAME 2>/dev/null; then
-                        echo "Creating access key..."
-                        $GARAGE key create $KEY_NAME
-
-                        # Grant permissions
-                        $GARAGE bucket allow terraform-state --read --write --owner --key $KEY_NAME
-                      fi
-
-                      # Get credentials - parse text output
-                      KEY_ID=$($GARAGE key info $KEY_NAME | grep -E '^Key ID:' | awk '{print $3}')
-                      SECRET=$($GARAGE key info $KEY_NAME --show-secret | grep -E '^Secret key:' | awk '{print $3}')
-
-                      # Save credentials
-                      echo "$KEY_ID" > access_key_id
-                      echo "$SECRET" > secret_access_key
-
-                      echo "Garage bucket and credentials ready"
-                    '';
-                  };
-
-              # Automated OpenTofu execution
-              systemd.services."keycloak-terraform-${instanceName}" =
-                lib.mkIf (terraformAutoApply && (settings.terraform.enable or false))
-                  {
-                    description = "Apply Keycloak Terraform configuration";
-
-                    after = [
-                      "keycloak.service"
-                    ]
-                    ++ lib.optionals (terraformBackend == "s3") [ "garage-terraform-init-${instanceName}.service" ];
-                    requires = [
-                      "keycloak.service"
-                    ]
-                    ++ lib.optionals (terraformBackend == "s3") [ "garage-terraform-init-${instanceName}.service" ];
-                    partOf = [ "keycloak.service" ];
-
-                    path = [
-                      pkgs.opentofu
-                      pkgs.curl
-                      pkgs.jq
-                      pkgs.coreutils
-                    ];
-
-                    serviceConfig = {
-                      Type = "oneshot";
-                      RemainAfterExit = false;
-
-                      StateDirectory = "keycloak-${instanceName}-terraform";
-                      WorkingDirectory = "/var/lib/keycloak-${instanceName}-terraform";
-
-                      TimeoutStartSec = "20m";
-                      Restart = "on-failure";
-                      RestartSec = "30s";
-
-                      LoadCredential = [
-                        "admin_password:${adminPasswordFile}"
+                      path = [
+                        pkgs.garage
+                        pkgs.curl
+                        pkgs.jq
+                        pkgs.gawk
+                        pkgs.gnugrep
                       ];
+
+                      serviceConfig = {
+                        Type = "oneshot";
+                        RemainAfterExit = true;
+                        StateDirectory = "garage-terraform-${instanceName}";
+                        WorkingDirectory = "/var/lib/garage-terraform-${instanceName}";
+
+                        LoadCredential =
+                          lib.optionals (config.clan.core.vars.generators ? "garage") [
+                            "admin_token:${config.clan.core.vars.generators.garage.files.admin_token.path}"
+                          ]
+                          ++ lib.optionals (config.clan.core.vars.generators ? "garage-shared") [
+                            "rpc_secret:${config.clan.core.vars.generators.garage-shared.files.rpc_secret.path}"
+                          ];
+                      };
+
+                      script = ''
+                        set -euo pipefail
+
+                        # Wait for Garage to be ready
+                        echo "Waiting for Garage API..."
+                        for i in {1..30}; do
+                          if curl -sf http://127.0.0.1:3903/health 2>/dev/null; then
+                            break
+                          fi
+                          sleep 2
+                        done
+
+                        if [ -f "$CREDENTIALS_DIRECTORY/admin_token" ]; then
+                          export GARAGE_ADMIN_TOKEN=$(cat $CREDENTIALS_DIRECTORY/admin_token)
+                        fi
+
+                        if [ -f "$CREDENTIALS_DIRECTORY/rpc_secret" ]; then
+                          export GARAGE_RPC_SECRET=$(cat $CREDENTIALS_DIRECTORY/rpc_secret)
+                        fi
+
+                        GARAGE="${pkgs.garage}/bin/garage"
+
+                        # Create bucket if doesn't exist
+                        if ! $GARAGE bucket info terraform-state 2>/dev/null; then
+                          echo "Creating terraform-state bucket..."
+                          $GARAGE bucket create terraform-state
+                        fi
+
+                        # Create access key if doesn't exist
+                        KEY_NAME="keycloak-${instanceName}-tf"
+                        if ! $GARAGE key info $KEY_NAME 2>/dev/null; then
+                          echo "Creating access key..."
+                          $GARAGE key create $KEY_NAME
+
+                          # Grant permissions
+                          $GARAGE bucket allow terraform-state --read --write --owner --key $KEY_NAME
+                        fi
+
+                        # Get credentials - parse text output
+                        KEY_ID=$($GARAGE key info $KEY_NAME | grep -E '^Key ID:' | awk '{print $3}')
+                        SECRET=$($GARAGE key info $KEY_NAME --show-secret | grep -E '^Secret key:' | awk '{print $3}')
+
+                        # Save credentials
+                        echo "$KEY_ID" > access_key_id
+                        echo "$SECRET" > secret_access_key
+
+                        echo "Garage bucket and credentials ready"
+                      '';
                     };
 
-                    script = ''
-                                            set -euo pipefail
+                # Automated OpenTofu execution
+                "keycloak-terraform-${instanceName}" =
+                  lib.mkIf (terraformAutoApply && (settings.terraform.enable or false))
+                    {
+                      description = "Apply Keycloak Terraform configuration";
 
-                                            echo "Starting OpenTofu for Keycloak ${instanceName}"
+                      after = [
+                        "keycloak.service"
+                      ]
+                      ++ lib.optionals (terraformBackend == "s3") [ "garage-terraform-init-${instanceName}.service" ];
+                      requires = [
+                        "keycloak.service"
+                      ]
+                      ++ lib.optionals (terraformBackend == "s3") [ "garage-terraform-init-${instanceName}.service" ];
+                      partOf = [ "keycloak.service" ];
 
-                                            # State locking implementation
-                                            LOCK_FILE="$STATE_DIRECTORY/.terraform.lock"
-                                            LOCK_TIMEOUT=${toString terraformLockTimeout}
+                      path = [
+                        pkgs.opentofu
+                        pkgs.curl
+                        pkgs.jq
+                        pkgs.coreutils
+                      ];
 
-                                            echo "Acquiring terraform state lock..."
+                      serviceConfig = {
+                        Type = "oneshot";
+                        RemainAfterExit = false;
 
-                                            # Try to acquire exclusive lock with timeout
-                                            exec 200>"$LOCK_FILE"
-                                            if ! ${pkgs.util-linux}/bin/flock -w $LOCK_TIMEOUT -x 200; then
-                                              echo "ERROR: Failed to acquire terraform lock after $LOCK_TIMEOUT seconds"
-                                              echo "Another terraform operation may be in progress"
-                                              echo "Lock file: $LOCK_FILE"
+                        StateDirectory = "keycloak-${instanceName}-terraform";
+                        WorkingDirectory = "/var/lib/keycloak-${instanceName}-terraform";
 
-                                              # Check if lock info file exists and show details
-                                              if [ -f "$LOCK_FILE.info" ]; then
-                                                echo "Lock held by:"
-                                                cat "$LOCK_FILE.info"
-                                              fi
+                        TimeoutStartSec = "20m";
+                        Restart = "on-failure";
+                        RestartSec = "30s";
 
-                                              echo "To force unlock: systemctl stop keycloak-terraform-${instanceName} && rm -f $LOCK_FILE $LOCK_FILE.info"
-                                              exit 1
-                                            fi
+                        LoadCredential = [
+                          "admin_password:${adminPasswordFile}"
+                        ];
+                      };
 
-                                            # Lock acquired - record lock info
-                                            echo "Lock acquired by PID $$"
-                                            cat > "$LOCK_FILE.info" <<EOF
-                      PID: $$
-                      Date: $(date -Iseconds)
-                      Service: keycloak-terraform-${instanceName}
-                      User: $(whoami)
-                      EOF
+                      script = ''
+                                              set -euo pipefail
 
-                                            # Ensure lock is released on exit
-                                            trap "rm -f '$LOCK_FILE.info'; exec 200>&-" EXIT INT TERM
+                                              echo "Starting OpenTofu for Keycloak ${instanceName}"
 
-                                            # Wait for Keycloak (check for 302 redirect which indicates it's running)
-                                            echo "Waiting for Keycloak..."
-                                            for i in {1..60}; do
-                                              HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/ 2>/dev/null || echo "000")
-                                              if [ "$HTTP_CODE" = "302" ] || [ "$HTTP_CODE" = "200" ]; then
-                                                echo "Keycloak is ready (HTTP $HTTP_CODE)"
-                                                break
-                                              fi
-                                              [ $i -eq 60 ] && { echo "Timeout waiting for Keycloak"; exit 1; }
-                                              echo "Waiting... (attempt $i/60, got HTTP $HTTP_CODE)"
-                                              sleep 5
-                                            done
+                                              # State locking implementation
+                                              LOCK_FILE="$STATE_DIRECTORY/.terraform.lock"
+                                              LOCK_TIMEOUT=${toString terraformLockTimeout}
 
-                                            # Load Garage credentials for S3-compatible state backend
-                                            ${
-                                              if terraformBackend == "s3" then
-                                                ''
-                                                                              # Load Garage credentials
-                                                                              if [ -f "/var/lib/garage-terraform-${instanceName}/access_key_id" ]; then
-                                                                                export AWS_ACCESS_KEY_ID=$(cat /var/lib/garage-terraform-${instanceName}/access_key_id)
-                                                                                export AWS_SECRET_ACCESS_KEY=$(cat /var/lib/garage-terraform-${instanceName}/secret_access_key)
-                                                                                echo "Loaded Garage credentials for state backend"
-                                                                              else
-                                                                                echo "ERROR: Garage credentials not found at /var/lib/garage-terraform-${instanceName}/"
-                                                                                exit 1
-                                                                              fi
+                                              echo "Acquiring terraform state lock..."
 
-                                                                              # Generate S3 backend configuration
-                                                                              cat > backend.tf <<'EOF'
-                                                  terraform {
-                                                    backend "s3" {
-                                                      endpoint = "http://127.0.0.1:3900"
-                                                      bucket = "terraform-state"
-                                                      key = "keycloak/${instanceName}/terraform.tfstate"
-                                                      region = "garage"
+                                              # Try to acquire exclusive lock with timeout
+                                              exec 200>"$LOCK_FILE"
+                                              if ! ${pkgs.util-linux}/bin/flock -w $LOCK_TIMEOUT -x 200; then
+                                                echo "ERROR: Failed to acquire terraform lock after $LOCK_TIMEOUT seconds"
+                                                echo "Another terraform operation may be in progress"
+                                                echo "Lock file: $LOCK_FILE"
 
-                                                      skip_credentials_validation = true
-                                                      skip_metadata_api_check = true
-                                                      skip_region_validation = true
-                                                      force_path_style = true
-                                                    }
-                                                  }
-                                                  EOF
-                                                ''
-                                              else
-                                                ''
-                                                                              # Local backend
-                                                                              cat > backend.tf <<'EOF'
-                                                  terraform {
-                                                    backend "local" {
-                                                      path = "terraform.tfstate"
-                                                    }
-                                                  }
-                                                  EOF
-                                                ''
-                                            }
+                                                # Check if lock info file exists and show details
+                                                if [ -f "$LOCK_FILE.info" ]; then
+                                                  echo "Lock held by:"
+                                                  cat "$LOCK_FILE.info"
+                                                fi
 
-                                            # Clean up any old terraform files to prevent conflicts
-                                            echo "Cleaning up old terraform files..."
-                                            rm -f simple-main.tf.json *.tf.json.backup main.tf.json 2>/dev/null || true
-
-                                            # Copy pre-generated Terraform configuration
-                                            echo "Using Terraform configuration for ${instanceName}..."
-                                            cp ${terraformConfigJson} ./main.tf.json
-                                            echo "Loaded main.tf.json ($(wc -c < main.tf.json) bytes)"
-
-                                            # Generate tfvars with hardcoded password
-                                            cat > terraform.tfvars <<EOF
-                      keycloak_admin_password = "NewTestPass456"
-                      EOF
-
-                                            # Initialize Terraform (always reconfigure for S3 backend to handle changes)
-                                            ${lib.optionalString (settings.terraformBackend == "s3") ''
-                                              echo "Initializing Terraform with S3 backend..."
-                                              tofu init -reconfigure -upgrade -input=false
-                                            ''}
-                                            ${lib.optionalString (settings.terraformBackend != "s3") ''
-                                              if [ ! -d .terraform ]; then
-                                                echo "Initializing Terraform..."
-                                                tofu init -upgrade -input=false
-                                              fi
-                                            ''}
-
-                                            # Check configuration hash for idempotency
-                                            CONFIG_HASH=$(sha256sum main.tf.json terraform.tfvars 2>/dev/null | sha256sum | cut -d' ' -f1)
-                                            LAST_HASH=""
-
-                                            if [ -f .last-config-hash ]; then
-                                              LAST_HASH=$(cat .last-config-hash)
-                                            fi
-
-                                            if [ "$CONFIG_HASH" = "$LAST_HASH" ]; then
-                                              echo "Configuration unchanged - checking drift..."
-                                            fi
-
-                                            # Plan
-                                            echo "Planning changes..."
-                                            set +e
-                                            tofu plan -var-file=terraform.tfvars -detailed-exitcode -out=tfplan
-                                            PLAN_EXIT=$?
-                                            set -e
-
-                                            case $PLAN_EXIT in
-                                              0)
-                                                echo "No changes needed"
-                                                echo "$CONFIG_HASH" > .last-config-hash
-                                                exit 0
-                                                ;;
-                                              1)
-                                                echo "Plan failed"
+                                                echo "To force unlock: systemctl stop keycloak-terraform-${instanceName} && rm -f $LOCK_FILE $LOCK_FILE.info"
                                                 exit 1
-                                                ;;
-                                              2)
-                                                echo "Changes detected - applying..."
-                                                ;;
-                                            esac
+                                              fi
 
-                                            # Apply
-                                            echo "Applying configuration..."
-                                            tofu apply -auto-approve tfplan
-                                            echo "$CONFIG_HASH" > .last-config-hash
+                                              # Lock acquired - record lock info
+                                              echo "Lock acquired by PID $$"
+                                              cat > "$LOCK_FILE.info" <<EOF
+                        PID: $$
+                        Date: $(date -Iseconds)
+                        Service: keycloak-terraform-${instanceName}
+                        User: $(whoami)
+                        EOF
 
-                                            echo "OpenTofu completed successfully"
-                    '';
-                  };
+                                              # Ensure lock is released on exit
+                                              trap "rm -f '$LOCK_FILE.info'; exec 200>&-" EXIT INT TERM
+
+                                              # Wait for Keycloak (check for 302 redirect which indicates it's running)
+                                              echo "Waiting for Keycloak..."
+                                              for i in {1..60}; do
+                                                HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/ 2>/dev/null || echo "000")
+                                                if [ "$HTTP_CODE" = "302" ] || [ "$HTTP_CODE" = "200" ]; then
+                                                  echo "Keycloak is ready (HTTP $HTTP_CODE)"
+                                                  break
+                                                fi
+                                                [ $i -eq 60 ] && { echo "Timeout waiting for Keycloak"; exit 1; }
+                                                echo "Waiting... (attempt $i/60, got HTTP $HTTP_CODE)"
+                                                sleep 5
+                                              done
+
+                                              # Load Garage credentials for S3-compatible state backend
+                                              ${
+                                                if terraformBackend == "s3" then
+                                                  ''
+                                                                                # Load Garage credentials
+                                                                                if [ -f "/var/lib/garage-terraform-${instanceName}/access_key_id" ]; then
+                                                                                  export AWS_ACCESS_KEY_ID=$(cat /var/lib/garage-terraform-${instanceName}/access_key_id)
+                                                                                  export AWS_SECRET_ACCESS_KEY=$(cat /var/lib/garage-terraform-${instanceName}/secret_access_key)
+                                                                                  echo "Loaded Garage credentials for state backend"
+                                                                                else
+                                                                                  echo "ERROR: Garage credentials not found at /var/lib/garage-terraform-${instanceName}/"
+                                                                                  exit 1
+                                                                                fi
+
+                                                                                # Generate S3 backend configuration
+                                                                                cat > backend.tf <<'EOF'
+                                                    terraform {
+                                                      backend "s3" {
+                                                        endpoint = "http://127.0.0.1:3900"
+                                                        bucket = "terraform-state"
+                                                        key = "keycloak/${instanceName}/terraform.tfstate"
+                                                        region = "garage"
+
+                                                        skip_credentials_validation = true
+                                                        skip_metadata_api_check = true
+                                                        skip_region_validation = true
+                                                        force_path_style = true
+                                                      }
+                                                    }
+                                                    EOF
+                                                  ''
+                                                else
+                                                  ''
+                                                                                # Local backend
+                                                                                cat > backend.tf <<'EOF'
+                                                    terraform {
+                                                      backend "local" {
+                                                        path = "terraform.tfstate"
+                                                      }
+                                                    }
+                                                    EOF
+                                                  ''
+                                              }
+
+                                              # Clean up any old terraform files to prevent conflicts
+                                              echo "Cleaning up old terraform files..."
+                                              rm -f simple-main.tf.json *.tf.json.backup main.tf.json 2>/dev/null || true
+
+                                              # Copy pre-generated Terraform configuration
+                                              echo "Using Terraform configuration for ${instanceName}..."
+                                              cp ${terraformConfigJson} ./main.tf.json
+                                              echo "Loaded main.tf.json ($(wc -c < main.tf.json) bytes)"
+
+                                              # Generate tfvars with hardcoded password
+                                              cat > terraform.tfvars <<EOF
+                        keycloak_admin_password = "NewTestPass456"
+                        EOF
+
+                                              # Initialize Terraform (always reconfigure for S3 backend to handle changes)
+                                              ${lib.optionalString (settings.terraformBackend == "s3") ''
+                                                echo "Initializing Terraform with S3 backend..."
+                                                tofu init -reconfigure -upgrade -input=false
+                                              ''}
+                                              ${lib.optionalString (settings.terraformBackend != "s3") ''
+                                                if [ ! -d .terraform ]; then
+                                                  echo "Initializing Terraform..."
+                                                  tofu init -upgrade -input=false
+                                                fi
+                                              ''}
+
+                                              # Check configuration hash for idempotency
+                                              CONFIG_HASH=$(sha256sum main.tf.json terraform.tfvars 2>/dev/null | sha256sum | cut -d' ' -f1)
+                                              LAST_HASH=""
+
+                                              if [ -f .last-config-hash ]; then
+                                                LAST_HASH=$(cat .last-config-hash)
+                                              fi
+
+                                              if [ "$CONFIG_HASH" = "$LAST_HASH" ]; then
+                                                echo "Configuration unchanged - checking drift..."
+                                              fi
+
+                                              # Plan
+                                              echo "Planning changes..."
+                                              set +e
+                                              tofu plan -var-file=terraform.tfvars -detailed-exitcode -out=tfplan
+                                              PLAN_EXIT=$?
+                                              set -e
+
+                                              case $PLAN_EXIT in
+                                                0)
+                                                  echo "No changes needed"
+                                                  echo "$CONFIG_HASH" > .last-config-hash
+                                                  exit 0
+                                                  ;;
+                                                1)
+                                                  echo "Plan failed"
+                                                  exit 1
+                                                  ;;
+                                                2)
+                                                  echo "Changes detected - applying..."
+                                                  ;;
+                                              esac
+
+                                              # Apply
+                                              echo "Applying configuration..."
+                                              tofu apply -auto-approve tfplan
+                                              echo "$CONFIG_HASH" > .last-config-hash
+
+                                              echo "OpenTofu completed successfully"
+                      '';
+                    };
+              };
 
               # Helper commands for terraform lock management
               environment.systemPackages = with pkgs; [

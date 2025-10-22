@@ -231,7 +231,7 @@ in
       realmId: realmCfg:
       nameValuePair realmId {
         realm = realmCfg.name;
-        enabled = realmCfg.enabled;
+        inherit (realmCfg) enabled;
         display_name = realmCfg.displayName;
 
         registration_allowed = realmCfg.registrationAllowed;
@@ -262,7 +262,7 @@ in
         max_delta_time_seconds = realmCfg.maxDeltaTimeSeconds;
         failure_factor = realmCfg.failureFactor;
 
-        attributes = realmCfg.attributes;
+        inherit (realmCfg) attributes;
 
         internationalization = mkIf realmCfg.internationalizationEnabled {
           supported_locales = realmCfg.supportedLocales;

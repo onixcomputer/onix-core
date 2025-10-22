@@ -1,5 +1,4 @@
-{ ... }:
-{
+_: {
   # Keycloak Provider Variables
   # These variables allow secure credential management for the Keycloak provider
 
