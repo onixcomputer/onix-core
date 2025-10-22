@@ -162,8 +162,8 @@ _: {
                 email = "finaltest@robitzs.ch";
                 firstName = "Final";
                 lastName = "Verification";
-                enabled = false;  # Changed: disable user to test update
-                emailVerified = false;  # Changed: test attribute change
+                enabled = false; # Changed: disable user to test update
+                emailVerified = false; # Changed: test attribute change
                 initialPassword = "FinalTest789!";
                 temporary = true;
               };
