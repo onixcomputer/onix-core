@@ -11,32 +11,29 @@ _: {
 
           # Enable automated terraform with S3 backend
           terraformBackend = "s3";
-          terraformAutoApply = false; # Disable for now to get Garage working first
-
-          settings = {
-            http-port = 8080;
-          };
+          terraformAutoApply = true; # Re-enabled for testing
 
           # Enable terraform integration
           terraform = {
-            enable = true;
+            enable = true; # Re-enabled for testing
 
             # Define realms
             realms = {
               # Master realm configuration (administrative - secure it)
-              "master" = {
-                enabled = true;
-                displayName = "Administrative Realm";
-                loginWithEmailAllowed = false;
-                registrationAllowed = false;
-                verifyEmail = true;
-                sslRequired = "all";
-                passwordPolicy = "upperCase(1) and lowerCase(1) and length(12) and specialChars(1) and notUsername";
-                ssoSessionIdleTimeout = "15m";
-                ssoSessionMaxLifespan = "1h";
-                rememberMe = false;
-                resetPasswordAllowed = false;
-              };
+              # NOTE: Master realm already exists by default, don't try to create it
+              # "master" = {
+              #   enabled = true;
+              #   displayName = "Administrative Realm";
+              #   loginWithEmailAllowed = false;
+              #   registrationAllowed = false;
+              #   verifyEmail = true;
+              #   sslRequired = "all";
+              #   passwordPolicy = "upperCase(1) and lowerCase(1) and length(12) and specialChars(1) and notUsername";
+              #   ssoSessionIdleTimeout = "15m";
+              #   ssoSessionMaxLifespan = "1h";
+              #   rememberMe = false;
+              #   resetPasswordAllowed = false;
+              # };
 
               "production" = {
                 displayName = "Production Environment";
@@ -92,20 +89,6 @@ _: {
 
             # Define users
             users = {
-              # Phase 2: Upgrade bootstrap admin password to secure clan vars
-              "bootstrap-admin-upgrade" = {
-                realm = "master";
-                username = "admin"; # The bootstrap admin user
-                email = "admin@robitzs.ch";
-                firstName = "Bootstrap";
-                lastName = "Administrator";
-                enabled = true;
-                emailVerified = true;
-                # This will upgrade to the secure clan vars password
-                initialPassword = "CLAN_ADMIN_PASSWORD_UPGRADE";
-                temporary = false; # Keep this as permanent password
-              };
-
               "admin-user" = {
                 realm = "production";
                 email = "admin@robitzs.ch";
@@ -125,6 +108,16 @@ _: {
                 emailVerified = false;
                 initialPassword = "TestPass123";
                 temporary = false;
+              };
+              "dev-user" = {
+                realm = "development";
+                email = "dev@robitzs.ch";
+                firstName = "Developer";
+                lastName = "Account";
+                enabled = true;
+                emailVerified = true;
+                initialPassword = "DevPass456!";
+                temporary = true;
               };
             };
 

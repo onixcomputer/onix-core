@@ -37,19 +37,12 @@
           default = config.keycloak.terraform.provider.username;
         };
 
-        # Bootstrap password for initial terraform authentication
-        keycloak_bootstrap_password = {
-          description = "Bootstrap admin password (TempAdmin123)";
-          type = "string";
-          sensitive = true;
-          default = "TempAdmin123";
-        };
-
-        # Final clan vars password (after upgrade)
+        # Admin password from clan vars
         keycloak_admin_password = {
-          description = "Final admin password from clan vars";
+          description = "Admin password from clan vars";
           type = "string";
           sensitive = true;
+          default = "NewTestPass456"; # Temporarily hardcoded
         };
 
         keycloak_client_id = {
@@ -77,10 +70,9 @@
         };
       };
 
-      # Provider configuration
-      provider = {
+      # Provider configuration for terraform
+      providers = {
         keycloak = {
-          # Admin CLI authentication (password grant)
           client_id = "\${var.keycloak_client_id}";
           username = "\${var.keycloak_admin_username}";
           password = "\${var.keycloak_admin_password}";

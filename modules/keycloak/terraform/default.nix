@@ -20,7 +20,6 @@ in
     ./users.nix
     ./groups.nix
     ./roles.nix
-    ./admin-upgrade.nix
   ];
 
   options = {
@@ -123,6 +122,37 @@ in
         type = attrsOf anything;
         default = { };
         description = "Keycloak roles configuration";
+      };
+
+      # Terraform resource definitions (populated by sub-modules)
+      resources = mkOption {
+        type = attrsOf anything;
+        default = { };
+        description = "Terraform resources for Keycloak configuration";
+      };
+
+      data = mkOption {
+        type = attrsOf anything;
+        default = { };
+        description = "Terraform data sources for Keycloak";
+      };
+
+      variables = mkOption {
+        type = attrsOf anything;
+        default = { };
+        description = "Terraform variables for the configuration";
+      };
+
+      providers = mkOption {
+        type = attrsOf anything;
+        default = { };
+        description = "Terraform provider configurations";
+      };
+
+      terraform = mkOption {
+        type = attrsOf anything;
+        default = { };
+        description = "Terraform backend and version configuration";
       };
 
       # Output configuration

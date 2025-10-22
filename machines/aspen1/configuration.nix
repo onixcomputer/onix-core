@@ -12,6 +12,7 @@
   ];
 
   # Garage S3-compatible storage for Terraform backend
+  services.garage.enable = true;
   services.garage.package = pkgs.garage;
   services.garage.settings = {
     metadata_dir = "/var/lib/garage/meta";

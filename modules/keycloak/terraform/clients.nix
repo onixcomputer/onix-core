@@ -29,7 +29,8 @@
             # Advanced flow settings
             oauth2_device_authorization_grant_enabled =
               clientConfig.oauth2DeviceAuthorizationGrantEnabled or false;
-            oidc_ciba_grant_enabled = clientConfig.oidcCibaGrantEnabled or false;
+            # oidc_ciba_grant_enabled is not supported in keycloak provider 4.x
+            # oidc_ciba_grant_enabled = clientConfig.oidcCibaGrantEnabled or false;
 
             # URLs and redirects
             root_url = clientConfig.rootUrl or "";

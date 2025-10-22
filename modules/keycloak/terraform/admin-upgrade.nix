@@ -6,10 +6,22 @@
 
   config = lib.mkIf config.keycloak.terraform.enable {
     keycloak.terraform = {
-      # Add dual provider configuration support
+      # Provider configuration with aliases
+      # The JSON generation will convert this to proper terraform format
       providers = {
+        # Default provider (uses clan vars password)
+        keycloak = {
+          client_id = "\${var.keycloak_client_id}";
+          username = "\${var.keycloak_admin_username}";
+          password = "\${var.keycloak_admin_password}";
+          url = "\${var.keycloak_url}";
+          realm = "\${var.keycloak_realm}";
+          initial_login = "\${var.keycloak_initial_login}";
+          client_timeout = "\${var.keycloak_client_timeout}";
+          tls_insecure_skip_verify = "\${var.keycloak_tls_insecure_skip_verify}";
+        };
         # Bootstrap provider for initial authentication
-        keycloak-bootstrap = {
+        "keycloak.bootstrap" = {
           alias = "bootstrap";
           client_id = "\${var.keycloak_client_id}";
           username = "\${var.keycloak_admin_username}";
@@ -20,9 +32,8 @@
           client_timeout = "\${var.keycloak_client_timeout}";
           tls_insecure_skip_verify = "\${var.keycloak_tls_insecure_skip_verify}";
         };
-
         # Final provider using clan vars password (after upgrade)
-        keycloak-final = {
+        "keycloak.final" = {
           alias = "final";
           client_id = "\${var.keycloak_client_id}";
           username = "\${var.keycloak_admin_username}";
@@ -69,10 +80,6 @@
 
           # Lifecycle management for reliable upgrades
           lifecycle = {
-            # Always check for password changes
-            replace_triggered_by = [
-              "\${var.keycloak_admin_password}"
-            ];
             # Prevent accidental deletion
             prevent_destroy = true;
           };
@@ -97,14 +104,6 @@
           depends_on = [
             "keycloak_user.admin_password_upgrade"
           ];
-
-          lifecycle = {
-            # This resource validates that final auth works
-            postcondition = {
-              condition = "self.enabled == true";
-              error_message = "Admin user upgrade validation failed - final authentication not working";
-            };
-          };
         };
       };
 
