@@ -109,10 +109,10 @@ _: {
                 initialPassword = "TestPass123";
                 temporary = false;
               };
-              "dev-user" = {
+              "dev1" = {
                 realm = "development";
-                email = "dev@robitzs.ch";
-                firstName = "Developer";
+                email = "dev1@robitzs.ch";
+                firstName = "Dev1";
                 lastName = "Account";
                 enabled = true;
                 emailVerified = true;

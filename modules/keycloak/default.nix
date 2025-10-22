@@ -65,8 +65,7 @@ in
               terraformBackend = settings.terraformBackend or "local";
               terraformAutoApply = settings.terraformAutoApply or false;
               terraformLockTimeout = settings.terraformLockTimeout or 300; # Default 5 minutes
-              terraformGenerator = import ./terraform-generator.nix { inherit lib; };
-              generateTerraformConfig = terraformGenerator.generateTerraformConfig;
+              # Use terranix for terraform configuration generation
 
               generatorName = "keycloak-${instanceName}";
               dbPasswordFile = config.clan.core.vars.generators.${generatorName}.files.db_password.path;
@@ -265,6 +264,7 @@ in
 
                     path = [
                       pkgs.opentofu
+                      pkgs.terranix
                       pkgs.curl
                       pkgs.jq
                       pkgs.coreutils
@@ -387,12 +387,20 @@ in
                       echo "Cleaning up old terraform files..."
                       rm -f simple-main.tf.json *.tf.json.backup 2>/dev/null || true
 
-                      # Generate Terraform configuration
-                      echo "Generating Terraform configuration for ${instanceName}..."
+                      # Generate Terraform configuration using terranix
+                      echo "Generating Terraform configuration for ${instanceName} using terranix..."
                       echo "Settings.terraform.enable: ${if settings.terraform.enable or false then "true" else "false"}"
-                      cat > main.tf.json <<'EOF'
-                      ${(generateTerraformConfig instanceName settings adminPasswordFile).terraformJson}
+
+                      # Write terranix config to a file
+                      cat > config.nix <<'EOF'
+                      (import ${./terranix-config.nix} {
+                        lib = (import ${pkgs.path} {}).lib;
+                        settings = ${builtins.toJSON settings};
+                      })
                       EOF
+
+                      # Generate main.tf.json using terranix
+                      ${pkgs.terranix}/bin/terranix config.nix > main.tf.json
                       echo "Generated main.tf.json ($(wc -c < main.tf.json) bytes)"
 
                       # Generate tfvars with hardcoded password
