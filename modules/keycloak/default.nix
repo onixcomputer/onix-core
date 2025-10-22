@@ -167,12 +167,8 @@ in
                     echo "PostgreSQL ready. Starting Keycloak."
                   '';
 
-                  postStart = lib.mkIf terraformAutoApply (
-                    lib.mkAfter ''
-                      # Trigger terraform configuration non-blocking
-                      ${pkgs.systemd}/bin/systemctl start --no-block keycloak-terraform-${instanceName}.service || true
-                    ''
-                  );
+                  # Note: terraform auto-application is now handled by a systemd timer
+                  # that periodically checks for .needs-apply flag
                 };
 
                 # Garage bucket setup for Terraform state (if using S3 backend)
@@ -258,7 +254,7 @@ in
                       '';
                     };
 
-                # Automated OpenTofu execution
+                # Automated OpenTofu execution (triggered by timer when .needs-apply exists)
                 "keycloak-terraform-${instanceName}" =
                   lib.mkIf (terraformAutoApply && (settings.terraform.enable or false))
                     {
@@ -272,7 +268,11 @@ in
                         "keycloak.service"
                       ]
                       ++ lib.optionals (terraformBackend == "s3") [ "garage-terraform-init-${instanceName}.service" ];
-                      partOf = [ "keycloak.service" ];
+
+                      # Do not auto-start - only run when triggered by timer or manually
+                      # wantedBy = [ "keycloak.service" ];
+                      # bindsTo = [ "keycloak.service" ];
+                      # partOf = [ "keycloak.service" ];
 
                       path = [
                         pkgs.opentofu
@@ -301,6 +301,15 @@ in
                                               set -euo pipefail
 
                                               echo "Starting OpenTofu for Keycloak ${instanceName}"
+
+                                              # Check if activation script detected changes that need to be applied
+                                              if [ ! -f "$STATE_DIRECTORY/.needs-apply" ]; then
+                                                echo "No terraform changes detected by activation script"
+                                                echo "Use 'systemctl start keycloak-terraform-${instanceName}.service' to force execution"
+                                                exit 0
+                                              fi
+
+                                              echo "Activation script detected configuration changes - proceeding with terraform apply"
 
                                               # State locking implementation
                                               LOCK_FILE="$STATE_DIRECTORY/.terraform.lock"
@@ -459,9 +468,100 @@ in
                                               tofu apply -auto-approve tfplan
                                               echo "$CONFIG_HASH" > .last-config-hash
 
+                                              # Remove the needs-apply flag to indicate successful completion
+                                              rm -f "$STATE_DIRECTORY/.needs-apply"
+
                                               echo "OpenTofu completed successfully"
                       '';
                     };
+
+                # Timer service that checks for .needs-apply flag
+                "keycloak-terraform-watcher-${instanceName}" = lib.mkIf terraformAutoApply {
+                  description = "Check if Keycloak terraform needs to be applied";
+
+                  after = [ "keycloak.service" ];
+                  requisite = [ "keycloak.service" ];
+
+                  serviceConfig = {
+                    Type = "oneshot";
+                    ExecCondition = "${pkgs.systemd}/bin/systemctl is-active keycloak.service";
+                    StateDirectory = "keycloak-${instanceName}-terraform";
+                    WorkingDirectory = "/var/lib/keycloak-${instanceName}-terraform";
+                  };
+
+                  script = ''
+                    # Only proceed if .needs-apply flag exists
+                    if [ -f "$STATE_DIRECTORY/.needs-apply" ]; then
+                      echo "Found .needs-apply flag - triggering terraform service"
+
+                      # Check that terraform service isn't already running
+                      if ! ${pkgs.systemd}/bin/systemctl is-active --quiet keycloak-terraform-${instanceName}.service; then
+                        echo "Starting keycloak-terraform-${instanceName}.service"
+                        ${pkgs.systemd}/bin/systemctl start keycloak-terraform-${instanceName}.service
+                      else
+                        echo "Terraform service already running - skipping"
+                      fi
+                    fi
+                  '';
+                };
+              };
+
+              # Systemd timer for automatic terraform application
+              systemd.timers = lib.mkIf terraformAutoApply {
+                "keycloak-terraform-watcher-${instanceName}" = {
+                  description = "Watch for Keycloak terraform configuration changes";
+                  wantedBy = [ "timers.target" ];
+                  after = [ "keycloak.service" ];
+
+                  timerConfig = {
+                    # Check every 30 seconds for changes
+                    OnCalendar = "*:*:0/30";
+                    # Start timer 60 seconds after keycloak starts to give it time to stabilize
+                    OnBootSec = "60s";
+                    # Ensure timer starts after keycloak
+                    Unit = "keycloak-terraform-watcher-${instanceName}.service";
+                  };
+                };
+              };
+
+              # Activation script to detect terraform configuration changes and apply them
+              system.activationScripts."keycloak-terraform-${instanceName}" = lib.mkIf terraformAutoApply {
+                text = ''
+                  echo "Checking for Keycloak terraform configuration changes..."
+
+                  # Create state directory if it doesn't exist
+                  mkdir -p /var/lib/keycloak-${instanceName}-terraform
+
+                  # Generate current terraform configuration hash from the build-time config
+                  CURRENT_CONFIG_HASH=$(sha256sum ${terraformConfigJson} | cut -d' ' -f1)
+                  LAST_APPLIED_HASH=$(cat /var/lib/keycloak-${instanceName}-terraform/.last-activation-hash 2>/dev/null || echo "")
+
+                  if [ "$CURRENT_CONFIG_HASH" != "$LAST_APPLIED_HASH" ]; then
+                    echo "Keycloak terraform configuration changed, scheduling update..."
+
+                    # Copy the new configuration to the service directory
+                    cp ${terraformConfigJson} /var/lib/keycloak-${instanceName}-terraform/main.tf.json
+
+                    # Generate tfvars (matching the service implementation)
+                    cat > /var/lib/keycloak-${instanceName}-terraform/terraform.tfvars <<EOF
+                  keycloak_admin_password = "NewTestPass456"
+                  EOF
+
+                    # Mark that we need to apply changes after services are running
+                    touch /var/lib/keycloak-${instanceName}-terraform/.needs-apply
+
+                    # Update the hash to reflect what we're about to apply
+                    echo "$CURRENT_CONFIG_HASH" > /var/lib/keycloak-${instanceName}-terraform/.last-activation-hash
+
+                    echo "Terraform configuration staged for application"
+                  else
+                    echo "Keycloak terraform configuration unchanged"
+                  fi
+                '';
+                deps = [
+                  "setupSecrets"
+                  "users"
+                ];
               };
 
               # Helper commands for terraform lock management
@@ -529,6 +629,31 @@ in
 
                   # Follow the logs
                   journalctl -u keycloak-terraform-${instanceName}.service -f
+                '')
+
+                (writeScriptBin "keycloak-tf-watch-${instanceName}" ''
+                  #!${pkgs.bash}/bin/bash
+                  echo "Manually triggering terraform watcher for ${instanceName}..."
+
+                  # Show current status
+                  echo "=== Current Status ==="
+                  echo "Keycloak service: $(systemctl is-active keycloak.service)"
+                  echo "Terraform service: $(systemctl is-active keycloak-terraform-${instanceName}.service)"
+                  echo "Watcher timer: $(systemctl is-active keycloak-terraform-watcher-${instanceName}.timer)"
+
+                  # Check for .needs-apply flag
+                  if [ -f "/var/lib/keycloak-${instanceName}-terraform/.needs-apply" ]; then
+                    echo ".needs-apply flag: EXISTS"
+                  else
+                    echo ".needs-apply flag: NOT FOUND"
+                  fi
+
+                  echo ""
+                  echo "Triggering watcher service manually..."
+                  systemctl start keycloak-terraform-watcher-${instanceName}.service
+
+                  # Follow the logs
+                  journalctl -u keycloak-terraform-watcher-${instanceName}.service -f
                 '')
               ];
             };
