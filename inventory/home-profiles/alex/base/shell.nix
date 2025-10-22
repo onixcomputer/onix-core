@@ -38,6 +38,7 @@
     v = "validate";
     cmu = "clan machines update";
     cu = "clan machines update $hostname";
+    cul = "clan machines update $hostname --target-host localhost";
     coc = "cd $HOME/dev/onix-core";
     cocn = "cd $HOME/dev/onix-core && nvim .";
   };
