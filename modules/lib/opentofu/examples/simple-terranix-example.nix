@@ -71,7 +71,6 @@ in
   jsonConfig = opentofu.generateTerranixJson {
     module = exampleTerranixModule;
     fileName = "example-terraform.json";
-    prettyPrint = true;
     validate = true;
   };
 

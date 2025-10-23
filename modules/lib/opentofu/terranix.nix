@@ -157,7 +157,6 @@ rec {
       # Terranix-specific options
       validateConfig ? true,
       debugMode ? false,
-      prettyPrintJson ? false,
     }:
     let
       # Import the base OpenTofu library
@@ -170,7 +169,6 @@ rec {
         fileName = "${serviceName}-terraform-${instanceName}.json";
         validate = validateConfig;
         debug = debugMode;
-        prettyPrint = prettyPrintJson;
       };
 
     in

@@ -481,31 +481,26 @@ let
   nullProviderConfig = opentofu.generateTerranixJson {
     module = nullProviderTerranixModule;
     fileName = "null-provider-test.json";
-    prettyPrint = true;
   };
 
   localProviderConfig = opentofu.generateTerranixJson {
     module = localProviderTerranixModule;
     fileName = "local-provider-test.json";
-    prettyPrint = true;
   };
 
   randomProviderConfig = opentofu.generateTerranixJson {
     module = randomProviderTerranixModule;
     fileName = "random-provider-test.json";
-    prettyPrint = true;
   };
 
   combinedProviderConfig = opentofu.generateTerranixJson {
     module = combinedProviderTerranixModule;
     fileName = "combined-provider-test.json";
-    prettyPrint = true;
   };
 
   invalidProviderConfig = opentofu.generateTerranixJson {
     module = invalidTerranixModule;
     fileName = "invalid-provider-test.json";
-    prettyPrint = true;
     validate = false; # Skip validation for intentionally invalid config
   };
 

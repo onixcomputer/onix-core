@@ -171,7 +171,6 @@ in
                     fileName = "keycloak-terraform-${instanceName}.json";
                     validate = true;
                     debug = false;
-                    prettyPrint = false;
                   };
                 in
                 opentofu.mkActivationScript {
