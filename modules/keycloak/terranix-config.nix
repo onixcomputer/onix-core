@@ -120,8 +120,8 @@ let
         };
       };
 
-  # Admin user management removed to avoid circular dependency
-  # The admin user should not be managed by terraform since it's used for authentication
+  # Admin user password management is handled by keycloak-admin-password-sync service
+  # Terraform cannot manage existing admin user password - only authentication
   adminUserResource = { };
 
   # Merge all resource generators

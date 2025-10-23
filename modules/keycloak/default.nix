@@ -68,6 +68,7 @@ in
 
               generatorName = "keycloak-${instanceName}";
               dbPasswordFile = config.clan.core.vars.generators.${generatorName}.files.db_password.path;
+              adminPasswordFile = config.clan.core.vars.generators.${generatorName}.files.admin_password.path;
 
               # OpenTofu library functions
               opentofu = import ../../lib/opentofu/default.nix { inherit lib pkgs; };
@@ -78,7 +79,7 @@ in
               # Dependencies for terraform deployment
               deploymentDependencies = [
                 "keycloak.service"
-                "keycloak-admin-password-sync.service"
+                "keycloak-password-sync.service"
               ]
               ++ lib.optionals (terraformBackend == "s3") [ "garage-terraform-init-${instanceName}.service" ];
             in
@@ -87,7 +88,7 @@ in
                 keycloak = {
                   enable = true;
 
-                  # Use bootstrap password (will be updated by terraform to clan vars)
+                  # Use predictable bootstrap password (updated by sync service to clan vars)
                   initialAdminPassword = "TemporaryBootstrapPassword123!";
 
                   settings = {
@@ -231,34 +232,59 @@ in
                   }
                 ))
                 // {
-                  # Admin password sync service to sync clan vars password to keycloak
-                  "keycloak-admin-password-sync" = {
-                    description = "Sync Keycloak admin password from bootstrap to clan vars";
-                    after = [ "keycloak.service" ];
-                    requires = [ "keycloak.service" ];
+                  # Password sync service - ensures both admin and database passwords match clan vars
+                  "keycloak-password-sync" = {
+                    description = "Sync Keycloak admin and database passwords to clan vars";
+                    after = [
+                      "keycloak.service"
+                      "postgresql.service"
+                    ];
+                    requires = [
+                      "keycloak.service"
+                      "postgresql.service"
+                    ];
                     wantedBy = [ "multi-user.target" ];
 
                     serviceConfig = {
                       Type = "oneshot";
                       RemainAfterExit = true;
-                      StateDirectory = "keycloak-admin-sync";
-                      WorkingDirectory = "/var/lib/keycloak-admin-sync";
-                      # Load the clan vars admin password
-                      LoadCredential = "admin_password:${
-                        config.clan.core.vars.generators.${generatorName}.files.admin_password.path
-                      }";
+                      StateDirectory = "keycloak-password-sync";
+                      WorkingDirectory = "/var/lib/keycloak-password-sync";
+                      # Load both clan vars passwords
+                      LoadCredential = [
+                        "admin_password:${adminPasswordFile}"
+                        "db_password:${dbPasswordFile}"
+                      ];
                     };
 
                     path = with pkgs; [
                       keycloak
                       curl
                       jq
+                      postgresql
+                      sudo
                     ];
 
                     script = ''
                       set -euo pipefail
 
-                      echo "Syncing Keycloak admin password to clan vars password..."
+                      echo "Syncing Keycloak admin and database passwords to clan vars..."
+
+                      # Read clan vars passwords
+                      ADMIN_PASSWORD=$(cat "$CREDENTIALS_DIRECTORY/admin_password")
+                      DB_PASSWORD=$(cat "$CREDENTIALS_DIRECTORY/db_password")
+
+                      echo "=== Database Password Sync ==="
+
+                      # Update PostgreSQL keycloak user password to match clan vars
+                      echo "Updating PostgreSQL keycloak user password..."
+                      sudo -u postgres psql -c "ALTER USER keycloak PASSWORD '$DB_PASSWORD';" || {
+                        echo "⚠ Failed to update PostgreSQL password"
+                        exit 1
+                      }
+                      echo "✓ PostgreSQL keycloak user password updated"
+
+                      echo "=== Keycloak Admin Password Sync ==="
 
                       # Wait for Keycloak to be ready
                       for i in {1..30}; do
@@ -269,56 +295,73 @@ in
                         sleep 2
                       done
 
-                      # Read clan vars admin password
-                      CLAN_VARS_PASSWORD=$(cat "$CREDENTIALS_DIRECTORY/admin_password")
-
-                      # Use Keycloak admin CLI to sync admin password
+                      # Use Keycloak admin CLI to ensure password matches clan vars
                       export JAVA_HOME="${pkgs.openjdk_headless}"
 
-                      # Try to connect with bootstrap password first, then clan vars password
-                      BOOTSTRAP_PASSWORD="TemporaryBootstrapPassword123!"
-
-                      echo "Attempting to connect with bootstrap password..."
+                      echo "Testing current admin password..."
                       if ${pkgs.keycloak}/bin/kcadm.sh config credentials \
                         --server http://localhost:8080 \
                         --realm master \
                         --user admin \
-                        --password "$BOOTSTRAP_PASSWORD" 2>/dev/null; then
+                        --password "$ADMIN_PASSWORD" 2>/dev/null; then
 
-                        echo "✓ Connected with bootstrap password, syncing to clan vars password..."
+                        echo "✓ Admin password already matches clan vars - no update needed"
+                        touch /var/lib/keycloak-password-sync/.sync-complete
+                        exit 0
+                      fi
 
-                        # Update admin password to clan vars password
-                        ${pkgs.keycloak}/bin/kcadm.sh set-password \
+                      echo "Admin password doesn't match clan vars - updating..."
+
+                      # Create a comprehensive list: previous clan vars passwords from state + known fallbacks
+                      POSSIBLE_PASSWORDS=()
+
+                      # Add any previous password from our state files
+                      if [ -f /var/lib/keycloak-password-sync/.last-password ]; then
+                        LAST_PASSWORD=$(cat /var/lib/keycloak-password-sync/.last-password 2>/dev/null || true)
+                        if [ -n "$LAST_PASSWORD" ]; then
+                          POSSIBLE_PASSWORDS+=("$LAST_PASSWORD")
+                        fi
+                      fi
+
+                      # Add known fallback passwords
+                      POSSIBLE_PASSWORDS+=("TemporaryBootstrapPassword123!" "TestPassword456!" "Hello123" "admin" "password")
+
+                      for CURRENT_PASSWORD in "''${POSSIBLE_PASSWORDS[@]}"; do
+                        echo "Trying to connect with known password..."
+                        if ${pkgs.keycloak}/bin/kcadm.sh config credentials \
                           --server http://localhost:8080 \
                           --realm master \
-                          --target-realm master \
-                          --username admin \
-                          --new-password "$CLAN_VARS_PASSWORD"
+                          --user admin \
+                          --password "$CURRENT_PASSWORD" 2>/dev/null; then
 
-                        echo "✓ Admin password synced to clan vars successfully"
-                        touch /var/lib/keycloak-admin-sync/.sync-complete
-                        exit 0
-                      fi
+                          echo "✓ Connected, updating admin password to clan vars..."
 
-                      echo "Attempting to connect with clan vars password..."
-                      if ${pkgs.keycloak}/bin/kcadm.sh config credentials \
-                        --server http://localhost:8080 \
-                        --realm master \
-                        --user admin \
-                        --password "$CLAN_VARS_PASSWORD" 2>/dev/null; then
+                          # Update admin password to clan vars password
+                          ${pkgs.keycloak}/bin/kcadm.sh set-password \
+                            --server http://localhost:8080 \
+                            --realm master \
+                            --target-realm master \
+                            --username admin \
+                            --new-password "$ADMIN_PASSWORD"
 
-                        echo "✓ Already using clan vars password - no sync needed"
-                        touch /var/lib/keycloak-admin-sync/.sync-complete
-                        exit 0
-                      fi
+                          echo "✓ Admin password updated to clan vars successfully"
 
-                      echo "⚠ Could not connect with bootstrap or clan vars password - manual intervention required"
-                      touch /var/lib/keycloak-admin-sync/.sync-failed
+                          # Save the new password for future reference
+                          echo "$ADMIN_PASSWORD" > /var/lib/keycloak-password-sync/.last-password
+
+                          touch /var/lib/keycloak-password-sync/.sync-complete
+                          exit 0
+                        fi
+                      done
+
+                      echo "⚠ Could not connect with any known password"
+                      echo "Manual intervention may be required to reset admin password"
+                      touch /var/lib/keycloak-password-sync/.sync-failed
                       exit 1
                     '';
                   };
 
-                  # Basic service startup order
+                  # Basic service startup order with bootstrap password
                   keycloak = {
                     after = [ "postgresql.service" ];
                     requires = [ "postgresql.service" ];
@@ -328,11 +371,8 @@ in
                         echo "Waiting for PostgreSQL to be ready..."
                         sleep 2
                       done
-                      echo "PostgreSQL ready. Starting Keycloak."
+                      echo "PostgreSQL ready. Starting Keycloak with bootstrap password."
                     '';
-
-                    # Note: terraform auto-application is now handled by a systemd timer
-                    # that periodically checks for .needs-apply flag
                   };
 
                   # Garage bucket setup for Terraform state (if using S3 backend)
