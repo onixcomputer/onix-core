@@ -113,6 +113,7 @@ rec {
       # Output file name
       fileName ? "terraform.json",
       # Pretty print JSON
+      prettyPrintJson ? false,
       # Validation options
       validate ? true,
       # Debug mode
@@ -128,10 +129,13 @@ rec {
           ;
       };
 
-      jsonContent = builtins.toJSON evaluated;
-
     in
-    pkgs.writeText fileName jsonContent;
+    if prettyPrintJson then
+      pkgs.runCommand fileName { nativeBuildInputs = [ pkgs.jq ]; } ''
+        echo '${builtins.toJSON evaluated}' | jq . > $out
+      ''
+    else
+      pkgs.writeText fileName (builtins.toJSON evaluated);
 
   # Enhanced deployment service that works with terranix modules
   mkTerranixDeploymentService =
@@ -157,6 +161,7 @@ rec {
       # Terranix-specific options
       validateConfig ? true,
       debugMode ? false,
+      prettyPrintJson ? false,
     }:
     let
       # Import the base OpenTofu library
@@ -165,7 +170,7 @@ rec {
       # Generate terraform configuration from terranix module
       terraformConfigJson = generateTerranixJson {
         module = terranixModule;
-        inherit moduleArgs;
+        inherit moduleArgs prettyPrintJson;
         fileName = "${serviceName}-terraform-${instanceName}.json";
         validate = validateConfig;
         debug = debugMode;

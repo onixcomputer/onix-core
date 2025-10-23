@@ -70,10 +70,10 @@ in
               dbPasswordFile = config.clan.core.vars.generators.${generatorName}.files.db_password.path;
 
               # OpenTofu library functions
-              opentofu = import ../lib/opentofu/default.nix { inherit lib pkgs; };
+              opentofu = import ../../lib/opentofu/default.nix { inherit lib pkgs; };
 
               # Enhanced terranix integration
-              terranix = import ../lib/opentofu/terranix.nix { inherit lib pkgs; };
+              terranix = import ../../lib/opentofu/terranix.nix { inherit lib pkgs; };
 
               # Define credential mapping for OpenTofu library
               credentialMapping = { };

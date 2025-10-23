@@ -53,6 +53,7 @@
         ./parts/pre-commit.nix
         ./parts/sops-viz.nix
         ./parts/checks.nix
+        ./parts/infrastructure.nix
         ./checks/flake-module.nix
       ];
 

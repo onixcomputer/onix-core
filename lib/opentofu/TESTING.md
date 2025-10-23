@@ -31,7 +31,7 @@ This approach ensures appropriate testing tools for each level of functionality 
 **Running tests**:
 ```bash
 # Direct execution
-nix run nixpkgs#nix-unit -- modules/lib/opentofu/test-pure.nix
+nix run nixpkgs#nix-unit -- lib/opentofu/test-pure.nix
 
 # Via checks (faster in CI)
 nix build .#checks.x86_64-linux.eval-opentofu-pure
@@ -85,7 +85,7 @@ nix build .#checks.x86_64-linux.eval-opentofu-integration
 nix build .#legacyPackages.x86_64-linux.opentofu-integration-tests
 
 # Direct execution
-nix build -f modules/lib/opentofu/test-integration.nix
+nix build -f lib/opentofu/test-integration.nix
 ```
 
 **Test approach**:
@@ -116,7 +116,7 @@ nix build -f modules/lib/opentofu/test-integration.nix
 # Uncomment in parts/checks.nix to enable in CI
 
 # Direct execution (takes several minutes)
-nix build -f modules/lib/opentofu/test-system.nix
+nix build -f lib/opentofu/test-system.nix
 ```
 
 **Test environment**:
@@ -128,7 +128,7 @@ nix build -f modules/lib/opentofu/test-system.nix
 ## Test Files Structure
 
 ```
-modules/lib/opentofu/
+lib/opentofu/
 ├── default.nix              # Full library with derivations
 ├── lib-pure.nix             # Pure functions only (no pkgs dependency)
 ├── test-pure.nix            # TIER 1: nix-unit tests
@@ -211,7 +211,7 @@ The original `test.nix` had mixed concerns that caused nix-unit failures:
 ### Developer workflow:
 ```bash
 # Quick feedback during development
-nix run nixpkgs#nix-unit -- modules/lib/opentofu/test-pure.nix
+nix run nixpkgs#nix-unit -- lib/opentofu/test-pure.nix
 
 # Test integration when changing service generation
 nix build .#checks.x86_64-linux.eval-opentofu-integration

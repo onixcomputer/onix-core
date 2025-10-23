@@ -117,10 +117,10 @@ _: {
                 initialPassword = "TestPass123";
                 temporary = false;
               };
-              "bye" = {
+              "eeeek" = {
                 realm = "development";
-                email = "bye@robitzs.ch";
-                firstName = "bye";
+                email = "eeek@robitzs.ch";
+                firstName = "eeek";
                 lastName = "Test";
                 enabled = true;
                 emailVerified = true;
