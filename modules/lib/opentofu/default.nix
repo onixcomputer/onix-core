@@ -30,14 +30,18 @@ in
   # Generate terraform.tfvars script content
   generateTfvarsScript = credentialMapping: extraContent: ''
     # Generate terraform.tfvars from clan vars
+    echo "Generating terraform.tfvars with credentials from $CREDENTIALS_DIRECTORY"
     cat > terraform.tfvars <<EOF
     ${lib.concatStringsSep "\n" (
       lib.mapAttrsToList (
-        tfVar: _: "${tfVar} = \"$(cat \"$CREDENTIALS_DIRECTORY/${tfVar}\")\""
+        tfVar: _clanVarsFile:
+        "${tfVar} = \"$(cat \"$CREDENTIALS_DIRECTORY/${tfVar}\" | tr -d '\\n\\r' | sed 's/\"/\\\\\"/g')\""
       ) credentialMapping
     )}
     ${extraContent}
     EOF
+    echo "Generated terraform.tfvars:"
+    cat terraform.tfvars
   '';
 
   # Generate activation script for config change detection
@@ -160,6 +164,9 @@ in
           LoadCredential = lib.mapAttrsToList (
             tfVar: clanVar: "${tfVar}:/run/secrets/vars/${serviceName}-${instanceName}/${clanVar}"
           ) credentialMapping;
+          # Prevent rapid restart loops on failure
+          Restart = "no";
+          RestartSec = "30s";
         };
 
         path = [
@@ -220,17 +227,71 @@ in
 
             ${enhancedPreScript}
 
-            # Wait for service to be ready (basic check)
-            echo "Waiting for ${serviceName} to be ready..."
+            # Comprehensive readiness check with health probes
+            echo "=== ${serviceName} Readiness Verification ==="
+            echo "Timestamp: $(date -Iseconds)"
+
+            # Phase 1: Wait for systemd service to be active
+            echo "Phase 1: Waiting for systemd service..."
             for i in {1..60}; do
               if systemctl is-active ${serviceName}.service >/dev/null 2>&1; then
-                echo "${serviceName} service is ready"
+                echo "${serviceName} systemd service is active"
                 break
               fi
-              [ "$i" -eq 60 ] && { echo "ERROR: ${serviceName} not ready for terraform deployment"; exit 1; }
-              echo "Waiting for ${serviceName}... (attempt $i/60)"
+              [ "$i" -eq 60 ] && { echo "ERROR: ${serviceName} service failed to start"; exit 1; }
+              echo "Waiting for ${serviceName} service... (attempt $i/60)"
               sleep 2
             done
+
+            # Phase 2: Wait for health endpoints (Keycloak-specific)
+            if [ "${serviceName}" = "keycloak" ]; then
+              echo "Phase 2: Waiting for Keycloak health endpoints..."
+              HEALTH_CHECK_MAX_ATTEMPTS=90  # 3 minutes
+
+              for i in $(seq 1 $HEALTH_CHECK_MAX_ATTEMPTS); do
+                # Check startup probe
+                if curl -sf http://localhost:9000/management/health/started >/dev/null 2>&1; then
+                  echo "✓ Startup probe passed"
+
+                  # Check readiness probe
+                  if curl -sf http://localhost:9000/management/health/ready >/dev/null 2>&1; then
+                    echo "✓ Readiness probe passed"
+
+                    # Check OIDC endpoint
+                    if curl -sf http://localhost:8080/realms/master/protocol/openid-connect/certs >/dev/null 2>&1; then
+                      echo "✓ OIDC endpoints accessible"
+                      echo "✓ ${serviceName} is fully ready for terraform operations"
+                      break
+                    else
+                      echo "OIDC endpoints not yet accessible (attempt $i/$HEALTH_CHECK_MAX_ATTEMPTS)"
+                    fi
+                  else
+                    echo "Readiness probe failed (attempt $i/$HEALTH_CHECK_MAX_ATTEMPTS)"
+                  fi
+                else
+                  echo "Startup probe failed (attempt $i/$HEALTH_CHECK_MAX_ATTEMPTS)"
+                fi
+
+                [ "$i" -eq $HEALTH_CHECK_MAX_ATTEMPTS ] && {
+                  echo "ERROR: ${serviceName} health checks failed after $((HEALTH_CHECK_MAX_ATTEMPTS * 2)) seconds"
+                  echo "Service status:"
+                  systemctl status ${serviceName}.service --no-pager
+                  exit 1
+                }
+
+                sleep 2
+              done
+
+              # Additional stabilization wait for authentication subsystem
+              echo "Phase 3: Authentication subsystem stabilization..."
+              sleep 10
+            else
+              # Non-Keycloak services use basic readiness
+              echo "Phase 2: Basic service readiness wait..."
+              sleep 5
+            fi
+
+            echo "=== ${serviceName} Ready for Terraform Operations ==="
 
             ${
               if backendType == "s3" then
@@ -273,7 +334,8 @@ in
             ${pkgs.opentofu}/bin/tofu init -upgrade -input=false
 
             set +e
-            ${pkgs.opentofu}/bin/tofu plan -var-file=terraform.tfvars -detailed-exitcode -out=tfplan
+            # Capture terraform output to filter verbose JSON dumps
+            TERRAFORM_PLAN_OUTPUT=$(${pkgs.opentofu}/bin/tofu plan -var-file=terraform.tfvars -detailed-exitcode -out=tfplan 2>&1)
             PLAN_EXIT=$?
             set -e
 
@@ -283,11 +345,28 @@ in
                 ;;
               1)
                 echo "ERROR: Terraform plan failed during deployment"
+                # Extract clean error messages, filter out JSON dumps
+                echo "$TERRAFORM_PLAN_OUTPUT" | grep -E "(Error:|Warning:|│)" | grep -v '{"output":' | head -10
                 exit 1
                 ;;
               2)
                 echo "Applying terraform changes during deployment..."
-                ${pkgs.opentofu}/bin/tofu apply -auto-approve tfplan
+                echo "Plan summary:"
+                echo "$TERRAFORM_PLAN_OUTPUT" | grep -E "(will be created|will be modified|will be destroyed)" | head -5
+
+                set +e
+                TERRAFORM_APPLY_OUTPUT=$(${pkgs.opentofu}/bin/tofu apply -auto-approve tfplan 2>&1)
+                APPLY_EXIT=$?
+                set -e
+
+                if [ $APPLY_EXIT -ne 0 ]; then
+                  echo "ERROR: Terraform apply failed"
+                  # Extract clean error messages, filter out JSON dumps
+                  echo "$TERRAFORM_APPLY_OUTPUT" | grep -E "(Error:|Warning:|│)" | grep -v '{"output":' | head -10
+                  exit 1
+                fi
+
+                echo "✓ Terraform apply completed successfully"
                 echo "Terraform applied successfully during deployment"
                 ;;
             esac

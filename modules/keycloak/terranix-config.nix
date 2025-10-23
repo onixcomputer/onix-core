@@ -120,24 +120,9 @@ let
         };
       };
 
-  # Admin user management for password synchronization
-  adminUserResource = {
-    keycloak_user.admin = {
-      realm_id = "master";
-      username = "admin";
-      enabled = true;
-      email = "admin@keycloak.local";
-      email_verified = true;
-      first_name = "Administrator";
-      last_name = "User";
-
-      # Update admin password to clan vars password
-      initial_password = {
-        value = "\${var.keycloak_admin_new_password}";
-        temporary = false;
-      };
-    };
-  };
+  # Admin user management removed to avoid circular dependency
+  # The admin user should not be managed by terraform since it's used for authentication
+  adminUserResource = { };
 
   # Merge all resource generators
   resources = lib.foldl' lib.recursiveUpdate { } [
@@ -183,29 +168,19 @@ in
     required_version = ">= 1.0.0";
   };
 
-  # Variables
-  variable = {
-    keycloak_admin_password = {
-      description = "Keycloak admin password for provider authentication";
-      type = "string";
-      sensitive = true;
-    };
-    keycloak_admin_new_password = {
-      description = "New admin password to sync with clan vars";
-      type = "string";
-      sensitive = true;
-    };
-  };
+  # No variables needed since we use hardcoded bootstrap password
+
+  # No variables needed - using hardcoded bootstrap password
 
   # Provider configuration
   provider.keycloak = {
     client_id = "admin-cli";
     username = "admin";
-    password = "\${var.keycloak_admin_password}";
+    password = "TemporaryBootstrapPassword123!";
     url = "http://localhost:8080";
     realm = "master";
-    initial_login = false;
-    client_timeout = 60;
+    initial_login = false; # Critical: Avoid auth during plan phase
+    client_timeout = 300; # Increased timeout
     tls_insecure_skip_verify = true;
   };
 

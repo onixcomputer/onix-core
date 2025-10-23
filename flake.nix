@@ -52,6 +52,8 @@
         ./parts/formatter.nix
         ./parts/pre-commit.nix
         ./parts/sops-viz.nix
+        ./parts/checks.nix
+        ./checks/flake-module.nix
       ];
 
       systems = [

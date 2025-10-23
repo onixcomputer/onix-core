@@ -11,7 +11,7 @@ _: {
 
           # Enable automated terraform with S3 backend
           terraformBackend = "s3";
-          terraformAutoApply = true; # Re-enabled for testing
+          terraformAutoApply = true; # Re-enabled to test with external endpoint
 
           # Enable terraform integration
           terraform = {
@@ -121,6 +121,16 @@ _: {
                 realm = "development";
                 email = "bye@robitzs.ch";
                 firstName = "bye";
+                lastName = "Test";
+                enabled = true;
+                emailVerified = true;
+                initialPassword = "BlockingTest456!";
+                temporary = true;
+              };
+              "hihihi" = {
+                realm = "development";
+                email = "hi@robitzs.ch";
+                firstName = "hi";
                 lastName = "Test";
                 enabled = true;
                 emailVerified = true;

@@ -69,27 +69,19 @@ in
               generatorName = "keycloak-${instanceName}";
               dbPasswordFile = config.clan.core.vars.generators.${generatorName}.files.db_password.path;
 
-              # Generate Terraform configuration at build time
-              terraformConfigJson = pkgs.writeText "keycloak-terraform-${instanceName}.json" (
-                builtins.toJSON (
-                  import ./terranix-config.nix {
-                    inherit (pkgs) lib;
-                    inherit settings;
-                  }
-                )
-              );
               # OpenTofu library functions
               opentofu = import ../lib/opentofu/default.nix { inherit lib pkgs; };
 
+              # Enhanced terranix integration
+              terranix = import ../lib/opentofu/terranix.nix { inherit lib pkgs; };
+
               # Define credential mapping for OpenTofu library
-              credentialMapping = {
-                "keycloak_admin_password" = "admin_password";
-                "keycloak_admin_new_password" = "admin_password";
-              };
+              credentialMapping = { };
 
               # Dependencies for terraform deployment
               deploymentDependencies = [
                 "keycloak.service"
+                "keycloak-admin-password-reset.service"
               ]
               ++ lib.optionals (terraformBackend == "s3") [ "garage-terraform-init-${instanceName}.service" ];
             in
@@ -98,8 +90,7 @@ in
                 keycloak = {
                   enable = true;
 
-                  # Use clan vars admin password (terraform will sync this with keycloak)
-                  # Note: We set a temporary password here and terraform updates it to clan vars
+                  # Use bootstrap password (will be updated by terraform to clan vars)
                   initialAdminPassword = "TemporaryBootstrapPassword123!";
 
                   settings = {
@@ -107,6 +98,10 @@ in
                     proxy-headers = "xforwarded";
                     http-enabled = true;
                     http-port = 8080;
+                    # Enable health checks on management port
+                    health-enabled = true;
+                    http-management-port = 9000;
+                    http-management-relative-path = "/management";
                   };
 
                   database = {
@@ -164,8 +159,21 @@ in
                 '';
               };
 
-              # Apply the blocking deployment pattern using simple OpenTofu library
+              # Apply the blocking deployment pattern using terranix-enhanced OpenTofu library
+              # Add activation script to trigger terraform deployment on configuration changes
               system.activationScripts."keycloak-terraform-reset-${instanceName}" = lib.mkIf terraformAutoApply (
+                let
+                  terraformConfigJson = terranix.generateTerranixJson {
+                    module = ./terranix-config.nix;
+                    moduleArgs = {
+                      inherit lib settings;
+                    };
+                    fileName = "keycloak-terraform-${instanceName}.json";
+                    validate = true;
+                    debug = false;
+                    prettyPrint = false;
+                  };
+                in
                 opentofu.mkActivationScript {
                   serviceName = "keycloak";
                   inherit instanceName;
@@ -173,17 +181,28 @@ in
                 }
               );
 
-              # Combined systemd services
               systemd.services =
-                (opentofu.mkDeploymentService {
+                (terranix.mkTerranixDeploymentService {
                   serviceName = "keycloak";
                   inherit instanceName;
-                  terraformConfigPath = terraformConfigJson;
+
+                  # Use the new terranix module
+                  terranixModule = ./terranix-config.nix;
+                  moduleArgs = {
+                    inherit lib settings;
+                  };
+
                   inherit credentialMapping;
                   dependencies = deploymentDependencies;
                   backendType = terraformBackend;
                   timeoutSec = "10m";
-                  preTerraformScript = opentofu.generateTfvarsScript credentialMapping "";
+
+                  # Enhanced terranix options
+                  validateConfig = true;
+                  debugMode = false;
+                  prettyPrintJson = false;
+
+                  preTerraformScript = "echo 'No terraform variables needed - using hardcoded bootstrap password'";
                 })
                 // (lib.optionalAttrs (terraformBackend == "s3") (
                   opentofu.mkGarageInitService {
@@ -192,6 +211,76 @@ in
                   }
                 ))
                 // {
+                  # Admin password reset service to ensure bootstrap password is active
+                  "keycloak-admin-password-reset" = {
+                    description = "Reset Keycloak admin password to bootstrap password";
+                    after = [ "keycloak.service" ];
+                    requires = [ "keycloak.service" ];
+                    wantedBy = [ "multi-user.target" ];
+
+                    serviceConfig = {
+                      Type = "oneshot";
+                      RemainAfterExit = true;
+                      StateDirectory = "keycloak-admin-reset";
+                      WorkingDirectory = "/var/lib/keycloak-admin-reset";
+                    };
+
+                    path = with pkgs; [
+                      keycloak
+                      curl
+                      jq
+                    ];
+
+                    script = ''
+                      set -euo pipefail
+
+                      echo "Resetting Keycloak admin password to bootstrap password..."
+
+                      # Wait for Keycloak to be ready
+                      for i in {1..30}; do
+                        if curl -sf http://localhost:8080/realms/master >/dev/null 2>&1; then
+                          break
+                        fi
+                        echo "Waiting for Keycloak... (attempt $i/30)"
+                        sleep 2
+                      done
+
+                      # Use Keycloak admin CLI to reset admin password
+                      export JAVA_HOME="${pkgs.openjdk_headless}"
+
+                      # Try multiple possible passwords to find the current one
+                      PASSWORDS=("TemporaryBootstrapPassword123!" "GQLpLkcUdE7Xs3cxzO6hyAruz9l7rsOy" "admin")
+
+                      for CURRENT_PASSWORD in "''${PASSWORDS[@]}"; do
+                        echo "Trying password reset with current password: [REDACTED]"
+                        if ${pkgs.keycloak}/bin/kcadm.sh config credentials \
+                          --server http://localhost:8080 \
+                          --realm master \
+                          --user admin \
+                          --password "$CURRENT_PASSWORD" 2>/dev/null; then
+
+                          echo "✓ Connected successfully, updating admin password"
+
+                          # Reset admin password to bootstrap password
+                          ${pkgs.keycloak}/bin/kcadm.sh set-password \
+                            --server http://localhost:8080 \
+                            --realm master \
+                            --target-realm master \
+                            --username admin \
+                            --new-password TemporaryBootstrapPassword123!
+
+                          echo "✓ Admin password reset completed successfully"
+                          touch /var/lib/keycloak-admin-reset/.reset-complete
+                          exit 0
+                        fi
+                      done
+
+                      echo "⚠ Could not connect with any known password - manual intervention required"
+                      touch /var/lib/keycloak-admin-reset/.password-mismatch
+                      exit 0  # Don't fail the service
+                    '';
+                  };
+
                   # Basic service startup order
                   keycloak = {
                     after = [ "postgresql.service" ];

@@ -64,26 +64,14 @@ rec {
       module,
       # Settings/arguments to pass to the module
       moduleArgs ? { },
-      # Additional pkgs to provide to the module
-      extraPkgs ? { },
       # Debug mode - includes source information
       debug ? false,
       # Validation mode - strict type checking
       validate ? true,
     }:
     let
-      # Prepare the evaluation environment
-
-      # Merge provided pkgs with any extras
-      evalPkgs = pkgs // extraPkgs;
-
-      # Standard evaluation arguments
-      evalArgs = {
-        inherit lib;
-        pkgs = evalPkgs;
-        config = { };
-      }
-      // moduleArgs;
+      # Use only the provided moduleArgs (don't add extra lib/pkgs that might conflict)
+      evalArgs = moduleArgs;
 
       # Evaluate the terranix module
       evaluated =
@@ -107,7 +95,6 @@ rec {
             _debug = {
               moduleSource = toString module;
               evaluationArgs = builtins.attrNames evalArgs;
-              timestamp = builtins.currentTime;
             };
           }
         else
@@ -126,7 +113,6 @@ rec {
       # Output file name
       fileName ? "terraform.json",
       # Pretty print JSON
-      prettyPrint ? false,
       # Validation options
       validate ? true,
       # Debug mode
@@ -142,7 +128,7 @@ rec {
           ;
       };
 
-      jsonContent = if prettyPrint then builtins.toJSON evaluated else builtins.toJSON evaluated;
+      jsonContent = builtins.toJSON evaluated;
 
     in
     pkgs.writeText fileName jsonContent;
