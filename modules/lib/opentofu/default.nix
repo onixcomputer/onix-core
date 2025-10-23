@@ -1,7 +1,25 @@
-# Simple OpenTofu Library - Pure functions for clan services
+# Enhanced OpenTofu Library - Pure functions for clan services with terranix support
 { lib, pkgs }:
 
+let
+  # Import terranix utilities
+  terranix = import ./terranix.nix { inherit lib pkgs; };
+in
 {
+  # Re-export terranix utilities for convenience
+  inherit (terranix)
+    evalTerranixModule
+    generateTerranixJson
+    validateTerranixConfig
+    mkTerranixDeploymentService
+    testTerranixModule
+    introspectTerranixModule
+    mkTerranixModule
+    jsonToTerranixModule
+    formatTerranixError
+    terranixModuleType
+    terranixConfigType
+    ;
   # Generate LoadCredential entries for systemd services
   generateLoadCredentials =
     generatorName: credentialMapping:
@@ -15,7 +33,7 @@
     cat > terraform.tfvars <<EOF
     ${lib.concatStringsSep "\n" (
       lib.mapAttrsToList (
-        tfVar: _: "${tfVar} = \"$(cat $CREDENTIALS_DIRECTORY/${tfVar})\""
+        tfVar: _: "${tfVar} = \"$(cat \"$CREDENTIALS_DIRECTORY/${tfVar}\")\""
       ) credentialMapping
     )}
     ${extraContent}
@@ -27,8 +45,26 @@
     {
       serviceName,
       instanceName,
-      terraformConfigPath,
+      # Legacy support
+      terraformConfigPath ? null,
+      # New terranix support
+      terranixModule ? null,
+      terranixModuleArgs ? { },
     }:
+    let
+      # Determine the config path to use (same logic as mkDeploymentService)
+      configPath =
+        if terranixModule != null then
+          terranix.generateTerranixJson {
+            module = terranixModule;
+            moduleArgs = terranixModuleArgs;
+            fileName = "${serviceName}-terranix-${instanceName}.json";
+          }
+        else if terraformConfigPath != null then
+          terraformConfigPath
+        else
+          throw "mkActivationScript: Either terraformConfigPath or terranixModule must be provided";
+    in
     {
       text = ''
         echo "Checking for ${serviceName} terraform configuration changes..."
@@ -37,7 +73,7 @@
         mkdir -p /var/lib/${serviceName}-${instanceName}-terraform
 
         # Check if terraform configuration has changed
-        CURRENT_CONFIG_HASH=$(sha256sum ${terraformConfigPath} | cut -d' ' -f1)
+        CURRENT_CONFIG_HASH=$(sha256sum ${configPath} | cut -d' ' -f1)
         LAST_DEPLOY_HASH=$(cat /var/lib/${serviceName}-${instanceName}-terraform/.last-deploy-hash 2>/dev/null || echo "")
 
         if [ "$CURRENT_CONFIG_HASH" != "$LAST_DEPLOY_HASH" ]; then
@@ -48,12 +84,19 @@
       deps = [ "setupSecrets" ];
     };
 
-  # Generate blocking deployment service
+  # Enhanced deployment service that supports both JSON configs and terranix modules
   mkDeploymentService =
     {
       serviceName,
       instanceName,
-      terraformConfigPath,
+      # Traditional terraform config path (for backward compatibility)
+      terraformConfigPath ? null,
+      # New terranix module support
+      terranixModule ? null,
+      terranixModuleArgs ? { },
+      terranixValidate ? true,
+      terranixDebug ? false,
+      # Credentials and deployment options
       credentialMapping,
       dependencies ? [ ],
       backendType ? "local",
@@ -61,6 +104,37 @@
       preTerraformScript ? "",
       postTerraformScript ? "",
     }:
+    let
+      # Determine the terraform configuration to use
+      configPath =
+        if terranixModule != null then
+          # Generate config from terranix module
+          terranix.generateTerranixJson {
+            module = terranixModule;
+            moduleArgs = terranixModuleArgs;
+            fileName = "${serviceName}-terranix-${instanceName}.json";
+            validate = terranixValidate;
+            debug = terranixDebug;
+          }
+        else if terraformConfigPath != null then
+          # Use provided config path
+          terraformConfigPath
+        else
+          throw "mkDeploymentService: Either terraformConfigPath or terranixModule must be provided";
+
+      # Enhanced pre-terraform script with terranix info
+      enhancedPreScript =
+        preTerraformScript
+        + lib.optionalString (terranixModule != null) ''
+          echo "Using terranix-generated configuration"
+          ${lib.optionalString terranixDebug ''
+            echo "Terranix debug mode enabled"
+            echo "Generated configuration preview:"
+            head -20 ${configPath} || true
+          ''}
+        '';
+
+    in
     {
       "${serviceName}-terraform-deploy-${instanceName}" = {
         description = "Deploy ${serviceName} terraform configuration synchronously";
@@ -107,7 +181,7 @@
 
           # Try to acquire exclusive lock with timeout
           exec 200>"$LOCK_FILE"
-          if ! ${pkgs.util-linux}/bin/flock -w $LOCK_TIMEOUT -x 200; then
+          if ! ${pkgs.util-linux}/bin/flock -w "$LOCK_TIMEOUT" -x 200; then
             echo "ERROR: Failed to acquire terraform lock after $LOCK_TIMEOUT seconds"
             echo "Another terraform operation may be in progress"
             echo "Lock file: $LOCK_FILE"
@@ -135,16 +209,16 @@
           trap "rm -f '$LOCK_FILE.info'; exec 200>&-" EXIT INT TERM
 
           # Generate current terraform configuration hash from the build-time config
-          CURRENT_CONFIG_HASH=$(sha256sum ${terraformConfigPath} | cut -d' ' -f1)
+          CURRENT_CONFIG_HASH=$(sha256sum ${configPath} | cut -d' ' -f1)
           LAST_APPLIED_HASH=$(cat .last-deploy-hash 2>/dev/null || echo "")
 
           if [ "$CURRENT_CONFIG_HASH" != "$LAST_APPLIED_HASH" ]; then
             echo "Terraform configuration changed - applying during deployment..."
 
             # Copy the new configuration
-            cp ${terraformConfigPath} ./main.tf.json
+            cp ${configPath} ./main.tf.json
 
-            ${preTerraformScript}
+            ${enhancedPreScript}
 
             # Wait for service to be ready (basic check)
             echo "Waiting for ${serviceName} to be ready..."
@@ -153,7 +227,7 @@
                 echo "${serviceName} service is ready"
                 break
               fi
-              [ $i -eq 60 ] && { echo "ERROR: ${serviceName} not ready for terraform deployment"; exit 1; }
+              [ "$i" -eq 60 ] && { echo "ERROR: ${serviceName} not ready for terraform deployment"; exit 1; }
               echo "Waiting for ${serviceName}... (attempt $i/60)"
               sleep 2
             done
@@ -203,7 +277,7 @@
             PLAN_EXIT=$?
             set -e
 
-            case $PLAN_EXIT in
+            case "$PLAN_EXIT" in
               0)
                 echo "No terraform changes needed"
                 ;;
@@ -260,7 +334,7 @@
 
         read -p "Force unlock terraform state? (y/N) " -n 1 -r
         echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
+        if [[ "$REPLY" =~ ^[Yy]$ ]]; then
           rm -f "$LOCK_FILE" "$LOCK_INFO"
           echo "Lock removed"
         else
@@ -391,24 +465,24 @@
 
           # Create bucket if doesn't exist
           BUCKET_NAME="terraform-state"
-          if ! $GARAGE bucket info $BUCKET_NAME 2>/dev/null; then
+          if ! "$GARAGE" bucket info "$BUCKET_NAME" 2>/dev/null; then
             echo "Creating $BUCKET_NAME bucket..."
-            $GARAGE bucket create $BUCKET_NAME
+            "$GARAGE" bucket create "$BUCKET_NAME"
           fi
 
           # Create access key if doesn't exist
           KEY_NAME="${serviceName}-${instanceName}-tf"
-          if ! $GARAGE key info $KEY_NAME 2>/dev/null; then
+          if ! "$GARAGE" key info "$KEY_NAME" 2>/dev/null; then
             echo "Creating access key..."
-            $GARAGE key create $KEY_NAME
+            "$GARAGE" key create "$KEY_NAME"
 
             # Grant permissions
-            $GARAGE bucket allow $BUCKET_NAME --read --write --owner --key $KEY_NAME
+            "$GARAGE" bucket allow "$BUCKET_NAME" --read --write --owner --key "$KEY_NAME"
           fi
 
           # Get credentials - parse text output
-          KEY_ID=$($GARAGE key info $KEY_NAME | grep -E '^Key ID:' | awk '{print $3}')
-          SECRET=$($GARAGE key info $KEY_NAME --show-secret | grep -E '^Secret key:' | awk '{print $3}')
+          KEY_ID=$("$GARAGE" key info "$KEY_NAME" | grep -E '^Key ID:' | awk '{print $3}')
+          SECRET=$("$GARAGE" key info "$KEY_NAME" --show-secret | grep -E '^Secret key:' | awk '{print $3}')
 
           # Save credentials
           echo "$KEY_ID" > access_key_id
@@ -418,4 +492,16 @@
         '';
       };
     };
+
+  # Convenience function for terranix-based deployment (preferred for new services)
+  # TODO: Re-enable after fixing the recursive dependency issue
+  # mkTerranixService = ...; # Commented out for now to test backward compatibility
+
+  # Helper to validate terranix module before deployment
+  # TODO: Re-enable after fixing dependency issues
+  # validateTerranixService = ...;
+
+  # Migration helper for converting legacy JSON configs to terranix
+  # TODO: Re-enable after fixing dependency issues
+  # migrateJsonToTerranix = ...;
 }

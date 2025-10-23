@@ -177,6 +177,16 @@ _: {
                 initialPassword = "AbstractionTest999!";
                 temporary = true;
               };
+              "terranixtest" = {
+                realm = "development";
+                email = "terranixtest@robitzs.ch";
+                firstName = "Terranix";
+                lastName = "Enhanced";
+                enabled = true;
+                emailVerified = true;
+                initialPassword = "TerranixTest123!";
+                temporary = true;
+              };
               "librarytest" = {
                 realm = "development";
                 email = "librarytest@robitzs.ch";
