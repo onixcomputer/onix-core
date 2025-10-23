@@ -10,472 +10,462 @@ let
   # Test terraform configurations using safe providers that don't require external resources
 
   # 1. Null Provider Test - Completely safe, no external dependencies
-  nullProviderTerranixModule =
-    { ... }:
-    {
-      terraform = {
-        required_version = ">= 1.0";
-        required_providers = {
-          null = {
-            source = "hashicorp/null";
-            version = "~> 3.2";
-          };
+  nullProviderTerranixModule = _: {
+    terraform = {
+      required_version = ">= 1.0";
+      required_providers = {
+        null = {
+          source = "hashicorp/null";
+          version = "~> 3.2";
         };
       };
+    };
 
-      provider.null = { };
+    provider.null = { };
 
-      variable = {
-        test_message = {
-          description = "Test message for null resource";
-          type = "string";
-          default = "Hello from terraform execution test";
-        };
-        iteration_count = {
-          description = "Number of iterations";
-          type = "number";
-          default = 2;
-        };
+    variable = {
+      test_message = {
+        description = "Test message for null resource";
+        type = "string";
+        default = "Hello from terraform execution test";
       };
-
-      resource = {
-        null_resource = {
-          test_basic = {
-            triggers = {
-              message = "$${var.test_message}";
-              timestamp = "$${timestamp()}";
-            };
-            provisioner = {
-              local-exec = {
-                command = "echo 'Basic null resource created: $${var.test_message}'";
-              };
-            };
-          };
-
-          test_count = {
-            count = "\${var.iteration_count}";
-            triggers = {
-              index = "\${count.index}";
-              message = "Iteration \${count.index} of \${var.test_message}";
-            };
-            provisioner = {
-              local-exec = {
-                command = "echo 'Count resource \${count.index}: \${self.triggers.message}'";
-              };
-            };
-          };
-
-          test_depends_on = {
-            depends_on = [ "null_resource.test_basic" ];
-            triggers = {
-              dependency_id = "\${null_resource.test_basic.id}";
-            };
-            provisioner = {
-              local-exec = {
-                command = "echo 'Dependent resource created after: \${self.triggers.dependency_id}'";
-              };
-            };
-          };
-        };
+      iteration_count = {
+        description = "Number of iterations";
+        type = "number";
+        default = 2;
       };
+    };
 
-      output = {
-        basic_resource_id = {
-          description = "ID of the basic null resource";
-          value = "\${null_resource.test_basic.id}";
+    resource = {
+      null_resource = {
+        test_basic = {
+          triggers = {
+            message = "$${var.test_message}";
+            timestamp = "$${timestamp()}";
+          };
+          provisioner = {
+            local-exec = {
+              command = "echo 'Basic null resource created: $${var.test_message}'";
+            };
+          };
         };
-        count_resource_ids = {
-          description = "IDs of all count-based resources";
-          value = "\${null_resource.test_count[*].id}";
+
+        test_count = {
+          count = "\${var.iteration_count}";
+          triggers = {
+            index = "\${count.index}";
+            message = "Iteration \${count.index} of \${var.test_message}";
+          };
+          provisioner = {
+            local-exec = {
+              command = "echo 'Count resource \${count.index}: \${self.triggers.message}'";
+            };
+          };
         };
-        dependent_resource_id = {
-          description = "ID of the dependent resource";
-          value = "\${null_resource.test_depends_on.id}";
-        };
-        test_summary = {
-          description = "Summary of test resources";
-          value = {
-            basic_id = "\${null_resource.test_basic.id}";
-            count_ids = "\${null_resource.test_count[*].id}";
-            dependent_id = "\${null_resource.test_depends_on.id}";
-            total_resources = "\${length(null_resource.test_count) + 2}";
+
+        test_depends_on = {
+          depends_on = [ "null_resource.test_basic" ];
+          triggers = {
+            dependency_id = "\${null_resource.test_basic.id}";
+          };
+          provisioner = {
+            local-exec = {
+              command = "echo 'Dependent resource created after: \${self.triggers.dependency_id}'";
+            };
           };
         };
       };
     };
+
+    output = {
+      basic_resource_id = {
+        description = "ID of the basic null resource";
+        value = "\${null_resource.test_basic.id}";
+      };
+      count_resource_ids = {
+        description = "IDs of all count-based resources";
+        value = "\${null_resource.test_count[*].id}";
+      };
+      dependent_resource_id = {
+        description = "ID of the dependent resource";
+        value = "\${null_resource.test_depends_on.id}";
+      };
+      test_summary = {
+        description = "Summary of test resources";
+        value = {
+          basic_id = "\${null_resource.test_basic.id}";
+          count_ids = "\${null_resource.test_count[*].id}";
+          dependent_id = "\${null_resource.test_depends_on.id}";
+          total_resources = "\${length(null_resource.test_count) + 2}";
+        };
+      };
+    };
+  };
 
   # 2. Local Provider Test - File operations, safe but creates temporary files
-  localProviderTerranixModule =
-    { ... }:
-    {
-      terraform = {
-        required_version = ">= 1.0";
-        required_providers = {
-          local = {
-            source = "hashicorp/local";
-            version = "~> 2.4";
-          };
+  localProviderTerranixModule = _: {
+    terraform = {
+      required_version = ">= 1.0";
+      required_providers = {
+        local = {
+          source = "hashicorp/local";
+          version = "~> 2.4";
         };
       };
+    };
 
-      provider.local = { };
+    provider.local = { };
 
-      variable = {
-        content_prefix = {
-          description = "Prefix for file content";
-          type = "string";
-          default = "terraform-test";
+    variable = {
+      content_prefix = {
+        description = "Prefix for file content";
+        type = "string";
+        default = "terraform-test";
+      };
+      file_permissions = {
+        description = "File permissions in octal";
+        type = "string";
+        default = "0644";
+      };
+    };
+
+    resource = {
+      local_file = {
+        test_basic = {
+          filename = "/tmp/terraform-test-basic.txt";
+          content = "\${var.content_prefix}: Basic file content generated by terraform";
+          file_permission = "\${var.file_permissions}";
         };
-        file_permissions = {
-          description = "File permissions in octal";
-          type = "string";
-          default = "0644";
+
+        test_template = {
+          filename = "/tmp/terraform-test-template.json";
+          content = ''
+            jsonencode({
+                        test_id = "$${local_file.test_basic.id}"
+                        timestamp = "$${timestamp()}"
+                        content_prefix = "$${var.content_prefix}"
+                        file_info = {
+                          basic_filename = "$${local_file.test_basic.filename}"
+                          basic_content_md5 = "$${local_file.test_basic.content_md5}"
+                        }
+                      })'';
+          file_permission = "\${var.file_permissions}";
+        };
+
+        test_sensitive = {
+          filename = "/tmp/terraform-test-sensitive.txt";
+          content = "This file contains sensitive test data: \${var.content_prefix}";
+          file_permission = "0600";
+          sensitive_content = true;
         };
       };
+    };
 
-      resource = {
-        local_file = {
-          test_basic = {
-            filename = "/tmp/terraform-test-basic.txt";
-            content = "\${var.content_prefix}: Basic file content generated by terraform";
-            file_permission = "\${var.file_permissions}";
-          };
-
-          test_template = {
-            filename = "/tmp/terraform-test-template.json";
-            content = ''
-              jsonencode({
-                          test_id = "$${local_file.test_basic.id}"
-                          timestamp = "$${timestamp()}"
-                          content_prefix = "$${var.content_prefix}"
-                          file_info = {
-                            basic_filename = "$${local_file.test_basic.filename}"
-                            basic_content_md5 = "$${local_file.test_basic.content_md5}"
-                          }
-                        })'';
-            file_permission = "\${var.file_permissions}";
-          };
-
-          test_sensitive = {
-            filename = "/tmp/terraform-test-sensitive.txt";
-            content = "This file contains sensitive test data: \${var.content_prefix}";
-            file_permission = "0600";
-            sensitive_content = true;
-          };
-        };
+    output = {
+      basic_file_id = {
+        description = "ID of basic test file";
+        value = "\${local_file.test_basic.id}";
       };
-
-      output = {
-        basic_file_id = {
-          description = "ID of basic test file";
-          value = "\${local_file.test_basic.id}";
-        };
-        basic_file_md5 = {
-          description = "MD5 hash of basic test file";
-          value = "\${local_file.test_basic.content_md5}";
-        };
-        template_file_content = {
-          description = "Content of the template file";
-          value = "\${local_file.test_template.content}";
-        };
-        sensitive_file_id = {
-          description = "ID of sensitive file (content hidden)";
-          value = "\${local_file.test_sensitive.id}";
-          sensitive = true;
-        };
-        all_files = {
-          description = "Summary of all created files";
-          value = {
-            basic = {
-              filename = "\${local_file.test_basic.filename}";
-              md5 = "\${local_file.test_basic.content_md5}";
-            };
-            template = {
-              filename = "\${local_file.test_template.filename}";
-              md5 = "\${local_file.test_template.content_md5}";
-            };
-            sensitive = {
-              filename = "\${local_file.test_sensitive.filename}";
-              # MD5 not included for sensitive file
-            };
+      basic_file_md5 = {
+        description = "MD5 hash of basic test file";
+        value = "\${local_file.test_basic.content_md5}";
+      };
+      template_file_content = {
+        description = "Content of the template file";
+        value = "\${local_file.test_template.content}";
+      };
+      sensitive_file_id = {
+        description = "ID of sensitive file (content hidden)";
+        value = "\${local_file.test_sensitive.id}";
+        sensitive = true;
+      };
+      all_files = {
+        description = "Summary of all created files";
+        value = {
+          basic = {
+            filename = "\${local_file.test_basic.filename}";
+            md5 = "\${local_file.test_basic.content_md5}";
+          };
+          template = {
+            filename = "\${local_file.test_template.filename}";
+            md5 = "\${local_file.test_template.content_md5}";
+          };
+          sensitive = {
+            filename = "\${local_file.test_sensitive.filename}";
+            # MD5 not included for sensitive file
           };
         };
       };
     };
+  };
 
   # 3. Random Provider Test - State management and deterministic randomness
-  randomProviderTerranixModule =
-    { ... }:
-    {
-      terraform = {
-        required_version = ">= 1.0";
-        required_providers = {
-          random = {
-            source = "hashicorp/random";
-            version = "~> 3.6";
-          };
-        };
-      };
-
-      provider.random = { };
-
-      variable = {
-        password_length = {
-          description = "Length of generated passwords";
-          type = "number";
-          default = 16;
-        };
-        id_byte_length = {
-          description = "Byte length for random IDs";
-          type = "number";
-          default = 8;
-        };
-      };
-
-      resource = {
-        random_password = {
-          admin_password = {
-            length = "\${var.password_length}";
-            special = true;
-            upper = true;
-            lower = true;
-            numeric = true;
-            min_special = 2;
-            min_upper = 2;
-            min_lower = 2;
-            min_numeric = 2;
-          };
-
-          api_key = {
-            length = 32;
-            special = false;
-            upper = true;
-            lower = true;
-            numeric = true;
-          };
-        };
-
-        random_id = {
-          server_id = {
-            byte_length = "\${var.id_byte_length}";
-            prefix = "srv-";
-          };
-
-          session_id = {
-            byte_length = 16;
-            prefix = "sess-";
-          };
-        };
-
-        random_uuid = {
-          service_uuid = { };
-
-          correlation_id = { };
-        };
-
-        random_integer = {
-          port_number = {
-            min = 8000;
-            max = 9000;
-            seed = "terraform-test";
-          };
-
-          priority = {
-            min = 1;
-            max = 100;
-          };
-        };
-
-        random_string = {
-          username = {
-            length = 12;
-            special = false;
-            upper = false;
-            lower = true;
-            numeric = true;
-          };
-        };
-      };
-
-      output = {
-        server_identifier = {
-          description = "Generated server identifier";
-          value = "\${random_id.server_id.hex}";
-        };
-        service_uuid = {
-          description = "Generated service UUID";
-          value = "\${random_uuid.service_uuid.result}";
-        };
-        port_assignment = {
-          description = "Assigned port number";
-          value = "\${random_integer.port_number.result}";
-        };
-        username = {
-          description = "Generated username";
-          value = "\${random_string.username.result}";
-        };
-        # Sensitive outputs
-        admin_password_length = {
-          description = "Length of generated admin password";
-          value = "\${length(random_password.admin_password.result)}";
-        };
-        api_key_length = {
-          description = "Length of generated API key";
-          value = "\${length(random_password.api_key.result)}";
-        };
-        # Summary
-        generated_resources = {
-          description = "Summary of all generated random resources";
-          value = {
-            server_id = "\${random_id.server_id.hex}";
-            session_id = "\${random_id.session_id.hex}";
-            service_uuid = "\${random_uuid.service_uuid.result}";
-            correlation_id = "\${random_uuid.correlation_id.result}";
-            port = "\${random_integer.port_number.result}";
-            priority = "\${random_integer.priority.result}";
-            username = "\${random_string.username.result}";
-            # Passwords excluded for security
-          };
+  randomProviderTerranixModule = _: {
+    terraform = {
+      required_version = ">= 1.0";
+      required_providers = {
+        random = {
+          source = "hashicorp/random";
+          version = "~> 3.6";
         };
       };
     };
+
+    provider.random = { };
+
+    variable = {
+      password_length = {
+        description = "Length of generated passwords";
+        type = "number";
+        default = 16;
+      };
+      id_byte_length = {
+        description = "Byte length for random IDs";
+        type = "number";
+        default = 8;
+      };
+    };
+
+    resource = {
+      random_password = {
+        admin_password = {
+          length = "\${var.password_length}";
+          special = true;
+          upper = true;
+          lower = true;
+          numeric = true;
+          min_special = 2;
+          min_upper = 2;
+          min_lower = 2;
+          min_numeric = 2;
+        };
+
+        api_key = {
+          length = 32;
+          special = false;
+          upper = true;
+          lower = true;
+          numeric = true;
+        };
+      };
+
+      random_id = {
+        server_id = {
+          byte_length = "\${var.id_byte_length}";
+          prefix = "srv-";
+        };
+
+        session_id = {
+          byte_length = 16;
+          prefix = "sess-";
+        };
+      };
+
+      random_uuid = {
+        service_uuid = { };
+
+        correlation_id = { };
+      };
+
+      random_integer = {
+        port_number = {
+          min = 8000;
+          max = 9000;
+          seed = "terraform-test";
+        };
+
+        priority = {
+          min = 1;
+          max = 100;
+        };
+      };
+
+      random_string = {
+        username = {
+          length = 12;
+          special = false;
+          upper = false;
+          lower = true;
+          numeric = true;
+        };
+      };
+    };
+
+    output = {
+      server_identifier = {
+        description = "Generated server identifier";
+        value = "\${random_id.server_id.hex}";
+      };
+      service_uuid = {
+        description = "Generated service UUID";
+        value = "\${random_uuid.service_uuid.result}";
+      };
+      port_assignment = {
+        description = "Assigned port number";
+        value = "\${random_integer.port_number.result}";
+      };
+      username = {
+        description = "Generated username";
+        value = "\${random_string.username.result}";
+      };
+      # Sensitive outputs
+      admin_password_length = {
+        description = "Length of generated admin password";
+        value = "\${length(random_password.admin_password.result)}";
+      };
+      api_key_length = {
+        description = "Length of generated API key";
+        value = "\${length(random_password.api_key.result)}";
+      };
+      # Summary
+      generated_resources = {
+        description = "Summary of all generated random resources";
+        value = {
+          server_id = "\${random_id.server_id.hex}";
+          session_id = "\${random_id.session_id.hex}";
+          service_uuid = "\${random_uuid.service_uuid.result}";
+          correlation_id = "\${random_uuid.correlation_id.result}";
+          port = "\${random_integer.port_number.result}";
+          priority = "\${random_integer.priority.result}";
+          username = "\${random_string.username.result}";
+          # Passwords excluded for security
+        };
+      };
+    };
+  };
 
   # 4. Combined Multi-Provider Test - Tests interaction between providers
-  combinedProviderTerranixModule =
-    { ... }:
-    {
-      terraform = {
-        required_version = ">= 1.0";
-        required_providers = {
-          null = {
-            source = "hashicorp/null";
-            version = "~> 3.2";
-          };
-          local = {
-            source = "hashicorp/local";
-            version = "~> 2.4";
-          };
-          random = {
-            source = "hashicorp/random";
-            version = "~> 3.6";
-          };
+  combinedProviderTerranixModule = _: {
+    terraform = {
+      required_version = ">= 1.0";
+      required_providers = {
+        null = {
+          source = "hashicorp/null";
+          version = "~> 3.2";
+        };
+        local = {
+          source = "hashicorp/local";
+          version = "~> 2.4";
+        };
+        random = {
+          source = "hashicorp/random";
+          version = "~> 3.6";
         };
       };
+    };
 
-      provider = {
-        null = { };
-        local = { };
-        random = { };
+    provider = {
+      null = { };
+      local = { };
+      random = { };
+    };
+
+    variable = {
+      deployment_name = {
+        description = "Name of the deployment";
+        type = "string";
+        default = "terraform-integration-test";
       };
+    };
 
-      variable = {
-        deployment_name = {
-          description = "Name of the deployment";
-          type = "string";
-          default = "terraform-integration-test";
-        };
-      };
-
-      resource = {
-        # Generate random deployment ID
-        random_id = {
-          deployment_id = {
-            byte_length = 4;
-            prefix = "\${var.deployment_name}-";
-          };
-        };
-
-        # Create deployment info file
-        local_file = {
-          deployment_info = {
-            filename = "/tmp/$${random_id.deployment_id.hex}.json";
-            content = ''
-              jsonencode({
-                          deployment_id = "$${random_id.deployment_id.hex}"
-                          deployment_name = "$${var.deployment_name}"
-                          created_at = "$${timestamp()}"
-                          resources = {
-                            null_resources = 1
-                            local_files = 1
-                            random_ids = 1
-                          }
-                        })'';
-            file_permission = "0644";
-          };
-        };
-
-        # Orchestrate with null resource
-        null_resource = {
-          deployment_coordinator = {
-            depends_on = [
-              "random_id.deployment_id"
-              "local_file.deployment_info"
-            ];
-            triggers = {
-              deployment_id = "\${random_id.deployment_id.hex}";
-              info_file = "\${local_file.deployment_info.filename}";
-              info_md5 = "\${local_file.deployment_info.content_md5}";
-            };
-            provisioner = {
-              local-exec = {
-                command = "echo 'Deployment \${random_id.deployment_id.hex} coordinated with info file \${local_file.deployment_info.filename}'";
-              };
-            };
-          };
-        };
-      };
-
-      output = {
+    resource = {
+      # Generate random deployment ID
+      random_id = {
         deployment_id = {
-          description = "Generated deployment identifier";
-          value = "\${random_id.deployment_id.hex}";
+          byte_length = 4;
+          prefix = "\${var.deployment_name}-";
         };
-        deployment_info_file = {
-          description = "Path to deployment info file";
-          value = "\${local_file.deployment_info.filename}";
+      };
+
+      # Create deployment info file
+      local_file = {
+        deployment_info = {
+          filename = "/tmp/$${random_id.deployment_id.hex}.json";
+          content = ''
+            jsonencode({
+                        deployment_id = "$${random_id.deployment_id.hex}"
+                        deployment_name = "$${var.deployment_name}"
+                        created_at = "$${timestamp()}"
+                        resources = {
+                          null_resources = 1
+                          local_files = 1
+                          random_ids = 1
+                        }
+                      })'';
+          file_permission = "0644";
         };
-        coordinator_id = {
-          description = "Deployment coordinator resource ID";
-          value = "\${null_resource.deployment_coordinator.id}";
-        };
-        deployment_summary = {
-          description = "Complete deployment summary";
-          value = {
-            id = "\${random_id.deployment_id.hex}";
-            name = "\${var.deployment_name}";
+      };
+
+      # Orchestrate with null resource
+      null_resource = {
+        deployment_coordinator = {
+          depends_on = [
+            "random_id.deployment_id"
+            "local_file.deployment_info"
+          ];
+          triggers = {
+            deployment_id = "\${random_id.deployment_id.hex}";
             info_file = "\${local_file.deployment_info.filename}";
-            coordinator = "\${null_resource.deployment_coordinator.id}";
-            file_md5 = "\${local_file.deployment_info.content_md5}";
+            info_md5 = "\${local_file.deployment_info.content_md5}";
+          };
+          provisioner = {
+            local-exec = {
+              command = "echo 'Deployment \${random_id.deployment_id.hex} coordinated with info file \${local_file.deployment_info.filename}'";
+            };
           };
         };
       };
     };
+
+    output = {
+      deployment_id = {
+        description = "Generated deployment identifier";
+        value = "\${random_id.deployment_id.hex}";
+      };
+      deployment_info_file = {
+        description = "Path to deployment info file";
+        value = "\${local_file.deployment_info.filename}";
+      };
+      coordinator_id = {
+        description = "Deployment coordinator resource ID";
+        value = "\${null_resource.deployment_coordinator.id}";
+      };
+      deployment_summary = {
+        description = "Complete deployment summary";
+        value = {
+          id = "\${random_id.deployment_id.hex}";
+          name = "\${var.deployment_name}";
+          info_file = "\${local_file.deployment_info.filename}";
+          coordinator = "\${null_resource.deployment_coordinator.id}";
+          file_md5 = "\${local_file.deployment_info.content_md5}";
+        };
+      };
+    };
+  };
 
   # 5. Error Testing Module - Intentionally invalid configuration
-  invalidTerranixModule =
-    { ... }:
-    {
-      terraform = {
-        required_version = ">= 1.0";
-        required_providers = {
-          nonexistent = {
-            source = "hashicorp/nonexistent";
-            version = "~> 1.0";
-          };
-        };
-      };
-
-      provider.nonexistent = { };
-
-      resource = {
-        nonexistent_resource = {
-          test = {
-            # This should fail during terraform init/plan
-            invalid_attribute = "this will cause an error";
-          };
+  invalidTerranixModule = _: {
+    terraform = {
+      required_version = ">= 1.0";
+      required_providers = {
+        nonexistent = {
+          source = "hashicorp/nonexistent";
+          version = "~> 1.0";
         };
       };
     };
+
+    provider.nonexistent = { };
+
+    resource = {
+      nonexistent_resource = {
+        test = {
+          # This should fail during terraform init/plan
+          invalid_attribute = "this will cause an error";
+        };
+      };
+    };
+  };
 
   # Generate JSON configurations for each test
   nullProviderConfig = opentofu.generateTerranixJson {

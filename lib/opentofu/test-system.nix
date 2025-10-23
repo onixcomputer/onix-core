@@ -7,52 +7,50 @@
 
 let
   # Simple test terranix module for keycloak
-  testKeycloakTerranix =
-    { ... }:
-    {
-      terraform.required_version = ">= 1.0";
+  testKeycloakTerranix = _: {
+    terraform.required_version = ">= 1.0";
 
-      provider.keycloak = {
-        client_id = "admin-cli";
-        username = "admin";
-        password = "\${var.admin_password}";
-        url = "http://localhost:8080";
-        initial_login = false;
-        client_timeout = 60;
-      };
+    provider.keycloak = {
+      client_id = "admin-cli";
+      username = "admin";
+      password = "\${var.admin_password}";
+      url = "http://localhost:8080";
+      initial_login = false;
+      client_timeout = 60;
+    };
 
-      variable.admin_password = {
-        description = "Keycloak admin password";
-        type = "string";
-        sensitive = true;
-      };
+    variable.admin_password = {
+      description = "Keycloak admin password";
+      type = "string";
+      sensitive = true;
+    };
 
-      # Create test realm
-      resource.keycloak_realm.test = {
-        realm = "test";
-        enabled = true;
-        display_name = "Test Realm";
-      };
+    # Create test realm
+    resource.keycloak_realm.test = {
+      realm = "test";
+      enabled = true;
+      display_name = "Test Realm";
+    };
 
-      # Create test user
-      resource.keycloak_user.testuser = {
-        realm_id = "\${keycloak_realm.test.id}";
-        username = "testuser";
-        enabled = true;
-        email = "test@example.com";
-        first_name = "Test";
-        last_name = "User";
-        initial_password = {
-          value = "test123";
-          temporary = false;
-        };
-      };
-
-      output.realm_id = {
-        value = "\${keycloak_realm.test.id}";
-        description = "Test realm ID";
+    # Create test user
+    resource.keycloak_user.testuser = {
+      realm_id = "\${keycloak_realm.test.id}";
+      username = "testuser";
+      enabled = true;
+      email = "test@example.com";
+      first_name = "Test";
+      last_name = "User";
+      initial_password = {
+        value = "test123";
+        temporary = false;
       };
     };
+
+    output.realm_id = {
+      value = "\${keycloak_realm.test.id}";
+      description = "Test realm ID";
+    };
+  };
 
 in
 (import "${self}/lib/test/test-base.nix" {

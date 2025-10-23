@@ -1,8 +1,7 @@
 # Flake module for OpenTofu library tests
 # Following clan patterns from lib/values/flake-module.nix
 
-{ ... }:
-{
+_: {
   perSystem =
     { pkgs, ... }:
     {

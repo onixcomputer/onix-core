@@ -1,8 +1,7 @@
 # Checks for onix-core infrastructure
 # Testing for modules and libraries using tiered approach
 
-{ ... }:
-{
+_: {
   perSystem =
     {
       pkgs,

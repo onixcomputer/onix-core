@@ -246,29 +246,27 @@ in
     expr =
       let
         # Create a simple generic terranix module
-        simpleModule =
-          { ... }:
-          {
-            terraform.required_version = ">= 1.0";
-            provider.null = {
-              source = "hashicorp/null";
-              version = "~> 3.0";
-            };
-            variable.test_var = {
-              description = "Test variable";
-              type = "string";
-              default = "test";
-            };
-            resource.null_resource.test = {
-              provisioner.local-exec = {
-                command = "echo \${var.test_var}";
-              };
-            };
-            output.test_output = {
-              value = "\${null_resource.test.id}";
-              description = "Test resource ID";
+        simpleModule = _: {
+          terraform.required_version = ">= 1.0";
+          provider.null = {
+            source = "hashicorp/null";
+            version = "~> 3.0";
+          };
+          variable.test_var = {
+            description = "Test variable";
+            type = "string";
+            default = "test";
+          };
+          resource.null_resource.test = {
+            provisioner.local-exec = {
+              command = "echo \${var.test_var}";
             };
           };
+          output.test_output = {
+            value = "\${null_resource.test.id}";
+            description = "Test resource ID";
+          };
+        };
 
         # Evaluate the module using OpenTofu terranix utilities
         config = opentofu.evalTerranixModule {

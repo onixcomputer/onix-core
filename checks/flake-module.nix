@@ -1,6 +1,5 @@
 # Checks module for onix-core VM integration tests
-{ ... }:
-{
+_: {
   perSystem =
     { pkgs, lib, ... }:
     {
