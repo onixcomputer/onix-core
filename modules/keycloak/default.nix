@@ -75,13 +75,10 @@ in
               # Enhanced terranix integration
               terranix = import ../../lib/opentofu/terranix.nix { inherit lib pkgs; };
 
-              # Define credential mapping for OpenTofu library
-              credentialMapping = { };
-
               # Dependencies for terraform deployment
               deploymentDependencies = [
                 "keycloak.service"
-                "keycloak-admin-password-reset.service"
+                "keycloak-admin-password-sync.service"
               ]
               ++ lib.optionals (terraformBackend == "s3") [ "garage-terraform-init-${instanceName}.service" ];
             in
@@ -181,28 +178,52 @@ in
               );
 
               systemd.services =
-                (terranix.mkTerranixDeploymentService {
-                  serviceName = "keycloak";
-                  inherit instanceName;
+                (
+                  let
+                    baseService = terranix.mkTerranixDeploymentService {
+                      serviceName = "keycloak";
+                      inherit instanceName;
 
-                  # Use the new terranix module
-                  terranixModule = ./terranix-config.nix;
-                  moduleArgs = {
-                    inherit lib settings;
-                  };
+                      # Use the new terranix module
+                      terranixModule = ./terranix-config.nix;
+                      moduleArgs = {
+                        inherit lib settings;
+                      };
 
-                  inherit credentialMapping;
-                  dependencies = deploymentDependencies;
-                  backendType = terraformBackend;
-                  timeoutSec = "10m";
+                      # Use direct path to clan vars instead of OpenTofu's assumption
+                      credentialMapping = { };
+                      dependencies = deploymentDependencies;
+                      backendType = terraformBackend;
+                      timeoutSec = "10m";
 
-                  # Enhanced terranix options
-                  validateConfig = true;
-                  debugMode = false;
-                  prettyPrintJson = false;
+                      # Enhanced terranix options
+                      validateConfig = true;
+                      debugMode = false;
+                      prettyPrintJson = false;
 
-                  preTerraformScript = "echo 'No terraform variables needed - using hardcoded bootstrap password'";
-                })
+                      preTerraformScript = ''
+                        echo 'Using clan vars admin password for terraform authentication'
+
+                        # Generate terraform.tfvars with clan vars admin password
+                        if [ -f "$CREDENTIALS_DIRECTORY/admin_password" ]; then
+                          ADMIN_PASSWORD=$(cat "$CREDENTIALS_DIRECTORY/admin_password" | tr -d '\n\r' | sed 's/"/\\"/g')
+                          echo "admin_password = \"$ADMIN_PASSWORD\"" > terraform.tfvars
+                          echo "Generated terraform.tfvars with clan vars admin password"
+                        else
+                          echo "ERROR: Admin password not available in credentials directory"
+                          echo "Available credentials:"
+                          ls -la "$CREDENTIALS_DIRECTORY/" || echo "No credentials directory"
+                          exit 1
+                        fi
+                      '';
+                    };
+                  in
+                  lib.recursiveUpdate baseService {
+                    "keycloak-terraform-deploy-${instanceName}".serviceConfig.LoadCredential = [
+                      "admin_password:${config.clan.core.vars.generators.${generatorName}.files.admin_password.path}"
+                    ];
+                  }
+                )
                 // (lib.optionalAttrs (terraformBackend == "s3") (
                   opentofu.mkGarageInitService {
                     serviceName = "keycloak";
@@ -210,9 +231,9 @@ in
                   }
                 ))
                 // {
-                  # Admin password reset service to ensure bootstrap password is active
-                  "keycloak-admin-password-reset" = {
-                    description = "Reset Keycloak admin password to bootstrap password";
+                  # Admin password sync service to sync clan vars password to keycloak
+                  "keycloak-admin-password-sync" = {
+                    description = "Sync Keycloak admin password from bootstrap to clan vars";
                     after = [ "keycloak.service" ];
                     requires = [ "keycloak.service" ];
                     wantedBy = [ "multi-user.target" ];
@@ -220,8 +241,12 @@ in
                     serviceConfig = {
                       Type = "oneshot";
                       RemainAfterExit = true;
-                      StateDirectory = "keycloak-admin-reset";
-                      WorkingDirectory = "/var/lib/keycloak-admin-reset";
+                      StateDirectory = "keycloak-admin-sync";
+                      WorkingDirectory = "/var/lib/keycloak-admin-sync";
+                      # Load the clan vars admin password
+                      LoadCredential = "admin_password:${
+                        config.clan.core.vars.generators.${generatorName}.files.admin_password.path
+                      }";
                     };
 
                     path = with pkgs; [
@@ -233,7 +258,7 @@ in
                     script = ''
                       set -euo pipefail
 
-                      echo "Resetting Keycloak admin password to bootstrap password..."
+                      echo "Syncing Keycloak admin password to clan vars password..."
 
                       # Wait for Keycloak to be ready
                       for i in {1..30}; do
@@ -244,39 +269,52 @@ in
                         sleep 2
                       done
 
-                      # Use Keycloak admin CLI to reset admin password
+                      # Read clan vars admin password
+                      CLAN_VARS_PASSWORD=$(cat "$CREDENTIALS_DIRECTORY/admin_password")
+
+                      # Use Keycloak admin CLI to sync admin password
                       export JAVA_HOME="${pkgs.openjdk_headless}"
 
-                      # Try multiple possible passwords to find the current one
-                      PASSWORDS=("TemporaryBootstrapPassword123!" "GQLpLkcUdE7Xs3cxzO6hyAruz9l7rsOy" "admin")
+                      # Try to connect with bootstrap password first, then clan vars password
+                      BOOTSTRAP_PASSWORD="TemporaryBootstrapPassword123!"
 
-                      for CURRENT_PASSWORD in "''${PASSWORDS[@]}"; do
-                        echo "Trying password reset with current password: [REDACTED]"
-                        if ${pkgs.keycloak}/bin/kcadm.sh config credentials \
+                      echo "Attempting to connect with bootstrap password..."
+                      if ${pkgs.keycloak}/bin/kcadm.sh config credentials \
+                        --server http://localhost:8080 \
+                        --realm master \
+                        --user admin \
+                        --password "$BOOTSTRAP_PASSWORD" 2>/dev/null; then
+
+                        echo "✓ Connected with bootstrap password, syncing to clan vars password..."
+
+                        # Update admin password to clan vars password
+                        ${pkgs.keycloak}/bin/kcadm.sh set-password \
                           --server http://localhost:8080 \
                           --realm master \
-                          --user admin \
-                          --password "$CURRENT_PASSWORD" 2>/dev/null; then
+                          --target-realm master \
+                          --username admin \
+                          --new-password "$CLAN_VARS_PASSWORD"
 
-                          echo "✓ Connected successfully, updating admin password"
+                        echo "✓ Admin password synced to clan vars successfully"
+                        touch /var/lib/keycloak-admin-sync/.sync-complete
+                        exit 0
+                      fi
 
-                          # Reset admin password to bootstrap password
-                          ${pkgs.keycloak}/bin/kcadm.sh set-password \
-                            --server http://localhost:8080 \
-                            --realm master \
-                            --target-realm master \
-                            --username admin \
-                            --new-password TemporaryBootstrapPassword123!
+                      echo "Attempting to connect with clan vars password..."
+                      if ${pkgs.keycloak}/bin/kcadm.sh config credentials \
+                        --server http://localhost:8080 \
+                        --realm master \
+                        --user admin \
+                        --password "$CLAN_VARS_PASSWORD" 2>/dev/null; then
 
-                          echo "✓ Admin password reset completed successfully"
-                          touch /var/lib/keycloak-admin-reset/.reset-complete
-                          exit 0
-                        fi
-                      done
+                        echo "✓ Already using clan vars password - no sync needed"
+                        touch /var/lib/keycloak-admin-sync/.sync-complete
+                        exit 0
+                      fi
 
-                      echo "⚠ Could not connect with any known password - manual intervention required"
-                      touch /var/lib/keycloak-admin-reset/.password-mismatch
-                      exit 0  # Don't fail the service
+                      echo "⚠ Could not connect with bootstrap or clan vars password - manual intervention required"
+                      touch /var/lib/keycloak-admin-sync/.sync-failed
+                      exit 1
                     '';
                   };
 

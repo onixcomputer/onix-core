@@ -168,15 +168,20 @@ in
     required_version = ">= 1.0.0";
   };
 
-  # No variables needed since we use hardcoded bootstrap password
-
-  # No variables needed - using hardcoded bootstrap password
+  # Variables for admin password from clan vars
+  variable = {
+    admin_password = {
+      description = "Keycloak admin password from clan vars";
+      type = "string";
+      sensitive = true;
+    };
+  };
 
   # Provider configuration
   provider.keycloak = {
     client_id = "admin-cli";
     username = "admin";
-    password = "TemporaryBootstrapPassword123!";
+    password = "\${var.admin_password}";
     url = "http://localhost:8080";
     realm = "master";
     initial_login = false; # Critical: Avoid auth during plan phase
