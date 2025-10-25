@@ -266,7 +266,7 @@
   test_garage_init_service = {
     expr =
       let
-        garageService = s3Backend.mkGarageInitService {
+        garageService = s3Backend.mkTerranixGarageBackend {
           serviceName = "keycloak";
           instanceName = "prod";
         };

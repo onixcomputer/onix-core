@@ -22,7 +22,7 @@ in
 
   # Re-export specific backend functions for convenience
   inherit (localBackend) generateLocalBackendConfig mkLocalBackend;
-  inherit (s3Backend) generateS3BackendConfig mkS3Backend mkGarageInitService;
+  inherit (s3Backend) generateS3BackendConfig mkS3Backend mkTerranixGarageBackend;
 
   # Main unified backend creation function
   mkBackend =
@@ -139,7 +139,7 @@ in
       instanceName,
     }:
     if backendType == "s3" then
-      s3Backend.mkGarageInitService { inherit serviceName instanceName; }
+      s3Backend.mkTerranixGarageBackend { inherit serviceName instanceName; }
     else
       { };
 

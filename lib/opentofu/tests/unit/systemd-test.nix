@@ -184,7 +184,7 @@
       let
         # Mock terranix module for testing
 
-        script = systemd.mkActivationScript {
+        script = systemd.mkTerranixActivation {
           serviceName = "test-service";
           instanceName = "unit";
           terraformConfigPath = "/mock/config.json";
@@ -358,7 +358,7 @@
       let
         # Test activation script with missing parameters
         invalidActivationTest = builtins.tryEval (
-          systemd.mkActivationScript {
+          systemd.mkTerranixActivation {
             serviceName = "test";
             instanceName = "unit";
             # Neither terraformConfigPath nor terranixModule provided

@@ -44,7 +44,6 @@ rec {
     mkLocalBackend
     generateS3BackendConfig
     mkS3Backend
-    mkGarageInitService
     ;
 
   # Re-export systemd utilities for convenience
@@ -65,7 +64,7 @@ rec {
     mkHelperScript
     getScriptNames
     validateScriptType
-    # Garage-related functions (note: mkGarageInitService is in backends for backward compatibility)
+    # Garage-related functions
     mkTerranixGarageBackend
     mkS3CredentialsScript
     validateGarageConfig
@@ -84,12 +83,6 @@ rec {
     mkHealthCheckScript
     validateCompleteServiceConfig
     getAvailableFunctions
-    # Backward compatibility aliases
-    mkDeploymentService
-    mkCompleteSystemdService
-    mkQuickDeploymentService
-    mkActivationScript
-    mkHelperScripts
     # Pure utility functions
     makeServiceName
     makeStateDirectory
@@ -129,17 +122,11 @@ rec {
     cat terraform.tfvars
   '';
 
-  # Note: Terranix-focused functions are the primary interface.
-  # Backward compatibility functions are available through the systemd module exports above.
-
-  # Note: High-level terranix-focused functions are the primary interface:
-  # - mkTerranixService: Full-featured service creation with comprehensive terranix support
-  # - mkTerranixDeployment: Simplified deployment service creation
-  # - mkTerranixInfrastructure: Core infrastructure deployment function
-  # - mkTerranixActivation: Enhanced activation script generation
-  # - mkTerranixScripts: Helper scripts with terranix awareness
-  #
-  # Backward compatibility functions maintain the old naming for existing code.
-  # These provide complete service creation including systemd services, activation
-  # scripts, helper scripts, and backend initialization.
+  # Note: Primary terranix-focused API:
+  # - mkTerranixService: Complete service creation with full terranix integration
+  # - mkTerranixInfrastructure: Core deployment function for terranix modules
+  # - mkTerranixDeployment: Quick deployment wrapper
+  # - mkTerranixActivation: Activation script with terranix support
+  # - mkTerranixScripts: Helper scripts for terranix workflows
+  # - mkTerranixGarageBackend: S3/Garage backend for terranix state
 }

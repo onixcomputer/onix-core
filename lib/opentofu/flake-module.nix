@@ -19,15 +19,15 @@ _: {
               touch $out
             '';
 
-        # Legacy pure tests for backward compatibility
-        eval-opentofu-pure-tests =
-          pkgs.runCommand "pure-tests"
+        # Terranix pure function tests
+        eval-terranix-pure-tests =
+          pkgs.runCommand "terranix-pure-tests"
             {
               nativeBuildInputs = [ pkgs.nix-unit ];
             }
             ''
               export HOME="$(realpath .)"
-              nix-unit --eval-store auto --flake .#legacyPackages.${pkgs.stdenv.hostPlatform.system}.opentofu-pure-tests
+              nix-unit --eval-store auto --flake .#legacyPackages.${pkgs.stdenv.hostPlatform.system}.terranix-pure-tests
               touch $out
             '';
 
@@ -52,7 +52,7 @@ _: {
         };
 
         # Export individual unit test modules for granular testing
-        opentofu-pure-tests = import ./tests/unit/pure-test.nix {
+        terranix-pure-tests = import ./tests/unit/pure-test.nix {
           inherit (pkgs) lib;
         };
 
@@ -83,8 +83,8 @@ _: {
           inherit pkgs;
         };
 
-        # Legacy exports for backward compatibility
-        opentofu-tests = import ./tests/unit/default.nix {
+        # Main test suite export
+        terranix-tests = import ./tests/unit/default.nix {
           inherit (pkgs) lib;
           inherit pkgs;
         };

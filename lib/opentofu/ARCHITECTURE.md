@@ -12,7 +12,7 @@ The OpenTofu library follows a **layered architecture** that provides multiple l
 │ • mkTerranixInfrastructure                                  │
 ├─────────────────────────────────────────────────────────────┤
 │ Layer 2: Modular Functions                                 │
-│ • systemd: mkTerranixInfrastructure, mkActivationScript    │
+│ • systemd: mkTerranixInfrastructure, mkTerranixActivation  │
 │ • terranix: generateTerranixJson, evalTerranixModule       │
 │ • backends: mkBackend, mkS3Backend, mkLocalBackend         │
 ├─────────────────────────────────────────────────────────────┤
@@ -84,10 +84,10 @@ These functions let you compose exactly what you need:
 deployment = opentofu.mkTerranixInfrastructure { ... };
 
 # Create activation script only
-activation = opentofu.mkActivationScript { ... };
+activation = opentofu.mkTerranixActivation { ... };
 
 # Create helper scripts only
-helpers = opentofu.mkHelperScripts { ... };
+helpers = opentofu.mkTerranixScripts { ... };
 ```
 
 ### Terranix Module (`terranix/`)

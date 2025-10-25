@@ -61,14 +61,6 @@ rec {
   # Terranix-focused activation function aliases (new naming convention)
   mkTerranixComprehensiveActivation = activation.mkComprehensiveActivationScript;
 
-  # Backward compatibility aliases
-  mkDeploymentService = deployment.mkTerranixInfrastructure;
-  mkCompleteSystemdService = mkTerranixService;
-  mkQuickDeploymentService = mkTerranixDeployment;
-  mkActivationScript = activation.mkTerranixActivation;
-  mkGarageInitService = garage.mkTerranixGarageBackend;
-  mkHelperScripts = scripts.mkTerranixScripts;
-
   # Re-export pure utility functions for convenience
   inherit (pure)
     makeServiceName

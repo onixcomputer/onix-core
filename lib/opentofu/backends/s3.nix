@@ -33,7 +33,7 @@ rec {
       backendType = "s3";
 
       # Additional services needed for S3 backend (Garage initialization)
-      additionalServices = mkGarageInitService { inherit serviceName instanceName; };
+      additionalServices = mkTerranixGarageBackend { inherit serviceName instanceName; };
 
       # State directory path
       stateDirectory = pureFuncs.makeStateDirectory serviceName instanceName;
@@ -55,7 +55,7 @@ rec {
     };
 
   # Generate Garage bucket initialization service
-  mkGarageInitService =
+  mkTerranixGarageBackend =
     { serviceName, instanceName }:
     {
       "garage-terraform-init-${instanceName}" = {
@@ -191,7 +191,7 @@ rec {
         EOF
       '';
       backendType = "s3";
-      additionalServices = mkGarageInitService { inherit serviceName instanceName; };
+      additionalServices = mkTerranixGarageBackend { inherit serviceName instanceName; };
       stateDirectory = pureFuncs.makeStateDirectory serviceName instanceName;
       environmentVariables = {
         AWS_ACCESS_KEY_ID = "/var/lib/garage-terraform-${instanceName}/access_key_id";

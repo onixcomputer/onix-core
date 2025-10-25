@@ -173,14 +173,14 @@ in
   };
 
   # Step 3: Create activation script
-  postgres_activation = opentofu.mkActivationScript {
+  postgres_activation = opentofu.mkTerranixActivation {
     serviceName = "postgres";
     instanceName = "custom";
     terraformConfigPath = postgres_config;
   };
 
   # Step 4: Create helper scripts
-  postgres_helpers = opentofu.mkHelperScripts {
+  postgres_helpers = opentofu.mkTerranixScripts {
     serviceName = "postgres";
     instanceName = "custom";
   };
@@ -286,7 +286,7 @@ in
   # - Sensible defaults with customization options
   # - One function call creates complete working service
 
-  # 🔧 Advanced users can use: mkTerranixInfrastructure + mkActivationScript
+  # 🔧 Advanced users can use: mkTerranixInfrastructure + mkTerranixActivation
   # - More control over individual components
   # - Custom composition of features
   # - Better for complex deployment workflows
