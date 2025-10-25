@@ -184,15 +184,11 @@ rec {
       inherit postTerraformScript;
     };
 
-  # Convenience function for terranix-based deployment (preferred for new services)
-  # TODO: Re-enable after fixing the recursive dependency issue
-  # mkTerranixService = ...; # Commented out for now to test backward compatibility
-
-  # Helper to validate terranix module before deployment
-  # TODO: Re-enable after fixing dependency issues
-  # validateTerranixService = ...;
-
-  # Migration helper for converting legacy JSON configs to terranix
-  # TODO: Re-enable after fixing dependency issues
-  # migrateJsonToTerranix = ...;
+  # Note: High-level convenience functions are available in systemd module:
+  # - mkCompleteSystemdService: Full-featured service creation with terranix support
+  # - mkQuickDeploymentService: Simplified deployment service creation
+  # - mkTerranixDeploymentService: Legacy alias for mkDeploymentService with terranix
+  #
+  # These provide complete service creation including systemd services, activation
+  # scripts, helper scripts, and backend initialization.
 }

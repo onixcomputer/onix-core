@@ -52,7 +52,18 @@
     if errors == [ ] then
       config
     else
-      throw "Terranix validation failed:\n${lib.concatStringsSep "\n" errors}";
+      throw ''
+        Terranix configuration validation failed:
+
+        ${lib.concatStringsSep "\n" errors}
+
+        Troubleshooting:
+        - Ensure your terranix module returns an attribute set
+        - Required blocks: terraform (for providers), resource (for infrastructure),
+          provider (for authentication), variable (for inputs), or output (for results)
+        - Example: { terraform.required_providers.null = {...}; resource.null_resource.test = {...}; }
+        - Check syntax: nix-instantiate --eval your-config.nix
+      '';
 
   # Error reporting utilities
   formatTerranixError =
