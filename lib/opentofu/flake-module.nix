@@ -1,4 +1,5 @@
 # Flake module for OpenTofu library tests
+# Updated to use the new modular test structure
 # Following clan patterns from lib/values/flake-module.nix
 
 _: {
@@ -6,15 +7,32 @@ _: {
     { pkgs, ... }:
     {
       checks = {
-        # Unit tests for OpenTofu library functions
-        eval-opentofu-library = pkgs.runCommand "tests" { nativeBuildInputs = [ pkgs.nix-unit ]; } ''
-          export HOME="$(realpath .)"
-          nix-unit --eval-store auto --flake .#legacyPackages.${pkgs.stdenv.hostPlatform.system}.opentofu-tests
-          touch $out
-        '';
+        # Unit tests for OpenTofu library functions (pure functions only)
+        eval-opentofu-unit-tests =
+          pkgs.runCommand "unit-tests"
+            {
+              nativeBuildInputs = [ pkgs.nix-unit ];
+            }
+            ''
+              export HOME="$(realpath .)"
+              nix-unit --eval-store auto --flake .#legacyPackages.${pkgs.stdenv.hostPlatform.system}.opentofu-unit-tests
+              touch $out
+            '';
+
+        # Legacy pure tests for backward compatibility
+        eval-opentofu-pure-tests =
+          pkgs.runCommand "pure-tests"
+            {
+              nativeBuildInputs = [ pkgs.nix-unit ];
+            }
+            ''
+              export HOME="$(realpath .)"
+              nix-unit --eval-store auto --flake .#legacyPackages.${pkgs.stdenv.hostPlatform.system}.opentofu-pure-tests
+              touch $out
+            '';
 
         # Integration tests for OpenTofu library derivations
-        opentofu-integration-tests = import ./test-integration.nix {
+        opentofu-integration-tests = import ./tests/integration/integration-test.nix {
           inherit (pkgs) lib;
           inherit pkgs;
         };
@@ -27,20 +45,46 @@ _: {
       };
 
       legacyPackages = {
-        # Export the test suite for nix-unit
-        opentofu-tests = import ./test.nix {
+        # Export the new comprehensive unit test suite for nix-unit
+        opentofu-unit-tests = import ./tests/unit/default.nix {
+          inherit (pkgs) lib;
+          inherit pkgs;
+        };
+
+        # Export individual unit test modules for granular testing
+        opentofu-pure-tests = import ./tests/unit/pure-test.nix {
+          inherit (pkgs) lib;
+        };
+
+        opentofu-systemd-tests = import ./tests/unit/systemd-test.nix {
+          inherit (pkgs) lib;
+          inherit pkgs;
+        };
+
+        opentofu-terranix-tests = import ./tests/unit/terranix-test.nix {
+          inherit (pkgs) lib;
+          inherit pkgs;
+        };
+
+        opentofu-backends-tests = import ./tests/unit/backends-test.nix {
           inherit (pkgs) lib;
           inherit pkgs;
         };
 
         # Export integration tests
-        opentofu-integration-tests = import ./test-integration.nix {
+        opentofu-integration-tests = import ./tests/integration/integration-test.nix {
           inherit (pkgs) lib;
           inherit pkgs;
         };
 
         # Export terraform execution tests
         opentofu-terraform-execution-tests = import ./terraform-execution-tests.nix {
+          inherit (pkgs) lib;
+          inherit pkgs;
+        };
+
+        # Legacy exports for backward compatibility
+        opentofu-tests = import ./tests/unit/default.nix {
           inherit (pkgs) lib;
           inherit pkgs;
         };
