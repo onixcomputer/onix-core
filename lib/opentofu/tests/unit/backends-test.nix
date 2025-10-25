@@ -262,7 +262,7 @@
     };
   };
 
-  # Test Garage init service generation
+  # Test Garage backend init service generation
   test_garage_init_service = {
     expr =
       let

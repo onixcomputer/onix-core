@@ -8,7 +8,7 @@ in
 
 rec {
   # Generate activation script for config change detection
-  mkActivationScript =
+  mkTerranixActivation =
     {
       serviceName,
       instanceName,
@@ -22,7 +22,7 @@ rec {
       # Import terranix utilities if needed for module support
       terranix = import ../terranix.nix { inherit lib pkgs; };
 
-      # Determine the config path to use (same logic as mkDeploymentService)
+      # Determine the config path to use (same logic as mkTerranixInfrastructure)
       configPath =
         if terranixModule != null then
           terranix.generateTerranixJson {
@@ -33,7 +33,7 @@ rec {
         else if terraformConfigPath != null then
           terraformConfigPath
         else
-          throw "mkActivationScript: Either terraformConfigPath or terranixModule must be provided";
+          throw "mkTerranixActivation: Either terraformConfigPath or terranixModule must be provided";
 
       stateDir = pure.makeStateDirectory serviceName instanceName;
 
@@ -174,7 +174,7 @@ rec {
           ;
       };
 
-      mainScript = mkActivationScript {
+      mainScript = mkTerranixActivation {
         inherit
           serviceName
           instanceName

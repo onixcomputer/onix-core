@@ -76,7 +76,7 @@ in
 
   # Example 3: High-level service creation (RECOMMENDED APPROACH)
   # This creates a complete NixOS configuration with systemd services, activation scripts, and helper scripts
-  completeService = opentofu.mkCompleteSystemdService {
+  completeService = opentofu.mkTerranixService {
     serviceName = "example";
     instanceName = "main";
     terranixModule = exampleTerranixModule;
@@ -93,7 +93,7 @@ in
   };
 
   # Example 4: Lower-level deployment service (for advanced users)
-  deploymentService = opentofu.mkDeploymentService {
+  deploymentService = opentofu.mkTerranixInfrastructure {
     serviceName = "example";
     instanceName = "main";
     terranixModule = exampleTerranixModule;
@@ -108,7 +108,7 @@ in
   };
 
   # Example 5: Quick deployment service (simplified wrapper)
-  quickService = opentofu.mkQuickDeploymentService {
+  quickService = opentofu.mkTerranixDeployment {
     serviceName = "example";
     instanceName = "quick";
     terranixModule = exampleTerranixModule;

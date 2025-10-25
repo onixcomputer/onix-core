@@ -8,7 +8,7 @@ in
 
 {
   # Generate Garage bucket init service for S3 backend
-  mkGarageInitService =
+  mkTerranixGarageBackend =
     {
       serviceName,
       instanceName,

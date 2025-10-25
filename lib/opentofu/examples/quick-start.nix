@@ -94,7 +94,7 @@ in
 
   # Complete PostgreSQL service with all components
   # Creates: systemd services + activation scripts + helper scripts + backend setup
-  postgres_complete = opentofu.mkCompleteSystemdService {
+  postgres_complete = opentofu.mkTerranixService {
     serviceName = "postgres";
     instanceName = "production";
 
@@ -125,7 +125,7 @@ in
   };
 
   # Quick deployment for development environments
-  postgres_dev = opentofu.mkQuickDeploymentService {
+  postgres_dev = opentofu.mkTerranixDeployment {
     serviceName = "postgres";
     instanceName = "dev";
     terranixModule = postgresModule;
@@ -157,7 +157,7 @@ in
   };
 
   # Step 2: Create deployment service
-  postgres_deployment = opentofu.mkDeploymentService {
+  postgres_deployment = opentofu.mkTerranixInfrastructure {
     serviceName = "postgres";
     instanceName = "custom";
     terraformConfigPath = postgres_config;
@@ -223,7 +223,7 @@ in
   # Multi-environment pattern
   environments = lib.genAttrs [ "dev" "staging" "prod" ] (
     env:
-    opentofu.mkCompleteSystemdService {
+    opentofu.mkTerranixService {
       serviceName = "postgres";
       instanceName = env;
       terranixModule = postgresModule;
@@ -243,7 +243,7 @@ in
   );
 
   # Migration from JSON to Terranix pattern
-  legacy_json_service = opentofu.mkDeploymentService {
+  legacy_json_service = opentofu.mkTerranixInfrastructure {
     serviceName = "legacy";
     instanceName = "main";
     terraformConfigPath = ./legacy-config.json; # Existing JSON config
@@ -281,12 +281,12 @@ in
   # USAGE RECOMMENDATIONS
   # ===============================================
 
-  # 👍 Most users should use: mkCompleteSystemdService
+  # 👍 Most users should use: mkTerranixService
   # - Handles everything: systemd services, activation, scripts, backends
   # - Sensible defaults with customization options
   # - One function call creates complete working service
 
-  # 🔧 Advanced users can use: mkDeploymentService + mkActivationScript
+  # 🔧 Advanced users can use: mkTerranixInfrastructure + mkActivationScript
   # - More control over individual components
   # - Custom composition of features
   # - Better for complex deployment workflows
@@ -296,8 +296,8 @@ in
   # - Building custom higher-level abstractions
   # - Creating domain-specific deployment tools
 
-  # 📚 Migration path: JSON → Terranix → mkCompleteSystemdService
-  # 1. Start with existing JSON config using mkDeploymentService
+  # 📚 Migration path: JSON → Terranix → mkTerranixService
+  # 1. Start with existing JSON config using mkTerranixInfrastructure
   # 2. Convert to terranix module when ready
-  # 3. Upgrade to mkCompleteSystemdService for full integration
+  # 3. Upgrade to mkTerranixService for full integration
 }

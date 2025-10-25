@@ -7,12 +7,12 @@ The OpenTofu library follows a **layered architecture** that provides multiple l
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ Layer 3: High-Level Composite Functions                    │
-│ • mkCompleteSystemdService (recommended for most users)    │
-│ • mkQuickDeploymentService                                  │
-│ • mkTerranixDeploymentService                               │
+│ • mkTerranixService (recommended for most users)           │
+│ • mkTerranixDeployment                                      │
+│ • mkTerranixInfrastructure                                  │
 ├─────────────────────────────────────────────────────────────┤
 │ Layer 2: Modular Functions                                 │
-│ • systemd: mkDeploymentService, mkActivationScript         │
+│ • systemd: mkTerranixInfrastructure, mkActivationScript    │
 │ • terranix: generateTerranixJson, evalTerranixModule       │
 │ • backends: mkBackend, mkS3Backend, mkLocalBackend         │
 ├─────────────────────────────────────────────────────────────┤
@@ -30,7 +30,7 @@ The OpenTofu library follows a **layered architecture** that provides multiple l
 
 These functions create complete NixOS configurations with all necessary components:
 
-### `mkCompleteSystemdService`
+### `mkTerranixService`
 
 The primary high-level interface that creates:
 - SystemD deployment service
@@ -40,7 +40,7 @@ The primary high-level interface that creates:
 - Proper dependencies and ordering
 
 ```nix
-opentofu.mkCompleteSystemdService {
+opentofu.mkTerranixService {
   serviceName = "postgres";
   instanceName = "production";
   terranixModule = ./postgres-config.nix;
@@ -51,12 +51,12 @@ opentofu.mkCompleteSystemdService {
 # Returns: Complete NixOS configuration
 ```
 
-### `mkQuickDeploymentService`
+### `mkTerranixDeployment`
 
 Simplified wrapper for common deployment scenarios:
 
 ```nix
-opentofu.mkQuickDeploymentService {
+opentofu.mkTerranixDeployment {
   serviceName = "redis";
   instanceName = "cache";
   terranixModule = ./redis-config.nix;
@@ -81,7 +81,7 @@ These functions let you compose exactly what you need:
 
 ```nix
 # Create deployment service only
-deployment = opentofu.mkDeploymentService { ... };
+deployment = opentofu.mkTerranixInfrastructure { ... };
 
 # Create activation script only
 activation = opentofu.mkActivationScript { ... };
@@ -257,7 +257,7 @@ All existing APIs are preserved. New layers are additive, not breaking.
 
 ```nix
 # One function call creates everything needed
-postgres = opentofu.mkCompleteSystemdService {
+postgres = opentofu.mkTerranixService {
   serviceName = "postgres";
   instanceName = "prod";
   terranixModule = ./postgres.nix;
@@ -271,7 +271,7 @@ postgres = opentofu.mkCompleteSystemdService {
 # Build exactly what you need
 let
   config = opentofu.generateTerranixJson { module = ./my-config.nix; };
-  deployment = opentofu.mkDeploymentService {
+  deployment = opentofu.mkTerranixInfrastructure {
     terraformConfigPath = config;
     # custom options
   };
@@ -285,7 +285,7 @@ in deployment // backend
 ```nix
 # Generate services for multiple environments
 environments = lib.genAttrs ["dev" "staging" "prod"] (env:
-  opentofu.mkCompleteSystemdService {
+  opentofu.mkTerranixService {
     serviceName = "app";
     instanceName = env;
     terranixModule = ./app-config.nix;
@@ -299,17 +299,17 @@ environments = lib.genAttrs ["dev" "staging" "prod"] (env:
 
 ```nix
 # Stage 1: Use existing JSON
-legacy = opentofu.mkDeploymentService {
+legacy = opentofu.mkTerranixInfrastructure {
   terraformConfigPath = ./legacy-config.json;
 };
 
 # Stage 2: Convert to terranix
-terranix = opentofu.mkDeploymentService {
+terranix = opentofu.mkTerranixInfrastructure {
   terranixModule = ./converted-config.nix;
 };
 
 # Stage 3: Full integration
-complete = opentofu.mkCompleteSystemdService {
+complete = opentofu.mkTerranixService {
   terranixModule = ./converted-config.nix;
   # All features enabled
 };
@@ -331,12 +331,12 @@ complete = opentofu.mkCompleteSystemdService {
 
 ### From Existing OpenTofu Usage
 
-1. **Currently using `mkDeploymentService`**:
+1. **Currently using `mkTerranixInfrastructure`**:
    - ✅ Keep using it (no changes needed)
-   - 🚀 Consider upgrading to `mkCompleteSystemdService` for additional features
+   - 🚀 Consider upgrading to `mkTerranixService` for additional features
 
 2. **Currently using multiple separate function calls**:
-   - 🚀 Consider `mkCompleteSystemdService` to reduce boilerplate
+   - 🚀 Consider `mkTerranixService` to reduce boilerplate
    - 🔧 Or continue with modular approach if you need custom composition
 
 3. **Building custom infrastructure tools**:
@@ -345,8 +345,8 @@ complete = opentofu.mkCompleteSystemdService {
 
 ### From JSON Terraform Configs
 
-1. **Start with `mkDeploymentService`** and existing JSON
+1. **Start with `mkTerranixInfrastructure`** and existing JSON
 2. **Convert to terranix modules** when ready
-3. **Upgrade to `mkCompleteSystemdService`** for full integration
+3. **Upgrade to `mkTerranixService`** for full integration
 
 This layered architecture provides a clear path from simple usage to advanced customization while maintaining excellent composability and testability.

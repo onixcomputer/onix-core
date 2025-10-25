@@ -232,7 +232,7 @@ rec {
     '';
 
   # Main function to create deployment service
-  mkDeploymentService =
+  mkTerranixInfrastructure =
     {
       serviceName,
       instanceName,
@@ -270,7 +270,7 @@ rec {
           # Use provided config path
           terraformConfigPath
         else
-          throw "mkDeploymentService: Either terraformConfigPath or terranixModule must be provided";
+          throw "mkTerranixInfrastructure: Either terraformConfigPath or terranixModule must be provided";
 
       # Use the deployment module's own functions by calling them directly
       serviceConfigResult = mkServiceConfig {

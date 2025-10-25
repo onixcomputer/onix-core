@@ -1,4 +1,4 @@
-# OpenTofu Library Integration Tests - For derivation-based functions
+# Terranix OpenTofu Library Integration Tests - For derivation-based functions
 # Run via: nix build .#legacyPackages.x86_64-linux.opentofu-integration-tests
 { pkgs, lib, ... }:
 
@@ -32,14 +32,14 @@ let
     }
   '';
 
-  # Test helper scripts generation
-  testHelperScripts = opentofu.mkHelperScripts {
+  # Test terranix scripts generation
+  testTerranixScripts = opentofu.mkTerranixScripts {
     serviceName = "test";
     instanceName = "unit";
   };
 
-  # Test activation script generation
-  testActivationScript = opentofu.mkActivationScript {
+  # Test terranix activation script generation
+  testActivationScript = opentofu.mkTerranixActivation {
     serviceName = "test";
     instanceName = "unit";
     terraformConfigPath = testTerraformConfig;
@@ -49,7 +49,7 @@ let
   testCredentialMapping = {
     "admin_password" = "admin_password";
   };
-  testDeploymentService = opentofu.mkDeploymentService {
+  testDeploymentService = opentofu.mkTerranixInfrastructure {
     serviceName = "test";
     instanceName = "unit";
     terraformConfigPath = testTerraformConfig;
@@ -57,18 +57,18 @@ let
     dependencies = [ "test.service" ];
   };
 
-  # Test garage init service generation
-  testGarageService = opentofu.mkGarageInitService {
+  # Test terranix garage backend service generation
+  testGarageService = opentofu.mkTerranixGarageBackend {
     serviceName = "test";
     instanceName = "unit";
   };
 
   # Test multiple service pattern
-  service1Scripts = opentofu.mkHelperScripts {
+  service1Scripts = opentofu.mkTerranixScripts {
     serviceName = "service1";
     instanceName = "prod";
   };
-  service2Scripts = opentofu.mkHelperScripts {
+  service2Scripts = opentofu.mkTerranixScripts {
     serviceName = "service2";
     instanceName = "dev";
   };
@@ -103,7 +103,7 @@ let
   };
 
   # Test terranix-based deployment service
-  testTerranixDeployment = opentofu.mkDeploymentService {
+  testTerranixDeployment = opentofu.mkTerranixInfrastructure {
     serviceName = "terranix-test";
     instanceName = "integration";
     terranixModule = simpleTerranixModule;
@@ -138,8 +138,8 @@ let
   # Test new systemd health checks
   testHealthCheckScript = opentofu.generateHealthChecks "keycloak";
 
-  # Test comprehensive systemd service
-  testCompleteService = opentofu.mkCompleteSystemdService {
+  # Test comprehensive terranix service
+  testCompleteService = opentofu.mkTerranixService {
     serviceName = "complete";
     instanceName = "test";
     terraformConfigPath = testTerraformConfig;
@@ -160,27 +160,27 @@ pkgs.runCommand "opentofu-integration-tests"
   ''
             echo "=== OpenTofu Library Integration Tests ==="
 
-            echo "Testing helper scripts generation..."
-            test ${toString (builtins.length testHelperScripts)} -eq 4
-            echo "✓ Helper scripts count: OK (${toString (builtins.length testHelperScripts)})"
+            echo "Testing terranix scripts generation..."
+            test ${toString (builtins.length testTerranixScripts)} -eq 4
+            echo "✓ Terranix scripts count: OK (${toString (builtins.length testTerranixScripts)})"
 
             # Check that scripts are derivations
-            first_script="${builtins.head testHelperScripts}"
+            first_script="${builtins.head testTerranixScripts}"
             test -n "$first_script"
-            echo "✓ Helper scripts are derivations: OK"
+            echo "✓ Terranix scripts are derivations: OK"
 
             # Verify script names contain expected patterns
             script_names=""
             ${lib.concatMapStringsSep "\n" (script: ''
               script_names="$script_names $(basename ${script})"
-            '') testHelperScripts}
+            '') testTerranixScripts}
 
             echo "Script names: $script_names"
             echo "$script_names" | grep -q "test-tf-unlock-unit"
             echo "$script_names" | grep -q "test-tf-status-unit"
             echo "$script_names" | grep -q "test-tf-apply-unit"
             echo "$script_names" | grep -q "test-tf-logs-unit"
-            echo "✓ Helper script naming: OK"
+            echo "✓ Terranix script naming: OK"
 
             echo "Testing activation script generation..."
             activation_text_length=$(echo "${testActivationScript.text}" | wc -c)
@@ -216,16 +216,16 @@ pkgs.runCommand "opentofu-integration-tests"
             grep -q "admin_password" "$deployment_service_file"
             echo "✓ Deployment service has credentials: OK"
 
-            echo "Testing garage init service generation..."
+            echo "Testing terranix garage backend service generation..."
             garage_service_file=$(mktemp)
             cat > "$garage_service_file" <<'EOF'
     ${builtins.toJSON testGarageService}
     EOF
             grep -q "garage-terraform-init-unit" "$garage_service_file"
-            echo "✓ Garage service has correct name: OK"
+            echo "✓ Terranix garage service has correct name: OK"
 
             grep -q "garage.service" "$garage_service_file"
-            echo "✓ Garage service depends on garage: OK"
+            echo "✓ Terranix garage service depends on garage: OK"
             rm -f "$garage_service_file"
 
             echo "Testing multiple service isolation..."
@@ -305,7 +305,7 @@ pkgs.runCommand "opentofu-integration-tests"
             echo "✓ Health check script has Keycloak-specific checks: OK"
             rm -f "$health_check_file"
 
-            echo "Testing comprehensive systemd service creation..."
+            echo "Testing comprehensive terranix service creation..."
             complete_service_file=$(mktemp)
             cat > "$complete_service_file" <<'EOF'
     ${builtins.toJSON testCompleteService}
@@ -324,11 +324,11 @@ pkgs.runCommand "opentofu-integration-tests"
             rm -f "$deployment_service_file" "$terranix_deployment_file"
 
             echo ""
-            echo "=== Integration Test Summary ==="
-            echo "✓ Helper scripts generation"
-            echo "✓ Activation script generation"
-            echo "✓ Deployment service generation"
-            echo "✓ Garage init service generation"
+            echo "=== Terranix Integration Test Summary ==="
+            echo "✓ Terranix scripts generation"
+            echo "✓ Terranix activation script generation"
+            echo "✓ Terranix infrastructure service generation"
+            echo "✓ Terranix garage backend service generation"
             echo "✓ Multiple service isolation"
             echo "✓ Terranix module evaluation"
             echo "✓ Terranix-based deployment"
@@ -336,7 +336,7 @@ pkgs.runCommand "opentofu-integration-tests"
             echo "✓ New backend system"
             echo "✓ Backend auto-detection"
             echo "✓ Health check script generation"
-            echo "✓ Comprehensive systemd service creation"
+            echo "✓ Comprehensive terranix service creation"
             echo ""
             echo "🎉 All integration tests passed!"
 

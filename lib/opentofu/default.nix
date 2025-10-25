@@ -55,31 +55,41 @@ rec {
     registerHealthCheckStrategy
     getAvailableStrategies
     validateHealthCheckStrategy
-    # Deployment functions
+    # Deployment functions (new terranix-focused names)
     mkServiceConfig
     mkDeploymentScript
     mkLockingScript
+    mkTerranixInfrastructure
     # Script generation functions
-    mkHelperScripts
+    mkTerranixScripts
     mkHelperScript
     getScriptNames
     validateScriptType
     # Garage-related functions (note: mkGarageInitService is in backends for backward compatibility)
+    mkTerranixGarageBackend
     mkS3CredentialsScript
     validateGarageConfig
     getGarageDependencies
     isGarageBackend
-    # Activation functions
+    # Activation functions (new terranix-focused names)
+    mkTerranixActivation
+    mkTerranixComprehensiveActivation
     mkPreActivationChecks
     mkPostActivationCleanup
     mkComprehensiveActivationScript
     validateActivationConfig
-    # Comprehensive service creation
-    mkCompleteSystemdService
-    mkQuickDeploymentService
+    # Comprehensive service creation (new terranix-focused names)
+    mkTerranixService
+    mkTerranixDeployment
     mkHealthCheckScript
     validateCompleteServiceConfig
     getAvailableFunctions
+    # Backward compatibility aliases
+    mkDeploymentService
+    mkCompleteSystemdService
+    mkQuickDeploymentService
+    mkActivationScript
+    mkHelperScripts
     # Pure utility functions
     makeServiceName
     makeStateDirectory
@@ -119,76 +129,17 @@ rec {
     cat terraform.tfvars
   '';
 
-  # Re-export mkActivationScript from systemd module (preserving backward compatibility)
-  inherit (systemd) mkActivationScript;
+  # Note: Terranix-focused functions are the primary interface.
+  # Backward compatibility functions are available through the systemd module exports above.
 
-  # Re-export mkDeploymentService from systemd module (preserving backward compatibility)
-  # NOTE: The modular version now uses extensible health checks instead of hardcoded Keycloak logic
-  inherit (systemd) mkDeploymentService;
-
-  # Enhanced deployment service that works with terranix modules
-  mkTerranixDeploymentService =
-    {
-      # Service configuration
-      serviceName,
-      instanceName,
-
-      # Terranix module configuration
-      terranixModule,
-      moduleArgs ? { },
-
-      # Credential mapping for OpenTofu library compatibility
-      credentialMapping ? { },
-
-      # Deployment options
-      dependencies ? [ ],
-      backendType ? "local",
-      timeoutSec ? "10m",
-      preTerraformScript ? "",
-      postTerraformScript ? "",
-
-      # Terranix-specific options
-      validateConfig ? true,
-      debugMode ? false,
-      prettyPrintJson ? false,
-    }:
-    let
-      # Generate terraform configuration from terranix module
-      terraformConfigJson = terranix.generateTerranixJson {
-        module = terranixModule;
-        inherit moduleArgs prettyPrintJson;
-        fileName = "${serviceName}-terraform-${instanceName}.json";
-        validate = validateConfig;
-        debug = debugMode;
-      };
-
-    in
-    mkDeploymentService {
-      inherit
-        serviceName
-        instanceName
-        credentialMapping
-        dependencies
-        backendType
-        timeoutSec
-        ;
-      terraformConfigPath = terraformConfigJson;
-      preTerraformScript = preTerraformScript + ''
-        echo "Using terranix-generated configuration: ${terraformConfigJson}"
-        ${lib.optionalString debugMode ''
-          echo "Terranix debug mode enabled"
-          echo "Configuration preview:"
-          head -20 ${terraformConfigJson} || true
-        ''}
-      '';
-      inherit postTerraformScript;
-    };
-
-  # Note: High-level convenience functions are available in systemd module:
-  # - mkCompleteSystemdService: Full-featured service creation with terranix support
-  # - mkQuickDeploymentService: Simplified deployment service creation
-  # - mkTerranixDeploymentService: Legacy alias for mkDeploymentService with terranix
+  # Note: High-level terranix-focused functions are the primary interface:
+  # - mkTerranixService: Full-featured service creation with comprehensive terranix support
+  # - mkTerranixDeployment: Simplified deployment service creation
+  # - mkTerranixInfrastructure: Core infrastructure deployment function
+  # - mkTerranixActivation: Enhanced activation script generation
+  # - mkTerranixScripts: Helper scripts with terranix awareness
   #
+  # Backward compatibility functions maintain the old naming for existing code.
   # These provide complete service creation including systemd services, activation
   # scripts, helper scripts, and backend initialization.
 }

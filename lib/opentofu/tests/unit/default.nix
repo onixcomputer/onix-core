@@ -1,4 +1,4 @@
-# OpenTofu Library Unit Tests - Combined Test Suite
+# Terranix OpenTofu Library Unit Tests - Combined Test Suite
 # Aggregates all unit test modules for nix-unit testing
 #
 # Usage:
@@ -6,7 +6,7 @@
 #
 # This file combines tests from:
 # - pure-test.nix: Tests for pure functions (lib-pure.nix)
-# - systemd-test.nix: Tests for systemd integration modules
+# - systemd-test.nix: Tests for terranix-focused systemd integration modules
 # - terranix-test.nix: Tests for terranix evaluation and generation
 # - backends-test.nix: Tests for backend configuration modules
 {

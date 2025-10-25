@@ -1,5 +1,5 @@
-# SystemD Module Tests - For nix-unit testing
-# Tests systemd-specific functions that don't create derivations
+# Terranix SystemD Module Tests - For nix-unit testing
+# Tests terranix-focused systemd functions that don't create derivations
 {
   lib ? import <nixpkgs/lib>,
   pkgs ? import <nixpkgs> { },
@@ -178,7 +178,7 @@
     };
   };
 
-  # Test systemd activation script generation (pure parts)
+  # Test terranix activation script generation (pure parts)
   test_activation_script_structure = {
     expr =
       let
@@ -212,11 +212,11 @@
     };
   };
 
-  # Test helper script structure validation
-  test_helper_scripts_structure = {
+  # Test terranix script structure validation
+  test_terranix_scripts_structure = {
     expr =
       let
-        scripts = systemd.mkHelperScripts {
+        scripts = systemd.mkTerranixScripts {
           serviceName = "test-service";
           instanceName = "unit";
         };
@@ -241,8 +241,8 @@
     };
   };
 
-  # Test helper script name generation using pure functions
-  test_helper_script_names = {
+  # Test terranix script name generation using pure functions
+  test_terranix_script_names = {
     expr =
       let
         serviceName = "myservice";
@@ -368,8 +368,8 @@
         # Test empty service names
         emptyServiceTest = builtins.tryEval (pure.makeServiceName "" "test");
 
-        # Test helper scripts with minimum valid input
-        minimalScripts = systemd.mkHelperScripts {
+        # Test terranix scripts with minimum valid input
+        minimalScripts = systemd.mkTerranixScripts {
           serviceName = "s";
           instanceName = "i";
         };

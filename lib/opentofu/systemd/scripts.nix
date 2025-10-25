@@ -8,7 +8,7 @@ in
 
 rec {
   # Generate helper scripts for terraform operations
-  mkHelperScripts =
+  mkTerranixScripts =
     {
       serviceName,
       instanceName,
@@ -142,7 +142,7 @@ rec {
       scriptType, # "unlock" | "status" | "apply" | "logs"
     }:
     let
-      allScripts = mkHelperScripts { inherit serviceName instanceName; };
+      allScripts = mkTerranixScripts { inherit serviceName instanceName; };
       scriptMap = {
         unlock = builtins.elemAt allScripts 0;
         status = builtins.elemAt allScripts 1;

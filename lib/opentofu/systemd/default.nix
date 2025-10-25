@@ -14,7 +14,7 @@ let
   pure = import ../lib-pure.nix { inherit lib; };
 in
 
-{
+rec {
   # Re-export all health check functions
   inherit (healthChecks)
     healthCheckStrategies
@@ -29,12 +29,12 @@ in
     mkServiceConfig
     mkDeploymentScript
     mkLockingScript
-    mkDeploymentService
+    mkTerranixInfrastructure
     ;
 
   # Re-export all script generation functions
   inherit (scripts)
-    mkHelperScripts
+    mkTerranixScripts
     mkHelperScript
     getScriptNames
     validateScriptType
@@ -42,7 +42,7 @@ in
 
   # Re-export all garage-related functions
   inherit (garage)
-    mkGarageInitService
+    mkTerranixGarageBackend
     mkS3CredentialsScript
     validateGarageConfig
     getGarageDependencies
@@ -51,12 +51,23 @@ in
 
   # Re-export all activation functions
   inherit (activation)
-    mkActivationScript
+    mkTerranixActivation
     mkPreActivationChecks
     mkPostActivationCleanup
     mkComprehensiveActivationScript
     validateActivationConfig
     ;
+
+  # Terranix-focused activation function aliases (new naming convention)
+  mkTerranixComprehensiveActivation = activation.mkComprehensiveActivationScript;
+
+  # Backward compatibility aliases
+  mkDeploymentService = deployment.mkTerranixInfrastructure;
+  mkCompleteSystemdService = mkTerranixService;
+  mkQuickDeploymentService = mkTerranixDeployment;
+  mkActivationScript = activation.mkTerranixActivation;
+  mkGarageInitService = garage.mkTerranixGarageBackend;
+  mkHelperScripts = scripts.mkTerranixScripts;
 
   # Re-export pure utility functions for convenience
   inherit (pure)
@@ -75,7 +86,7 @@ in
     ;
 
   # Comprehensive service creation with all components
-  mkCompleteSystemdService =
+  mkTerranixService =
     {
       serviceName,
       instanceName,
@@ -106,7 +117,7 @@ in
       # Validate inputs
 
       # Generate core deployment service
-      deploymentService = deployment.mkDeploymentService {
+      deploymentService = deployment.mkTerranixInfrastructure {
         inherit
           serviceName
           instanceName
@@ -143,13 +154,13 @@ in
 
       # Generate Garage init service if using S3 backend
       garageService = lib.optionalAttrs (garage.isGarageBackend backendType) (
-        garage.mkGarageInitService { inherit serviceName instanceName; }
+        garage.mkTerranixGarageBackend { inherit serviceName instanceName; }
       );
 
       # Generate helper scripts if requested
       helperScripts =
         if generateHelperScripts then
-          scripts.mkHelperScripts { inherit serviceName instanceName; }
+          scripts.mkTerranixScripts { inherit serviceName instanceName; }
         else
           [ ];
 
@@ -177,7 +188,7 @@ in
     };
 
   # Quick deployment service creation (minimal options)
-  mkQuickDeploymentService =
+  mkTerranixDeployment =
     {
       serviceName,
       instanceName,
@@ -186,7 +197,7 @@ in
       terranixModule ? null,
       dependencies ? [ ],
     }:
-    deployment.mkDeploymentService {
+    deployment.mkTerranixInfrastructure {
       inherit
         serviceName
         instanceName
