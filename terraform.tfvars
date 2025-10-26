@@ -1,1 +1,0 @@
-keycloak_admin_password = "Ew4guHWeZPtMX34UVtBn72l5TexfL6xE"

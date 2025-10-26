@@ -1,5 +1,4 @@
-{ pkgs, ... }:
-{
+_: {
   networking = {
     hostName = "aspen1";
   };
