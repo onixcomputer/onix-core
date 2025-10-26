@@ -12,12 +12,16 @@ let
 in
 {
   _class = "clan.service";
-  manifest.name = "grafana";
+  manifest = {
+    name = "grafana";
+    readme = "Grafana visualization platform for metrics and logs dashboards";
+  };
 
   # Define available roles
   roles = {
     # Grafana server role
     server = {
+      description = "Grafana visualization server for metrics and logs dashboards";
       interface = {
         # Allow freeform configuration that maps directly to services.grafana
         freeformType = attrsOf anything;

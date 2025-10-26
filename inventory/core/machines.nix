@@ -109,6 +109,7 @@ _: {
         "openpgp"
         "password-manager"
         "typst"
+        "llm-client"
       ];
       deploy = {
         targetHost = "root@britton-fw.bison-tailor.ts.net";
@@ -124,22 +125,11 @@ _: {
         "prometheus"
         "monitoring"
         "homepage-server"
+        "llm"
+        "amd-gpu" # AMD Ryzen AI MAX+ 395 with Radeon 8060S
       ];
       deploy = {
         targetHost = "root@aspen1";
-        buildHost = "";
-      };
-    };
-
-    britton-dev = {
-      name = "britton-dev";
-      tags = [
-        "dev"
-        "wiki-js"
-        "traefik-blrdev"
-      ];
-      deploy = {
-        targetHost = "root@192.168.1.146";
         buildHost = "";
       };
     };
@@ -161,7 +151,7 @@ _: {
         "static-demo"
         "seaweedfs-volume"
         "docker"
-        "llm"
+        "llm-client"
         "password-manager"
       ];
       deploy = {

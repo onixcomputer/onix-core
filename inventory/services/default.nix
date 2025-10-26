@@ -17,8 +17,10 @@ let
     seaweedfs = import ./seaweedfs.nix { inherit inputs; };
     wiki-js = import ./wiki-js.nix { inherit inputs; };
     cloudflare-tunnel = import ./cloudflare-tunnel.nix { inherit inputs; };
+    llm = import ./llm.nix { inherit inputs; };
     #gitlab-runner = import ./gitlab-runner.nix { inherit inputs; };
-    #keycloak = import ./keycloak.nix { inherit inputs; };
+    # keycloak = import ./keycloak.nix { inherit inputs; };
+    garage = import ./garage.nix { inherit inputs; };
     #buildbot = import ./buildbot.nix { inherit inputs; };
   };
 in

@@ -14,10 +14,14 @@ let
 in
 {
   _class = "clan.service";
-  manifest.name = "seaweedfs";
+  manifest = {
+    name = "seaweedfs";
+    readme = "SeaweedFS distributed file system for scalable object storage";
+  };
 
   roles = {
     server = {
+      description = "SeaweedFS distributed file system server";
       interface = {
         # Allow freeform configuration that maps directly to seaweedfs services
         freeformType = attrsOf anything;

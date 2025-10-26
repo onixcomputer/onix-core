@@ -14,10 +14,14 @@ let
 in
 {
   _class = "clan.service";
-  manifest.name = "vaultwarden";
+  manifest = {
+    name = "vaultwarden";
+    readme = "Vaultwarden password manager server for secure credential storage";
+  };
 
   roles = {
     server = {
+      description = "Vaultwarden password manager server";
       interface = {
         # Freeform module - any attribute becomes a Vaultwarden environment variable
         freeformType = attrsOf anything;

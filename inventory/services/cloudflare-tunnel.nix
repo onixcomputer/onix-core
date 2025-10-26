@@ -34,6 +34,7 @@ _: {
             tunnelName = "aspen1-services";
             ingress = {
               "vault.robitzs.ch" = "http://localhost:8222";
+              "auth.robitzs.ch" = "http://localhost:9081";
             };
           };
         };

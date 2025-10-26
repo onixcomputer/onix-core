@@ -4,6 +4,7 @@ _: {
   manifest = {
     name = "tailscale";
     description = "Tailscale VPN - Zero-config mesh networking";
+    readme = "Tailscale mesh VPN service for secure peer-to-peer networking";
     categories = [
       "Networking"
       "VPN"
@@ -11,6 +12,7 @@ _: {
   };
 
   roles.peer = {
+    description = "Tailscale peer that connects to the mesh VPN network";
     interface =
       { lib, ... }:
       {
