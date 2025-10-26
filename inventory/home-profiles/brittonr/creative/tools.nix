@@ -5,5 +5,8 @@
     # bambu-studio
     gimp
     figma-agent
+    penpot-desktop
+    cables
+    logseq
   ];
 }
