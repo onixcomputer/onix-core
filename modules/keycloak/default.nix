@@ -1,3 +1,4 @@
+#Generated and edited with Claude Code Sonnet 4.5
 { lib, ... }:
 let
   inherit (lib) mkOption;
@@ -46,6 +47,12 @@ in
             default = false;
             description = "Automatically apply terraform on service start";
           };
+
+          bootstrapPassword = mkOption {
+            type = str;
+            default = "InitialBootstrapPassword";
+            description = "Bootstrap password for initial Keycloak admin user (only used on first deployment)";
+          };
         };
       };
 
@@ -70,11 +77,11 @@ in
               dbPasswordFile = config.clan.core.vars.generators.${generatorName}.files.db_password.path;
               adminPasswordFile = config.clan.core.vars.generators.${generatorName}.files.admin_password.path;
 
-              # OpenTofu library functions
-              opentofu = import ../../lib/opentofu/default.nix { inherit lib pkgs; };
+              # Bootstrap password for initial setup - configurable for security
+              bootstrapPassword = settings.bootstrapPassword or "InitialBootstrapPassword";
 
-              # Enhanced terranix integration
-              terranix = import ../../lib/opentofu/terranix.nix { inherit lib pkgs; };
+              # OpenTofu library functions (includes terranix utilities)
+              opentofu = import ../../lib/opentofu/default.nix { inherit lib pkgs; };
 
               # Dependencies for terraform deployment
               deploymentDependencies = [
@@ -88,8 +95,8 @@ in
                 keycloak = {
                   enable = true;
 
-                  # Use predictable bootstrap password (updated by sync service to clan vars)
-                  initialAdminPassword = "TemporaryBootstrapPassword123!";
+                  # Bootstrap password - only used on first installation
+                  initialAdminPassword = bootstrapPassword;
 
                   settings = {
                     hostname = domain;
@@ -161,7 +168,7 @@ in
               # Add activation script to trigger terraform deployment on configuration changes
               system.activationScripts."keycloak-terraform-reset-${instanceName}" = lib.mkIf terraformAutoApply (
                 let
-                  terraformConfigJson = terranix.generateTerranixJson {
+                  terraformConfigJson = opentofu.generateTerranixJson {
                     module = ./terranix-config.nix;
                     moduleArgs = {
                       inherit lib settings;
@@ -181,7 +188,7 @@ in
               systemd.services =
                 (
                   let
-                    baseService = terranix.mkTerranixDeploymentService {
+                    baseService = opentofu.mkTerranixDeploymentService {
                       serviceName = "keycloak";
                       inherit instanceName;
 
@@ -218,17 +225,11 @@ in
                   }
                 ))
                 // {
-                  # Password sync service - ensures both admin and database passwords match clan vars
+                  # Admin password sync service - ensures admin password matches clan vars
                   "keycloak-password-sync" = {
-                    description = "Sync Keycloak admin and database passwords to clan vars";
-                    after = [
-                      "keycloak.service"
-                      "postgresql.service"
-                    ];
-                    requires = [
-                      "keycloak.service"
-                      "postgresql.service"
-                    ];
+                    description = "Sync Keycloak admin password to clan vars";
+                    after = [ "keycloak.service" ];
+                    requires = [ "keycloak.service" ];
                     wantedBy = [ "multi-user.target" ];
 
                     serviceConfig = {
@@ -236,10 +237,8 @@ in
                       RemainAfterExit = true;
                       StateDirectory = "keycloak-password-sync";
                       WorkingDirectory = "/var/lib/keycloak-password-sync";
-                      # Load both clan vars passwords
                       LoadCredential = [
                         "admin_password:${adminPasswordFile}"
-                        "db_password:${dbPasswordFile}"
                       ];
                     };
 
@@ -247,30 +246,15 @@ in
                       keycloak
                       curl
                       jq
-                      postgresql
-                      sudo
                     ];
 
                     script = ''
                       set -euo pipefail
 
-                      echo "Syncing Keycloak admin and database passwords to clan vars..."
+                      echo "Syncing Keycloak admin password to clan vars..."
 
-                      # Read clan vars passwords
+                      # Read clan vars password
                       ADMIN_PASSWORD=$(cat "$CREDENTIALS_DIRECTORY/admin_password")
-                      DB_PASSWORD=$(cat "$CREDENTIALS_DIRECTORY/db_password")
-
-                      echo "=== Database Password Sync ==="
-
-                      # Update PostgreSQL keycloak user password to match clan vars
-                      echo "Updating PostgreSQL keycloak user password..."
-                      sudo -u postgres psql -c "ALTER USER keycloak PASSWORD '$DB_PASSWORD';" || {
-                        echo "⚠ Failed to update PostgreSQL password"
-                        exit 1
-                      }
-                      echo "✓ PostgreSQL keycloak user password updated"
-
-                      echo "=== Keycloak Admin Password Sync ==="
 
                       # Wait for Keycloak to be ready
                       for i in {1..30}; do
@@ -281,67 +265,75 @@ in
                         sleep 2
                       done
 
-                      # Use Keycloak admin CLI to ensure password matches clan vars
                       export JAVA_HOME="${pkgs.openjdk_headless}"
 
-                      echo "Testing current admin password..."
+                      # Test if clan vars password already works
                       if ${pkgs.keycloak}/bin/kcadm.sh config credentials \
                         --server http://localhost:8080 \
                         --realm master \
                         --user admin \
                         --password "$ADMIN_PASSWORD" 2>/dev/null; then
 
-                        echo "✓ Admin password already matches clan vars - no update needed"
+                        echo "✓ Admin password already matches clan vars"
+                        echo "$ADMIN_PASSWORD" > /var/lib/keycloak-password-sync/.last-password
                         touch /var/lib/keycloak-password-sync/.sync-complete
                         exit 0
                       fi
 
-                      echo "Admin password doesn't match clan vars - updating..."
+                      echo "Admin password doesn't match clan vars - trying bootstrap password..."
 
-                      # Create a comprehensive list: previous clan vars passwords from state + known fallbacks
-                      POSSIBLE_PASSWORDS=()
+                      # Try bootstrap password and update to clan vars
+                      if ${pkgs.keycloak}/bin/kcadm.sh config credentials \
+                        --server http://localhost:8080 \
+                        --realm master \
+                        --user admin \
+                        --password "${bootstrapPassword}" 2>/dev/null; then
 
-                      # Add any previous password from our state files
+                        echo "✓ Connected with bootstrap password, updating to clan vars..."
+
+                        # Update admin password to clan vars password
+                        ${pkgs.keycloak}/bin/kcadm.sh set-password \
+                          --server http://localhost:8080 \
+                          --realm master \
+                          --target-realm master \
+                          --username admin \
+                          --new-password "$ADMIN_PASSWORD"
+
+                        echo "✓ Admin password updated to clan vars successfully"
+                        touch /var/lib/keycloak-password-sync/.sync-complete
+                        exit 0
+                      fi
+
+                      # Try previous working password from state if available
                       if [ -f /var/lib/keycloak-password-sync/.last-password ]; then
                         LAST_PASSWORD=$(cat /var/lib/keycloak-password-sync/.last-password 2>/dev/null || true)
-                        if [ -n "$LAST_PASSWORD" ]; then
-                          POSSIBLE_PASSWORDS+=("$LAST_PASSWORD")
+                        if [ -n "$LAST_PASSWORD" ] && [ "$LAST_PASSWORD" != "$ADMIN_PASSWORD" ]; then
+                          echo "Trying previous working password..."
+                          if ${pkgs.keycloak}/bin/kcadm.sh config credentials \
+                            --server http://localhost:8080 \
+                            --realm master \
+                            --user admin \
+                            --password "$LAST_PASSWORD" 2>/dev/null; then
+
+                            echo "✓ Connected with previous password, updating to clan vars..."
+                            ${pkgs.keycloak}/bin/kcadm.sh set-password \
+                              --server http://localhost:8080 \
+                              --realm master \
+                              --target-realm master \
+                              --username admin \
+                              --new-password "$ADMIN_PASSWORD"
+
+                            echo "✓ Admin password updated to clan vars successfully"
+                            echo "$ADMIN_PASSWORD" > /var/lib/keycloak-password-sync/.last-password
+                            touch /var/lib/keycloak-password-sync/.sync-complete
+                            exit 0
+                          fi
                         fi
                       fi
 
-                      # Add known fallback passwords
-                      POSSIBLE_PASSWORDS+=("TemporaryBootstrapPassword123!" "TestPassword456!" "Hello123" "admin" "password")
-
-                      for CURRENT_PASSWORD in "''${POSSIBLE_PASSWORDS[@]}"; do
-                        echo "Trying to connect with known password..."
-                        if ${pkgs.keycloak}/bin/kcadm.sh config credentials \
-                          --server http://localhost:8080 \
-                          --realm master \
-                          --user admin \
-                          --password "$CURRENT_PASSWORD" 2>/dev/null; then
-
-                          echo "✓ Connected, updating admin password to clan vars..."
-
-                          # Update admin password to clan vars password
-                          ${pkgs.keycloak}/bin/kcadm.sh set-password \
-                            --server http://localhost:8080 \
-                            --realm master \
-                            --target-realm master \
-                            --username admin \
-                            --new-password "$ADMIN_PASSWORD"
-
-                          echo "✓ Admin password updated to clan vars successfully"
-
-                          # Save the new password for future reference
-                          echo "$ADMIN_PASSWORD" > /var/lib/keycloak-password-sync/.last-password
-
-                          touch /var/lib/keycloak-password-sync/.sync-complete
-                          exit 0
-                        fi
-                      done
-
-                      echo "⚠ Could not connect with any known password"
-                      echo "Manual intervention may be required to reset admin password"
+                      echo "⚠ Could not connect with bootstrap or previous passwords"
+                      echo "Manual intervention required to reset admin password"
+                      echo "Current clan vars password: $ADMIN_PASSWORD"
                       touch /var/lib/keycloak-password-sync/.sync-failed
                       exit 1
                     '';
@@ -362,8 +354,6 @@ in
                   };
 
                 };
-
-              # Note: Activation script and deployment service are now provided by the generic deployment pattern
 
               # Helper commands for terraform management
               environment.systemPackages = opentofu.mkHelperScripts {

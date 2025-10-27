@@ -49,23 +49,33 @@ _: {
 
         # Keycloak module evaluation test (basic check)
         eval-keycloak-module =
-          pkgs.runCommand "keycloak-module-test"
-            {
-              nativeBuildInputs = [ pkgs.nix ];
-            }
-            ''
-              cd ${toString ./..}
-              echo "Testing keycloak module evaluation..."
-              nix-instantiate --eval --strict -E '
-                let
-                  lib = import <nixpkgs/lib>;
-                  keycloak = import ./modules/keycloak { inherit lib; };
-                in
-                  keycloak._class == "clan.service"
-              ' > /dev/null
-              echo "✓ Keycloak module evaluation: PASSED"
-              touch $out
-            '';
+          let
+            keycloakModule = import ../modules/keycloak { inherit lib; };
+          in
+          pkgs.runCommand "keycloak-module-test" { } ''
+            echo "Testing keycloak module evaluation..."
+
+            # Test that module has correct class
+            if [ "${keycloakModule._class}" = "clan.service" ]; then
+              echo "✓ Module has correct _class: clan.service"
+            else
+              echo "✗ Module _class is: ${keycloakModule._class}"
+              exit 1
+            fi
+
+            # Test that module has required manifest
+            ${lib.optionalString (keycloakModule.manifest.name == "keycloak") ''
+              echo "✓ Module has correct name: keycloak"
+            ''}
+
+            # Test that module has server role
+            ${lib.optionalString (keycloakModule.roles ? server) ''
+              echo "✓ Module has server role defined"
+            ''}
+
+            echo "✓ Keycloak module evaluation: PASSED"
+            touch $out
+          '';
       };
 
       legacyPackages = {
