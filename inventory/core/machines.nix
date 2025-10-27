@@ -153,6 +153,7 @@ _: {
         "docker"
         "llm-client"
         "password-manager"
+        "cross-compile"
       ];
       deploy = {
         targetHost = "root@127.0.0.1";
