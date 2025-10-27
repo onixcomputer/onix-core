@@ -504,7 +504,11 @@ in
 
   # Generate Garage bucket init service for S3 backend
   mkGarageInitService =
-    { serviceName, instanceName }:
+    {
+      serviceName,
+      instanceName,
+      config ? null,
+    }:
     {
       "garage-terraform-init-${instanceName}" = {
         description = "Initialize Garage bucket for ${serviceName} Terraform";
@@ -526,6 +530,16 @@ in
           RemainAfterExit = true;
           StateDirectory = "garage-terraform-${instanceName}";
           WorkingDirectory = "/var/lib/garage-terraform-${instanceName}";
+
+          # Load garage credentials if config is provided
+          LoadCredential = lib.optionals (config != null) (
+            lib.optionals (config.clan.core.vars.generators ? "garage") [
+              "admin_token:${config.clan.core.vars.generators.garage.files.admin_token.path}"
+            ]
+            ++ lib.optionals (config.clan.core.vars.generators ? "garage-shared") [
+              "rpc_secret:${config.clan.core.vars.generators.garage-shared.files.rpc_secret.path}"
+            ]
+          );
         };
 
         script = ''
@@ -539,6 +553,15 @@ in
             fi
             sleep 2
           done
+
+          # Load garage credentials if available
+          if [ -f "$CREDENTIALS_DIRECTORY/admin_token" ]; then
+            export GARAGE_ADMIN_TOKEN=$(cat $CREDENTIALS_DIRECTORY/admin_token)
+          fi
+
+          if [ -f "$CREDENTIALS_DIRECTORY/rpc_secret" ]; then
+            export GARAGE_RPC_SECRET=$(cat $CREDENTIALS_DIRECTORY/rpc_secret)
+          fi
 
           GARAGE="${pkgs.garage}/bin/garage"
 

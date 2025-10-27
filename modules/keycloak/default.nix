@@ -68,6 +68,7 @@ in
 
               generatorName = "keycloak-${instanceName}";
               dbPasswordFile = config.clan.core.vars.generators.${generatorName}.files.db_password.path;
+              adminPasswordFile = config.clan.core.vars.generators.${generatorName}.files.admin_password.path;
 
               # OpenTofu library functions
               opentofu = import ../../lib/opentofu/default.nix { inherit lib pkgs; };
@@ -78,6 +79,7 @@ in
               # Dependencies for terraform deployment
               deploymentDependencies = [
                 "keycloak.service"
+                "keycloak-password-sync.service"
               ]
               ++ lib.optionals (terraformBackend == "s3") [ "garage-terraform-init-${instanceName}.service" ];
             in
@@ -212,10 +214,138 @@ in
                 // (lib.optionalAttrs (terraformBackend == "s3") (
                   opentofu.mkGarageInitService {
                     serviceName = "keycloak";
-                    inherit instanceName;
+                    inherit instanceName config;
                   }
                 ))
                 // {
+                  # Password sync service - ensures both admin and database passwords match clan vars
+                  "keycloak-password-sync" = {
+                    description = "Sync Keycloak admin and database passwords to clan vars";
+                    after = [
+                      "keycloak.service"
+                      "postgresql.service"
+                    ];
+                    requires = [
+                      "keycloak.service"
+                      "postgresql.service"
+                    ];
+                    wantedBy = [ "multi-user.target" ];
+
+                    serviceConfig = {
+                      Type = "oneshot";
+                      RemainAfterExit = true;
+                      StateDirectory = "keycloak-password-sync";
+                      WorkingDirectory = "/var/lib/keycloak-password-sync";
+                      # Load both clan vars passwords
+                      LoadCredential = [
+                        "admin_password:${adminPasswordFile}"
+                        "db_password:${dbPasswordFile}"
+                      ];
+                    };
+
+                    path = with pkgs; [
+                      keycloak
+                      curl
+                      jq
+                      postgresql
+                      sudo
+                    ];
+
+                    script = ''
+                      set -euo pipefail
+
+                      echo "Syncing Keycloak admin and database passwords to clan vars..."
+
+                      # Read clan vars passwords
+                      ADMIN_PASSWORD=$(cat "$CREDENTIALS_DIRECTORY/admin_password")
+                      DB_PASSWORD=$(cat "$CREDENTIALS_DIRECTORY/db_password")
+
+                      echo "=== Database Password Sync ==="
+
+                      # Update PostgreSQL keycloak user password to match clan vars
+                      echo "Updating PostgreSQL keycloak user password..."
+                      sudo -u postgres psql -c "ALTER USER keycloak PASSWORD '$DB_PASSWORD';" || {
+                        echo "⚠ Failed to update PostgreSQL password"
+                        exit 1
+                      }
+                      echo "✓ PostgreSQL keycloak user password updated"
+
+                      echo "=== Keycloak Admin Password Sync ==="
+
+                      # Wait for Keycloak to be ready
+                      for i in {1..30}; do
+                        if curl -sf http://localhost:8080/realms/master >/dev/null 2>&1; then
+                          break
+                        fi
+                        echo "Waiting for Keycloak... (attempt $i/30)"
+                        sleep 2
+                      done
+
+                      # Use Keycloak admin CLI to ensure password matches clan vars
+                      export JAVA_HOME="${pkgs.openjdk_headless}"
+
+                      echo "Testing current admin password..."
+                      if ${pkgs.keycloak}/bin/kcadm.sh config credentials \
+                        --server http://localhost:8080 \
+                        --realm master \
+                        --user admin \
+                        --password "$ADMIN_PASSWORD" 2>/dev/null; then
+
+                        echo "✓ Admin password already matches clan vars - no update needed"
+                        touch /var/lib/keycloak-password-sync/.sync-complete
+                        exit 0
+                      fi
+
+                      echo "Admin password doesn't match clan vars - updating..."
+
+                      # Create a comprehensive list: previous clan vars passwords from state + known fallbacks
+                      POSSIBLE_PASSWORDS=()
+
+                      # Add any previous password from our state files
+                      if [ -f /var/lib/keycloak-password-sync/.last-password ]; then
+                        LAST_PASSWORD=$(cat /var/lib/keycloak-password-sync/.last-password 2>/dev/null || true)
+                        if [ -n "$LAST_PASSWORD" ]; then
+                          POSSIBLE_PASSWORDS+=("$LAST_PASSWORD")
+                        fi
+                      fi
+
+                      # Add known fallback passwords
+                      POSSIBLE_PASSWORDS+=("TemporaryBootstrapPassword123!" "TestPassword456!" "Hello123" "admin" "password")
+
+                      for CURRENT_PASSWORD in "''${POSSIBLE_PASSWORDS[@]}"; do
+                        echo "Trying to connect with known password..."
+                        if ${pkgs.keycloak}/bin/kcadm.sh config credentials \
+                          --server http://localhost:8080 \
+                          --realm master \
+                          --user admin \
+                          --password "$CURRENT_PASSWORD" 2>/dev/null; then
+
+                          echo "✓ Connected, updating admin password to clan vars..."
+
+                          # Update admin password to clan vars password
+                          ${pkgs.keycloak}/bin/kcadm.sh set-password \
+                            --server http://localhost:8080 \
+                            --realm master \
+                            --target-realm master \
+                            --username admin \
+                            --new-password "$ADMIN_PASSWORD"
+
+                          echo "✓ Admin password updated to clan vars successfully"
+
+                          # Save the new password for future reference
+                          echo "$ADMIN_PASSWORD" > /var/lib/keycloak-password-sync/.last-password
+
+                          touch /var/lib/keycloak-password-sync/.sync-complete
+                          exit 0
+                        fi
+                      done
+
+                      echo "⚠ Could not connect with any known password"
+                      echo "Manual intervention may be required to reset admin password"
+                      touch /var/lib/keycloak-password-sync/.sync-failed
+                      exit 1
+                    '';
+                  };
 
                   # Basic service startup order
                   keycloak = {
@@ -230,89 +360,6 @@ in
                       echo "PostgreSQL ready. Starting Keycloak."
                     '';
                   };
-
-                  # Garage bucket setup for Terraform state (if using S3 backend)
-                  "garage-terraform-init-${instanceName}" =
-                    lib.mkIf (terraformBackend == "s3" && terraformAutoApply)
-                      {
-                        description = "Initialize Garage bucket for Keycloak Terraform";
-                        after = [ "garage.service" ];
-                        requires = [ "garage.service" ];
-                        before = [ "keycloak-terraform-deploy-${instanceName}.service" ];
-                        wantedBy = [ "multi-user.target" ];
-
-                        path = [
-                          pkgs.garage
-                          pkgs.curl
-                          pkgs.jq
-                          pkgs.gawk
-                          pkgs.gnugrep
-                        ];
-
-                        serviceConfig = {
-                          Type = "oneshot";
-                          RemainAfterExit = true;
-                          StateDirectory = "garage-terraform-${instanceName}";
-                          WorkingDirectory = "/var/lib/garage-terraform-${instanceName}";
-
-                          LoadCredential =
-                            lib.optionals (config.clan.core.vars.generators ? "garage") [
-                              "admin_token:${config.clan.core.vars.generators.garage.files.admin_token.path}"
-                            ]
-                            ++ lib.optionals (config.clan.core.vars.generators ? "garage-shared") [
-                              "rpc_secret:${config.clan.core.vars.generators.garage-shared.files.rpc_secret.path}"
-                            ];
-                        };
-
-                        script = ''
-                          set -euo pipefail
-
-                          # Wait for Garage to be ready
-                          echo "Waiting for Garage API..."
-                          for i in {1..30}; do
-                            if curl -sf http://127.0.0.1:3903/health 2>/dev/null; then
-                              break
-                            fi
-                            sleep 2
-                          done
-
-                          if [ -f "$CREDENTIALS_DIRECTORY/admin_token" ]; then
-                            export GARAGE_ADMIN_TOKEN=$(cat $CREDENTIALS_DIRECTORY/admin_token)
-                          fi
-
-                          if [ -f "$CREDENTIALS_DIRECTORY/rpc_secret" ]; then
-                            export GARAGE_RPC_SECRET=$(cat $CREDENTIALS_DIRECTORY/rpc_secret)
-                          fi
-
-                          GARAGE="${pkgs.garage}/bin/garage"
-
-                          # Create bucket if doesn't exist
-                          if ! $GARAGE bucket info terraform-state 2>/dev/null; then
-                            echo "Creating terraform-state bucket..."
-                            $GARAGE bucket create terraform-state
-                          fi
-
-                          # Create access key if doesn't exist
-                          KEY_NAME="keycloak-${instanceName}-tf"
-                          if ! $GARAGE key info $KEY_NAME 2>/dev/null; then
-                            echo "Creating access key..."
-                            $GARAGE key create $KEY_NAME
-
-                            # Grant permissions
-                            $GARAGE bucket allow terraform-state --read --write --owner --key $KEY_NAME
-                          fi
-
-                          # Get credentials - parse text output
-                          KEY_ID=$($GARAGE key info $KEY_NAME | grep -E '^Key ID:' | awk '{print $3}')
-                          SECRET=$($GARAGE key info $KEY_NAME --show-secret | grep -E '^Secret key:' | awk '{print $3}')
-
-                          # Save credentials
-                          echo "$KEY_ID" > access_key_id
-                          echo "$SECRET" > secret_access_key
-
-                          echo "Garage bucket and credentials ready"
-                        '';
-                      };
 
                 };
 
