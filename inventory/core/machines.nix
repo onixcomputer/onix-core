@@ -126,7 +126,8 @@ _: {
         "monitoring"
         "homepage-server"
         "llm"
-        "amd-gpu" # AMD Ryzen AI MAX+ 395 with Radeon 8060S
+        "amd-gpu"
+        "media-server"
       ];
       deploy = {
         targetHost = "root@aspen1";
