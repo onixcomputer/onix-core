@@ -169,9 +169,10 @@ in
               system.activationScripts."keycloak-terraform-reset-${instanceName}" = lib.mkIf terraformAutoApply (
                 let
                   terraformConfigJson = opentofu.generateTerranixJson {
-                    module = ./terranix-config.nix;
+                    module = ./terranix-wrapper.nix;
                     moduleArgs = {
-                      inherit lib settings;
+                      inherit lib;
+                      settings = settings.terraform or { };
                     };
                     fileName = "keycloak-terraform-${instanceName}.json";
                     validate = true;
@@ -192,13 +193,14 @@ in
                       serviceName = "keycloak";
                       inherit instanceName;
 
-                      # Use the new terranix module
-                      terranixModule = ./terranix-config.nix;
+                      # Use the new terranix module via wrapper
+                      terranixModule = ./terranix-wrapper.nix;
                       moduleArgs = {
-                        inherit lib settings;
+                        inherit lib;
+                        settings = settings.terraform or { };
                       };
 
-                      # Map terraform variables to clan vars
+                      # Map terraform variables to clan vars - simplified like original
                       credentialMapping = {
                         "admin_password" = "admin_password";
                       };
@@ -212,7 +214,15 @@ in
                       prettyPrintJson = false;
 
                       preTerraformScript = ''
-                        echo 'Using clan vars admin password for terraform authentication'
+                                                echo 'Generating terraform.tfvars from clan vars'
+
+                                                # Generate terraform.tfvars with admin password only (like original)
+                                                cat > terraform.tfvars <<EOF
+                        admin_password = "$(cat "$CREDENTIALS_DIRECTORY/admin_password" | tr -d '\n\r' | sed 's/"/\\"/g')"
+                        EOF
+
+                                                echo 'Generated terraform.tfvars:'
+                                                cat terraform.tfvars
                       '';
                     };
                   in

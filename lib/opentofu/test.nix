@@ -37,7 +37,7 @@ in
   test_basic_terranix_config = {
     expr =
       let
-        config = import ../../keycloak/terranix-config.nix {
+        config = import ../../keycloak/terranix-wrapper.nix {
           inherit lib;
           settings = testSettings;
         };
