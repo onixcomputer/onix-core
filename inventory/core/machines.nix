@@ -129,7 +129,7 @@ _: {
         "amd-gpu" # AMD Ryzen AI MAX+ 395 with Radeon 8060S
       ];
       deploy = {
-        targetHost = "root@aspen1";
+        targetHost = "root@192.168.1.240";
         buildHost = "";
       };
     };

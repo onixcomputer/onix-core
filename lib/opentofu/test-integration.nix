@@ -33,13 +33,13 @@ let
   '';
 
   # Test helper scripts generation
-  testHelperScripts = opentofu.mkTerranixScripts {
+  testHelperScripts = opentofu.mkHelperScripts {
     serviceName = "test";
     instanceName = "unit";
   };
 
   # Test activation script generation
-  testActivationScript = opentofu.mkTerranixActivation {
+  testActivationScript = opentofu.mkActivationScript {
     serviceName = "test";
     instanceName = "unit";
     terraformConfigPath = testTerraformConfig;
@@ -49,7 +49,7 @@ let
   testCredentialMapping = {
     "admin_password" = "admin_password";
   };
-  testDeploymentService = opentofu.mkTerranixInfrastructure {
+  testDeploymentService = opentofu.mkDeploymentService {
     serviceName = "test";
     instanceName = "unit";
     terraformConfigPath = testTerraformConfig;
@@ -58,17 +58,17 @@ let
   };
 
   # Test garage init service generation
-  testGarageService = opentofu.mkTerranixGarageBackend {
+  testGarageService = opentofu.mkGarageInitService {
     serviceName = "test";
     instanceName = "unit";
   };
 
   # Test multiple service pattern
-  service1Scripts = opentofu.mkTerranixScripts {
+  service1Scripts = opentofu.mkHelperScripts {
     serviceName = "service1";
     instanceName = "prod";
   };
-  service2Scripts = opentofu.mkTerranixScripts {
+  service2Scripts = opentofu.mkHelperScripts {
     serviceName = "service2";
     instanceName = "dev";
   };
@@ -103,7 +103,7 @@ let
   };
 
   # Test terranix-based deployment service
-  testTerranixDeployment = opentofu.mkTerranixInfrastructure {
+  testTerranixDeployment = opentofu.mkDeploymentService {
     serviceName = "terranix-test";
     instanceName = "integration";
     terranixModule = simpleTerranixModule;

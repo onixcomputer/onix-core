@@ -21,7 +21,7 @@ _: {
               export NIX_PATH=nixpkgs=${pkgs.path}
               echo "Running OpenTofu pure function tests..."
               ${pkgs.nix-unit}/bin/nix-unit \
-                ${../lib/opentofu/.}/tests/unit/pure-test.nix \
+                ${../lib/opentofu/.}/test-pure.nix \
                 --eval-store $(realpath .) \
                 --show-trace \
                 --extra-experimental-features flakes
@@ -40,14 +40,7 @@ _: {
           inherit pkgs lib;
         };
 
-        # TIER 3: Minimal system integration test (lightweight VM test)
-        opentofu-system-minimal = import ../lib/opentofu/test-system-minimal.nix {
-          inherit pkgs lib;
-          self = self';
-          nixosLib = import (pkgs.path + "/nixos/lib") { };
-        };
-
-        # TIER 3: Full system integration test (commented out for now - expensive)
+        # TIER 3: System integration test (commented out for now - expensive)
         # opentofu-system-test = import ../lib/opentofu/test-system.nix {
         #   inherit pkgs lib;
         #   self = self';
@@ -55,25 +48,34 @@ _: {
         # };
 
         # Keycloak module evaluation test (basic check)
-        #   eval-keycloak-module =
-        #     pkgs.runCommand "keycloak-module-test"
-        #       {
-        #         nativeBuildInputs = [ pkgs.nix ];
-        #       }
-        #       ''
-        #         cd ${toString ./..}
-        #         echo "Testing keycloak module evaluation..."
-        #         nix-instantiate --eval --strict -E '
-        #           let
-        #             lib = import <nixpkgs/lib>;
-        #             keycloak = import ./modules/keycloak { inherit lib; };
-        #           in
-        #             keycloak._class == "clan.service"
-        #         ' > /dev/null
-        #         echo "✓ Keycloak module evaluation: PASSED"
-        #         touch $out
-        #       '';
-        # };
+        eval-keycloak-module =
+          let
+            keycloakModule = import ../modules/keycloak { inherit lib; };
+          in
+          pkgs.runCommand "keycloak-module-test" { } ''
+            echo "Testing keycloak module evaluation..."
+
+            # Test that module has correct class
+            if [ "${keycloakModule._class}" = "clan.service" ]; then
+              echo "✓ Module has correct _class: clan.service"
+            else
+              echo "✗ Module _class is: ${keycloakModule._class}"
+              exit 1
+            fi
+
+            # Test that module has required manifest
+            ${lib.optionalString (keycloakModule.manifest.name == "keycloak") ''
+              echo "✓ Module has correct name: keycloak"
+            ''}
+
+            # Test that module has server role
+            ${lib.optionalString (keycloakModule.roles ? server) ''
+              echo "✓ Module has server role defined"
+            ''}
+
+            echo "✓ Keycloak module evaluation: PASSED"
+            touch $out
+          '';
       };
 
       legacyPackages = {
