@@ -154,6 +154,7 @@ _: {
         "llm-client"
         "password-manager"
         "cross-compile"
+        "udev-rules"
       ];
       deploy = {
         targetHost = "root@127.0.0.1";

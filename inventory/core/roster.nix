@@ -306,6 +306,7 @@ let
               "hyprland"
               "creative"
               "social"
+              "embedded"
             ];
           };
         };
