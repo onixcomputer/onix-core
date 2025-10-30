@@ -28,6 +28,7 @@ _: {
     ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", MODE="0666", GROUP="plugdev", TAG+="uaccess"
   '';
 
-  # Ensure plugdev group exists
+  # Ensure groups exist and add users to dialout for serial access
   users.groups.plugdev = { };
+  users.groups.dialout = { };
 }

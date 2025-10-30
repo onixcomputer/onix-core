@@ -30,6 +30,7 @@ let
         "input"
         "kvm"
         "docker"
+        "dialout"
       ];
       sshAuthorizedKeys = [
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILYzh3yIsSTOYXkJMFHBKzkakoDfonm3/RED5rqMqhIO britton@framework"
