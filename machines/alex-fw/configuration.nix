@@ -22,7 +22,7 @@ in
         protocol = "ssh-ng";
         hostName = "leviathan.cymric-daggertooth.ts.net";
         systems = [ "x86_64-linux" ];
-        maxJobs = 24;
+        maxJobs = 7;
         speedFactor = 20;
         supportedFeatures = [
           "nixos-test"
