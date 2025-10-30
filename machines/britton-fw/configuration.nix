@@ -79,6 +79,19 @@ in
     ];
   };
 
+  programs.ssh = {
+    knownHosts = {
+      leviathan = {
+        hostNames = [ "leviathan.cymric-daggertooth.ts.net" ];
+        publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOEtV2xoOv+N4c5sg5oBqM/Xy+aZHf+5GHOhzXKYduXG";
+      };
+    };
+    extraConfig = ''
+      Host leviathan.cymric-daggertooth.ts.net
+        IdentityAgent /run/user/1555/gcr/ssh
+    '';
+  };
+
   services = {
     gnome.gnome-keyring.enable = true;
 
