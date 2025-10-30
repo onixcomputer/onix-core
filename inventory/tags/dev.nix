@@ -9,5 +9,6 @@
     goose-cli
     nix-output-monitor
     pamtester
+    usbmuxd
   ];
 }
