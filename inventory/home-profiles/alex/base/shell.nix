@@ -39,8 +39,8 @@
     cmu = "clan machines update";
     cu = "clan machines update $hostname";
     cul = "clan machines update $hostname --target-host localhost";
-    coc = "cd $HOME/dev/onix-core";
-    cocn = "cd $HOME/dev/onix-core && nvim .";
+    coc = "cd $HOME/git/onix-core";
+    cocn = "cd $HOME/git/onix-core && nvim .";
   };
 
   # Fish shell configuration
