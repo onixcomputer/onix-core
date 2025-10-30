@@ -169,7 +169,7 @@ in
               system.activationScripts."keycloak-terraform-reset-${instanceName}" = lib.mkIf terraformAutoApply (
                 let
                   terraformConfigJson = opentofu.generateTerranixJson {
-                    module = ./terranix-wrapper.nix;
+                    module = ./terranix.nix;
                     moduleArgs = {
                       inherit lib;
                       settings = settings.terraform or { };
@@ -193,8 +193,8 @@ in
                       serviceName = "keycloak";
                       inherit instanceName;
 
-                      # Use the new terranix module via wrapper
-                      terranixModule = ./terranix-wrapper.nix;
+                      # Use the terranix module for resource management
+                      terranixModule = ./terranix.nix;
                       moduleArgs = {
                         inherit lib;
                         settings = settings.terraform or { };

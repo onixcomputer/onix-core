@@ -1,5 +1,5 @@
-# Minimal wrapper for legacy compatibility
-# Provides basic terraform configuration for Keycloak resources
+# Terranix module for Keycloak resource management
+# Provides terraform configuration for Keycloak realms, clients, users, groups, and roles
 
 { lib, settings }:
 
