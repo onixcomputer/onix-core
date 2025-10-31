@@ -91,3 +91,7 @@ cloud/terraform.tfvars
 cloud/*.tfvars
 cloud/main.tf.json
 cloud/tfplan
+.claude
+.claude/*
+zero-to-nix.txt
+*.txt
