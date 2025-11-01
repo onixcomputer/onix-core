@@ -121,6 +121,11 @@ for HOSTNAME in $HOSTNAMES; do
   # Get everything before the base domain as subdomain
   SUBDOMAIN="${HOSTNAME%."$BASE_DOMAIN"}"
 
+  # Handle root domain case (when hostname equals base domain)
+  if [ "$SUBDOMAIN" = "$HOSTNAME" ]; then
+    SUBDOMAIN="@"
+  fi
+
   # Get zone ID for this domain
   ZONE_RESPONSE=$(curl -sf "https://api.cloudflare.com/client/v4/zones?name=$BASE_DOMAIN" \
     -H "Authorization: Bearer $API_TOKEN" \
@@ -133,18 +138,21 @@ for HOSTNAME in $HOSTNAMES; do
     exit 1
   fi
 
-  # Check/Create DNS record
-  DNS_RECORDS=$(curl -sf \
-    "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=CNAME&name=${HOSTNAME}" \
+  # Check for existing DNS records (any type)
+  ALL_RECORDS=$(curl -sf \
+    "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?name=${HOSTNAME}" \
     -H "Authorization: Bearer $API_TOKEN" \
     -H "Content-Type: application/json")
 
-  RECORD_COUNT=$(echo "$DNS_RECORDS" | jq -r '.result | length')
+  # Check specifically for CNAME records
+  CNAME_RECORDS=$(echo "$ALL_RECORDS" | jq -r '.result[] | select(.type == "CNAME")')
+  CNAME_COUNT=$(echo "$CNAME_RECORDS" | jq -s 'length')
+
   TUNNEL_TARGET="$TUNNEL_ID.cfargotunnel.com"
 
-  if [ "$RECORD_COUNT" -gt 0 ]; then
-    RECORD_ID=$(echo "$DNS_RECORDS" | jq -r '.result[0].id')
-    CURRENT_TARGET=$(echo "$DNS_RECORDS" | jq -r '.result[0].content')
+  if [ "$CNAME_COUNT" -gt 0 ]; then
+    RECORD_ID=$(echo "$CNAME_RECORDS" | jq -r '.id')
+    CURRENT_TARGET=$(echo "$CNAME_RECORDS" | jq -r '.content')
 
     if [ "$CURRENT_TARGET" = "$TUNNEL_TARGET" ]; then
       echo "✓ DNS record for ${HOSTNAME} already correct"
@@ -163,6 +171,20 @@ for HOSTNAME in $HOSTNAMES; do
       echo "✓ DNS record for ${HOSTNAME} updated"
     fi
   else
+    # Check for conflicting A/AAAA records and delete them
+    CONFLICTING_RECORDS=$(echo "$ALL_RECORDS" | jq -r '.result[] | select(.type == "A" or .type == "AAAA") | .id')
+
+    if [ -n "$CONFLICTING_RECORDS" ]; then
+      echo "Removing conflicting A/AAAA records for ${HOSTNAME}..."
+      echo "$CONFLICTING_RECORDS" | while read -r record_id; do
+        if [ -n "$record_id" ]; then
+          curl -sf -X DELETE \
+            "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$record_id" \
+            -H "Authorization: Bearer $API_TOKEN" > /dev/null
+        fi
+      done
+    fi
+
     echo "Creating DNS record for ${HOSTNAME}..."
     curl -sf -X POST \
       "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
