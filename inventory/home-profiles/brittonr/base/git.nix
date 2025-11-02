@@ -1,8 +1,6 @@
 {
   programs.git = {
     enable = true;
-    userName = "brittonr";
-    userEmail = "b@robitzs.ch";
 
     aliases = {
       o = "checkout";
@@ -14,7 +12,11 @@
       d = "cat-file -p";
     };
 
-    extraConfig = {
+    settings = {
+      user = {
+        name = "brittonr";
+        email = "b@robitzs.ch";
+      };
       init.defaultBranch = "main";
       pull.rebase = true;
       push.autoSetupRemote = true;
@@ -28,16 +30,17 @@
       ".direnv"
       ".envrc"
     ];
+  };
 
-    delta = {
-      enable = true;
-      options = {
-        navigate = true;
-        light = false;
-        side-by-side = true;
-        line-numbers = true;
-        syntax-theme = "Dracula";
-      };
+  programs.delta = {
+    enable = true;
+    enableGitIntegration = true;
+    options = {
+      navigate = true;
+      light = false;
+      side-by-side = true;
+      line-numbers = true;
+      syntax-theme = "Dracula";
     };
   };
 }
