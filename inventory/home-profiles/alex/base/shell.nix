@@ -47,6 +47,19 @@
   programs.fish = {
     enable = true;
 
+    interactiveShellInit = ''
+      # Atuin manual setup
+      if type -q atuin
+        set -gx ATUIN_NOBIND "true"
+        atuin init fish | source
+
+        bind \cr _atuin_search
+        bind -M insert \cr _atuin_search
+        bind -M insert \e\[A _atuin_bind_up
+        bind -M insert \eOA _atuin_bind_up
+      end
+    '';
+
     shellInit = ''
       # Disable greeting
       set -g fish_greeting
@@ -63,20 +76,25 @@
         bat $argv | wl-copy
       end
 
-      # Better colors for suggestions (subtle gray)
+      # Colors
       set -g fish_color_autosuggestion 555 brblack
       set -g fish_color_command green
       set -g fish_color_error red --bold
       set -g fish_color_param cyan
       set -g fish_color_quote yellow
 
-      # Force block cursor for all vi modes (these ARE needed!)
+      # Block cursor for vi modes
       set -g fish_cursor_default block
       set -g fish_cursor_insert block
       set -g fish_cursor_replace_one underscore
       set -g fish_cursor_visual block
+      set -g fish_vi_force_cursor 1
 
-      # Enable vi key bindings
+      # Cursor function stub
+      function __fish_vi_cursor --argument-names mode
+      end
+
+      # Vi key bindings
       fish_vi_key_bindings
     '';
   };

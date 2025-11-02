@@ -1,10 +1,12 @@
 {
   programs.git = {
     enable = true;
-    userName = "adeci";
-    userEmail = "alex.decious@gmail.com";
 
-    extraConfig = {
+    settings = {
+      user = {
+        name = "adeci";
+        email = "alex.decious@gmail.com";
+      };
       init.defaultBranch = "main";
       pull.rebase = true;
       push.autoSetupRemote = true;
@@ -17,16 +19,17 @@
       ".direnv"
       ".envrc"
     ];
+  };
 
-    delta = {
-      enable = true;
-      options = {
-        navigate = true;
-        light = false;
-        side-by-side = true;
-        line-numbers = true;
-        syntax-theme = "Dracula";
-      };
+  programs.delta = {
+    enable = true;
+    enableGitIntegration = true;
+    options = {
+      navigate = true;
+      light = false;
+      side-by-side = true;
+      line-numbers = true;
+      syntax-theme = "Dracula";
     };
   };
 }

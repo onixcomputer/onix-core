@@ -97,5 +97,5 @@ in
   };
 
   # Git credential helper integration
-  programs.git.extraConfig.credential.helper = "${pkgs.rbw}/bin/git-credential-rbw";
+  programs.git.settings.credential.helper = "${pkgs.rbw}/bin/git-credential-rbw";
 }

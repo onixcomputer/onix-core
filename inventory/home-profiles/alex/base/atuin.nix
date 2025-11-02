@@ -1,9 +1,8 @@
 _: {
-  # Atuin - magical shell history
   programs.atuin = {
     enable = true;
     enableZshIntegration = true;
-    enableFishIntegration = true;
+    enableFishIntegration = false; # Manual setup in shell.nix
     enableBashIntegration = true;
 
     settings = {
