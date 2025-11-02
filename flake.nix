@@ -37,9 +37,9 @@
       url = "github:nix-community/nixos-avf";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nixvim = {
-      url = "github:nix-community/nixvim";
-      # Don't follow nixpkgs - nixvim needs its own nixpkgs
+    adeci-nixvim = {
+      url = "github:adeci/nixvim-config";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 

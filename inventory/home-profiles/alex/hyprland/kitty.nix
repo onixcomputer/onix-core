@@ -81,6 +81,7 @@ in
 
       # Scrollback
       scrollback_lines = 10000;
+      scrollbar = "never"; # Completely hide the scrollbar
 
       # Bell and notifications - all disabled
       enable_audio_bell = false;
