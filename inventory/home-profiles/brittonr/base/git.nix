@@ -2,16 +2,6 @@
   programs.git = {
     enable = true;
 
-    aliases = {
-      o = "checkout";
-      c = "commit";
-      s = "status";
-      b = "branch";
-      h = "log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short";
-      t = "cat-file -t";
-      d = "cat-file -p";
-    };
-
     settings = {
       user = {
         name = "brittonr";
@@ -21,6 +11,15 @@
       pull.rebase = true;
       push.autoSetupRemote = true;
       core.editor = "hx";
+      aliases = {
+        o = "checkout";
+        c = "commit";
+        s = "status";
+        b = "branch";
+        h = "log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short";
+        t = "cat-file -t";
+        d = "cat-file -p";
+      };
     };
 
     ignores = [

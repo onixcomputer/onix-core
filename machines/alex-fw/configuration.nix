@@ -53,6 +53,9 @@ in
     enable = true;
     enable32Bit = true;
     extraPackages = with pkgs; [
+      mesa
+      vulkan-loader
+      libva
       rocmPackages.clr.icd
     ];
   };

@@ -2,7 +2,7 @@
 {
   home.packages = with pkgs; [
     # Embedded development tools for Daisy and other ARM Cortex-M devices
-    probe-rs
+    probe-rs-tools
     cargo-binutils
     flip-link
     libusb1

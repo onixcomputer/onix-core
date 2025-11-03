@@ -86,9 +86,17 @@ _: {
 
             services.tailscale-host-sync.enable = enableHostAliases;
 
-            # Don't block boot
+            # Don't block boot at all - start in background after network is online
             systemd.services.tailscaled-autoconnect = lib.mkIf (finalSettings.autoconnect or false) {
-              wantedBy = lib.mkForce [ ];
+              wantedBy = lib.mkForce [ "multi-user.target" ];
+              wants = [ "network-online.target" ];
+              after = [ "network-online.target" ];
+              serviceConfig = {
+                Type = lib.mkForce "exec";
+                TimeoutStartSec = "30s";
+                Restart = "on-failure";
+                RestartSec = "10s";
+              };
             };
 
             networking.firewall = {

@@ -20,7 +20,10 @@ in
       "$fileManager" = "thunar";
 
       env = [
-        "ELECTRON_OZONE_PLATFORM_HINT,auto"
+        "ELECTRON_OZONE_PLATFORM_HINT,wayland"
+        "NIXOS_OZONE_WL,1"
+        "WLR_RENDERER_ALLOW_SOFTWARE,1"
+        "WLR_NO_HARDWARE_CURSORS,1"
       ];
 
       # Autostart
@@ -162,6 +165,10 @@ in
         "float, class:^(\\.blueman-manager-wrapped)$"
         "center, class:^(\\.blueman-manager-wrapped)$"
         "size 900 600, class:^(\\.blueman-manager-wrapped)$"
+
+        "noblur, class:^(vesktop)$"
+        "forcergbx, class:^(vesktop)$"
+        "noinitialfocus, class:^(vesktop)$"
 
       ];
 
