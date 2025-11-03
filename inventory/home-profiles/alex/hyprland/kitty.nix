@@ -14,7 +14,7 @@ in
     settings = {
       # Window settings
       window_padding_width = 14;
-      background_opacity = "0.98";
+      #background_opacity = "0.98";
 
       # Font settings
       bold_font = "CaskaydiaMono Nerd Font Mono Bold";

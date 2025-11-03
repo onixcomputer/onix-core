@@ -66,6 +66,10 @@ in
 
   time.timeZone = "America/New_York";
 
+  # vm building
+  virtualisation.libvirtd.enable = true;
+  programs.virt-manager.enable = true;
+
   environment.systemPackages = with pkgs; [
     imagemagick # required for grub2-theme
     os-prober
