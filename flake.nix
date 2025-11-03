@@ -4,7 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
-    clan-core.url = "git+https://git.clan.lol/adeci/clan-core?ref=adeci-unstable";
+    clan-core.url = "git+file:///home/brittonr/git/clan-core?ref=tofu";
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";

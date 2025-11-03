@@ -22,12 +22,11 @@
         rocmPackages.rocm-smi
 
         # Vulkan packages for graphics and compute
-        amdvlk # AMD Vulkan driver
         vulkan-loader # Vulkan loader
         vulkan-validation-layers # Vulkan validation
         vulkan-extension-layer # Vulkan extensions
 
-        # Mesa Vulkan driver (RADV) - alternative to AMDVLK
+        # Mesa Vulkan driver (RADV) - enabled by default
         mesa.drivers # Includes RADV Vulkan driver
 
         # Additional Vulkan tools
@@ -35,22 +34,12 @@
         vulkan-headers # Development headers
       ];
       extraPackages32 = with pkgs; [
-        driversi686Linux.amdvlk
         driversi686Linux.mesa.drivers
       ];
     };
 
     # AMD GPU specific settings
     amdgpu = {
-      amdvlk = {
-        enable = true;
-        support32Bit.enable = true;
-        # Enable both AMDVLK and RADV for maximum compatibility
-        settings = {
-          # Allow both drivers to coexist (1 = enabled)
-          AllowVkDeviceSelection = "1";
-        };
-      };
       opencl.enable = true;
     };
 
@@ -70,7 +59,7 @@
     btop # System resource monitoring with GPU support
 
     # GPU stress testing and benchmarking
-    glxinfo # OpenGL information
+    mesa-demos # OpenGL information (includes glxinfo)
     vulkan-tools # Vulkan utilities
     vkmark # Vulkan benchmarking tool
   ];
@@ -88,8 +77,8 @@
     VK_ICD_FILENAMES = "/run/opengl-driver/share/vulkan/icd.d/amd_icd64.json:/run/opengl-driver/share/vulkan/icd.d/radeon_icd.x86_64.json";
     VK_LAYER_PATH = "${pkgs.vulkan-validation-layers}/share/vulkan/explicit_layer.d";
 
-    # Allow both RADV and AMDVLK drivers
-    AMD_VULKAN_ICD = "RADV"; # Prefer RADV for better compatibility
+    # Use RADV Vulkan driver (enabled by default)
+    AMD_VULKAN_ICD = "RADV";
     VK_DRIVER_FILES = "/run/opengl-driver/share/vulkan/icd.d/radeon_icd.x86_64.json";
 
     # Enable Vulkan debug layers in development

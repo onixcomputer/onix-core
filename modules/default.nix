@@ -1,4 +1,4 @@
-_:
+{ inputs }:
 let
 
   module_definitions = {
@@ -18,6 +18,7 @@ let
     "cloudflare-tunnel" = import ./cloudflare-tunnel;
     "gitlab-runner" = import ./gitlab-runner;
     "llm" = import ./llm;
+    "keycloak" = import ./keycloak { inherit inputs; };
   };
 
 in
