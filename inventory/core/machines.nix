@@ -110,6 +110,7 @@ _: {
         "password-manager"
         "typst"
         "llm-client"
+        "aarch64-builder"
       ];
       deploy = {
         targetHost = "root@britton-fw.bison-tailor.ts.net";
@@ -127,6 +128,7 @@ _: {
         "homepage-server"
         "llm"
         "amd-gpu" # AMD Ryzen AI MAX+ 395 with Radeon 8060S
+        "aarch64-builder"
       ];
       deploy = {
         targetHost = "root@aspen1";

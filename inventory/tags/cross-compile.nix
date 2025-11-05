@@ -18,8 +18,8 @@
   ];
 
   # Enable binfmt for running cross-compiled binaries via QEMU
+  # Note: aarch64-linux removed since we have native m2 builder
   boot.binfmt.emulatedSystems = [
-    "aarch64-linux"
     "armv7l-linux"
     "riscv64-linux"
   ];

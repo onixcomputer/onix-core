@@ -42,15 +42,8 @@
 
     # AMD GPU specific settings
     amdgpu = {
-      amdvlk = {
-        enable = true;
-        support32Bit.enable = true;
-        # Enable both AMDVLK and RADV for maximum compatibility
-        settings = {
-          # Allow both drivers to coexist (1 = enabled)
-          AllowVkDeviceSelection = "1";
-        };
-      };
+      # Note: amdvlk option has been removed in favor of RADV (Mesa)
+      # RADV is enabled by default as part of Mesa drivers
       opencl.enable = true;
     };
 

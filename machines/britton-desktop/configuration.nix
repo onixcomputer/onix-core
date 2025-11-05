@@ -118,4 +118,65 @@ in
       hyprlock = { };
     };
   };
+
+  # Configure m2 as aarch64 remote builder
+  nix = {
+    distributedBuilds = true;
+    settings = {
+      builders = "@/etc/nix/machines";
+      builders-use-substitutes = true;
+      trusted-users = [ "brittonr" ];
+      # Lower max-jobs to encourage offloading
+      max-jobs = 0;
+    };
+    buildMachines = [
+      {
+        protocol = "ssh-ng";
+        hostName = "m2.bison-tailor.ts.net";
+        systems = [ "aarch64-linux" ];
+        maxJobs = 6;
+        speedFactor = 2;
+        supportedFeatures = [
+          "nixos-test"
+          "benchmark"
+          "big-parallel"
+        ];
+        mandatoryFeatures = [ ];
+        sshUser = "root";
+        sshKey = "/root/.ssh/id_m2";
+      }
+    ];
+  };
+
+  # Copy SSH key for m2 builder access (runs during activation)
+  system.activationScripts.m2-builder-key = {
+    text = ''
+      mkdir -p /root/.ssh
+      chmod 700 /root/.ssh
+      if [ -f /home/brittonr/.ssh/framework ]; then
+        if cp -f /home/brittonr/.ssh/framework /root/.ssh/id_m2 && chmod 600 /root/.ssh/id_m2; then
+          echo "m2 builder SSH key installed successfully"
+        else
+          echo "ERROR: Failed to install m2 builder SSH key"
+          exit 1
+        fi
+      else
+        echo "ERROR: /home/brittonr/.ssh/framework not found"
+        exit 1
+      fi
+    '';
+    deps = [ "users" ];
+  };
+
+  programs.ssh = {
+    knownHosts = {
+      m2 = {
+        hostNames = [
+          "m2"
+          "m2.bison-tailor.ts.net"
+        ];
+        publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ05g4bAY8EsmySlCMxAEyTRjs/g/SpggreGoe9XTsXz";
+      };
+    };
+  };
 }

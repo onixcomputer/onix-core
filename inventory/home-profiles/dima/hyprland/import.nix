@@ -13,7 +13,6 @@ _: {
     ../../alex/hyprland/hyprlock.nix
     ../../alex/hyprland/keyring.nix
     ../../alex/hyprland/kitty.nix
-    ../../alex/hyprland/libreoffice.nix
     ../../alex/hyprland/media-viewers.nix
     ../../alex/hyprland/network.nix
     ../../alex/hyprland/rofi.nix
