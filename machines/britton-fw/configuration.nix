@@ -15,7 +15,8 @@ in
     hostName = "britton-fw";
   };
 
-  time.timeZone = "America/New_York";
+  #time.timeZone = "America/New_York";
+  time.timeZone = "Asia/Bangkok";
 
   environment.systemPackages = with pkgs; [
     imagemagick # required for grub2-theme

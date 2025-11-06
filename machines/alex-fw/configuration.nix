@@ -16,7 +16,13 @@ in
   # Leviathan remote builder configuration
   nix = {
     distributedBuilds = true;
-    settings.builders-use-substitutes = true;
+    settings = {
+      builders-use-substitutes = true;
+      trusted-users = [
+        "root"
+        "alex"
+      ];
+    };
     buildMachines = [
       {
         protocol = "ssh-ng";
@@ -39,7 +45,10 @@ in
   programs.ssh = {
     knownHosts = {
       leviathan = {
-        hostNames = [ "leviathan.cymric-daggertooth.ts.net" ];
+        hostNames = [
+          "leviathan.cymric-daggertooth.ts.net"
+          "192.168.50.189"
+        ];
         publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOEtV2xoOv+N4c5sg5oBqM/Xy+aZHf+5GHOhzXKYduXG";
       };
     };
@@ -64,7 +73,8 @@ in
     hostName = "alex-fw";
   };
 
-  time.timeZone = "America/New_York";
+  #time.timeZone = "America/New_York";
+  time.timeZone = "Asia/Bangkok";
 
   # vm building
   virtualisation.libvirtd.enable = true;
