@@ -23,7 +23,6 @@ in
     signal-desktop
   ];
 
-  services.udev.packages = [ pkgs.android-udev-rules ];
   zramSwap = {
     enable = true;
     algorithm = "lz4"; # Fast compression

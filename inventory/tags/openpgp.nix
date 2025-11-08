@@ -5,7 +5,7 @@
     gnupg # GPG for OpenPGP operations
     pcsclite # PC/SC daemon for smart card communication
     ccid # CCID driver for USB smart cards
-    pcsctools # Tools like pcsc_scan for debugging
+    pcsc-tools # Tools like pcsc_scan for debugging
     pinentry-gtk2 # PIN entry dialog (or pinentry-qt, pinentry-curses)
   ];
   # Required services

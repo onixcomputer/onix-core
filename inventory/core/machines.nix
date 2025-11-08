@@ -112,7 +112,7 @@ _: {
         "llm-client"
       ];
       deploy = {
-        targetHost = "root@britton-fw.bison-tailor.ts.net";
+        targetHost = "root@localhost";
         buildHost = "";
       };
     };

@@ -25,6 +25,19 @@
     # Network tools
     wget
 
+    # Debug and system tools
+    lsof
+    gdb
+    ast-grep
+    graphicsmagick
+    tea
+    sysdig
+
+    # Code quality tools
+    shellcheck
+    ruff
+    mypy
+
     # Parser and formatter tools
     tree-sitter
     stylua
