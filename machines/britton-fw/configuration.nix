@@ -59,7 +59,10 @@ in
 
   nix = {
     distributedBuilds = true;
-    settings.builders-use-substitutes = true;
+    settings = {
+      builders-use-substitutes = true;
+      trusted-users = [ "brittonr" ];
+    };
     buildMachines = [
       {
         protocol = "ssh-ng";

@@ -935,17 +935,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1762525404,
-        "narHash": "sha256-1vZl76tkbwJGn+QikGB3lCzLWcgmDp70OE/xlLkoNKs=",
-        "owner": "lassulus",
-        "repo": "wrappers",
-        "rev": "76557772d61068ee1f29fb8b07de6b0f02e876fe",
-        "type": "github"
+        "lastModified": 1762665220,
+        "narHash": "sha256-O0u/zrUZU9EFRdKYRpv2t7Z5XTZYwCX8xRndQJ67Bjg=",
+        "ref": "refs/heads/main",
+        "rev": "bd1ecd6a0f62007f2fe4a333e289970dddba90d0",
+        "revCount": 72,
+        "type": "git",
+        "url": "file:///home/brittonr/git/wrappers"
       },
       "original": {
-        "owner": "lassulus",
-        "repo": "wrappers",
-        "type": "github"
+        "type": "git",
+        "url": "file:///home/brittonr/git/wrappers"
       }
     }
   },
