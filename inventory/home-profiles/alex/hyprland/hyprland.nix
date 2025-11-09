@@ -173,7 +173,7 @@ in
         "$mod, P, pseudo"
         "$mod, V, togglefloating"
         ", F11, fullscreen, 0"
-        "$mod, bracketright, exec, hyprctl dispatch exit"
+        #"$mod, bracketright, exec, hyprctl dispatch exit"
 
         # Vim bindings for focus
         "$mod, H, movefocus, l"
