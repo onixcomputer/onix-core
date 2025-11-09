@@ -6,8 +6,7 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     clan-core.url = "git+https://git.clan.lol/adeci/clan-core?ref=adeci-unstable";
     wrappers = {
-      # url = "github:lassulus/wrappers";
-      url = "git+file:///home/brittonr/git/wrappers";
+      url = "github:lassulus/wrappers";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     treefmt-nix = {
