@@ -730,7 +730,8 @@
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs_5",
         "pre-commit-hooks-nix": "pre-commit-hooks-nix",
-        "treefmt-nix": "treefmt-nix_4"
+        "treefmt-nix": "treefmt-nix_4",
+        "wrappers": "wrappers"
       }
     },
     "rust-overlay": {
@@ -924,6 +925,26 @@
       "original": {
         "owner": "numtide",
         "repo": "treefmt-nix",
+        "type": "github"
+      }
+    },
+    "wrappers": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1762525404,
+        "narHash": "sha256-1vZl76tkbwJGn+QikGB3lCzLWcgmDp70OE/xlLkoNKs=",
+        "owner": "lassulus",
+        "repo": "wrappers",
+        "rev": "76557772d61068ee1f29fb8b07de6b0f02e876fe",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lassulus",
+        "repo": "wrappers",
         "type": "github"
       }
     }

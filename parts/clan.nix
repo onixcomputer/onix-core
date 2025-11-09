@@ -11,7 +11,10 @@
 
       # Build clan using new API
       clanModule = inputs.clan-core.lib.clan {
-        specialArgs = { inherit inputs; };
+        specialArgs = {
+          inherit inputs;
+          wrappers = inputs.wrappers.wrapperModules;
+        };
         inherit self;
         meta.name = "Onix";
         inherit modules;
