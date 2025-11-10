@@ -23,8 +23,4 @@
       };
     }).wrapper
   ];
-
-  home.shellAliases = {
-    jj = "jujutsu";
-  };
 }
