@@ -935,17 +935,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1762787190,
+        "lastModified": 1762794092,
         "narHash": "sha256-Z8dTmjx3T5rEzp7x5AMO07N0aB7nPx1370P+NAT2nYk=",
-        "ref": "refs/heads/main",
-        "rev": "51edd973a4853f40a2a18f2e3f1f6c5db8aef0cc",
-        "revCount": 74,
-        "type": "git",
-        "url": "file:///home/brittonr/git/wrappers"
+        "owner": "brittonr",
+        "repo": "wrappers",
+        "rev": "44a401e5bf6979ec2ec9b3633698a1d42239fd5a",
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "file:///home/brittonr/git/wrappers"
+        "owner": "brittonr",
+        "repo": "wrappers",
+        "type": "github"
       }
     }
   },
