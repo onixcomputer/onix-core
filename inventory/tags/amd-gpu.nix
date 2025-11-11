@@ -22,7 +22,6 @@
         rocmPackages.rocm-smi
 
         # Vulkan packages for graphics and compute
-        amdvlk # AMD Vulkan driver
         vulkan-loader # Vulkan loader
         vulkan-validation-layers # Vulkan validation
         vulkan-extension-layer # Vulkan extensions
@@ -35,22 +34,22 @@
         vulkan-headers # Development headers
       ];
       extraPackages32 = with pkgs; [
-        driversi686Linux.amdvlk
+        # driversi686Linux.amdvlk
         driversi686Linux.mesa.drivers
       ];
     };
 
     # AMD GPU specific settings
     amdgpu = {
-      amdvlk = {
-        enable = true;
-        support32Bit.enable = true;
-        # Enable both AMDVLK and RADV for maximum compatibility
-        settings = {
-          # Allow both drivers to coexist (1 = enabled)
-          AllowVkDeviceSelection = "1";
-        };
-      };
+      # amdvlk = {
+      #   enable = true;
+      #   support32Bit.enable = true;
+      #   # Enable both AMDVLK and RADV for maximum compatibility
+      #   settings = {
+      #     # Allow both drivers to coexist (1 = enabled)
+      #     AllowVkDeviceSelection = "1";
+      #   };
+      # };
       opencl.enable = true;
     };
 
@@ -70,7 +69,6 @@
     btop # System resource monitoring with GPU support
 
     # GPU stress testing and benchmarking
-    glxinfo # OpenGL information
     vulkan-tools # Vulkan utilities
     vkmark # Vulkan benchmarking tool
   ];
