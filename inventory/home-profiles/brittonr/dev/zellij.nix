@@ -8,6 +8,7 @@
     exitShellOnExit = false;
     settings = {
       show_startup_tips = false;
+      auto_layout = true;
       keybinds = {
         normal = {
           "bind \"Alt t\"" = {
