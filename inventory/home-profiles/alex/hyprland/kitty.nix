@@ -8,7 +8,7 @@ in
 
     font = {
       name = "CaskaydiaMono Nerd Font Mono";
-      size = 14;
+      size = 12;
     };
 
     settings = {
