@@ -10,5 +10,7 @@
     nix-output-monitor
     pamtester
     usbmuxd
+    socat
+    lsof
   ];
 }
