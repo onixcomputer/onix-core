@@ -14,5 +14,7 @@
     usbmuxd
     usbutils
     radicle-node
+    socat
+    lsof
   ];
 }
