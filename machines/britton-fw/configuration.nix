@@ -62,6 +62,15 @@ in
     settings = {
       builders-use-substitutes = true;
       trusted-users = [ "brittonr" ];
+      substituters = [
+        "https://cache.dataaturservice.se/spectrum/"
+        "https://cache.snix.dev"
+      ];
+      trusted-public-keys = [
+        "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+        "spectrum-os.org-2:foQk3r7t2VpRx92CaXb5ROyy/NBdRJQG2uX2XJMYZfU="
+        "cache.snix.dev-1:miTqzIzmCbX/DyK2tLNXDROk77CbbvcRdWA4y2F8pno="
+      ];
     };
     buildMachines = [
       {
