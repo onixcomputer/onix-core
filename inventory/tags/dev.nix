@@ -20,5 +20,7 @@
     socat
     lsof
     jujutsu
+    socat
+    lsof
   ];
 }
