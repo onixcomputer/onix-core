@@ -20,6 +20,7 @@ _: {
               "*.json"
               "*.json5"
               "*.jsx"
+              "*.md"
               "*.mdx"
               "*.mjs"
               "*.scss"
