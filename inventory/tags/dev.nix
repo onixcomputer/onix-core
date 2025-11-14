@@ -19,5 +19,6 @@
     jujutsu
     socat
     lsof
+    jujutsu
   ];
 }
