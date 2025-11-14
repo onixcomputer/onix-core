@@ -21,28 +21,28 @@ _: {
       "--header"
     ];
 
-    # Custom theme colors
+    # Onix Dark theme colors
     theme = {
       # File type colors
-      "fi" = "38;5;15"; # Regular file - white
-      "di" = "38;5;12"; # Directory - blue
-      "ex" = "38;5;10"; # Executable - green
-      "ln" = "38;5;14"; # Symlink - cyan
-      "so" = "38;5;13"; # Socket - magenta
-      "pi" = "38;5;11"; # Pipe - yellow
+      "fi" = "38;2;230;230;230"; # Regular file - white (#e6e6e6)
+      "di" = "38;2;68;136;255"; # Directory - blue (#4488ff)
+      "ex" = "38;2;68;255;68"; # Executable - green (#44ff44)
+      "ln" = "38;2;0;255;255"; # Symlink - cyan (#00ffff)
+      "so" = "38;2;255;68;255"; # Socket - magenta (#ff44ff)
+      "pi" = "38;2;255;170;0"; # Pipe - yellow (#ffaa00)
 
       # Permission bits
-      "ur" = "38;5;9"; # User read - red
-      "uw" = "38;5;10"; # User write - green
-      "ux" = "38;5;11"; # User execute - yellow
-      "ue" = "38;5;11"; # User execute (other) - yellow
+      "ur" = "38;2;255;68;68"; # User read - red (#ff4444)
+      "uw" = "38;2;68;255;68"; # User write - green (#44ff44)
+      "ux" = "38;2;255;170;0"; # User execute - yellow (#ffaa00)
+      "ue" = "38;2;255;170;0"; # User execute (other) - yellow (#ffaa00)
 
       # Git status
-      "gm" = "38;5;11"; # Git modified - yellow
-      "ga" = "38;5;10"; # Git added - green
-      "gd" = "38;5;9"; # Git deleted - red
-      "gv" = "38;5;14"; # Git renamed - cyan
-      "gt" = "38;5;12"; # Git typechange - blue
+      "gm" = "38;2;255;170;0"; # Git modified - yellow (#ffaa00)
+      "ga" = "38;2;68;255;68"; # Git added - green (#44ff44)
+      "gd" = "38;2;255;68;68"; # Git deleted - red (#ff4444)
+      "gv" = "38;2;0;255;255"; # Git renamed - cyan (#00ffff)
+      "gt" = "38;2;68;136;255"; # Git typechange - blue (#4488ff)
     };
   };
 

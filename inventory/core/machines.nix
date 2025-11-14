@@ -110,6 +110,8 @@ _: {
         "password-manager"
         "typst"
         "llm-client"
+        "cross-compile"
+        "creative"
       ];
       deploy = {
         targetHost = "root@localhost";

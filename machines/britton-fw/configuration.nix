@@ -7,6 +7,11 @@ let
   };
 in
 {
+  # Use nix with radicle-fetcher support (skip tests to avoid build failures)
+  # Temporarily disabled - patch doesn't apply to Nix 2.31.2
+  # nixpkgs.overlays = [
+  #   inputs.self.overlays.nix-radicle
+  # ];
   imports = [
     inputs.grub2-themes.nixosModules.default
   ];
@@ -65,14 +70,34 @@ in
       substituters = [
         "https://cache.dataaturservice.se/spectrum/"
         "https://cache.snix.dev"
+        "https://nix-community.cachix.org"
+        "https://cache.nixos.org/"
+        "https://attic.radicle.xyz/radicle"
       ];
       trusted-public-keys = [
+        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
         "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
         "spectrum-os.org-2:foQk3r7t2VpRx92CaXb5ROyy/NBdRJQG2uX2XJMYZfU="
         "cache.snix.dev-1:miTqzIzmCbX/DyK2tLNXDROk77CbbvcRdWA4y2F8pno="
+        "radicle:TruHbueGHPm9iYSq7Gq6wJApJOqddWH+CEo+fsZnf4g="
       ];
     };
     buildMachines = [
+      #  {
+      #   protocol = "ssh-ng";
+      #   hostName = "m2.bison-tailor.ts.net";
+      #   systems = [ "aarch64-linux" ];
+      #   maxJobs = 6;
+      #   speedFactor = 2;
+      #   supportedFeatures = [
+      #     "nixos-test"
+      #     "benchmark"
+      #     "big-parallel"
+      #   ];
+      #   mandatoryFeatures = [ ];
+      #   sshUser = "root";
+      #   sshKey = "/root/.ssh/id_m2";
+      # }
       {
         protocol = "ssh-ng";
         hostName = "leviathan.cymric-daggertooth.ts.net";
@@ -128,12 +153,18 @@ in
       enable = true;
       settings = {
         default_session = {
-          command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd Hyprland";
+          command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd /etc/profiles/per-user/brittonr/bin/niri-session";
           user = "greeter";
         };
       };
     };
     fwupd.enable = true; # framework bios/firmware updates
+  };
+
+  # Portal services for VM integration
+  xdg.portal = {
+    enable = true;
+    extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
   };
 
   security.pam.services = {
@@ -142,4 +173,5 @@ in
     sudo.fprintAuth = false;
     hyprlock = { };
   };
+
 }

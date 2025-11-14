@@ -12,6 +12,8 @@ let
     tokyo-night = import ./themes/tokyo-night.nix { inherit pkgs; };
     everblush = import ./themes/everblush.nix { inherit pkgs; };
     solarized-dark = import ./themes/solarized-dark.nix { inherit pkgs; };
+    onix-dark = import ./themes/onix-dark.nix { inherit pkgs; };
+    onix-light = import ./themes/onix-light.nix { inherit pkgs; };
   };
 in
 {
@@ -56,9 +58,10 @@ in
         lib.mapAttrs' (
           name: wallpaperConfig:
           lib.nameValuePair "Pictures/Wallpapers/${name}" {
-            source = pkgs.fetchurl {
-              inherit (wallpaperConfig) url sha256;
-            };
+            source =
+              wallpaperConfig.source or (pkgs.fetchurl {
+                inherit (wallpaperConfig) url sha256;
+              });
           }
         ) allWallpapers;
 

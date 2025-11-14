@@ -253,8 +253,9 @@ let
             profiles = [
               "base"
               "dev"
-              "hyprland"
-              "hypr-laptop"
+              # "hyprland"
+              # "hypr-laptop"
+              "niri"
               "social"
             ];
           };

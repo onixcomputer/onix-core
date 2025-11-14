@@ -36,6 +36,38 @@
     interactiveShellInit = ''
       set fish_greeting # Disable greeting
 
+      # Manual zellij attach function
+      function zj
+        # Check if already in zellij
+        if set -q ZELLIJ
+          echo "Already in a zellij session. Exit first or use Ctrl+o,d to detach."
+          return 1
+        end
+
+        # If there's a .envrc, eval direnv first to get ZELLIJ_SESSION_NAME
+        if test -f .envrc
+          set -l direnv_export (direnv export fish 2>/dev/null)
+          if test $status -eq 0
+            eval $direnv_export
+          end
+        end
+
+        # Determine session name
+        set -l session_name
+        if set -q ZELLIJ_SESSION_NAME; and test -n "$ZELLIJ_SESSION_NAME"
+          set session_name $ZELLIJ_SESSION_NAME
+        else
+          set session_name (basename $PWD | string replace -a '.' '_')
+          if test -z "$session_name"
+            set session_name "main"
+          end
+        end
+
+        echo "Attaching to session: $session_name"
+        # Force attach regardless of attachment status
+        zellij attach --create "$session_name"
+      end
+
       # Import systemd environment (for SSH_AUTH_SOCK from gnome-keyring)
       if command -q systemctl
         for var in (systemctl --user show-environment | string match 'SSH_AUTH_SOCK=*')
@@ -59,12 +91,21 @@
         bind -M insert \eOA _atuin_bind_up
       end
 
-      # Colors
-      set -g fish_color_autosuggestion 555 brblack
-      set -g fish_color_command green
-      set -g fish_color_error red --bold
-      set -g fish_color_param cyan
-      set -g fish_color_quote yellow
+      # Onix Dark colors
+      set -g fish_color_autosuggestion 595959
+      set -g fish_color_command 44ff44
+      set -g fish_color_error ff4444 --bold
+      set -g fish_color_param 4488ff
+      set -g fish_color_quote ffaa00
+      set -g fish_color_redirection ff6600
+      set -g fish_color_end 00ffff
+      set -g fish_color_comment 595959 --italics
+      set -g fish_color_operator ff6600
+      set -g fish_color_escape 00ffff
+      set -g fish_color_cwd 4488ff
+      set -g fish_color_user ff6600
+      set -g fish_color_host 44ff44
+      set -g fish_color_selection --background=262626
 
       # Block cursor for vi modes
       set -g fish_cursor_default block

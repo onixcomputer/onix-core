@@ -12,7 +12,6 @@ _: {
     ../../alex/hyprland/hyprland.nix
     ../../alex/hyprland/hyprlock.nix
     ../../alex/hyprland/keyring.nix
-    ../../alex/hyprland/kitty.nix
     ../../alex/hyprland/libreoffice.nix
     ../../alex/hyprland/media-viewers.nix
     ../../alex/hyprland/network.nix
@@ -25,7 +24,8 @@ _: {
     ../../alex/hyprland/waybar.nix
     ../../alex/hyprland/xdg.nix
 
-    # Override with brittonr's theme preferences
+    # Override with brittonr's preferences
+    ./kitty.nix
     ./theme-config.nix
   ];
 }

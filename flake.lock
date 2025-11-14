@@ -510,6 +510,25 @@
         "type": "github"
       }
     },
+    "kdl2nix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1763105502,
+        "narHash": "sha256-xL1wDp5qYYMhT719RO/2x/TaTuWxvVymjQRx5bnuhz0=",
+        "rev": "019aa2973fb7f53510dc3590dcf96b9cf7b6ad0c",
+        "revCount": 1,
+        "type": "git",
+        "url": "file:/home/brittonr/git/kdl2nix"
+      },
+      "original": {
+        "type": "git",
+        "url": "file:/home/brittonr/git/kdl2nix"
+      }
+    },
     "mcp-servers-nix": {
       "inputs": {
         "nixpkgs": [
@@ -838,6 +857,7 @@
         "flake-parts": "flake-parts_4",
         "grafana-dashboards": "grafana-dashboards",
         "grub2-themes": "grub2-themes",
+        "kdl2nix": "kdl2nix",
         "mcp-servers-nix": "mcp-servers-nix",
         "nixos-avf": "nixos-avf",
         "nixos-wsl": "nixos-wsl",
@@ -845,7 +865,9 @@
         "nixvim": "nixvim_2",
         "pre-commit-hooks-nix": "pre-commit-hooks-nix",
         "treefmt-nix": "treefmt-nix_4",
-        "wrappers": "wrappers"
+        "wrappers": "wrappers",
+        "wrappers-niri": "wrappers-niri",
+        "wrappers-waybar": "wrappers-waybar"
       }
     },
     "rust-overlay": {
@@ -1088,6 +1110,48 @@
       },
       "original": {
         "owner": "brittonr",
+        "repo": "wrappers",
+        "type": "github"
+      }
+    },
+    "wrappers-niri": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1762937568,
+        "narHash": "sha256-o8vZ7PVPYz/2LACGTOZgToATdo3QY9GuCeisHLUYNKQ=",
+        "owner": "turbio",
+        "repo": "wrappers",
+        "rev": "4ed9d4a1405dda27325b62411ce79b71c3fa0c79",
+        "type": "github"
+      },
+      "original": {
+        "owner": "turbio",
+        "ref": "init-niri",
+        "repo": "wrappers",
+        "type": "github"
+      }
+    },
+    "wrappers-waybar": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1762939682,
+        "narHash": "sha256-z/PWl2k3Vu+TuIfSBb6gggIip0MqCMfpcia2BUM7JdA=",
+        "owner": "turbio",
+        "repo": "wrappers",
+        "rev": "bd61ffb1f2b820122d4f288e553b6505fb95db0e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "turbio",
+        "ref": "init-waybar",
         "repo": "wrappers",
         "type": "github"
       }

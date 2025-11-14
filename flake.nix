@@ -9,6 +9,14 @@
       url = "github:brittonr/wrappers";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    wrappers-niri = {
+      url = "github:turbio/wrappers/init-niri";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    wrappers-waybar = {
+      url = "github:turbio/wrappers/init-waybar";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -47,6 +55,10 @@
     };
     nixvim = {
       url = "github:nix-community/nixvim";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    kdl2nix = {
+      url = "git+file:/home/brittonr/git/kdl2nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

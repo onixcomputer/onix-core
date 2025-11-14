@@ -10,5 +10,6 @@
     nix-output-monitor
     pamtester
     usbmuxd
+    radicle-node
   ];
 }
