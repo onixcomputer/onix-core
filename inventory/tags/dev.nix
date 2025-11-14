@@ -12,5 +12,6 @@
     usbmuxd
     socat
     lsof
+    jujutsu
   ];
 }
