@@ -16,5 +16,6 @@
     radicle-node
     socat
     lsof
+    jujutsu
   ];
 }
