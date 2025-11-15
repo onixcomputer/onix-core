@@ -229,7 +229,7 @@ in
                   ReadWritePaths = mkDefault [ "/var/lib/radicle" ];
 
                   # Ensure control socket is accessible to users
-                  UMask = "0002"; # Allow group read/write
+                  UMask = mkForce "0002"; # Allow group read/write (override upstream)
                 };
 
                 # Set permissions on control socket after starting
@@ -559,7 +559,7 @@ in
                   ReadWritePaths = mkDefault [ "/var/lib/radicle" ];
 
                   # Ensure control socket is accessible to users
-                  UMask = "0002"; # Allow group read/write
+                  UMask = mkForce "0002"; # Allow group read/write (override upstream)
                 };
 
                 # Set permissions on control socket after starting
