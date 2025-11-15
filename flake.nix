@@ -61,6 +61,10 @@
       url = "git+file:/home/brittonr/git/kdl2nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    snix = {
+      url = "git+https://git.snix.dev/snix/snix";
+      flake = false;
+    };
   };
 
   outputs =
@@ -75,6 +79,7 @@
         ./parts/sops-viz.nix
         ./parts/checks.nix
         ./parts/infrastructure.nix
+        ./parts/snix.nix
         ./checks/flake-module.nix
       ];
 

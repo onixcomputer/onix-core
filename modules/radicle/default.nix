@@ -41,12 +41,37 @@ in
 
       **Important**: Each device requires its own unique DID (Decentralized Identifier). Do NOT share Radicle identities across devices. Each machine must run 'rad auth' to create its own identity.
 
-      This service provides three roles:
+      ## Roles
+
       - **seed**: Always-online node that replicates and serves repositories
       - **node**: Developer workstation node for active development
       - **gateway**: HTTP gateway for web-based repository browsing (no identity required)
 
-      The service automatically generates SSH key pairs for each instance on each machine to ensure unique DIDs per device.
+      ## Hardware Requirements (Official Guide)
+
+      **Seed Nodes:**
+      - 1-2GB RAM minimum (shared CPU acceptable)
+      - 10GB disk space to get started
+      - Linux with systemd v232+
+      - Public static IP address (for public seeds)
+      - DNS hostname pointing to server
+
+      **Developer Nodes:**
+      - 1GB RAM minimum
+      - 5GB disk space
+      - Linux/macOS/Windows (with WSL2)
+
+      ## Features
+
+      - Automatic identity initialization on first boot
+      - SSH key generation per instance per machine
+      - Optional HTTPS support via Caddy reverse proxy
+      - Hardened systemd services with resource limits
+      - User access control via allowedUsers option
+
+      ## Documentation
+
+      Official guides: https://radicle.xyz/guides/seeder
     '';
   };
 
@@ -62,7 +87,19 @@ in
           externalAddress = mkOption {
             type = nullOr str;
             default = null;
-            description = "External address for the seed node (e.g., seed.example.com:8776)";
+            description = ''
+              External address for the seed node in format <hostname>:<port>
+              Examples:
+                - "seed.example.com:8776" (DNS recommended)
+                - "192.0.2.1:8776" (static IP)
+                - "seed.tailscale-hostname:8776" (Tailscale)
+
+              Requires:
+                - DNS A/AAAA record pointing to your server
+                - Port 8776 open for inbound TCP connections
+                - Static IP or stable hostname
+            '';
+            example = "seed.example.com:8776";
           };
 
           seedingPolicy = mkOption {
@@ -91,6 +128,28 @@ in
             default = [ ];
             description = "Users who can access the radicle node via rad commands";
             example = [ "alice" "bob" ];
+          };
+
+          # HTTPS support via Caddy reverse proxy (recommended in official guide)
+          enableHTTPS = mkOption {
+            type = bool;
+            default = false;
+            description = ''
+              Enable HTTPS for the Radicle web interface via Caddy reverse proxy.
+              This will automatically obtain Let's Encrypt certificates.
+
+              Requires:
+                - Valid domain name pointing to this server
+                - Port 443 open for HTTPS
+                - Port 80 open for ACME challenges
+            '';
+          };
+
+          httpsHostname = mkOption {
+            type = nullOr str;
+            default = null;
+            description = "Domain name for HTTPS access (e.g., seed.example.com)";
+            example = "seed.example.com";
           };
 
         };
@@ -142,7 +201,7 @@ in
               };
 
               # Extract our custom options
-              inherit (localSettings) externalAddress seedingPolicy initialRepositories allowedUsers;
+              inherit (localSettings) externalAddress seedingPolicy initialRepositories allowedUsers enableHTTPS httpsHostname;
 
               # Everything else goes to services.radicle
               radicleConfig = lib.removeAttrs localSettings [
@@ -150,6 +209,8 @@ in
                 "seedingPolicy"
                 "initialRepositories"
                 "allowedUsers"
+                "enableHTTPS"
+                "httpsHostname"
               ];
             in
             {
@@ -165,6 +226,12 @@ in
                     externalAddresses = mkIf (externalAddress != null) [ externalAddress ];
                   };
                 };
+              };
+
+              # Security hardening: disable shell access for radicle user as per official guide
+              # https://radicle.xyz/guides/seeder recommends no shell for service isolation
+              users.users.radicle = {
+                shell = mkDefault "${pkgs.shadow}/bin/nologin";
               };
 
               # Service to initialize radicle identity if not exists
@@ -286,6 +353,24 @@ in
 
                   ReadWritePaths = mkDefault [ "/var/lib/radicle" ];
                 };
+              };
+
+              # Configure Caddy reverse proxy for HTTPS if enabled (as per official guide)
+              services.caddy = mkIf (enableHTTPS && httpsHostname != null) {
+                enable = true;
+                virtualHosts."${httpsHostname}".extraConfig = ''
+                  reverse_proxy http://127.0.0.1:${toString (radicleConfig.httpd.listenPort or 8777)} {
+                    header_up Host {host}
+                    header_up X-Real-IP {remote}
+                    header_up X-Forwarded-For {remote}
+                    header_up X-Forwarded-Proto {scheme}
+                  }
+                '';
+              };
+
+              # Open firewall for HTTPS/HTTP if Caddy is enabled
+              networking.firewall = mkIf (enableHTTPS && httpsHostname != null) {
+                allowedTCPPorts = [ 80 443 ];
               };
 
               # Service to clone initial repositories with improved retry logic
@@ -495,6 +580,12 @@ in
                     seedingPolicy = mkDefault (mkSeedingPolicy seedingPolicy);
                   };
                 };
+              };
+
+              # Security hardening: disable shell access for radicle user as per official guide
+              # https://radicle.xyz/guides/seeder recommends no shell for service isolation
+              users.users.radicle = {
+                shell = mkDefault "${pkgs.shadow}/bin/nologin";
               };
 
               # Service to initialize radicle identity if not exists

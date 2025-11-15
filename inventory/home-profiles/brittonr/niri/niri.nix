@@ -294,7 +294,7 @@ let
                               focus-ring {
                                   active-color "${theme.accent}"
                                   inactive-color "${theme.border}"
-                                  width 2
+                                  width 1
                               }
 
                               border {
@@ -353,14 +353,8 @@ let
 
           window-rule {
               match app-id=r#"kitty$"# title="^yazi$"
-
-              open-floating true
           }
-          window-rule {
-              match app-id=r#"kitty$"# title="^float$"
 
-              open-floating true
-          }
           // Indicate screencasted windows with red colors.
           window-rule {
               match is-window-cast-target=true

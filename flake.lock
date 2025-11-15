@@ -864,6 +864,7 @@
         "nixpkgs": "nixpkgs_5",
         "nixvim": "nixvim_2",
         "pre-commit-hooks-nix": "pre-commit-hooks-nix",
+        "snix": "snix",
         "treefmt-nix": "treefmt-nix_4",
         "wrappers": "wrappers",
         "wrappers-niri": "wrappers-niri",
@@ -886,6 +887,22 @@
         "owner": "oxalica",
         "repo": "rust-overlay",
         "type": "github"
+      }
+    },
+    "snix": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1762132265,
+        "narHash": "sha256-Y/nbqO7LbQA83K/FD093D6MdVuAk/9JqiccPImNWumw=",
+        "ref": "refs/heads/canon",
+        "rev": "6b08b3382f68417111a15721be2c79e75b0d0c23",
+        "revCount": 21981,
+        "type": "git",
+        "url": "https://git.snix.dev/snix/snix"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://git.snix.dev/snix/snix"
       }
     },
     "sops-nix": {
