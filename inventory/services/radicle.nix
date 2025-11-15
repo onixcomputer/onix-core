@@ -58,6 +58,9 @@ _: {
       roles.node = {
         tags."radicle-node" = { };
         settings = {
+          # Allow brittonr user to access radicle
+          allowedUsers = [ "brittonr" ];
+
           # Selective seeding - only replicate repos you explicitly choose
           seedingPolicy = "selective";
 

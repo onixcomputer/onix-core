@@ -85,6 +85,14 @@ in
             ];
           };
 
+          # Users who can access the radicle node
+          allowedUsers = mkOption {
+            type = listOf str;
+            default = [ ];
+            description = "Users who can access the radicle node via rad commands";
+            example = [ "alice" "bob" ];
+          };
+
         };
       };
 
@@ -134,13 +142,14 @@ in
               };
 
               # Extract our custom options
-              inherit (localSettings) externalAddress seedingPolicy initialRepositories;
+              inherit (localSettings) externalAddress seedingPolicy initialRepositories allowedUsers;
 
               # Everything else goes to services.radicle
               radicleConfig = lib.removeAttrs localSettings [
                 "externalAddress"
                 "seedingPolicy"
                 "initialRepositories"
+                "allowedUsers"
               ];
             in
             {
@@ -158,11 +167,47 @@ in
                 };
               };
 
+              # Service to initialize radicle identity if not exists
+              systemd.services.radicle-init-identity = {
+                description = "Initialize Radicle identity";
+                wantedBy = [ "radicle-node.service" ];
+                before = [ "radicle-node.service" ];
+
+                serviceConfig = {
+                  Type = "oneshot";
+                  RemainAfterExit = true;
+                  User = "radicle";
+                  Group = "radicle";
+                  WorkingDirectory = "/var/lib/radicle";
+                };
+
+                script = ''
+                  # Check if radicle profile already exists
+                  if [ ! -f /var/lib/radicle/.radicle/keys/radicle.pub ]; then
+                    echo "Initializing Radicle identity for ${config.networking.hostName}..."
+                    # Use non-interactive auth with alias
+                    ${config.services.radicle.package}/bin/rad auth --alias "${config.networking.hostName}-${instanceName}" || true
+                    echo "Radicle identity initialized with DID: $(${config.services.radicle.package}/bin/rad self --nid || echo 'unknown')"
+                  else
+                    echo "Radicle identity already exists: $(${config.services.radicle.package}/bin/rad self --nid || echo 'unknown')"
+                  fi
+                '';
+
+                path = [ config.services.radicle.package ];
+              };
+
               # Ensure radicle-node service starts on boot with hardening
               systemd.services.radicle-node = {
                 wantedBy = mkDefault [ "multi-user.target" ];
-                after = mkDefault [ "network-online.target" ];
-                wants = mkDefault [ "network-online.target" ];
+                after = mkDefault [
+                  "network-online.target"
+                  "radicle-init-identity.service"
+                ];
+                wants = mkDefault [
+                  "network-online.target"
+                  "radicle-init-identity.service"
+                ];
+                requires = [ "radicle-init-identity.service" ];
 
                 serviceConfig = {
                   # Restart policy for reliability
@@ -182,8 +227,41 @@ in
 
                   # Allow radicle to write to its state directory
                   ReadWritePaths = mkDefault [ "/var/lib/radicle" ];
+
+                  # Ensure control socket is accessible to users
+                  UMask = "0002"; # Allow group read/write
                 };
+
+                # Set permissions on control socket after starting
+                postStart = ''
+                  # Wait for socket to be created
+                  for i in {1..10}; do
+                    if [ -S /var/lib/radicle/node/control.sock ]; then
+                      chmod 660 /var/lib/radicle/node/control.sock || true
+                      break
+                    fi
+                    sleep 1
+                  done
+                '';
               };
+
+              # Set up environment for users to connect to system radicle node
+              environment.systemPackages = [ config.services.radicle.package ];
+
+              # Allow users to connect to the system radicle node
+              users.groups.radicle.members = allowedUsers;
+
+              # Configure rad to use system socket for all users
+              environment.variables = {
+                RAD_SOCKET = "/var/lib/radicle/node/control.sock";
+              };
+
+              # Create wrapper script for rad commands to use system node
+              environment.etc."profile.d/radicle.sh".text = ''
+                # Point rad commands to system radicle node
+                export RAD_SOCKET="/var/lib/radicle/node/control.sock"
+                export RAD_HOME="/var/lib/radicle"
+              '';
 
               # Harden httpd service if enabled
               systemd.services.radicle-httpd = {
@@ -339,6 +417,14 @@ in
             description = "Enable Radicle HTTP gateway";
           };
 
+          # Users who can access the radicle node
+          allowedUsers = mkOption {
+            type = listOf str;
+            default = [ ];
+            description = "Users who can access the radicle node via rad commands";
+            example = [ "alice" "bob" ];
+          };
+
         };
       };
 
@@ -388,12 +474,13 @@ in
               };
 
               # Extract our custom options
-              inherit (localSettings) seedingPolicy;
+              inherit (localSettings) seedingPolicy allowedUsers;
 
               # Everything else goes to services.radicle
               radicleConfig = lib.removeAttrs localSettings [
                 "seedingPolicy"
                 "enableHttpd"
+                "allowedUsers"
               ];
             in
             {
@@ -410,11 +497,47 @@ in
                 };
               };
 
+              # Service to initialize radicle identity if not exists
+              systemd.services.radicle-init-identity = {
+                description = "Initialize Radicle identity";
+                wantedBy = [ "radicle-node.service" ];
+                before = [ "radicle-node.service" ];
+
+                serviceConfig = {
+                  Type = "oneshot";
+                  RemainAfterExit = true;
+                  User = "radicle";
+                  Group = "radicle";
+                  WorkingDirectory = "/var/lib/radicle";
+                };
+
+                script = ''
+                  # Check if radicle profile already exists
+                  if [ ! -f /var/lib/radicle/.radicle/keys/radicle.pub ]; then
+                    echo "Initializing Radicle identity for ${config.networking.hostName}..."
+                    # Use non-interactive auth with alias
+                    ${config.services.radicle.package}/bin/rad auth --alias "${config.networking.hostName}-${instanceName}" || true
+                    echo "Radicle identity initialized with DID: $(${config.services.radicle.package}/bin/rad self --nid || echo 'unknown')"
+                  else
+                    echo "Radicle identity already exists: $(${config.services.radicle.package}/bin/rad self --nid || echo 'unknown')"
+                  fi
+                '';
+
+                path = [ config.services.radicle.package ];
+              };
+
               # Ensure radicle-node service starts on boot with hardening
               systemd.services.radicle-node = {
                 wantedBy = mkDefault [ "multi-user.target" ];
-                after = mkDefault [ "network-online.target" ];
-                wants = mkDefault [ "network-online.target" ];
+                after = mkDefault [
+                  "network-online.target"
+                  "radicle-init-identity.service"
+                ];
+                wants = mkDefault [
+                  "network-online.target"
+                  "radicle-init-identity.service"
+                ];
+                requires = [ "radicle-init-identity.service" ];
 
                 serviceConfig = {
                   # Restart policy for reliability
@@ -434,8 +557,41 @@ in
 
                   # Allow radicle to write to its state directory
                   ReadWritePaths = mkDefault [ "/var/lib/radicle" ];
+
+                  # Ensure control socket is accessible to users
+                  UMask = "0002"; # Allow group read/write
                 };
+
+                # Set permissions on control socket after starting
+                postStart = ''
+                  # Wait for socket to be created
+                  for i in {1..10}; do
+                    if [ -S /var/lib/radicle/node/control.sock ]; then
+                      chmod 660 /var/lib/radicle/node/control.sock || true
+                      break
+                    fi
+                    sleep 1
+                  done
+                '';
               };
+
+              # Set up environment for users to connect to system radicle node
+              environment.systemPackages = [ config.services.radicle.package ];
+
+              # Allow users to connect to the system radicle node
+              users.groups.radicle.members = allowedUsers;
+
+              # Configure rad to use system socket for all users
+              environment.variables = {
+                RAD_SOCKET = "/var/lib/radicle/node/control.sock";
+              };
+
+              # Create wrapper script for rad commands to use system node
+              environment.etc."profile.d/radicle.sh".text = ''
+                # Point rad commands to system radicle node
+                export RAD_SOCKET="/var/lib/radicle/node/control.sock"
+                export RAD_HOME="/var/lib/radicle"
+              '';
 
               # Harden httpd service if enabled
               systemd.services.radicle-httpd = {
