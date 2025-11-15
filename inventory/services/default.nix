@@ -22,6 +22,7 @@ let
     # keycloak = import ./keycloak.nix { inherit inputs; };
     garage = import ./garage.nix { inherit inputs; };
     #buildbot = import ./buildbot.nix { inherit inputs; };
+    radicle = import ./radicle.nix { inherit inputs; };
   };
 in
 lib.foldr lib.recursiveUpdate { } (lib.attrValues services)

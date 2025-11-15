@@ -15,7 +15,7 @@ _: {
     ../../alex/hyprland/screenshot.nix
     ../../alex/hyprland/swayosd.nix
     ../../alex/hyprland/wallpaper.nix
-    ../../alex/hyprland/xdg.nix
+    # ../../alex/hyprland/xdg.nix # Commented out - using brittonr's own xdg.nix from dev profile
 
     # Applications
     ../../alex/hyprland/firefox.nix

@@ -112,6 +112,7 @@ _: {
         "llm-client"
         "cross-compile"
         "creative"
+        "radicle-node"
       ];
       deploy = {
         targetHost = "root@localhost";
@@ -157,6 +158,7 @@ _: {
         "password-manager"
         "cross-compile"
         "udev-rules"
+        "radicle-seed"
       ];
       deploy = {
         targetHost = "root@127.0.0.1";

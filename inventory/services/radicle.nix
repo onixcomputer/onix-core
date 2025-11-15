@@ -58,8 +58,6 @@ _: {
       roles.node = {
         tags."radicle-node" = { };
         settings = {
-          # Temporarily disable config checking
-          checkConfig = false;
           # Selective seeding - only replicate repos you explicitly choose
           seedingPolicy = "selective";
 
@@ -79,13 +77,17 @@ _: {
             listenPort = 8777;
           };
 
-          # Connect to your seed node via settings
+          # Connect to seed nodes
           settings = {
             node = {
               connect = [
-                # Format: <node-id>@<address>
-                # Node ID from britton-desktop's API response
-                "z6MksdZNFdg8gpSk6ze3zACHQHvtuN69Pfi7hLMkjQwvEEsp@britton-desktop:8776"
+                # Connect to britton-desktop seed node (update node-id after deployment)
+                # Get the node ID by running: rad self --nid
+                # "z6Mk...@britton-desktop:8776"
+
+                # Optionally connect to public seeds for discovery
+                # "seed.radicle.xyz:8776"
+                # "seed.radicle.garden:8776"
               ];
             };
           };
