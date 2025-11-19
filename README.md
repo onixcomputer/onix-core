@@ -1,3 +1,5 @@
+🚧🚧🚧 Under construction! Not for use *yet*™ 🚧🚧🚧
+
 # Onix Infrastructure
 
 A declarative NixOS infrastructure repository powered by [clan-core](https://clan.lol), implementing advanced user and machine management with integrated home configurations.
