@@ -4,6 +4,9 @@
   nixpkgs.config.allowUnfree = true;
   clan.core.settings.state-version.enable = true;
 
+  # Enable SSH agent forwarding on the server side
+  services.openssh.settings.AllowAgentForwarding = true;
+
   environment.systemPackages = with pkgs; [
     kitty.terminfo
     btop

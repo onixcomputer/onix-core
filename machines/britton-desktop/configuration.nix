@@ -96,16 +96,25 @@ in
       alsa.support32Bit = true;
       pulse.enable = true;
     };
-
     greetd = {
       enable = true;
       settings = {
         default_session = {
-          command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd Hyprland";
+          command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd /etc/profiles/per-user/brittonr/bin/niri-session";
           user = "greeter";
         };
       };
     };
+
+    # greetd = {
+    #   enable = true;
+    #   settings = {
+    #     default_session = {
+    #       command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd Hyprland";
+    #       user = "greeter";
+    #     };
+    #   };
+    # };
 
   };
 

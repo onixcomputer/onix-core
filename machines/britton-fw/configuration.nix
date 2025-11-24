@@ -20,8 +20,7 @@ in
     hostName = "britton-fw";
   };
 
-  #time.timeZone = "America/New_York";
-  time.timeZone = "Asia/Bangkok";
+  time.timeZone = "America/New_York";
 
   environment.systemPackages = with pkgs; [
     imagemagick # required for grub2-theme
@@ -132,6 +131,15 @@ in
   services = {
     gnome.gnome-keyring.enable = true;
 
+    pulseaudio.enable = false;
+
+    pipewire = {
+      enable = true;
+      alsa.enable = true;
+      alsa.support32Bit = true;
+      pulse.enable = true;
+    };
+
     fprintd.enable = true;
 
     # Keyd for dual-function keys (Caps Lock = Esc on tap, Ctrl on hold)
@@ -167,11 +175,14 @@ in
     extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
   };
 
-  security.pam.services = {
-    login.enableGnomeKeyring = true;
-    greetd.enableGnomeKeyring = true;
-    sudo.fprintAuth = false;
-    hyprlock = { };
+  security = {
+    rtkit.enable = true;
+    pam.services = {
+      login.enableGnomeKeyring = true;
+      greetd.enableGnomeKeyring = true;
+      sudo.fprintAuth = true;
+      hyprlock = { };
+    };
   };
 
 }

@@ -13,6 +13,7 @@ _: {
       "*" = {
         addKeysToAgent = "yes";
         compression = true;
+        forwardAgent = true;
         # controlMaster = "auto";
         # controlPath = "~/.ssh/control-%r@%h:%p";
         # controlPersist = "10m";

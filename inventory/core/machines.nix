@@ -4,6 +4,7 @@ _: {
     alex-fw = {
       name = "alex-fw";
       tags = [
+        "all"
         "tailnet-adeci"
         "password-manager"
         "laptop"
@@ -19,6 +20,7 @@ _: {
     leviathan = {
       name = "leviathan";
       tags = [
+        "all"
         "tailnet-adeci"
         "dev"
         "pragmatic"
@@ -32,6 +34,7 @@ _: {
     claudia = {
       name = "claudia";
       tags = [
+        "all"
         "tailnet-adeci"
       ];
       deploy = {
@@ -43,6 +46,7 @@ _: {
     sequoia = {
       name = "sequoia";
       tags = [
+        "all"
         "dev"
         "tailnet-adeci"
         "docker"
@@ -57,6 +61,7 @@ _: {
     marine = {
       name = "marine";
       tags = [
+        "all"
         "tailnet-adeci"
         "dev"
       ];
@@ -69,6 +74,7 @@ _: {
     bambrew = {
       name = "bambrew";
       tags = [
+        "all"
         "tailnet-adeci"
         "dev"
       ];
@@ -81,6 +87,7 @@ _: {
     alex-wsl = {
       name = "alex-wsl";
       tags = [
+        "all"
         "tailnet-adeci"
         "wsl"
         "dev"
@@ -95,6 +102,7 @@ _: {
     britton-fw = {
       name = "britton-fw";
       tags = [
+        "all"
         "dev"
         "laptop"
         "hyprland"
@@ -112,10 +120,39 @@ _: {
         "llm-client"
         "cross-compile"
         "creative"
-        "radicle-node"
+        "docker"
+        # "radicle-node"
       ];
       deploy = {
-        targetHost = "root@localhost";
+        targetHost = "root@127.0.0.1";
+        buildHost = "";
+      };
+    };
+    britton-gpd = {
+      name = "britton-gpd";
+      tags = [
+        "all"
+        "dev"
+        "laptop"
+        "hyprland"
+        "prometheus"
+        "monitoring"
+        "homepage-server"
+        # "static-test"
+        # "static-demo"
+        # "seaweedfs-master"
+        # "traefik-blr"
+        "tailnet-brittonr"
+        "openpgp"
+        "password-manager"
+        "typst"
+        "llm-client"
+        "cross-compile"
+        "creative"
+        # "radicle-node"
+      ];
+      deploy = {
+        targetHost = "root@192.168.1.73";
         buildHost = "";
       };
     };
@@ -123,6 +160,8 @@ _: {
     aspen1 = {
       name = "aspen1";
       tags = [
+        "all"
+        "docker"
         "tailnet-brittonr"
         "dev"
         "prometheus"
@@ -140,6 +179,7 @@ _: {
     britton-desktop = {
       name = "britton-desktop";
       tags = [
+        "all"
         "dev"
         "desktop"
         "nvidia"
@@ -156,12 +196,12 @@ _: {
         "docker"
         "llm-client"
         "password-manager"
-        "cross-compile"
+        # "cross-compile"
         "udev-rules"
-        "radicle-seed"
+        # "radicle-seed"
       ];
       deploy = {
-        targetHost = "root@127.0.0.1";
+        targetHost = "root@britton-desktop";
         buildHost = "";
       };
     };
@@ -169,6 +209,7 @@ _: {
     gmk1 = {
       name = "gmk1";
       tags = [
+        "all"
         "nv"
         "tailnet-brittonr"
         "prometheus"
@@ -183,6 +224,7 @@ _: {
     gmk2 = {
       name = "gmk2";
       tags = [
+        "all"
         "nv"
         "tailnet-brittonr"
         "prometheus"
@@ -197,6 +239,7 @@ _: {
     gmk3 = {
       name = "gmk3";
       tags = [
+        "all"
         "nv"
         "tailnet-brittonr"
         "prometheus"
@@ -212,6 +255,7 @@ _: {
     zenith = {
       name = "zenith";
       tags = [
+        "all"
         "dev"
         "tailnet-dima"
         "laptop"

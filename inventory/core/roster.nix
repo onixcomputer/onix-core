@@ -272,6 +272,32 @@ let
         ];
       };
     };
+    britton-gpd = {
+      users = {
+        brittonr = {
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+              # "hyprland"
+              # "hypr-laptop"
+              "niri"
+              "social"
+            ];
+          };
+        };
+      };
+      homeManagerOptions = {
+        sharedModules = [
+          {
+            # wayland.windowManager.hyprland.settings.monitor = [
+            #   "eDP-1,2880x1920@120,auto,1"
+            # ];
+          }
+        ];
+      };
+    };
 
     aspen1 = {
       users = {
@@ -304,7 +330,8 @@ let
             profiles = [
               "base"
               "dev"
-              "hyprland"
+              # "hyprland"
+              "niri"
               "creative"
               "social"
               "embedded"

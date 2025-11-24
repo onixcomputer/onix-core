@@ -274,8 +274,9 @@ let
                           }
 
                           output "eDP-1" {
-                              mode "2880x1920@120"
+                              mode "2560x1600@144"
                               scale 2.0
+                              variable-refresh-rate
                           }
                           
 
@@ -315,6 +316,7 @@ let
                           spawn-at-startup "vesktop" "--enable-features=UseOzonePlatform" "--ozone-platform=wayland" "--enable-wayland-ime" "--disable-gpu-sandbox"
                           spawn-at-startup "element-desktop"
                           spawn-at-startup "kitty" "--title" "btop" "-e" "btop"
+                          spawn-at-startup "kitty" "--title" "journalctl" "-e" "journalctl -f"
                           window-rule {
               match app-id=r#"firefox$"#
 
@@ -346,6 +348,12 @@ let
 
           window-rule {
               match app-id=r#"kitty$"# title="^btop$"
+
+              open-on-workspace "status"
+              open-maximized true
+          }
+          window-rule {
+              match app-id=r#"kitty$"# title="^journalctl$"
 
               open-on-workspace "status"
               open-maximized true
@@ -423,10 +431,10 @@ let
                               Alt+J { focus-window-down; }
 
                               // Arrow keys for moving windows
-                              Mod+Shift+Left { move-column-left; }
-                              Mod+Shift+Right { move-column-right; }
-                              Mod+Shift+Up { move-window-up; }
-                              Mod+Shift+Down { move-window-down; }
+                              Mod+Control+Left { move-column-left; }
+                              Mod+Control+Right { move-column-right; }
+                              Mod+Control+Up { move-window-up; }
+                              Mod+Control+Down { move-window-down; }
 
                               // Column operations - consume/expel windows
                               Mod+BracketLeft { consume-window-into-column; }
@@ -516,6 +524,8 @@ in
     pkgs.blueman
     # File manager for portal file chooser (can be removed if using GTK portal)
     pkgs.nautilus
+    # Auto-rotation daemon for tablet/convertible devices
+    pkgs.rot8
   ];
 
   # Override the niri systemd service to use the wrapped binary
@@ -574,6 +584,39 @@ in
     "org/gnome/desktop/interface" = {
       color-scheme = lib.mkDefault "prefer-dark";
     };
+  };
+
+  # Configure rot8 for automatic screen rotation
+  # Create rotation hook script for rot8
+  # GPD Pocket 4 rotations mapped to match device orientation (270° default)
+  home.file.".local/bin/rot8-niri-hook" = {
+    text = ''
+      #!/bin/sh
+      # Log to file for debugging
+      LOG="$HOME/.local/share/rot8-debug.log"
+      mkdir -p "$(dirname "$LOG")"
+      echo "$(date '+%Y-%m-%d %H:%M:%S') - Orientation: $ORIENTATION (prev: $PREV_ORIENTATION)" >> "$LOG"
+
+      case "$ORIENTATION" in
+        "normal")
+          echo "  -> Applying transform 270" >> "$LOG"
+          ${wrappedNiri}/bin/niri msg output eDP-1 transform 270
+          ;;
+        "90")
+          echo "  -> Applying transform 180" >> "$LOG"
+          ${wrappedNiri}/bin/niri msg output eDP-1 transform normal
+          ;;
+        "inverted")
+          echo "  -> Applying transform 90" >> "$LOG"
+          ${wrappedNiri}/bin/niri msg output eDP-1 transform 90
+          ;;
+        "270")
+          echo "  -> Applying transform normal" >> "$LOG"
+          ${wrappedNiri}/bin/niri msg output eDP-1 transform 180
+          ;;
+      esac
+    '';
+    executable = true;
   };
 
   # Automatically reload niri when configuration changes
