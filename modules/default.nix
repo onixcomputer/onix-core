@@ -19,6 +19,8 @@ let
     "gitlab-runner" = import ./gitlab-runner;
     "llm" = import ./llm;
     "radicle" = import ./radicle;
+    "radicle-nix-adapter" = import ./radicle-nix-adapter;
+    "upmpdcli" = import ./upmpdcli;
   };
 
 in

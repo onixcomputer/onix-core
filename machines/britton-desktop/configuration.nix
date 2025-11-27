@@ -1,6 +1,7 @@
 {
   inputs,
   pkgs,
+  config,
   ...
 }:
 let
@@ -29,34 +30,43 @@ in
   environment.systemPackages = with pkgs; [
     imagemagick # required for grub2-theme
     os-prober
+    nirius # niri compositor utilities
+    displaylink # DisplayLink for Wayland
   ];
 
-  boot.loader = {
-    timeout = 1;
-    grub = {
-      timeoutStyle = "menu";
-      enable = true;
-      device = "nodev";
-      efiSupport = true;
-      useOSProber = true;
-      extraConfig = ''
-        GRUB_DISABLE_OS_PROBER=false
-      '';
-      extraEntries = ''
-        menuentry "Reboot" {
-          reboot
-        }
-      '';
-      # extraEntries = ''
-      #   menuentry "Windows (Manual)" {
-      #     insmod part_gpt
-      #     insmod ntfs
-      #     insmod search_fs_uuid
-      #     insmod chain
-      #     search --fs-uuid --set=root 12EA42E8EA42C825
-      #     chainloader +1
-      #   }
-      # '';
+  boot = {
+    # DisplayLink support for Wayland (evdi module)
+    extraModulePackages = [ config.boot.kernelPackages.evdi ];
+    kernelModules = [ "evdi" ];
+
+    loader = {
+      timeout = 1;
+      grub = {
+        timeoutStyle = "menu";
+        enable = true;
+        device = "nodev";
+        efiSupport = true;
+        useOSProber = true;
+        configurationLimit = 5; # Limit boot entries to reduce /boot usage
+        extraConfig = ''
+          GRUB_DISABLE_OS_PROBER=false
+        '';
+        extraEntries = ''
+          menuentry "Reboot" {
+            reboot
+          }
+        '';
+        # extraEntries = ''
+        #   menuentry "Windows (Manual)" {
+        #     insmod part_gpt
+        #     insmod ntfs
+        #     insmod search_fs_uuid
+        #     insmod chain
+        #     search --fs-uuid --set=root 12EA42E8EA42C825
+        #     chainloader +1
+        #   }
+        # '';
+      };
     };
     grub2-theme = {
       enable = true;
@@ -116,6 +126,19 @@ in
     #   };
     # };
 
+  };
+
+  # DisplayLink Manager service
+  systemd.services.dlm = {
+    description = "DisplayLink Manager Service";
+    after = [ "display-manager.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      ExecStart = "${pkgs.displaylink}/bin/DisplayLinkManager";
+      Restart = "always";
+      RestartSec = 5;
+      LogsDirectory = "displaylink";
+    };
   };
 
   security = {

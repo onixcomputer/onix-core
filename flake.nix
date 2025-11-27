@@ -57,6 +57,14 @@
       url = "github:nix-community/nixvim";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    upmpdcli = {
+      url = "path:/home/brittonr/git/upmpdcli";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    radicle-nix-adapter = {
+      url = "git+https://radicle.defelo.de/zhSTd5vZ9K8aqtLecgSU5zDAZaS8.git";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =

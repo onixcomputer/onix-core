@@ -350,6 +350,24 @@
         "type": "github"
       }
     },
+    "flake-utils_5": {
+      "inputs": {
+        "systems": "systems_8"
+      },
+      "locked": {
+        "lastModified": 1731533236,
+        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
     "gitignore": {
       "inputs": {
         "nixpkgs": [
@@ -829,6 +847,26 @@
         "type": "github"
       }
     },
+    "radicle-nix-adapter": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1762354059,
+        "narHash": "sha256-OZVs3e689E9m3ex9hk8/xgOnzg7mNZinXS0vc2oFdF4=",
+        "ref": "refs/heads/develop",
+        "rev": "6762c791aa724df55da2340b1c16afbd0aff7fbe",
+        "revCount": 21,
+        "type": "git",
+        "url": "https://radicle.defelo.de/zhSTd5vZ9K8aqtLecgSU5zDAZaS8.git"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://radicle.defelo.de/zhSTd5vZ9K8aqtLecgSU5zDAZaS8.git"
+      }
+    },
     "root": {
       "inputs": {
         "adeci-nixvim": "adeci-nixvim",
@@ -844,7 +882,9 @@
         "nixpkgs": "nixpkgs_5",
         "nixvim": "nixvim_2",
         "pre-commit-hooks-nix": "pre-commit-hooks-nix",
+        "radicle-nix-adapter": "radicle-nix-adapter",
         "treefmt-nix": "treefmt-nix_4",
+        "upmpdcli": "upmpdcli",
         "wrappers": "wrappers",
         "wrappers-niri": "wrappers-niri",
         "wrappers-waybar": "wrappers-waybar"
@@ -994,6 +1034,21 @@
         "type": "github"
       }
     },
+    "systems_8": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    },
     "treefmt-nix": {
       "inputs": {
         "nixpkgs": "nixpkgs"
@@ -1072,6 +1127,24 @@
         "owner": "numtide",
         "repo": "treefmt-nix",
         "type": "github"
+      }
+    },
+    "upmpdcli": {
+      "inputs": {
+        "flake-utils": "flake-utils_5",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1764106549,
+        "narHash": "sha256-+DPFAr8OPx4HPT8JbmrS08oz74FK4hUWpRLl54K0jMU=",
+        "path": "/home/brittonr/git/upmpdcli",
+        "type": "path"
+      },
+      "original": {
+        "path": "/home/brittonr/git/upmpdcli",
+        "type": "path"
       }
     },
     "wrappers": {
