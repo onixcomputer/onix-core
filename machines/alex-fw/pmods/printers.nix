@@ -5,7 +5,7 @@ _: {
         name = "XeroxWorkCentre";
         location = "Office";
         description = "Xerox WorkCentre 6605DN";
-        deviceUri = "ipp://xerox-printer.local:631/ipp/print"; # Use mDNS hostname instead of hardcoded IP
+        deviceUri = "ipp://192.168.50.5:631/ipp/print";
         model = "everywhere";
       }
     ];

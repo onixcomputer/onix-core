@@ -1,20 +1,18 @@
 {
-  inputs,
   pkgs,
-  config,
   ...
 }:
-let
-  grubWallpaper = pkgs.fetchurl {
-    name = "nixos-grub-wallpaper.jpg";
-    url = "https://raw.githubusercontent.com/adeci/wallpapers/main/nix-grub-3840x2160.png";
-    sha256 = "sha256-d+sXYC74KL90wh06bLYTgebF6Ai7ac6Qsd+6qj57yyE=";
-  };
-in
+# let
+# grubWallpaper = pkgs.fetchurl {
+#   name = "nixos-grub-wallpaper.jpg";
+#   url = "https://raw.githubusercontent.com/adeci/wallpapers/main/nix-grub-3840x2160.png";
+#   sha256 = "sha256-d+sXYC74KL90wh06bLYTgebF6Ai7ac6Qsd+6qj57yyE=";
+#   };
+# in
 {
-  imports = [
-    inputs.grub2-themes.nixosModules.default
-  ];
+  # imports = [
+  #   inputs.grub2-themes.nixosModules.default
+  # ];
 
   networking = {
     hostName = "britton-desktop";
@@ -68,13 +66,13 @@ in
         # '';
       };
     };
-    grub2-theme = {
-      enable = true;
-      theme = "stylish";
-      footer = true;
-      customResolution = "3840x2160";
-      splashImage = grubWallpaper;
-    };
+    # grub2-theme = {
+    #   enable = true;
+    #   theme = "stylish";
+    #   footer = true;
+    #   customResolution = "3840x2160";
+    #   splashImage = grubWallpaper;
+    # };
   };
 
   services = {

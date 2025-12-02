@@ -36,6 +36,16 @@
     interactiveShellInit = ''
       set fish_greeting # Disable greeting
 
+      # Custom prompt to show ZMX_SESSION if set
+      functions -c fish_prompt _original_fish_prompt 2>/dev/null
+
+      function fish_prompt --description 'Write out the prompt'
+        if set -q ZMX_SESSION
+          echo -n "[$ZMX_SESSION] "
+        end
+        _original_fish_prompt
+      end
+
       # Manual zellij attach function
       function zj
         # Check if already in zellij
@@ -192,6 +202,7 @@
 
   # Shell utilities used by aliases
   home.packages = with pkgs; [
+    autossh
     bat
     eza
     fzf

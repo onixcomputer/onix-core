@@ -420,6 +420,10 @@ let
                               Mod+K { focus-workspace-up; }
                               Mod+J { focus-workspace-down; }
 
+                              // Scroll wheel for workspace switching
+                              Mod+WheelScrollUp { focus-workspace-up; }
+                              Mod+WheelScrollDown { focus-workspace-down; }
+
                               // Arrow keys for compatibility
                               Mod+Left { focus-column-left; }
                               Mod+Right { focus-column-right; }
