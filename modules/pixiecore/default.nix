@@ -79,6 +79,20 @@ in
             description = "SSH authorized keys to embed in netboot image";
           };
 
+          harmoniaCache = mkOption {
+            type = str;
+            default = "";
+            description = "URL of Harmonia binary cache server (e.g., http://harmonia.example.com:5000)";
+            example = "http://192.168.8.227:5000";
+          };
+
+          fallbackServerIp = mkOption {
+            type = str;
+            default = "";
+            description = "Fallback server IP for netboot when Host header is unavailable (leave empty to use Host header only)";
+            example = "192.168.1.140";
+          };
+
           kexecEnabled = mkOption {
             type = bool;
             default = true;
@@ -167,10 +181,12 @@ in
                               networking.firewall.enable = false;
                               nix = {
                                 settings = {
-                                  substituters = [
-                                    "http://192.168.8.227:5000"
-                                    "https://nix-community.cachix.org"
-                                    "https://cache.nixos.org/"
+                                  substituters = lib.mkMerge [
+                                    (lib.optionals (cfg.harmoniaCache != "") [ cfg.harmoniaCache ])
+                                    [
+                                      "https://nix-community.cachix.org"
+                                      "https://cache.nixos.org/"
+                                    ]
                                   ];
                                   trusted-public-keys = [
                                     "harmonia-britton-fw-1754726891:8p0Zry0lnJOoAmNyv3cVSBHENop6DCwm3ymUPf0a0BQ="
@@ -331,7 +347,8 @@ in
                                         server_ip = "${cfg.listenAddr}"
                                         if server_ip == "0.0.0.0":
                                             # Get the IP from the request
-                                            server_ip = self.headers.get('Host', '192.168.1.140').split(':')[0]
+                                            fallback = "${cfg.fallbackServerIp}" if "${cfg.fallbackServerIp}" else "localhost"
+                                            server_ip = self.headers.get('Host', fallback).split(':')[0]
                                         
                                         # Get kernel params from the built system (empty by default in netboot)
                                         kernel_params = []

@@ -47,7 +47,7 @@ in
       leviathan = {
         hostNames = [
           "leviathan.cymric-daggertooth.ts.net"
-          "192.168.50.189"
+          "leviathan" # Local hostname fallback
         ];
         publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOEtV2xoOv+N4c5sg5oBqM/Xy+aZHf+5GHOhzXKYduXG";
       };

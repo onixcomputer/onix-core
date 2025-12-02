@@ -486,15 +486,20 @@ in
                           ADMIN_EMAIL=$(cat ${adminEmailFile})
                           ADMIN_HASH=$(cat ${adminPasswordHashFile})
 
-                          ${pkgs.sudo}/bin/sudo -u postgres ${config.services.postgresql.package}/bin/psql -d ${dbName} <<EOF
-                          INSERT INTO users (id, email, name, "providerId", password, "isSystem", "isActive", "isVerified", "createdAt", "updatedAt") 
-                          VALUES (1, '\$ADMIN_EMAIL', 'Administrator', 'local', '\$ADMIN_HASH', false, true, true, NOW(), NOW())
-                          ON CONFLICT (id) DO UPDATE SET 
+                          # Use psql variables to prevent SQL injection
+                          ${pkgs.sudo}/bin/sudo -u postgres ${config.services.postgresql.package}/bin/psql \
+                            -d ${dbName} \
+                            -v admin_email="$ADMIN_EMAIL" \
+                            -v admin_hash="$ADMIN_HASH" \
+                            <<'EOF'
+                          INSERT INTO users (id, email, name, "providerId", password, "isSystem", "isActive", "isVerified", "createdAt", "updatedAt")
+                          VALUES (1, :'admin_email', 'Administrator', 'local', :'admin_hash', false, true, true, NOW(), NOW())
+                          ON CONFLICT (id) DO UPDATE SET
                             email = EXCLUDED.email,
                             password = EXCLUDED.password;
-                            
+
                           -- Add admin to administrators group
-                          INSERT INTO "userGroups" ("userId", "groupId") 
+                          INSERT INTO "userGroups" ("userId", "groupId")
                           VALUES (1, 1)
                           ON CONFLICT DO NOTHING;
                           EOF
@@ -626,8 +631,7 @@ in
                           cat > $HOME/.ssh/config <<EOF
                           Host *
                             IdentityFile $HOME/.ssh/wiki_deploy_key
-                            StrictHostKeyChecking no
-                            UserKnownHostsFile /dev/null
+                            StrictHostKeyChecking accept-new
                           EOF
                           chmod 600 $HOME/.ssh/config
                         ''}

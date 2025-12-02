@@ -152,7 +152,7 @@ _: {
         # "radicle-node"
       ];
       deploy = {
-        targetHost = "root@192.168.1.73";
+        targetHost = "root@britton-gpd"; # Use hostname instead of hardcoded IP
         buildHost = "";
       };
     };
@@ -195,6 +195,7 @@ _: {
         "seaweedfs-volume"
         "docker"
         "llm-client"
+        "llm"
         "password-manager"
         # "cross-compile"
         "udev-rules"
@@ -202,51 +203,6 @@ _: {
       ];
       deploy = {
         targetHost = "root@britton-desktop";
-        buildHost = "";
-      };
-    };
-
-    gmk1 = {
-      name = "gmk1";
-      tags = [
-        "all"
-        "nv"
-        "tailnet-brittonr"
-        "prometheus"
-        "blr-logs"
-      ];
-      deploy = {
-        targetHost = "root@192.168.8.201";
-        buildHost = "";
-      };
-    };
-
-    gmk2 = {
-      name = "gmk2";
-      tags = [
-        "all"
-        "nv"
-        "tailnet-brittonr"
-        "prometheus"
-        "blr-logs"
-      ];
-      deploy = {
-        targetHost = "root@192.168.8.121";
-        buildHost = "";
-      };
-    };
-
-    gmk3 = {
-      name = "gmk3";
-      tags = [
-        "all"
-        "nv"
-        "tailnet-brittonr"
-        "prometheus"
-        "blr-logs"
-      ];
-      deploy = {
-        targetHost = "root@192.168.8.167";
         buildHost = "";
       };
     };
