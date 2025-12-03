@@ -74,26 +74,8 @@ in
     validate = true;
   };
 
-  # Example 3: High-level service creation (RECOMMENDED APPROACH)
-  # This creates a complete NixOS configuration with systemd services, activation scripts, and helper scripts
-  completeService = opentofu.mkTerranixService {
-    serviceName = "example";
-    instanceName = "main";
-    terranixModule = exampleTerranixModule;
-    terranixModuleArgs = {
-      settings = {
-        message = "Complete service with terranix!";
-      };
-    };
-    credentialMapping = { };
-    backendType = "local";
-    generateHelperScripts = true;
-    terranixValidate = true;
-    terranixDebug = false;
-  };
-
-  # Example 4: Lower-level deployment service (for advanced users)
-  deploymentService = opentofu.mkTerranixInfrastructure {
+  # Example 3: Enhanced deployment service using terranix
+  deploymentService = opentofu.mkDeploymentService {
     serviceName = "example";
     instanceName = "main";
     terranixModule = exampleTerranixModule;
@@ -107,32 +89,27 @@ in
     terranixDebug = false;
   };
 
-  # Example 5: Quick deployment service (simplified wrapper)
-  quickService = opentofu.mkTerranixDeployment {
-    serviceName = "example";
-    instanceName = "quick";
-    terranixModule = exampleTerranixModule;
-    credentialMapping = { };
-    dependencies = [ ];
-  };
+  # Example 4: Validation utilities
+  # Note: These are commented out as they depend on functions that are temporarily disabled
+  # validation = opentofu.validateTerranixService {
+  #   serviceName = "example";
+  #   instanceName = "main";
+  #   terranixModule = exampleTerranixModule;
+  #   expectedBlocks = [ "terraform" "resource" "output" ];
+  # };
 
-  # Example 6: Testing utilities
-  testResults = opentofu.testTerranixModule {
-    module = exampleTerranixModule;
-    testCases = {
-      "basic" = { };
-      "with-settings" = {
-        settings = {
-          message = "Test message";
-        };
-      };
-    };
-    expectedBlocks = [
-      "terraform"
-      "resource"
-    ];
-  };
+  # Example 5: Testing utilities
+  # testResults = opentofu.testTerranixModule {
+  #   module = exampleTerranixModule;
+  #   testCases = {
+  #     "basic" = {};
+  #     "with-settings" = { settings = { message = "Test message"; }; };
+  #   };
+  #   expectedBlocks = [ "terraform" "resource" ];
+  # };
 
-  # Example 7: Introspection
-  introspection = opentofu.introspectTerranixModule { module = exampleTerranixModule; };
+  # Example 6: Introspection
+  # introspection = opentofu.introspectTerranixModule {
+  #   module = exampleTerranixModule;
+  # };
 }

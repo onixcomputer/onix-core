@@ -1,11 +1,5 @@
 { lib, ... }:
-let
-  # Import Keycloak variables configuration
-  keycloakVars = import ./keycloak-variables.nix { inherit lib; };
-in
 {
-  # Import Keycloak variables
-  inherit (keycloakVars) variable;
 
   terraform = {
     required_providers = {
@@ -17,10 +11,6 @@ in
         source = "registry.opentofu.org/hashicorp/http";
         version = "~> 3.0";
       };
-      keycloak = {
-        source = "registry.opentofu.org/mrparkers/keycloak";
-        version = "~> 4.0";
-      };
     };
     required_version = ">= 1.0.0";
   };
@@ -30,17 +20,6 @@ in
       region = "us-east-1";
     };
     http = { };
-    keycloak = {
-      # Use variables for flexible authentication
-      client_id = "\${var.keycloak_client_id}";
-      username = "\${var.keycloak_admin_username}";
-      password = "\${var.keycloak_admin_password}";
-      url = "\${var.keycloak_url}";
-      realm = "\${var.keycloak_realm}";
-      initial_login = "\${var.keycloak_initial_login}";
-      client_timeout = "\${var.keycloak_client_timeout}";
-      tls_insecure_skip_verify = "\${var.keycloak_tls_insecure_skip_verify}";
-    };
   };
 
   # Get current IP for security group rules
@@ -170,7 +149,7 @@ in
     };
   };
 
-  output = lib.recursiveUpdate keycloakVars.output {
+  output = {
     # AWS Infrastructure outputs
     claudia_ip = {
       value = "\${aws_eip.claudia_eip.public_ip}";

@@ -2,9 +2,9 @@
 _: {
   perSystem = _: {
     checks = {
-      # Complete VM integration test - End-to-end keycloak + terraform validation
+      # VM integration test disabled - complex external provider dependencies
       # opentofu-keycloak-vm-integration = import ./opentofu-keycloak-integration {
-      # inherit pkgs lib;
+      #   inherit pkgs lib;
       # };
     };
   };
