@@ -1,4 +1,5 @@
 {
+  config,
   pkgs,
   ...
 }:
@@ -13,6 +14,7 @@
   # imports = [
   #   inputs.grub2-themes.nixosModules.default
   # ];
+  # boot.kernelPackages = pkgs.linuxPackages_6_17;
 
   networking = {
     hostName = "britton-desktop";
