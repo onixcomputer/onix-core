@@ -7,9 +7,12 @@
     gh
     nixpkgs-review
     goose-cli
+    net-tools
     nix-output-monitor
+    nmap
     pamtester
     usbmuxd
+    usbutils
     radicle-node
   ];
 }

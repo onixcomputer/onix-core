@@ -102,33 +102,20 @@ in
                 ;
 
               # Remove our wrapper options for service-specific config
-              serviceConfig = builtins.removeAttrs settings [
-                "serviceType"
-                "port"
-                "host"
-                "models"
-                "model"
-                "enableGPU"
-              ];
 
               # Base configuration for all services
-              baseConfig = {
-                enable = true;
-                inherit port host;
-              };
 
               # Final configuration merging base + user config
-              finalConfig = baseConfig // serviceConfig;
 
             in
             {
               # Enable the specific LLM service
               services = lib.mkMerge [
-                (lib.mkIf (serviceType == "ollama") {
-                  ollama = finalConfig // {
-                    acceleration = lib.mkIf enableGPU "rocm";
-                  };
-                })
+                # (lib.mkIf (serviceType == "ollama") {
+                # ollama = finalConfig // {
+                #   acceleration = lib.mkIf enableGPU "rocm";
+                # };
+                # })
 
                 (lib.mkIf (serviceType == "vllm") {
                   # Custom vLLM systemd service since nixpkgs doesn't have one

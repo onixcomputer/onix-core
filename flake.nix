@@ -4,7 +4,14 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
-    clan-core.url = "git+https://git.clan.lol/adeci/clan-core?ref=adeci-unstable";
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    clan-core = {
+      url = "git+https://git.clan.lol/adeci/clan-core?ref=adeci-unstable";
+      inputs.home-manager.follows = "home-manager";
+    };
     wrappers = {
       url = "github:brittonr/wrappers";
       inputs.nixpkgs.follows = "nixpkgs";
