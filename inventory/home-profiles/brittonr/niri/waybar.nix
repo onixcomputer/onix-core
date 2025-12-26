@@ -50,6 +50,9 @@ let
         ];
         modules-center = [ "clock" ];
         modules-right = [
+          "custom/media-prev"
+          "mpris"
+          "custom/media-next"
           "pulseaudio"
           "network"
           "cpu"
@@ -114,6 +117,34 @@ let
           on-click = "pavucontrol";
         };
 
+        mpris = {
+          format = "{player_icon} {artist} - {title}";
+          format-paused = "{player_icon} {artist} - {title}";
+          player-icons = {
+            default = "";
+            spotify = "";
+            firefox = "";
+            chromium = "";
+            mpv = "";
+          };
+          max-length = 40;
+          on-click = "${pkgs.playerctl}/bin/playerctl play-pause";
+        };
+
+        "custom/media-prev" = {
+          format = "&lt;&lt;";
+          tooltip = true;
+          tooltip-format = "Previous Track";
+          on-click = "${pkgs.playerctl}/bin/playerctl previous";
+        };
+
+        "custom/media-next" = {
+          format = "&gt;&gt;";
+          tooltip = true;
+          tooltip-format = "Next Track";
+          on-click = "${pkgs.playerctl}/bin/playerctl next";
+        };
+
         "custom/kitty" = {
           format = "";
           tooltip = true;
@@ -136,7 +167,7 @@ let
         };
       };
 
-      style = {
+      "style.css" = {
         content = ''
           * {
               border: none;
@@ -173,9 +204,12 @@ let
           #battery,
           #network,
           #pulseaudio,
+          #mpris,
           #custom-kitty,
           #custom-launcher,
-          #custom-nixos {
+          #custom-nixos,
+          #custom-media-prev,
+          #custom-media-next {
               padding: 0 10px;
           }
 
@@ -189,6 +223,27 @@ let
           #custom-kitty:hover,
           #custom-launcher:hover,
           #custom-nixos:hover {
+              background-color: #ff6600;
+              color: #000000;
+          }
+
+          #mpris {
+              color: #88cc88;
+          }
+
+          #mpris.paused {
+              color: #888888;
+          }
+
+          #custom-media-prev,
+          #custom-media-next {
+              color: #ff6600;
+              font-size: 14px;
+              padding: 0 5px;
+          }
+
+          #custom-media-prev:hover,
+          #custom-media-next:hover {
               background-color: #ff6600;
               color: #000000;
           }

@@ -10,6 +10,7 @@
         clippy
         rustfmt
         rust-analyzer
+        nls
       ];
 
       settings = {
@@ -69,6 +70,11 @@
           auto-format = true;
           language-servers = [ "tinymist" ];
         }
+        {
+          name = "nickel";
+          auto-format = true;
+          language-servers = [ "nls" ];
+        }
       ];
 
       languages.language-server = {
@@ -127,6 +133,9 @@
         };
         tinymist = {
           command = "${pkgs.tinymist}/bin/tinymist";
+        };
+        nls = {
+          command = "${pkgs.nls}/bin/nls";
         };
       };
 

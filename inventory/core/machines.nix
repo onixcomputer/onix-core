@@ -5,6 +5,7 @@ _: {
       name = "alex-fw";
       tags = [
         "all"
+        "ssd-optimization"
         "tailnet-adeci"
         "password-manager"
         "laptop"
@@ -21,6 +22,7 @@ _: {
       name = "leviathan";
       tags = [
         "all"
+        "ssd-optimization"
         "tailnet-adeci"
         "dev"
         "pragmatic"
@@ -47,6 +49,7 @@ _: {
       name = "sequoia";
       tags = [
         "all"
+        "ssd-optimization"
         "dev"
         "tailnet-adeci"
         "docker"
@@ -62,6 +65,7 @@ _: {
       name = "marine";
       tags = [
         "all"
+        "ssd-optimization"
         "tailnet-adeci"
         "dev"
       ];
@@ -75,6 +79,7 @@ _: {
       name = "bambrew";
       tags = [
         "all"
+        "ssd-optimization"
         "tailnet-adeci"
         "dev"
       ];
@@ -103,6 +108,7 @@ _: {
       name = "britton-fw";
       tags = [
         "all"
+        "ssd-optimization"
         "dev"
         "laptop"
         "hyprland"
@@ -132,6 +138,7 @@ _: {
       name = "britton-gpd";
       tags = [
         "all"
+        "ssd-optimization"
         "dev"
         "laptop"
         "hyprland"
@@ -161,6 +168,7 @@ _: {
       name = "aspen1";
       tags = [
         "all"
+        "ssd-optimization"
         "docker"
         "tailnet-brittonr"
         "dev"
@@ -180,6 +188,7 @@ _: {
       name = "britton-desktop";
       tags = [
         "all"
+        "ssd-optimization"
         "dev"
         "desktop"
         "nvidia"
@@ -212,6 +221,7 @@ _: {
       name = "zenith";
       tags = [
         "all"
+        "ssd-optimization"
         "dev"
         "tailnet-dima"
         "laptop"

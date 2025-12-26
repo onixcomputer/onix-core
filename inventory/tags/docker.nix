@@ -54,15 +54,8 @@
     podman-tui # Terminal UI for containers
   ];
 
-  networking.firewall = {
-    trustedInterfaces = [ "docker0" ];
-    extraCommands = ''
-      iptables -A nixos-fw -i docker0 -j ACCEPT
-    '';
-    extraStopCommands = ''
-      iptables -D nixos-fw -i docker0 -j ACCEPT 2>/dev/null || true
-    '';
-  };
+  # trustedInterfaces handles docker0 traffic - nftables manages this automatically
+  networking.firewall.trustedInterfaces = [ "docker0" ];
 
   boot.kernelModules = [
     "overlay"

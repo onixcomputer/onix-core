@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 {
   # MPD (Music Player Daemon) configuration - User service
   # Running as user service to properly access PipeWire audio
@@ -9,74 +9,68 @@
 
     # Run as user service instead of system service
     # This allows proper access to user's PipeWire session
-    user = "brittonr"; # Run as your user
-    startWhenNeeded = false; # Start with the system
+    user = "brittonr";
+    startWhenNeeded = false;
 
     # Network configuration
-    network = {
-      listenAddress = "0.0.0.0"; # Listen on all interfaces
-      port = 6600;
-    };
+    network.port = 6600;
 
-    # Extra configuration for better streaming support
-    extraConfig = ''
-      # Enable local socket for rmpc YouTube support
-      bind_to_address "/run/mpd/socket"
-
-      # Audio output configuration - PipeWire primary
-      audio_output {
-        type "pipewire"
-        name "PipeWire Output"
-      }
-
-      # HTTP streaming output for network playback
-      audio_output {
-        type "httpd"
-        name "HTTP Stream"
-        encoder "lame"
-        port "8000"
-        bitrate "320"
-        format "44100:16:2"
-        always_on "yes"
-        tags "yes"
-      }
-
-      # FIFO output for visualizers (cava)
-      audio_output {
-        type "fifo"
-        name "Visualizer FIFO"
-        path "/tmp/mpd.fifo"
-        format "44100:16:2"
-        always_on "yes"
-      }
-
-      # Database path is handled by NixOS module automatically
-      # so we don't need to specify it here
+    # RFC42 declarative settings format
+    settings = {
+      # Bind to network (socket binding done via extraConfig for multiple addresses)
+      bind_to_address = lib.mkForce "any";
 
       # Enable Zeroconf for automatic discovery
-      zeroconf_enabled "yes"
-      zeroconf_name "MPD @ %h"
+      zeroconf_enabled = "yes";
+      zeroconf_name = "MPD @ %h";
 
       # File permissions
-      filesystem_charset "UTF-8"
+      filesystem_charset = "UTF-8";
 
       # Buffer settings for network streaming
-      audio_buffer_size "4096"
+      audio_buffer_size = "4096";
 
       # Connection settings
-      max_connections "20"
-      connection_timeout "60"
+      max_connections = "20";
+      connection_timeout = "60";
 
       # Enable volume normalization
-      replaygain "album"
-      volume_normalization "yes"
+      replaygain = "album";
+      volume_normalization = "yes";
 
-      # Enable HTTP/HTTPS input for streaming
-      input {
-        plugin "curl"
-        enabled "yes"
-      }
-    '';
+      # Audio outputs
+      audio_output = [
+        {
+          type = "pipewire";
+          name = "PipeWire Output";
+        }
+        {
+          type = "httpd";
+          name = "HTTP Stream";
+          encoder = "lame";
+          port = "8000";
+          bitrate = "320";
+          format = "44100:16:2";
+          always_on = "yes";
+          tags = "yes";
+        }
+        {
+          type = "fifo";
+          name = "Visualizer FIFO";
+          path = "/tmp/mpd.fifo";
+          format = "44100:16:2";
+          always_on = "yes";
+        }
+      ];
+
+      # HTTP/HTTPS input for streaming
+      input = [
+        {
+          plugin = "curl";
+          enabled = "yes";
+        }
+      ];
+    };
   };
 
   # Grant brittonr user access to audio group for MPD

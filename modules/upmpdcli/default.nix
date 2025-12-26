@@ -321,10 +321,10 @@ in
                   49154 # UPnP dynamic ports
                 ];
 
-                # Allow multicast for UPnP discovery
-                extraCommands = ''
-                  iptables -A INPUT -d 239.255.255.250/32 -p udp -m udp --dport 1900 -j ACCEPT
-                  iptables -A INPUT -s 192.168.0.0/16 -p udp --dport 49152:49154 -j ACCEPT
+                # Allow multicast for UPnP discovery (nftables syntax)
+                extraInputRules = ''
+                  ip daddr 239.255.255.250 udp dport 1900 accept comment "SSDP multicast discovery"
+                  ip saddr 192.168.0.0/16 udp dport 49152-49154 accept comment "UPnP dynamic ports"
                 '';
               };
 

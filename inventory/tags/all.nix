@@ -1,11 +1,29 @@
 { pkgs, ... }:
 {
-  services.avahi.enable = true;
   nixpkgs.config.allowUnfree = true;
   clan.core.settings.state-version.enable = true;
 
-  # Enable SSH agent forwarding on the server side
-  services.openssh.settings.AllowAgentForwarding = true;
+  # Modern firewall - nftables replaces iptables
+  # Provides build-time ruleset validation via checkRuleset
+  networking.nftables.enable = true;
+
+  services = {
+    # Enable Avahi for service discovery
+    avahi.enable = true;
+
+    # Enable SSH agent forwarding on the server side
+    openssh.settings.AllowAgentForwarding = true;
+
+    # IRQ balancing for better multi-core performance
+    # Prevents UI freezes during heavy load (compilation, etc.)
+    irqbalance.enable = true;
+  };
+
+  # RAM-based /tmp (faster, reduces SSD wear, auto-cleanup on reboot)
+  boot.tmp.useTmpfs = true;
+
+  # Redirect Nix builds to /var/tmp (not RAM) to avoid OOM on large builds
+  systemd.services.nix-daemon.environment.TMPDIR = "/var/tmp";
 
   environment.systemPackages = with pkgs; [
     kitty.terminfo

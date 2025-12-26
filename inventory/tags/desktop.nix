@@ -7,6 +7,9 @@
     powerOnBoot = true;
   };
 
+  # High-performance D-Bus implementation (default on Arch/Fedora)
+  services.dbus.implementation = "broker";
+
   services = {
     xserver = {
       enable = true;
@@ -16,8 +19,6 @@
       };
     };
     blueman.enable = true;
-    # power-profiles-daemon.enable = true;
-    # upower.enable = true;
 
     libinput = {
       enable = true;

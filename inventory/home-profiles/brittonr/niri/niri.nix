@@ -175,7 +175,7 @@ let
         };
       };
 
-      style = {
+      "style.css" = {
         content = ''
           * {
               border: none;

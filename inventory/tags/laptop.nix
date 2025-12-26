@@ -7,6 +7,12 @@
     powerOnBoot = true;
   };
 
+  # Faster WiFi reconnection and better power management
+  networking.networkmanager.wifi.backend = "iwd";
+
+  # High-performance D-Bus implementation (default on Arch/Fedora)
+  services.dbus.implementation = "broker";
+
   services = {
     xserver = {
       enable = true;
@@ -35,6 +41,6 @@
     brightnessctl
     powertop
     acpi
-    libnotify # For battery notifications
+    libnotify
   ];
 }
