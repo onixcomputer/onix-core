@@ -818,7 +818,6 @@
         "treefmt-nix": "treefmt-nix_4",
         "upmpdcli": "upmpdcli",
         "wrappers": "wrappers",
-        "wrappers-niri": "wrappers-niri",
         "wrappers-waybar": "wrappers-waybar"
       }
     },
@@ -1071,36 +1070,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1762831364,
-        "narHash": "sha256-Kw+jnnfAjc5V9u8+d0GFAMcDKQgZiXN+tH497iD9M9g=",
-        "owner": "brittonr",
+        "lastModified": 1766525018,
+        "narHash": "sha256-KxuDPpgX1Em+u3TmVJid6ZYmu4Ka1+jqo34fDzN61hE=",
+        "owner": "Lassulus",
         "repo": "wrappers",
-        "rev": "ec0a9ff93fee7a13e37e5b80adcb43c901afb311",
+        "rev": "7ea9ba94ed2bd1fa4ae37b2665498e1950180f8a",
         "type": "github"
       },
       "original": {
-        "owner": "brittonr",
-        "repo": "wrappers",
-        "type": "github"
-      }
-    },
-    "wrappers-niri": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1763189766,
-        "narHash": "sha256-yhBQqrXk6mQl9yMwayWvQTv+0IIktPDZTIwh+KGekZY=",
-        "owner": "turbio",
-        "repo": "wrappers",
-        "rev": "eaa4ea434b34fd0a78dd56e89b5871623b8a9ecb",
-        "type": "github"
-      },
-      "original": {
-        "owner": "turbio",
-        "ref": "init-niri",
+        "owner": "Lassulus",
         "repo": "wrappers",
         "type": "github"
       }

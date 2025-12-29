@@ -81,7 +81,20 @@ in
 
       # Scrollback
       scrollback_lines = 10000;
-      scrollbar = "never"; # Completely hide the scrollbar
+
+      # Scrollbar - visible for touchscreen use
+      scrollbar = "always";
+      scrollbar_width = 1;
+      scrollbar_hover_width = 2;
+      scrollbar_radius = "0.5";
+      scrollbar_gap = "0.1";
+      scrollbar_handle_opacity = "0.6";
+      scrollbar_track_opacity = "0.1";
+      scrollbar_interactive = true;
+      scrollbar_jump_on_click = true;
+      scrollbar_min_handle_height = 2;
+      scrollbar_handle_color = theme.fg_dim;
+      scrollbar_track_color = theme.bg_highlight;
 
       # Bell and notifications - all disabled
       enable_audio_bell = false;

@@ -30,6 +30,7 @@ _: {
     ./fuzzel.nix
     ./fuzzel-scripts.nix
     ./darkman.nix
+    ./gestures.nix
     ../hyprland/kitty.nix
   ];
 }

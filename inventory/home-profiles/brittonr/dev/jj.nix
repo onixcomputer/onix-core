@@ -1,7 +1,7 @@
 { inputs, pkgs, ... }:
 {
   home.packages = [
-    (inputs.wrappers.wrapperModules.jj.apply {
+    (inputs.wrappers.wrapperModules.jujutsu.apply {
       inherit pkgs;
 
       settings = {

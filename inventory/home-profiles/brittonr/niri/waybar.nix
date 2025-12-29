@@ -2,7 +2,7 @@
 let
   # Define wrapped fuzzel so we can reference it in waybar on-click actions
   wrappedFuzzel =
-    (inputs.wrappers-niri.wrapperModules.fuzzel.apply {
+    (inputs.wrappers.wrapperModules.fuzzel.apply {
       inherit pkgs;
 
       settings = {

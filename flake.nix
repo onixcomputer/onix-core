@@ -13,11 +13,7 @@
       inputs.home-manager.follows = "home-manager";
     };
     wrappers = {
-      url = "github:brittonr/wrappers";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    wrappers-niri = {
-      url = "github:turbio/wrappers/init-niri";
+      url = "github:Lassulus/wrappers";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     wrappers-waybar = {

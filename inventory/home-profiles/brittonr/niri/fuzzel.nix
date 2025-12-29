@@ -1,7 +1,7 @@
 { inputs, pkgs, ... }:
 let
   wrappedFuzzel =
-    (inputs.wrappers-niri.wrapperModules.fuzzel.apply {
+    (inputs.wrappers.wrapperModules.fuzzel.apply {
       inherit pkgs;
 
       settings = {

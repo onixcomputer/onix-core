@@ -1,12 +1,7 @@
-{ inputs, pkgs, ... }:
+{ pkgs, ... }:
 {
   home.packages = [
-    (inputs.wrappers.wrapperModules.jjui.apply {
-      inherit pkgs;
-
-      settings = {
-      };
-    }).wrapper
+    pkgs.jjui
   ];
 
   home.shellAliases = {

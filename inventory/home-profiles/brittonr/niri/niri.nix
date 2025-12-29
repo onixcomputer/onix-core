@@ -10,7 +10,7 @@ let
   theme = config.theme.colors;
   # Define wrapped fuzzel locally so we can reference it in the config
   wrappedFuzzel =
-    (inputs.wrappers-niri.wrapperModules.fuzzel.apply {
+    (inputs.wrappers.wrapperModules.fuzzel.apply {
       inherit pkgs;
 
       settings = {
@@ -249,7 +249,7 @@ let
 
   # Define wrapped niri package with custom config
   wrappedNiri =
-    (inputs.wrappers-niri.wrapperModules.niri.apply {
+    (inputs.wrappers.wrapperModules.niri.apply {
       inherit pkgs;
 
       "config.kdl" = {
@@ -267,10 +267,45 @@ let
                               touchpad {
                                   tap
                                   natural-scroll
+                                  dwt  // disable while typing
+                                  dwtp // disable while trackpointing
+                                  drag
+                                  drag-lock
+                                  // Enable clickfinger for multi-finger right-click (2-finger) and middle-click (3-finger)
+                                  click-method "clickfinger"
+                                  // Smoother scrolling
+                                  scroll-method "two-finger"
+                                  accel-speed 0.2
+                                  accel-profile "adaptive"
+                              }
+
+                              // Touchscreen settings for GPD Pocket 4
+                              touch {
+                                  map-to-output "eDP-1"
+                              }
+
+                              // Tablet/stylus settings (if applicable)
+                              tablet {
+                                  map-to-output "eDP-1"
                               }
 
                               focus-follows-mouse
                               warp-mouse-to-focus
+                          }
+
+                          // Gesture configuration for touchpad and touchscreen
+                          gestures {
+                              // Scroll the view when dragging near monitor edges
+                              dnd-edge-view-scroll {
+                                  trigger-width 40
+                                  delay-ms 150
+                                  max-speed 1200
+                              }
+
+                              // Enable hot corner to toggle overview (top-left)
+                              hot-corners {
+                                  top-left
+                              }
                           }
 
                           output "eDP-1" {
@@ -510,6 +545,13 @@ let
                               XF86AudioPause { spawn "playerctl" "play-pause"; }
                               XF86AudioPlay { spawn "playerctl" "play-pause"; }
                               XF86AudioPrev { spawn "playerctl" "previous"; }
+
+                              // Overview toggle (also accessible via 4-finger swipe or hot corner)
+                              Mod+Tab { toggle-overview; }
+
+                              // Touchpad scroll bindings for volume (Mod + scroll)
+                              Mod+TouchpadScrollUp { spawn "swayosd-client" "--output-volume" "raise"; }
+                              Mod+TouchpadScrollDown { spawn "swayosd-client" "--output-volume" "lower"; }
                           }
         '';
       };

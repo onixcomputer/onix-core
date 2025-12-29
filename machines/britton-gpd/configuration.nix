@@ -68,12 +68,12 @@ in
     signal-desktop
   ];
 
-  zramSwap = {
-    enable = true;
-    algorithm = "lz4"; # Fast compression
-    memoryPercent = 87; # ~56GB of your 64GB RAM (87% of 64GB ≈ 56GB)
-    priority = 100; # Higher priority than disk swap
-  };
+  # zramSwap = {
+  #   enable = true;
+  #   algorithm = "lz4"; # Fast compression
+  #   memoryPercent = 87; # ~56GB of your 64GB RAM (87% of 64GB ≈ 56GB)
+  #   priority = 100; # Higher priority than disk swap
+  # };
 
   nix = {
     distributedBuilds = true;
@@ -201,7 +201,36 @@ in
       SUBSYSTEM=="iio", KERNEL=="iio*", MODE="0666"
       SUBSYSTEM=="iio", KERNEL=="iio*", RUN+="${pkgs.coreutils}/bin/chmod a+rw /sys$devpath/buffer/enable"
       SUBSYSTEM=="iio", KERNEL=="iio*", RUN+="${pkgs.coreutils}/bin/chmod a+rw /sys$devpath/buffer/length"
+
+      # Fix GPD Pocket 4 USB keyboard blocking suspend
+      # Keep keyboard always-on but disable wakeup
+      ACTION=="add", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="258a", ATTRS{idProduct}=="000c", ATTR{power/wakeup}="disabled", ATTR{power/control}="on"
     '';
+  };
+
+  # GPD Pocket 4 suspend/wake fixes
+  systemd.services = {
+    # Disable USB controller wakeup to prevent spurious wakes from suspend
+    disable-usb-wakeup = {
+      description = "Disable XHC0 USB controller wakeup";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${pkgs.bash}/bin/bash -c 'echo XHC0 > /proc/acpi/wakeup'";
+        RemainAfterExit = true;
+      };
+    };
+
+    # Fix intermittent touchscreen breakage after suspension
+    fix-touchscreen = {
+      description = "Manually reload i2c_hid_acpi module to fix touchscreen";
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStartPre = "${pkgs.kmod}/bin/modprobe -r i2c_hid_acpi";
+        ExecStart = "${pkgs.kmod}/bin/modprobe i2c_hid_acpi";
+      };
+    };
   };
 
   # Portal services for VM integration
