@@ -46,10 +46,10 @@ let
       -o 0 \
       -t 150 \
       -g "1,DU,B,M,R,${gestureHandler}/bin/gesture-handler toggle-overview 'Overview'" \
-      -g "2,LR,*,M,R,${gestureHandler}/bin/gesture-handler focus-workspace-down '→ Next WS'" \
-      -g "2,RL,*,M,R,${gestureHandler}/bin/gesture-handler focus-workspace-up '← Prev WS'" \
-      -g "2,DU,*,M,R,${gestureHandler}/bin/gesture-handler focus-column-right '↓ Next Win'" \
-      -g "2,UD,*,M,R,${gestureHandler}/bin/gesture-handler focus-column-left '↑ Prev Win'" \
+      -g "2,LR,*,M,R,${gestureHandler}/bin/gesture-handler focus-workspace-up '← Prev WS'" \
+      -g "2,RL,*,M,R,${gestureHandler}/bin/gesture-handler focus-workspace-down '→ Next WS'" \
+      -g "2,DU,*,M,R,${gestureHandler}/bin/gesture-handler focus-column-left '↑ Prev Win'" \
+      -g "2,UD,*,M,R,${gestureHandler}/bin/gesture-handler focus-column-right '↓ Next Win'" \
       -g "3,DU,*,*,R,${gestureHandler}/bin/gesture-handler toggle-overview 'Overview'"
   '';
 in
