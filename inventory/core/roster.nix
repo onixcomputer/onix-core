@@ -334,7 +334,6 @@ let
               "niri"
               "creative"
               "social"
-              "embedded"
             ];
           };
         };
