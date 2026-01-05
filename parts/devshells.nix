@@ -1,11 +1,10 @@
 # Development shells for onix-core
 # Provides multiple specialized environments for different workflows
-{ inputs, ... }:
-{
+_: {
   perSystem =
     {
       pkgs,
-      system,
+      inputs',
       config,
       ...
     }:
@@ -14,7 +13,7 @@
         # Full development environment with all tools
         default = pkgs.mkShell {
           packages = [
-            inputs.clan-core.packages.${system}.clan-cli
+            inputs'.clan-core.packages.clan-cli
             config.pre-commit.settings.package
             config.packages.acl
             config.packages.vars
@@ -92,7 +91,7 @@
         # Minimal shell with just clan CLI
         minimal = pkgs.mkShell {
           packages = [
-            inputs.clan-core.packages.${system}.clan-cli
+            inputs'.clan-core.packages.clan-cli
           ];
 
           shellHook = ''

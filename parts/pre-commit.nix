@@ -1,7 +1,6 @@
-{ inputs, ... }:
-{
-  imports = [ inputs.pre-commit-hooks-nix.flakeModule ];
-
+# Pre-commit configuration for onix-core
+# Note: The flakeModule import is handled by dev/flake-module.nix
+_: {
   perSystem =
     { config, ... }:
     {

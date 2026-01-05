@@ -1,8 +1,11 @@
+# Analysis tools for infrastructure inspection
+# Provides: acl, vars, tags, roster
+# Access via: .#analysisTools.<system>.<tool> or .#packages.<system>.<tool>
 _: {
   perSystem =
     { pkgs, ... }:
-    {
-      packages = {
+    let
+      tools = {
         # Main ACL (Access Control List) viewer - replaces old sops-viz
         acl = pkgs.stdenv.mkDerivation {
           pname = "acl";
@@ -222,5 +225,12 @@ _: {
           '';
         };
       };
+    in
+    {
+      # Expose via custom transposed output
+      analysisTools = tools;
+
+      # Also expose via standard packages for backward compatibility
+      packages = tools;
     };
 }

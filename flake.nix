@@ -20,14 +20,8 @@
       url = "github:turbio/wrappers/init-waybar";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    treefmt-nix = {
-      url = "github:numtide/treefmt-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    pre-commit-hooks-nix = {
-      url = "github:cachix/pre-commit-hooks.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # Dev inputs moved to dev/flake.nix for lazy evaluation
+    # treefmt-nix and pre-commit-hooks-nix are only fetched for dev outputs
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL/main";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -73,21 +67,18 @@
   outputs =
     inputs@{ flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
-      imports =
-        let
-          # Auto-import all .nix files from parts/ directory
-          partsDir = ./parts;
-          partsContents = builtins.readDir partsDir;
-          nixFiles = builtins.filter (name: builtins.match ".*\\.nix" name != null) (
-            builtins.attrNames partsContents
-          );
-          partsImports = map (name: partsDir + "/${name}") nixFiles;
-        in
-        [
-          # External flake modules
-          inputs.treefmt-nix.flakeModule
-        ]
-        ++ partsImports;
+      # Enable debug mode for nix repl inspection: nix repl .#debug
+      debug = true;
+
+      imports = [
+        # Enable partitions for lazy input fetching
+        inputs.flake-parts.flakeModules.partitions
+
+        # Core parts (always evaluated)
+        ./parts/clan.nix
+        ./parts/lib.nix
+        ./parts/flake-modules.nix
+      ];
 
       systems = [
         "x86_64-linux"
@@ -95,5 +86,22 @@
         "aarch64-darwin"
         "x86_64-darwin"
       ];
+
+      # Partition dev outputs so dev inputs are only fetched when needed
+      # Building nixosConfigurations won't fetch treefmt-nix, pre-commit-hooks, etc.
+      partitionedAttrs = {
+        checks = "dev";
+        devShells = "dev";
+        formatter = "dev";
+        packages = "dev";
+        # Custom transposed outputs
+        analysisTools = "dev";
+        clanTools = "dev";
+      };
+
+      partitions.dev = {
+        extraInputsFlake = ./dev;
+        module = ./dev/flake-module.nix;
+      };
     };
 }
