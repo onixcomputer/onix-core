@@ -209,6 +209,7 @@ _: {
         # "cross-compile"
         "udev-rules"
         # "radicle-seed"
+        "cloud-hypervisor-host" # TAP networking for RedoxOS development
       ];
       deploy = {
         targetHost = "root@britton-desktop";

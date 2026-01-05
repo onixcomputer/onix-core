@@ -14,14 +14,26 @@
   # imports = [
   #   inputs.grub2-themes.nixosModules.default
   # ];
+  nix.settings = {
+    trusted-users = [
+      "root"
+      "brittonr"
+    ];
+    substituters = [ "https://cache.dataaturservice.se/spectrum/" ];
+    trusted-public-keys = [
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+      "spectrum-os.org-2:foQk3r7t2VpRx92CaXb5ROyy/NBdRJQG2uX2XJMYZfU="
+    ];
+  };
+
   boot.kernelPackages = pkgs.linuxPackages_6_17;
 
   networking = {
     hostName = "britton-desktop";
-    nameservers = [
-      "1.1.1.1"
-      "8.8.8.8"
-    ];
+    # Fallback DNS servers appended after Tailscale's MagicDNS
+    resolvconf.extraConfig = ''
+      name_servers="1.1.1.1 8.8.8.8"
+    '';
   };
 
   time.timeZone = "America/New_York";
@@ -78,6 +90,10 @@
   };
 
   services = {
+    # Qualcomm EDL (Emergency Download Loader) mode access
+    udev.extraRules = ''
+      SUBSYSTEM=="usb", ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="9008", MODE="0666"
+    '';
 
     gnome.gnome-keyring.enable = true;
 
@@ -150,4 +166,6 @@
       hyprlock = { };
     };
   };
+
+  programs.fuse.userAllowOther = true;
 }

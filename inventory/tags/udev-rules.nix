@@ -26,6 +26,11 @@ _: {
 
     # Daisy Seed DFU mode
     ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", MODE="0666", GROUP="plugdev", TAG+="uaccess"
+
+    # Qualcomm EDL/Firehose mode (for OnePlus, Xiaomi, etc.)
+    ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="9008", MODE="0666", GROUP="plugdev", TAG+="uaccess"
+    ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="900e", MODE="0666", GROUP="plugdev", TAG+="uaccess"
+    ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="9091", MODE="0666", GROUP="plugdev", TAG+="uaccess"
   '';
 
   # Ensure groups exist and add users to dialout for serial access
