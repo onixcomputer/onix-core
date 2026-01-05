@@ -73,17 +73,21 @@
   outputs =
     inputs@{ flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
-      imports = [
-        inputs.treefmt-nix.flakeModule
-        ./parts/clan.nix
-        ./parts/devshells.nix
-        ./parts/formatter.nix
-        ./parts/pre-commit.nix
-        ./parts/sops-viz.nix
-        ./parts/checks.nix
-        ./parts/infrastructure.nix
-        ./checks/flake-module.nix
-      ];
+      imports =
+        let
+          # Auto-import all .nix files from parts/ directory
+          partsDir = ./parts;
+          partsContents = builtins.readDir partsDir;
+          nixFiles = builtins.filter (name: builtins.match ".*\\.nix" name != null) (
+            builtins.attrNames partsContents
+          );
+          partsImports = map (name: partsDir + "/${name}") nixFiles;
+        in
+        [
+          # External flake modules
+          inputs.treefmt-nix.flakeModule
+        ]
+        ++ partsImports;
 
       systems = [
         "x86_64-linux"
