@@ -10,19 +10,22 @@ in
   imports = [
     inputs.grub2-themes.nixosModules.default
     ./pmods/macrand.nix
-    # ./pmods/printers.nix
   ];
 
-  # Leviathan remote builder configuration
-  nix = {
-    distributedBuilds = true;
-    settings = {
-      builders-use-substitutes = true;
-      trusted-users = [
-        "root"
-        "alex"
-      ];
+  networking.hostName = "alex-fw";
+  time.timeZone = "Asia/Bangkok";
+
+  # GRUB wallpaper (theme from grub-theme tag)
+  boot.loader = {
+    grub.useOSProber = true;
+    grub2-theme = {
+      customResolution = "2880x1920";
+      splashImage = grubWallpaper;
     };
+  };
+
+  # Remote builder configuration
+  nix = {
     buildMachines = [
       {
         protocol = "ssh-ng";
@@ -40,24 +43,19 @@ in
         sshUser = "alex";
       }
     ];
+    settings.trusted-users = [
+      "root"
+      "alex"
+    ];
   };
 
-  programs.ssh = {
-    knownHosts = {
-      leviathan = {
-        hostNames = [
-          "leviathan.cymric-daggertooth.ts.net"
-          "leviathan" # Local hostname fallback
-        ];
-        publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOEtV2xoOv+N4c5sg5oBqM/Xy+aZHf+5GHOhzXKYduXG";
-      };
-    };
-    extraConfig = ''
-      Host leviathan.cymric-daggertooth.ts.net
-        IdentityAgent /run/user/3801/gcr/ssh
-    '';
-  };
+  # SSH agent forwarding for remote builds
+  programs.ssh.extraConfig = ''
+    Host leviathan.cymric-daggertooth.ts.net
+      IdentityAgent /run/user/3801/gcr/ssh
+  '';
 
+  # AMD GPU (ROCm)
   hardware.graphics = {
     enable = true;
     enable32Bit = true;
@@ -69,110 +67,45 @@ in
     ];
   };
 
-  networking = {
-    hostName = "alex-fw";
-  };
-
-  #time.timeZone = "America/New_York";
-  time.timeZone = "Asia/Bangkok";
-
-  # vm building
+  # VM building
   virtualisation.libvirtd.enable = true;
   programs.virt-manager.enable = true;
 
-  environment.systemPackages = with pkgs; [
-    imagemagick # required for grub2-theme
-    os-prober
-    signal-desktop
-    prismlauncher
-  ];
-
-  boot.loader = {
-    timeout = 1;
-    grub = {
-      timeoutStyle = "menu";
-      useOSProber = true;
-    };
-    grub2-theme = {
-      enable = true;
-      theme = "stylish";
-      footer = true;
-      customResolution = "2880x1920";
-      splashImage = grubWallpaper;
-    };
-  };
-
-  boot.kernel.sysctl = {
-    "vm.swappiness" = 60; # Balanced swapping
-    "vm.dirty_ratio" = 15; # Reduce dirty pages
-    "vm.dirty_background_ratio" = 5; # Earlier writeback
-    "vm.overcommit_memory" = 1; # Allow overcommit for compilation
-    "vm.page-cluster" = 0; # Optimize for ZRAM
-  };
-
-  zramSwap = {
-    enable = true;
-    algorithm = "lz4"; # compression
-    memoryPercent = 87; # ~56GB of 64GB RAM
-    priority = 100; # prio over disk swap
-  };
-
   services = {
-    gnome.gnome-keyring.enable = true;
+    # Framework laptop fingerprint (disabled for sudo)
     fprintd.enable = true;
-    fwupd.enable = true; # framework bios/firmware updates
+
+    # Framework firmware updates
+    fwupd.enable = true;
 
     # Network printing support
     printing = {
       enable = true;
-      browsing = true; # Enable network printer discovery
-      defaultShared = false; # Don't share local printers
+      browsing = true;
+      defaultShared = false;
       drivers = with pkgs; [
-        gutenprint # Common printer drivers including Xerox
-        hplip # HP printer drivers
-        epson-escpr2 # Epson drivers
-        brlaser # Brother laser printer drivers
-        splix # Samsung/Xerox SPL printers
+        gutenprint
+        hplip
+        epson-escpr2
+        brlaser
+        splix
       ];
     };
 
-    # Auto-configure Xerox WorkCentre 6605DN
+    # Auto-configure network printers via Avahi
     avahi = {
       enable = true;
-      nssmdns4 = true; # Enable .local domain resolution
-      openFirewall = true; # Open firewall for mDNS
-    };
-
-    # Keyd for dual-function keys (Caps Lock = Esc on tap, Ctrl on hold)
-    keyd = {
-      enable = true;
-      keyboards = {
-        default = {
-          ids = [ "*" ];
-          settings = {
-            main = {
-              capslock = "overload(control, esc)";
-            };
-          };
-        };
-      };
-    };
-
-    greetd = {
-      enable = true;
-      settings = {
-        default_session = {
-          command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd Hyprland";
-          user = "greeter";
-        };
-      };
+      nssmdns4 = true;
+      openFirewall = true;
     };
   };
 
-  security.pam.services = {
-    login.enableGnomeKeyring = true;
-    greetd.enableGnomeKeyring = true;
-    sudo.fprintAuth = false;
-    hyprlock = { };
-  };
+  # Framework laptop fingerprint disabled for sudo
+  security.pam.services.sudo.fprintAuth = false;
+
+  environment.systemPackages = with pkgs; [
+    os-prober
+    signal-desktop
+    prismlauncher
+  ];
 }

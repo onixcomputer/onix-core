@@ -972,14 +972,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1764106549,
-        "narHash": "sha256-+DPFAr8OPx4HPT8JbmrS08oz74FK4hUWpRLl54K0jMU=",
-        "path": "/home/brittonr/git/upmpdcli",
-        "type": "path"
+        "lastModified": 1764106514,
+        "narHash": "sha256-pQnZY9V36x7fRGGQ1fMaXwRpFETUI4/4G40WUuaWot0=",
+        "owner": "brittonr",
+        "repo": "upmpdcli",
+        "rev": "141f8150ea0c438c4ccdd8b830af0586bb7b2ecf",
+        "type": "github"
       },
       "original": {
-        "path": "/home/brittonr/git/upmpdcli",
-        "type": "path"
+        "owner": "brittonr",
+        "repo": "upmpdcli",
+        "type": "github"
       }
     },
     "wrappers": {

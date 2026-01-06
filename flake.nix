@@ -55,7 +55,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     upmpdcli = {
-      url = "path:/home/brittonr/git/upmpdcli";
+      url = "github:brittonr/upmpdcli";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     radicle-nix-adapter = {
