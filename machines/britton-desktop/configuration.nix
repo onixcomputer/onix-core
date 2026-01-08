@@ -23,7 +23,7 @@
   };
 
   boot = {
-    kernelPackages = pkgs.linuxPackages_6_17;
+    kernelPackages = pkgs.linuxPackages_6_18;
     # DisplayLink support for Wayland (evdi module)
     extraModulePackages = [ config.boot.kernelPackages.evdi ];
     kernelModules = [ "evdi" ];
@@ -52,6 +52,7 @@
     # Qualcomm EDL mode access
     udev.extraRules = ''
       SUBSYSTEM=="usb", ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="9008", MODE="0666"
+      SUBSYSTEM=="block", ENV{ID_VENDOR_ID}=="1949", ENV{ID_MODEL_ID}=="0324", TAG+="uaccess"
     '';
 
     printing.enable = true;

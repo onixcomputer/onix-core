@@ -7,6 +7,7 @@ let
     tailscale-traefik = import ./tailscale-traefik.nix { inherit inputs; };
     static-server = import ./static-server.nix { inherit inputs; };
     sshd = import ./sshd.nix { inherit inputs; };
+    calibre-server = import ./calibre-server.nix { inherit inputs; };
     prometheus = import ./prometheus.nix { inherit inputs; };
     grafana = import ./grafana.nix { inherit inputs; };
     #    harmonia = import ./harmonia.nix { inherit inputs; };

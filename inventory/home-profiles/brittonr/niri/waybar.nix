@@ -1,5 +1,12 @@
-{ inputs, pkgs, ... }:
+{
+  inputs,
+  pkgs,
+  config,
+  ...
+}:
 let
+  theme = config.theme.colors;
+
   # Define wrapped fuzzel so we can reference it in waybar on-click actions
   wrappedFuzzel =
     (inputs.wrappers.wrapperModules.fuzzel.apply {
@@ -16,12 +23,12 @@ let
         };
 
         colors = {
-          background = "1a1a1aff";
-          text = "ffffffff";
-          match = "ff6600ff";
-          selection = "ff6600ff";
-          selection-text = "000000ff";
-          border = "ff6600ff";
+          background = "${builtins.substring 1 6 theme.bg}ff";
+          text = "${builtins.substring 1 6 theme.fg}ff";
+          match = "${builtins.substring 1 6 theme.accent}ff";
+          selection = "${builtins.substring 1 6 theme.accent}ff";
+          selection-text = "${builtins.substring 1 6 theme.bg}ff";
+          border = "${builtins.substring 1 6 theme.accent}ff";
         };
 
         border = {
@@ -177,24 +184,25 @@ let
           }
 
           window#waybar {
-              background-color: #1a1a1a;
-              color: #ffffff;
+              background-color: ${theme.bg};
+              color: ${theme.fg};
           }
 
           #workspaces button {
               padding: 0 8px;
-              color: #ffffff;
+              color: ${theme.fg_dim};
               background-color: transparent;
           }
 
           #workspaces button.active {
-              background-color: #ff6600;
-              color: #000000;
+              background-color: ${theme.bg_highlight};
+              color: ${theme.accent};
+              border-bottom: 2px solid ${theme.accent};
           }
 
           #workspaces button.urgent {
-              background-color: #ff3300;
-              color: #ffffff;
+              background-color: ${theme.red};
+              color: ${theme.fg};
           }
 
           #window,
@@ -216,44 +224,45 @@ let
           #custom-kitty,
           #custom-launcher,
           #custom-nixos {
-              color: #ff6600;
+              color: ${theme.accent};
               font-size: 16px;
           }
 
           #custom-kitty:hover,
           #custom-launcher:hover,
           #custom-nixos:hover {
-              background-color: #ff6600;
-              color: #000000;
+              background-color: ${theme.bg_highlight};
+              color: ${theme.fg};
           }
 
           #mpris {
-              color: #88cc88;
+              color: ${theme.green};
           }
 
           #mpris.paused {
-              color: #888888;
+              color: ${theme.fg_dim};
           }
 
           #custom-media-prev,
           #custom-media-next {
-              color: #ff6600;
+              color: ${theme.accent};
               font-size: 14px;
               padding: 0 5px;
           }
 
           #custom-media-prev:hover,
           #custom-media-next:hover {
-              background-color: #ff6600;
-              color: #000000;
+              background-color: ${theme.bg_highlight};
+              color: ${theme.fg};
           }
 
           #battery.warning {
-              color: #ff6600;
+              color: ${theme.yellow};
           }
 
           #battery.critical {
-              color: #ff3300;
+              color: ${theme.red};
+              font-weight: bold;
           }
         '';
       };

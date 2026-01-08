@@ -10,9 +10,8 @@ let
     # Execute the niri action
     ${pkgs.niri}/bin/niri msg action "$ACTION"
 
-    # Visual feedback via dunst notification (brief, low priority)
+    # Visual feedback via notification (brief, low priority)
     ${pkgs.libnotify}/bin/notify-send -t 400 -u low \
-      -h string:x-dunst-stack-tag:gesture \
       "Gesture" "$LABEL"
   '';
 

@@ -269,7 +269,7 @@ let
                                   natural-scroll
                                   dwt  // disable while typing
                                   dwtp // disable while trackpointing
-                                  drag
+                                  drag true
                                   drag-lock
                                   // Enable clickfinger for multi-finger right-click (2-finger) and middle-click (3-finger)
                                   click-method "clickfinger"
@@ -308,12 +308,11 @@ let
                               }
                           }
 
-                          output "eDP-1" {
-                              mode "2560x1600@144"
-                              scale 2.0
+                          output "DP-3" {
+                              scale 1.0
                               variable-refresh-rate
                           }
-                          
+
 
                           prefer-no-csd
 
@@ -341,7 +340,7 @@ let
                           }
 
                           spawn-at-startup "${wrappedWaybar}/bin/waybar"
-                          spawn-at-startup "${pkgs.dunst}/bin/dunst"
+                          // mako is started via systemd graphical-session.target
                           spawn-at-startup "sh" "-c" "${pkgs.swww}/bin/swww-daemon && restore-wallpaper"
                           spawn-at-startup "${pkgs.wl-clipboard}/bin/wl-paste" "--watch" "${pkgs.cliphist}/bin/cliphist" "store"
                           spawn-at-startup "${pkgs.swayosd}/bin/swayosd-server"
@@ -532,9 +531,9 @@ let
                               Print { spawn "sh" "-c" "grim ~/Screenshots/$(date +'screenshot_%Y-%m-%d_%H-%M-%S.png') && notify-send 'Screenshot' 'Saved to ~/Screenshots' -i camera-photo"; }
                               Mod+Shift+S { spawn "screenshot-wrapper" "-m" "region" "-o" "~/Screenshots"; }
 
-                              // Notifications
-                              Mod+Comma { spawn "dunstctl" "close"; }
-                              Mod+Shift+Comma { spawn "dunstctl" "close-all"; }
+                              // Notifications (makoctl)
+                              Mod+Comma { spawn "makoctl" "dismiss"; }
+                              Mod+Shift+Comma { spawn "makoctl" "dismiss" "--all"; }
 
                               // Media controls
                               XF86AudioRaiseVolume { spawn "swayosd-client" "--output-volume" "raise"; }

@@ -8,7 +8,7 @@ _: {
     ../../alex/hyprland/audio-utils.nix
     ../../alex/hyprland/clipboard.nix
     ../../alex/hyprland/cursor.nix
-    ../../alex/hyprland/dunst.nix
+    ./mako.nix
     ../../alex/hyprland/fonts.nix
     ../../alex/hyprland/keyring.nix
     ../../alex/hyprland/network.nix

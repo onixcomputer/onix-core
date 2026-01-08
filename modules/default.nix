@@ -17,6 +17,7 @@ let
     "buildbot" = import ./buildbot;
     "cloudflare-tunnel" = import ./cloudflare-tunnel;
     "gitlab-runner" = import ./gitlab-runner;
+    "calibre-server" = import ./calibre-server;
     "llm" = import ./llm;
     "radicle" = import ./radicle;
     "radicle-nix-adapter" = import ./radicle-nix-adapter;
