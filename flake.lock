@@ -719,6 +719,26 @@
         "type": "github"
       }
     },
+    "pinenote-nixos": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1764577046,
+        "narHash": "sha256-LIrhUKV7qFvp60wr8zGPjRNQskabCg/ukxyjjasMFJo=",
+        "owner": "WeraPea",
+        "repo": "pinenote-nixos",
+        "rev": "520e92d1badd8a00f187ff853f727a8b33386820",
+        "type": "github"
+      },
+      "original": {
+        "owner": "WeraPea",
+        "repo": "pinenote-nixos",
+        "type": "github"
+      }
+    },
     "radicle-nix-adapter": {
       "inputs": {
         "nixpkgs": [
@@ -754,6 +774,7 @@
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs_5",
         "nixvim": "nixvim_2",
+        "pinenote-nixos": "pinenote-nixos",
         "radicle-nix-adapter": "radicle-nix-adapter",
         "upmpdcli": "upmpdcli",
         "wrappers": "wrappers",

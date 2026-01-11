@@ -354,6 +354,20 @@ let
       };
     };
 
+    pine = {
+      users = {
+        brittonr = {
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+      };
+    };
+
     # ========== Dima Machines ===========
     zenith = {
       users = {

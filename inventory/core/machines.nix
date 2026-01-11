@@ -231,7 +231,7 @@ _: {
         "llm-client"
         "llm"
         "password-manager"
-        # "cross-compile"
+        "cross-compile"
         "udev-rules"
         # "radicle-seed"
         "cloud-hypervisor-host" # TAP networking for RedoxOS development
@@ -239,6 +239,20 @@ _: {
       deploy = {
         targetHost = "root@britton-desktop";
         buildHost = "";
+      };
+    };
+
+    pine = {
+      name = "pine";
+      tags = [
+        "all"
+        "pinenote"
+        "tailnet-brittonr"
+        "dev"
+      ];
+      deploy = {
+        targetHost = "root@pine.bison-tailor.ts.net";
+        buildHost = "britton-desktop";
       };
     };
 

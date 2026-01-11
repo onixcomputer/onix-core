@@ -62,6 +62,10 @@
       url = "git+https://radicle.defelo.de/zhSTd5vZ9K8aqtLecgSU5zDAZaS8.git";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    pinenote-nixos = {
+      url = "github:WeraPea/pinenote-nixos";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
