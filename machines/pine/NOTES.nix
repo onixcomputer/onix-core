@@ -326,6 +326,70 @@
     };
   };
 
+  # Clan Build and Flash Commands
+  clan = {
+    # Quick reference for building and flashing
+
+    # Build only (verify configuration compiles)
+    build = {
+      local = "build pine";
+      toplevel = "nix build .#nixosConfigurations.pine.config.system.build.toplevel";
+      diskoImages = "nix build .#nixosConfigurations.pine.config.system.build.diskoImages";
+      dryRun = "clan flash write pine --disk main /dev/mmcblk0 --dry-run";
+    };
+
+    # Initial installation - flash directly to eMMC
+    flash = {
+      # Direct flash when eMMC is accessible (USB mode or mounted)
+      direct = ''
+        clan flash write pine \
+          --disk main /dev/mmcblk0 \
+          --ssh-pubkey ~/.ssh/id_ed25519.pub \
+          --mode format
+      '';
+
+      # Network install if device already runs Linux
+      network = ''
+        clan machines install pine \
+          --target-host root@<IP> \
+          --update-hardware-config nixos-facter \
+          --phases kexec,disko,install,reboot
+      '';
+
+      # Using pinenote-nixos disk image (alternative)
+      diskImage = "nix build github:WeraPea/pinenote-nixos#disk-image-cross";
+    };
+
+    # Update running system (cross-compiled on britton-desktop)
+    update = {
+      command = "clan machines update pine";
+      note = "Uses buildHost=britton-desktop from machines.nix for cross-compilation";
+    };
+
+    # Critical: Backup waveform before repartitioning
+    waveformBackup = {
+      command = "dd if=/dev/mmcblk0p2 of=waveform_backup.bin bs=1M";
+      warning = "Device-unique e-ink calibration data - BACKUP BEFORE ANY REPARTITIONING";
+    };
+
+    # Post-installation step
+    postInstall = {
+      command = "sudo setup-waveform.sh";
+      note = "Required after first boot to enable e-ink display";
+    };
+
+    # Available system.build outputs
+    systemBuildOutputs = [
+      "toplevel" # Complete NixOS closure
+      "diskoImages" # Disk images for direct flashing
+      "initialRamdisk" # initramfs
+      "kernel" # Linux kernel
+      "disko" # Disk partitioning script
+      "format" # Format disks only
+      "mount" # Mount disks only
+    ];
+  };
+
   # External Documentation Links
   docs = {
     pine64 = {
