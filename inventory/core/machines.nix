@@ -196,7 +196,7 @@ _: {
         "prometheus"
         "monitoring"
         "homepage-server"
-        "llm"
+        # "llm" # Disabled: Using llm-gptoss instance with vLLM instead of ollama
         "amd-gpu" # AMD Ryzen AI MAX+ 395 with Radeon 8060S
       ];
       deploy = {
@@ -213,7 +213,7 @@ _: {
         "dev"
         "desktop"
         "laptop-input"
-        "greeter"
+        # "greeter" # Using cosmic-greeter instead
         "audio"
         "xdg-portal"
         "nvidia"

@@ -12,7 +12,7 @@ _: {
     ../../alex/hyprland/fonts.nix
     ../../alex/hyprland/keyring.nix
     ../../alex/hyprland/network.nix
-    ../../alex/hyprland/screenshot.nix
+    ./screenshot.nix
     ../../alex/hyprland/swayosd.nix
     ../../alex/hyprland/wallpaper.nix
     # ../../alex/hyprland/xdg.nix # Commented out - using brittonr's own xdg.nix from dev profile

@@ -57,11 +57,20 @@
 
     printing.enable = true;
 
-    # Override greeter session for niri
-    greetd.settings.default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd /etc/profiles/per-user/brittonr/bin/niri-session";
+    # COSMIC greeter (uses greetd internally)
+    displayManager.cosmic-greeter.enable = true;
   };
 
-  security.pam.services.sudo.fprintAuth = false;
+  security.pam.services = {
+    sudo.fprintAuth = false;
+    # PAM services for desktop login (normally from greeter tag)
+    login.enableGnomeKeyring = true;
+    greetd.enableGnomeKeyring = true;
+    hyprlock = { };
+  };
+
+  # Gnome keyring for SSH agent and secrets
+  services.gnome.gnome-keyring.enable = true;
 
   # DisplayLink Manager service
   systemd.services.dlm = {

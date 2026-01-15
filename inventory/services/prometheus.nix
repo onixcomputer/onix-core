@@ -37,6 +37,22 @@ _: {
                 }
               ];
             }
+            # vLLM metrics endpoint on aspen1
+            {
+              job_name = "vllm";
+              static_configs = [
+                {
+                  targets = [ "aspen1.bison-tailor.ts.net:8000" ];
+                  labels = {
+                    instance = "aspen1";
+                    model = "gpt-oss-120b";
+                  };
+                }
+              ];
+              metrics_path = "/metrics";
+              scrape_interval = "30s";
+              scrape_timeout = "10s";
+            }
           ];
 
           # Alert rules
@@ -241,6 +257,61 @@ _: {
                       annotations:
                         summary: "CPU thermal throttling on {{ $labels.instance }}"
                         description: "CPU {{ $labels.cpu }} frequency is decreasing, indicating thermal throttling"
+
+                    # vLLM/LLM Inference Alerts
+                    - alert: VLLMServiceDown
+                      expr: up{job="vllm"} == 0
+                      for: 5m
+                      labels:
+                        severity: critical
+                      annotations:
+                        summary: "vLLM service down on {{ $labels.instance }}"
+                        description: "vLLM inference service is not responding"
+
+                    - alert: VLLMHighGPUCacheUsage
+                      expr: vllm_gpu_cache_usage_percent > 95
+                      for: 10m
+                      labels:
+                        severity: warning
+                      annotations:
+                        summary: "High GPU cache usage on {{ $labels.instance }}"
+                        description: "vLLM KV cache is at {{ $value }}% - may cause request rejections"
+
+                    - alert: VLLMHighRequestLatency
+                      expr: histogram_quantile(0.95, rate(vllm_e2e_request_latency_seconds_bucket[5m])) > 30
+                      for: 10m
+                      labels:
+                        severity: warning
+                      annotations:
+                        summary: "High vLLM request latency on {{ $labels.instance }}"
+                        description: "P95 request latency is {{ $value }}s"
+
+                    - alert: VLLMHighPendingRequests
+                      expr: vllm_num_requests_waiting > 10
+                      for: 5m
+                      labels:
+                        severity: warning
+                      annotations:
+                        summary: "Many pending requests on {{ $labels.instance }}"
+                        description: "{{ $value }} requests waiting in queue"
+
+                    - alert: AMDGPUHighMemoryUsage
+                      expr: amd_gpu_memory_utilization_percent > 95
+                      for: 5m
+                      labels:
+                        severity: warning
+                      annotations:
+                        summary: "High AMD GPU memory on {{ $labels.instance }}"
+                        description: "GPU memory utilization is {{ $value }}%"
+
+                    - alert: AMDGPUHighTemperature
+                      expr: amd_gpu_temperature_celsius > 85
+                      for: 5m
+                      labels:
+                        severity: warning
+                      annotations:
+                        summary: "High AMD GPU temperature on {{ $labels.instance }}"
+                        description: "GPU temperature is {{ $value }}C"
             ''
           ];
         };

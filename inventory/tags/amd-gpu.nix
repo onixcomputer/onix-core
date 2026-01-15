@@ -70,7 +70,8 @@
 
     # GPU stress testing and benchmarking
     vulkan-tools # Vulkan utilities
-    vkmark # Vulkan benchmarking tool
+    # TODO: vkmark disabled due to Vulkan API compatibility issue in nixpkgs
+    # vkmark # Vulkan benchmarking tool
   ];
 
   # Environment variables for ROCm/OpenCL/Vulkan
@@ -78,6 +79,11 @@
     # ROCm/HIP settings
     ROC_ENABLE_PRE_VEGA = "1";
     HIP_VISIBLE_DEVICES = "0";
+
+    # vLLM/ROCm optimization settings for Strix Halo (gfx1151)
+    HSA_ENABLE_SDMA = "0"; # Prevents artifacts, improves stability for AI workloads
+    HSA_OVERRIDE_GFX_VERSION = "11.5.1"; # Ensure gfx1151 is recognized
+    PYTORCH_ROCM_ARCH = "gfx1151"; # Target architecture for PyTorch/vLLM
 
     # OpenCL settings
     OCL_ICD_VENDORS = "${pkgs.rocmPackages.clr.icd}/etc/OpenCL/vendors/";

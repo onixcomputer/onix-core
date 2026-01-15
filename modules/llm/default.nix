@@ -95,7 +95,6 @@ in
               inherit (settings)
                 serviceType
                 port
-                host
                 enableGPU
                 models
                 model
@@ -130,22 +129,32 @@ in
               # Open firewall for the service
               networking.firewall.allowedTCPPorts = [ port ];
 
-              # Custom vLLM systemd service
+              # Custom vLLM systemd service using OCI container (ROCm compatible)
+              # nixpkgs vLLM is CUDA-only, so we use containers for AMD GPUs
               systemd.services = lib.mkIf (serviceType == "vllm") {
                 vllm = {
-                  description = "vLLM Inference Server";
+                  description = "vLLM Inference Server (Container)";
                   wantedBy = [ "multi-user.target" ];
-                  after = [ "network.target" ];
-
-                  environment = {
-                    # Set environment variables for vLLM
-                    CUDA_VISIBLE_DEVICES = lib.mkIf enableGPU "0";
-                  };
+                  after = [
+                    "network.target"
+                    "docker.service"
+                  ];
+                  requires = [ "docker.service" ];
 
                   serviceConfig = {
                     Type = "simple";
-                    User = "vllm";
-                    Group = "vllm";
+
+                    # State directory for model cache
+                    StateDirectory = "vllm";
+                    StateDirectoryMode = "0755";
+
+                    ExecStartPre =
+                      let
+                        # Pre-built vLLM ROCm container for gfx1151 (Strix Halo)
+                        containerImage = "docker.io/kyuz0/vllm-therock-gfx1151:latest";
+                      in
+                      "${pkgs.docker}/bin/docker pull ${containerImage}";
+
                     ExecStart =
                       let
                         # Use model parameter or first model from models list
@@ -157,45 +166,76 @@ in
                           else
                             throw "vLLM requires either 'model' or 'models' to be specified";
 
-                        vllmArgs = [
-                          "${pkgs.vllm}/bin/vllm"
+                        # Pre-built vLLM ROCm container for gfx1151 (Strix Halo)
+                        containerImage = "docker.io/kyuz0/vllm-therock-gfx1151:latest";
+
+                        # Build vLLM command arguments
+                        vllmCmd = [
+                          "vllm"
                           "serve"
                           primaryModel
                           "--host"
-                          host
+                          "0.0.0.0"
                           "--port"
-                          (toString port)
+                          "8000"
                         ]
                         ++ lib.optionals enableGPU [
-                          "--tensor-parallel-size=1"
-                          "--gpu-memory-utilization=0.9"
+                          "--tensor-parallel-size"
+                          "1"
+                          "--gpu-memory-utilization"
+                          "0.85"
                         ]
                         ++ (settings.extraArgs or [ ]);
+
+                        vllmCmdStr = lib.concatStringsSep " " vllmCmd;
                       in
-                      "${lib.concatStringsSep " " vllmArgs}";
+                      pkgs.writeShellScript "run-vllm-container" ''
+                        exec ${pkgs.docker}/bin/docker run \
+                          --rm \
+                          --name vllm-server \
+                          --network host \
+                          --device /dev/kfd \
+                          --device /dev/dri \
+                          --group-add video \
+                          --group-add render \
+                          --ipc host \
+                          --cap-add SYS_PTRACE \
+                          --security-opt seccomp=unconfined \
+                          -e HSA_ENABLE_SDMA=0 \
+                          -e HIP_VISIBLE_DEVICES=0 \
+                          -e VLLM_WORKER_MULTIPROC_METHOD=spawn \
+                          -e TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1 \
+                          -e PYTORCH_TUNABLEOP_ENABLED=1 \
+                          -e PYTORCH_HIP_ALLOC_CONF=expandable_segments:True \
+                          -e HSA_XNACK=1 \
+                          -v /var/lib/vllm:/root/.cache/huggingface \
+                          ${containerImage} \
+                          ${vllmCmdStr}
+                      '';
+
+                    ExecStop = "${pkgs.docker}/bin/docker stop vllm-server";
+
                     Restart = "always";
-                    RestartSec = "10";
+                    RestartSec = "30";
+                    TimeoutStartSec = "1800"; # 30 minutes for initial container pull
                   };
                 };
               };
 
-              # Create vllm user for the service
-              users = lib.mkIf (serviceType == "vllm") {
-                users.vllm = {
-                  isSystemUser = true;
-                  group = "vllm";
-                  description = "vLLM service user";
-                };
-                groups.vllm = { };
-              };
+              # Create vllm directory for model cache
+              systemd.tmpfiles.rules = lib.mkIf (serviceType == "vllm") [
+                "d /var/lib/vllm 0755 root root -"
+              ];
 
-              # Install client tools
+              # Install client tools (curl/jq for API access)
               environment.systemPackages = lib.mkMerge [
                 (lib.mkIf (serviceType == "ollama") [
                   pkgs.ollama
                 ])
                 (lib.mkIf (serviceType == "vllm") [
-                  pkgs.vllm
+                  pkgs.curl
+                  pkgs.jq
+                  pkgs.python3Packages.openai # OpenAI-compatible client
                 ])
               ];
             };

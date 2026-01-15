@@ -308,9 +308,19 @@ let
                               }
                           }
 
+                          // Primary monitor (top) - LG ULTRAGEAR+
                           output "DP-3" {
-                              scale 1.0
+                              mode "3840x2160@240.084"
+                              scale 1.5
+                              position x=0 y=0
                               variable-refresh-rate
+                          }
+
+                          // Secondary monitor (below, centered) - Portable monitor via HDMI
+                          output "HDMI-A-2" {
+                              mode "2880x1800@99.999"
+                              scale 1.2
+                              position x=960 y=2160
                           }
 
 
@@ -420,17 +430,22 @@ let
               }
           }
           workspace "term" {
+              open-on-output "DP-3"
           }
           workspace "web" {
+              open-on-output "DP-3"
           }
 
           workspace "chat" {
+              open-on-output "DP-3"
           }
 
           workspace "status" {
+              open-on-output "DP-3"
           }
 
           workspace "hidden" {
+              open-on-output "DP-3"
           }
 
           xwayland-satellite {
@@ -519,8 +534,8 @@ let
                               Mod+S { spawn "kitty" "--title" "btop" "-e" "btop"; }
                               Mod+R { spawn "${wrappedFuzzel}/bin/fuzzel"; }
                               Mod+Space { spawn "${wrappedFuzzel}/bin/fuzzel"; }
-                              Mod+C { spawn "sh" "-c" "${pkgs.cliphist}/bin/cliphist list | ${wrappedFuzzel}/bin/fuzzel --dmenu | ${pkgs.cliphist}/bin/cliphist decode | ${pkgs.wl-clipboard}/bin/wl-copy"; }
-                              Mod+Shift+C { spawn "sh" "-c" "${pkgs.cliphist}/bin/cliphist list | ${wrappedFuzzel}/bin/fuzzel --dmenu | ${pkgs.cliphist}/bin/cliphist delete"; }
+                              Mod+V { spawn "sh" "-c" "${pkgs.cliphist}/bin/cliphist list | ${wrappedFuzzel}/bin/fuzzel --dmenu | ${pkgs.cliphist}/bin/cliphist decode | ${pkgs.wl-clipboard}/bin/wl-copy"; }
+                              Mod+Shift+V { spawn "sh" "-c" "${pkgs.cliphist}/bin/cliphist list | ${wrappedFuzzel}/bin/fuzzel --dmenu | ${pkgs.cliphist}/bin/cliphist delete"; }
                               Mod+N { spawn "sh" "-c" "notify-send -t 1000 'WiFi 󰤨' 'Scanning networks...' && fuzzel-network-menu"; }
                               Mod+G { spawn "fuzzel-generations"; }
                               Mod+T { spawn "toggle-theme-mode"; }
@@ -528,8 +543,14 @@ let
                               Mod+D { spawn "fuzzel-darkman"; }
 
                               // Screenshots
-                              Print { spawn "sh" "-c" "grim ~/Screenshots/$(date +'screenshot_%Y-%m-%d_%H-%M-%S.png') && notify-send 'Screenshot' 'Saved to ~/Screenshots' -i camera-photo"; }
-                              Mod+Shift+S { spawn "screenshot-wrapper" "-m" "region" "-o" "~/Screenshots"; }
+                              // Print: full screen screenshot (quick, no annotation)
+                              Print { spawn "screenshot-screen"; }
+                              // Mod+Shift+S: region selection with satty annotation editor
+                              Mod+Shift+S { spawn "screenshot-region"; }
+                              // Mod+Print: full screen with satty annotation editor
+                              Mod+Print { spawn "screenshot-screen-edit"; }
+                              // Mod+Shift+P: color picker
+                              Mod+Shift+P { spawn "color-picker"; }
 
                               // Notifications (makoctl)
                               Mod+Comma { spawn "makoctl" "dismiss"; }
@@ -551,6 +572,27 @@ let
                               // Touchpad scroll bindings for volume (Mod + scroll)
                               Mod+TouchpadScrollUp { spawn "swayosd-client" "--output-volume" "raise"; }
                               Mod+TouchpadScrollDown { spawn "swayosd-client" "--output-volume" "lower"; }
+
+                              // Monitor navigation (for multi-monitor setups)
+                              // Monitors are stacked: DP-3 (top) and HDMI-A-2 (bottom)
+                              Mod+Escape { focus-monitor-previous; }
+                              Mod+Shift+Up { focus-monitor-up; }
+                              Mod+Shift+Down { focus-monitor-down; }
+                              Mod+Shift+Left { focus-monitor-left; }
+                              Mod+Shift+Right { focus-monitor-right; }
+
+                              // Move focused column to another monitor
+                              Mod+Control+Shift+Up { move-column-to-monitor-up; }
+                              Mod+Control+Shift+Down { move-column-to-monitor-down; }
+                              Mod+Control+Shift+Left { move-column-to-monitor-left; }
+                              Mod+Control+Shift+Right { move-column-to-monitor-right; }
+
+                              // Column layout
+                              Mod+M { maximize-column; }
+                              Mod+P { switch-preset-column-width; }
+
+                              // Power management
+                              Mod+Shift+O { power-off-monitors; }
                           }
         '';
       };

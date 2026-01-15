@@ -19,6 +19,7 @@ let
     #wiki-js = import ./wiki-js.nix { inherit inputs; };
     cloudflare-tunnel = import ./cloudflare-tunnel.nix { inherit inputs; };
     llm = import ./llm.nix { inherit inputs; };
+    llm-gptoss = import ./llm-gptoss.nix { inherit inputs; };
     #gitlab-runner = import ./gitlab-runner.nix { inherit inputs; };
     # keycloak = import ./keycloak.nix { inherit inputs; };
     garage = import ./garage.nix { inherit inputs; };

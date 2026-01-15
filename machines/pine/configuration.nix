@@ -3,6 +3,10 @@
   networking.hostName = "pine";
   time.timeZone = "America/Chicago";
 
+  # PineNote has no TPM - disable to prevent missing module errors
+  boot.initrd.systemd.tpm2.enable = false;
+  systemd.tpm2.enable = false;
+
   # NetworkManager for WiFi
   networking.networkmanager.enable = true;
 

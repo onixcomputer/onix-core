@@ -29,6 +29,7 @@
     php.packages.composer
 
     # Julia development
-    julia
+    # TODO: julia temporarily disabled - takes too long to build from source
+    # julia
   ];
 }
