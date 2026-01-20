@@ -1,8 +1,7 @@
 _: {
   instances = {
     # vLLM instance on aspen1 (AMD Strix Halo with 124GB unified memory)
-    # Using Qwen2.5-32B-Instruct - fits with room for KV cache
-    # Memory breakdown: ~61GB weights + ~50GB KV cache headroom
+    # ArliAI GPT-OSS 20B Derestricted (~40GB bf16)
     "llm-gptoss" = {
       module.name = "llm";
       module.input = "self";
@@ -16,19 +15,19 @@ _: {
           port = 8000;
           host = "0.0.0.0";
           enableGPU = true;
-          model = "Qwen/Qwen2.5-32B-Instruct";
+          model = "ArliAI/gpt-oss-20b-Derestricted";
 
-          # vLLM arguments optimized for Strix Halo with 124GB
+          # vLLM arguments for 20B on 124GB
           extraArgs = [
             "--max-model-len"
-            "16384" # Reduced context for 32B model to fit KV cache
+            "32768"
             "--gpu-memory-utilization"
-            "0.92" # ~114GB usable
+            "0.92"
             "--max-num-seqs"
-            "8" # Fewer concurrent requests for larger model
+            "16"
             "--enforce-eager" # Required for ROCm stability
             "--dtype"
-            "bfloat16" # Optimal for inference
+            "bfloat16"
           ];
         };
       };

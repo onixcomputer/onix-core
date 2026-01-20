@@ -46,7 +46,8 @@ _: {
               echo "Running nix fmt..."
               nix fmt && echo "Running pre-commit checks..." && pre-commit run --all-files
             '')
-          ];
+          ]
+          ++ config.mcp-servers.packages;
 
           shellHook = ''
             echo "Clan Infrastructure Development Shell"
@@ -85,6 +86,9 @@ _: {
             echo ""
 
             ${config.pre-commit.installationScript}
+
+            # Configure MCP servers for AI coding assistants
+            ${config.mcp-servers.shellHook}
           '';
         };
 

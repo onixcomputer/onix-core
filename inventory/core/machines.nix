@@ -141,6 +141,7 @@ _: {
         "cross-compile"
         "creative"
         "docker"
+        "taskwarrior"
         # "radicle-node"
       ];
       deploy = {
@@ -177,6 +178,7 @@ _: {
         "llm-client"
         "cross-compile"
         "creative"
+        "taskwarrior"
         # "radicle-node"
       ];
       deploy = {
@@ -235,6 +237,7 @@ _: {
         "udev-rules"
         # "radicle-seed"
         "cloud-hypervisor-host" # TAP networking for RedoxOS development
+        "taskwarrior"
       ];
       deploy = {
         targetHost = "root@britton-desktop";

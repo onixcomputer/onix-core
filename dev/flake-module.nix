@@ -6,6 +6,7 @@
     # External flake modules
     inputs.treefmt-nix.flakeModule
     inputs.pre-commit-hooks-nix.flakeModule
+    inputs.mcp-servers-nix.flakeModule
 
     # Custom transposed modules for organized outputs
     ../parts/modules
@@ -20,5 +21,8 @@
     # Analysis and infrastructure tools
     ../parts/sops-viz.nix
     ../parts/cloud-cli.nix
+
+    # MCP servers configuration
+    ../parts/mcp-servers.nix
   ];
 }
