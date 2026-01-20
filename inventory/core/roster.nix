@@ -299,7 +299,53 @@ let
       };
     };
 
+    bonsai = {
+      users = {
+        brittonr = {
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+              "niri"
+              "social"
+            ];
+          };
+        };
+      };
+      homeManagerOptions = {
+        sharedModules = [
+          {
+            # TODO: Add monitor configuration if needed
+          }
+        ];
+      };
+    };
+
     aspen1 = {
+      users = {
+        brittonr = {
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+        alex = {
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+      };
+    };
+
+    aspen2 = {
       users = {
         brittonr = {
           homeManager = {

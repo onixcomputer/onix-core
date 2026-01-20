@@ -187,6 +187,39 @@ _: {
       };
     };
 
+    bonsai = {
+      name = "bonsai";
+      tags = [
+        "all"
+        "ssd-optimization"
+        "perf-tuning"
+        "dev"
+        "laptop"
+        "laptop-input"
+        "greeter"
+        "audio"
+        "grub-theme"
+        "remote-builders"
+        "xdg-portal"
+        "hyprland"
+        "prometheus"
+        "monitoring"
+        "homepage-server"
+        "tailnet-brittonr"
+        "openpgp"
+        "password-manager"
+        "typst"
+        "llm-client"
+        "cross-compile"
+        "creative"
+        "taskwarrior"
+      ];
+      deploy = {
+        targetHost = "root@bonsai"; # Update with actual hostname or IP
+        buildHost = "";
+      };
+    };
+
     aspen1 = {
       name = "aspen1";
       tags = [
@@ -203,6 +236,25 @@ _: {
       ];
       deploy = {
         targetHost = "root@aspen1";
+        buildHost = "";
+      };
+    };
+
+    aspen2 = {
+      name = "aspen2";
+      tags = [
+        "all"
+        "ssd-optimization"
+        "docker"
+        "tailnet-brittonr"
+        "dev"
+        "prometheus"
+        "monitoring"
+        "homepage-server"
+        "amd-gpu" # AMD Ryzen AI MAX+ 395 with Radeon 8060S
+      ];
+      deploy = {
+        targetHost = "root@aspen2"; # Update with actual hostname or IP
         buildHost = "";
       };
     };
