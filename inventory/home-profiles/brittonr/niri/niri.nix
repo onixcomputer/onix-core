@@ -364,7 +364,7 @@ let
                           window-rule {
               match app-id=r#"firefox$"#
 
-              open-on-workspace "web"
+              open-on-workspace 2
               open-maximized true
           }
           window-rule {
@@ -375,31 +375,31 @@ let
                           window-rule {
               match app-id=r#"kitty$"#
 
-              open-on-workspace "term"
+              open-on-workspace 1
 
           }
           window-rule {
               match app-id=r#"vesktop$"#
 
-              open-on-workspace "chat"
+              open-on-workspace 3
           }
 
           window-rule {
               match app-id=r#"Element$"#
 
-              open-on-workspace "chat"
+              open-on-workspace 3
           }
 
           window-rule {
               match app-id=r#"kitty$"# title="^btop$"
 
-              open-on-workspace "status"
+              open-on-workspace 4
               open-maximized true
           }
           window-rule {
               match app-id=r#"kitty$"# title="^journalctl$"
 
-              open-on-workspace "status"
+              open-on-workspace 4
               open-maximized true
           }
 
@@ -428,24 +428,6 @@ let
                   active-color "#f38ba8"
                   inactive-color "#7d0d2d"
               }
-          }
-          workspace "term" {
-              open-on-output "DP-3"
-          }
-          workspace "web" {
-              open-on-output "DP-3"
-          }
-
-          workspace "chat" {
-              open-on-output "DP-3"
-          }
-
-          workspace "status" {
-              open-on-output "DP-3"
-          }
-
-          workspace "hidden" {
-              open-on-output "DP-3"
           }
 
           xwayland-satellite {
