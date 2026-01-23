@@ -25,7 +25,10 @@ in
 
       # Autostart
       exec-once = [
-        "${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
+        # Pass all environment variables to systemd/dbus so services inherit them
+        # This ensures NVIDIA VA-API vars (LIBVA_DRIVER_NAME, NVD_BACKEND, MOZ_DISABLE_RDD_SANDBOX)
+        # are available to Firefox and other apps started from the session
+        "${pkgs.dbus}/bin/dbus-update-activation-environment --systemd --all"
         "eval $(${pkgs.gnome-keyring}/bin/gnome-keyring-daemon --start --components=ssh) && systemctl --user import-environment SSH_AUTH_SOCK"
         "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
         "${pkgs.wl-clip-persist}/bin/wl-clip-persist --clipboard regular --all-mime-type-regex '^(?!x-kde-passwordManagerHint).+'"

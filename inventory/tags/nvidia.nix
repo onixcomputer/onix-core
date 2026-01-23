@@ -99,4 +99,27 @@
       kicad-zink = "__GLX_VENDOR_LIBRARY_NAME=mesa MESA_LOADER_DRIVER_OVERRIDE=zink GALLIUM_DRIVER=zink kicad";
     };
   };
+
+  # Use sessionVariables in addition to environment.variables
+  # sessionVariables are better inherited by display managers and Wayland sessions
+  environment.sessionVariables = {
+    # GBM backend for Wayland - required for proper EGL initialization
+    GBM_BACKEND = "nvidia-drm";
+    __GLX_VENDOR_LIBRARY_NAME = "nvidia";
+
+    # VA-API with NVIDIA (for Firefox video acceleration)
+    NVD_BACKEND = "direct";
+    LIBVA_DRIVER_NAME = "nvidia";
+
+    # Firefox Wayland - enable hardware acceleration
+    MOZ_ENABLE_WAYLAND = "1";
+    MOZ_WAYLAND_USE_VAAPI = "1";
+
+    # Required for Firefox VA-API: disable RDD sandbox to allow libva access
+    # Without this, VA-API decoding fails or produces green artifacts
+    MOZ_DISABLE_RDD_SANDBOX = "1";
+
+    # Electron apps (OrcaSlicer uses wxWidgets which may use GTK)
+    ELECTRON_OZONE_PLATFORM_HINT = "auto";
+  };
 }

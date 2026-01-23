@@ -12,8 +12,11 @@ in
   networking.hostName = "bonsai";
   time.timeZone = "America/New_York";
 
-  # TODO: Add hardware-specific kernel params if needed
-  # boot.kernelParams = [ ];
+  # GPD screen orientation fixes
+  boot.kernelParams = [
+    "fbcon=rotate:1"
+    "video=eDP-1:panel_orientation=right_side_up"
+  ];
 
   # GRUB wallpaper (theme from grub-theme tag)
   boot.loader.grub2-theme = {
@@ -65,24 +68,53 @@ in
       IdentityAgent /run/user/1555/gcr/ssh
   '';
 
-  # TODO: Enable hardware sensors if supported
-  # hardware.sensor.iio.enable = true;
+  # GPD hardware sensors for rotation detection
+  hardware.sensor.iio.enable = true;
 
   services = {
-    # TODO: Enable fingerprint if supported
-    # fprintd.enable = true;
+    fprintd.enable = true;
 
     # Override greeter session for niri
     greetd.settings.default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd /etc/profiles/per-user/brittonr/bin/niri-session";
 
-    # TODO: Add hardware-specific udev rules if needed
-    # udev = {
-    #   extraHwdb = '''';
-    #   extraRules = '''';
-    # };
+    # GPD suspend/wake fixes
+    udev = {
+      # Accelerometer mount matrix for correct orientation
+      extraHwdb = ''
+        sensor:modalias:acpi:MXC*
+         ACCEL_MOUNT_MATRIX=-1, 0, 0; 0, 1, 0; 0, 0, 1
+      '';
+      # IIO device buffer access and USB wakeup fixes
+      extraRules = ''
+        SUBSYSTEM=="iio", KERNEL=="iio*", MODE="0666"
+        SUBSYSTEM=="iio", KERNEL=="iio*", RUN+="${pkgs.coreutils}/bin/chmod a+rw /sys$devpath/buffer/enable"
+        SUBSYSTEM=="iio", KERNEL=="iio*", RUN+="${pkgs.coreutils}/bin/chmod a+rw /sys$devpath/buffer/length"
+        ACTION=="add", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="258a", ATTRS{idProduct}=="000c", ATTR{power/wakeup}="disabled", ATTR{power/control}="on"
+      '';
+    };
   };
 
   environment.systemPackages = with pkgs; [ signal-desktop ];
 
-  # TODO: Add any hardware-specific systemd services below
+  # Disable USB controller wakeup to prevent spurious wakes
+  systemd.services.disable-usb-wakeup = {
+    description = "Disable XHC0 USB controller wakeup";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.bash}/bin/bash -c 'echo XHC0 > /proc/acpi/wakeup'";
+      RemainAfterExit = true;
+    };
+  };
+
+  # Fix intermittent touchscreen breakage after suspension
+  systemd.services.fix-touchscreen = {
+    description = "Manually reload i2c_hid_acpi module to fix touchscreen";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStartPre = "${pkgs.kmod}/bin/modprobe -r i2c_hid_acpi";
+      ExecStart = "${pkgs.kmod}/bin/modprobe i2c_hid_acpi";
+    };
+  };
 }

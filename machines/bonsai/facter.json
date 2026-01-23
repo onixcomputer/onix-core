@@ -23,8 +23,8 @@
     },
     "bluetooth": [
       {
-        "index": 79,
-        "attached_to": 74,
+        "index": 78,
+        "attached_to": 73,
         "class_list": ["usb", "bluetooth"],
         "bus_type": {
           "hex": "0086",
@@ -95,8 +95,8 @@
         "module_alias": "usb:v8087p0032d0000dcE0dsc01dp01icE0isc01ip01in00"
       },
       {
-        "index": 88,
-        "attached_to": 74,
+        "index": 87,
+        "attached_to": 73,
         "class_list": ["usb", "bluetooth"],
         "bus_type": {
           "hex": "0086",
@@ -1394,8 +1394,8 @@
     ],
     "camera": [
       {
-        "index": 75,
-        "attached_to": 74,
+        "index": 74,
+        "attached_to": 73,
         "class_list": ["camera", "usb"],
         "bus_type": {
           "hex": "0086",
@@ -1412,21 +1412,22 @@
           "value": 271
         },
         "vendor": {
-          "hex": "2ef4",
-          "value": 12020
+          "hex": "1bcf",
+          "name": "XFSJ-250116-ZW",
+          "value": 7119
         },
         "device": {
-          "hex": "5820",
-          "name": "Integrated Camera",
-          "value": 22560
+          "hex": "28c4",
+          "name": "Hy-QSXGA(9D35)-Camera",
+          "value": 10436
         },
         "revision": {
           "hex": "0000",
-          "name": "0.03",
+          "name": "1.16",
           "value": 0
         },
-        "serial": "200901010001",
-        "model": "Integrated Camera",
+        "serial": "01.00.00",
+        "model": "XFSJ-250116-ZW Hy-QSXGA(9D35)-Camera",
         "sysfs_id": "/devices/pci0000:00/0000:00:08.3/0000:c7:00.0/usb3/3-4/3-4:1.0",
         "sysfs_bus_id": "3-4:1.0",
         "resources": [
@@ -1485,11 +1486,11 @@
         "driver_module": "uvcvideo",
         "drivers": ["uvcvideo"],
         "driver_modules": ["uvcvideo"],
-        "module_alias": "usb:v2EF4p5820d0003dcEFdsc02dp01ic0Eisc01ip00in00"
+        "module_alias": "usb:v1BCFp28C4d0116dcEFdsc02dp01ic0Eisc01ip00in00"
       },
       {
-        "index": 83,
-        "attached_to": 74,
+        "index": 82,
+        "attached_to": 73,
         "class_list": ["camera", "usb"],
         "bus_type": {
           "hex": "0086",
@@ -1506,21 +1507,22 @@
           "value": 271
         },
         "vendor": {
-          "hex": "2ef4",
-          "value": 12020
+          "hex": "1bcf",
+          "name": "XFSJ-250116-ZW",
+          "value": 7119
         },
         "device": {
-          "hex": "5820",
-          "name": "Integrated Camera",
-          "value": 22560
+          "hex": "28c4",
+          "name": "Hy-QSXGA(9D35)-Camera",
+          "value": 10436
         },
         "revision": {
           "hex": "0000",
-          "name": "0.03",
+          "name": "1.16",
           "value": 0
         },
-        "serial": "200901010001",
-        "model": "Integrated Camera",
+        "serial": "01.00.00",
+        "model": "XFSJ-250116-ZW Hy-QSXGA(9D35)-Camera",
         "sysfs_id": "/devices/pci0000:00/0000:00:08.3/0000:c7:00.0/usb3/3-4/3-4:1.1",
         "sysfs_bus_id": "3-4:1.1",
         "resources": [
@@ -1579,7 +1581,7 @@
         "driver_module": "uvcvideo",
         "drivers": ["uvcvideo"],
         "driver_modules": ["uvcvideo"],
-        "module_alias": "usb:v2EF4p5820d0003dcEFdsc02dp01ic0Eisc02ip00in01"
+        "module_alias": "usb:v1BCFp28C4d0116dcEFdsc02dp01ic0Eisc02ip00in01"
       }
     ],
     "cpu": [
@@ -1794,38 +1796,38 @@
           "value": 0
         },
         "vendor": {
-          "hex": "1e0f",
-          "value": 7695
+          "hex": "15b7",
+          "value": 5559
         },
         "sub_vendor": {
-          "hex": "1e0f",
-          "value": 7695
+          "hex": "15b7",
+          "value": 5559
         },
         "device": {
-          "hex": "000d",
-          "name": "KXG70ZNV1T02 KIOXIA",
-          "value": 13
+          "hex": "5017",
+          "name": "WD PC SN740 SDDPNQE-2T00",
+          "value": 20503
         },
         "sub_device": {
-          "hex": "0001",
-          "value": 1
+          "hex": "5017",
+          "value": 20503
         },
-        "serial": "14UF706CF0JP",
-        "model": "KXG70ZNV1T02 KIOXIA",
+        "serial": "251517805135",
+        "model": "WD PC SN740 SDDPNQE-2T00",
         "sysfs_id": "/class/block/nvme0n1",
         "sysfs_bus_id": "nvme0",
         "sysfs_device_link": "/devices/pci0000:00/0000:00:02.1/0000:c1:00.0/nvme/nvme0",
         "unix_device_names": [
-          "/dev/disk/by-id/nvme-KXG70ZNV1T02_KIOXIA_14UF706CF0JP",
-          "/dev/disk/by-id/nvme-KXG70ZNV1T02_KIOXIA_14UF706CF0JP_1",
-          "/dev/disk/by-id/nvme-eui.00000000000000008ce38e050110307d",
+          "/dev/disk/by-id/nvme-WD_PC_SN740_SDDPNQE-2T00_251517805135",
+          "/dev/disk/by-id/nvme-WD_PC_SN740_SDDPNQE-2T00_251517805135_1",
+          "/dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b4d2ac791",
           "/dev/disk/by-path/pci-0000:c1:00.0-nvme-1",
           "/dev/nvme0n1"
         ],
         "resources": [
           {
             "type": "disk_geo",
-            "cylinders": 976762,
+            "cylinders": 1953514,
             "heads": 64,
             "sectors": 32,
             "size": "0x0",
@@ -1834,7 +1836,7 @@
           {
             "type": "size",
             "unit": "sectors",
-            "value_1": 2000409264,
+            "value_1": 4000797360,
             "value_2": 512
           }
         ],
@@ -1992,7 +1994,7 @@
     "hub": [
       {
         "index": 71,
-        "attached_to": 74,
+        "attached_to": 73,
         "class_list": ["usb", "hub"],
         "bus_type": {
           "hex": "0086",
@@ -2139,7 +2141,7 @@
         "module_alias": "usb:v1D6Bp0003d0617dc09dsc00dp03ic09isc00ip00in00"
       },
       {
-        "index": 74,
+        "index": 73,
         "attached_to": 43,
         "class_list": ["usb", "hub"],
         "bus_type": {
@@ -2219,7 +2221,7 @@
         "module_alias": "usb:v1D6Bp0002d0617dc09dsc00dp01ic09isc00ip00in00"
       },
       {
-        "index": 76,
+        "index": 75,
         "attached_to": 37,
         "class_list": ["usb", "hub"],
         "bus_type": {
@@ -2299,7 +2301,7 @@
         "module_alias": "usb:v1D6Bp0002d0617dc09dsc00dp01ic09isc00ip00in00"
       },
       {
-        "index": 78,
+        "index": 77,
         "attached_to": 43,
         "class_list": ["usb", "hub"],
         "bus_type": {
@@ -2369,7 +2371,7 @@
         "module_alias": "usb:v1D6Bp0003d0617dc09dsc00dp03ic09isc00ip00in00"
       },
       {
-        "index": 81,
+        "index": 80,
         "attached_to": 37,
         "class_list": ["usb", "hub"],
         "bus_type": {
@@ -2439,7 +2441,7 @@
         "module_alias": "usb:v1D6Bp0003d0617dc09dsc00dp03ic09isc00ip00in00"
       },
       {
-        "index": 82,
+        "index": 81,
         "attached_to": 49,
         "class_list": ["usb", "hub"],
         "bus_type": {
@@ -2519,7 +2521,7 @@
         "module_alias": "usb:v1D6Bp0002d0617dc09dsc00dp01ic09isc00ip00in00"
       },
       {
-        "index": 84,
+        "index": 83,
         "attached_to": 60,
         "class_list": ["usb", "hub"],
         "bus_type": {
@@ -2599,7 +2601,7 @@
         "module_alias": "usb:v1D6Bp0002d0617dc09dsc00dp01ic09isc00ip00in00"
       },
       {
-        "index": 87,
+        "index": 86,
         "attached_to": 49,
         "class_list": ["usb", "hub"],
         "bus_type": {
@@ -2671,8 +2673,8 @@
     ],
     "keyboard": [
       {
-        "index": 77,
-        "attached_to": 74,
+        "index": 76,
+        "attached_to": 73,
         "class_list": ["keyboard", "usb"],
         "bus_type": {
           "hex": "0086",
@@ -2785,7 +2787,7 @@
         "resources": [
           {
             "type": "phys_mem",
-            "range": 25769803776
+            "range": 51539607552
           }
         ]
       }
@@ -2896,8 +2898,8 @@
     ],
     "mouse": [
       {
-        "index": 86,
-        "attached_to": 74,
+        "index": 85,
+        "attached_to": 73,
         "class_list": ["mouse", "usb"],
         "bus_type": {
           "hex": "0086",
@@ -3046,11 +3048,11 @@
         "resources": [
           {
             "type": "hwaddr",
-            "address": 53
+            "address": 98
           },
           {
             "type": "phwaddr",
-            "address": 48
+            "address": 52
           },
           {
             "type": "wlan",
@@ -3220,40 +3222,7 @@
     ],
     "network_interface": [
       {
-        "index": 89,
-        "attached_to": 29,
-        "class_list": ["network_interface"],
-        "base_class": {
-          "hex": "0107",
-          "name": "Network Interface",
-          "value": 263
-        },
-        "sub_class": {
-          "hex": "000a",
-          "name": "WLAN",
-          "value": 10
-        },
-        "model": "WLAN network interface",
-        "sysfs_id": "/class/net/wlan0",
-        "sysfs_device_link": "/devices/pci0000:00/0000:00:02.3/0000:c3:00.0",
-        "unix_device_names": ["wlan0"],
-        "resources": [
-          {
-            "type": "hwaddr",
-            "address": 53
-          },
-          {
-            "type": "phwaddr",
-            "address": 48
-          }
-        ],
-        "driver": "iwlwifi",
-        "driver_module": "iwlwifi",
-        "drivers": ["iwlwifi"],
-        "driver_modules": ["iwlwifi"]
-      },
-      {
-        "index": 90,
+        "index": 88,
         "attached_to": 62,
         "class_list": ["network_interface"],
         "base_class": {
@@ -3286,7 +3255,7 @@
         "driver_modules": ["r8169"]
       },
       {
-        "index": 91,
+        "index": 89,
         "attached_to": 0,
         "class_list": ["network_interface"],
         "base_class": {
@@ -3302,6 +3271,39 @@
         "model": "Loopback network interface",
         "sysfs_id": "/class/net/lo",
         "unix_device_names": ["lo"]
+      },
+      {
+        "index": 90,
+        "attached_to": 29,
+        "class_list": ["network_interface"],
+        "base_class": {
+          "hex": "0107",
+          "name": "Network Interface",
+          "value": 263
+        },
+        "sub_class": {
+          "hex": "000a",
+          "name": "WLAN",
+          "value": 10
+        },
+        "model": "WLAN network interface",
+        "sysfs_id": "/class/net/wlan0",
+        "sysfs_device_link": "/devices/pci0000:00/0000:00:02.3/0000:c3:00.0",
+        "unix_device_names": ["wlan0"],
+        "resources": [
+          {
+            "type": "hwaddr",
+            "address": 98
+          },
+          {
+            "type": "phwaddr",
+            "address": 52
+          }
+        ],
+        "driver": "iwlwifi",
+        "driver_module": "iwlwifi",
+        "drivers": ["iwlwifi"],
+        "driver_modules": ["iwlwifi"]
       }
     ],
     "pci": [
@@ -3731,18 +3733,22 @@
           "value": 2
         },
         "vendor": {
-          "hex": "1e0f",
-          "value": 7695
+          "hex": "15b7",
+          "value": 5559
         },
         "sub_vendor": {
-          "hex": "1e0f",
-          "value": 7695
+          "hex": "15b7",
+          "value": 5559
         },
         "device": {
-          "hex": "000d",
-          "value": 13
+          "hex": "5017",
+          "value": 20503
         },
         "sub_device": {
+          "hex": "5017",
+          "value": 20503
+        },
+        "revision": {
           "hex": "0001",
           "value": 1
         },
@@ -3752,7 +3758,7 @@
         "sysfs_iommu_group_id": 16,
         "detail": {
           "function": 0,
-          "command": 1030,
+          "command": 1031,
           "header_type": 0,
           "secondary_bus": 0,
           "prog_if": 2
@@ -3761,7 +3767,7 @@
         "driver_module": "nvme",
         "drivers": ["nvme"],
         "driver_modules": ["nvme"],
-        "module_alias": "pci:v00001E0Fd0000000Dsv00001E0Fsd00000001bc01sc08i02"
+        "module_alias": "pci:v000015B7d00005017sv000015B7sd00005017bc01sc08i02"
       }
     ],
     "system": {
@@ -3769,102 +3775,7 @@
     },
     "usb": [
       {
-        "index": 73,
-        "attached_to": 74,
-        "class_list": ["usb", "unknown"],
-        "bus_type": {
-          "hex": "0086",
-          "name": "USB",
-          "value": 134
-        },
-        "slot": {
-          "bus": 0,
-          "number": 0
-        },
-        "base_class": {
-          "hex": "0000",
-          "name": "Unclassified device",
-          "value": 0
-        },
-        "sub_class": {
-          "hex": "0000",
-          "name": "Unclassified device",
-          "value": 0
-        },
-        "vendor": {
-          "hex": "2ef4",
-          "value": 12020
-        },
-        "device": {
-          "hex": "5820",
-          "name": "Integrated Camera",
-          "value": 22560
-        },
-        "revision": {
-          "hex": "0000",
-          "name": "0.03",
-          "value": 0
-        },
-        "serial": "200901010001",
-        "model": "Integrated Camera",
-        "sysfs_id": "/devices/pci0000:00/0000:00:08.3/0000:c7:00.0/usb3/3-4/3-4:1.2",
-        "sysfs_bus_id": "3-4:1.2",
-        "resources": [
-          {
-            "type": "baud",
-            "speed": 480000000,
-            "bits": 0,
-            "stop_bits": 0,
-            "parity": 0,
-            "handshake": 0
-          }
-        ],
-        "detail": {
-          "device_class": {
-            "hex": "00ef",
-            "name": "miscellaneous",
-            "value": 239
-          },
-          "device_subclass": {
-            "hex": "0002",
-            "name": "comm",
-            "value": 2
-          },
-          "device_protocol": 1,
-          "interface_class": {
-            "hex": "00fe",
-            "name": "application",
-            "value": 254
-          },
-          "interface_subclass": {
-            "hex": "0001",
-            "name": "audio",
-            "value": 1
-          },
-          "interface_protocol": 1,
-          "interface_number": 2,
-          "interface_alternate_setting": 0,
-          "interface_association": {
-            "function_class": {
-              "hex": "00fe",
-              "name": "application",
-              "value": 254
-            },
-            "function_subclass": {
-              "hex": "0001",
-              "name": "audio",
-              "value": 1
-            },
-            "function_protocol": 0,
-            "interface_count": 1,
-            "first_interface": 2
-          }
-        },
-        "hotplug": "usb",
-        "module_alias": "usb:v2EF4p5820d0003dcEFdsc02dp01icFEisc01ip01in02"
-      },
-      {
-        "index": 80,
+        "index": 79,
         "attached_to": 71,
         "class_list": ["usb", "unknown"],
         "bus_type": {
@@ -4323,8 +4234,8 @@
     "bios": {
       "handle": 0,
       "vendor": "American Megatrends International, LLC.",
-      "version": "2.02",
-      "date": "12/23/2024",
+      "version": "2.10",
+      "date": "06/26/2025",
       "features": [
         "PCI supported",
         "BIOS flashable",
@@ -4355,7 +4266,7 @@
     },
     "cache": [
       {
-        "handle": 23,
+        "handle": 25,
         "socket": "L1 - Cache",
         "size_max": 960,
         "size_current": 960,
@@ -4392,7 +4303,7 @@
         "sram_type_supported": ["Pipeline Burst"]
       },
       {
-        "handle": 24,
+        "handle": 26,
         "socket": "L2 - Cache",
         "size_max": 12288,
         "size_current": 12288,
@@ -4429,7 +4340,7 @@
         "sram_type_supported": ["Pipeline Burst"]
       },
       {
-        "handle": 25,
+        "handle": 27,
         "socket": "L3 - Cache",
         "size_max": 24576,
         "size_current": 24576,
@@ -4512,7 +4423,7 @@
     ],
     "memory_array": [
       {
-        "handle": 29,
+        "handle": 31,
         "location": {
           "hex": "0003",
           "name": "Motherboard",
@@ -4529,31 +4440,31 @@
           "value": 3
         },
         "max_size": "0x4000000",
-        "error_handle": 28,
+        "error_handle": 30,
         "slots": 4
       }
     ],
     "memory_array_mapped_address": [
       {
-        "handle": 30,
-        "array_handle": 29,
+        "handle": 32,
+        "array_handle": 31,
         "start_address": "0x0",
-        "end_address": "0x800000000",
+        "end_address": "0x1000000000",
         "part_width": 4
       }
     ],
     "memory_device": [
       {
-        "handle": 32,
+        "handle": 34,
         "location": "DIMM 0",
         "bank_location": "P0 CHANNEL A",
         "manufacturer": "Micron Technology",
-        "part_number": "MT62F2G32D4DS-026 WT",
-        "array_handle": 29,
-        "error_handle": 31,
+        "part_number": "MT62F4G32D8DV-026 WT",
+        "array_handle": 31,
+        "error_handle": 33,
         "width": 32,
         "ecc_bits": 0,
-        "size": 8388608,
+        "size": 16777216,
         "form_factor": {
           "hex": "0001",
           "name": "Other",
@@ -4569,16 +4480,16 @@
         "speed": 7500
       },
       {
-        "handle": 35,
+        "handle": 37,
         "location": "DIMM 0",
         "bank_location": "P0 CHANNEL B",
         "manufacturer": "Micron Technology",
-        "part_number": "MT62F2G32D4DS-026 WT",
-        "array_handle": 29,
-        "error_handle": 34,
+        "part_number": "MT62F4G32D8DV-026 WT",
+        "array_handle": 31,
+        "error_handle": 36,
         "width": 32,
         "ecc_bits": 0,
-        "size": 8388608,
+        "size": 16777216,
         "form_factor": {
           "hex": "0001",
           "name": "Other",
@@ -4594,16 +4505,16 @@
         "speed": 7500
       },
       {
-        "handle": 38,
+        "handle": 40,
         "location": "DIMM 0",
         "bank_location": "P0 CHANNEL C",
         "manufacturer": "Micron Technology",
-        "part_number": "MT62F2G32D4DS-026 WT",
-        "array_handle": 29,
-        "error_handle": 37,
+        "part_number": "MT62F4G32D8DV-026 WT",
+        "array_handle": 31,
+        "error_handle": 39,
         "width": 32,
         "ecc_bits": 0,
-        "size": 8388608,
+        "size": 16777216,
         "form_factor": {
           "hex": "0001",
           "name": "Other",
@@ -4619,16 +4530,16 @@
         "speed": 7500
       },
       {
-        "handle": 41,
+        "handle": 43,
         "location": "DIMM 0",
         "bank_location": "P0 CHANNEL D",
         "manufacturer": "Micron Technology",
-        "part_number": "MT62F2G32D4DS-026 WT",
-        "array_handle": 29,
-        "error_handle": 40,
+        "part_number": "MT62F4G32D8DV-026 WT",
+        "array_handle": 31,
+        "error_handle": 42,
         "width": 32,
         "ecc_bits": 0,
-        "size": 8388608,
+        "size": 16777216,
         "form_factor": {
           "hex": "0001",
           "name": "Other",
@@ -4646,41 +4557,41 @@
     ],
     "memory_device_mapped_address": [
       {
-        "handle": 33,
-        "memory_device_handle": 32,
-        "array_map_handle": 30,
+        "handle": 35,
+        "memory_device_handle": 34,
+        "array_map_handle": 32,
         "start_address": "0x0",
-        "end_address": "0x800000000",
+        "end_address": "0x1000000000",
         "row_position": 255,
         "interleave_position": 255,
         "interleave_depth": 255
       },
       {
-        "handle": 36,
-        "memory_device_handle": 35,
-        "array_map_handle": 30,
+        "handle": 38,
+        "memory_device_handle": 37,
+        "array_map_handle": 32,
         "start_address": "0x0",
-        "end_address": "0x800000000",
+        "end_address": "0x1000000000",
         "row_position": 255,
         "interleave_position": 255,
         "interleave_depth": 255
       },
       {
-        "handle": 39,
-        "memory_device_handle": 38,
-        "array_map_handle": 30,
+        "handle": 41,
+        "memory_device_handle": 40,
+        "array_map_handle": 32,
         "start_address": "0x0",
-        "end_address": "0x800000000",
+        "end_address": "0x1000000000",
         "row_position": 255,
         "interleave_position": 255,
         "interleave_depth": 255
       },
       {
-        "handle": 42,
-        "memory_device_handle": 41,
-        "array_map_handle": 30,
+        "handle": 44,
+        "memory_device_handle": 43,
+        "array_map_handle": 32,
         "start_address": "0x0",
-        "end_address": "0x800000000",
+        "end_address": "0x1000000000",
         "row_position": 255,
         "interleave_position": 255,
         "interleave_depth": 255
@@ -4688,7 +4599,7 @@
     ],
     "memory_error": [
       {
-        "handle": 28,
+        "handle": 30,
         "error_type": {
           "hex": "0003",
           "name": "OK",
@@ -4710,7 +4621,7 @@
         "range": 2147483648
       },
       {
-        "handle": 31,
+        "handle": 33,
         "error_type": {
           "hex": "0003",
           "name": "OK",
@@ -4732,7 +4643,7 @@
         "range": 2147483648
       },
       {
-        "handle": 34,
+        "handle": 36,
         "error_type": {
           "hex": "0003",
           "name": "OK",
@@ -4754,7 +4665,7 @@
         "range": 2147483648
       },
       {
-        "handle": 37,
+        "handle": 39,
         "error_type": {
           "hex": "0003",
           "name": "OK",
@@ -4776,7 +4687,7 @@
         "range": 2147483648
       },
       {
-        "handle": 40,
+        "handle": 42,
         "error_type": {
           "hex": "0003",
           "name": "OK",
@@ -4848,7 +4759,7 @@
     ],
     "processor": [
       {
-        "handle": 26,
+        "handle": 28,
         "socket": "FP8LPDDR5x",
         "socket_type": {
           "hex": "0001",
@@ -4876,9 +4787,9 @@
         },
         "clock_ext": 100,
         "clock_max": 5150,
-        "cache_handle_l1": 23,
-        "cache_handle_l2": 24,
-        "cache_handle_l3": 25
+        "cache_handle_l1": 25,
+        "cache_handle_l2": 26,
+        "cache_handle_l3": 27
       }
     ],
     "slot": [

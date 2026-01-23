@@ -27,11 +27,11 @@ _: {
         # Disable WebRTC VA-API to prevent video call artifacts
         "media.navigator.mediadatadecoder_vpx_enabled" = false;
 
-        # Wayland-specific optimizations
-        "widget.dmabuf.force-enabled" = true;
-
-        # EGL backend - required for nvidia-vaapi-driver
-        "gfx.x11-egl.force-enabled" = true;
+        # NVIDIA Wayland fixes:
+        # - Disable dmabuf which can cause green artifacts on NVIDIA
+        # - Don't force x11-egl on Wayland
+        "widget.dmabuf.force-enabled" = false;
+        "gfx.x11-egl.force-enabled" = false;
       };
     };
   };

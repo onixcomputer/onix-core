@@ -1,13 +1,9 @@
 # ---
 # schema = "single-disk"
 # [placeholders]
-# mainDisk = "/dev/disk/by-id/REPLACE_WITH_ACTUAL_DISK_ID"
+# mainDisk = "/dev/disk/by-id/nvme-WD_PC_SN740_SDDPNQE-2T00_251517805135"
 # ---
-# This file was automatically generated!
-# CHANGING this configuration requires wiping and reinstalling the machine
-#
-# TODO: Update mainDisk placeholder above with actual disk ID from:
-#   ls -la /dev/disk/by-id/ | grep -E 'nvme|sd|vd'
+# WD PC SN740 2TB NVMe SSD
 {
 
   boot.loader.grub = {
@@ -19,7 +15,7 @@
     disk = {
       main = {
         name = "main-bonsai";
-        device = "/dev/disk/by-id/REPLACE_WITH_ACTUAL_DISK_ID";
+        device = "/dev/disk/by-id/nvme-WD_PC_SN740_SDDPNQE-2T00_251517805135";
         type = "disk";
         content = {
           type = "gpt";
