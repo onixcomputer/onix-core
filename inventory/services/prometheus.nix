@@ -45,7 +45,9 @@ _: {
                   targets = [ "aspen1.bison-tailor.ts.net:8000" ];
                   labels = {
                     instance = "aspen1";
-                    model = "gpt-oss-120b";
+                    model = "gpt-oss-20b";
+                    service = "vllm";
+                    gpu = "gfx1151";
                   };
                 }
               ];

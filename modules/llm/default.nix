@@ -79,6 +79,31 @@ in
             default = true;
             description = "Enable GPU acceleration if available";
           };
+
+          # vLLM-specific container image (for ROCm/AMD GPU support)
+          containerImage = mkOption {
+            type = nullOr str;
+            default = null;
+            description = ''
+              Custom container image for vLLM. If null, uses the default
+              gfx1151 (Strix Halo) ROCm image. For other AMD GPUs, specify
+              an appropriate ROCm vLLM image.
+            '';
+          };
+
+          # Extra environment variables for the container
+          extraEnv = mkOption {
+            type = attrsOf str;
+            default = { };
+            description = "Extra environment variables for the vLLM container";
+          };
+
+          # Auto-start control
+          autoStart = mkOption {
+            type = bool;
+            default = true;
+            description = "Whether to start the service automatically on boot. Set to false to require manual start.";
+          };
         };
       };
 
@@ -132,64 +157,97 @@ in
               # Custom vLLM systemd service using OCI container (ROCm compatible)
               # nixpkgs vLLM is CUDA-only, so we use containers for AMD GPUs
               systemd.services = lib.mkIf (serviceType == "vllm") {
-                vllm = {
-                  description = "vLLM Inference Server (Container)";
-                  wantedBy = [ "multi-user.target" ];
-                  after = [
-                    "network.target"
-                    "docker.service"
-                  ];
-                  requires = [ "docker.service" ];
+                vllm =
+                  let
+                    # Use model parameter or first model from models list
+                    primaryModel =
+                      if model != null then
+                        model
+                      else if models != [ ] then
+                        builtins.head models
+                      else
+                        throw "vLLM requires either 'model' or 'models' to be specified";
 
-                  serviceConfig = {
-                    Type = "simple";
+                    # Container image: user-specified or default gfx1151 ROCm image
+                    containerImage =
+                      if settings.containerImage != null then
+                        settings.containerImage
+                      else
+                        "docker.io/kyuz0/vllm-therock-gfx1151:latest";
 
-                    # State directory for model cache
-                    StateDirectory = "vllm";
-                    StateDirectoryMode = "0755";
+                    # Get extra args or empty list
+                    extraArgs = if settings ? extraArgs && settings.extraArgs != null then settings.extraArgs else [ ];
 
-                    ExecStartPre =
-                      let
-                        # Pre-built vLLM ROCm container for gfx1151 (Strix Halo)
-                        containerImage = "docker.io/kyuz0/vllm-therock-gfx1151:latest";
-                      in
-                      "${pkgs.docker}/bin/docker pull ${containerImage}";
+                    # Get extra environment variables
+                    extraEnv = if settings ? extraEnv && settings.extraEnv != null then settings.extraEnv else { };
 
-                    ExecStart =
-                      let
-                        # Use model parameter or first model from models list
-                        primaryModel =
-                          if model != null then
-                            model
-                          else if models != [ ] then
-                            builtins.head models
-                          else
-                            throw "vLLM requires either 'model' or 'models' to be specified";
+                    # Check if extraArgs already contains gpu-memory-utilization
+                    hasGpuMemUtil = lib.any (arg: lib.hasPrefix "--gpu-memory-utilization" arg) extraArgs;
 
-                        # Pre-built vLLM ROCm container for gfx1151 (Strix Halo)
-                        containerImage = "docker.io/kyuz0/vllm-therock-gfx1151:latest";
+                    # Build vLLM command arguments
+                    vllmCmd = [
+                      "vllm"
+                      "serve"
+                      primaryModel
+                      "--host"
+                      "0.0.0.0"
+                      "--port"
+                      (toString port)
+                    ]
+                    ++ lib.optionals enableGPU [
+                      "--tensor-parallel-size"
+                      "1"
+                    ]
+                    # Only add default gpu-memory-utilization if not specified in extraArgs
+                    ++ lib.optionals (enableGPU && !hasGpuMemUtil) [
+                      "--gpu-memory-utilization"
+                      "0.85"
+                    ]
+                    ++ extraArgs;
 
-                        # Build vLLM command arguments
-                        vllmCmd = [
-                          "vllm"
-                          "serve"
-                          primaryModel
-                          "--host"
-                          "0.0.0.0"
-                          "--port"
-                          "8000"
-                        ]
-                        ++ lib.optionals enableGPU [
-                          "--tensor-parallel-size"
-                          "1"
-                          "--gpu-memory-utilization"
-                          "0.85"
-                        ]
-                        ++ (settings.extraArgs or [ ]);
+                    vllmCmdStr = lib.concatStringsSep " " vllmCmd;
 
-                        vllmCmdStr = lib.concatStringsSep " " vllmCmd;
-                      in
-                      pkgs.writeShellScript "run-vllm-container" ''
+                    # Build extra environment variable flags
+                    extraEnvList = lib.mapAttrsToList (name: value: "-e ${name}=${value}") extraEnv;
+                    extraEnvFlags = if extraEnvList == [ ] then "" else lib.concatStringsSep " \\\n  " extraEnvList;
+                  in
+                  {
+                    description = "vLLM Inference Server (Container)";
+                    # Only auto-start if autoStart is true (default)
+                    wantedBy = lib.mkIf (settings.autoStart or true) [ "multi-user.target" ];
+                    after = [
+                      "network.target"
+                      "docker.service"
+                    ];
+                    requires = [ "docker.service" ];
+
+                    serviceConfig = {
+                      Type = "simple";
+
+                      # State directory for model cache
+                      StateDirectory = "vllm";
+                      StateDirectoryMode = "0755";
+
+                      # Pull image if not present, but don't fail if already present
+                      # Use script to handle errors gracefully and avoid timeout issues
+                      ExecStartPre = pkgs.writeShellScript "vllm-pull-image" ''
+                        # Stop any existing container with the same name
+                        ${pkgs.docker}/bin/docker stop vllm-server 2>/dev/null || true
+                        ${pkgs.docker}/bin/docker rm vllm-server 2>/dev/null || true
+
+                        # Check if image exists, if not pull it
+                        if ! ${pkgs.docker}/bin/docker image inspect ${containerImage} >/dev/null 2>&1; then
+                          echo "Pulling container image: ${containerImage}"
+                          ${pkgs.docker}/bin/docker pull ${containerImage} || {
+                            echo "Failed to pull image, will retry on next restart"
+                            exit 1
+                          }
+                        else
+                          echo "Image ${containerImage} already present"
+                        fi
+                      '';
+
+                      ExecStart = pkgs.writeShellScript "run-vllm-container" ''
                         exec ${pkgs.docker}/bin/docker run \
                           --rm \
                           --name vllm-server \
@@ -201,6 +259,9 @@ in
                           --ipc host \
                           --cap-add SYS_PTRACE \
                           --security-opt seccomp=unconfined \
+                          --memory=115g \
+                          --memory-swap=115g \
+                          --oom-kill-disable=false \
                           -e HSA_ENABLE_SDMA=0 \
                           -e HIP_VISIBLE_DEVICES=0 \
                           -e VLLM_WORKER_MULTIPROC_METHOD=spawn \
@@ -208,18 +269,26 @@ in
                           -e PYTORCH_TUNABLEOP_ENABLED=1 \
                           -e PYTORCH_HIP_ALLOC_CONF=expandable_segments:True \
                           -e HSA_XNACK=1 \
+                          -e PYTORCH_ROCM_ARCH=gfx1151 \
+                          -e HSA_OVERRIDE_GFX_VERSION=11.5.1 \
+                          ${lib.optionalString (extraEnvFlags != "") extraEnvFlags} \
                           -v /var/lib/vllm:/root/.cache/huggingface \
                           ${containerImage} \
                           ${vllmCmdStr}
                       '';
 
-                    ExecStop = "${pkgs.docker}/bin/docker stop vllm-server";
+                      ExecStop = "${pkgs.docker}/bin/docker stop vllm-server";
 
-                    Restart = "always";
-                    RestartSec = "30";
-                    TimeoutStartSec = "1800"; # 30 minutes for initial container pull
+                      Restart = "on-failure";
+                      RestartMaxDelaySec = "5min";
+
+                      # Prevent OOM from taking down the host
+                      OOMPolicy = "stop";
+                      OOMScoreAdjust = 500;
+                      RestartSec = "30";
+                      TimeoutStartSec = "3600"; # 60 minutes for initial container pull (large images)
+                    };
                   };
-                };
               };
 
               # Create vllm directory for model cache

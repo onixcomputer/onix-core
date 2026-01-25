@@ -113,4 +113,11 @@
     BUILDKIT_PROGRESS = "auto";
   };
 
+  # Create empty docker config for root to prevent credential helper errors
+  # (prevents "GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown" when pulling images as systemd services)
+  systemd.tmpfiles.rules = [
+    "d /root/.docker 0700 root root -"
+    "f /root/.docker/config.json 0600 root root - {}"
+  ];
+
 }

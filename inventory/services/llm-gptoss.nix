@@ -17,17 +17,24 @@ _: {
           enableGPU = true;
           model = "ArliAI/gpt-oss-20b-Derestricted";
 
-          # vLLM arguments for 20B on 124GB
+          # Disable auto-start until we verify stability
+          autoStart = false;
+
+          # vLLM arguments for 20B on 124GB unified memory
+          # Docker container capped at 115GB with OOM protection
+          # 20B bf16 model ≈ 40GB, leaving ~75GB for KV cache
           extraArgs = [
             "--max-model-len"
-            "32768"
+            "32768" # Full 32K context
             "--gpu-memory-utilization"
-            "0.92"
+            "0.85" # 85% of GPU memory for KV cache (safe with Docker memory cap)
             "--max-num-seqs"
-            "16"
+            "16" # Concurrent requests
             "--enforce-eager" # Required for ROCm stability
             "--dtype"
             "bfloat16"
+            "--kv-cache-dtype"
+            "auto" # Use bf16 for KV cache too
           ];
         };
       };
