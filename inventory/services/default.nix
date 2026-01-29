@@ -27,6 +27,7 @@ let
     radicle = import ./radicle.nix { inherit inputs; };
     radicle-nix-adapter = import ./radicle-nix-adapter.nix { inherit inputs; };
     upmpdcli = import ./upmpdcli.nix { inherit inputs; };
+    nix-gc = import ./nix-gc.nix { inherit inputs; };
   };
 in
 lib.foldr lib.recursiveUpdate { } (lib.attrValues services)

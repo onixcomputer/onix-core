@@ -22,6 +22,7 @@ let
     "radicle" = import ./radicle;
     "radicle-nix-adapter" = import ./radicle-nix-adapter;
     "upmpdcli" = import ./upmpdcli;
+    "nix-gc" = import ./nix-gc;
   };
 
 in
