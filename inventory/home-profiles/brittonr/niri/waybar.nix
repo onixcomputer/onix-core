@@ -62,6 +62,7 @@ let
           "custom/media-next"
           "pulseaudio"
           "network"
+          "disk"
           "cpu"
           "memory"
           "battery"
@@ -99,6 +100,12 @@ let
 
         memory = {
           format = "MEM {}%";
+        };
+
+        disk = {
+          path = "/";
+          format = "DISK {percentage_used}%";
+          tooltip-format = "{used} / {total} ({free} free)";
         };
 
         battery = {
@@ -209,6 +216,7 @@ let
           #clock,
           #cpu,
           #memory,
+          #disk,
           #battery,
           #network,
           #pulseaudio,

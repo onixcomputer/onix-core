@@ -14,6 +14,7 @@
     deadnix
     statix
     dix
+    flake-edit
     terranix
     nix-index
     nix-prefetch

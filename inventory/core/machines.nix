@@ -267,7 +267,7 @@ _: {
         "dev"
         "desktop"
         "laptop-input"
-        # "greeter" # Using cosmic-greeter instead
+        "greeter" # Using cosmic-greeter instead
         "audio"
         "xdg-portal"
         "nvidia"

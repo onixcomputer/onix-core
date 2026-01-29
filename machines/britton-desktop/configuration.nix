@@ -57,8 +57,6 @@
 
     printing.enable = true;
 
-    # COSMIC greeter (uses greetd internally)
-    displayManager.cosmic-greeter.enable = true;
   };
 
   security.pam.services = {
