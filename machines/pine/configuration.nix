@@ -3,8 +3,23 @@
   networking.hostName = "pine";
   time.timeZone = "America/Chicago";
 
-  # PineNote has no TPM - disable to prevent missing module errors
-  boot.initrd.systemd.tpm2.enable = false;
+  # PineNote boot configuration
+  boot = {
+    # U-Boot with extlinux boot (not EFI)
+    # U-Boot sysboot reads /boot/extlinux/extlinux.conf
+    loader.grub.enable = false;
+    loader.generic-extlinux-compatible.enable = true;
+
+    # Kernel parameters for PineNote e-ink display
+    kernelParams = [
+      "console=ttyS2,1500000n8" # UART console
+      "console=tty0"
+      "earlycon"
+    ];
+
+    # PineNote has no TPM - disable to prevent missing module errors
+    initrd.systemd.tpm2.enable = false;
+  };
   systemd.tpm2.enable = false;
 
   # NetworkManager for WiFi

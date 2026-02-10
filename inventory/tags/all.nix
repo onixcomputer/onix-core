@@ -26,6 +26,7 @@
   systemd.services.nix-daemon.environment.TMPDIR = "/var/tmp";
 
   environment.systemPackages = with pkgs; [
+    uutils-coreutils-noprefix
     kitty.terminfo
     btop
     tree
