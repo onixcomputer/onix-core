@@ -20,7 +20,7 @@ let
       nodePackages.prettier # Markdown formatting with prose-wrap control
 
       # Preview
-      glow # Terminal markdown preview
+      glow # Terminal markdown renderer
     ];
 
     settings = {
@@ -34,11 +34,12 @@ let
           select = "underline";
         };
 
-        # Zen mode: hide line numbers by default, use wide gutter for centering
+        # Zen mode: use line-numbers gutter for centering
         # Toggle with space+t+z to switch between zen (centered) and normal mode
         gutters = {
           layout = [
             "diagnostics"
+            "line-numbers"
             "spacer"
             "diff"
           ];
@@ -105,12 +106,6 @@ let
           smart-case = true;
           wrap-around = true;
         };
-
-        # Word completion from buffers
-        word-completion = {
-          enable = true;
-          trigger-length = 4;
-        };
       };
 
       keys.normal = {
@@ -136,8 +131,11 @@ let
           # Quick format current file
           f = ":format";
 
-          # Preview markdown with glow
-          p = ":sh glow -p '%{buffer_name}'";
+          # Preview markdown with glow (saves first, env -i resets wrapper env)
+          p = [
+            ":write"
+            ":sh env -i HOME=$HOME PATH=$PATH TERM=$TERM glow -p '%{buffer_name}'"
+          ];
 
           # Help - show zen keybindings
           "?" =

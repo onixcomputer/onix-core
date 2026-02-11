@@ -7,7 +7,7 @@
   backends ? (import ../../backends/default.nix { inherit lib pkgs; }),
   localBackend ? (import ../../backends/local.nix { inherit lib pkgs; }),
   s3Backend ? (import ../../backends/s3.nix { inherit lib pkgs; }),
-# Import pure functions for testing utilities
+  # Import pure functions for testing utilities
 }:
 
 {

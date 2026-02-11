@@ -201,19 +201,24 @@
     };
   };
 
-  # Partition Layout (Community Edition default)
+  # Partition Layout (Community Edition compatible)
+  # disko.nix now matches this layout for U-Boot bootmenu compatibility
   partitions = {
-    # WARNING: This is the FACTORY layout - DO NOT use with disko
-    # disko.nix uses a different layout optimized for NixOS
-    factory = {
-      "0_uboot" = "64 MB - Bootloader";
-      "1_waveform" = "2 MB - E-ink calibration (CRITICAL - backup this!)";
-      "2_uboot_env" = "1 MB - U-Boot environment";
-      "3_logo" = "64 MB - Boot splash";
-      "4_os1" = "14.65 GB - Primary OS";
-      "5_os2" = "14.65 GB - Alternative OS";
-      "6_data" = "85.82 GB - User data";
+    # Layout defined in disko.nix - matches Community Edition for U-Boot
+    layout = {
+      "1_uboot" = "64 MB - Bootloader (preserved, not formatted)";
+      "2_waveform" = "2 MB - E-ink calibration (CRITICAL - preserved)";
+      "3_uboot_env" = "1 MB - U-Boot environment (preserved)";
+      "4_logo" = "64 MB - Boot splash (preserved)";
+      "5_os1" = "15 GB - Debian/recovery OS (ext4, label=os1)";
+      "6_os2" = "15 GB - NixOS (ext4, label=nixos) <- U-Boot bootmenu_2";
+      "7_data" = "remaining - Shared user data (ext4, label=data)";
     };
+
+    # U-Boot bootmenu configuration (from printenv):
+    # bootmenu_1=Boot OS1 (part 5)=sysboot mmc 0:5
+    # bootmenu_2=Boot OS2 (part 6)=sysboot mmc 0:6
+    # NixOS boots from partition 6 (os2) via bootmenu option 2
   };
 
   # Firmware Requirements

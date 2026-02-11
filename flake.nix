@@ -16,10 +16,6 @@
       url = "github:Lassulus/wrappers";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    wrappers-waybar = {
-      url = "github:turbio/wrappers/init-waybar";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     # Dev inputs moved to dev/flake.nix for lazy evaluation
     # treefmt-nix and pre-commit-hooks-nix are only fetched for dev outputs
     nixos-wsl = {
@@ -30,9 +26,9 @@
       url = "github:vinceliuice/grub2-themes";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    grafana-dashboards = {
-      url = "github:onixcomputer/grafana-dashboards";
-    };
+    # grafana-dashboards = {
+    #   url = "github:onixcomputer/grafana-dashboards";
+    # };
     mcp-servers-nix = {
       url = "github:natsukium/mcp-servers-nix";
       inputs.nixpkgs.follows = "nixpkgs";

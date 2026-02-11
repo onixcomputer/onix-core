@@ -213,6 +213,7 @@ _: {
         "cross-compile"
         "creative"
         "taskwarrior"
+        "udev-rules"
       ];
       deploy = {
         targetHost = "root@bonsai"; # Update with actual hostname or IP

@@ -94,7 +94,40 @@ in
     };
   };
 
-  environment.systemPackages = with pkgs; [ signal-desktop ];
+  # LTE Modem (Quectel EC25) with 9eSIM support
+  # Hardware: Quectel EC25 LTE modem with 9eSIM programmable SIM card
+  # Devices:
+  #   /dev/ttyUSB0-3 - Serial ports (AT commands on ttyUSB2)
+  #   /dev/cdc-wdm0  - QMI control interface
+  #
+  # eSIM Management (lpac via QMI):
+  #   # List profiles
+  #   sudo LPAC_APDU_QMI_DEVICE=/dev/cdc-wdm0 LPAC_APDU=qmi lpac profile list | jq
+  #
+  #   # Get chip info
+  #   sudo LPAC_APDU_QMI_DEVICE=/dev/cdc-wdm0 LPAC_APDU=qmi lpac chip info | jq
+  #
+  #   # Download profile (use activation code from eSIM provider)
+  #   sudo LPAC_APDU_QMI_DEVICE=/dev/cdc-wdm0 LPAC_APDU=qmi lpac profile download -a 'LPA:1$rsp.example.com$MATCHING-ID'
+  #
+  #   # Enable a profile
+  #   sudo LPAC_APDU_QMI_DEVICE=/dev/cdc-wdm0 LPAC_APDU=qmi lpac profile enable <ICCID>
+  #
+  # Network connection (after profile enabled):
+  #   sudo systemctl start ModemManager
+  #   mmcli -L                                    # List modems
+  #   mmcli -m 0                                  # Show modem info
+  #   sudo nmcli connection add type gsm con-name "LTE" ifname "*" apn "YOUR_APN"
+  #   nmcli connection up LTE
+  networking.modemmanager.enable = true;
+
+  environment.systemPackages = with pkgs; [
+    signal-desktop
+    modemmanager
+    libqmi
+    libmbim
+    lpac # eSIM profile management via QMI
+  ];
 
   # Disable USB controller wakeup to prevent spurious wakes
   systemd.services.disable-usb-wakeup = {

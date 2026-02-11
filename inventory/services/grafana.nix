@@ -1,5 +1,4 @@
-{ inputs }:
-{
+_: {
   instances = {
     # Grafana monitoring visualization
     "grafana" = {
@@ -57,15 +56,15 @@
             };
           };
 
-          # Dashboard provisioning from external flake
-          dashboards = [
-            {
-              name = "System Dashboards";
-              type = "file";
-              options.path = inputs.grafana-dashboards;
-              options.foldersFromFilesStructure = false;
-            }
-          ];
+          # TODO: Add dashboard provisioning when grafana-dashboards input is available
+          # dashboards = [
+          #   {
+          #     name = "System Dashboards";
+          #     type = "file";
+          #     options.path = inputs.grafana-dashboards;
+          #     options.foldersFromFilesStructure = false;
+          #   }
+          # ];
         };
       };
     };

@@ -39,7 +39,7 @@ let
     }).wrapper;
 
   wrappedWaybar =
-    (inputs.wrappers-waybar.wrapperModules.waybar.apply {
+    (inputs.wrappers.wrapperModules.waybar.apply {
       inherit pkgs;
 
       settings = {
@@ -64,6 +64,7 @@ let
           "network"
           "disk"
           "cpu"
+          "temperature"
           "memory"
           "battery"
         ];
@@ -96,6 +97,20 @@ let
         cpu = {
           format = "CPU {usage}%";
           tooltip = false;
+        };
+
+        temperature = {
+          interval = 2;
+          format = "TEMP {temperatureC}°C";
+          hwmon-path-abs = [
+            "/sys/devices/pci0000:00/0000:00:18.3/hwmon" # AMD k10temp
+            "/sys/devices/platform/coretemp.0/hwmon" # Intel coretemp
+          ];
+          input-filename = "temp1_input";
+          critical-threshold = 80;
+          format-critical = "TEMP {temperatureC}°C!";
+          tooltip = true;
+          tooltip-format = "CPU Temperature: {temperatureC}°C";
         };
 
         memory = {
@@ -215,6 +230,7 @@ let
           #window,
           #clock,
           #cpu,
+          #temperature,
           #memory,
           #disk,
           #battery,
@@ -227,6 +243,11 @@ let
           #custom-media-prev,
           #custom-media-next {
               padding: 0 10px;
+          }
+
+          #temperature.critical {
+              color: ${theme.red};
+              font-weight: bold;
           }
 
           #custom-kitty,

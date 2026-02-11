@@ -1,33 +1,53 @@
 { pkgs, ... }:
 {
-  # Shell-agnostic aliases that apply to all shells
-  home.shellAliases = {
-    # Navigation
-    ".." = "cd ..";
-    "..." = "cd ../..";
-    "...." = "cd ../../..";
+  # Home configuration
+  home = {
+    # Add ~/.local/bin to PATH for user-installed binaries (e.g., claude CLI)
+    sessionPath = [
+      "$HOME/.local/bin"
+    ];
 
-    # Git shortcuts
-    g = "git";
-    gs = "git status";
-    ga = "git add";
-    gc = "git commit";
-    gp = "git push";
-    gl = "git log --oneline --graph";
+    # Shell-agnostic aliases that apply to all shells
+    shellAliases = {
+      # Navigation
+      ".." = "cd ..";
+      "..." = "cd ../..";
+      "...." = "cd ../../..";
 
-    # Better defaults
-    cat = "bat -pp";
-    grep = "grep --color=auto";
-    df = "df -h";
-    du = "du -h";
+      # Git shortcuts
+      g = "git";
+      gs = "git status";
+      ga = "git add";
+      gc = "git commit";
+      gp = "git push";
+      gl = "git log --oneline --graph";
 
-    # Nix shortcuts
-    nrs = "sudo nixos-rebuild switch";
-    nfu = "nix flake update";
-    ncg = "nix-collect-garbage -d";
+      # Better defaults
+      cat = "bat -pp";
+      grep = "grep --color=auto";
+      df = "df -h";
+      du = "du -h";
 
-    # Clan shortcuts
-    cu = "clan m update \\$hostname";
+      # Nix shortcuts
+      nrs = "sudo nixos-rebuild switch";
+      nfu = "nix flake update";
+      ncg = "nix-collect-garbage -d";
+
+      # Clan shortcuts
+      cu = "clan m update \\$hostname";
+    };
+
+    # Shell utilities used by aliases
+    packages = with pkgs; [
+      autossh
+      bat
+      eza
+      fzf
+      delta
+      jq
+      yq
+      lazygit
+    ];
   };
 
   # Fish shell configuration
@@ -199,16 +219,4 @@
       bind -M default k 'commandline -f history-search-backward'
     '';
   };
-
-  # Shell utilities used by aliases
-  home.packages = with pkgs; [
-    autossh
-    bat
-    eza
-    fzf
-    delta
-    jq
-    yq
-    lazygit
-  ];
 }

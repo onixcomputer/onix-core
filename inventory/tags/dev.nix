@@ -2,7 +2,7 @@
 {
   programs.direnv.enable = true;
   environment.systemPackages = with pkgs; [
-    claude-code
+    claude-code-bin
     codex
     comma
     gh

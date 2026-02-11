@@ -41,7 +41,7 @@ let
 
   # Define wrapped waybar locally so we can reference it in the config
   wrappedWaybar =
-    (inputs.wrappers-waybar.wrapperModules.waybar.apply {
+    (inputs.wrappers.wrapperModules.waybar.apply {
       inherit pkgs;
 
       settings = {
@@ -364,7 +364,7 @@ let
                           window-rule {
               match app-id=r#"firefox$"#
 
-              open-on-workspace 2
+              open-on-workspace "2"
               open-maximized true
           }
           window-rule {
@@ -375,31 +375,31 @@ let
                           window-rule {
               match app-id=r#"kitty$"#
 
-              open-on-workspace 1
+              open-on-workspace "1"
 
           }
           window-rule {
               match app-id=r#"vesktop$"#
 
-              open-on-workspace 3
+              open-on-workspace "3"
           }
 
           window-rule {
               match app-id=r#"Element$"#
 
-              open-on-workspace 3
+              open-on-workspace "3"
           }
 
           window-rule {
               match app-id=r#"kitty$"# title="^btop$"
 
-              open-on-workspace 4
+              open-on-workspace "4"
               open-maximized true
           }
           window-rule {
               match app-id=r#"kitty$"# title="^journalctl$"
 
-              open-on-workspace 4
+              open-on-workspace "4"
               open-maximized true
           }
 

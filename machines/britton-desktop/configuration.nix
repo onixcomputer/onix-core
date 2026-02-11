@@ -20,6 +20,19 @@
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
       "spectrum-os.org-2:foQk3r7t2VpRx92CaXb5ROyy/NBdRJQG2uX2XJMYZfU="
     ];
+    # Enable experimental features for uid-range support
+    experimental-features = [
+      "auto-allocate-uids"
+      "cgroups"
+    ];
+    auto-allocate-uids = true;
+    # System features for NixOS container tests
+    system-features = [
+      "uid-range"
+      "kvm"
+      "nixos-test"
+      "big-parallel"
+    ];
   };
 
   boot = {

@@ -23,7 +23,7 @@
 
   xdg.desktopEntries.vesktop = {
     name = "Vesktop";
-    exec = ''vesktop --enable-features=UseOzonePlatform --ozone-platform=wayland --enable-wayland-ime --disable-gpu-sandbox %U'';
+    exec = "vesktop --enable-features=UseOzonePlatform --ozone-platform=wayland --enable-wayland-ime --disable-gpu-sandbox %U";
     icon = "vesktop";
     terminal = false;
     type = "Application";
