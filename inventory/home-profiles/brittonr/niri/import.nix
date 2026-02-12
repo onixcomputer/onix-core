@@ -18,7 +18,7 @@ _: {
     # ../../alex/hyprland/xdg.nix # Commented out - using brittonr's own xdg.nix from dev profile
 
     # Applications
-    ../../alex/hyprland/firefox.nix
+    ./firefox.nix
     ../../alex/hyprland/thunar.nix
     ../../alex/hyprland/media-viewers.nix
     ../../alex/hyprland/btop.nix
