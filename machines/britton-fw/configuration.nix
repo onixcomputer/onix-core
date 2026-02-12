@@ -37,8 +37,22 @@ in
         sshUser = "brittonr";
       }
     ];
+    # Enable experimental features for uid-range support
+    experimental-features = [
+      "auto-allocate-uids"
+      "cgroups"
+    ];
+    auto-allocate-uids = true;
     settings = {
       trusted-users = [ "brittonr" ];
+      # System features for NixOS container tests
+      system-features = [
+        "uid-range"
+        "kvm"
+        "nixos-test"
+        "big-parallel"
+        "benchmark"
+      ];
       substituters = [
         "https://cache.dataaturservice.se/spectrum/"
         "https://cache.snix.dev"
