@@ -37,13 +37,13 @@ in
         sshUser = "brittonr";
       }
     ];
-    # Enable experimental features for uid-range support
-    experimental-features = [
-      "auto-allocate-uids"
-      "cgroups"
-    ];
-    auto-allocate-uids = true;
     settings = {
+      # Enable experimental features for uid-range support
+      experimental-features = [
+        "auto-allocate-uids"
+        "cgroups"
+      ];
+      auto-allocate-uids = true;
       trusted-users = [ "brittonr" ];
       # System features for NixOS container tests
       system-features = [
