@@ -11,11 +11,29 @@ let
     fixedExtid = "tridactyl.vim@cmcaine.co.uk";
   };
 
+  ublock-origin = pkgs.fetchFirefoxAddon {
+    name = "ublock-origin";
+    url = "https://addons.mozilla.org/firefox/downloads/file/4675310/ublock_origin-1.69.0.xpi";
+    hash = "sha256:785bcde68a25faa8a0949964ec5ffe9bdcb85d3f0ae21c23f607c6c8f91472cf";
+    fixedExtid = "uBlock0@raymondhill.net";
+  };
+
+  bitwarden = pkgs.fetchFirefoxAddon {
+    name = "bitwarden";
+    url = "https://addons.mozilla.org/firefox/downloads/file/4664623/bitwarden_password_manager-2025.12.1.xpi";
+    hash = "sha256:a7a123eee4e40fdd8af7c0c67243731ddcc37ae1498cf2828995f4905600c51f";
+    fixedExtid = "{446900e4-71c2-419f-a6a7-df9c091e268b}";
+  };
+
   wrappedFirefox =
     (inputs.wrappers.wrapperModules.firefox.apply {
       inherit pkgs;
 
-      extensions = [ tridactyl ];
+      extensions = [
+        tridactyl
+        ublock-origin
+        bitwarden
+      ];
 
       nativeMessagingHosts = [ pkgs.tridactyl-native ];
 
