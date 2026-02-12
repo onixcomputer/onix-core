@@ -1,4 +1,8 @@
-{ pkgs, ... }:
+{
+  inputs,
+  pkgs,
+  ...
+}:
 let
   tridactyl = pkgs.fetchFirefoxAddon {
     name = "tridactyl";
@@ -6,17 +10,14 @@ let
     hash = "sha256:9ba7d6bc3be555631c981c3acdd25cab6942c1f4a6f0cb511bbe8fa81d79dd9d";
     fixedExtid = "tridactyl.vim@cmcaine.co.uk";
   };
-in
-{
-  programs.firefox = {
-    enable = true;
 
-    nativeMessagingHosts = [ pkgs.tridactyl-native ];
+  wrappedFirefox =
+    (inputs.wrappers.wrapperModules.firefox.apply {
+      inherit pkgs;
 
-    profiles.default = {
-      isDefault = true;
+      extensions = [ tridactyl ];
 
-      extensions.packages = [ tridactyl ];
+      nativeMessagingHosts = [ pkgs.tridactyl-native ];
 
       settings = {
         # Hardware acceleration - WebRender
@@ -31,8 +32,10 @@ in
         "widget.dmabuf.force-enabled" = false;
         "gfx.x11-egl.force-enabled" = false;
       };
-    };
-  };
+    }).wrapper;
+in
+{
+  home.packages = [ wrappedFirefox ];
 
   # Prevent mimeapps.list backup conflict during home-manager activation
   xdg.configFile."mimeapps.list".force = true;

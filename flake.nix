@@ -13,7 +13,7 @@
       inputs.home-manager.follows = "home-manager";
     };
     wrappers = {
-      url = "github:Lassulus/wrappers";
+      url = "git+file:///home/brittonr/git/wrappers";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # Dev inputs moved to dev/flake.nix for lazy evaluation
