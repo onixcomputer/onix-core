@@ -15,7 +15,6 @@ let
     vaultwarden = import ./vaultwarden.nix { inherit inputs; };
     homepage-dashboard = import ./homepage-dashboard.nix { inherit inputs; };
     pixiecore = import ./pixiecore.nix { inherit inputs; };
-    seaweedfs = import ./seaweedfs.nix { inherit inputs; };
     #wiki-js = import ./wiki-js.nix { inherit inputs; };
     cloudflare-tunnel = import ./cloudflare-tunnel.nix { inherit inputs; };
     llm = import ./llm.nix { inherit inputs; };

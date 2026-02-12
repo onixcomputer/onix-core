@@ -12,7 +12,6 @@ let
     "vaultwarden" = import ./vaultwarden;
     "homepage-dashboard" = import ./homepage-dashboard;
     "pixiecore" = import ./pixiecore;
-    "seaweedfs" = import ./seaweedfs;
     "wiki-js" = import ./wiki-js;
     "buildbot" = import ./buildbot;
     "cloudflare-tunnel" = import ./cloudflare-tunnel;

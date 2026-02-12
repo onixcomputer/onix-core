@@ -248,8 +248,6 @@ def create_tag_table(tag_machines: dict[str, list[str]]) -> Table:
             "traefik-homepage",
             "static-test",
             "static-demo",
-            "seaweedfs-master",
-            "seaweedfs-volume",
         ]:
             tag_categories["Service"][tag] = machines
         else:
