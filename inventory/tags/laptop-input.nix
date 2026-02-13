@@ -1,12 +1,16 @@
 { lib, ... }:
 {
-  # Kanata for system-wide keyboard remapping
-  # CapsLock = Esc on tap, Ctrl on hold (with nav layer via hjkl)
+  # Kanata for system-wide keyboard remapping (internal keyboards only)
+  # QMK keyboards are excluded -- they handle their own layers in firmware.
+  # CapsLock = Esc on tap, Nav layer on hold (hjkl arrows, etc.)
   services.kanata = {
     enable = lib.mkDefault true;
     keyboards.default = {
-      devices = [ ]; # all keyboards
-      extraDefCfg = "process-unmapped-keys yes";
+      devices = [ ]; # all keyboards (filtered by name below)
+      extraDefCfg = ''
+        process-unmapped-keys yes
+        linux-dev-names-include ("AT Translated Set 2 keyboard")
+      '';
       config = ''
         (defsrc
           caps h j k l u d w b 0 4
