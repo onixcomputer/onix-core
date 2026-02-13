@@ -85,11 +85,11 @@ let
             mode = "month";
             on-scroll = 1;
             format = {
-              months = "<span color='#ffead3'><b>{}</b></span>";
-              days = "<span color='#ecc6d9'><b>{}</b></span>";
-              weeks = "<span color='#99ffdd'><b>W{}</b></span>";
-              weekdays = "<span color='#ffcc66'><b>{}</b></span>";
-              today = "<span color='#ff6699'><b><u>{}</u></b></span>";
+              months = "<span color='${theme.orange}'><b>{}</b></span>";
+              days = "<span color='${theme.accent2}'><b>{}</b></span>";
+              weeks = "<span color='${theme.green}'><b>W{}</b></span>";
+              weekdays = "<span color='${theme.yellow}'><b>{}</b></span>";
+              today = "<span color='${theme.red}'><b><u>{}</u></b></span>";
             };
           };
         };

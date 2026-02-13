@@ -260,7 +260,7 @@ in
                     ];
                     wantedBy = [ "multi-user.target" ];
                     serviceConfig = {
-                      ExecStart = "${pkgs.tailscalesd}/bin/tailscalesd -localapi -localapi_socket /var/run/tailscale/tailscaled.sock";
+                      ExecStart = "${pkgs.tailscalesd}/bin/tailscalesd --localapi --localapi_socket /var/run/tailscale/tailscaled.sock";
                       Restart = "always";
                       RestartSec = 10;
                       User = "prometheus";

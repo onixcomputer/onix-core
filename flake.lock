@@ -905,10 +905,11 @@
         ]
       },
       "locked": {
-        "dirtyRev": "a3425e594bf2bfec184b0e22526e86fa1ef5b92b-dirty",
-        "dirtyShortRev": "a3425e5-dirty",
-        "lastModified": 1770912573,
+        "lastModified": 1770914133,
         "narHash": "sha256-/+8jFXIFW29EKuviDIbBgNHZUcbvTPpEYliy2QtchNg=",
+        "ref": "refs/heads/main",
+        "rev": "3228804d1c11fbc49509a9e9f5f3bcb78926e04f",
+        "revCount": 171,
         "type": "git",
         "url": "file:///home/brittonr/git/wrappers"
       },

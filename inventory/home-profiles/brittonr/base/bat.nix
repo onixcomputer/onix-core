@@ -1,4 +1,7 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
+let
+  c = config.colors;
+in
 {
   programs.bat = {
     enable = true;
@@ -23,15 +26,15 @@
                 <key>settings</key>
                 <dict>
                   <key>background</key>
-                  <string>#1a1a1a</string>
+                  <string>${c.bg}</string>
                   <key>foreground</key>
-                  <string>#e6e6e6</string>
+                  <string>${c.fg}</string>
                   <key>caret</key>
-                  <string>#ff6600</string>
+                  <string>${c.orange}</string>
                   <key>lineHighlight</key>
-                  <string>#262626</string>
+                  <string>${c.bg_highlight}</string>
                   <key>selection</key>
-                  <string>#404040</string>
+                  <string>${c.border}</string>
                 </dict>
               </dict>
               <!-- Comments -->
@@ -43,7 +46,7 @@
                 <key>settings</key>
                 <dict>
                   <key>foreground</key>
-                  <string>#595959</string>
+                  <string>${c.comment}</string>
                   <key>fontStyle</key>
                   <string>italic</string>
                 </dict>
@@ -57,7 +60,7 @@
                 <key>settings</key>
                 <dict>
                   <key>foreground</key>
-                  <string>#ffaa00</string>
+                  <string>${c.yellow}</string>
                 </dict>
               </dict>
               <!-- Numbers -->
@@ -69,7 +72,7 @@
                 <key>settings</key>
                 <dict>
                   <key>foreground</key>
-                  <string>#00ffff</string>
+                  <string>${c.cyan}</string>
                 </dict>
               </dict>
               <!-- Keywords -->
@@ -81,7 +84,7 @@
                 <key>settings</key>
                 <dict>
                   <key>foreground</key>
-                  <string>#ff6600</string>
+                  <string>${c.orange}</string>
                   <key>fontStyle</key>
                   <string>bold</string>
                 </dict>
@@ -95,7 +98,7 @@
                 <key>settings</key>
                 <dict>
                   <key>foreground</key>
-                  <string>#4488ff</string>
+                  <string>${c.blue}</string>
                 </dict>
               </dict>
               <!-- Types -->
@@ -107,7 +110,7 @@
                 <key>settings</key>
                 <dict>
                   <key>foreground</key>
-                  <string>#00ffff</string>
+                  <string>${c.cyan}</string>
                 </dict>
               </dict>
               <!-- Variables -->
@@ -119,7 +122,7 @@
                 <key>settings</key>
                 <dict>
                   <key>foreground</key>
-                  <string>#e6e6e6</string>
+                  <string>${c.fg}</string>
                 </dict>
               </dict>
               <!-- Operators -->
@@ -131,7 +134,7 @@
                 <key>settings</key>
                 <dict>
                   <key>foreground</key>
-                  <string>#ff6600</string>
+                  <string>${c.orange}</string>
                 </dict>
               </dict>
               <!-- Constants -->
@@ -143,7 +146,7 @@
                 <key>settings</key>
                 <dict>
                   <key>foreground</key>
-                  <string>#00ffff</string>
+                  <string>${c.cyan}</string>
                 </dict>
               </dict>
               <!-- Markup headers -->
@@ -155,7 +158,7 @@
                 <key>settings</key>
                 <dict>
                   <key>foreground</key>
-                  <string>#ff6600</string>
+                  <string>${c.orange}</string>
                   <key>fontStyle</key>
                   <string>bold</string>
                 </dict>
@@ -193,7 +196,7 @@
                 <key>settings</key>
                 <dict>
                   <key>foreground</key>
-                  <string>#44ff44</string>
+                  <string>${c.green}</string>
                 </dict>
               </dict>
               <!-- Diff Added -->
@@ -205,7 +208,7 @@
                 <key>settings</key>
                 <dict>
                   <key>foreground</key>
-                  <string>#44ff44</string>
+                  <string>${c.green}</string>
                 </dict>
               </dict>
               <!-- Diff Deleted -->
@@ -217,7 +220,7 @@
                 <key>settings</key>
                 <dict>
                   <key>foreground</key>
-                  <string>#ff4444</string>
+                  <string>${c.red}</string>
                 </dict>
               </dict>
               <!-- Diff Changed -->
@@ -229,7 +232,7 @@
                 <key>settings</key>
                 <dict>
                   <key>foreground</key>
-                  <string>#ffaa00</string>
+                  <string>${c.yellow}</string>
                 </dict>
               </dict>
             </array>

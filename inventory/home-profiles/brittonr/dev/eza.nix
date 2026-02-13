@@ -1,4 +1,8 @@
-_: {
+{ config, ... }:
+let
+  c = config.colors;
+in
+{
   programs.eza = {
     enable = true;
 
@@ -24,25 +28,25 @@ _: {
     # Onix Dark theme colors
     theme = {
       # File type colors
-      "fi" = "38;2;230;230;230"; # Regular file - white (#e6e6e6)
-      "di" = "38;2;68;136;255"; # Directory - blue (#4488ff)
-      "ex" = "38;2;68;255;68"; # Executable - green (#44ff44)
-      "ln" = "38;2;0;255;255"; # Symlink - cyan (#00ffff)
-      "so" = "38;2;255;68;255"; # Socket - magenta (#ff44ff)
-      "pi" = "38;2;255;170;0"; # Pipe - yellow (#ffaa00)
+      "fi" = c.hexToAnsi c.fg;
+      "di" = c.hexToAnsi c.blue;
+      "ex" = c.hexToAnsi c.green;
+      "ln" = c.hexToAnsi c.cyan;
+      "so" = c.hexToAnsi c.magenta;
+      "pi" = c.hexToAnsi c.yellow;
 
       # Permission bits
-      "ur" = "38;2;255;68;68"; # User read - red (#ff4444)
-      "uw" = "38;2;68;255;68"; # User write - green (#44ff44)
-      "ux" = "38;2;255;170;0"; # User execute - yellow (#ffaa00)
-      "ue" = "38;2;255;170;0"; # User execute (other) - yellow (#ffaa00)
+      "ur" = c.hexToAnsi c.red;
+      "uw" = c.hexToAnsi c.green;
+      "ux" = c.hexToAnsi c.yellow;
+      "ue" = c.hexToAnsi c.yellow;
 
       # Git status
-      "gm" = "38;2;255;170;0"; # Git modified - yellow (#ffaa00)
-      "ga" = "38;2;68;255;68"; # Git added - green (#44ff44)
-      "gd" = "38;2;255;68;68"; # Git deleted - red (#ff4444)
-      "gv" = "38;2;0;255;255"; # Git renamed - cyan (#00ffff)
-      "gt" = "38;2;68;136;255"; # Git typechange - blue (#4488ff)
+      "gm" = c.hexToAnsi c.yellow;
+      "ga" = c.hexToAnsi c.green;
+      "gd" = c.hexToAnsi c.red;
+      "gv" = c.hexToAnsi c.cyan;
+      "gt" = c.hexToAnsi c.blue;
     };
   };
 

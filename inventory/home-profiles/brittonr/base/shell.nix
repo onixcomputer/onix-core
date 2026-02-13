@@ -1,6 +1,7 @@
 { pkgs, config, ... }:
 let
   k = config.keymap;
+  c = config.colors;
 in
 {
   # Home configuration
@@ -125,20 +126,20 @@ in
       end
 
       # Onix Dark colors
-      set -g fish_color_autosuggestion 595959
-      set -g fish_color_command 44ff44
-      set -g fish_color_error ff4444 --bold
-      set -g fish_color_param 4488ff
-      set -g fish_color_quote ffaa00
-      set -g fish_color_redirection ff6600
-      set -g fish_color_end 00ffff
-      set -g fish_color_comment 595959 --italics
-      set -g fish_color_operator ff6600
-      set -g fish_color_escape 00ffff
-      set -g fish_color_cwd 4488ff
-      set -g fish_color_user ff6600
-      set -g fish_color_host 44ff44
-      set -g fish_color_selection --background=262626
+      set -g fish_color_autosuggestion ${c.noHash c.comment}
+      set -g fish_color_command ${c.noHash c.green}
+      set -g fish_color_error ${c.noHash c.red} --bold
+      set -g fish_color_param ${c.noHash c.blue}
+      set -g fish_color_quote ${c.noHash c.yellow}
+      set -g fish_color_redirection ${c.noHash c.orange}
+      set -g fish_color_end ${c.noHash c.cyan}
+      set -g fish_color_comment ${c.noHash c.comment} --italics
+      set -g fish_color_operator ${c.noHash c.orange}
+      set -g fish_color_escape ${c.noHash c.cyan}
+      set -g fish_color_cwd ${c.noHash c.blue}
+      set -g fish_color_user ${c.noHash c.orange}
+      set -g fish_color_host ${c.noHash c.green}
+      set -g fish_color_selection --background=${c.noHash c.bg_highlight}
 
       # Block cursor for vi modes
       set -g fish_cursor_default block

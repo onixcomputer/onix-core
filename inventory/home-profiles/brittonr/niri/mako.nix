@@ -18,7 +18,7 @@ let
         text-color = "${theme.fg}ff";
         border-color = "${theme.accent}ff";
         border-size = config.layout.borderWidth;
-        border-radius = theme.hypr.rounding;
+        border-radius = config.layout.borderRadius;
         width = 320;
         height = 100;
         margin = 10;

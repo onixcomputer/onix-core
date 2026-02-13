@@ -1,5 +1,7 @@
-_:
-
+{ config, ... }:
+let
+  c = config.colors;
+in
 {
   programs.starship = {
     enable = true;
@@ -26,9 +28,9 @@ _:
         color_green = "#808080"; # Gray
         color_yellow = "#cccccc"; # Light gray
         color_red = "#999999"; # Medium-dark gray
-        color_bg1 = "#1a1a1a"; # Base background
-        color_bg3 = "#262626"; # Elevated background
-        color_fg0 = "#e6e6e6"; # Primary text
+        color_bg1 = c.bg;
+        color_bg3 = c.bg_highlight;
+        color_fg0 = c.fg;
       };
 
       right_format = "$cmd_duration";
