@@ -1,4 +1,8 @@
-_: {
+{ config, ... }:
+let
+  theme = config.theme.colors;
+in
+{
   programs.btop = {
     enable = true;
     settings = {
@@ -8,88 +12,86 @@ _: {
     };
   };
 
-  #Tokyo Night theme for btop
   xdg.configFile."btop/themes/tokyo-night.theme".text = ''
     # Theme: tokyo-night
-    # By: Pascal Jaeger
 
     # Main bg
-    theme[main_bg]="#1a1b26"
+    theme[main_bg]="${theme.bg}"
 
     # Main text color
-    theme[main_fg]="#cfc9c2"
+    theme[main_fg]="${theme.fg}"
 
     # Title color for boxes
-    theme[title]="#cfc9c2"
+    theme[title]="${theme.fg}"
 
     # Highlight color for keyboard shortcuts
-    theme[hi_fg]="#7dcfff"
+    theme[hi_fg]="${theme.cyan}"
 
     # Background color of selected item in processes box
-    theme[selected_bg]="#414868"
+    theme[selected_bg]="${theme.bg_highlight}"
 
     # Foreground color of selected item in processes box
-    theme[selected_fg]="#cfc9c2"
+    theme[selected_fg]="${theme.fg}"
 
     # Color of inactive/disabled text
-    theme[inactive_fg]="#565f89"
+    theme[inactive_fg]="${theme.border}"
 
     # Misc colors for processes box including mini cpu graphs, details memory graph and details status text
-    theme[proc_misc]="#7dcfff"
+    theme[proc_misc]="${theme.cyan}"
 
     # Cpu box outline color
-    theme[cpu_box]="#565f89"
+    theme[cpu_box]="${theme.border}"
 
     # Memory/disks box outline color
-    theme[mem_box]="#565f89"
+    theme[mem_box]="${theme.border}"
 
     # Net up/down box outline color
-    theme[net_box]="#565f89"
+    theme[net_box]="${theme.border}"
 
     # Processes box outline color
-    theme[proc_box]="#565f89"
+    theme[proc_box]="${theme.border}"
 
     # Box divider line and small boxes line color
-    theme[div_line]="#565f89"
+    theme[div_line]="${theme.border}"
 
     # Temperature graph colors
-    theme[temp_start]="#9ece6a"
-    theme[temp_mid]="#e0af68"
-    theme[temp_end]="#f7768e"
+    theme[temp_start]="${theme.green}"
+    theme[temp_mid]="${theme.yellow}"
+    theme[temp_end]="${theme.red}"
 
     # CPU graph colors
-    theme[cpu_start]="#9ece6a"
-    theme[cpu_mid]="#e0af68"
-    theme[cpu_end]="#f7768e"
+    theme[cpu_start]="${theme.green}"
+    theme[cpu_mid]="${theme.yellow}"
+    theme[cpu_end]="${theme.red}"
 
     # Mem/Disk free meter
-    theme[free_start]="#9ece6a"
-    theme[free_mid]="#e0af68"
-    theme[free_end]="#f7768e"
+    theme[free_start]="${theme.green}"
+    theme[free_mid]="${theme.yellow}"
+    theme[free_end]="${theme.red}"
 
     # Mem/Disk cached meter
-    theme[cached_start]="#9ece6a"
-    theme[cached_mid]="#e0af68"
-    theme[cached_end]="#f7768e"
+    theme[cached_start]="${theme.green}"
+    theme[cached_mid]="${theme.yellow}"
+    theme[cached_end]="${theme.red}"
 
     # Mem/Disk available meter
-    theme[available_start]="#9ece6a"
-    theme[available_mid]="#e0af68"
-    theme[available_end]="#f7768e"
+    theme[available_start]="${theme.green}"
+    theme[available_mid]="${theme.yellow}"
+    theme[available_end]="${theme.red}"
 
     # Mem/Disk used meter
-    theme[used_start]="#9ece6a"
-    theme[used_mid]="#e0af68"
-    theme[used_end]="#f7768e"
+    theme[used_start]="${theme.green}"
+    theme[used_mid]="${theme.yellow}"
+    theme[used_end]="${theme.red}"
 
     # Download graph colors
-    theme[download_start]="#9ece6a"
-    theme[download_mid]="#e0af68"
-    theme[download_end]="#f7768e"
+    theme[download_start]="${theme.green}"
+    theme[download_mid]="${theme.yellow}"
+    theme[download_end]="${theme.red}"
 
     # Upload graph colors
-    theme[upload_start]="#9ece6a"
-    theme[upload_mid]="#e0af68"
-    theme[upload_end]="#f7768e"
+    theme[upload_start]="${theme.green}"
+    theme[upload_mid]="${theme.yellow}"
+    theme[upload_end]="${theme.red}"
   '';
 }

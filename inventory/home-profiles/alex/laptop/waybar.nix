@@ -1,4 +1,8 @@
-_: {
+{ config, ... }:
+let
+  theme = config.theme.colors;
+in
+{
   programs.waybar = {
     enable = true;
     settings = {
@@ -79,14 +83,14 @@ _: {
           interval = 1;
           format = "󰍛 {usage:02}%";
           tooltip = true;
-          on-click = "alacritty -e btop";
+          on-click = "${config.apps.terminal.command} -e ${config.apps.sysmon.command}";
         };
 
         memory = {
           interval = 1;
           format = "󰘚 {used:0.1f}G/{total:0.1f}G";
           tooltip-format = "Memory: {percentage}%\nUsed: {used:0.2f}GB\nTotal: {total:0.2f}GB";
-          on-click = "alacritty -e btop";
+          on-click = "${config.apps.terminal.command} -e ${config.apps.sysmon.command}";
         };
 
         temperature = {
@@ -96,7 +100,7 @@ _: {
           critical-threshold = 80;
           format-critical = "󰸁 {temperatureC}°C";
           tooltip-format = "CPU Temperature: {temperatureC}°C / {temperatureF}°F";
-          on-click = "alacritty -e btop";
+          on-click = "${config.apps.terminal.command} -e ${config.apps.sysmon.command}";
         };
 
         battery = {
@@ -163,25 +167,25 @@ _: {
 
       window#waybar {
         background: transparent;
-        color: #c0caf5;
+        color: ${theme.fg};
       }
 
       tooltip {
-        background: #24283b;
+        background: ${theme.base01};
         border-radius: 0.6em;
         border-width: 2px;
         border-style: solid;
-        border-color: #16161e;
+        border-color: ${theme.bg_dark};
         padding: 0.5em;
       }
 
       tooltip label {
-        color: #c0caf5;
+        color: ${theme.fg};
         font-size: 0.9em;
       }
 
       #workspaces {
-        background: #16161e;
+        background: ${theme.bg_dark};
         border-radius: 0.7em;
         margin: 0.3em;
         margin-left: 0.8em;
@@ -192,7 +196,7 @@ _: {
         padding: 0 0.5em;
         margin: 0 0.1em;
         border-radius: 0.6em;
-        color: #7aa2f7;
+        color: ${theme.accent};
         background: transparent;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       }
@@ -206,8 +210,8 @@ _: {
       }
 
       #workspaces button.active {
-        background: #7aa2f7;
-        color: #16161e;
+        background: ${theme.accent};
+        color: ${theme.bg_dark};
         border-radius: 0.6em;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         font-size: 1.6em;
@@ -216,15 +220,15 @@ _: {
       }
 
       #workspaces button:hover {
-        background: #7aa2f7;
-        color: #16161e;
+        background: ${theme.accent};
+        color: ${theme.bg_dark};
         border-radius: 0.6em;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       #clock {
-        color: #7aa2f7;
-        background: #16161e;
+        color: ${theme.accent};
+        background: ${theme.bg_dark};
         border-radius: 0.7em;
         margin: 0.3em;
         padding: 0 0.8em;
@@ -235,7 +239,7 @@ _: {
       }
 
       #tray {
-        background: #16161e;
+        background: ${theme.bg_dark};
         border-radius: 0.7em;
         padding: 0.3em 0.6em;
         margin: 0.3em 0.2em;
@@ -250,78 +254,78 @@ _: {
       }
 
       #pulseaudio {
-        background: #16161e;
-        color: #7aa2f7;
+        background: ${theme.bg_dark};
+        color: ${theme.accent};
         border-radius: 0.7em;
         padding: 0 0.8em;
         margin: 0.3em 0.2em;
       }
 
       #pulseaudio.muted {
-        color: #313244;
+        color: ${theme.bg_highlight};
       }
 
       box#resources {
-        background: #16161e;
+        background: ${theme.bg_dark};
         border-radius: 0.7em;
         margin: 0.3em 0.2em;
         padding: 0 0.4em;
       }
 
       #cpu {
-        color: #7aa2f7;
+        color: ${theme.accent};
         padding: 0 0.2em;
         background: transparent;
       }
 
       #memory {
-        color: #7aa2f7;
+        color: ${theme.accent};
         padding: 0 0.6em;
         background: transparent;
       }
 
       #temperature {
-        color: #7aa2f7;
+        color: ${theme.accent};
         padding: 0 0.4em;
         background: transparent;
       }
 
       #temperature.critical {
-        color: #f7768e;
+        color: ${theme.red};
       }
 
       #battery {
-        background: #16161e;
-        color: #7aa2f7;
+        background: ${theme.bg_dark};
+        color: ${theme.accent};
         border-radius: 0.7em;
         padding: 0 0.8em;
         margin: 0.3em 0.2em;
       }
 
       #battery.charging, #battery.plugged {
-        color: #a6e3a1;
+        color: ${theme.green};
       }
 
       #battery.warning {
-        color: #f9e2af;
+        color: ${theme.yellow};
       }
 
       #battery.critical {
-        background-color: #f38ba8;
-        color: #1e1e2e;
+        background-color: ${theme.red};
+        color: ${theme.bg};
         animation: blink 0.5s linear infinite alternate;
       }
 
       @keyframes blink {
         to {
-          background-color: #1e1e2e;
-          color: #f38ba8;
+          background-color: ${theme.bg};
+          color: ${theme.red};
         }
       }
 
       #custom-power {
-        background: #16161e;
-        color: #7aa2f7;
+        background: ${theme.bg_dark};
+        color: ${theme.accent};
         border-radius: 0.7em;
         padding: 0 0.8em;
         margin: 0.3em 0.2em;

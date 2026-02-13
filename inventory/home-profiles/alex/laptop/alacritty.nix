@@ -1,4 +1,8 @@
-_: {
+{ config, ... }:
+let
+  theme = config.theme.colors;
+in
+{
   programs.alacritty = {
     enable = true;
     settings = {
@@ -36,37 +40,36 @@ _: {
         }
       ];
 
-      # Tokyo Night theme colors
       colors = {
         primary = {
-          background = "#1a1b26";
-          foreground = "#a9b1d6";
+          background = theme.bg;
+          foreground = theme.fg_dim;
         };
 
         normal = {
-          black = "#32344a";
-          red = "#f7768e";
-          green = "#9ece6a";
-          yellow = "#e0af68";
-          blue = "#7aa2f7";
-          magenta = "#ad8ee6";
-          cyan = "#449dab";
-          white = "#787c99";
+          black = theme.term_black;
+          red = theme.term_red;
+          green = theme.term_green;
+          yellow = theme.term_yellow;
+          blue = theme.term_blue;
+          magenta = theme.term_magenta;
+          cyan = theme.term_cyan;
+          white = theme.term_white;
         };
 
         bright = {
-          black = "#444b6a";
-          red = "#ff7a93";
-          green = "#b9f27c";
-          yellow = "#ff9e64";
-          blue = "#7da6ff";
-          magenta = "#bb9af7";
-          cyan = "#0db9d7";
-          white = "#acb0d0";
+          black = theme.term_bright_black;
+          red = theme.term_bright_red;
+          green = theme.term_bright_green;
+          yellow = theme.term_bright_yellow;
+          blue = theme.term_bright_blue;
+          magenta = theme.term_bright_magenta;
+          cyan = theme.term_bright_cyan;
+          white = theme.term_bright_white;
         };
 
         selection = {
-          background = "#7aa2f7";
+          background = theme.accent;
         };
       };
     };

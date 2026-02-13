@@ -1,4 +1,8 @@
-_: {
+{ config, ... }:
+let
+  theme = config.theme.colors;
+in
+{
   services.mako = {
     enable = true;
 
@@ -9,20 +13,18 @@ _: {
       padding = 10;
       margin = 20;
       border-size = 2;
-      border-radius = 0; # Tokyo Night uses no rounding
+      border-radius = 0;
       anchor = "top-right";
       font = "CaskaydiaMono Nerd Font 11";
       icons = true;
       max-icon-size = 32;
 
-      # Tokyo Night colors
-      background-color = "#1a1b26";
-      text-color = "#a9b1d6";
-      border-color = "#33ccff";
-      progress-color = "#33ccff";
+      background-color = theme.bg;
+      text-color = theme.fg_dim;
+      border-color = theme.cyan;
+      progress-color = theme.cyan;
     };
 
-    # Extra configuration for specific app behaviors
     extraConfig = ''
       [app-name=Spotify]
       invisible=1

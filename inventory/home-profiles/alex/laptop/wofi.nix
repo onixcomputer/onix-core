@@ -1,4 +1,7 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
+let
+  theme = config.theme.colors;
+in
 {
   programs.wofi = {
     enable = true;
@@ -22,15 +25,14 @@
     };
 
     style = ''
-      /* Tokyo Night theme - official folke colors */
       * {
         font-family: "CaskaydiaMono Nerd Font";
-        color: #c0caf5;
+        color: ${theme.fg};
       }
 
       window {
-        border: 3px solid #7aa2f7;
-        background: #1a1b26;
+        border: 3px solid ${theme.accent};
+        background: ${theme.bg};
         border-radius: 15px;
       }
 
@@ -40,13 +42,13 @@
         padding: 1em;
         border: none;
         font-weight: bold;
-        background: #1a1b26;
-        color: #c0caf5;
+        background: ${theme.bg};
+        color: ${theme.fg};
         border-radius: 15px;
       }
 
       #input:focus {
-        border: 1px solid #7aa2f7;
+        border: 1px solid ${theme.accent};
       }
 
       #inner-box {
@@ -64,11 +66,11 @@
 
       #text {
         margin-left: 0.5em;
-        color: #c0caf5;
+        color: ${theme.fg};
       }
 
       #text:selected {
-        color: #15161e;
+        color: ${theme.bg_dark};
       }
 
       #entry {
@@ -77,7 +79,7 @@
       }
 
       #entry:selected {
-        background: linear-gradient(90deg, #7aa2f7 0%, #bb9af7 80%);
+        background: linear-gradient(90deg, ${theme.accent} 0%, ${theme.accent2} 80%);
       }
     '';
   };

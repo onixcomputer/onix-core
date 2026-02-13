@@ -1,4 +1,7 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
+let
+  theme = config.theme.colors;
+in
 {
   wayland.windowManager.hyprland = {
     enable = true;
@@ -6,9 +9,9 @@
     settings = {
       # Variables
       "$mod" = "SUPER";
-      "$terminal" = "alacritty";
-      "$browser" = "firefox";
-      "$fileManager" = "thunar";
+      "$terminal" = config.apps.terminal.command;
+      "$browser" = config.apps.browser.command;
+      "$fileManager" = config.apps.fileManager.command;
 
       # Monitors
       monitor = [
@@ -34,8 +37,8 @@
         gaps_in = 5;
         gaps_out = 10;
         border_size = 2;
-        "col.active_border" = "rgba(7aa2f7ee) rgba(bb9af7ee) 45deg";
-        "col.inactive_border" = "rgba(595959aa)";
+        "col.active_border" = theme.hypr.active_border;
+        "col.inactive_border" = theme.hypr.inactive_border;
         resize_on_border = false;
         allow_tearing = false;
         layout = "dwindle";
@@ -136,7 +139,7 @@
 
         "nofocus,class:^$,title:^$,xwayland:1,floating:1,fullscreen:0,pinned:0"
 
-        "opacity 0.97 0.97, class:^(Alacritty|alacritty)$"
+        "opacity 0.97 0.97, class:^(${config.apps.terminal.appId})$"
 
       ];
 
