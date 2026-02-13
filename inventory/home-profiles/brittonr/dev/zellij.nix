@@ -1,4 +1,8 @@
-_: {
+{ config, ... }:
+let
+  k = config.keymap;
+in
+{
   programs.zellij = {
     enable = true;
     enableBashIntegration = false;
@@ -29,6 +33,19 @@ _: {
           };
           "bind \"Alt p\"" = {
             NewPane = { };
+          };
+          # Vim-style navigation (hjkl)
+          "bind \"Alt ${k.nav.left}\"" = {
+            MoveFocusOrTab = "Left";
+          };
+          "bind \"Alt ${k.nav.right}\"" = {
+            MoveFocusOrTab = "Right";
+          };
+          "bind \"Alt ${k.nav.down}\"" = {
+            MoveFocus = "Down";
+          };
+          "bind \"Alt ${k.nav.up}\"" = {
+            MoveFocus = "Up";
           };
         };
       };

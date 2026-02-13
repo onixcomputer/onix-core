@@ -8,6 +8,9 @@
 let
   # Access the current theme colors
   theme = config.theme.colors;
+  # Access the shared keymap
+  k = config.keymap;
+  up = lib.toUpper;
   # Define wrapped fuzzel locally so we can reference it in the config
   wrappedFuzzel =
     (inputs.wrappers.wrapperModules.fuzzel.apply {
@@ -362,13 +365,13 @@ let
                           spawn-at-startup "kitty" "--title" "btop" "-e" "btop"
                           spawn-at-startup "kitty" "--title" "journalctl" "-e" "journalctl -f"
                           window-rule {
-              match app-id=r#"firefox$"#
+              match app-id=r#"librewolf$"#
 
               open-on-workspace "2"
               open-maximized true
           }
           window-rule {
-              match app-id="firefox$" title="^Picture-in-Picture$"
+              match app-id="librewolf$" title="^Picture-in-Picture$"
 
               open-floating true
           }
@@ -436,107 +439,103 @@ let
           }
 
                           binds {
-                              Mod+Shift+Slash { show-hotkey-overlay; }
+                              ${k.modifiers.wm}+Shift+Slash { show-hotkey-overlay; }
 
                               // Window management
-                              Mod+Q { close-window; }
-                              Mod+W { toggle-column-tabbed-display; }
-                              Mod+Shift+I { fullscreen-window; }
-                              Alt+F { toggle-window-floating; }
-                              Mod+Shift+R { spawn "niri" "msg" "action" "load-config-file"; }
+                              ${k.modifiers.wm}+${k.wm.close} { close-window; }
+                              ${k.modifiers.wm}+${k.wm.toggleTabs} { toggle-column-tabbed-display; }
+                              ${k.modifiers.wm}+${k.wm.fullscreen} { fullscreen-window; }
+                              ${k.modifiers.secondary}+F { toggle-window-floating; }
+                              ${k.modifiers.wm}+${k.wm.reload} { spawn "niri" "msg" "action" "load-config-file"; }
 
                               // Vim bindings for focus
-                              Mod+H { focus-column-left; }
-                              Mod+L { focus-column-right; }
-                              Mod+K { focus-workspace-up; }
-                              Mod+J { focus-workspace-down; }
+                              ${k.modifiers.wm}+${up k.nav.left} { focus-column-left; }
+                              ${k.modifiers.wm}+${up k.nav.right} { focus-column-right; }
+                              ${k.modifiers.wm}+${up k.nav.up} { focus-workspace-up; }
+                              ${k.modifiers.wm}+${up k.nav.down} { focus-workspace-down; }
 
                               // Scroll wheel for workspace switching
-                              Mod+WheelScrollUp { focus-workspace-up; }
-                              Mod+WheelScrollDown { focus-workspace-down; }
+                              ${k.modifiers.wm}+WheelScrollUp { focus-workspace-up; }
+                              ${k.modifiers.wm}+WheelScrollDown { focus-workspace-down; }
 
                               // Arrow keys for compatibility
-                              Mod+Left { focus-column-left; }
-                              Mod+Right { focus-column-right; }
-                              Mod+Up { focus-window-up; }
-                              Mod+Down { focus-window-down; }
+                              ${k.modifiers.wm}+Left { focus-column-left; }
+                              ${k.modifiers.wm}+Right { focus-column-right; }
+                              ${k.modifiers.wm}+Up { focus-window-up; }
+                              ${k.modifiers.wm}+Down { focus-window-down; }
 
                               // Alt+J/K for moving between tabs/windows
-                              Alt+K { focus-window-up; }
-                              Alt+J { focus-window-down; }
+                              ${k.modifiers.secondary}+${up k.nav.up} { focus-window-up; }
+                              ${k.modifiers.secondary}+${up k.nav.down} { focus-window-down; }
 
                               // Arrow keys for moving windows
-                              Mod+Control+Left { move-column-left; }
-                              Mod+Control+Right { move-column-right; }
-                              Mod+Control+Up { move-window-up; }
-                              Mod+Control+Down { move-window-down; }
+                              ${k.modifiers.wm}+Control+Left { move-column-left; }
+                              ${k.modifiers.wm}+Control+Right { move-column-right; }
+                              ${k.modifiers.wm}+Control+Up { move-window-up; }
+                              ${k.modifiers.wm}+Control+Down { move-window-down; }
 
                               // Column operations - consume/expel windows
-                              Mod+BracketLeft { consume-window-into-column; }
-                              Mod+BracketRight { expel-window-from-column; }
+                              ${k.modifiers.wm}+BracketLeft { consume-window-into-column; }
+                              ${k.modifiers.wm}+BracketRight { expel-window-from-column; }
 
                               // Resizing
-                              Mod+Minus { set-column-width "-10%"; }
-                              Mod+Equal { set-column-width "+10%"; }
+                              ${k.modifiers.wm}+Minus { set-column-width "-10%"; }
+                              ${k.modifiers.wm}+Equal { set-column-width "+10%"; }
 
                               // Vim bindings for resizing
-                              Mod+Shift+H { set-column-width "-10%"; }
-                              Mod+Shift+L { set-column-width "+10%"; }
-                              Mod+Shift+J { set-window-height "+10%"; }
-                              Mod+Shift+K { set-window-height "-10%"; }
+                              ${k.modifiers.wm}+Shift+${up k.nav.left} { set-column-width "-10%"; }
+                              ${k.modifiers.wm}+Shift+${up k.nav.right} { set-column-width "+10%"; }
+                              ${k.modifiers.wm}+Shift+${up k.nav.down} { set-window-height "+10%"; }
+                              ${k.modifiers.wm}+Shift+${up k.nav.up} { set-window-height "-10%"; }
 
                               // Workspaces (1-10)
-                              Mod+1 { focus-workspace 1; }
-                              Mod+2 { focus-workspace 2; }
-                              Mod+3 { focus-workspace 3; }
-                              Mod+4 { focus-workspace 4; }
-                              Mod+5 { focus-workspace 5; }
-                              Mod+6 { focus-workspace 6; }
-                              Mod+7 { focus-workspace 7; }
-                              Mod+8 { focus-workspace 8; }
-                              Mod+9 { focus-workspace 9; }
-                              Mod+0 { focus-workspace 10; }
+                              ${k.modifiers.wm}+1 { focus-workspace 1; }
+                              ${k.modifiers.wm}+2 { focus-workspace 2; }
+                              ${k.modifiers.wm}+3 { focus-workspace 3; }
+                              ${k.modifiers.wm}+4 { focus-workspace 4; }
+                              ${k.modifiers.wm}+5 { focus-workspace 5; }
+                              ${k.modifiers.wm}+6 { focus-workspace 6; }
+                              ${k.modifiers.wm}+7 { focus-workspace 7; }
+                              ${k.modifiers.wm}+8 { focus-workspace 8; }
+                              ${k.modifiers.wm}+9 { focus-workspace 9; }
+                              ${k.modifiers.wm}+0 { focus-workspace 10; }
 
-                              Mod+Shift+1 { move-column-to-workspace 1; }
-                              Mod+Shift+2 { move-column-to-workspace 2; }
-                              Mod+Shift+3 { move-column-to-workspace 3; }
-                              Mod+Shift+4 { move-column-to-workspace 4; }
-                              Mod+Shift+5 { move-column-to-workspace 5; }
-                              Mod+Shift+6 { move-column-to-workspace 6; }
-                              Mod+Shift+7 { move-column-to-workspace 7; }
-                              Mod+Shift+8 { move-column-to-workspace 8; }
-                              Mod+Shift+9 { move-column-to-workspace 9; }
-                              Mod+Shift+0 { move-column-to-workspace 10; }
+                              ${k.modifiers.wm}+Shift+1 { move-column-to-workspace 1; }
+                              ${k.modifiers.wm}+Shift+2 { move-column-to-workspace 2; }
+                              ${k.modifiers.wm}+Shift+3 { move-column-to-workspace 3; }
+                              ${k.modifiers.wm}+Shift+4 { move-column-to-workspace 4; }
+                              ${k.modifiers.wm}+Shift+5 { move-column-to-workspace 5; }
+                              ${k.modifiers.wm}+Shift+6 { move-column-to-workspace 6; }
+                              ${k.modifiers.wm}+Shift+7 { move-column-to-workspace 7; }
+                              ${k.modifiers.wm}+Shift+8 { move-column-to-workspace 8; }
+                              ${k.modifiers.wm}+Shift+9 { move-column-to-workspace 9; }
+                              ${k.modifiers.wm}+Shift+0 { move-column-to-workspace 10; }
 
                               // Applications
-                              Mod+Return { spawn "kitty"; }
-                              Mod+Shift+Return { spawn "sh" "-c" "cd $(${pkgs.xcwd}/bin/xcwd) && kitty --title float"; }
-                              Mod+F { spawn "sh" "-c" "cd $(${pkgs.xcwd}/bin/xcwd) && kitty --title yazi -e yazi"; }
-                              Mod+B { spawn "firefox"; }
-                              Mod+S { spawn "kitty" "--title" "btop" "-e" "btop"; }
-                              Mod+R { spawn "${wrappedFuzzel}/bin/fuzzel"; }
-                              Mod+Space { spawn "${wrappedFuzzel}/bin/fuzzel"; }
-                              Mod+V { spawn "sh" "-c" "${pkgs.cliphist}/bin/cliphist list | ${wrappedFuzzel}/bin/fuzzel --dmenu | ${pkgs.cliphist}/bin/cliphist decode | ${pkgs.wl-clipboard}/bin/wl-copy"; }
-                              Mod+Shift+V { spawn "sh" "-c" "${pkgs.cliphist}/bin/cliphist list | ${wrappedFuzzel}/bin/fuzzel --dmenu | ${pkgs.cliphist}/bin/cliphist delete"; }
-                              Mod+N { spawn "sh" "-c" "notify-send -t 1000 'WiFi 󰤨' 'Scanning networks...' && fuzzel-network-menu"; }
-                              Mod+G { spawn "fuzzel-generations"; }
-                              Mod+T { spawn "toggle-theme-mode"; }
-                              Mod+Shift+T { spawn "fuzzel-theme-mode"; }
-                              Mod+D { spawn "fuzzel-darkman"; }
+                              ${k.modifiers.wm}+${k.wm.terminal} { spawn "kitty"; }
+                              ${k.modifiers.wm}+Shift+${k.wm.terminal} { spawn "sh" "-c" "cd $(${pkgs.xcwd}/bin/xcwd) && kitty --title float"; }
+                              ${k.modifiers.wm}+${k.wm.fileManager} { spawn "sh" "-c" "cd $(${pkgs.xcwd}/bin/xcwd) && kitty --title yazi -e yazi"; }
+                              ${k.modifiers.wm}+${k.wm.browser} { spawn "librewolf"; }
+                              ${k.modifiers.wm}+${k.wm.sysmon} { spawn "kitty" "--title" "btop" "-e" "btop"; }
+                              ${k.modifiers.wm}+R { spawn "${wrappedFuzzel}/bin/fuzzel"; }
+                              ${k.modifiers.wm}+${k.wm.launcher} { spawn "${wrappedFuzzel}/bin/fuzzel"; }
+                              ${k.modifiers.wm}+${k.wm.clipboard} { spawn "sh" "-c" "${pkgs.cliphist}/bin/cliphist list | ${wrappedFuzzel}/bin/fuzzel --dmenu | ${pkgs.cliphist}/bin/cliphist decode | ${pkgs.wl-clipboard}/bin/wl-copy"; }
+                              ${k.modifiers.wm}+Shift+${k.wm.clipboard} { spawn "sh" "-c" "${pkgs.cliphist}/bin/cliphist list | ${wrappedFuzzel}/bin/fuzzel --dmenu | ${pkgs.cliphist}/bin/cliphist delete"; }
+                              ${k.modifiers.wm}+N { spawn "sh" "-c" "notify-send -t 1000 'WiFi 󰤨' 'Scanning networks...' && fuzzel-network-menu"; }
+                              ${k.modifiers.wm}+G { spawn "fuzzel-generations"; }
+                              ${k.modifiers.wm}+${k.wm.themeToggle} { spawn "toggle-theme-mode"; }
+                              ${k.modifiers.wm}+Shift+${k.wm.themeToggle} { spawn "fuzzel-theme-mode"; }
+                              ${k.modifiers.wm}+D { spawn "fuzzel-darkman"; }
 
                               // Screenshots
-                              // Print: full screen screenshot (quick, no annotation)
                               Print { spawn "screenshot-screen"; }
-                              // Mod+Shift+S: region selection with satty annotation editor
-                              Mod+Shift+S { spawn "screenshot-region"; }
-                              // Mod+Print: full screen with satty annotation editor
-                              Mod+Print { spawn "screenshot-screen-edit"; }
-                              // Mod+Shift+P: color picker
-                              Mod+Shift+P { spawn "color-picker"; }
+                              ${k.modifiers.wm}+${k.wm.screenshot} { spawn "screenshot-region"; }
+                              ${k.modifiers.wm}+Print { spawn "screenshot-screen-edit"; }
+                              ${k.modifiers.wm}+Shift+P { spawn "color-picker"; }
 
                               // Notifications (makoctl)
-                              Mod+Comma { spawn "makoctl" "dismiss"; }
-                              Mod+Shift+Comma { spawn "makoctl" "dismiss" "--all"; }
+                              ${k.modifiers.wm}+Comma { spawn "makoctl" "dismiss"; }
+                              ${k.modifiers.wm}+Shift+Comma { spawn "makoctl" "dismiss" "--all"; }
 
                               // Media controls
                               XF86AudioRaiseVolume { spawn "swayosd-client" "--output-volume" "raise"; }
@@ -549,32 +548,31 @@ let
                               XF86AudioPrev { spawn "playerctl" "previous"; }
 
                               // Overview toggle (also accessible via 4-finger swipe or hot corner)
-                              Mod+Tab { toggle-overview; }
+                              ${k.modifiers.wm}+${k.wm.overview} { toggle-overview; }
 
                               // Touchpad scroll bindings for volume (Mod + scroll)
-                              Mod+TouchpadScrollUp { spawn "swayosd-client" "--output-volume" "raise"; }
-                              Mod+TouchpadScrollDown { spawn "swayosd-client" "--output-volume" "lower"; }
+                              ${k.modifiers.wm}+TouchpadScrollUp { spawn "swayosd-client" "--output-volume" "raise"; }
+                              ${k.modifiers.wm}+TouchpadScrollDown { spawn "swayosd-client" "--output-volume" "lower"; }
 
                               // Monitor navigation (for multi-monitor setups)
-                              // Monitors are stacked: DP-3 (top) and HDMI-A-2 (bottom)
-                              Mod+Escape { focus-monitor-previous; }
-                              Mod+Shift+Up { focus-monitor-up; }
-                              Mod+Shift+Down { focus-monitor-down; }
-                              Mod+Shift+Left { focus-monitor-left; }
-                              Mod+Shift+Right { focus-monitor-right; }
+                              ${k.modifiers.wm}+Escape { focus-monitor-previous; }
+                              ${k.modifiers.wm}+Shift+Up { focus-monitor-up; }
+                              ${k.modifiers.wm}+Shift+Down { focus-monitor-down; }
+                              ${k.modifiers.wm}+Shift+Left { focus-monitor-left; }
+                              ${k.modifiers.wm}+Shift+Right { focus-monitor-right; }
 
                               // Move focused column to another monitor
-                              Mod+Control+Shift+Up { move-column-to-monitor-up; }
-                              Mod+Control+Shift+Down { move-column-to-monitor-down; }
-                              Mod+Control+Shift+Left { move-column-to-monitor-left; }
-                              Mod+Control+Shift+Right { move-column-to-monitor-right; }
+                              ${k.modifiers.wm}+Control+Shift+Up { move-column-to-monitor-up; }
+                              ${k.modifiers.wm}+Control+Shift+Down { move-column-to-monitor-down; }
+                              ${k.modifiers.wm}+Control+Shift+Left { move-column-to-monitor-left; }
+                              ${k.modifiers.wm}+Control+Shift+Right { move-column-to-monitor-right; }
 
                               // Column layout
-                              Mod+M { maximize-column; }
-                              Mod+P { switch-preset-column-width; }
+                              ${k.modifiers.wm}+${k.wm.maxColumn} { maximize-column; }
+                              ${k.modifiers.wm}+${k.wm.presetWidth} { switch-preset-column-width; }
 
                               // Power management
-                              Mod+Shift+O { power-off-monitors; }
+                              ${k.modifiers.wm}+Shift+O { power-off-monitors; }
                           }
         '';
       };
@@ -595,6 +593,8 @@ in
     pkgs.nautilus
     # Auto-rotation daemon for tablet/convertible devices
     pkgs.rot8
+    # Wayland forwarding over SSH
+    pkgs.waypipe
   ];
 
   # Override the niri systemd service to use the wrapped binary

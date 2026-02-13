@@ -1,4 +1,12 @@
-{ inputs, pkgs, ... }:
+{
+  inputs,
+  pkgs,
+  config,
+  ...
+}:
+let
+  k = config.keymap;
+in
 {
   home.packages = [
     (inputs.wrappers.wrapperModules.helix.apply {
@@ -23,10 +31,10 @@
           };
         };
         keys.normal = {
-          space = {
-            space = "file_picker";
-            w = ":w";
-            q = ":q";
+          ${k.leader} = {
+            ${k.leaderActions.filePicker} = "file_picker";
+            ${k.leaderActions.save} = ":w";
+            ${k.leaderActions.quit} = ":q";
           };
         };
       };

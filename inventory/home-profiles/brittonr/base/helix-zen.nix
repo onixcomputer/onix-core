@@ -1,8 +1,15 @@
 # Helix Zen Mode - Distraction-free prose/markdown editor
 # A separate helix wrapper optimized for writing documentation and prose
 # Based on: https://helix-editor-tutorials.com/tutorials/writing-documentation-and-prose-in-markdown-using-helix/
-{ inputs, pkgs, ... }:
+{
+  inputs,
+  pkgs,
+  config,
+  ...
+}:
 let
+  k = config.keymap;
+
   # Build the full helix-zen wrapper
   helixZenWrapper = inputs.wrappers.wrapperModules.helix.apply {
     inherit pkgs;
@@ -109,48 +116,39 @@ let
       };
 
       keys.normal = {
-        space = {
-          space = "file_picker";
-          w = ":w";
-          q = ":q";
+        ${k.leader} = {
+          ${k.leaderActions.filePicker} = "file_picker";
+          ${k.leaderActions.save} = ":w";
+          ${k.leaderActions.quit} = ":q";
 
-          # Zen mode toggles under space+t
+          # Zen mode toggles under leader+t
           t = {
-            # Toggle zen centering (wide gutter vs minimal)
             z = ":toggle gutters.line-numbers.min-width 40 1";
-            # Toggle soft wrap
             s = ":toggle soft-wrap.enable";
-            # Toggle inline diagnostics (grammar feedback)
             d = '':toggle inline-diagnostics.cursor-line "hint" "disable"'';
-            # Toggle spell checking severity display
             g = '':toggle inline-diagnostics.other-lines "hint" "disable"'';
-            # Toggle whitespace visibility for editing
             w = ":toggle whitespace.render all none";
           };
 
-          # Quick format current file
-          f = ":format";
+          ${k.leaderActions.format} = ":format";
 
-          # Preview markdown with glow (saves first, env -i resets wrapper env)
           p = [
             ":write"
             ":sh env -i HOME=$HOME PATH=$PATH TERM=$TERM glow -p '%{buffer_name}'"
           ];
 
-          # Help - show zen keybindings
           "?" =
             ":echo 'ZEN KEYS: space+p=preview | space+f=format | space+t+z=zen-center | space+t+s=soft-wrap | space+t+d=diagnostics | space+t+g=grammar | space+t+w=whitespace | Alt+hjkl=insert-nav'";
         };
       };
 
       keys.insert = {
-        # Navigation in insert mode with Alt modifier
-        "A-h" = "move_char_left";
-        "A-j" = "move_visual_line_down";
-        "A-k" = "move_visual_line_up";
-        "A-l" = "move_char_right";
-        "A-w" = "move_next_word_start";
-        "A-b" = "move_prev_word_start";
+        "A-${k.nav.left}" = "move_char_left";
+        "A-${k.nav.down}" = "move_visual_line_down";
+        "A-${k.nav.up}" = "move_visual_line_up";
+        "A-${k.nav.right}" = "move_char_right";
+        "A-${k.word.forward}" = "move_next_word_start";
+        "A-${k.word.backward}" = "move_prev_word_start";
       };
     };
 

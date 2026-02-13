@@ -1,4 +1,7 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
+let
+  k = config.keymap;
+in
 {
   # Home configuration
   home = {
@@ -155,9 +158,9 @@
       # But in Helix, movements automatically select
 
       # Normal mode movements (helix-like: implicit selection on movement)
-      bind -M default w forward-word
-      bind -M default b backward-word
-      bind -M default e forward-word
+      bind -M default ${k.word.forward} forward-word
+      bind -M default ${k.word.backward} backward-word
+      bind -M default ${k.word.end} forward-word
       bind -M default W forward-bigword
       bind -M default B backward-bigword
       bind -M default E forward-bigword
@@ -204,19 +207,19 @@
       bind -M default i 'set fish_bind_mode insert; commandline -f repaint-mode'
 
       # Visual mode movements extend selection
-      bind -M visual w 'commandline -f forward-word'
-      bind -M visual b 'commandline -f backward-word' 
-      bind -M visual e 'commandline -f forward-word'
-      bind -M visual h 'commandline -f backward-char'
-      bind -M visual l 'commandline -f forward-char'
-      bind -M visual j 'commandline -f down-line'
-      bind -M visual k 'commandline -f up-line'
+      bind -M visual ${k.word.forward} 'commandline -f forward-word'
+      bind -M visual ${k.word.backward} 'commandline -f backward-word'
+      bind -M visual ${k.word.end} 'commandline -f forward-word'
+      bind -M visual ${k.nav.left} 'commandline -f backward-char'
+      bind -M visual ${k.nav.right} 'commandline -f forward-char'
+      bind -M visual ${k.nav.down} 'commandline -f down-line'
+      bind -M visual ${k.nav.up} 'commandline -f up-line'
 
       # Basic movements in default mode (no selection)
-      bind -M default h 'commandline -f backward-char'
-      bind -M default l 'commandline -f forward-char'
-      bind -M default j 'commandline -f history-search-forward'
-      bind -M default k 'commandline -f history-search-backward'
+      bind -M default ${k.nav.left} 'commandline -f backward-char'
+      bind -M default ${k.nav.right} 'commandline -f forward-char'
+      bind -M default ${k.nav.down} 'commandline -f history-search-forward'
+      bind -M default ${k.nav.up} 'commandline -f history-search-backward'
     '';
   };
 }

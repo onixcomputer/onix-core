@@ -1,6 +1,7 @@
 { config, ... }:
 let
   theme = config.theme.colors;
+  k = config.keymap;
 in
 {
   programs.kitty = {
@@ -168,8 +169,16 @@ in
       "ctrl+shift+home" = "scroll_home";
       "ctrl+shift+end" = "scroll_end";
 
-      # Clear scrollback
-      "ctrl+shift+k" = "clear_terminal scrollback active";
+      # Clear scrollback (rebind from ctrl+shift+k to free k for window nav)
+      "ctrl+shift+backspace" = "clear_terminal scrollback active";
+
+      # Vim-style tab navigation (hjkl)
+      "ctrl+shift+${k.nav.right}" = "next_tab";
+      "ctrl+shift+${k.nav.left}" = "previous_tab";
+
+      # Vim-style window navigation (hjkl)
+      "ctrl+shift+${k.nav.down}" = "next_window";
+      "ctrl+shift+${k.nav.up}" = "previous_window";
     };
 
     # Extra config for advanced features

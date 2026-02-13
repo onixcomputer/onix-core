@@ -1,6 +1,7 @@
 {
   inputs,
   pkgs,
+  config,
   ...
 }:
 let
@@ -24,6 +25,8 @@ let
     hash = "sha256:a7a123eee4e40fdd8af7c0c67243731ddcc37ae1498cf2828995f4905600c51f";
     fixedExtid = "{446900e4-71c2-419f-a6a7-df9c091e268b}";
   };
+
+  k = config.keymap;
 
   wrappedFirefox =
     (inputs.wrappers.wrapperModules.firefox.apply {
@@ -70,20 +73,20 @@ in
     bind --mode=visual d composite js document.getSelection().toString() | clipboard yank | js document.getSelection().empty()
 
     " --- Helix-inspired goto (g prefix) ---
-    bind ge scrollto 100           " ge = bottom (Helix: ge = end of file)
-    bind gg scrollto 0             " gg = top (same in both)
-    bind gt tabnext                " gt = next tab
-    bind gT tabprev                " gT = prev tab
+    bind ${k.goto.prefix}${k.goto.bottom} scrollto 100
+    bind ${k.goto.prefix}${k.goto.top} scrollto 0
+    bind ${k.goto.prefix}${k.goto.nextTab} tabnext
+    bind ${k.goto.prefix}${k.goto.prevTab} tabprev
 
     " --- Space leader (matching user's Helix config) ---
-    bind <Space>f fillcmdline tabopen    " open URL (like file_picker)
-    bind <Space>/ fillcmdline find       " search page
-    bind <Space>b fillcmdline buffer     " switch tab (buffer picker)
-    bind <Space>d tabclose               " close tab
+    bind <Space><Space> fillcmdline tabopen
+    bind <Space>${k.leaderActions.search} fillcmdline find
+    bind <Space>${k.leaderActions.bufferPicker} fillcmdline buffer
+    bind <Space>${k.leaderActions.close} tabclose
 
     " --- Tab navigation ---
-    bind J tabprev
-    bind K tabnext
+    bind ${k.tabs.prev} tabprev
+    bind ${k.tabs.next} tabnext
 
     " --- General settings ---
     set smoothscroll true
