@@ -1,4 +1,5 @@
-_: {
+{ config, ... }:
+{
   fonts.fontconfig.enable = true;
 
   xdg.configFile."fontconfig/fonts.conf".text = ''
@@ -62,7 +63,7 @@ _: {
       <alias>
         <family>monospace</family>
         <prefer>
-          <family>CaskaydiaMono Nerd Font</family>
+          <family>${config.font.ui}</family>
           <family>Liberation Mono</family>
           <family>DejaVu Sans Mono</family>
         </prefer>

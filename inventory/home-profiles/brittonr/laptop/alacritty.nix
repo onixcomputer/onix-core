@@ -1,4 +1,5 @@
-_: {
+{ config, ... }:
+{
   programs.alacritty = {
     enable = true;
     settings = {
@@ -6,15 +7,15 @@ _: {
 
       font = {
         normal = {
-          family = "CaskaydiaMono Nerd Font Mono";
+          family = config.font.mono;
           style = "Regular";
         };
         bold = {
-          family = "CaskaydiaMono Nerd Font Mono";
+          family = config.font.mono;
           style = "Bold";
         };
         italic = {
-          family = "CaskaydiaMono Nerd Font Mono";
+          family = config.font.mono;
           style = "Italic";
         };
         size = 14;

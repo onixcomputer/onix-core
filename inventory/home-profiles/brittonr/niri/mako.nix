@@ -13,11 +13,11 @@ let
 
       settings = {
         # Global settings matching wired configuration
-        font = "CaskaydiaMono Nerd Font 11";
+        font = "${config.font.ui} ${toString config.font.size.notification}";
         background-color = "${theme.bg}ee";
         text-color = "${theme.fg}ff";
         border-color = "${theme.accent}ff";
-        border-size = 2;
+        border-size = config.layout.borderWidth;
         border-radius = theme.hypr.rounding;
         width = 320;
         height = 100;

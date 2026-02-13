@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 let
   inherit (pkgs) writeShellScriptBin;
 in
@@ -247,14 +247,14 @@ in
       case "$chosen" in
         *"Rebuild System")
           ${pkgs.libnotify}/bin/notify-send "NixOS" "Rebuilding system..." -t 2000
-          ${pkgs.kitty}/bin/kitty --hold sudo nixos-rebuild switch
+          ${config.apps.terminal.command} --hold sudo nixos-rebuild switch
           ;;
         *"Collect Garbage")
-          ${pkgs.kitty}/bin/kitty --hold sudo ${pkgs.nix}/bin/nix-collect-garbage -d
+          ${config.apps.terminal.command} --hold sudo ${pkgs.nix}/bin/nix-collect-garbage -d
           ${pkgs.libnotify}/bin/notify-send "NixOS" "Garbage collection complete"
           ;;
         *"List Generations")
-          ${pkgs.kitty}/bin/kitty --hold sudo ${pkgs.nix}/bin/nix-env --list-generations --profile /nix/var/nix/profiles/system
+          ${config.apps.terminal.command} --hold sudo ${pkgs.nix}/bin/nix-env --list-generations --profile /nix/var/nix/profiles/system
           ;;
         *)
           # Extract generation number
@@ -393,7 +393,7 @@ in
             *"Darkman Status"*)
               # Show full status
               status=$(${pkgs.systemd}/bin/systemctl --user status darkman.service --no-pager --lines=20)
-              ${pkgs.kitty}/bin/kitty --hold sh -c "echo 'Darkman Service Status:'; echo; ${pkgs.systemd}/bin/systemctl --user status darkman.service --no-pager --lines=30"
+              ${config.apps.terminal.command} --hold sh -c "echo 'Darkman Service Status:'; echo; ${pkgs.systemd}/bin/systemctl --user status darkman.service --no-pager --lines=30"
               ;;
           esac
     '')
@@ -453,7 +453,7 @@ in
         [ -z "$DIR" ] || [ ! -d "$DIR" ] && DIR="$HOME"
 
         # Spawn kitty scratchpad with custom app-id (using --name for Wayland)
-        ${pkgs.kitty}/bin/kitty --name="$SCRATCHPAD_CLASS" --directory="$DIR" &
+        ${config.apps.terminal.command} --name="$SCRATCHPAD_CLASS" --directory="$DIR" &
       fi
     '')
 

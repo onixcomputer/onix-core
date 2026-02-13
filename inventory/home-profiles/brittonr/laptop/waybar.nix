@@ -1,4 +1,5 @@
-_: {
+{ config, ... }:
+{
   programs.waybar = {
     enable = true;
     settings = {
@@ -149,7 +150,7 @@ _: {
       * {
         border: none;
         border-radius: 0;
-        font-family: "CaskaydiaMono Nerd Font";
+        font-family: "${config.font.ui}";
         font-size: 15px;
         min-height: 0;
       }

@@ -15,7 +15,7 @@
     }
 
     label {
-      font-family: 'CaskaydiaMono Nerd Font', monospace;
+      font-family: '${config.font.ui}', monospace;
       font-size: 11pt;
       color: #cdd6f4;
     }

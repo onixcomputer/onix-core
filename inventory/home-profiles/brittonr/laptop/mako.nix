@@ -1,4 +1,5 @@
-_: {
+{ config, ... }:
+{
   services.mako = {
     enable = true;
 
@@ -8,10 +9,10 @@ _: {
       height = 110;
       padding = 10;
       margin = 20;
-      border-size = 2;
-      border-radius = 0; # Tokyo Night uses no rounding
+      border-size = config.layout.borderWidth;
+      border-radius = config.layout.borderRadius;
       anchor = "top-right";
-      font = "CaskaydiaMono Nerd Font 11";
+      font = "${config.font.ui} ${toString config.font.size.notification}";
       icons = true;
       max-icon-size = 32;
 

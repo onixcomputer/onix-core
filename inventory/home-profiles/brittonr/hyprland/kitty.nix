@@ -8,8 +8,8 @@ in
     enable = true;
 
     font = {
-      name = "CaskaydiaMono Nerd Font Mono";
-      size = 12;
+      name = config.font.mono;
+      size = config.font.size.terminal;
     };
 
     settings = {
@@ -18,9 +18,9 @@ in
       background_opacity = "1.0"; # No transparency
 
       # Font settings
-      bold_font = "CaskaydiaMono Nerd Font Mono Bold";
-      italic_font = "CaskaydiaMono Nerd Font Mono Italic";
-      bold_italic_font = "CaskaydiaMono Nerd Font Mono Bold Italic";
+      bold_font = "${config.font.mono} Bold";
+      italic_font = "${config.font.mono} Italic";
+      bold_italic_font = "${config.font.mono} Bold Italic";
 
       # Cursor settings - block cursor with blinking and trail effect
       cursor_shape = "block";

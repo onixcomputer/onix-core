@@ -14,7 +14,7 @@ let
 
       settings = {
         main = {
-          terminal = "${pkgs.kitty}/bin/kitty";
+          terminal = config.apps.terminal.command;
           layer = "overlay";
           width = 50;
           horizontal-pad = 20;
@@ -32,8 +32,8 @@ let
         };
 
         border = {
-          width = 2;
-          radius = 0;
+          width = config.layout.borderWidth;
+          radius = config.layout.borderRadius;
         };
       };
     }).wrapper;
@@ -152,7 +152,7 @@ let
           player-icons = {
             default = "";
             spotify = "";
-            firefox = "";
+            librewolf = "";
             chromium = "";
             mpv = "";
           };
@@ -178,7 +178,7 @@ let
           format = "";
           tooltip = true;
           tooltip-format = "Launch Terminal";
-          on-click = "${pkgs.kitty}/bin/kitty";
+          on-click = config.apps.terminal.command;
         };
 
         "custom/launcher" = {
@@ -201,7 +201,7 @@ let
           * {
               border: none;
               border-radius: 0;
-              font-family: monospace;
+              font-family: "${config.font.ui}";
               font-size: 13px;
           }
 

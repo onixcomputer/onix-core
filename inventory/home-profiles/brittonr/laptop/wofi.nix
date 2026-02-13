@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 {
   programs.wofi = {
     enable = true;
@@ -24,7 +24,7 @@
     style = ''
       /* Tokyo Night theme - official folke colors */
       * {
-        font-family: "CaskaydiaMono Nerd Font";
+        font-family: "${config.font.ui}";
         color: #c0caf5;
       }
 

@@ -18,7 +18,7 @@ let
 
       settings = {
         main = {
-          terminal = "${pkgs.kitty}/bin/kitty";
+          terminal = config.apps.terminal.command;
           layer = "overlay";
           width = 50;
           horizontal-pad = 20;
@@ -36,8 +36,8 @@ let
         };
 
         border = {
-          width = 2;
-          radius = 0;
+          width = config.layout.borderWidth;
+          radius = config.layout.borderRadius;
         };
       };
     }).wrapper;
@@ -183,7 +183,7 @@ let
           * {
               border: none;
               border-radius: 0;
-              font-family: monospace;
+              font-family: "${config.font.ui}";
               font-size: 13px;
           }
 
@@ -331,7 +331,7 @@ let
 
                           layout {
                               empty-workspace-above-first
-                              gaps 8
+                              gaps ${toString config.layout.gaps}
                               center-focused-column "never"
                               preset-column-widths {
                                   proportion 0.33333
@@ -346,7 +346,7 @@ let
                               }
 
                               border {
-                                  width 2
+                                  width ${toString config.layout.borderWidth}
                                   active-color "${theme.accent}"
                                   inactive-color "${theme.border}"
                               }
@@ -362,8 +362,8 @@ let
                           spawn-at-startup "${pkgs.blueman}/bin/blueman-applet"
                           spawn-at-startup "vesktop" "--enable-features=UseOzonePlatform" "--ozone-platform=wayland" "--enable-wayland-ime" "--disable-gpu-sandbox"
                           spawn-at-startup "element-desktop"
-                          spawn-at-startup "kitty" "--title" "btop" "-e" "btop"
-                          spawn-at-startup "kitty" "--title" "journalctl" "-e" "journalctl -f"
+                          spawn-at-startup "${config.apps.terminal.command}" "--title" "${config.apps.sysmon.name}" "-e" "${config.apps.sysmon.command}"
+                          spawn-at-startup "${config.apps.terminal.command}" "--title" "journalctl" "-e" "journalctl -f"
                           window-rule {
               match app-id=r#"librewolf$"#
 
@@ -512,11 +512,11 @@ let
                               ${k.modifiers.wm}+Shift+0 { move-column-to-workspace 10; }
 
                               // Applications
-                              ${k.modifiers.wm}+${k.wm.terminal} { spawn "kitty"; }
-                              ${k.modifiers.wm}+Shift+${k.wm.terminal} { spawn "sh" "-c" "cd $(${pkgs.xcwd}/bin/xcwd) && kitty --title float"; }
-                              ${k.modifiers.wm}+${k.wm.fileManager} { spawn "sh" "-c" "cd $(${pkgs.xcwd}/bin/xcwd) && kitty --title yazi -e yazi"; }
-                              ${k.modifiers.wm}+${k.wm.browser} { spawn "librewolf"; }
-                              ${k.modifiers.wm}+${k.wm.sysmon} { spawn "kitty" "--title" "btop" "-e" "btop"; }
+                              ${k.modifiers.wm}+${k.wm.terminal} { spawn "${config.apps.terminal.command}"; }
+                              ${k.modifiers.wm}+Shift+${k.wm.terminal} { spawn "sh" "-c" "cd $(${pkgs.xcwd}/bin/xcwd) && ${config.apps.terminal.command} --title float"; }
+                              ${k.modifiers.wm}+${k.wm.fileManager} { spawn "sh" "-c" "cd $(${pkgs.xcwd}/bin/xcwd) && ${config.apps.terminal.command} --title ${config.apps.fileManager.name} -e ${config.apps.fileManager.command}"; }
+                              ${k.modifiers.wm}+${k.wm.browser} { spawn "${config.apps.browser.command}"; }
+                              ${k.modifiers.wm}+${k.wm.sysmon} { spawn "${config.apps.terminal.command}" "--title" "${config.apps.sysmon.name}" "-e" "${config.apps.sysmon.command}"; }
                               ${k.modifiers.wm}+R { spawn "${wrappedFuzzel}/bin/fuzzel"; }
                               ${k.modifiers.wm}+${k.wm.launcher} { spawn "${wrappedFuzzel}/bin/fuzzel"; }
                               ${k.modifiers.wm}+${k.wm.clipboard} { spawn "sh" "-c" "${pkgs.cliphist}/bin/cliphist list | ${wrappedFuzzel}/bin/fuzzel --dmenu | ${pkgs.cliphist}/bin/cliphist decode | ${pkgs.wl-clipboard}/bin/wl-copy"; }

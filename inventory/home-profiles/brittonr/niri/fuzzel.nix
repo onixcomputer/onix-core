@@ -13,7 +13,7 @@ let
 
       settings = {
         main = {
-          terminal = "${pkgs.kitty}/bin/kitty";
+          terminal = config.apps.terminal.command;
           layer = "overlay";
           width = 50;
           horizontal-pad = 20;
@@ -31,8 +31,8 @@ let
         };
 
         border = {
-          width = 2;
-          radius = 0;
+          width = config.layout.borderWidth;
+          radius = config.layout.borderRadius;
         };
       };
     }).wrapper;
