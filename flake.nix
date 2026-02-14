@@ -62,6 +62,10 @@
       url = "github:WeraPea/pinenote-nixos";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    clonadic = {
+      url = "path:/home/brittonr/git/clonadic";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =

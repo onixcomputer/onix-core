@@ -36,6 +36,7 @@ _: {
             ingress = {
               "vault.robitzs.ch" = "http://localhost:8222";
               "auth.robitzs.ch" = "http://localhost:9081";
+              "clonadic.blr.dev" = "http://localhost:8080";
             };
           };
         };
