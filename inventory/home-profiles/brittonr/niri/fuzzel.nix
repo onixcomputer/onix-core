@@ -22,12 +22,12 @@ let
         };
 
         colors = {
-          background = "${builtins.substring 1 6 theme.bg}ff";
-          text = "${builtins.substring 1 6 theme.fg}ff";
-          match = "${builtins.substring 1 6 theme.accent}ff";
-          selection = "${builtins.substring 1 6 theme.accent}ff";
-          selection-text = "${builtins.substring 1 6 theme.bg}ff";
-          border = "${builtins.substring 1 6 theme.accent}ff";
+          background = "${config.colors.noHash theme.bg}${config.opacity.hex.opaque}";
+          text = "${config.colors.noHash theme.fg}${config.opacity.hex.opaque}";
+          match = "${config.colors.noHash theme.accent}${config.opacity.hex.opaque}";
+          selection = "${config.colors.noHash theme.accent}${config.opacity.hex.opaque}";
+          selection-text = "${config.colors.noHash theme.bg}${config.opacity.hex.opaque}";
+          border = "${config.colors.noHash theme.accent}${config.opacity.hex.opaque}";
         };
 
         border = {

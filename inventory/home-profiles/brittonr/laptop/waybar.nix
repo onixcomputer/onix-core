@@ -45,8 +45,7 @@ in
             "7" = "7";
             "8" = "8";
             "9" = "9";
-            active = "●";
-            default = "";
+            inherit (config.icons.workspace) active default;
           };
           on-scroll-up = "hyprctl dispatch workspace e+1";
           on-scroll-down = "hyprctl dispatch workspace e-1";
@@ -60,7 +59,7 @@ in
         };
 
         clock = {
-          interval = 1;
+          interval = config.timing.polling.fast;
           format = "{:%I:%M %p}";
           format-alt = "{:%A, %B %d, %Y}";
           tooltip-format = "<tt><small>{calendar}</small></tt>";
@@ -80,61 +79,45 @@ in
         };
 
         cpu = {
-          interval = 1;
-          format = "󰍛 {usage:02}%";
+          interval = config.timing.polling.fast;
+          format = "${config.icons.system.cpu} {usage:02}%";
           tooltip = true;
           on-click = "alacritty -e btop";
         };
 
         memory = {
-          interval = 1;
-          format = "󰘚 {used:0.1f}G/{total:0.1f}G";
+          interval = config.timing.polling.fast;
+          format = "${config.icons.system.memory} {used:0.1f}G/{total:0.1f}G";
           tooltip-format = "Memory: {percentage}%\nUsed: {used:0.2f}GB\nTotal: {total:0.2f}GB";
           on-click = "alacritty -e btop";
         };
 
         temperature = {
-          interval = 1;
-          format = "󰔏 {temperatureC}°C";
+          interval = config.timing.polling.fast;
+          format = "${config.icons.system.temperature} {temperatureC}°C";
           thermal-zone = 0;
           critical-threshold = config.power.temperature.critical;
-          format-critical = "󰸁 {temperatureC}°C";
+          format-critical = "${config.icons.system.temperatureCritical} {temperatureC}°C";
           tooltip-format = "CPU Temperature: {temperatureC}°C / {temperatureF}°F";
           on-click = "alacritty -e btop";
         };
 
         battery = {
-          interval = 1;
+          interval = config.timing.polling.fast;
           states = {
             inherit (config.power.battery) warning critical;
           };
           format = "{icon} {capacity}%";
-          format-charging = "󰂄 {capacity}%";
-          format-plugged = "󰚥 {capacity}%";
-          format-icons = [
-            "󰂎"
-            "󰁺"
-            "󰁻"
-            "󰁼"
-            "󰁽"
-            "󰁾"
-            "󰁿"
-            "󰂀"
-            "󰂁"
-            "󰂂"
-            "󰁹"
-          ];
+          format-charging = "${config.icons.battery.charging} {capacity}%";
+          format-plugged = "${config.icons.battery.plugged} {capacity}%";
+          format-icons = config.icons.battery.levels;
         };
 
         pulseaudio = {
           format = "{icon} {volume}%";
-          format-muted = "󰝟";
+          format-muted = config.icons.audio.muted;
           format-icons = {
-            default = [
-              "󰕿"
-              "󰖀"
-              "󰕾"
-            ];
+            default = config.icons.audio.levels;
           };
           on-click = "pavucontrol";
           on-click-right = "pamixer -t";
@@ -174,7 +157,7 @@ in
 
       tooltip label {
         color: ${wc.fg};
-        font-size: 0.9em;
+        font-size: ${config.css.fontSizeEm.small};
       }
 
       #workspaces {
@@ -187,7 +170,7 @@ in
 
       #workspaces button {
         padding: 0 ${config.css.padding.md};
-        margin: 0 0.1em;
+        margin: 0 ${config.css.marginEm.tiny};
         border-radius: ${config.css.borderRadius.md};
         color: ${wc.accent};
         background: transparent;
@@ -207,7 +190,7 @@ in
         color: ${wc.bg};
         border-radius: ${config.css.borderRadius.md};
         transition: all ${config.css.transition.fast} ${config.css.transition.easing};
-        font-size: 1.6em;
+        font-size: ${config.css.fontSizeEm.xlarge};
         padding: ${config.bar.waybar.modulePadding};
         margin: ${config.bar.waybar.moduleMargin};
       }
@@ -262,7 +245,7 @@ in
         background: ${wc.bg};
         border-radius: ${config.css.borderRadius.lg};
         margin: ${config.css.padding.sm} ${config.css.padding.xs};
-        padding: 0 0.4em;
+        padding: 0 ${config.css.paddingEm.sm};
       }
 
       #cpu {
@@ -279,7 +262,7 @@ in
 
       #temperature {
         color: ${wc.accent};
-        padding: 0 0.4em;
+        padding: 0 ${config.css.paddingEm.sm};
         background: transparent;
       }
 

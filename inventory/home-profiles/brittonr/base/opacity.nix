@@ -9,6 +9,14 @@
       panels = 0.85;
       inactive = 0.9;
       swayosd = 0.97;
+      # Hex alpha suffixes for color+alpha patterns (appended to hex colors)
+      hex = {
+        opaque = "ff"; # 100%
+        high = "ee"; # 93% - notifications, active elements
+        medium = "aa"; # 67% - inactive elements
+        low = "70"; # 44% - shadows, overlays
+        subtle = "40"; # 25% - very faint overlays
+      };
       blur = {
         size = 8;
         passes = 2;

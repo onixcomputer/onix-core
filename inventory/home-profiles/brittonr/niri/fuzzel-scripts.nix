@@ -185,10 +185,10 @@ in
 
             if [ "$active_type" = "802-3-ethernet" ]; then
               # Ethernet is connected - show ethernet options
-              menu="󰢾  Network Settings
-      󰖩  Switch to WiFi
+              menu="${config.icons.network.settings}  Network Settings
+      ${config.icons.network.wifiSwitch}  Switch to WiFi
 
-      󰈁  Ethernet Connected"
+      ${config.icons.network.ethernet}  Ethernet Connected"
 
               chosen=$(echo -e "$menu" | ${pkgs.fuzzel}/bin/fuzzel --dmenu --prompt "Network: ")
 
@@ -225,18 +225,18 @@ in
 
         # Add indicator for current generation
         if [ "$gen_num" = "$current" ]; then
-          icon="  "
+          icon="${config.icons.generations.current}  "
         else
-          icon="  "
+          icon="${config.icons.generations.other}  "
         fi
 
         formatted_list="$formatted_list$icon Gen $gen_num - $gen_date$is_current\n"
       done <<< "$generations"
 
       # Add menu options at top
-      menu="  Rebuild System
-        Collect Garbage
-        List Generations
+      menu="${config.icons.generations.rebuild}  Rebuild System
+      ${config.icons.generations.garbage}  Collect Garbage
+      ${config.icons.generations.list}  List Generations
 
       $formatted_list"
 
@@ -476,14 +476,14 @@ in
 
               # Add connection icon if connected
               if [ "$ssid" = "$connected" ]; then
-                icon="󰤨 "
+                icon="${config.icons.network.wifi} "
               else
                 icon="  "
               fi
 
               # Add lock icon if secured
               if [ -n "$security" ] && [ "$security" != "--" ]; then
-                lock=" 󰌾"
+                lock=" ${config.icons.network.lock}"
               else
                 lock=""
               fi
@@ -492,8 +492,8 @@ in
             done <<< "$wifi_list"
 
             # Add menu options at top
-            menu="󰢾  Network Settings
-      󰛵  Rescan Networks
+            menu="${config.icons.network.settings}  Network Settings
+      ${config.icons.network.rescan}  Rescan Networks
 
       $formatted_list"
 
@@ -506,7 +506,7 @@ in
                 ${pkgs.networkmanagerapplet}/bin/nm-connection-editor &
                 ;;
               *"Rescan Networks")
-                ${pkgs.libnotify}/bin/notify-send -t ${toString config.timing.notification.quick} "WiFi 󰤨" "Scanning networks..."
+                ${pkgs.libnotify}/bin/notify-send -t ${toString config.timing.notification.quick} "WiFi ${config.icons.network.wifi}" "Scanning networks..."
                 ${pkgs.networkmanager}/bin/nmcli device wifi rescan
                 sleep ${config.timing.process.wifiScan}
                 fuzzel-wifi
@@ -520,7 +520,7 @@ in
                   ${pkgs.networkmanager}/bin/nmcli connection up "$ssid"
                 else
                   # New network - prompt for password if secured
-                  if echo "$chosen" | grep -q "󰌾"; then
+                  if echo "$chosen" | grep -q "${config.icons.network.lock}"; then
                     password=$(echo "" | ${pkgs.fuzzel}/bin/fuzzel --dmenu --prompt "Password for $ssid: " --password)
                     [ -z "$password" ] && exit 0
                     ${pkgs.networkmanager}/bin/nmcli device wifi connect "$ssid" password "$password"

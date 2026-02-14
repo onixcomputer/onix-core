@@ -14,9 +14,9 @@ let
       settings = {
         # Global settings matching wired configuration
         font = "${config.font.ui} ${toString config.font.size.notification}";
-        background-color = "${theme.bg}ee";
-        text-color = "${theme.fg}ff";
-        border-color = "${theme.accent}ff";
+        background-color = "${theme.bg}${config.opacity.hex.high}";
+        text-color = "${theme.fg}${config.opacity.hex.opaque}";
+        border-color = "${theme.accent}${config.opacity.hex.opaque}";
         border-size = config.layout.borderWidth;
         border-radius = config.layout.borderRadius;
         inherit (config.notifications) width height;

@@ -46,6 +46,23 @@
         normal = "2px";
         thick = "3px";
       };
+
+      fontSizeEm = {
+        small = "0.9em";
+        normal = "1em";
+        large = "1.2em";
+        xlarge = "1.6em";
+      };
+
+      marginEm = {
+        tiny = "0.1em";
+        sm = "0.3em";
+        md = "0.5em";
+      };
+
+      paddingEm = {
+        sm = "0.4em";
+      };
     };
     description = "Shared CSS sizing and timing values for waybar and other GTK widgets";
   };

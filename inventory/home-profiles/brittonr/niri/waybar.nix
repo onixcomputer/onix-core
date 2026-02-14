@@ -99,7 +99,7 @@ let
         };
 
         temperature = {
-          interval = 2;
+          interval = config.timing.polling.normal;
           format = "TEMP {temperatureC}°C";
           hwmon-path-abs = [
             "/sys/devices/pci0000:00/0000:00:18.3/hwmon" # AMD k10temp
@@ -148,11 +148,13 @@ let
           format = "{player_icon} {artist} - {title}";
           format-paused = "{player_icon} {artist} - {title}";
           player-icons = {
-            default = "";
-            spotify = "";
-            librewolf = "";
-            chromium = "";
-            mpv = "";
+            inherit (config.icons.media)
+              default
+              spotify
+              librewolf
+              chromium
+              mpv
+              ;
           };
           max-length = config.bar.maxLength.module;
           on-click = "${pkgs.playerctl}/bin/playerctl play-pause";
@@ -173,21 +175,21 @@ let
         };
 
         "custom/kitty" = {
-          format = "";
+          format = config.icons.apps.terminal;
           tooltip = true;
           tooltip-format = "Launch Terminal";
           on-click = config.apps.terminal.command;
         };
 
         "custom/launcher" = {
-          format = "";
+          format = config.icons.apps.launcher;
           tooltip = true;
           tooltip-format = "Application Launcher";
           on-click = "${wrappedFuzzel}/bin/fuzzel";
         };
 
         "custom/nixos" = {
-          format = "";
+          format = config.icons.apps.nixos;
           tooltip = true;
           tooltip-format = "NixOS Generations";
           on-click = "fuzzel-generations";

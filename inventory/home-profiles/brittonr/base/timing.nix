@@ -11,6 +11,12 @@
         daemonStart = "1";
         wifiScan = "2";
       };
+      # Polling intervals for status bar modules (seconds)
+      polling = {
+        fast = 1; # Clock, CPU, memory, battery
+        normal = 2; # Temperature
+        slow = 5; # Network, disk
+      };
       # Notification display durations (milliseconds)
       notification = {
         gesture = 400;

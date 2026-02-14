@@ -28,12 +28,12 @@ let
         };
 
         colors = {
-          background = "${builtins.substring 1 6 theme.bg}ff";
-          text = "${builtins.substring 1 6 theme.fg}ff";
-          match = "${builtins.substring 1 6 theme.accent}ff";
-          selection = "${builtins.substring 1 6 theme.accent}ff";
-          selection-text = "${builtins.substring 1 6 theme.bg}ff";
-          border = "${builtins.substring 1 6 theme.accent}ff";
+          background = "${config.colors.noHash theme.bg}${config.opacity.hex.opaque}";
+          text = "${config.colors.noHash theme.fg}${config.opacity.hex.opaque}";
+          match = "${config.colors.noHash theme.accent}${config.opacity.hex.opaque}";
+          selection = "${config.colors.noHash theme.accent}${config.opacity.hex.opaque}";
+          selection-text = "${config.colors.noHash theme.bg}${config.opacity.hex.opaque}";
+          border = "${config.colors.noHash theme.accent}${config.opacity.hex.opaque}";
         };
 
         border = {
@@ -414,7 +414,7 @@ let
               }
 
               shadow {
-                  color "${config.colors.screencast_inactive}70"
+                  color "${config.colors.screencast_inactive}${config.opacity.hex.low}"
               }
 
               tab-indicator {
@@ -519,7 +519,7 @@ let
                               ${k.modifiers.wm}+${k.wm.launcher} { spawn "${wrappedFuzzel}/bin/fuzzel"; }
                               ${k.modifiers.wm}+${k.wm.clipboard} { spawn "sh" "-c" "${pkgs.cliphist}/bin/cliphist list | ${wrappedFuzzel}/bin/fuzzel --dmenu | ${pkgs.cliphist}/bin/cliphist decode | ${pkgs.wl-clipboard}/bin/wl-copy"; }
                               ${k.modifiers.wm}+Shift+${k.wm.clipboard} { spawn "sh" "-c" "${pkgs.cliphist}/bin/cliphist list | ${wrappedFuzzel}/bin/fuzzel --dmenu | ${pkgs.cliphist}/bin/cliphist delete"; }
-                              ${k.modifiers.wm}+N { spawn "sh" "-c" "notify-send -t ${toString config.timing.notification.quick} 'WiFi 󰤨' 'Scanning networks...' && fuzzel-network-menu"; }
+                              ${k.modifiers.wm}+N { spawn "sh" "-c" "notify-send -t ${toString config.timing.notification.quick} 'WiFi ${config.icons.network.wifi}' 'Scanning networks...' && fuzzel-network-menu"; }
                               ${k.modifiers.wm}+G { spawn "fuzzel-generations"; }
                               ${k.modifiers.wm}+${k.wm.themeToggle} { spawn "toggle-theme-mode"; }
                               ${k.modifiers.wm}+Shift+${k.wm.themeToggle} { spawn "fuzzel-theme-mode"; }
