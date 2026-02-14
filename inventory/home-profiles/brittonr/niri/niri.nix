@@ -11,6 +11,7 @@ let
   # Access the shared keymap
   k = config.keymap;
   up = lib.toUpper;
+  mon = config.monitors;
   # Define wrapped fuzzel locally so we can reference it in the config
   wrappedFuzzel =
     (inputs.wrappers.wrapperModules.fuzzel.apply {
@@ -286,12 +287,12 @@ let
 
                               // Touchscreen settings for GPD Pocket 4
                               touch {
-                                  map-to-output "eDP-1"
+                                  map-to-output "${mon.builtin.name}"
                               }
 
                               // Tablet/stylus settings (if applicable)
                               tablet {
-                                  map-to-output "eDP-1"
+                                  map-to-output "${mon.builtin.name}"
                               }
 
                               ${if config.input.mouse.focusFollows then "focus-follows-mouse" else ""}
@@ -314,18 +315,18 @@ let
                           }
 
                           // Primary monitor (top) - LG ULTRAGEAR+
-                          output "DP-3" {
-                              mode "3840x2160@240.084"
-                              scale 1.5
-                              position x=0 y=0
-                              variable-refresh-rate
+                          output "${mon.primary.name}" {
+                              mode "${mon.primary.mode}"
+                              scale ${toString mon.primary.scale}
+                              position x=${toString mon.primary.position.x} y=${toString mon.primary.position.y}
+                              ${if mon.primary.vrr then "variable-refresh-rate" else ""}
                           }
 
                           // Secondary monitor (below, centered) - Portable monitor via HDMI
-                          output "HDMI-A-2" {
-                              mode "2880x1800@99.999"
-                              scale 1.2
-                              position x=960 y=2160
+                          output "${mon.secondary.name}" {
+                              mode "${mon.secondary.mode}"
+                              scale ${toString mon.secondary.scale}
+                              position x=${toString mon.secondary.position.x} y=${toString mon.secondary.position.y}
                           }
 
 
@@ -690,19 +691,19 @@ in
       case "$ORIENTATION" in
         "normal")
           echo "  -> Applying transform 270" >> "$LOG"
-          ${wrappedNiri}/bin/niri msg output eDP-1 transform 270
+          ${wrappedNiri}/bin/niri msg output ${config.monitors.builtin.name} transform 270
           ;;
         "90")
           echo "  -> Applying transform 180" >> "$LOG"
-          ${wrappedNiri}/bin/niri msg output eDP-1 transform normal
+          ${wrappedNiri}/bin/niri msg output ${config.monitors.builtin.name} transform normal
           ;;
         "inverted")
           echo "  -> Applying transform 90" >> "$LOG"
-          ${wrappedNiri}/bin/niri msg output eDP-1 transform 90
+          ${wrappedNiri}/bin/niri msg output ${config.monitors.builtin.name} transform 90
           ;;
         "270")
           echo "  -> Applying transform normal" >> "$LOG"
-          ${wrappedNiri}/bin/niri msg output eDP-1 transform 180
+          ${wrappedNiri}/bin/niri msg output ${config.monitors.builtin.name} transform 180
           ;;
       esac
     '';

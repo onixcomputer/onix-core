@@ -1,371 +1,363 @@
-{ lib, ... }:
+{ lib, config, ... }:
+let
+  c = config.colors;
+  d = c.zen.dark;
+  l = c.zen.light;
+in
 {
   options.helixZenTheme = lib.mkOption {
     type = lib.types.attrs;
     readOnly = true;
     default = {
       dark = {
-        # Deep, comfortable background
         "ui.background" = {
-          bg = "#1c1c1c";
+          inherit (d) bg;
         };
         "ui.text" = {
-          fg = "#d4d4d4";
+          inherit (d) fg;
         };
 
-        # Minimal, muted statusline
         "ui.statusline" = {
-          bg = "#2a2a2a";
-          fg = "#888888";
+          bg = d.bg_elevated;
+          fg = d.fg_muted;
         };
         "ui.statusline.insert" = {
-          bg = "#3a5a3a";
-          fg = "#d4d4d4";
+          bg = d.statusline_insert_bg;
+          inherit (d) fg;
         };
         "ui.statusline.select" = {
-          bg = "#4a4a5a";
-          fg = "#d4d4d4";
+          bg = d.statusline_select_bg;
+          inherit (d) fg;
         };
         "ui.statusline.inactive" = {
-          bg = "#1c1c1c";
-          fg = "#555555";
+          inherit (d) bg;
+          fg = d.fg_inactive;
         };
 
-        # Subtle cursor
         "ui.cursor" = {
-          bg = "#5a5a6a";
+          bg = d.cursor;
         };
         "ui.cursor.primary" = {
-          bg = "#7a9ec2";
+          bg = d.cursor_primary;
         };
         "ui.cursor.match" = {
-          bg = "#4a5a4a";
+          bg = d.cursor_match;
         };
 
-        # Soft selection
         "ui.selection" = {
-          bg = "#333344";
+          bg = d.selection;
         };
         "ui.selection.primary" = {
-          bg = "#3a3a4a";
+          bg = d.selection_primary;
         };
 
-        # Menus
         "ui.menu" = {
-          bg = "#252525";
-          fg = "#d4d4d4";
+          bg = d.bg_surface;
+          inherit (d) fg;
         };
         "ui.menu.selected" = {
-          bg = "#3a4a5a";
-          fg = "#ffffff";
+          bg = d.menu_selected_bg;
+          fg = d.menu_selected_fg;
         };
         "ui.popup" = {
-          bg = "#252525";
-          fg = "#d4d4d4";
+          bg = d.bg_surface;
+          inherit (d) fg;
         };
 
-        # Very subtle line numbers
         "ui.linenr" = {
-          fg = "#444444";
+          fg = d.fg_linenr;
         };
         "ui.linenr.selected" = {
-          fg = "#666666";
+          fg = d.fg_linenr_selected;
         };
 
-        # Virtual text/inlay hints
         "ui.virtual" = {
-          fg = "#555555";
+          fg = d.fg_inactive;
         };
         "ui.virtual.inlay-hint" = {
-          fg = "#555555";
+          fg = d.fg_inactive;
           modifiers = [ "italic" ];
         };
         "ui.virtual.ruler" = {
-          bg = "#2a2a2a";
+          bg = d.bg_elevated;
         };
 
-        # Cursorline
         "ui.cursorline.primary" = {
-          bg = "#252525";
+          bg = d.bg_surface;
         };
 
-        # Markdown-optimized syntax highlighting
         "markup.heading" = {
-          fg = "#7a9ec2";
+          fg = d.heading;
           modifiers = [ "bold" ];
         };
         "markup.heading.1" = {
-          fg = "#8ab4f8";
+          fg = d.heading1;
           modifiers = [ "bold" ];
         };
         "markup.heading.2" = {
-          fg = "#7a9ec2";
+          fg = d.heading;
           modifiers = [ "bold" ];
         };
         "markup.heading.3" = {
-          fg = "#6a8eb2";
+          fg = d.heading3;
           modifiers = [ "bold" ];
         };
         "markup.heading.marker" = {
-          fg = "#555555";
+          fg = d.fg_inactive;
         };
 
         "markup.bold" = {
-          fg = "#d4d4d4";
+          inherit (d) fg;
           modifiers = [ "bold" ];
         };
         "markup.italic" = {
-          fg = "#b4c4d4";
+          fg = d.italic;
           modifiers = [ "italic" ];
         };
         "markup.strikethrough" = {
-          fg = "#888888";
+          fg = d.fg_muted;
           modifiers = [ "crossed_out" ];
         };
 
         "markup.link" = {
-          fg = "#7ab4c2";
+          fg = d.link;
         };
         "markup.link.url" = {
-          fg = "#5a8a9a";
+          fg = d.link_url;
           modifiers = [ "underlined" ];
         };
         "markup.link.text" = {
-          fg = "#7ab4c2";
+          fg = d.link;
         };
 
         "markup.list" = {
-          fg = "#888888";
+          fg = d.fg_muted;
         };
         "markup.list.checked" = {
-          fg = "#6a9a6a";
+          fg = d.list_checked;
         };
         "markup.list.unchecked" = {
-          fg = "#9a6a6a";
+          fg = d.list_unchecked;
         };
 
         "markup.quote" = {
-          fg = "#888899";
+          fg = d.quote;
           modifiers = [ "italic" ];
         };
 
         "markup.raw" = {
-          fg = "#9ab48a";
+          fg = d.raw;
         };
         "markup.raw.block" = {
-          fg = "#9ab48a";
+          fg = d.raw;
         };
         "markup.raw.inline" = {
-          fg = "#9ab48a";
+          fg = d.raw;
         };
 
-        # Code block syntax
         "keyword" = {
-          fg = "#c49a6a";
+          fg = d.keyword;
         };
         "function" = {
-          fg = "#7a9ec2";
+          fg = d.cursor_primary;
         };
         "type" = {
-          fg = "#8ab48a";
+          fg = d.type;
         };
         "string" = {
-          fg = "#8ab48a";
+          fg = d.type;
         };
         "comment" = {
-          fg = "#666666";
+          fg = d.fg_linenr_selected;
           modifiers = [ "italic" ];
         };
         "variable" = {
-          fg = "#b4b4c4";
+          fg = d.variable;
         };
         "constant" = {
-          fg = "#c4a47a";
+          fg = d.constant;
         };
         "operator" = {
-          fg = "#888888";
+          fg = d.fg_muted;
         };
         "punctuation" = {
-          fg = "#777777";
+          fg = d.fg_punctuation;
         };
 
-        # Diagnostics
         "diagnostic.hint" = {
           underline = {
-            color = "#5a7a5a";
+            color = d.diag_hint;
             style = "dotted";
           };
         };
         "diagnostic.info" = {
           underline = {
-            color = "#5a7a9a";
+            color = d.diag_info;
             style = "dotted";
           };
         };
         "diagnostic.warning" = {
           underline = {
-            color = "#9a8a5a";
+            color = d.diag_warning;
             style = "curl";
           };
         };
         "diagnostic.error" = {
           underline = {
-            color = "#9a5a5a";
+            color = d.diag_error;
             style = "curl";
           };
         };
 
-        # Diff indicators
         "diff.plus" = {
-          fg = "#5a8a5a";
+          fg = d.diff_plus;
         };
         "diff.minus" = {
-          fg = "#8a5a5a";
+          fg = d.diff_minus;
         };
         "diff.delta" = {
-          fg = "#7a7a5a";
+          fg = d.diff_delta;
         };
       };
 
       light = {
         "ui.background" = {
-          bg = "#fafafa";
+          inherit (l) bg;
         };
         "ui.text" = {
-          fg = "#333333";
+          inherit (l) fg;
         };
 
         "ui.statusline" = {
-          bg = "#e8e8e8";
-          fg = "#666666";
+          bg = l.bg_elevated;
+          fg = l.fg_muted;
         };
         "ui.statusline.insert" = {
-          bg = "#d8e8d8";
-          fg = "#333333";
+          bg = l.statusline_insert_bg;
+          inherit (l) fg;
         };
         "ui.statusline.select" = {
-          bg = "#d8d8e8";
-          fg = "#333333";
+          bg = l.statusline_select_bg;
+          inherit (l) fg;
         };
         "ui.statusline.inactive" = {
-          bg = "#f0f0f0";
-          fg = "#aaaaaa";
+          bg = l.bg_surface;
+          fg = l.fg_inactive;
         };
 
         "ui.cursor" = {
-          bg = "#c0c0d0";
+          bg = l.cursor;
         };
         "ui.cursor.primary" = {
-          bg = "#7090c0";
+          bg = l.cursor_primary;
         };
 
         "ui.selection" = {
-          bg = "#d0d8e8";
+          bg = l.selection;
         };
 
         "ui.menu" = {
-          bg = "#f0f0f0";
-          fg = "#333333";
+          bg = l.bg_surface;
+          inherit (l) fg;
         };
         "ui.menu.selected" = {
-          bg = "#c0d0e0";
-          fg = "#111111";
+          bg = l.menu_selected_bg;
+          fg = l.menu_selected_fg;
         };
         "ui.popup" = {
-          bg = "#f0f0f0";
-          fg = "#333333";
+          bg = l.bg_surface;
+          inherit (l) fg;
         };
 
         "ui.linenr" = {
-          fg = "#cccccc";
+          fg = l.fg_linenr;
         };
         "ui.linenr.selected" = {
-          fg = "#999999";
+          fg = l.fg_linenr_selected;
         };
 
         "ui.virtual" = {
-          fg = "#bbbbbb";
+          fg = l.fg_virtual;
         };
         "ui.virtual.ruler" = {
-          bg = "#e8e8e8";
+          bg = l.bg_elevated;
         };
 
-        # Cursorline
         "ui.cursorline.primary" = {
-          bg = "#f0f0f0";
+          bg = l.bg_surface;
         };
 
         "markup.heading" = {
-          fg = "#2060a0";
+          fg = l.heading;
           modifiers = [ "bold" ];
         };
         "markup.bold" = {
-          fg = "#333333";
+          inherit (l) fg;
           modifiers = [ "bold" ];
         };
         "markup.italic" = {
-          fg = "#444455";
+          fg = l.italic;
           modifiers = [ "italic" ];
         };
         "markup.link" = {
-          fg = "#206080";
+          fg = l.link;
         };
         "markup.link.url" = {
-          fg = "#4080a0";
+          fg = l.link_url;
           modifiers = [ "underlined" ];
         };
         "markup.list" = {
-          fg = "#666666";
+          fg = l.fg_muted;
         };
         "markup.quote" = {
-          fg = "#666677";
+          fg = l.quote;
           modifiers = [ "italic" ];
         };
         "markup.raw" = {
-          fg = "#408040";
+          fg = l.raw;
         };
 
         "keyword" = {
-          fg = "#a06020";
+          fg = l.keyword;
         };
         "function" = {
-          fg = "#2060a0";
+          fg = l.heading;
         };
         "string" = {
-          fg = "#408040";
+          fg = l.raw;
         };
         "comment" = {
-          fg = "#999999";
+          fg = l.comment;
           modifiers = [ "italic" ];
         };
 
         "diagnostic.hint" = {
           underline = {
-            color = "#60a060";
+            color = l.diag_hint;
             style = "dotted";
           };
         };
         "diagnostic.warning" = {
           underline = {
-            color = "#a0a060";
+            color = l.diag_warning;
             style = "curl";
           };
         };
         "diagnostic.error" = {
           underline = {
-            color = "#a06060";
+            color = l.diag_error;
             style = "curl";
           };
         };
 
         "diff.plus" = {
-          fg = "#408040";
+          fg = l.diff_plus;
         };
         "diff.minus" = {
-          fg = "#a04040";
+          fg = l.diff_minus;
         };
         "diff.delta" = {
-          fg = "#808040";
+          fg = l.diff_delta;
         };
       };
     };

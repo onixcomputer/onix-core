@@ -6,14 +6,12 @@
 
     settings = {
       general = {
-        inherit (config.media.cava) framerate;
+        inherit (config.media.cava) framerate sensitivity bars;
         autosens = 1;
-        sensitivity = 100;
-        bars = 0;
-        bar_width = 2;
-        bar_spacing = 1;
-        lower_cutoff_freq = 50;
-        higher_cutoff_freq = 10000;
+        bar_width = config.media.cava.barWidth;
+        bar_spacing = config.media.cava.barSpacing;
+        lower_cutoff_freq = config.media.cava.lowerCutoffFreq;
+        higher_cutoff_freq = config.media.cava.higherCutoffFreq;
         sleep_timer = 0;
       };
 
@@ -46,12 +44,12 @@
       };
 
       smoothing = {
-        integral = 77;
+        inherit (config.media.cava.smoothing) integral;
         monstercat = 0;
         waves = 0;
-        gravity = 100;
+        inherit (config.media.cava.smoothing) gravity;
         ignore = 0;
-        noise_reduction = 0.77;
+        noise_reduction = config.media.cava.smoothing.noiseReduction;
       };
     };
   };

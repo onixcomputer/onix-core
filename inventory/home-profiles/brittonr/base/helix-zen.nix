@@ -9,6 +9,7 @@
 }:
 let
   k = config.keymap;
+  ed = config.editor;
 
   # Build the full helix-zen wrapper
   helixZenWrapper = inputs.wrappers.wrapperModules.helix.apply {
@@ -56,7 +57,7 @@ let
         # Soft wrapping enabled globally - essential for prose
         soft-wrap = {
           enable = true;
-          max-wrap = 25;
+          max-wrap = ed.softWrap.maxWrap;
           max-indent-retain = 0;
           wrap-indicator = ""; # No indicator for clean prose appearance
           wrap-at-text-width = true;
@@ -87,9 +88,9 @@ let
         inline-diagnostics = {
           cursor-line = "hint";
           other-lines = "disable";
-          prefix-len = 2;
-          max-wrap = 40;
-          max-diagnostics = 5;
+          prefix-len = ed.inlineDiagnostics.prefixLen;
+          max-wrap = ed.softWrap.maxWrapZen;
+          max-diagnostics = ed.inlineDiagnostics.maxCount;
         };
 
         # Indent guides off for cleaner prose
@@ -97,14 +98,14 @@ let
 
         # Visual aids for prose
         cursorline = true;
-        rulers = [ 80 ];
+        inherit (ed) rulers;
 
         # Auto-save for writing flow
         auto-save = {
           focus-lost = true;
           after-delay = {
             enable = true;
-            timeout = 3000;
+            inherit (ed.autoSave) timeout;
           };
         };
 
@@ -182,8 +183,7 @@ let
           "- [ ]"
           ">"
         ];
-        # 80 chars text width for prose
-        text-width = 80;
+        text-width = ed.textWidth;
       }
       {
         # Plain text files with grammar checking
@@ -195,7 +195,7 @@ let
           wrap-at-text-width = true;
         };
         language-servers = [ "ltex-ls-plus" ];
-        text-width = 80;
+        text-width = ed.textWidth;
       }
     ];
 

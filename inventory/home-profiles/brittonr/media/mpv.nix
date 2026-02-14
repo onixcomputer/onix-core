@@ -12,8 +12,8 @@
       hwdec = "auto-safe";
 
       # Audio
-      volume = 100;
-      volume-max = 200;
+      volume = config.media.mpv.defaultVolume;
+      volume-max = config.media.mpv.maxVolume;
       audio-pitch-correction = "yes";
 
       # Subtitles
@@ -21,7 +21,7 @@
       sub-font-size = config.media.mpv.subFontSize;
       sub-color = "#FFFFFFFF";
       sub-border-color = "#FF000000";
-      sub-border-size = 3;
+      sub-border-size = config.media.mpv.subBorderSize;
 
       # UI
       osc = "yes";
@@ -34,9 +34,9 @@
 
       # Cache
       cache = "yes";
-      cache-secs = 300;
-      demuxer-max-bytes = "1024MiB";
-      demuxer-max-back-bytes = "1024MiB";
+      cache-secs = config.media.mpv.cacheSecs;
+      demuxer-max-bytes = config.media.mpv.demuxerMaxBytes;
+      demuxer-max-back-bytes = config.media.mpv.demuxerMaxBytes;
 
       # Screenshot
       screenshot-format = "png";
