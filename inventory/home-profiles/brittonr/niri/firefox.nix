@@ -52,6 +52,74 @@ let
         # Wayland-native settings
         "widget.dmabuf.force-enabled" = false;
         "gfx.x11-egl.force-enabled" = false;
+
+        # Compact UI
+        "browser.compactmode.show" = true;
+        "browser.uidensity" = 1;
+
+        # Disable new-tab-page noise
+        "browser.newtabpage.activity-stream.feeds.topsites" = false;
+        "browser.newtabpage.activity-stream.showSponsoredTopSites" = false;
+        "browser.newtabpage.activity-stream.feeds.section.topstories" = false;
+
+        # Auto-close cookie banners
+        "cookiebanners.service.mode" = 2;
+        "cookiebanners.service.mode.privateBrowsing" = 2;
+
+        # URL bar calculator and unit conversion
+        "browser.urlbar.suggest.calculator" = true;
+        "browser.urlbar.unitConversion.enabled" = true;
+
+        # Disable Firefox welcome/tour/discovery
+        "browser.aboutwelcome.enabled" = false;
+        "browser.uitour.enabled" = false;
+        "browser.discovery.enabled" = false;
+        "extensions.getAddons.showPane" = false;
+
+        # Canvas acceleration cache
+        "gfx.canvas.accelerated.cache-items" = 8192;
+        "gfx.canvas.accelerated.cache-size" = 1024;
+
+        # DNS cache tuning
+        "network.dnsCacheEntries" = 10000;
+        "network.dnsCacheExpiration" = 86400;
+
+        # Network connection limits
+        "network.http.max-connections" = 1800;
+        "network.http.max-persistent-connections-per-server" = 10;
+        "network.http.max-urgent-start-excessive-connections-per-host" = 5;
+
+        # Speculative/predictive loading
+        "network.http.speculative-parallel-limit" = 20;
+        "network.predictor.enabled" = true;
+        "network.prefetch-next" = true;
+        "network.dns.disablePrefetch" = false;
+
+        # Memory cache (disable disk cache, use memory)
+        "browser.cache.memory.enable" = true;
+        "browser.cache.disk.enable" = false;
+      };
+
+      extraPolicies = {
+        SearchEngines = {
+          Default = "Kagi";
+          Add = [
+            {
+              Name = "Kagi";
+              URLTemplate = "https://kagi.com/search?q={searchTerms}";
+              Method = "GET";
+              IconURL = "https://assets.kagi.com/v2/favicon-32x32.png";
+              Description = "Kagi Search";
+            }
+          ];
+          Remove = [
+            "Google"
+            "Bing"
+            "Amazon.com"
+            "DuckDuckGo"
+            "Wikipedia (en)"
+          ];
+        };
       };
     }).wrapper;
 in
