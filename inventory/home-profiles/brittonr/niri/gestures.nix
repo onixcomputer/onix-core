@@ -42,8 +42,8 @@ let
 
     exec ${pkgs.lisgd}/bin/lisgd \
       -d "$TOUCHSCREEN" \
-      -o 0 \
-      -t 150 \
+      -o ${toString config.gestures.lisgd.outputIndex} \
+      -t ${toString config.gestures.lisgd.timeout} \
       -g "1,DU,B,M,R,${gestureHandler}/bin/gesture-handler toggle-overview 'Overview'" \
       -g "2,LR,*,M,R,${gestureHandler}/bin/gesture-handler focus-workspace-up '← Prev WS'" \
       -g "2,RL,*,M,R,${gestureHandler}/bin/gesture-handler focus-workspace-down '→ Next WS'" \

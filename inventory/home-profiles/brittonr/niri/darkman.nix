@@ -1,14 +1,11 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 {
   # Darkman service for automatic light/dark mode switching based on sunrise/sunset
   services.darkman = {
     enable = true;
 
     settings = {
-      # Manually set your location coordinates
-      # Adjust these values for your location
-      lat = 52.3;
-      lng = 4.8;
+      inherit (config.location) lat lng;
     };
 
     # Scripts to run when switching to dark mode

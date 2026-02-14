@@ -9,6 +9,10 @@
         delayMs = 150;
         maxSpeed = 1200;
       };
+      lisgd = {
+        timeout = 150;
+        outputIndex = 0;
+      };
     };
     description = "Gesture configuration for touchpad and touchscreen";
   };

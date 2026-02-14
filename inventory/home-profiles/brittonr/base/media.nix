@@ -14,6 +14,14 @@
         subBorderSize = 3;
         cacheSecs = 300;
         demuxerMaxBytes = "1024MiB";
+        volumeStep = 2;
+        speedStep = 0.25;
+        screenshotTemplate = "%F-%P-%n";
+      };
+
+      subtitles = {
+        color = "#FFFFFFFF";
+        borderColor = "#FF000000";
       };
 
       # Gradient colors sourced from colors.rainbow palette

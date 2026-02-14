@@ -355,16 +355,9 @@ let
                               }
                           }
 
-                          workspace "1"
-                          workspace "2"
-                          workspace "3"
-                          workspace "4"
-                          workspace "5"
-                          workspace "6"
-                          workspace "7"
-                          workspace "8"
-                          workspace "9"
-                          workspace "10"
+                          ${builtins.concatStringsSep "\n                          " (
+                            map (name: "workspace \"${name}\"") config.workspaces.names
+                          )}
 
                           spawn-at-startup "${wrappedWaybar}/bin/waybar"
                           // mako is started via systemd graphical-session.target

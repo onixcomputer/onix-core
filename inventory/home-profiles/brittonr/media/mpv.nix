@@ -19,8 +19,8 @@
       # Subtitles
       sub-auto = "fuzzy";
       sub-font-size = config.media.mpv.subFontSize;
-      sub-color = "#FFFFFFFF";
-      sub-border-color = "#FF000000";
+      sub-color = config.media.subtitles.color;
+      sub-border-color = config.media.subtitles.borderColor;
       sub-border-size = config.media.mpv.subBorderSize;
 
       # UI
@@ -40,14 +40,14 @@
 
       # Screenshot
       screenshot-format = "png";
-      screenshot-directory = "~/Pictures/Screenshots";
-      screenshot-template = "%F-%P-%n";
+      screenshot-directory = config.paths.screenshots;
+      screenshot-template = config.media.mpv.screenshotTemplate;
     };
 
     bindings = {
       # Mouse controls
-      "WHEEL_UP" = "add volume 2";
-      "WHEEL_DOWN" = "add volume -2";
+      "WHEEL_UP" = "add volume ${toString config.media.mpv.volumeStep}";
+      "WHEEL_DOWN" = "add volume -${toString config.media.mpv.volumeStep}";
       "MBTN_LEFT_DBL" = "cycle fullscreen";
 
       # Keyboard shortcuts
@@ -64,8 +64,8 @@
       "DOWN" = "seek -${toString config.media.mpv.seekLong}";
 
       # Speed controls
-      "[" = "add speed -0.25";
-      "]" = "add speed 0.25";
+      "[" = "add speed -${toString config.media.mpv.speedStep}";
+      "]" = "add speed ${toString config.media.mpv.speedStep}";
       "BS" = "set speed 1.0";
     };
 
