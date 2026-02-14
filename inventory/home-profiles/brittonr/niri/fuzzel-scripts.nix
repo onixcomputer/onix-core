@@ -28,12 +28,12 @@ in
           # Kill swww if running
           if ${pkgs.procps}/bin/pgrep -x swww-daemon > /dev/null; then
             ${pkgs.swww}/bin/swww kill
-            sleep 0.5
+            sleep ${config.timing.process.short}
           fi
 
           # Kill any existing mpvpaper instances
           ${pkgs.procps}/bin/pkill -x mpvpaper 2>/dev/null || true
-          sleep 0.2
+          sleep ${config.timing.process.veryShort}
 
           # Get all outputs from niri
           OUTPUTS=$(niri msg outputs | ${pkgs.jq}/bin/jq -r '.[].name')
@@ -56,7 +56,7 @@ in
           # Start swww daemon if not running
           if ! ${pkgs.procps}/bin/pgrep -x swww-daemon > /dev/null; then
             ${pkgs.swww}/bin/swww-daemon &
-            sleep 1
+            sleep ${config.timing.process.daemonStart}
           fi
 
           # Set the GIF on all outputs
@@ -81,7 +81,7 @@ in
           # Start swww daemon if not running
           if ! ${pkgs.procps}/bin/pgrep -x swww-daemon > /dev/null; then
             ${pkgs.swww}/bin/swww-daemon &
-            sleep 1
+            sleep ${config.timing.process.daemonStart}
           fi
 
           # Set the wallpaper on all outputs
@@ -175,7 +175,7 @@ in
       # Set the wallpaper using our smart setter
       set-wallpaper "$WALLPAPER_DIR/$SELECTED"
 
-      ${pkgs.libnotify}/bin/notify-send "Wallpaper Changed" "$SELECTED" -t 2000
+      ${pkgs.libnotify}/bin/notify-send "Wallpaper Changed" "$SELECTED" -t ${toString config.timing.notification.standard}
     '')
 
     # Fuzzel network menu
@@ -246,7 +246,7 @@ in
 
       case "$chosen" in
         *"Rebuild System")
-          ${pkgs.libnotify}/bin/notify-send "NixOS" "Rebuilding system..." -t 2000
+          ${pkgs.libnotify}/bin/notify-send "NixOS" "Rebuilding system..." -t ${toString config.timing.notification.standard}
           ${config.apps.terminal.command} --hold sudo nixos-rebuild switch
           ;;
         *"Collect Garbage")
@@ -270,7 +270,7 @@ in
           confirm=$(echo -e "Yes\nNo" | ${pkgs.fuzzel}/bin/fuzzel --dmenu --prompt "Switch to generation $gen_num? ")
 
           if [ "$confirm" = "Yes" ]; then
-            ${pkgs.libnotify}/bin/notify-send "NixOS" "Switching to generation $gen_num..." -t 2000
+            ${pkgs.libnotify}/bin/notify-send "NixOS" "Switching to generation $gen_num..." -t ${toString config.timing.notification.standard}
             sudo /nix/var/nix/profiles/system-$gen_num-link/bin/switch-to-configuration switch
 
             if [ $? -eq 0 ]; then
@@ -293,10 +293,10 @@ in
       # Toggle between light and dark
       if [[ "$current_scheme" == "'prefer-dark'" ]]; then
         ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "'prefer-light'"
-        ${pkgs.libnotify}/bin/notify-send "Theme Mode" "Switched to Light Mode ☀" -t 2000
+        ${pkgs.libnotify}/bin/notify-send "Theme Mode" "Switched to Light Mode ☀" -t ${toString config.timing.notification.standard}
       else
         ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'"
-        ${pkgs.libnotify}/bin/notify-send "Theme Mode" "Switched to Dark Mode 🌙" -t 2000
+        ${pkgs.libnotify}/bin/notify-send "Theme Mode" "Switched to Dark Mode 🌙" -t ${toString config.timing.notification.standard}
       fi
     '')
 
@@ -325,15 +325,15 @@ in
           case "$chosen" in
             *"Dark Mode"*)
               ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'"
-              ${pkgs.libnotify}/bin/notify-send "Theme Mode" "Switched to Dark Mode 🌙" -t 2000
+              ${pkgs.libnotify}/bin/notify-send "Theme Mode" "Switched to Dark Mode 🌙" -t ${toString config.timing.notification.standard}
               ;;
             *"Light Mode"*)
               ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "'prefer-light'"
-              ${pkgs.libnotify}/bin/notify-send "Theme Mode" "Switched to Light Mode ☀" -t 2000
+              ${pkgs.libnotify}/bin/notify-send "Theme Mode" "Switched to Light Mode ☀" -t ${toString config.timing.notification.standard}
               ;;
             *"Auto"*)
               ${pkgs.dconf}/bin/dconf write /org/gnome/desktop/interface/color-scheme "'default'"
-              ${pkgs.libnotify}/bin/notify-send "Theme Mode" "Set to Auto (follow system) 🔄" -t 2000
+              ${pkgs.libnotify}/bin/notify-send "Theme Mode" "Set to Auto (follow system) 🔄" -t ${toString config.timing.notification.standard}
               ;;
           esac
     '')
@@ -367,20 +367,20 @@ in
           case "$chosen" in
             *"Switch to Dark Now"*)
               ${pkgs.darkman}/bin/darkman set dark
-              ${pkgs.libnotify}/bin/notify-send "Darkman" "Manually switched to Dark Mode 🌙" -t 2000
+              ${pkgs.libnotify}/bin/notify-send "Darkman" "Manually switched to Dark Mode 🌙" -t ${toString config.timing.notification.standard}
               ;;
             *"Switch to Light Now"*)
               ${pkgs.darkman}/bin/darkman set light
-              ${pkgs.libnotify}/bin/notify-send "Darkman" "Manually switched to Light Mode ☀" -t 2000
+              ${pkgs.libnotify}/bin/notify-send "Darkman" "Manually switched to Light Mode ☀" -t ${toString config.timing.notification.standard}
               ;;
             *"Let Darkman Auto-Switch"*)
               # Toggle mode to trigger darkman to re-evaluate
               if [[ "$darkman_mode" == "dark" ]]; then
                 ${pkgs.darkman}/bin/darkman set light
-                sleep 0.5
+                sleep ${config.timing.process.short}
               fi
               ${pkgs.darkman}/bin/darkman toggle
-              ${pkgs.libnotify}/bin/notify-send "Darkman" "Darkman will now auto-switch based on time 🔄" -t 2000
+              ${pkgs.libnotify}/bin/notify-send "Darkman" "Darkman will now auto-switch based on time 🔄" -t ${toString config.timing.notification.standard}
               ;;
             *"Show Location & Times"*)
               # Get location info from darkman
@@ -388,7 +388,7 @@ in
               if [ -z "$location_info" ]; then
                 location_info="Location info not available.\nDarkman may still be starting up or geoclue is not configured."
               fi
-              ${pkgs.libnotify}/bin/notify-send "Darkman Location" "$location_info" -t 10000
+              ${pkgs.libnotify}/bin/notify-send "Darkman Location" "$location_info" -t ${toString config.timing.notification.long}
               ;;
             *"Darkman Status"*)
               # Show full status
@@ -506,9 +506,9 @@ in
                 ${pkgs.networkmanagerapplet}/bin/nm-connection-editor &
                 ;;
               *"Rescan Networks")
-                ${pkgs.libnotify}/bin/notify-send -t 1000 "WiFi 󰤨" "Scanning networks..."
+                ${pkgs.libnotify}/bin/notify-send -t ${toString config.timing.notification.quick} "WiFi 󰤨" "Scanning networks..."
                 ${pkgs.networkmanager}/bin/nmcli device wifi rescan
-                sleep 2
+                sleep ${config.timing.process.wifiScan}
                 fuzzel-wifi
                 ;;
               *)

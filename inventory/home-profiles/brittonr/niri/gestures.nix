@@ -11,14 +11,14 @@ let
     ${pkgs.niri}/bin/niri msg action "$ACTION"
 
     # Visual feedback via notification (brief, low priority)
-    ${pkgs.libnotify}/bin/notify-send -t 400 -u low \
+    ${pkgs.libnotify}/bin/notify-send -t ${toString config.timing.notification.gesture} -u low \
       "Gesture" "$LABEL"
   '';
 
   # lisgd wrapper configured for GPD Pocket 4
   lisgdNiri = writeShellScriptBin "lisgd-niri" ''
     # Wait for Wayland session to be ready
-    while [ -z "$WAYLAND_DISPLAY" ]; do sleep 0.5; done
+    while [ -z "$WAYLAND_DISPLAY" ]; do sleep ${config.timing.process.short}; done
 
     # Find the touchscreen device
     # GPD Pocket 4 uses i2c-hid touchscreen

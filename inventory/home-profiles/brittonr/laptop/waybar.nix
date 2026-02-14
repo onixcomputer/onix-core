@@ -10,7 +10,7 @@ in
       mainBar = {
         layer = "top";
         position = "top";
-        height = 38;
+        inherit (config.bar) height;
         spacing = 0;
         margin = "0";
 
@@ -97,7 +97,7 @@ in
           interval = 1;
           format = "󰔏 {temperatureC}°C";
           thermal-zone = 0;
-          critical-threshold = 80;
+          critical-threshold = config.power.temperature.critical;
           format-critical = "󰸁 {temperatureC}°C";
           tooltip-format = "CPU Temperature: {temperatureC}°C / {temperatureF}°F";
           on-click = "alacritty -e btop";
@@ -106,8 +106,7 @@ in
         battery = {
           interval = 1;
           states = {
-            warning = 30;
-            critical = 15;
+            inherit (config.power.battery) warning critical;
           };
           format = "{icon} {capacity}%";
           format-charging = "󰂄 {capacity}%";

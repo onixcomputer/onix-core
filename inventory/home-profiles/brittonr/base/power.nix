@@ -10,7 +10,10 @@
         danger = 5;
         full = 95;
       };
+      temperature = {
+        critical = 80;
+      };
     };
-    description = "Power management thresholds (battery percentage levels)";
+    description = "Power management thresholds (battery and temperature levels)";
   };
 }

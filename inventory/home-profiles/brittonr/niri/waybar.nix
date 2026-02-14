@@ -106,7 +106,7 @@ let
             "/sys/devices/platform/coretemp.0/hwmon" # Intel coretemp
           ];
           input-filename = "temp1_input";
-          critical-threshold = 80;
+          critical-threshold = config.power.temperature.critical;
           format-critical = "TEMP {temperatureC}°C!";
           tooltip = true;
           tooltip-format = "CPU Temperature: {temperatureC}°C";

@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 {
   # MPV video player with configuration
   programs.mpv = {
@@ -15,19 +15,19 @@
 
       # Audio
       audio-pitch-correction = "yes";
-      volume-max = 200;
+      volume-max = config.media.mpv.maxVolume;
 
       # Subtitles
       sub-auto = "fuzzy";
       sub-font = "Liberation Sans";
-      sub-font-size = 36;
+      sub-font-size = config.media.mpv.subFontSize;
 
       # YouTube support
       ytdl-format = "bestvideo[height<=?1080]+bestaudio/best";
 
       # Cache
       cache = "yes";
-      cache-secs = 300;
+      cache-secs = config.media.mpv.cacheSecs;
 
       # UI
       osc = "yes";
