@@ -6,6 +6,7 @@
     default = {
       height = 30;
       spacing = 4;
+      calendarScrollSensitivity = 1;
       calendar = {
         months = config.colors.orange;
         days = config.colors.accent2;

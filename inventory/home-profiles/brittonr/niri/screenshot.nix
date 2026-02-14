@@ -21,11 +21,11 @@ let
     ${pkgs.grim}/bin/grim -t ppm -g "$(${pkgs.slurp}/bin/slurp -d)" - | \
       ${pkgs.satty}/bin/satty --filename - \
         --copy-command="${pkgs.wl-clipboard}/bin/wl-copy" \
-        --annotation-size-factor 2.0 \
+        --annotation-size-factor ${toString config.screenshot.annotationSizeFactor} \
         --output-filename="$SCREENSHOT_DIR/screenshot_%Y-%m-%d_%H-%M-%S.png" \
         --actions-on-enter="save-to-clipboard,exit" \
         --actions-on-escape="save-to-clipboard,exit" \
-        --brush-smooth-history-size=5 \
+        --brush-smooth-history-size=${toString config.screenshot.brushSmoothHistorySize} \
         --disable-notifications
   '';
 
@@ -57,11 +57,11 @@ let
     ${pkgs.grim}/bin/grim -t ppm - | \
       ${pkgs.satty}/bin/satty --filename - \
         --copy-command="${pkgs.wl-clipboard}/bin/wl-copy" \
-        --annotation-size-factor 2.0 \
+        --annotation-size-factor ${toString config.screenshot.annotationSizeFactor} \
         --output-filename="$SCREENSHOT_DIR/screenshot_%Y-%m-%d_%H-%M-%S.png" \
         --actions-on-enter="save-to-clipboard,exit" \
         --actions-on-escape="save-to-clipboard,exit" \
-        --brush-smooth-history-size=5 \
+        --brush-smooth-history-size=${toString config.screenshot.brushSmoothHistorySize} \
         --disable-notifications
   '';
 

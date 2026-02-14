@@ -21,7 +21,7 @@ let
         border-radius = config.layout.borderRadius;
         inherit (config.notifications) width height;
         margin = config.notifications.gap;
-        padding = 15;
+        inherit (config.notifications) padding;
         anchor = config.notifications.position;
         layer = "overlay";
         default-timeout = config.notifications.timeout;

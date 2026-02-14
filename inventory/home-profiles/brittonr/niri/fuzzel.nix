@@ -15,10 +15,10 @@ let
         main = {
           terminal = config.apps.terminal.command;
           layer = "overlay";
-          width = 50;
-          horizontal-pad = 20;
-          vertical-pad = 10;
-          inner-pad = 10;
+          width = config.launcher.fuzzel.widthPercent;
+          horizontal-pad = config.launcher.fuzzel.horizontalPad;
+          vertical-pad = config.launcher.fuzzel.verticalPad;
+          inner-pad = config.launcher.fuzzel.innerPad;
         };
 
         colors = {

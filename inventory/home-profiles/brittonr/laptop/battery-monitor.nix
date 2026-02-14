@@ -10,11 +10,7 @@
 
     Service = {
       Type = "simple";
-      # -w: warning level (20%)
-      # -c: critical level (10%)
-      # -d: danger level (5%)
-      # -f: full battery notification
-      ExecStart = "${pkgs.batsignal}/bin/batsignal -w 20 -c 10 -d 5 -f 95";
+      ExecStart = "${pkgs.batsignal}/bin/batsignal -w ${toString config.power.battery.warning} -c ${toString config.power.battery.critical} -d ${toString config.power.battery.danger} -f ${toString config.power.battery.full}";
       Restart = "on-failure";
       RestartSec = config.serviceTiming.restartSec.normal;
     };

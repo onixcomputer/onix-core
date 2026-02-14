@@ -158,6 +158,6 @@ in
 
     " --- General settings ---
     set smoothscroll true
-    set hintchars neiohtsrad
+    set hintchars ${k.hintChars}
   '';
 }

@@ -16,10 +16,10 @@ let
         main = {
           terminal = config.apps.terminal.command;
           layer = "overlay";
-          width = 50;
-          horizontal-pad = 20;
-          vertical-pad = 10;
-          inner-pad = 10;
+          width = config.launcher.fuzzel.widthPercent;
+          horizontal-pad = config.launcher.fuzzel.horizontalPad;
+          vertical-pad = config.launcher.fuzzel.verticalPad;
+          inner-pad = config.launcher.fuzzel.innerPad;
         };
 
         colors = {
@@ -82,7 +82,7 @@ let
           tooltip-format = "<tt><small>{calendar}</small></tt>";
           calendar = {
             mode = "month";
-            on-scroll = 1;
+            on-scroll = config.bar.calendarScrollSensitivity;
             format = {
               months = "<span color='${config.bar.calendar.months}'><b>{}</b></span>";
               days = "<span color='${config.bar.calendar.days}'><b>{}</b></span>";
@@ -124,8 +124,7 @@ let
 
         battery = {
           states = {
-            warning = 30;
-            critical = 15;
+            inherit (config.power.battery) warning critical;
           };
           format = "BAT {capacity}%";
           format-charging = "CHG {capacity}%";

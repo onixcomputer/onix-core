@@ -22,6 +22,24 @@
       description = "Gap size between windows/elements";
     };
 
+    focusRingWidth = lib.mkOption {
+      type = lib.types.int;
+      readOnly = true;
+      default = 1;
+      description = "Focus ring width in pixels (distinct from border width)";
+    };
+
+    presetColumnWidths = lib.mkOption {
+      type = lib.types.listOf lib.types.float;
+      readOnly = true;
+      default = [
+        0.33333
+        0.5
+        0.66667
+      ];
+      description = "Preset column width proportions for tiling WM";
+    };
+
     terminal = {
       padding = lib.mkOption {
         type = lib.types.int;

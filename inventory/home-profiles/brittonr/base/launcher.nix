@@ -8,7 +8,13 @@
       height = 500;
       iconSize = 40;
       spacing = 10;
+      fuzzel = {
+        widthPercent = 50;
+        horizontalPad = 20;
+        verticalPad = 10;
+        innerPad = 10;
+      };
     };
-    description = "Application launcher (wofi/rofi) dimensions";
+    description = "Application launcher (wofi/rofi/fuzzel) dimensions";
   };
 }

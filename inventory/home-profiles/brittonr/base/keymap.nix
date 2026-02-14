@@ -102,6 +102,13 @@
       description = "Modifier conventions per context";
     };
 
+    hintChars = lib.mkOption {
+      type = lib.types.str;
+      readOnly = true;
+      default = "neiohtsrad";
+      description = "Characters used for link hint overlays (tridactyl, etc.)";
+    };
+
     wm = lib.mkOption {
       type = lib.types.attrs;
       readOnly = true;
