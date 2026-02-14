@@ -72,6 +72,76 @@ in
       term_fg = "#a9b1d6";
       term_selection = "#7aa2f7";
 
+      # Grayscale ramp
+      grayscale = {
+        white = "#ffffff";
+        light = "#e6e6e6";
+        medium = "#b3b3b3";
+        dim = "#808080";
+        dark = "#666666";
+        muted = "#999999";
+      };
+
+      # Editor semantic colors (dark/light theme pairs)
+      editor = {
+        black = "#000000";
+        selection_dark = "#333333";
+        selection_light = "#e6f3ff";
+        popup_dark = "#2a2a2a";
+        popup_light = "#f0f0f0";
+        surface_dark = "#2a2a2a";
+        surface_light = "#f5f5f5";
+        keyword_control = "#ff3300";
+        keyword_control_light = "#cc3300";
+        function_dark = "#0099ff";
+        function_builtin_dark = "#0066cc";
+        function_light = "#0066cc";
+        function_builtin_light = "#004499";
+        string_dark = "#00cc66";
+        string_regexp_dark = "#009944";
+        string_light = "#008844";
+        string_regexp_light = "#006633";
+        constant_dark = "#ffcc00";
+        constant_light = "#cc8800";
+        type_dark = "#cccccc";
+        type_builtin_dark = "#aaaaaa";
+        type_light = "#555555";
+        type_builtin_light = "#333333";
+        variable_param_dark = "#ccccff";
+        variable_param_light = "#4455cc";
+        comment_dark = "#777777";
+        comment_light = "#999999";
+        bracket_dark = "#cccccc";
+        bracket_light = "#666666";
+        hint_color = "#888888";
+        statusline_select_dark = "#888888";
+        statusline_select_light = "#666666";
+      };
+
+      # Waybar / status bar colors (Tokyo Night derived)
+      waybar = {
+        bg = "#16161e";
+        fg = "#c0caf5";
+        accent = "#7aa2f7";
+        tooltip_bg = "#24283b";
+        muted = "#313244";
+        warning = "#f9e2af";
+        critical = "#f38ba8";
+        critical_bg = "#1e1e2e";
+        charging = "#a6e3a1";
+      };
+
+      # btop theme colors
+      btop = {
+        main_fg = "#cfc9c2";
+        hi_fg = "#7dcfff";
+        selected_bg = "#414868";
+        inactive_fg = "#565f89";
+      };
+
+      # Misc application colors
+      docker_accent = "#83a598";
+
       # Screencasting indicator colors
       screencast_active = "#f38ba8";
       screencast_inactive = "#7d0d2d";

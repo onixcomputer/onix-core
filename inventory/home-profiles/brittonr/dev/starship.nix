@@ -22,12 +22,12 @@ in
       palette = "onix-dark";
 
       palettes.onix-dark = {
-        color_orange = "#ffffff"; # White (brightest)
-        color_cyan = "#e6e6e6"; # Very light gray
-        color_gray = "#b3b3b3"; # Medium gray
-        color_green = "#808080"; # Gray
-        color_yellow = "#cccccc"; # Light gray
-        color_red = "#999999"; # Medium-dark gray
+        color_orange = c.grayscale.white;
+        color_cyan = c.grayscale.light;
+        color_gray = c.grayscale.medium;
+        color_green = c.grayscale.dim;
+        color_yellow = c.editor.type_dark;
+        color_red = c.grayscale.muted;
         color_bg1 = c.bg;
         color_bg3 = c.bg_highlight;
         color_fg0 = c.fg;
@@ -98,7 +98,7 @@ in
 
       docker_context = {
         symbol = "";
-        style = "bg:color_bg3 fg:#83a598";
+        style = "bg:color_bg3 fg:${c.docker_accent}";
         format = "[ $symbol $context ]($style)";
       };
 
@@ -110,13 +110,13 @@ in
       };
 
       character = {
-        success_symbol = "[➜](bold fg:#b3b3b3)";
-        error_symbol = "[✗](bold fg:#808080)";
+        success_symbol = "[➜](bold fg:${c.grayscale.medium})";
+        error_symbol = "[✗](bold fg:${c.grayscale.dim})";
       };
 
       cmd_duration = {
         min_time = 0;
-        format = " [$duration](fg:#808080)";
+        format = " [$duration](fg:${c.grayscale.dim})";
         show_milliseconds = true;
       };
     };

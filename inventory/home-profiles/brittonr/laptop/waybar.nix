@@ -1,4 +1,8 @@
 { config, ... }:
+let
+  wc = config.bar.waybar.colors;
+  cal = config.bar.calendar;
+in
 {
   programs.waybar = {
     enable = true;
@@ -66,11 +70,11 @@
             weeks-pos = "right";
             on-scroll = 1;
             format = {
-              months = "<span color='#ffead3'><b>{}</b></span>";
-              days = "<span color='#ecc6d9'><b>{}</b></span>";
-              weeks = "<span color='#99ffdd'><b>W{}</b></span>";
-              weekdays = "<span color='#ffcc66'><b>{}</b></span>";
-              today = "<span color='#ff6699'><b><u>{}</u></b></span>";
+              months = "<span color='${cal.months}'><b>{}</b></span>";
+              days = "<span color='${cal.days}'><b>{}</b></span>";
+              weeks = "<span color='${cal.weeks}'><b>W{}</b></span>";
+              weekdays = "<span color='${cal.weekdays}'><b>{}</b></span>";
+              today = "<span color='${cal.today}'><b><u>{}</u></b></span>";
             };
           };
         };
@@ -151,31 +155,31 @@
         border: none;
         border-radius: 0;
         font-family: "${config.font.ui}";
-        font-size: 15px;
+        font-size: ${toString config.font.size.bar}px;
         min-height: 0;
       }
 
       window#waybar {
         background: transparent;
-        color: #c0caf5;
+        color: ${wc.fg};
       }
 
       tooltip {
-        background: #24283b;
+        background: ${wc.tooltip_bg};
         border-radius: ${config.css.borderRadius.md};
         border-width: 2px;
         border-style: solid;
-        border-color: #16161e;
+        border-color: ${wc.bg};
         padding: ${config.css.padding.md};
       }
 
       tooltip label {
-        color: #c0caf5;
+        color: ${wc.fg};
         font-size: 0.9em;
       }
 
       #workspaces {
-        background: #16161e;
+        background: ${wc.bg};
         border-radius: ${config.css.borderRadius.lg};
         margin: ${config.css.padding.sm};
         margin-left: ${config.css.padding.xl};
@@ -186,7 +190,7 @@
         padding: 0 ${config.css.padding.md};
         margin: 0 0.1em;
         border-radius: ${config.css.borderRadius.md};
-        color: #7aa2f7;
+        color: ${wc.accent};
         background: transparent;
         transition: all ${config.css.transition.fast} ${config.css.transition.easing};
       }
@@ -200,8 +204,8 @@
       }
 
       #workspaces button.active {
-        background: #7aa2f7;
-        color: #16161e;
+        background: ${wc.accent};
+        color: ${wc.bg};
         border-radius: ${config.css.borderRadius.md};
         transition: all ${config.css.transition.fast} ${config.css.transition.easing};
         font-size: 1.6em;
@@ -210,15 +214,15 @@
       }
 
       #workspaces button:hover {
-        background: #7aa2f7;
-        color: #16161e;
+        background: ${wc.accent};
+        color: ${wc.bg};
         border-radius: ${config.css.borderRadius.md};
         transition: all ${config.css.transition.fast} ${config.css.transition.easing};
       }
 
       #clock {
-        color: #7aa2f7;
-        background: #16161e;
+        color: ${wc.accent};
+        background: ${wc.bg};
         border-radius: ${config.css.borderRadius.lg};
         margin: ${config.css.padding.sm};
         padding: 0 ${config.css.padding.xl};
@@ -229,7 +233,7 @@
       }
 
       #tray {
-        background: #16161e;
+        background: ${wc.bg};
         border-radius: ${config.css.borderRadius.lg};
         padding: ${config.css.padding.sm} ${config.css.padding.lg};
         margin: ${config.css.padding.sm} ${config.css.padding.xs};
@@ -244,72 +248,72 @@
       }
 
       #pulseaudio {
-        background: #16161e;
-        color: #7aa2f7;
+        background: ${wc.bg};
+        color: ${wc.accent};
         border-radius: ${config.css.borderRadius.lg};
         padding: 0 ${config.css.padding.xl};
         margin: ${config.css.padding.sm} ${config.css.padding.xs};
       }
 
       #pulseaudio.muted {
-        color: #313244;
+        color: ${wc.muted};
       }
 
       box#resources {
-        background: #16161e;
+        background: ${wc.bg};
         border-radius: ${config.css.borderRadius.lg};
         margin: ${config.css.padding.sm} ${config.css.padding.xs};
         padding: 0 0.4em;
       }
 
       #cpu {
-        color: #7aa2f7;
+        color: ${wc.accent};
         padding: 0 ${config.css.padding.xs};
         background: transparent;
       }
 
       #memory {
-        color: #7aa2f7;
+        color: ${wc.accent};
         padding: 0 ${config.css.padding.lg};
         background: transparent;
       }
 
       #temperature {
-        color: #7aa2f7;
+        color: ${wc.accent};
         padding: 0 0.4em;
         background: transparent;
       }
 
       #temperature.critical {
-        color: #f7768e;
+        color: ${config.colors.term_red};
       }
 
       #battery {
-        background: #16161e;
-        color: #7aa2f7;
+        background: ${wc.bg};
+        color: ${wc.accent};
         border-radius: ${config.css.borderRadius.lg};
         padding: 0 ${config.css.padding.xl};
         margin: ${config.css.padding.sm} ${config.css.padding.xs};
       }
 
       #battery.charging, #battery.plugged {
-        color: #a6e3a1;
+        color: ${wc.charging};
       }
 
       #battery.warning {
-        color: #f9e2af;
+        color: ${wc.warning};
       }
 
       #battery.critical {
-        background-color: #f38ba8;
-        color: #1e1e2e;
-        animation: blink 0.5s linear infinite alternate;
+        background-color: ${wc.critical};
+        color: ${wc.critical_bg};
+        animation: blink ${config.bar.waybar.blinkDuration} linear infinite alternate;
       }
 
       @keyframes blink {
         to {
-          background-color: #1e1e2e;
-          color: #f38ba8;
+          background-color: ${wc.critical_bg};
+          color: ${wc.critical};
         }
       }
 

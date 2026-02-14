@@ -23,6 +23,20 @@
         modulePadding = "0 0.6em";
         moduleMargin = "0 0.15em";
         workspaceMinWidth = "24px";
+        blinkDuration = "0.5s";
+        colors = {
+          inherit (config.colors.waybar)
+            bg
+            fg
+            accent
+            tooltip_bg
+            muted
+            warning
+            critical
+            critical_bg
+            charging
+            ;
+        };
       };
     };
     description = "Status bar (waybar) shared settings";
