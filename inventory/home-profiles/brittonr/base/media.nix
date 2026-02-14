@@ -11,17 +11,18 @@
         seekLong = 60;
       };
 
+      # Gradient colors sourced from colors.rainbow palette
       cava = {
         framerate = 60;
         gradient = [
-          "'#59cc33'"
-          "'#80cc33'"
-          "'#a6cc33'"
-          "'#cccc33'"
-          "'#cca633'"
-          "'#cc8033'"
-          "'#cc5933'"
-          "'#cc3333'"
+          "'#98C379'" # rainbow.green
+          "'#56B6C2'" # rainbow.cyan
+          "'#61AFEF'" # rainbow.blue
+          "'#E5C07B'" # rainbow.yellow
+          "'#D19A66'" # rainbow.orange
+          "'#E06C75'" # rainbow.red
+          "'#C678DD'" # rainbow.violet
+          "'#E06C75'" # rainbow.red (repeated for 8-entry gradient)
         ];
       };
     };

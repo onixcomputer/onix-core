@@ -465,8 +465,8 @@ let
                               // Vim bindings for focus
                               ${k.modifiers.wm}+${up k.nav.left} { focus-column-left; }
                               ${k.modifiers.wm}+${up k.nav.right} { focus-column-right; }
-                              ${k.modifiers.wm}+${up k.nav.up} { focus-workspace-up; }
-                              ${k.modifiers.wm}+${up k.nav.down} { focus-workspace-down; }
+                              ${k.modifiers.wm}+${up k.nav.up} { focus-window-or-workspace-up; }
+                              ${k.modifiers.wm}+${up k.nav.down} { focus-window-or-workspace-down; }
 
                               // Scroll wheel for workspace switching
                               ${k.modifiers.wm}+WheelScrollUp { focus-workspace-up; }
@@ -478,15 +478,17 @@ let
                               ${k.modifiers.wm}+Up { focus-window-up; }
                               ${k.modifiers.wm}+Down { focus-window-down; }
 
-                              // Alt+J/K for moving between tabs/windows
-                              ${k.modifiers.secondary}+${up k.nav.up} { focus-window-up; }
-                              ${k.modifiers.secondary}+${up k.nav.down} { focus-window-down; }
+                              // Alt+HJKL for unified navigation (same as Mod layer)
+                              ${k.modifiers.secondary}+${up k.nav.left} { focus-column-left; }
+                              ${k.modifiers.secondary}+${up k.nav.right} { focus-column-right; }
+                              ${k.modifiers.secondary}+${up k.nav.up} { focus-window-or-workspace-up; }
+                              ${k.modifiers.secondary}+${up k.nav.down} { focus-window-or-workspace-down; }
 
                               // Vim bindings for moving windows/columns
                               ${k.modifiers.wm}+Control+${up k.nav.left} { move-column-left; }
                               ${k.modifiers.wm}+Control+${up k.nav.right} { move-column-right; }
-                              ${k.modifiers.wm}+Control+${up k.nav.up} { move-window-up; }
-                              ${k.modifiers.wm}+Control+${up k.nav.down} { move-window-down; }
+                              ${k.modifiers.wm}+Control+${up k.nav.up} { move-window-up-or-to-workspace-up; }
+                              ${k.modifiers.wm}+Control+${up k.nav.down} { move-window-down-or-to-workspace-down; }
 
                               // Arrow keys for moving windows
                               ${k.modifiers.wm}+Control+Left { move-column-left; }

@@ -8,28 +8,28 @@
   # Create the style file
   xdg.configFile."swayosd/style.css".text = ''
     window {
-      border-radius: 5px;
+      border-radius: ${toString config.layout.borderRadius}px;
       opacity: 0.97;
-      border: 2px solid #89b4fa;
-      background-color: rgba(30, 30, 46, 0.9);
+      border: ${toString config.layout.borderWidth}px solid ${config.colors.term_blue};
+      background-color: rgba(${config.colors.hexToRgb config.colors.term_bg}, 0.9);
     }
 
     label {
       font-family: '${config.font.ui}', monospace;
       font-size: 11pt;
-      color: #cdd6f4;
+      color: ${config.colors.term_bright_white};
     }
 
     image {
-      color: #89b4fa;
+      color: ${config.colors.term_blue};
     }
 
     progressbar {
-      border-radius: 5px;
+      border-radius: ${toString config.layout.borderRadius}px;
     }
 
     progress {
-      background-color: #89b4fa;
+      background-color: ${config.colors.term_blue};
     }
   '';
 }

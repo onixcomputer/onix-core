@@ -8,6 +8,8 @@
       maxVisible = 5;
       width = 300;
       height = 100;
+      padding = 15;
+      margin = 10;
       position = "top-right";
       gap = 10;
       urgency = {

@@ -6,8 +6,7 @@
     settings = {
       default-timeout = config.notifications.timeout;
       inherit (config.notifications) width height;
-      padding = 10;
-      margin = 20;
+      inherit (config.notifications) padding margin;
       border-size = config.layout.borderWidth;
       border-radius = config.layout.borderRadius;
       anchor = config.notifications.position;
@@ -15,11 +14,10 @@
       icons = true;
       max-icon-size = 32;
 
-      # Tokyo Night colors
-      background-color = "#1a1b26";
-      text-color = "#a9b1d6";
-      border-color = "#33ccff";
-      progress-color = "#33ccff";
+      background-color = config.colors.term_bg;
+      text-color = config.colors.term_fg;
+      border-color = config.colors.cyan;
+      progress-color = config.colors.cyan;
     };
 
     # Extra configuration for specific app behaviors
