@@ -4,8 +4,7 @@
     enable = true;
 
     settings = {
-      width = 600;
-      height = 500;
+      inherit (config.launcher) width height;
       location = "center";
       show = "drun";
       prompt = "Apps";
@@ -17,7 +16,7 @@
       content_halign = "fill";
       insensitive = true;
       allow_images = true;
-      image_size = 40;
+      image_size = config.launcher.iconSize;
       gtk_dark = true;
     };
 

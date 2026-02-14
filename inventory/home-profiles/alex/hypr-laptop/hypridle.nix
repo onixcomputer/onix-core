@@ -1,4 +1,5 @@
-_: {
+{ config, ... }:
+{
   services.hypridle = {
     enable = true;
 
@@ -11,13 +12,13 @@ _: {
       listener = [
         {
           # Turn off screen after 10 minutes
-          timeout = 600;
+          timeout = config.timeouts.dim;
           on-timeout = "hyprctl dispatch dpms off";
           on-resume = "hyprctl dispatch dpms on";
         }
         # {
         #   # Suspend after 30 minutes (laptop only)
-        #   timeout = 1800;
+        #   timeout = config.timeouts.lock;
         #   on-timeout = "systemctl suspend";
         # }
       ];

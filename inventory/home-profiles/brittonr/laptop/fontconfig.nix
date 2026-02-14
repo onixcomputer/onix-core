@@ -45,27 +45,27 @@
       <alias>
         <family>serif</family>
         <prefer>
-          <family>Noto Serif</family>
-          <family>Liberation Serif</family>
-          <family>DejaVu Serif</family>
+          ${builtins.concatStringsSep "\n          " (
+            map (f: "<family>${f}</family>") config.font.stacks.serif
+          )}
         </prefer>
       </alias>
 
       <alias>
         <family>sans-serif</family>
         <prefer>
-          <family>Noto Sans</family>
-          <family>Liberation Sans</family>
-          <family>DejaVu Sans</family>
+          ${builtins.concatStringsSep "\n          " (
+            map (f: "<family>${f}</family>") config.font.stacks.sans
+          )}
         </prefer>
       </alias>
 
       <alias>
         <family>monospace</family>
         <prefer>
-          <family>${config.font.ui}</family>
-          <family>Liberation Mono</family>
-          <family>DejaVu Sans Mono</family>
+          ${builtins.concatStringsSep "\n          " (
+            map (f: "<family>${f}</family>") config.font.stacks.monospace
+          )}
         </prefer>
       </alias>
 

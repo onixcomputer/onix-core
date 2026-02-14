@@ -10,6 +10,11 @@
       height = 100;
       position = "top-right";
       gap = 10;
+      urgency = {
+        low = 3;
+        normal = 5;
+        critical = 10;
+      };
     };
     description = "Notification daemon settings";
   };

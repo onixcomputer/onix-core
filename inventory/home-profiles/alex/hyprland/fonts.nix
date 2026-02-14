@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 {
   # Minimal font setup - only what we actually use
   home.packages = with pkgs; [
@@ -23,16 +23,20 @@
       <alias>
         <family>monospace</family>
         <prefer>
-          <family>CaskaydiaMono Nerd Font</family>
-          <family>Noto Sans CJK</family>
+          ${builtins.concatStringsSep "\n          " (
+            map (f: "<family>${f}</family>") (config.font.stacks.monospace ++ config.font.stacks.cjk)
+          )}
         </prefer>
       </alias>
 
       <alias>
         <family>sans-serif</family>
         <prefer>
-          <family>Noto Sans</family>
-          <family>Noto Sans CJK</family>
+          ${builtins.concatStringsSep "\n          " (
+            map (f: "<family>${f}</family>") (
+              [ (builtins.head config.font.stacks.sans) ] ++ config.font.stacks.cjk
+            )
+          )}
         </prefer>
       </alias>
 
@@ -40,7 +44,9 @@
       <alias>
         <family>emoji</family>
         <prefer>
-          <family>Noto Color Emoji</family>
+          ${builtins.concatStringsSep "\n          " (
+            map (f: "<family>${f}</family>") config.font.stacks.emoji
+          )}
         </prefer>
       </alias>
 

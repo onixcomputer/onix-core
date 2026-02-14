@@ -13,6 +13,14 @@
         weekdays = config.colors.yellow;
         today = config.colors.red;
       };
+      waybar = {
+        workspaceHoverOpacity = "0.15";
+        workspaceHoverBorderOpacity = "0.25";
+        workspaceActiveShadowOpacity = "0.3";
+        workspaceActiveHoverShadowOpacity = "0.4";
+        moduleBgOpacity = "0.8";
+        moduleRadius = "0.5em";
+      };
     };
     description = "Status bar (waybar) shared settings";
   };

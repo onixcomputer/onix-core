@@ -12,5 +12,9 @@ _: {
     ../../brittonr/base/keymap.nix
     ../../brittonr/base/font.nix
     ../../brittonr/base/apps.nix
+    ../../brittonr/base/timeouts.nix
+    ../../brittonr/base/terminal.nix
+    ../../brittonr/base/launcher.nix
+    ../../brittonr/base/lockscreen.nix
   ];
 }

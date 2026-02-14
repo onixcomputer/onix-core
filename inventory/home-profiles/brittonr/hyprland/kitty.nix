@@ -24,7 +24,7 @@ in
 
       # Cursor settings - block cursor with blinking and trail effect
       cursor_shape = "block";
-      cursor_blink_interval = "0.5";
+      cursor_blink_interval = config.terminal.cursorBlinkInterval;
       cursor_stop_blinking_after = 0; # Never stop blinking
       cursor_trail = 3; # Smear/trail effect (0-5, higher = longer trail)
 
@@ -76,8 +76,8 @@ in
       tab_bar_background = theme.bg_dark;
 
       # Performance
-      repaint_delay = 10;
-      input_delay = 3;
+      repaint_delay = config.terminal.repaintDelay;
+      input_delay = config.terminal.inputDelay;
       sync_to_monitor = true;
 
       # Scrollback
@@ -99,7 +99,7 @@ in
 
       # Bell and notifications - all disabled
       enable_audio_bell = false;
-      visual_bell_duration = 0;
+      visual_bell_duration = config.terminal.visualBellDuration;
       window_alert_on_bell = false;
       command_on_bell = "none";
 
@@ -113,7 +113,7 @@ in
       shell_integration = "enabled no-cursor";
 
       # Disable update checking
-      update_check_interval = 0;
+      update_check_interval = config.terminal.updateCheckInterval;
 
       # Window decorations
       hide_window_decorations = false;

@@ -26,5 +26,31 @@
       };
       description = "Font sizes by context";
     };
+
+    stacks = lib.mkOption {
+      type = lib.types.attrs;
+      readOnly = true;
+      default = {
+        sans = [
+          "Noto Sans"
+          "Liberation Sans"
+          "DejaVu Sans"
+        ];
+        serif = [
+          "Noto Serif"
+          "Liberation Serif"
+          "DejaVu Serif"
+        ];
+        monospace = [
+          "CaskaydiaMono Nerd Font"
+          "Liberation Mono"
+          "DejaVu Sans Mono"
+        ];
+        emoji = [ "Noto Color Emoji" ];
+        cjk = [ "Noto Sans CJK" ];
+        subtitle = "Liberation Sans";
+      };
+      description = "Font family stacks for fontconfig and application defaults";
+    };
   };
 }

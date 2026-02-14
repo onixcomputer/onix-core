@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 let
   pinentry-rofi-custom = pkgs.writeShellScriptBin "pinentry-rofi-custom" ''
     #!/usr/bin/env bash
@@ -86,11 +86,13 @@ let
   '';
 in
 {
+  imports = [ ../../brittonr/base/timeouts.nix ];
+
   programs.rbw = {
     enable = true;
     settings = {
       email = "alex.decious@gmail.com";
-      lock_timeout = 3600; # 1 hour
+      lock_timeout = config.timeouts.passwordCache;
       pinentry = pinentry-rofi-custom; # Custom rofi pinentry
       base_url = "https://vault.decio.us";
     };

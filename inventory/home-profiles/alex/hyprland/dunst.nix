@@ -48,21 +48,21 @@ in
         background = "${theme.bg}ee";
         foreground = theme.fg;
         frame_color = theme.green;
-        timeout = 3;
+        timeout = config.notifications.urgency.low;
       };
 
       urgency_normal = {
         background = "${theme.bg}ee";
         foreground = theme.fg;
         frame_color = theme.accent;
-        timeout = 5;
+        timeout = config.notifications.urgency.normal;
       };
 
       urgency_critical = {
         background = "${theme.bg}ee";
         foreground = theme.fg;
         frame_color = theme.red;
-        timeout = 10;
+        timeout = config.notifications.urgency.critical;
       };
 
       kitty_ignore = {
