@@ -547,7 +547,7 @@ in
       (writeShellScriptBin "rofi-wallpaper" ''
         #!/usr/bin/env bash
 
-        WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
+        WALLPAPER_DIR="${config.paths.wallpapers}"
         THUMB_DIR="$HOME/.cache/wallpaper-thumbs"
 
         # Create thumbnail cache directory

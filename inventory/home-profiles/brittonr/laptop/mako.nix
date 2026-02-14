@@ -4,14 +4,13 @@
     enable = true;
 
     settings = {
-      default-timeout = 5000;
-      width = 420;
-      height = 110;
+      default-timeout = config.notifications.timeout;
+      inherit (config.notifications) width height;
       padding = 10;
       margin = 20;
       border-size = config.layout.borderWidth;
       border-radius = config.layout.borderRadius;
-      anchor = "top-right";
+      anchor = config.notifications.position;
       font = "${config.font.ui} ${toString config.font.size.notification}";
       icons = true;
       max-icon-size = 32;

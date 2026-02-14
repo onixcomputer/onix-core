@@ -50,8 +50,7 @@ let
       settings = {
         layer = "top";
         position = "top";
-        height = 30;
-        spacing = 4;
+        inherit (config.bar) height spacing;
 
         modules-left = [
           "niri/workspaces"
@@ -84,11 +83,11 @@ let
             mode = "month";
             on-scroll = 1;
             format = {
-              months = "<span color='#ffead3'><b>{}</b></span>";
-              days = "<span color='#ecc6d9'><b>{}</b></span>";
-              weeks = "<span color='#99ffdd'><b>W{}</b></span>";
-              weekdays = "<span color='#ffcc66'><b>{}</b></span>";
-              today = "<span color='#ff6699'><b><u>{}</u></b></span>";
+              months = "<span color='${config.bar.calendar.months}'><b>{}</b></span>";
+              days = "<span color='${config.bar.calendar.days}'><b>{}</b></span>";
+              weeks = "<span color='${config.bar.calendar.weeks}'><b>W{}</b></span>";
+              weekdays = "<span color='${config.bar.calendar.weekdays}'><b>{}</b></span>";
+              today = "<span color='${config.bar.calendar.today}'><b><u>{}</u></b></span>";
             };
           };
         };
@@ -263,23 +262,27 @@ let
                           input {
                               keyboard {
                                   xkb {
-                                      layout "us"
+                                      layout "${config.input.keyboard.layout}"
                                   }
                               }
 
                               touchpad {
-                                  tap
-                                  natural-scroll
-                                  dwt  // disable while typing
-                                  dwtp // disable while trackpointing
+                                  ${if config.input.touchpad.tap then "tap" else ""}
+                                  ${if config.input.touchpad.naturalScroll then "natural-scroll" else ""}
+                                  ${
+                                    if config.input.touchpad.disableWhileTyping then
+                                      ''
+                                        dwt  // disable while typing
+                                        dwtp // disable while trackpointing''
+                                    else
+                                      ""
+                                  }
                                   drag true
                                   drag-lock
-                                  // Enable clickfinger for multi-finger right-click (2-finger) and middle-click (3-finger)
-                                  click-method "clickfinger"
-                                  // Smoother scrolling
-                                  scroll-method "two-finger"
-                                  accel-speed 0.2
-                                  accel-profile "adaptive"
+                                  click-method "${config.input.touchpad.clickMethod}"
+                                  scroll-method "${config.input.touchpad.scrollMethod}"
+                                  accel-speed ${toString config.input.touchpad.accelSpeed}
+                                  accel-profile "${config.input.touchpad.accelProfile}"
                               }
 
                               // Touchscreen settings for GPD Pocket 4
@@ -292,8 +295,8 @@ let
                                   map-to-output "eDP-1"
                               }
 
-                              focus-follows-mouse
-                              warp-mouse-to-focus
+                              ${if config.input.mouse.focusFollows then "focus-follows-mouse" else ""}
+                              ${if config.input.mouse.warpToFocus then "warp-mouse-to-focus" else ""}
                           }
 
                           // Gesture configuration for touchpad and touchscreen

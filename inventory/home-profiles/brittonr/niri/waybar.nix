@@ -45,8 +45,7 @@ let
       settings = {
         layer = "top";
         position = "top";
-        height = 30;
-        spacing = 4;
+        inherit (config.bar) height spacing;
 
         modules-left = [
           "niri/workspaces"
@@ -85,11 +84,11 @@ let
             mode = "month";
             on-scroll = 1;
             format = {
-              months = "<span color='${theme.orange}'><b>{}</b></span>";
-              days = "<span color='${theme.accent2}'><b>{}</b></span>";
-              weeks = "<span color='${theme.green}'><b>W{}</b></span>";
-              weekdays = "<span color='${theme.yellow}'><b>{}</b></span>";
-              today = "<span color='${theme.red}'><b><u>{}</u></b></span>";
+              months = "<span color='${config.bar.calendar.months}'><b>{}</b></span>";
+              days = "<span color='${config.bar.calendar.days}'><b>{}</b></span>";
+              weeks = "<span color='${config.bar.calendar.weeks}'><b>W{}</b></span>";
+              weekdays = "<span color='${config.bar.calendar.weekdays}'><b>{}</b></span>";
+              today = "<span color='${config.bar.calendar.today}'><b><u>{}</u></b></span>";
             };
           };
         };

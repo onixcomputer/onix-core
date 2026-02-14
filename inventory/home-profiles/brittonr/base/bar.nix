@@ -1,0 +1,19 @@
+{ lib, config, ... }:
+{
+  options.bar = lib.mkOption {
+    type = lib.types.attrs;
+    readOnly = true;
+    default = {
+      height = 30;
+      spacing = 4;
+      calendar = {
+        months = config.colors.orange;
+        days = config.colors.accent2;
+        weeks = config.colors.green;
+        weekdays = config.colors.yellow;
+        today = config.colors.red;
+      };
+    };
+    description = "Status bar (waybar) shared settings";
+  };
+}

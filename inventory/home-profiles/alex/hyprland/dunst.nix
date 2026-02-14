@@ -8,12 +8,11 @@ in
 
     settings = {
       global = {
-        origin = "top-right";
+        origin = config.notifications.position;
         offset = "20x20";
 
-        width = 350;
-        height = 100;
-        notification_limit = 5;
+        inherit (config.notifications) width height;
+        notification_limit = config.notifications.maxVisible;
 
         frame_width = 2;
         frame_color = theme.accent;

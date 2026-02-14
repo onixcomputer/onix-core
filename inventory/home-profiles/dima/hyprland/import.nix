@@ -1,5 +1,8 @@
 _: {
   imports = [
+    # Shared config options (animations, opacity, input, etc.)
+    ../../alex/hyprland/shared-config.nix
+
     # Import all of alex's hyprland configuration
     ../../alex/hyprland/audio-utils.nix
     ../../alex/hyprland/btop.nix

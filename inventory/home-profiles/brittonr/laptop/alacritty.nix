@@ -27,7 +27,7 @@
           y = 14;
         };
         decorations = "None";
-        opacity = 0.98;
+        opacity = config.opacity.terminal;
       };
 
       keyboard.bindings = [

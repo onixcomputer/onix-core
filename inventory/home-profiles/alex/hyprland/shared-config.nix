@@ -1,0 +1,11 @@
+_: {
+  imports = [
+    ../../brittonr/base/animations.nix
+    ../../brittonr/base/opacity.nix
+    ../../brittonr/base/input.nix
+    ../../brittonr/base/paths.nix
+    ../../brittonr/base/notifications.nix
+    ../../brittonr/base/bar.nix
+    ../../brittonr/base/colors.nix
+  ];
+}

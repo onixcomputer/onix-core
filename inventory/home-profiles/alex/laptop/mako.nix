@@ -7,14 +7,13 @@ in
     enable = true;
 
     settings = {
-      default-timeout = 5000;
-      width = 420;
-      height = 110;
+      default-timeout = config.notifications.timeout;
+      inherit (config.notifications) width height;
       padding = 10;
       margin = 20;
-      border-size = 2;
-      border-radius = 0;
-      anchor = "top-right";
+      border-size = config.layout.borderWidth;
+      border-radius = config.layout.borderRadius;
+      anchor = config.notifications.position;
       font = "CaskaydiaMono Nerd Font 11";
       icons = true;
       max-icon-size = 32;

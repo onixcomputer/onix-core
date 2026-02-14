@@ -1,10 +1,12 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 let
+  screenshotDir = config.paths.screenshots;
+
   # Screenshot wrapper for region selection with annotation support
   # Uses grim + slurp + satty for niri (compositor-agnostic tools)
   screenshot-region = pkgs.writeShellScriptBin "screenshot-region" ''
     set -e
-    SCREENSHOT_DIR="$HOME/Screenshots"
+    SCREENSHOT_DIR="${screenshotDir}"
     mkdir -p "$SCREENSHOT_DIR"
 
     # Use a lock file to prevent multiple instances
@@ -30,7 +32,7 @@ let
   # Full screen screenshot (no annotation)
   screenshot-screen = pkgs.writeShellScriptBin "screenshot-screen" ''
     set -e
-    SCREENSHOT_DIR="$HOME/Screenshots"
+    SCREENSHOT_DIR="${screenshotDir}"
     mkdir -p "$SCREENSHOT_DIR"
     FILENAME="$SCREENSHOT_DIR/screenshot_$(date +'%Y-%m-%d_%H-%M-%S').png"
 
@@ -42,7 +44,7 @@ let
   # Full screen screenshot with satty annotation
   screenshot-screen-edit = pkgs.writeShellScriptBin "screenshot-screen-edit" ''
     set -e
-    SCREENSHOT_DIR="$HOME/Screenshots"
+    SCREENSHOT_DIR="${screenshotDir}"
     mkdir -p "$SCREENSHOT_DIR"
 
     # Use a lock file to prevent multiple instances

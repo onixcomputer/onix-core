@@ -1,6 +1,11 @@
-{ config, pkgs, ... }:
+{
+  config,
+  pkgs,
+  ...
+}:
 let
   theme = config.theme.colors;
+  anim = config.animations;
 in
 {
   wayland.windowManager.hyprland = {
@@ -66,31 +71,8 @@ in
       # Animations
       animations = {
         enabled = true;
-
-        bezier = [
-          "easeOutQuint,0.23,1,0.32,1"
-          "easeInOutCubic,0.65,0.05,0.36,1"
-          "linear,0,0,1,1"
-          "almostLinear,0.5,0.5,0.75,1.0"
-          "quick,0.15,0,0.1,1"
-        ];
-
-        animation = [
-          "global, 1, 10, default"
-          "border, 1, 5.39, easeOutQuint"
-          "windows, 1, 4.79, easeOutQuint"
-          "windowsIn, 1, 4.1, easeOutQuint, popin 87%"
-          "windowsOut, 1, 1.49, linear, popin 87%"
-          "fadeIn, 1, 1.73, almostLinear"
-          "fadeOut, 1, 1.46, almostLinear"
-          "fade, 1, 3.03, quick"
-          "layers, 1, 3.81, easeOutQuint"
-          "layersIn, 1, 4, easeOutQuint, fade"
-          "layersOut, 1, 1.5, linear, fade"
-          "fadeLayersIn, 1, 1.79, almostLinear"
-          "fadeLayersOut, 1, 1.39, almostLinear"
-          "workspaces, 0, 0, default"
-        ];
+        bezier = anim.hyprBeziers;
+        animation = anim.hyprAnimations;
       };
 
       # Layer rules
@@ -108,15 +90,15 @@ in
 
       # Input
       input = {
-        kb_layout = "us";
+        kb_layout = config.input.keyboard.layout;
         kb_options = "compose:caps";
 
-        follow_mouse = 1;
+        follow_mouse = if config.input.mouse.focusFollows then 1 else 0;
         sensitivity = 0;
         mouse_refocus = false;
 
         touchpad = {
-          natural_scroll = true;
+          natural_scroll = config.input.touchpad.naturalScroll;
         };
       };
 
@@ -139,7 +121,7 @@ in
 
         "nofocus,class:^$,title:^$,xwayland:1,floating:1,fullscreen:0,pinned:0"
 
-        "opacity 0.97 0.97, class:^(${config.apps.terminal.appId})$"
+        "opacity ${toString config.opacity.terminal} ${toString config.opacity.terminal}, class:^(${config.apps.terminal.appId})$"
 
       ];
 

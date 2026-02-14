@@ -8,6 +8,7 @@ let
   theme = config.theme.colors;
   # Helper for colors that still need stripping
   c = color: lib.removePrefix "#" color;
+  anim = config.animations;
 in
 {
   wayland.windowManager.hyprland = {
@@ -67,10 +68,12 @@ in
 
         blur = {
           enabled = true;
-          size = 8;
-          passes = 2;
-          vibrancy = 0.2;
-          noise = 0.02; # Slight texture for acrylic effect
+          inherit (config.opacity.blur)
+            size
+            passes
+            vibrancy
+            noise
+            ;
           contrast = 1.0;
           brightness = 0.8;
           special = true; # Blur on special workspaces too
@@ -80,33 +83,8 @@ in
       # Animations
       animations = {
         enabled = true;
-
-        bezier = [
-          "easeOutQuint,0.23,1,0.32,1"
-          "easeInOutCubic,0.65,0.05,0.36,1"
-          "linear,0,0,1,1"
-          "almostLinear,0.5,0.5,0.75,1.0"
-          "quick,0.15,0,0.1,1"
-          "easeOutBack,0.34,1.3,0.64,1" # Subtle bounce for notifications
-          "easeInBack,0.36,0,0.66,-0.3" # Gentle exit anticipation
-        ];
-
-        animation = [
-          "global, 1, 10, default"
-          "border, 1, 5.39, easeOutQuint"
-          "windows, 1, 4.79, easeOutQuint"
-          "windowsIn, 1, 4.1, easeOutQuint, popin 87%"
-          "windowsOut, 1, 1.49, linear, popin 87%"
-          "fadeIn, 1, 1.73, almostLinear"
-          "fadeOut, 1, 1.46, almostLinear"
-          "fade, 1, 3.03, quick"
-          "layers, 1, 3.81, easeOutQuint"
-          "layersIn, 1, 4, easeOutQuint, fade" # Normal fade for layers
-          "layersOut, 1, 1.5, linear, fade" # Normal fade out
-          "fadeLayersIn, 1, 1.79, almostLinear"
-          "fadeLayersOut, 1, 1.39, almostLinear"
-          "workspaces, 0, 0, default"
-        ];
+        bezier = anim.hyprBeziers;
+        animation = anim.hyprAnimations;
       };
 
       # Layer rules
@@ -129,13 +107,13 @@ in
 
       # Input
       input = {
-        kb_layout = "us";
-        follow_mouse = 1;
+        kb_layout = config.input.keyboard.layout;
+        follow_mouse = if config.input.mouse.focusFollows then 1 else 0;
         sensitivity = 0;
         mouse_refocus = false;
 
         touchpad = {
-          natural_scroll = true;
+          natural_scroll = config.input.touchpad.naturalScroll;
         };
       };
 
@@ -154,7 +132,7 @@ in
         "nofocus,class:^$,title:^$,xwayland:1,floating:1,fullscreen:0,pinned:0"
 
         # Terminal transparency (same for active and inactive)
-        "opacity 0.92 0.92, class:^(kitty)$"
+        "opacity ${toString config.opacity.terminal} ${toString config.opacity.terminal}, class:^(kitty)$"
 
         # Network settings - float and center
         "float, class:^(nm-connection-editor)$"
@@ -251,11 +229,11 @@ in
         "$mod SHIFT, comma, exec, dunstctl close-all"
 
         # Instant fullscreen screenshot (Fn+F11 or Print key)
-        ", Print, exec, grim ~/Screenshots/$(date +'screenshot_%Y-%m-%d_%H-%M-%S.png') && notify-send 'Screenshot' 'Saved to ~/Screenshots' -i camera-photo"
+        ", Print, exec, grim ${config.paths.screenshots}/$(date +'screenshot_%Y-%m-%d_%H-%M-%S.png') && notify-send 'Screenshot' 'Saved to ${config.paths.screenshots}' -i camera-photo"
         # Region selection screenshot (defined in screenshot.nix with lock)
-        "$mod SHIFT, S, exec, screenshot-wrapper -m region -o ~/Screenshots"
+        "$mod SHIFT, S, exec, screenshot-wrapper -m region -o ${config.paths.screenshots}"
         # Window selection screenshot (defined in screenshot.nix with lock)
-        "$mod SHIFT, W, exec, screenshot-wrapper -m window -o ~/Screenshots"
+        "$mod SHIFT, W, exec, screenshot-wrapper -m window -o ${config.paths.screenshots}"
 
         # Color picker
         "$mod SHIFT, P, exec, hyprpicker -a"

@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 let
   # Screenshot wrapper with lock mechanism to prevent multiple instances
   screenshot-wrapper = pkgs.writeShellScriptBin "screenshot-wrapper" ''
@@ -28,9 +28,9 @@ in
   # Override the screenshot keybindings in hyprland config
   wayland.windowManager.hyprland.settings.bind = [
     # Region selection screenshot
-    "$mod SHIFT, S, exec, screenshot-wrapper -m region -o ~/Screenshots"
+    "$mod SHIFT, S, exec, screenshot-wrapper -m region -o ${config.paths.screenshots}"
 
     # Window selection screenshot
-    "$mod SHIFT, W, exec, screenshot-wrapper -m window -o ~/Screenshots"
+    "$mod SHIFT, W, exec, screenshot-wrapper -m window -o ${config.paths.screenshots}"
   ];
 }
