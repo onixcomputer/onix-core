@@ -29,7 +29,7 @@
       window {
         border: 3px solid ${config.colors.term_blue};
         background: ${config.colors.term_bg};
-        border-radius: 15px;
+        border-radius: ${config.css.spacing.px15};
       }
 
       #input {
@@ -40,7 +40,7 @@
         font-weight: bold;
         background: ${config.colors.term_bg};
         color: ${config.colors.fg};
-        border-radius: 15px;
+        border-radius: ${config.css.spacing.px15};
       }
 
       #input:focus {
@@ -71,7 +71,7 @@
 
       #entry {
         margin-top: 0.5em;
-        border-radius: 15px;
+        border-radius: ${config.css.spacing.px15};
       }
 
       #entry:selected {

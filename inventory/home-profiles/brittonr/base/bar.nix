@@ -7,6 +7,13 @@
       height = 30;
       spacing = 4;
       calendarScrollSensitivity = 1;
+      tray = {
+        spacing = 10;
+      };
+      maxLength = {
+        title = 50;
+        module = 40;
+      };
       calendar = {
         months = config.colors.orange;
         days = config.colors.accent2;

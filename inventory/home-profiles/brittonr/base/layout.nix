@@ -40,6 +40,13 @@
       description = "Preset column width proportions for tiling WM";
     };
 
+    resizePercent = lib.mkOption {
+      type = lib.types.int;
+      readOnly = true;
+      default = 10;
+      description = "Default resize increment percentage for columns/windows";
+    };
+
     terminal = {
       padding = lib.mkOption {
         type = lib.types.int;

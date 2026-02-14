@@ -74,7 +74,7 @@ let
 
         "niri/window" = {
           format = "{}";
-          max-length = 50;
+          max-length = config.bar.maxLength.title;
         };
 
         clock = {
@@ -154,7 +154,7 @@ let
             chromium = "";
             mpv = "";
           };
-          max-length = 40;
+          max-length = config.bar.maxLength.module;
           on-click = "${pkgs.playerctl}/bin/playerctl play-pause";
         };
 

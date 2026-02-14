@@ -74,7 +74,7 @@ let
 
         "niri/window" = {
           format = "{}";
-          max-length = 50;
+          max-length = config.bar.maxLength.title;
         };
 
         clock = {
@@ -125,7 +125,7 @@ let
         };
 
         tray = {
-          spacing = 10;
+          inherit (config.bar.tray) spacing;
         };
 
         "custom/theme-mode" = {
@@ -359,6 +359,7 @@ let
                             map (name: "workspace \"${name}\"") config.workspaces.names
                           )}
 
+                          // Startup services
                           spawn-at-startup "${wrappedWaybar}/bin/waybar"
                           // mako is started via systemd graphical-session.target
                           spawn-at-startup "sh" "-c" "${pkgs.swww}/bin/swww-daemon && restore-wallpaper"
@@ -367,54 +368,36 @@ let
                           spawn-at-startup "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
                           spawn-at-startup "${pkgs.networkmanagerapplet}/bin/nm-applet"
                           spawn-at-startup "${pkgs.blueman}/bin/blueman-applet"
+
+                          // Startup applications
                           spawn-at-startup "vesktop" "--enable-features=UseOzonePlatform" "--ozone-platform=wayland" "--enable-wayland-ime" "--disable-gpu-sandbox"
                           spawn-at-startup "element-desktop"
                           spawn-at-startup "${config.apps.terminal.command}" "--title" "${config.apps.sysmon.name}" "-e" "${config.apps.sysmon.command}"
                           spawn-at-startup "${config.apps.terminal.command}" "--title" "journalctl" "-e" "journalctl -f"
+
+                          // Window rules: workspace assignments
+                          ${builtins.concatStringsSep "\n                          " (
+                            map (rule: ''
+                              window-rule {
+                                  match app-id=r#"${rule.appId}$"#
+                                  open-on-workspace "${rule.workspace}"
+                                  ${if rule ? maximized && rule.maximized then "open-maximized true" else ""}
+                              }'') config.windowRules.assignments
+                          )}
+
+                          // Window rules: title-specific overrides
+                          ${builtins.concatStringsSep "\n                          " (
+                            map (rule: ''
+                              window-rule {
+                                  match app-id=r#"${rule.appId}$"# title="${rule.title}"
+                                  ${if rule ? workspace then ''open-on-workspace "${rule.workspace}"'' else ""}
+                                  ${if rule ? maximized && rule.maximized then "open-maximized true" else ""}
+                                  ${if rule ? floating && rule.floating then "open-floating true" else ""}
+                              }'') config.windowRules.titleOverrides
+                          )}
+
                           window-rule {
-              match app-id=r#"librewolf$"#
-
-              open-on-workspace "2"
-              open-maximized true
-          }
-          window-rule {
-              match app-id="librewolf$" title="^Picture-in-Picture$"
-
-              open-floating true
-          }
-                          window-rule {
-              match app-id=r#"kitty$"#
-
-              open-on-workspace "1"
-
-          }
-          window-rule {
-              match app-id=r#"vesktop$"#
-
-              open-on-workspace "3"
-          }
-
-          window-rule {
-              match app-id=r#"Element$"#
-
-              open-on-workspace "3"
-          }
-
-          window-rule {
-              match app-id=r#"kitty$"# title="^btop$"
-
-              open-on-workspace "4"
-              open-maximized true
-          }
-          window-rule {
-              match app-id=r#"kitty$"# title="^journalctl$"
-
-              open-on-workspace "4"
-              open-maximized true
-          }
-
-          window-rule {
-              match app-id=r#"kitty$"# title="^yazi$"
+              match app-id=r#"${config.apps.terminal.appId}$"# title="^${config.apps.fileManager.name}$"
           }
 
           // Indicate screencasted windows with red colors.
@@ -494,14 +477,14 @@ let
                               ${k.modifiers.wm}+BracketRight { expel-window-from-column; }
 
                               // Resizing
-                              ${k.modifiers.wm}+Minus { set-column-width "-10%"; }
-                              ${k.modifiers.wm}+Equal { set-column-width "+10%"; }
+                              ${k.modifiers.wm}+Minus { set-column-width "-${toString config.layout.resizePercent}%"; }
+                              ${k.modifiers.wm}+Equal { set-column-width "+${toString config.layout.resizePercent}%"; }
 
                               // Vim bindings for resizing
-                              ${k.modifiers.wm}+Shift+${up k.nav.left} { set-column-width "-10%"; }
-                              ${k.modifiers.wm}+Shift+${up k.nav.right} { set-column-width "+10%"; }
-                              ${k.modifiers.wm}+Shift+${up k.nav.down} { set-window-height "+10%"; }
-                              ${k.modifiers.wm}+Shift+${up k.nav.up} { set-window-height "-10%"; }
+                              ${k.modifiers.wm}+Shift+${up k.nav.left} { set-column-width "-${toString config.layout.resizePercent}%"; }
+                              ${k.modifiers.wm}+Shift+${up k.nav.right} { set-column-width "+${toString config.layout.resizePercent}%"; }
+                              ${k.modifiers.wm}+Shift+${up k.nav.down} { set-window-height "+${toString config.layout.resizePercent}%"; }
+                              ${k.modifiers.wm}+Shift+${up k.nav.up} { set-window-height "-${toString config.layout.resizePercent}%"; }
 
                               // Workspaces (1-10)
                               ${k.modifiers.wm}+1 { focus-workspace 1; }
@@ -536,7 +519,7 @@ let
                               ${k.modifiers.wm}+${k.wm.launcher} { spawn "${wrappedFuzzel}/bin/fuzzel"; }
                               ${k.modifiers.wm}+${k.wm.clipboard} { spawn "sh" "-c" "${pkgs.cliphist}/bin/cliphist list | ${wrappedFuzzel}/bin/fuzzel --dmenu | ${pkgs.cliphist}/bin/cliphist decode | ${pkgs.wl-clipboard}/bin/wl-copy"; }
                               ${k.modifiers.wm}+Shift+${k.wm.clipboard} { spawn "sh" "-c" "${pkgs.cliphist}/bin/cliphist list | ${wrappedFuzzel}/bin/fuzzel --dmenu | ${pkgs.cliphist}/bin/cliphist delete"; }
-                              ${k.modifiers.wm}+N { spawn "sh" "-c" "notify-send -t 1000 'WiFi 󰤨' 'Scanning networks...' && fuzzel-network-menu"; }
+                              ${k.modifiers.wm}+N { spawn "sh" "-c" "notify-send -t ${toString config.timing.notification.quick} 'WiFi 󰤨' 'Scanning networks...' && fuzzel-network-menu"; }
                               ${k.modifiers.wm}+G { spawn "fuzzel-generations"; }
                               ${k.modifiers.wm}+${k.wm.themeToggle} { spawn "toggle-theme-mode"; }
                               ${k.modifiers.wm}+Shift+${k.wm.themeToggle} { spawn "fuzzel-theme-mode"; }
