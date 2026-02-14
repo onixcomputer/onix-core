@@ -55,7 +55,7 @@ let
 
         # Compact UI
         "browser.compactmode.show" = true;
-        "browser.uidensity" = 1;
+        "browser.uidensity" = config.firefox.ui.density;
 
         # Disable new-tab-page noise
         "browser.newtabpage.activity-stream.feeds.topsites" = false;
@@ -63,8 +63,8 @@ let
         "browser.newtabpage.activity-stream.feeds.section.topstories" = false;
 
         # Auto-close cookie banners
-        "cookiebanners.service.mode" = 2;
-        "cookiebanners.service.mode.privateBrowsing" = 2;
+        "cookiebanners.service.mode" = config.firefox.privacy.cookieBannerMode;
+        "cookiebanners.service.mode.privateBrowsing" = config.firefox.privacy.cookieBannerMode;
 
         # URL bar calculator and unit conversion
         "browser.urlbar.suggest.calculator" = true;
@@ -77,20 +77,22 @@ let
         "extensions.getAddons.showPane" = false;
 
         # Canvas acceleration cache
-        "gfx.canvas.accelerated.cache-items" = 8192;
-        "gfx.canvas.accelerated.cache-size" = 1024;
+        "gfx.canvas.accelerated.cache-items" = config.firefox.cache.canvasItems;
+        "gfx.canvas.accelerated.cache-size" = config.firefox.cache.canvasSize;
 
         # DNS cache tuning
-        "network.dnsCacheEntries" = 10000;
-        "network.dnsCacheExpiration" = 86400;
+        "network.dnsCacheEntries" = config.firefox.dns.cacheEntries;
+        "network.dnsCacheExpiration" = config.firefox.dns.cacheExpiration;
 
         # Network connection limits
-        "network.http.max-connections" = 1800;
-        "network.http.max-persistent-connections-per-server" = 10;
-        "network.http.max-urgent-start-excessive-connections-per-host" = 5;
+        "network.http.max-connections" = config.firefox.network.maxConnections;
+        "network.http.max-persistent-connections-per-server" =
+          config.firefox.network.maxPersistentPerServer;
+        "network.http.max-urgent-start-excessive-connections-per-host" =
+          config.firefox.network.maxUrgentStartExcessivePerHost;
 
         # Speculative/predictive loading
-        "network.http.speculative-parallel-limit" = 20;
+        "network.http.speculative-parallel-limit" = config.firefox.network.speculativeParallelLimit;
         "network.predictor.enabled" = true;
         "network.prefetch-next" = true;
         "network.dns.disablePrefetch" = false;

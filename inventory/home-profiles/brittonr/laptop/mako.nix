@@ -12,7 +12,7 @@
       anchor = config.notifications.position;
       font = "${config.font.ui} ${toString config.font.size.notification}";
       icons = true;
-      max-icon-size = 32;
+      max-icon-size = config.notifications.iconSize;
 
       background-color = config.colors.term_bg;
       text-color = config.colors.term_fg;

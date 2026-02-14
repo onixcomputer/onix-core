@@ -114,7 +114,7 @@ in
       #!/usr/bin/env bash
 
       STATE_FILE="$HOME/.cache/wallpaper-state"
-      DEFAULT_WALLPAPER="$HOME/git/wallpapers/1-matte-black.jpg"
+      DEFAULT_WALLPAPER="${config.paths.defaultWallpaper}"
 
       # Check if state file exists
       if [[ ! -f "$STATE_FILE" ]]; then
@@ -140,7 +140,7 @@ in
     (writeShellScriptBin "fuzzel-wallpaper" ''
       #!/usr/bin/env bash
 
-      WALLPAPER_DIR="$HOME/git/wallpapers"
+      WALLPAPER_DIR="${config.paths.wallpapersRepo}"
 
       # Create combined list with images first, then videos
       ALL_WALLPAPERS=""

@@ -8,6 +8,7 @@
       bars = 0.95;
       panels = 0.85;
       inactive = 0.9;
+      swayosd = 0.97;
       blur = {
         size = 8;
         passes = 2;

@@ -12,6 +12,7 @@
       margin = 10;
       position = "top-right";
       gap = 10;
+      iconSize = 32;
       maxHistory = 20;
       urgency = {
         low = 3;

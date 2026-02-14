@@ -25,8 +25,8 @@ in
       # Cursor settings - block cursor with blinking and trail effect
       cursor_shape = "block";
       cursor_blink_interval = config.terminal.cursorBlinkInterval;
-      cursor_stop_blinking_after = 0; # Never stop blinking
-      cursor_trail = 3; # Smear/trail effect (0-5, higher = longer trail)
+      cursor_stop_blinking_after = config.terminal.cursorStopBlinkingAfter;
+      cursor_trail = config.terminal.cursorTrail;
 
       # Theme colors
       background = theme.bg;
@@ -34,7 +34,7 @@ in
 
       # Color adjustments for better readability
       # Higher values = more aggressive contrast adjustment (max 21)
-      minimum_contrast = "7.0";
+      minimum_contrast = toString config.terminal.minimumContrast;
 
       # Selection colors
       selection_background = theme.accent;
@@ -81,19 +81,19 @@ in
       sync_to_monitor = true;
 
       # Scrollback
-      scrollback_lines = 10000;
+      scrollback_lines = config.terminal.scrollbackLines;
 
       # Scrollbar - visible for touchscreen use
       scrollbar = "always";
-      scrollbar_width = 1;
-      scrollbar_hover_width = 2;
-      scrollbar_radius = "0.5";
-      scrollbar_gap = "0.1";
-      scrollbar_handle_opacity = "0.6";
-      scrollbar_track_opacity = "0.1";
+      scrollbar_width = config.terminal.scrollbar.width;
+      scrollbar_hover_width = config.terminal.scrollbar.hoverWidth;
+      scrollbar_radius = toString config.terminal.scrollbar.radius;
+      scrollbar_gap = toString config.terminal.scrollbar.gap;
+      scrollbar_handle_opacity = toString config.terminal.scrollbar.handleOpacity;
+      scrollbar_track_opacity = toString config.terminal.scrollbar.trackOpacity;
       scrollbar_interactive = true;
       scrollbar_jump_on_click = true;
-      scrollbar_min_handle_height = 2;
+      scrollbar_min_handle_height = config.terminal.scrollbar.minHandleHeight;
       scrollbar_handle_color = theme.fg_dim;
       scrollbar_track_color = theme.bg_highlight;
 
@@ -104,7 +104,7 @@ in
       command_on_bell = "none";
 
       # Mouse
-      mouse_hide_wait = 3;
+      mouse_hide_wait = config.terminal.mouseHideWait;
 
       # Disable remote control to prevent permission notifications
       allow_remote_control = "no";
@@ -192,10 +192,10 @@ in
 
       # Better rendering on HiDPI with contrast adjustment
       # First number is gamma (text thickness), second is how much to scale based on bg/fg luminance
-      text_composition_strategy 1.0 1.75
+      text_composition_strategy ${toString config.terminal.textComposition.gamma} ${toString config.terminal.textComposition.scale}
 
       # Dim inactive windows slightly
-      inactive_text_alpha 0.8
+      inactive_text_alpha ${toString config.terminal.inactiveTextAlpha}
 
       # URL handling
       detect_urls yes
