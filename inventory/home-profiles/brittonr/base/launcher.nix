@@ -13,6 +13,7 @@
         horizontalPad = 20;
         verticalPad = 10;
         innerPad = 10;
+        scriptWidth = 60;
       };
     };
     description = "Application launcher (wofi/rofi/fuzzel) dimensions";

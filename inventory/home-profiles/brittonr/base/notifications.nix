@@ -12,6 +12,7 @@
       margin = 10;
       position = "top-right";
       gap = 10;
+      maxHistory = 20;
       urgency = {
         low = 3;
         normal = 5;

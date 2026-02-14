@@ -33,6 +33,19 @@
         drawerMs = "450ms";
         easing = "cubic-bezier(0.4, 0, 0.2, 1)";
       };
+
+      spacing = {
+        px2 = "2px";
+        px5 = "5px";
+        px10 = "10px";
+        px15 = "15px";
+      };
+
+      borderWidth = {
+        thin = "1px";
+        normal = "2px";
+        thick = "3px";
+      };
     };
     description = "Shared CSS sizing and timing values for waybar and other GTK widgets";
   };

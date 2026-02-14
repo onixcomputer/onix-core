@@ -26,7 +26,7 @@ let
         layer = "overlay";
         default-timeout = config.notifications.timeout;
         max-visible = config.notifications.maxVisible;
-        max-history = 20;
+        max-history = config.notifications.maxHistory;
         markup = 1;
         actions = 1;
         history = 1;

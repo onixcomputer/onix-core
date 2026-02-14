@@ -1,9 +1,10 @@
-_: {
+{ config, ... }:
+{
   services.pueue = {
     enable = true;
     settings = {
       daemon = {
-        default_parallel_tasks = 4;
+        default_parallel_tasks = config.build.pueue.parallelTasks;
       };
     };
   };

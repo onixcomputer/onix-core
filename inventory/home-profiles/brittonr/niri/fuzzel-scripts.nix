@@ -240,7 +240,7 @@ in
 
       $formatted_list"
 
-      chosen=$(echo -en "$menu" | ${pkgs.fuzzel}/bin/fuzzel --dmenu --prompt "NixOS: " --width 60)
+      chosen=$(echo -en "$menu" | ${pkgs.fuzzel}/bin/fuzzel --dmenu --prompt "NixOS: " --width ${toString config.launcher.fuzzel.scriptWidth})
 
       [ -z "$chosen" ] && exit 0
 
@@ -360,7 +360,7 @@ in
       📍 Show Location & Times
       ℹ️  Darkman Status"
 
-          chosen=$(echo -e "$menu" | ${pkgs.fuzzel}/bin/fuzzel --dmenu --prompt "Darkman: " --width 60)
+          chosen=$(echo -e "$menu" | ${pkgs.fuzzel}/bin/fuzzel --dmenu --prompt "Darkman: " --width ${toString config.launcher.fuzzel.scriptWidth})
 
           [ -z "$chosen" ] && exit 0
 

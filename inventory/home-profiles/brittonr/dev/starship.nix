@@ -45,7 +45,7 @@ in
       directory = {
         style = "fg:color_bg1 bg:color_cyan";
         format = "[ $path ]($style)";
-        truncation_length = 3;
+        truncation_length = config.shellConfig.starship.truncationLength;
         truncation_symbol = "…/";
       };
 
@@ -115,7 +115,7 @@ in
       };
 
       cmd_duration = {
-        min_time = 0;
+        min_time = config.shellConfig.starship.cmdDurationMinTime;
         format = " [$duration](fg:${c.grayscale.dim})";
         show_milliseconds = true;
       };
