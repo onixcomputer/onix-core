@@ -203,7 +203,7 @@ in
         };
         "attribute".fg = c.accent;
         "error" = {
-          fg = "#cc0000";
+          fg = e.error_red;
           modifiers = [ "bold" ];
         };
         "warning" = {

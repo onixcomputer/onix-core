@@ -1,4 +1,8 @@
-{ lib, ... }:
+{ lib, config, ... }:
+let
+  c = config.colors;
+  r = c.rainbow;
+in
 {
   options.media = lib.mkOption {
     type = lib.types.attrs;
@@ -20,22 +24,22 @@
       };
 
       subtitles = {
-        color = "#FFFFFFFF";
-        borderColor = "#FF000000";
+        color = "#FF${c.noHash c.grayscale.white}";
+        borderColor = "#FF${c.noHash c.editor.black}";
       };
 
       # Gradient colors sourced from colors.rainbow palette
       cava = {
         framerate = 60;
         gradient = [
-          "'#98C379'" # rainbow.green
-          "'#56B6C2'" # rainbow.cyan
-          "'#61AFEF'" # rainbow.blue
-          "'#E5C07B'" # rainbow.yellow
-          "'#D19A66'" # rainbow.orange
-          "'#E06C75'" # rainbow.red
-          "'#C678DD'" # rainbow.violet
-          "'#E06C75'" # rainbow.red (repeated for 8-entry gradient)
+          "'${r.green}'"
+          "'${r.cyan}'"
+          "'${r.blue}'"
+          "'${r.yellow}'"
+          "'${r.orange}'"
+          "'${r.red}'"
+          "'${r.violet}'"
+          "'${r.red}'" # repeated for 8-entry gradient
         ];
         sensitivity = 100;
         bars = 0;

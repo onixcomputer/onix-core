@@ -113,6 +113,7 @@ in
         comment_light = "#999999";
         bracket_dark = "#cccccc";
         bracket_light = "#666666";
+        error_red = "#cc0000";
         hint_color = "#888888";
         statusline_select_dark = "#888888";
         statusline_select_light = "#666666";
