@@ -1,20 +1,18 @@
-{ pkgs, ... }:
+{ config, ... }:
 {
   home.pointerCursor = {
     gtk.enable = true;
     x11.enable = true;
-    package = pkgs.phinger-cursors;
-    name = "phinger-cursors-dark";
-    size = 24;
+    inherit (config.cursor) package name size;
   };
   home.sessionVariables = {
-    XCURSOR_THEME = "phinger-cursors-dark";
-    XCURSOR_SIZE = "24";
+    XCURSOR_THEME = config.cursor.name;
+    XCURSOR_SIZE = toString config.cursor.size;
   };
   wayland.windowManager.hyprland.settings = {
     env = [
-      "XCURSOR_THEME,phinger-cursors-dark"
-      "XCURSOR_SIZE,24"
+      "XCURSOR_THEME,${config.cursor.name}"
+      "XCURSOR_SIZE,${toString config.cursor.size}"
     ];
   };
 }

@@ -17,6 +17,7 @@ _: {
     ../../alex/hyprland/network.nix
     ../../alex/hyprland/rofi.nix
     ../../alex/hyprland/screenshot.nix
+    ../../alex/hyprland/shared-config.nix
     ../../alex/hyprland/swayosd.nix
     ../../alex/hyprland/theme.nix
     ../../alex/hyprland/thunar.nix

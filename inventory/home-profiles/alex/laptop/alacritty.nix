@@ -26,8 +26,8 @@ in
 
       window = {
         padding = {
-          x = 14;
-          y = 14;
+          x = config.layout.terminal.padding;
+          y = config.layout.terminal.padding;
         };
         decorations = "None";
         opacity = config.opacity.terminal;

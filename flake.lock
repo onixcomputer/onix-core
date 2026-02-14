@@ -77,6 +77,47 @@
         "url": "https://git.clan.lol/adeci/clan-core"
       }
     },
+    "clonad": {
+      "inputs": {
+        "flake-utils": "flake-utils_2",
+        "nixpkgs": [
+          "clonadic",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1770766296,
+        "narHash": "sha256-sw6dLPA6Bx2dukck0ITOD4+d5CSqiiHeDBBXYCKkTng=",
+        "owner": "brittonr",
+        "repo": "clonad",
+        "rev": "a3571ce9a8083ac68ecf168c014486103d659a86",
+        "type": "github"
+      },
+      "original": {
+        "owner": "brittonr",
+        "repo": "clonad",
+        "type": "github"
+      }
+    },
+    "clonadic": {
+      "inputs": {
+        "clonad": "clonad",
+        "flake-utils": "flake-utils_3",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1771035633,
+        "narHash": "sha256-Se3DkbuKs6Vd+KFZ9uaXaAm36irF7FGk9gWZZ0GRIgc=",
+        "path": "/home/brittonr/git/clonadic",
+        "type": "path"
+      },
+      "original": {
+        "path": "/home/brittonr/git/clonadic",
+        "type": "path"
+      }
+    },
     "data-mesher": {
       "inputs": {
         "flake-parts": [
@@ -306,7 +347,43 @@
     },
     "flake-utils_2": {
       "inputs": {
+        "systems": "systems_4"
+      },
+      "locked": {
+        "lastModified": 1731533236,
+        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "flake-utils_3": {
+      "inputs": {
         "systems": "systems_5"
+      },
+      "locked": {
+        "lastModified": 1731533236,
+        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "flake-utils_4": {
+      "inputs": {
+        "systems": "systems_7"
       },
       "locked": {
         "lastModified": 1731533236,
@@ -374,11 +451,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1770818644,
-        "narHash": "sha256-DYS4jIRpRoKOzJjnR/QqEd/MlT4OZZpt8CrBLv+cjsE=",
+        "lastModified": 1771018093,
+        "narHash": "sha256-STUF5x1eQNKrhGn53WH1GpzBCsG719yl5rYnm7+1c4I=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "0acbd1180697de56724821184ad2c3e6e7202cd7",
+        "rev": "26dfad95d92c50a56ce708f4256bf720bb30a630",
         "type": "github"
       },
       "original": {
@@ -394,11 +471,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1770903622,
-        "narHash": "sha256-F7574mrfGBTkXO3Du+jDfwAGOMLJJn6wa1lcb8r9RHo=",
+        "lastModified": 1771031932,
+        "narHash": "sha256-sBu/Z8y9TJRG9WVp3wqtGhG/CPLZk7FCXTQ6M/py0A8=",
         "owner": "natsukium",
         "repo": "mcp-servers-nix",
-        "rev": "0d22f138c02e3690c3b7a6ba47fadac1657c0823",
+        "rev": "2a332e57ca7e9ce038d73ed22428ee1545719f09",
         "type": "github"
       },
       "original": {
@@ -603,14 +680,14 @@
         "nixpkgs": [
           "nixpkgs"
         ],
-        "systems": "systems_4"
+        "systems": "systems_6"
       },
       "locked": {
-        "lastModified": 1770630823,
-        "narHash": "sha256-5SEmOnJ61vmbap39vzWEsCX5UQ+3Ul8J4mXWKdqSn3w=",
+        "lastModified": 1771023756,
+        "narHash": "sha256-sTj1hrPT7D4oGHaQQzwDeqyZBwnxYc+T7yceyQc4sy4=",
         "owner": "nix-community",
         "repo": "nixvim",
-        "rev": "6acc964664ac916c64fe4e394edd467af4d90790",
+        "rev": "4c63aa76be59b49ae89892ae803005afd4a400cd",
         "type": "github"
       },
       "original": {
@@ -664,6 +741,7 @@
         "adeci-nixvim": "adeci-nixvim",
         "buildbot-nix": "buildbot-nix",
         "clan-core": "clan-core",
+        "clonadic": "clonadic",
         "devblog": "devblog",
         "flake-parts": "flake-parts_5",
         "grub2-themes": "grub2-themes",
@@ -796,6 +874,36 @@
         "type": "github"
       }
     },
+    "systems_6": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    },
+    "systems_7": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    },
     "treefmt-nix": {
       "inputs": {
         "nixpkgs": "nixpkgs"
@@ -879,7 +987,7 @@
     },
     "upmpdcli": {
       "inputs": {
-        "flake-utils": "flake-utils_2",
+        "flake-utils": "flake-utils_4",
         "nixpkgs": [
           "nixpkgs"
         ]
@@ -905,11 +1013,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1770914133,
-        "narHash": "sha256-/+8jFXIFW29EKuviDIbBgNHZUcbvTPpEYliy2QtchNg=",
+        "lastModified": 1771036160,
+        "narHash": "sha256-ekRfhHJ7EAEzjy4MsdruuB7hMMNKM/441EodMVuxniM=",
         "ref": "refs/heads/main",
-        "rev": "3228804d1c11fbc49509a9e9f5f3bcb78926e04f",
-        "revCount": 171,
+        "rev": "1bdc6a6e8fea531fef834974010542872b6a4921",
+        "revCount": 173,
         "type": "git",
         "url": "file:///home/brittonr/git/wrappers"
       },

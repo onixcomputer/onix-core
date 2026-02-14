@@ -9,6 +9,7 @@ let
   # Helper for colors that still need stripping
   c = color: lib.removePrefix "#" color;
   anim = config.animations;
+  k = config.keymap;
 in
 {
   wayland.windowManager.hyprland = {
@@ -149,7 +150,7 @@ in
       # Keybindings
       bind = [
         # Window management
-        "$mod, Q, killactive"
+        "$mod, ${k.wm.close}, killactive"
         "$mod, S, togglesplit"
         "$mod, P, pseudo"
         "$mod, V, togglefloating"
@@ -157,10 +158,10 @@ in
         #"$mod, bracketright, exec, hyprctl dispatch exit"
 
         # Vim bindings for focus
-        "$mod, H, movefocus, l"
-        "$mod, L, movefocus, r"
-        "$mod, K, movefocus, u"
-        "$mod, J, movefocus, d"
+        "$mod, ${lib.toUpper k.nav.left}, movefocus, l"
+        "$mod, ${lib.toUpper k.nav.right}, movefocus, r"
+        "$mod, ${lib.toUpper k.nav.up}, movefocus, u"
+        "$mod, ${lib.toUpper k.nav.down}, movefocus, d"
 
         # Keep arrow keys for compatibility
         "$mod, left, movefocus, l"
@@ -169,10 +170,10 @@ in
         "$mod, down, movefocus, d"
 
         # Vim bindings for swap
-        "$mod SHIFT, H, swapwindow, l"
-        "$mod SHIFT, L, swapwindow, r"
-        "$mod SHIFT, K, swapwindow, u"
-        "$mod SHIFT, J, swapwindow, d"
+        "$mod SHIFT, ${lib.toUpper k.nav.left}, swapwindow, l"
+        "$mod SHIFT, ${lib.toUpper k.nav.right}, swapwindow, r"
+        "$mod SHIFT, ${lib.toUpper k.nav.up}, swapwindow, u"
+        "$mod SHIFT, ${lib.toUpper k.nav.down}, swapwindow, d"
 
         # Keep arrow keys for compatibility
         "$mod SHIFT, left, swapwindow, l"
@@ -209,10 +210,10 @@ in
         "$mod SHIFT, code:19, movetoworkspace, 10"
 
         # Applications
-        "$mod, Return, exec, $terminal"
-        "$mod SHIFT, Return, exec, terminal-cwd"
-        "$mod, F, exec, $fileManager"
-        "$mod, B, exec, $browser"
+        "$mod, ${k.wm.terminal}, exec, $terminal"
+        "$mod SHIFT, ${k.wm.terminal}, exec, terminal-cwd"
+        "$mod, ${k.wm.fileManager}, exec, $fileManager"
+        "$mod, ${k.wm.browser}, exec, $browser"
         "$mod, R, exec, rofi -show run"
         # Clipboard manager - shows history with rofi, hides line numbers
         "$mod, C, exec, ${pkgs.cliphist}/bin/cliphist list | ${pkgs.rofi}/bin/rofi -dmenu -display-columns 2 -p 'Clipboard' | ${pkgs.cliphist}/bin/cliphist decode | ${pkgs.wl-clipboard}/bin/wl-copy"
@@ -220,7 +221,7 @@ in
         "$mod SHIFT, C, exec, ${pkgs.cliphist}/bin/cliphist list | ${pkgs.rofi}/bin/rofi -dmenu -display-columns 2 -p 'Delete Entry' | ${pkgs.cliphist}/bin/cliphist delete"
         # Wipe entire clipboard history
         "$mod ALT, C, exec, ${pkgs.rofi}/bin/rofi -dmenu -p 'Wipe clipboard history? (type yes)' | grep -q '^yes$' && ${pkgs.cliphist}/bin/cliphist wipe && notify-send 'Clipboard' 'History cleared'"
-        "$mod, space, exec, rofi -show drun"
+        "$mod, ${k.wm.launcher}, exec, rofi -show drun"
         "$mod, W, exec, rofi-wallpaper"
         "$mod, N, exec, notify-send -t 1000 'WiFi 󰤨' 'Scanning networks...' && rofi-network-menu"
         "$mod, Delete, exec, rofi-power"
@@ -231,7 +232,7 @@ in
         # Instant fullscreen screenshot (Fn+F11 or Print key)
         ", Print, exec, grim ${config.paths.screenshots}/$(date +'screenshot_%Y-%m-%d_%H-%M-%S.png') && notify-send 'Screenshot' 'Saved to ${config.paths.screenshots}' -i camera-photo"
         # Region selection screenshot (defined in screenshot.nix with lock)
-        "$mod SHIFT, S, exec, screenshot-wrapper -m region -o ${config.paths.screenshots}"
+        "$mod, ${k.wm.screenshot}, exec, screenshot-wrapper -m region -o ${config.paths.screenshots}"
         # Window selection screenshot (defined in screenshot.nix with lock)
         "$mod SHIFT, W, exec, screenshot-wrapper -m window -o ${config.paths.screenshots}"
 

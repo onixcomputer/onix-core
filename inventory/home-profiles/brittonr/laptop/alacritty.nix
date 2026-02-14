@@ -23,8 +23,8 @@
 
       window = {
         padding = {
-          x = 14;
-          y = 14;
+          x = config.layout.terminal.padding;
+          y = config.layout.terminal.padding;
         };
         decorations = "None";
         opacity = config.opacity.terminal;
@@ -37,37 +37,36 @@
         }
       ];
 
-      # Tokyo Night theme colors
       colors = {
         primary = {
-          background = "#1a1b26";
-          foreground = "#a9b1d6";
+          background = config.colors.term_bg;
+          foreground = config.colors.term_fg;
         };
 
         normal = {
-          black = "#32344a";
-          red = "#f7768e";
-          green = "#9ece6a";
-          yellow = "#e0af68";
-          blue = "#7aa2f7";
-          magenta = "#ad8ee6";
-          cyan = "#449dab";
-          white = "#787c99";
+          black = config.colors.term_black;
+          red = config.colors.term_red;
+          green = config.colors.term_green;
+          yellow = config.colors.term_yellow;
+          blue = config.colors.term_blue;
+          magenta = config.colors.term_magenta;
+          cyan = config.colors.term_cyan;
+          white = config.colors.term_white;
         };
 
         bright = {
-          black = "#444b6a";
-          red = "#ff7a93";
-          green = "#b9f27c";
-          yellow = "#ff9e64";
-          blue = "#7da6ff";
-          magenta = "#bb9af7";
-          cyan = "#0db9d7";
-          white = "#acb0d0";
+          black = config.colors.term_bright_black;
+          red = config.colors.term_bright_red;
+          green = config.colors.term_bright_green;
+          yellow = config.colors.term_bright_yellow;
+          blue = config.colors.term_bright_blue;
+          magenta = config.colors.term_bright_magenta;
+          cyan = config.colors.term_bright_cyan;
+          white = config.colors.term_bright_white;
         };
 
         selection = {
-          background = "#7aa2f7";
+          background = config.colors.term_selection;
         };
       };
     };

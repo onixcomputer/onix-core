@@ -5,5 +5,6 @@
     pavucontrol
     pamixer
     playerctl
+    wiremix
   ];
 }

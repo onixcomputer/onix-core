@@ -13,7 +13,7 @@ in
 
     settings = {
       # Window settings
-      window_padding_width = 14;
+      window_padding_width = config.layout.terminal.padding;
       #background_opacity = "0.98";
 
       # Font settings

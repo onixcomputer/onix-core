@@ -62,6 +62,9 @@
   };
 
   services = {
+    # Override greeter session for niri
+    greetd.settings.default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd /etc/profiles/per-user/brittonr/bin/niri-session";
+
     # Qualcomm EDL mode access
     udev.extraRules = ''
       SUBSYSTEM=="usb", ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="9008", MODE="0666"

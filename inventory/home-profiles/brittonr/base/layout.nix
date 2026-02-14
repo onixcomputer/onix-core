@@ -21,5 +21,14 @@
       default = 8;
       description = "Gap size between windows/elements";
     };
+
+    terminal = {
+      padding = lib.mkOption {
+        type = lib.types.int;
+        readOnly = true;
+        default = 14;
+        description = "Terminal window padding in pixels";
+      };
+    };
   };
 }

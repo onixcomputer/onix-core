@@ -22,15 +22,14 @@
     };
 
     style = ''
-      /* Tokyo Night theme - official folke colors */
       * {
         font-family: "${config.font.ui}";
-        color: #c0caf5;
+        color: ${config.colors.fg};
       }
 
       window {
-        border: 3px solid #7aa2f7;
-        background: #1a1b26;
+        border: 3px solid ${config.colors.term_blue};
+        background: ${config.colors.term_bg};
         border-radius: 15px;
       }
 
@@ -40,13 +39,13 @@
         padding: 1em;
         border: none;
         font-weight: bold;
-        background: #1a1b26;
-        color: #c0caf5;
+        background: ${config.colors.term_bg};
+        color: ${config.colors.fg};
         border-radius: 15px;
       }
 
       #input:focus {
-        border: 1px solid #7aa2f7;
+        border: 1px solid ${config.colors.term_blue};
       }
 
       #inner-box {
@@ -64,11 +63,11 @@
 
       #text {
         margin-left: 0.5em;
-        color: #c0caf5;
+        color: ${config.colors.fg};
       }
 
       #text:selected {
-        color: #15161e;
+        color: ${config.colors.bg_dark};
       }
 
       #entry {
@@ -77,7 +76,7 @@
       }
 
       #entry:selected {
-        background: linear-gradient(90deg, #7aa2f7 0%, #bb9af7 80%);
+        background: linear-gradient(90deg, ${config.colors.term_blue} 0%, ${config.colors.term_bright_magenta} 80%);
       }
     '';
   };

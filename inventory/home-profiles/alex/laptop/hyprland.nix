@@ -1,11 +1,13 @@
 {
   config,
   pkgs,
+  lib,
   ...
 }:
 let
   theme = config.theme.colors;
   anim = config.animations;
+  k = config.keymap;
 in
 {
   wayland.windowManager.hyprland = {
@@ -128,17 +130,17 @@ in
       # Keybindings
       bind = [
         # Window management
-        "$mod, Q, killactive"
+        "$mod, ${k.wm.close}, killactive"
         "$mod, S, togglesplit"
         "$mod, P, pseudo"
         "$mod, V, togglefloating"
         ", F11, fullscreen, 0"
 
         # Vim bindings for focus
-        "$mod, H, movefocus, l"
-        "$mod, L, movefocus, r"
-        "$mod, K, movefocus, u"
-        "$mod, J, movefocus, d"
+        "$mod, ${lib.toUpper k.nav.left}, movefocus, l"
+        "$mod, ${lib.toUpper k.nav.right}, movefocus, r"
+        "$mod, ${lib.toUpper k.nav.up}, movefocus, u"
+        "$mod, ${lib.toUpper k.nav.down}, movefocus, d"
 
         # Keep arrow keys for compatibility
         "$mod, left, movefocus, l"
@@ -147,10 +149,10 @@ in
         "$mod, down, movefocus, d"
 
         # Vim bindings for swap
-        "$mod SHIFT, H, swapwindow, l"
-        "$mod SHIFT, L, swapwindow, r"
-        "$mod SHIFT, K, swapwindow, u"
-        "$mod SHIFT, J, swapwindow, d"
+        "$mod SHIFT, ${lib.toUpper k.nav.left}, swapwindow, l"
+        "$mod SHIFT, ${lib.toUpper k.nav.right}, swapwindow, r"
+        "$mod SHIFT, ${lib.toUpper k.nav.up}, swapwindow, u"
+        "$mod SHIFT, ${lib.toUpper k.nav.down}, swapwindow, d"
 
         # Keep arrow keys for compatibility
         "$mod SHIFT, left, swapwindow, l"
@@ -187,11 +189,11 @@ in
         "$mod SHIFT, code:19, movetoworkspace, 10"
 
         # Applications
-        "$mod, Return, exec, $terminal"
-        "$mod, F, exec, $fileManager"
-        "$mod, B, exec, $browser"
+        "$mod, ${k.wm.terminal}, exec, $terminal"
+        "$mod, ${k.wm.fileManager}, exec, $fileManager"
+        "$mod, ${k.wm.browser}, exec, $browser"
         "$mod, R, exec, pkill wofi || wofi --show run"
-        "$mod, space, exec, pkill wofi || wofi --show drun"
+        "$mod, ${k.wm.launcher}, exec, pkill wofi || wofi --show drun"
         "$mod, bracketleft, exec, pkill wofi || wofi-power"
 
         "$mod, comma, exec, makoctl dismiss"
@@ -199,7 +201,7 @@ in
 
         ", PRINT, exec, hyprshot -m output"
         "SHIFT, PRINT, exec, hyprshot -m window"
-        "$mod SHIFT, S, exec, hyprshot -m region"
+        "$mod, ${k.wm.screenshot}, exec, hyprshot -m region"
 
         "$mod, PRINT, exec, hyprpicker -a"
 

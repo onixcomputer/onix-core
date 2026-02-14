@@ -355,6 +355,17 @@ let
                               }
                           }
 
+                          workspace "1"
+                          workspace "2"
+                          workspace "3"
+                          workspace "4"
+                          workspace "5"
+                          workspace "6"
+                          workspace "7"
+                          workspace "8"
+                          workspace "9"
+                          workspace "10"
+
                           spawn-at-startup "${wrappedWaybar}/bin/waybar"
                           // mako is started via systemd graphical-session.target
                           spawn-at-startup "sh" "-c" "${pkgs.swww}/bin/swww-daemon && restore-wallpaper"
@@ -418,21 +429,21 @@ let
               match is-window-cast-target=true
 
               focus-ring {
-                  active-color "#f38ba8"
-                  inactive-color "#7d0d2d"
+                  active-color "${config.colors.screencast_active}"
+                  inactive-color "${config.colors.screencast_inactive}"
               }
 
               border {
-                  inactive-color "#7d0d2d"
+                  inactive-color "${config.colors.screencast_inactive}"
               }
 
               shadow {
-                  color "#7d0d2d70"
+                  color "${config.colors.screencast_inactive}70"
               }
 
               tab-indicator {
-                  active-color "#f38ba8"
-                  inactive-color "#7d0d2d"
+                  active-color "${config.colors.screencast_active}"
+                  inactive-color "${config.colors.screencast_inactive}"
               }
           }
 

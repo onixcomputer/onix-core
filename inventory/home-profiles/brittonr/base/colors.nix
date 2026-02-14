@@ -48,8 +48,51 @@ in
       accent = "#ff6600";
       accent2 = "#ffaa00";
 
+      # Terminal palette (16-color) - Tokyo Night
+      term_black = "#32344a";
+      term_red = "#f7768e";
+      term_green = "#9ece6a";
+      term_yellow = "#e0af68";
+      term_blue = "#7aa2f7";
+      term_magenta = "#ad8ee6";
+      term_cyan = "#449dab";
+      term_white = "#787c99";
+
+      term_bright_black = "#444b6a";
+      term_bright_red = "#ff7a93";
+      term_bright_green = "#b9f27c";
+      term_bright_yellow = "#ff9e64";
+      term_bright_blue = "#7da6ff";
+      term_bright_magenta = "#bb9af7";
+      term_bright_cyan = "#0db9d7";
+      term_bright_white = "#acb0d0";
+
+      # Terminal-specific overrides (may differ from UI bg/fg)
+      term_bg = "#1a1b26";
+      term_fg = "#a9b1d6";
+      term_selection = "#7aa2f7";
+
+      # Screencasting indicator colors
+      screencast_active = "#f38ba8";
+      screencast_inactive = "#7d0d2d";
+
+      # RGB variants for transparency (R, G, B as string)
+      accent_rgb = "255, 102, 0";
+      accent2_rgb = "255, 170, 0";
+      bg_dark_rgb = "13, 13, 13";
+
       # Strip leading # from hex color
       noHash = hex: builtins.substring 1 6 hex;
+
+      # Convert "#rrggbb" to "R, G, B" string
+      hexToRgb =
+        hex:
+        let
+          r = toString (hexByteToDec (builtins.substring 1 2 hex));
+          g = toString (hexByteToDec (builtins.substring 3 2 hex));
+          b = toString (hexByteToDec (builtins.substring 5 2 hex));
+        in
+        "${r}, ${g}, ${b}";
 
       # Convert "#rrggbb" to "38;2;R;G;B" for ANSI 256-color sequences
       hexToAnsi =

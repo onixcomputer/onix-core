@@ -1,6 +1,7 @@
 { pkgs, config, ... }:
 let
   anim = config.animations;
+  k = config.keymap;
 in
 {
   wayland.windowManager.hyprland = {
@@ -33,9 +34,10 @@ in
       general = {
         gaps_in = 5;
         gaps_out = 10;
-        border_size = 2;
-        "col.active_border" = "rgba(7aa2f7ee) rgba(bb9af7ee) 45deg";
-        "col.inactive_border" = "rgba(595959aa)";
+        border_size = config.layout.borderWidth;
+        "col.active_border" =
+          "rgba(${config.colors.noHash config.colors.term_blue}ee) rgba(${config.colors.noHash config.colors.term_bright_magenta}ee) 45deg";
+        "col.inactive_border" = "rgba(${config.colors.noHash config.colors.comment}aa)";
         resize_on_border = false;
         allow_tearing = false;
         layout = "dwindle";
@@ -43,13 +45,13 @@ in
 
       # Decoration
       decoration = {
-        rounding = 0;
+        rounding = config.layout.borderRadius;
 
         shadow = {
           enabled = true;
           range = 2;
           render_power = 3;
-          color = "rgba(1a1a1aee)";
+          color = "rgba(${config.colors.noHash config.colors.bg}ee)";
         };
 
         blur = {
@@ -120,7 +122,7 @@ in
       # Keybindings
       bind = [
         # Window management
-        "$mod, Q, killactive"
+        "$mod, ${k.wm.close}, killactive"
         "$mod, J, togglesplit"
         "$mod, P, pseudo"
         "$mod, V, togglefloating"
@@ -165,11 +167,11 @@ in
         "$mod SHIFT, code:19, movetoworkspace, 10"
 
         # Applications
-        "$mod, Return, exec, $terminal"
-        "$mod, F, exec, $fileManager"
-        "$mod, B, exec, $browser"
+        "$mod, ${k.wm.terminal}, exec, $terminal"
+        "$mod, ${k.wm.fileManager}, exec, $fileManager"
+        "$mod, ${k.wm.browser}, exec, $browser"
         "$mod, R, exec, wofi --show run"
-        "$mod, space, exec, wofi --show drun"
+        "$mod, ${k.wm.launcher}, exec, wofi --show drun"
 
         "$mod, comma, exec, makoctl dismiss"
         "$mod SHIFT, comma, exec, makoctl dismiss --all"

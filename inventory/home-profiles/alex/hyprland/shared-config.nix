@@ -7,5 +7,10 @@ _: {
     ../../brittonr/base/notifications.nix
     ../../brittonr/base/bar.nix
     ../../brittonr/base/colors.nix
+    ../../brittonr/base/cursor.nix
+    ../../brittonr/base/layout.nix
+    ../../brittonr/base/keymap.nix
+    ../../brittonr/base/font.nix
+    ../../brittonr/base/apps.nix
   ];
 }

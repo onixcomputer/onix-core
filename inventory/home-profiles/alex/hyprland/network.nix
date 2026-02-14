@@ -4,6 +4,7 @@
   home.packages = with pkgs; [
     networkmanager
     networkmanagerapplet # Provides nm-connection-editor binary only
+    impala
   ];
 
   # Explicitly disable nm-applet service (we use waybar + rofi instead)
