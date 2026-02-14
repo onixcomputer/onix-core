@@ -482,6 +482,12 @@ let
                               ${k.modifiers.secondary}+${up k.nav.up} { focus-window-up; }
                               ${k.modifiers.secondary}+${up k.nav.down} { focus-window-down; }
 
+                              // Vim bindings for moving windows/columns
+                              ${k.modifiers.wm}+Control+${up k.nav.left} { move-column-left; }
+                              ${k.modifiers.wm}+Control+${up k.nav.right} { move-column-right; }
+                              ${k.modifiers.wm}+Control+${up k.nav.up} { move-window-up; }
+                              ${k.modifiers.wm}+Control+${up k.nav.down} { move-window-down; }
+
                               // Arrow keys for moving windows
                               ${k.modifiers.wm}+Control+Left { move-column-left; }
                               ${k.modifiers.wm}+Control+Right { move-column-right; }
