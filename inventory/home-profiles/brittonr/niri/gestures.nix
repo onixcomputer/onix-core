@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 let
   inherit (pkgs) writeShellScriptBin;
 
@@ -70,7 +70,7 @@ in
       Type = "simple";
       ExecStart = "${lisgdNiri}/bin/lisgd-niri";
       Restart = "on-failure";
-      RestartSec = "5s";
+      RestartSec = config.serviceTiming.restartSec.fast;
     };
     Install = {
       WantedBy = [ "graphical-session.target" ];

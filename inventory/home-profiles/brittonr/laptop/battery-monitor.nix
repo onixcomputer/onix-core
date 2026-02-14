@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 {
   home.packages = [ pkgs.batsignal ];
 
@@ -16,7 +16,7 @@
       # -f: full battery notification
       ExecStart = "${pkgs.batsignal}/bin/batsignal -w 20 -c 10 -d 5 -f 95";
       Restart = "on-failure";
-      RestartSec = "10s";
+      RestartSec = config.serviceTiming.restartSec.normal;
     };
 
     Install = {

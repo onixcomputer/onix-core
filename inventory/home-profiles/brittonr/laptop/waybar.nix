@@ -162,11 +162,11 @@
 
       tooltip {
         background: #24283b;
-        border-radius: 0.6em;
+        border-radius: ${config.css.borderRadius.md};
         border-width: 2px;
         border-style: solid;
         border-color: #16161e;
-        padding: 0.5em;
+        padding: ${config.css.padding.md};
       }
 
       tooltip label {
@@ -176,19 +176,19 @@
 
       #workspaces {
         background: #16161e;
-        border-radius: 0.7em;
-        margin: 0.3em;
-        margin-left: 0.8em;
-        padding: 0.2em;
+        border-radius: ${config.css.borderRadius.lg};
+        margin: ${config.css.padding.sm};
+        margin-left: ${config.css.padding.xl};
+        padding: ${config.css.padding.xs};
       }
 
       #workspaces button {
-        padding: 0 0.5em;
+        padding: 0 ${config.css.padding.md};
         margin: 0 0.1em;
-        border-radius: 0.6em;
+        border-radius: ${config.css.borderRadius.md};
         color: #7aa2f7;
         background: transparent;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all ${config.css.transition.fast} ${config.css.transition.easing};
       }
 
       #workspaces button:first-child {
@@ -202,37 +202,37 @@
       #workspaces button.active {
         background: #7aa2f7;
         color: #16161e;
-        border-radius: 0.6em;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: ${config.css.borderRadius.md};
+        transition: all ${config.css.transition.fast} ${config.css.transition.easing};
         font-size: 1.6em;
-        padding: 0 0.6em;
-        margin: 0 0.15em;
+        padding: ${config.bar.waybar.modulePadding};
+        margin: ${config.bar.waybar.moduleMargin};
       }
 
       #workspaces button:hover {
         background: #7aa2f7;
         color: #16161e;
-        border-radius: 0.6em;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: ${config.css.borderRadius.md};
+        transition: all ${config.css.transition.fast} ${config.css.transition.easing};
       }
 
       #clock {
         color: #7aa2f7;
         background: #16161e;
-        border-radius: 0.7em;
-        margin: 0.3em;
-        padding: 0 0.8em;
+        border-radius: ${config.css.borderRadius.lg};
+        margin: ${config.css.padding.sm};
+        padding: 0 ${config.css.padding.xl};
       }
 
       .modules-right {
-        margin-right: 0.8em;
+        margin-right: ${config.css.padding.xl};
       }
 
       #tray {
         background: #16161e;
-        border-radius: 0.7em;
-        padding: 0.3em 0.6em;
-        margin: 0.3em 0.2em;
+        border-radius: ${config.css.borderRadius.lg};
+        padding: ${config.css.padding.sm} ${config.css.padding.lg};
+        margin: ${config.css.padding.sm} ${config.css.padding.xs};
       }
 
       #tray > .passive {
@@ -246,9 +246,9 @@
       #pulseaudio {
         background: #16161e;
         color: #7aa2f7;
-        border-radius: 0.7em;
-        padding: 0 0.8em;
-        margin: 0.3em 0.2em;
+        border-radius: ${config.css.borderRadius.lg};
+        padding: 0 ${config.css.padding.xl};
+        margin: ${config.css.padding.sm} ${config.css.padding.xs};
       }
 
       #pulseaudio.muted {
@@ -257,20 +257,20 @@
 
       box#resources {
         background: #16161e;
-        border-radius: 0.7em;
-        margin: 0.3em 0.2em;
+        border-radius: ${config.css.borderRadius.lg};
+        margin: ${config.css.padding.sm} ${config.css.padding.xs};
         padding: 0 0.4em;
       }
 
       #cpu {
         color: #7aa2f7;
-        padding: 0 0.2em;
+        padding: 0 ${config.css.padding.xs};
         background: transparent;
       }
 
       #memory {
         color: #7aa2f7;
-        padding: 0 0.6em;
+        padding: 0 ${config.css.padding.lg};
         background: transparent;
       }
 
@@ -287,9 +287,9 @@
       #battery {
         background: #16161e;
         color: #7aa2f7;
-        border-radius: 0.7em;
-        padding: 0 0.8em;
-        margin: 0.3em 0.2em;
+        border-radius: ${config.css.borderRadius.lg};
+        padding: 0 ${config.css.padding.xl};
+        margin: ${config.css.padding.sm} ${config.css.padding.xs};
       }
 
       #battery.charging, #battery.plugged {

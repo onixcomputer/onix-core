@@ -183,7 +183,7 @@ let
               border: none;
               border-radius: 0;
               font-family: "${config.font.ui}";
-              font-size: 13px;
+              font-size: ${config.css.fontSize.sm};
           }
 
           window#waybar {
@@ -192,7 +192,7 @@ let
           }
 
           #workspaces button {
-              padding: 0 8px;
+              padding: 0 ${config.css.borderRadius.px8};
               color: ${theme.fg_dim};
               background-color: transparent;
           }
@@ -303,9 +303,9 @@ let
                           gestures {
                               // Scroll the view when dragging near monitor edges
                               dnd-edge-view-scroll {
-                                  trigger-width 40
-                                  delay-ms 150
-                                  max-speed 1200
+                                  trigger-width ${toString config.gestures.dndEdgeScroll.triggerWidth}
+                                  delay-ms ${toString config.gestures.dndEdgeScroll.delayMs}
+                                  max-speed ${toString config.gestures.dndEdgeScroll.maxSpeed}
                               }
 
                               // Enable hot corner to toggle overview (top-left)

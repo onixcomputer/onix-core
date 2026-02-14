@@ -62,11 +62,11 @@ in
           # Set the GIF on all outputs
           ${pkgs.swww}/bin/swww img "$WALLPAPER" \
             --resize crop \
-            --fill-color 000000 \
+            --fill-color ${config.wallpaper.fillColor} \
             --filter Lanczos3 \
-            --transition-type fade \
-            --transition-duration 2 \
-            --transition-fps 60
+            --transition-type ${config.wallpaper.gif.transitionType} \
+            --transition-duration ${toString config.wallpaper.gif.transitionDuration} \
+            --transition-fps ${toString config.wallpaper.gif.transitionFps}
 
           echo "GIF wallpaper set: $(basename "$WALLPAPER")"
           ;;
@@ -87,14 +87,14 @@ in
           # Set the wallpaper on all outputs
           ${pkgs.swww}/bin/swww img "$WALLPAPER" \
             --resize crop \
-            --fill-color 000000 \
+            --fill-color ${config.wallpaper.fillColor} \
             --filter Lanczos3 \
-            --transition-type center \
-            --transition-duration 3 \
-            --transition-fps 60 \
-            --transition-step 90 \
-            --transition-pos center \
-            --transition-bezier .54,0,.34,.99
+            --transition-type ${config.wallpaper.static.transitionType} \
+            --transition-duration ${toString config.wallpaper.static.transitionDuration} \
+            --transition-fps ${toString config.wallpaper.static.transitionFps} \
+            --transition-step ${toString config.wallpaper.static.transitionStep} \
+            --transition-pos ${config.wallpaper.static.transitionPos} \
+            --transition-bezier ${config.wallpaper.static.transitionBezier}
 
           echo "Static wallpaper set: $(basename "$WALLPAPER")"
           ;;

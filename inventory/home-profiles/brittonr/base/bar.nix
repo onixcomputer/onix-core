@@ -20,6 +20,9 @@
         workspaceActiveHoverShadowOpacity = "0.4";
         moduleBgOpacity = "0.8";
         moduleRadius = "0.5em";
+        modulePadding = "0 0.6em";
+        moduleMargin = "0 0.15em";
+        workspaceMinWidth = "24px";
       };
     };
     description = "Status bar (waybar) shared settings";

@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 
 {
   programs.mpv = {
@@ -18,7 +18,7 @@
 
       # Subtitles
       sub-auto = "fuzzy";
-      sub-font-size = 36;
+      sub-font-size = config.media.mpv.subFontSize;
       sub-color = "#FFFFFFFF";
       sub-border-color = "#FF000000";
       sub-border-size = 3;
@@ -26,7 +26,7 @@
       # UI
       osc = "yes";
       osd-bar = "yes";
-      osd-font-size = 30;
+      osd-font-size = config.media.mpv.osdFontSize;
 
       # Playback
       save-position-on-quit = "yes";
@@ -58,10 +58,10 @@
       "f" = "cycle fullscreen";
 
       # Seek controls
-      "RIGHT" = "seek 5";
-      "LEFT" = "seek -5";
-      "UP" = "seek 60";
-      "DOWN" = "seek -60";
+      "RIGHT" = "seek ${toString config.media.mpv.seekShort}";
+      "LEFT" = "seek -${toString config.media.mpv.seekShort}";
+      "UP" = "seek ${toString config.media.mpv.seekLong}";
+      "DOWN" = "seek -${toString config.media.mpv.seekLong}";
 
       # Speed controls
       "[" = "add speed -0.25";

@@ -201,7 +201,7 @@ let
               border: none;
               border-radius: 0;
               font-family: "${config.font.ui}";
-              font-size: 13px;
+              font-size: ${config.css.fontSize.sm};
           }
 
           window#waybar {
@@ -210,7 +210,7 @@ let
           }
 
           #workspaces button {
-              padding: 0 8px;
+              padding: 0 ${config.css.borderRadius.px8};
               color: ${theme.fg_dim};
               background-color: transparent;
           }
@@ -253,7 +253,7 @@ let
           #custom-launcher,
           #custom-nixos {
               color: ${theme.accent};
-              font-size: 16px;
+              font-size: ${config.css.fontSize.lg};
           }
 
           #custom-kitty:hover,
@@ -274,7 +274,7 @@ let
           #custom-media-prev,
           #custom-media-next {
               color: ${theme.accent};
-              font-size: 14px;
+              font-size: ${config.css.fontSize.md};
               padding: 0 5px;
           }
 

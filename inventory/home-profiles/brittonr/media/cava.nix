@@ -1,4 +1,4 @@
-_:
+{ config, ... }:
 
 {
   programs.cava = {
@@ -6,7 +6,7 @@ _:
 
     settings = {
       general = {
-        framerate = 60;
+        inherit (config.media.cava) framerate;
         autosens = 1;
         sensitivity = 100;
         bars = 0;
@@ -34,15 +34,15 @@ _:
 
       color = {
         gradient = 1;
-        gradient_count = 8;
-        gradient_color_1 = "'#59cc33'";
-        gradient_color_2 = "'#80cc33'";
-        gradient_color_3 = "'#a6cc33'";
-        gradient_color_4 = "'#cccc33'";
-        gradient_color_5 = "'#cca633'";
-        gradient_color_6 = "'#cc8033'";
-        gradient_color_7 = "'#cc5933'";
-        gradient_color_8 = "'#cc3333'";
+        gradient_count = builtins.length config.media.cava.gradient;
+        gradient_color_1 = builtins.elemAt config.media.cava.gradient 0;
+        gradient_color_2 = builtins.elemAt config.media.cava.gradient 1;
+        gradient_color_3 = builtins.elemAt config.media.cava.gradient 2;
+        gradient_color_4 = builtins.elemAt config.media.cava.gradient 3;
+        gradient_color_5 = builtins.elemAt config.media.cava.gradient 4;
+        gradient_color_6 = builtins.elemAt config.media.cava.gradient 5;
+        gradient_color_7 = builtins.elemAt config.media.cava.gradient 6;
+        gradient_color_8 = builtins.elemAt config.media.cava.gradient 7;
       };
 
       smoothing = {

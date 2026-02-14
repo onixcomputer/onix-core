@@ -144,7 +144,7 @@ _: {
         # "radicle-node"
       ];
       deploy = {
-        targetHost = "root@127.0.0.1";
+        targetHost = "root@britton-fw";
         buildHost = "";
       };
     };

@@ -54,7 +54,7 @@ in
       Type = "simple";
       ExecStart = "${wrappedMako}/bin/mako";
       Restart = "on-failure";
-      RestartSec = 5;
+      RestartSec = config.serviceTiming.restartSec.fast;
     };
     Install = {
       WantedBy = [ "graphical-session.target" ];

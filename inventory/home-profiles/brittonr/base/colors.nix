@@ -76,6 +76,17 @@ in
       screencast_active = "#f38ba8";
       screencast_inactive = "#7d0d2d";
 
+      # Rainbow palette for indent guides and bracket matching
+      rainbow = {
+        red = "#E06C75";
+        yellow = "#E5C07B";
+        blue = "#61AFEF";
+        orange = "#D19A66";
+        green = "#98C379";
+        violet = "#C678DD";
+        cyan = "#56B6C2";
+      };
+
       # RGB variants for transparency (R, G, B as string)
       accent_rgb = "255, 102, 0";
       accent2_rgb = "255, 170, 0";
