@@ -46,6 +46,15 @@ _: {
               echo "Running nix fmt..."
               nix fmt && echo "Running pre-commit checks..." && pre-commit run --all-files
             '')
+            # AI agent CLI tools (mics-skills)
+            inputs'.mics-skills.packages.browser-cli
+            inputs'.mics-skills.packages.context7-cli
+            inputs'.mics-skills.packages.db-cli
+            inputs'.mics-skills.packages.gmaps-cli
+            inputs'.mics-skills.packages.kagi-search
+            inputs'.mics-skills.packages.pexpect-cli
+            inputs'.mics-skills.packages.screenshot-cli
+            inputs'.mics-skills.packages.weather-cli
           ]
           ++ config.mcp-servers.packages;
 
@@ -63,6 +72,16 @@ _: {
             echo "  vars             - Analyze Clan vars ownership"
             echo "  tags             - Analyze Clan machine tags"
             echo "  roster           - Analyze Clan user roster configurations"
+            echo ""
+            echo "AI agent tools:"
+            echo "  browser-cli    - Firefox browser automation"
+            echo "  context7-cli   - Library documentation from Context7"
+            echo "  db-cli         - Deutsche Bahn train connections"
+            echo "  gmaps-cli      - Google Maps search/directions"
+            echo "  kagi-search    - Web search with Kagi AI summaries"
+            echo "  pexpect-cli    - Interactive terminal automation"
+            echo "  screenshot-cli - Screenshots (grim/spectacle/macOS)"
+            echo "  weather-cli    - Weather forecasts (DWD data)"
             echo ""
 
             if [ -f .env ]; then

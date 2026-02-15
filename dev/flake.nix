@@ -5,6 +5,7 @@
   inputs = {
     treefmt-nix.url = "github:numtide/treefmt-nix";
     pre-commit-hooks-nix.url = "github:cachix/pre-commit-hooks.nix";
+    mics-skills.url = "github:Mic92/mics-skills";
   };
 
   # This flake exists only to provide inputs to the dev partition
