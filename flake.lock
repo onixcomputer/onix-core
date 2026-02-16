@@ -696,6 +696,26 @@
         "type": "github"
       }
     },
+    "noctalia": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1771258235,
+        "narHash": "sha256-bCwxFlLAxEgPLW3zjEu/PJ9Mdvud/U/VLbmqj5ZkD8c=",
+        "owner": "noctalia-dev",
+        "repo": "noctalia-shell",
+        "rev": "73254f892f9d3c88e542e0a904863940a24f1724",
+        "type": "github"
+      },
+      "original": {
+        "owner": "noctalia-dev",
+        "repo": "noctalia-shell",
+        "type": "github"
+      }
+    },
     "pinenote-nixos": {
       "inputs": {
         "nixpkgs": [
@@ -751,6 +771,7 @@
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs_4",
         "nixvim": "nixvim_2",
+        "noctalia": "noctalia",
         "pinenote-nixos": "pinenote-nixos",
         "radicle-nix-adapter": "radicle-nix-adapter",
         "upmpdcli": "upmpdcli",

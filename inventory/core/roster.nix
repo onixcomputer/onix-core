@@ -255,7 +255,8 @@ let
               "dev"
               # "hyprland"
               # "hypr-laptop"
-              "niri"
+              # "niri"
+              "noctalia"
               "social"
             ];
           };
@@ -282,7 +283,8 @@ let
               "dev"
               # "hyprland"
               # "hypr-laptop"
-              "niri"
+              # "niri"
+              "noctalia"
               "social"
             ];
           };
@@ -307,7 +309,8 @@ let
             profiles = [
               "base"
               "dev"
-              "niri"
+              # "niri"
+              "noctalia"
               "social"
             ];
           };
@@ -377,7 +380,8 @@ let
               "base"
               "dev"
               # "hyprland"
-              "niri"
+              # "niri"
+              "noctalia"
               "creative"
               "social"
             ];
