@@ -7,7 +7,7 @@
       useWallpaperColors = true;
       darkMode = true;
       schedulingMode = "off"; # darkman handles light/dark switching
-      generationMethod = "tonal-spot";
+      generationMethod = "rainbow";
     };
     description = "Color scheme generation settings (Material You)";
   };

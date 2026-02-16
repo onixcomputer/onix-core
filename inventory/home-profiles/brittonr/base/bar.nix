@@ -11,8 +11,8 @@
       density = "default";
       displayMode = "always_visible";
       showCapsule = true;
-      outerCorners = true;
-      clockFormat = "HH:mm";
+      outerCorners = false;
+      clockFormat = "HH:mm ddd, MMM dd";
       calendarScrollSensitivity = 1;
       tray = {
         spacing = 10;
