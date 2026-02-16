@@ -13,8 +13,8 @@ let
   up = lib.toUpper;
   mon = config.monitors;
 
-  # Noctalia IPC helper - all shell IPC calls go through qs
-  ipc = target: action: ''"qs" "-c" "noctalia-shell" "ipc" "call" "${target}" "${action}"'';
+  # Noctalia IPC helper - noctalia-shell wraps qs with the correct config path
+  ipc = target: action: ''"noctalia-shell" "ipc" "call" "${target}" "${action}"'';
 
   # Define wrapped niri package with custom config
   wrappedNiri =
@@ -281,7 +281,6 @@ let
                               ${k.modifiers.wm}+${k.wm.sysmon} { spawn "${config.apps.terminal.command}" "--title" "${config.apps.sysmon.name}" "-e" "${config.apps.sysmon.command}"; }
 
                               // Noctalia launcher (replaces fuzzel)
-                              ${k.modifiers.wm}+R { spawn ${ipc "launcher" "toggle"}; }
                               ${k.modifiers.wm}+${k.wm.launcher} { spawn ${ipc "launcher" "toggle"}; }
 
                               // Noctalia clipboard history (replaces cliphist + fuzzel)
@@ -319,7 +318,8 @@ let
                               XF86MonBrightnessDown { spawn ${ipc "brightness" "decrease"}; }
 
                               // Lock screen (new - Noctalia built-in)
-                              ${k.modifiers.wm}+L { spawn ${ipc "lockScreen" "lock"}; }
+                              // Mod+L is vim nav (focus-column-right), so use Mod+Shift+Escape
+                              ${k.modifiers.wm}+Shift+Escape { spawn ${ipc "lockScreen" "lock"}; }
 
                               // Wallpaper picker (new - Noctalia built-in)
                               ${k.modifiers.wm}+Shift+W { spawn ${ipc "wallpaper" "toggle"}; }

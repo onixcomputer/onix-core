@@ -11,6 +11,7 @@
       padding = 15;
       margin = 10;
       position = "top-right";
+      location = "top_right";
       gap = 10;
       iconSize = 32;
       maxHistory = 20;
@@ -18,6 +19,11 @@
         low = 3;
         normal = 5;
         critical = 10;
+      };
+      noctalia = {
+        lowUrgencyDuration = 3;
+        normalUrgencyDuration = 8;
+        criticalUrgencyDuration = 15;
       };
     };
     description = "Notification daemon settings";

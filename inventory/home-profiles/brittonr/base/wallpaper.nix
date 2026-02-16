@@ -5,6 +5,12 @@
     readOnly = true;
     default = {
       fillColor = "000000";
+      fillMode = "crop";
+      automationEnabled = false;
+      changeMode = "random";
+      randomIntervalSec = 300;
+      transitionDuration = 1500;
+      transitionType = "random";
 
       gif = {
         transitionType = "fade";
@@ -21,6 +27,6 @@
         transitionBezier = ".54,0,.34,.99";
       };
     };
-    description = "Wallpaper transition settings for swww";
+    description = "Wallpaper settings";
   };
 }

@@ -6,6 +6,13 @@
     default = {
       height = 30;
       spacing = 4;
+      position = "top";
+      floating = false;
+      density = "default";
+      displayMode = "always_visible";
+      showCapsule = true;
+      outerCorners = true;
+      clockFormat = "HH:mm";
       calendarScrollSensitivity = 1;
       tray = {
         spacing = 10;
@@ -47,6 +54,6 @@
         };
       };
     };
-    description = "Status bar (waybar) shared settings";
+    description = "Status bar shared settings";
   };
 }

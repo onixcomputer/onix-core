@@ -2,46 +2,45 @@
 {
   programs.noctalia-shell = {
     enable = true;
-    # Package provided by NixOS module or flake overlay; set to null if using NixOS module
-    # package = null;
 
     # Material 3 color mapping from onix-dark palette
     colors = {
-      mPrimary = config.colors.accent; # #ff6600 - brand orange
-      mOnPrimary = config.colors.bg; # dark bg for contrast on primary
-      mSecondary = config.colors.accent2; # #ffaa00 - secondary gold
+      mPrimary = config.colors.accent;
+      mOnPrimary = config.colors.bg;
+      mSecondary = config.colors.accent2;
       mOnSecondary = config.colors.bg;
-      mTertiary = config.colors.purple; # #aa44ff - tertiary purple
+      mTertiary = config.colors.purple;
       mOnTertiary = config.colors.bg;
-      mError = config.colors.red; # #ff4444
+      mError = config.colors.red;
       mOnError = config.colors.bg;
-      mSurface = config.colors.bg; # #1a1a1a
-      mSurfaceVariant = config.colors.bg_highlight; # #262626
-      mOnSurface = config.colors.fg; # #e6e6e6
-      mOnSurfaceVariant = config.colors.fg_dim; # #b3b3b3
-      mOutline = config.colors.border; # #404040
-      mShadow = config.colors.bg_dark; # #0d0d0d
-      mHover = config.colors.bg_highlight; # #262626
-      mOnHover = config.colors.fg; # #e6e6e6
+      mSurface = config.colors.bg;
+      mSurfaceVariant = config.colors.bg_highlight;
+      mOnSurface = config.colors.fg;
+      mOnSurfaceVariant = config.colors.fg_dim;
+      mOutline = config.colors.border;
+      mShadow = config.colors.bg_dark;
+      mHover = config.colors.bg_highlight;
+      mOnHover = config.colors.fg;
     };
 
     settings = {
-      # Bar configuration
       bar = {
-        position = "top";
-        floating = false;
-        density = "default";
-        backgroundOpacity = 0.93;
-        displayMode = "always_visible";
-        showCapsule = true;
-        outerCorners = true;
-        monitors = [ ]; # all monitors
+        inherit (config.bar)
+          position
+          floating
+          density
+          displayMode
+          showCapsule
+          outerCorners
+          ;
+        backgroundOpacity = config.opacity.bars;
+        monitors = [ ];
         widgets = {
           left = [
             { id = "Launcher"; }
             {
               id = "Clock";
-              formatHorizontal = "HH:mm";
+              formatHorizontal = config.bar.clockFormat;
             }
             { id = "SystemMonitor"; }
             { id = "ActiveWindow"; }
@@ -70,54 +69,53 @@
         };
       };
 
-      # Notification settings
       notifications = {
         enabled = true;
-        location = "top_right";
-        lowUrgencyDuration = 3;
-        normalUrgencyDuration = 8;
-        criticalUrgencyDuration = 15;
+        inherit (config.notifications) location;
+        inherit (config.notifications.noctalia)
+          lowUrgencyDuration
+          normalUrgencyDuration
+          criticalUrgencyDuration
+          ;
         backgroundOpacity = 1;
       };
 
-      # OSD for volume/brightness
       osd = {
-        enabled = true;
-        location = "top_right";
-        autoHideMs = 2000;
+        inherit (config.osd) enabled location autoHideMs;
       };
 
-      # Wallpaper with Material 3 color extraction
       wallpaper = {
         enabled = true;
         directory = config.paths.wallpapersRepo;
-        fillMode = "crop";
-        automationEnabled = false;
-        wallpaperChangeMode = "random";
-        randomIntervalSec = 300;
-        transitionDuration = 1500;
-        transitionType = "random";
+        inherit (config.wallpaper)
+          fillMode
+          automationEnabled
+          transitionDuration
+          transitionType
+          randomIntervalSec
+          ;
+        wallpaperChangeMode = config.wallpaper.changeMode;
       };
 
-      # Application launcher
       appLauncher = {
-        position = "center";
-        sortByMostUsed = true;
+        inherit (config.launcher)
+          position
+          sortByMostUsed
+          viewMode
+          enableClipboardHistory
+          ;
         terminalCommand = "${config.apps.terminal.command} -e";
-        viewMode = "list";
-        enableClipboardHistory = true;
       };
 
-      # Color scheme - use wallpaper-based Material You by default,
-      # with dark mode and location-based scheduling via darkman
       colorSchemes = {
-        useWallpaperColors = true;
-        darkMode = true;
-        schedulingMode = "off"; # darkman handles light/dark switching
-        generationMethod = "tonal-spot";
+        inherit (config.colorScheme)
+          useWallpaperColors
+          darkMode
+          schedulingMode
+          generationMethod
+          ;
       };
 
-      # Dock disabled (niri is a tiling WM, dock is for stacking)
       dock = {
         enabled = false;
       };

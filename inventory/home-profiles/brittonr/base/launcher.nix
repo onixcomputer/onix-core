@@ -8,6 +8,10 @@
       height = 500;
       iconSize = 40;
       spacing = 10;
+      position = "center";
+      viewMode = "list";
+      sortByMostUsed = true;
+      enableClipboardHistory = true;
       fuzzel = {
         widthPercent = 50;
         horizontalPad = 20;
@@ -16,6 +20,6 @@
         scriptWidth = 60;
       };
     };
-    description = "Application launcher (wofi/rofi/fuzzel) dimensions";
+    description = "Application launcher settings";
   };
 }
