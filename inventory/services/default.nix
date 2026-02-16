@@ -29,6 +29,7 @@ let
     nix-gc = import ./nix-gc.nix { inherit inputs; };
     ollama = import ./ollama.nix { inherit inputs; };
     clonadic = import ./clonadic.nix { inherit inputs; };
+    iroh-ssh = import ./iroh-ssh.nix { inherit inputs; };
   };
 in
 lib.foldr lib.recursiveUpdate { } (lib.attrValues services)

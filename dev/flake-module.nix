@@ -22,6 +22,11 @@
     ../parts/sops-viz.nix
     ../parts/cloud-cli.nix
 
+    # Mic92 workflow tools
+    ../parts/merge-when-green.nix
+    ../parts/nix-eval-warnings.nix
+    ../parts/iroh-ssh.nix
+
     # MCP servers configuration
     ../parts/mcp-servers.nix
   ];

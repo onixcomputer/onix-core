@@ -74,6 +74,17 @@ _: {
         #         touch $out
         #       '';
         # };
+
+        # TODO: Enable eval-warnings check once nix-eval-jobs is stable in CI
+        # eval-warnings =
+        #   pkgs.runCommand "eval-warnings-check"
+        #     {
+        #       nativeBuildInputs = [ self'.packages.nix-eval-warnings ];
+        #     }
+        #     ''
+        #       echo "Running nix evaluation warnings check..."
+        #       nix-eval-warnings ".#nixosConfigurations" --json > $out || true
+        #     '';
       };
 
       legacyPackages = {

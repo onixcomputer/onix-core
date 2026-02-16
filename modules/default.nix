@@ -24,6 +24,7 @@ let
     "nix-gc" = import ./nix-gc;
     "ollama" = import ./ollama;
     "clonadic" = import ./clonadic;
+    "iroh-ssh" = import ./iroh-ssh;
   };
 
 in

@@ -20,6 +20,17 @@ _: {
             config.packages.tags
             config.packages.roster
             config.packages.cloud-cli
+            config.packages.merge-when-green
+            config.packages.nix-eval-warnings
+            config.packages.iroh-ssh
+            (pkgs.writeShellScriptBin "eval-warnings" ''
+              if [ -z "$1" ]; then
+                echo "Usage: eval-warnings <flake-ref>"
+                echo "Example: eval-warnings '.#checks'"
+                exit 1
+              fi
+              exec ${config.packages.nix-eval-warnings}/bin/nix-eval-warnings "$@"
+            '')
             pkgs.terranix
             pkgs.opentofu
             pkgs.awscli2
@@ -82,6 +93,11 @@ _: {
             echo "  pexpect-cli    - Interactive terminal automation"
             echo "  screenshot-cli - Screenshots (grim/spectacle/macOS)"
             echo "  weather-cli    - Weather forecasts (DWD data)"
+            echo ""
+            echo "Workflow tools:"
+            echo "  merge-when-green - Auto-create PRs and merge when CI passes"
+            echo "  eval-warnings    - Extract Nix evaluation warnings"
+            echo "  iroh-ssh         - P2P SSH without public IPs or VPN"
             echo ""
 
             if [ -f .env ]; then
