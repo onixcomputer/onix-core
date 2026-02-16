@@ -26,6 +26,7 @@
     ../parts/merge-when-green.nix
     ../parts/nix-eval-warnings.nix
     ../parts/iroh-ssh.nix
+    ../parts/claude-md.nix
 
     # MCP servers configuration
     ../parts/mcp-servers.nix

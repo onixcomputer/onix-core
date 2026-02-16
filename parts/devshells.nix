@@ -23,6 +23,7 @@ _: {
             config.packages.merge-when-green
             config.packages.nix-eval-warnings
             config.packages.iroh-ssh
+            config.packages.claude-md
             (pkgs.writeShellScriptBin "eval-warnings" ''
               if [ -z "$1" ]; then
                 echo "Usage: eval-warnings <flake-ref>"
@@ -98,6 +99,7 @@ _: {
             echo "  merge-when-green - Auto-create PRs and merge when CI passes"
             echo "  eval-warnings    - Extract Nix evaluation warnings"
             echo "  iroh-ssh         - P2P SSH without public IPs or VPN"
+            echo "  claude-md        - Centralize CLAUDE.local.md across repos"
             echo ""
 
             if [ -f .env ]; then
