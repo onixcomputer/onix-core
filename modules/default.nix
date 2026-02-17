@@ -25,6 +25,7 @@ let
     "ollama" = import ./ollama;
     "clonadic" = import ./clonadic;
     "iroh-ssh" = import ./iroh-ssh;
+    "llm-agents" = import ./llm-agents;
   };
 
 in
