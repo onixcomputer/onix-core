@@ -70,7 +70,7 @@ fn default_repo_path() -> PathBuf {
     dirs::home_dir()
         .unwrap_or_else(|| PathBuf::from("~"))
         .join("git")
-        .join("claude.md")
+        .join("agentkit")
 }
 
 fn default_agents() -> HashMap<String, AgentHome> {

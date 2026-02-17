@@ -3,7 +3,7 @@
 //! Manages skills, commands, and instructions across multiple AI agents
 //! including Claude Code, OpenAI Codex, Cursor, and others.
 //!
-//! Drop-in replacement for claude-md with multi-agent support.
+//! Successor to claude-md with multi-agent support.
 
 mod config;
 mod repo;
@@ -28,12 +28,12 @@ struct Cli {
 enum Commands {
     /// Initialize the central repository
     Init {
-        /// Path to initialize (default: ~/git/claude.md)
+        /// Path to initialize (default: ~/git/agentkit)
         #[arg(short, long)]
         path: Option<PathBuf>,
     },
 
-    /// Add current project to central management (like claude-md add)
+    /// Add current project to central management
     ///
     /// Links instruction files (CLAUDE.local.md, AGENTS.md) and agent config
     /// directories (.claude/, .codex/) for the current git repository.
