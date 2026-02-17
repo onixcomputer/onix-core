@@ -12,7 +12,7 @@ buildPythonApplication {
   build-system = [ hatchling ];
 
   meta = {
-    description = "CLI tool to manage CLAUDE.local.md files across repositories";
+    description = "Centralize Claude Code configuration (projects, skills, commands) across repositories";
     mainProgram = "claude-md";
   };
 }

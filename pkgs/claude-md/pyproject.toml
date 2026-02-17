@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "claude-md"
 version = "0.1.0"
-description = "CLI tool to manage CLAUDE.local.md files across repositories"
+description = "Centralize Claude Code configuration (projects, skills, commands) across repositories"
 
 [project.scripts]
 claude-md = "claude_md:main"
