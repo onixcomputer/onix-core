@@ -36,6 +36,7 @@
   };
 
   boot = {
+    kernel.sysctl."kernel.perf_event_paranoid" = -1;
     kernelPackages = pkgs.linuxPackages_6_18;
     # DisplayLink support for Wayland (evdi module)
     extraModulePackages = [ config.boot.kernelPackages.evdi ];
@@ -101,7 +102,24 @@
 
   programs.fuse.userAllowOther = true;
 
+  security.sudo.extraRules = [
+    {
+      users = [ "brittonr" ];
+      commands = [
+        {
+          command = "${pkgs.bpftrace}/bin/bpftrace";
+          options = [ "NOPASSWD" ];
+        }
+        {
+          command = "/home/brittonr/.cargo-target/release/chaoscontrol-trace";
+          options = [ "NOPASSWD" ];
+        }
+      ];
+    }
+  ];
+
   environment.systemPackages = with pkgs; [
+    bpftrace
     imagemagick
     os-prober
     nirius
