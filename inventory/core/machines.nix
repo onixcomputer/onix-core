@@ -214,7 +214,7 @@ _: {
         "udev-rules"
       ];
       deploy = {
-        targetHost = "root@bonsai"; # Update with actual hostname or IP
+        targetHost = "root@100.126.162.16"; # Update with actual hostname or IP
         buildHost = "";
       };
     };
