@@ -2,7 +2,6 @@
 {
   options.monitors = lib.mkOption {
     type = lib.types.attrs;
-    readOnly = true;
     default = {
       primary = {
         name = "DP-3";

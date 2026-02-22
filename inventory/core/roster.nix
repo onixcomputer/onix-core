@@ -319,7 +319,33 @@ let
       homeManagerOptions = {
         sharedModules = [
           {
-            # TODO: Add monitor configuration if needed
+            # GPD Pocket 4: 1600x2560 panel rotated 270° → 2560x1600 landscape
+            # Scale 2 → 1280x800 logical (up from 1024x640 at scale 2.5)
+            monitors = {
+              primary = {
+                name = "eDP-1";
+                mode = "1600x2560@143.999";
+                scale = 2;
+                position = {
+                  x = 0;
+                  y = 0;
+                };
+                vrr = false;
+              };
+              secondary = {
+                name = "DP-3";
+                mode = "preferred";
+                scale = 1;
+                position = {
+                  x = 1280;
+                  y = 0;
+                };
+                vrr = false;
+              };
+              builtin = {
+                name = "eDP-1";
+              };
+            };
           }
         ];
       };
