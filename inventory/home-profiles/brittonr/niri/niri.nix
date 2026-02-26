@@ -316,7 +316,9 @@ let
 
                           // Primary monitor (top) - LG ULTRAGEAR+
                           output "${mon.primary.name}" {
-                              mode "${mon.primary.mode}"
+                              ${
+                                if mon.primary.mode != "preferred" then ''mode "${mon.primary.mode}"'' else ""
+                              }
                               scale ${toString mon.primary.scale}
                               position x=${toString mon.primary.position.x} y=${toString mon.primary.position.y}
                               ${if mon.primary.vrr then "variable-refresh-rate" else ""}
@@ -324,7 +326,9 @@ let
 
                           // Secondary monitor (below, centered) - Portable monitor via HDMI
                           output "${mon.secondary.name}" {
-                              mode "${mon.secondary.mode}"
+                              ${
+                                if mon.secondary.mode != "preferred" then ''mode "${mon.secondary.mode}"'' else ""
+                              }
                               scale ${toString mon.secondary.scale}
                               position x=${toString mon.secondary.position.x} y=${toString mon.secondary.position.y}
                           }
@@ -435,7 +439,7 @@ let
                               ${k.modifiers.wm}+${k.wm.close} { close-window; }
                               ${k.modifiers.wm}+${k.wm.toggleTabs} { toggle-column-tabbed-display; }
                               ${k.modifiers.wm}+${k.wm.fullscreen} { fullscreen-window; }
-                              ${k.modifiers.secondary}+F { toggle-window-floating; }
+                              ${k.modifiers.wm}+Shift+F { toggle-window-floating; }
                               ${k.modifiers.wm}+${k.wm.reload} { spawn "niri" "msg" "action" "load-config-file"; }
 
                               // Vim bindings for focus
@@ -453,12 +457,6 @@ let
                               ${k.modifiers.wm}+Right { focus-column-right; }
                               ${k.modifiers.wm}+Up { focus-window-up; }
                               ${k.modifiers.wm}+Down { focus-window-down; }
-
-                              // Alt+HJKL for unified navigation (same as Mod layer)
-                              ${k.modifiers.secondary}+${up k.nav.left} { focus-column-left; }
-                              ${k.modifiers.secondary}+${up k.nav.right} { focus-column-right; }
-                              ${k.modifiers.secondary}+${up k.nav.up} { focus-window-or-workspace-up; }
-                              ${k.modifiers.secondary}+${up k.nav.down} { focus-window-or-workspace-down; }
 
                               // Vim bindings for moving windows/columns
                               ${k.modifiers.wm}+Control+${up k.nav.left} { move-column-left; }

@@ -1,3 +1,7 @@
+[tool.pytest.ini_options]
+# Prevent pytest from descending into NixOS build output symlinks (result-*)
+norecursedirs = ["result-*", ".direnv", "vars", "sops", "machines"]
+
 [tool.mypy]
 python_version = "3.13"
 pretty = true

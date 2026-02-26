@@ -32,6 +32,23 @@
     nix-output-monitor
     nmap
     pamtester
+    # Reverse engineering & binary analysis
+    radare2
+    python3Packages.r2pipe
+    cutter
+    ghidra
+    iaito
+    imhex
+    binwalk
+    hexyl
+    capstone
+    elfutils
+    patchelf
+    gdb
+    strace
+    ltrace
+    yara
+    volatility3
     usbmuxd
     usbutils
     radicle-node

@@ -83,7 +83,9 @@ let
 
                           // Primary monitor (top) - LG ULTRAGEAR+
                           output "${mon.primary.name}" {
-                              mode "${mon.primary.mode}"
+                              ${
+                                if mon.primary.mode != "preferred" then ''mode "${mon.primary.mode}"'' else ""
+                              }
                               scale ${toString mon.primary.scale}
                               position x=${toString mon.primary.position.x} y=${toString mon.primary.position.y}
                               ${if mon.primary.vrr then "variable-refresh-rate" else ""}
@@ -91,7 +93,9 @@ let
 
                           // Secondary monitor (below, centered) - Portable monitor via HDMI
                           output "${mon.secondary.name}" {
-                              mode "${mon.secondary.mode}"
+                              ${
+                                if mon.secondary.mode != "preferred" then ''mode "${mon.secondary.mode}"'' else ""
+                              }
                               scale ${toString mon.secondary.scale}
                               position x=${toString mon.secondary.position.x} y=${toString mon.secondary.position.y}
                           }

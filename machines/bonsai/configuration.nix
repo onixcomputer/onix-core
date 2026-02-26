@@ -30,12 +30,30 @@ in
       {
         protocol = "ssh-ng";
         hostName = "leviathan.cymric-daggertooth.ts.net";
-        systems = [ "x86_64-linux" ];
+        systems = [
+          "x86_64-linux"
+        ];
         maxJobs = 7;
         speedFactor = 20;
         supportedFeatures = [
           "nixos-test"
           "benchmark"
+          "big-parallel"
+          "kvm"
+        ];
+        mandatoryFeatures = [ ];
+        sshUser = "brittonr";
+      }
+      {
+        protocol = "ssh-ng";
+        hostName = "britton-desktop";
+        systems = [
+          "aarch64-linux"
+        ];
+        maxJobs = 8;
+        speedFactor = 15;
+        supportedFeatures = [
+          "nixos-test"
           "big-parallel"
           "kvm"
         ];
@@ -66,7 +84,15 @@ in
   programs.ssh.extraConfig = ''
     Host leviathan.cymric-daggertooth.ts.net
       IdentityAgent /run/user/1555/gcr/ssh
+    Host britton-desktop
+      IdentityAgent /run/user/1555/gcr/ssh
   '';
+
+  # Known host for britton-desktop remote builder
+  programs.ssh.knownHosts.britton-desktop = {
+    hostNames = [ "britton-desktop" ];
+    publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIe2N5OW2IY12lTvJZOFnMxw74eA/UhWJvCAd9OhUpsE";
+  };
 
   # GPD hardware sensors for rotation detection
   hardware.sensor.iio.enable = true;
@@ -90,6 +116,18 @@ in
         SUBSYSTEM=="iio", KERNEL=="iio*", RUN+="${pkgs.coreutils}/bin/chmod a+rw /sys$devpath/buffer/enable"
         SUBSYSTEM=="iio", KERNEL=="iio*", RUN+="${pkgs.coreutils}/bin/chmod a+rw /sys$devpath/buffer/length"
         ACTION=="add", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTRS{idVendor}=="258a", ATTRS{idProduct}=="000c", ATTR{power/wakeup}="disabled", ATTR{power/control}="on"
+        # RP2350/RP2040 BOOTSEL mode
+        SUBSYSTEM=="usb", ATTRS{idVendor}=="2e8a", MODE="0666"
+        SUBSYSTEM=="block", ATTRS{idVendor}=="2e8a", MODE="0666"
+        # Realtek SD card reader access
+        SUBSYSTEM=="usb", ATTRS{idVendor}=="0bda", ATTRS{idProduct}=="0316", MODE="0666", GROUP="plugdev", TAG+="uaccess"
+        SUBSYSTEM=="block", ATTRS{idVendor}=="0bda", ATTRS{idProduct}=="0316", GROUP="brittonr", MODE="0660"
+        # Allwinner FEL mode (sunxi USB flashing)
+        SUBSYSTEM=="usb", ATTR{idVendor}=="1f3a", ATTR{idProduct}=="efe8", MODE="0666", GROUP="plugdev", TAG+="uaccess"
+        # Glasgow Digital Interface Explorer
+        SUBSYSTEM=="usb", ATTRS{idVendor}=="20b7", ATTRS{idProduct}=="9db1", MODE="0666", GROUP="plugdev", TAG+="uaccess"
+        # Rockchip USB (maskrom/loader mode)
+        SUBSYSTEM=="usb", ATTR{idVendor}=="2207", MODE="0666"
       '';
     };
   };

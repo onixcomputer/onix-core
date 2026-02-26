@@ -37,7 +37,7 @@
         "leviathan.cymric-daggertooth.ts.net"
         "leviathan"
       ];
-      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOEtV2xoOv+N4c5sg5oBqM/Xy+aZHf+5GHOhzXKYduXG";
+      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJeHLo5xojFAnilVKDHWrPSSZe0qrPCC7we4hrwHYGRd";
     };
   };
 }

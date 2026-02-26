@@ -47,7 +47,7 @@ in
           acceleration = mkOption {
             type = str;
             default = "rocm";
-            description = "Acceleration type: 'rocm', 'cuda', or 'false'";
+            description = "Acceleration type: 'rocm', 'cuda', 'vulkan', or 'cpu'";
           };
         };
       };
@@ -65,12 +65,23 @@ in
                 enableGPU
                 acceleration
                 ;
+              ollamaPackage =
+                if !enableGPU then
+                  pkgs.ollama-cpu
+                else if acceleration == "rocm" then
+                  pkgs.ollama-rocm
+                else if acceleration == "cuda" then
+                  pkgs.ollama-cuda
+                else if acceleration == "vulkan" then
+                  pkgs.ollama-vulkan
+                else
+                  pkgs.ollama-cpu;
             in
             {
               services.ollama = {
                 enable = true;
                 inherit host port;
-                acceleration = if enableGPU then acceleration else null;
+                package = ollamaPackage;
               };
 
               # Pre-pull models on activation

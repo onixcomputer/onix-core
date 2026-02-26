@@ -33,6 +33,7 @@ _: {
         "tailnet-adeci"
         "dev"
         "pragmatic"
+        "cross-compile"
       ];
       deploy = {
         targetHost = "root@leviathan.cymric-daggertooth.ts.net";
