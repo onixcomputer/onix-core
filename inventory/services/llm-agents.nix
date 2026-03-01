@@ -5,7 +5,10 @@ _: {
       module.input = "self";
       roles.default.tags.llm-client = { };
       roles.default.settings = {
-        packages = [ "pi" ];
+        packages = [
+          "pi"
+          "openspec"
+        ];
       };
     };
   };
