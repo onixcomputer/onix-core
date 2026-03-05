@@ -366,7 +366,7 @@ let
                           // Startup services
                           spawn-at-startup "${wrappedWaybar}/bin/waybar"
                           // mako is started via systemd graphical-session.target
-                          spawn-at-startup "sh" "-c" "${pkgs.swww}/bin/swww-daemon && restore-wallpaper"
+                          spawn-at-startup "sh" "-c" "${pkgs.swww}/bin/swww-daemon && ${pkgs.swww}/bin/swww clear 000000"
                           spawn-at-startup "${pkgs.wl-clipboard}/bin/wl-paste" "--watch" "${pkgs.cliphist}/bin/cliphist" "store"
                           spawn-at-startup "${pkgs.swayosd}/bin/swayosd-server"
                           spawn-at-startup "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"

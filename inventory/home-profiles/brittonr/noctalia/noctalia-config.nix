@@ -371,8 +371,8 @@
           ;
         wallpaperChangeMode = config.wallpaper.changeMode;
         fillColor = "#000000";
-        useSolidColor = false;
-        solidColor = "#1a1a2e";
+        useSolidColor = true;
+        solidColor = "#000000";
         skipStartupTransition = false;
         transitionEdgeSmoothness = 0.05;
         panelPosition = "follow_bar";

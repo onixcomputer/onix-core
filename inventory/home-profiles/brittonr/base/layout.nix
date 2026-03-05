@@ -18,7 +18,7 @@
     gaps = lib.mkOption {
       type = lib.types.int;
       readOnly = true;
-      default = 8;
+      default = 4;
       description = "Gap size between windows/elements";
     };
 
