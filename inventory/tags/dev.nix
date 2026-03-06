@@ -55,12 +55,11 @@
     socat
     lsof
     jujutsu
-    socat
-    lsof
-    jujutsu
-    socat
-    lsof
-    jujutsu
+    # TUI tools
+    television # Fast general-purpose fuzzy finder
+    bandwhich # Per-process network bandwidth monitor
+    trippy # Visual traceroute / network diagnostics
+    scooter # Interactive find-and-replace across files
     # GStreamer plugins for screen recording and video encoding
     gst_all_1.gstreamer
     gst_all_1.gst-plugins-base

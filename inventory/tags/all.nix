@@ -31,6 +31,9 @@
     btop
     tree
     pstree
+    # TUI tools
+    systemctl-tui # TUI for managing systemd services
+    dua # Fast disk space analyzer
   ];
 
   networking = {
