@@ -7,6 +7,7 @@
     figma-agent
     penpot-desktop
     cables
+    libresprite
     logseq
   ];
 }
