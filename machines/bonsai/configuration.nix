@@ -165,6 +165,7 @@ in
     libqmi
     libmbim
     lpac # eSIM profile management via QMI
+    dolphin-emu # Dolphin Gamecube/Wii emulator
   ];
 
   # Disable USB controller wakeup to prevent spurious wakes

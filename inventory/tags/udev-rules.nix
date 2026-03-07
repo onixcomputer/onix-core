@@ -1,4 +1,18 @@
-_: {
+{ config, pkgs, ... }:
+{
+  # Dolphin Emulator udev rules (GameCube controller adapter, etc.)
+  services.udev.packages = [ pkgs.dolphin-emu ];
+
+  # GameCube adapter overclock kernel module
+  boot.extraModulePackages = [
+    config.boot.kernelPackages.gcadapter-oc-kmod
+  ];
+
+  # Autoload at boot
+  boot.kernelModules = [
+    "gcadapter_oc"
+  ];
+
   # Add udev rules for embedded hardware and debug probes
   services.udev.extraRules = ''
     # STLink V1

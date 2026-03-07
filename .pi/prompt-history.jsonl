@@ -14,3 +14,39 @@
 {"text":"fix those","timestamp":1771970545420}
 {"text":"add  ```bash\n   echo 'SUBSYSTEM==\"usb\", ATTR{idVendor}==\"2207\", MODE=\"0666\"' | sudo tee /etc/udev/rules.d/99-rockchip.rules\n   sudo udevadm control --reload-rules && sudo udevadm trigger\n ``` to bonsai","timestamp":1772031054427}
 {"text":"add britton to the disk group","timestamp":1772041291429}
+{"text":"lets add radare2 and cutter","timestamp":1772055083485}
+{"text":"anything else in the realm","timestamp":1772055724747}
+{"text":"add them all","timestamp":1772055848967}
+{"text":"add https://github.com/radareorg/radare2-r2pipe","timestamp":1772068360809}
+{"text":"make sure we are using openspec from https://github.com/numtide/llm-agents.nix","timestamp":1772323880036}
+{"text":"in niri, is it possible to remove these boarders in the overall view","timestamp":1772401988902}
+{"text":"how can we add # Start a local OpenAI-compatible server:\nllama-server -hf unsloth/Qwen3.5-35B-A3B-GGUF: --jinja\n\nConfigure the model in Pi\n\n# Install Pi:\nnpm install -g @mariozechner/pi-coding-agent\n\n# Add to ~/.pi/agent/models.json:\n{\n  \"providers\": {\n    \"llama-cpp\": {\n      \"baseUrl\": \"http://localhost:8080/v1\",\n      \"api\": \"openai-completions\",\n      \"apiKey\": \"none\",\n      \"models\": [\n        {\n          \"id\": \"Qwen3.5-35B-A3B-GGUF\"\n        }\n      ]\n    }\n  }\n} for our pi agent","timestamp":1772454329409}
+{"text":"can you give me the command for llamma in nix","timestamp":1772454414181}
+{"text":"llamma-ccp or ollama?","timestamp":1772454449208}
+{"text":"is that the unsloth model?","timestamp":1772454483119}
+{"text":"ollama run hf.co/unsloth/Qwen3.5-35B-A3B-GGUF:UD-IQ2_XXS https://huggingface.co/collections/unsloth/unsloth-dynamic-20-quants","timestamp":1772454541462}
+{"text":"how do i decide what size","timestamp":1772454577269}
+{"text":"what about on bonsai?","timestamp":1772454593877}
+{"text":"what about on aspen","timestamp":1772454648111}
+{"text":"can we go ahead an download this on this desktop for us to transfer to aspen1 later?","timestamp":1772454735436}
+{"text":"this is the vllm model?","timestamp":1772454778803}
+{"text":"use peuue","timestamp":1772454795922}
+{"text":"use peuue","timestamp":1772454797015}
+{"text":"rsync the /home/brittonr/git/clankers folder from bonsai to /home/brittonr/git/clankers on this machine","timestamp":1772504811887}
+{"text":"lets update aspen1","timestamp":1772580274572}
+{"text":"for bonsai/niri/noctalia in general lets just do a plain black background. lets also shrink the window gaps in niri","timestamp":1772735184414}
+{"text":"add   services.udev.packages = [ pkgs.dolphin-emu ];","timestamp":1772780560207}
+{"text":"add { config, ... }: \n{\n  boot.extraModulePackages = [ \n    config.boot.kernelPackages.gcadapter-oc-kmod\n  ];\n\n  # to autoload at boot:\n  boot.kernelModules = [ \n    \"gcadapter_oc\"\n  ];\n}","timestamp":1772780622754}
+{"text":"lets add https://github.com/MatthewCroughan/dolphin-emu-nix for bonsai","timestamp":1772780785835}
+{"text":"did we add those udev for bonsai too","timestamp":1772780967860}
+{"text":"u/dolphin.git\"}'\n[bonsai] failed with error:\n========================== Command ==========================\nnix \\\n    --extra-experimental-features 'nix-command flakes' \\\n    flake \\\n    archive \\\n    --to ssh://root@100.126.162.16 \\\n    --json /home/brittonr/git/onix-core\n\n========================== Stderr ===========================\nwarning: Git tree '/home/brittonr/git/onix-core' is dirty\nerror:\n       … while fetching the input 'git+https://github.com/dolphin-emu/dolphin.git?ref=refs/heads/master&rev=1a570401634bc13581bab35847d3b468b2c47360&submodules=1'\n\n       error: mismatch in field 'narHash' of input '{\"__final\":true,\"lastModified\":1705762503,\"narHash\":\"sha256-iFDRYTwAUzIl+3AW0ck2mWprkFHlLaz/Hd9Vy+7LoW0=\",\"ref\":\"refs/heads/master\",\"rev\":\"1a570401634bc13581bab35847d3b468b2c47360\",\"revCount\":41372,\"submodules\":true,\"type\":\"git\",\"url\":\"https://github.com/dolphin-emu/dolphin.git\"}', got '{\"__final\":true,\"lastModified\":1705762503,\"narHash\":\"sha256-zBvyDocZsbZr1DlEfGP/ihgf/ceAiMbnvq7qrSuIS8A=\",\"ref\":\"refs/heads/master\",\"rev\":\"1a570401634bc13581bab35847d3b468b2c47360\",\"revCount\":41372,\"submodules\":true,\"type\":\"git\",\"url\":\"https://github.com/dolphin-emu/dolphin.git\"}'\n\nReturn Code: 1\n\nError Msg:  Failed to upload sources\n1 hosts failed with an error. Check the logs above","timestamp":1772781132094}
+{"text":"lets fork it","timestamp":1772781278852}
+{"text":"add libresprite","timestamp":1772813171261}
+{"text":"https://github.com/ratatui/awesome-ratatui?tab=readme-ov-file what of these should we adopt?","timestamp":1772813830956}
+{"text":"https://github.com/ratatui/awesome-ratatui?tab=readme-ov-file what of these apps should we adopt?","timestamp":1772814056812}
+{"text":"arent we using some of these","timestamp":1772815317424}
+{"text":"add the tier one","timestamp":1772815383573}
+{"text":"add oryx","timestamp":1772815494802}
+{"text":"skip. lets commit","timestamp":1772815523788}
+{"text":"switch our niri to use https://github.com/brittonr/niri","timestamp":1772916391630}
+{"text":"yes","timestamp":1772916921013}
