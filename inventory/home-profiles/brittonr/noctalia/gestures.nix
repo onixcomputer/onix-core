@@ -1,6 +1,12 @@
-{ pkgs, config, ... }:
+{
+  inputs,
+  pkgs,
+  config,
+  ...
+}:
 let
   inherit (pkgs) writeShellScriptBin;
+  niriPackage = inputs.niri.packages.${pkgs.system}.niri;
 
   # Handler script that executes niri action + shows notification
   gestureHandler = writeShellScriptBin "gesture-handler" ''
@@ -8,7 +14,7 @@ let
     LABEL="$2"
 
     # Execute the niri action
-    ${pkgs.niri}/bin/niri msg action "$ACTION"
+    ${niriPackage}/bin/niri msg action "$ACTION"
 
     # Visual feedback via notification (brief, low priority)
     ${pkgs.libnotify}/bin/notify-send -t ${toString config.timing.notification.gesture} -u low \

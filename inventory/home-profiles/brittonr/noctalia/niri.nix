@@ -16,10 +16,14 @@ let
   # Noctalia IPC helper - noctalia-shell wraps qs with the correct config path
   ipc = target: action: ''"noctalia-shell" "ipc" "call" "${target}" "${action}"'';
 
+  # Use niri from our fork
+  niriPackage = inputs.niri.packages.${pkgs.system}.niri;
+
   # Define wrapped niri package with custom config
   wrappedNiri =
     (inputs.wrappers.wrapperModules.niri.apply {
       inherit pkgs;
+      package = lib.mkForce niriPackage;
 
       "config.kdl" = {
         content = /* kdl */ ''

@@ -249,10 +249,14 @@ let
       };
     }).wrapper;
 
+  # Use niri from our fork
+  niriPackage = inputs.niri.packages.${pkgs.system}.niri;
+
   # Define wrapped niri package with custom config
   wrappedNiri =
     (inputs.wrappers.wrapperModules.niri.apply {
       inherit pkgs;
+      package = lib.mkForce niriPackage;
 
       "config.kdl" = {
         content = /* kdl */ ''

@@ -66,10 +66,15 @@
       url = "path:/home/brittonr/git/clonadic";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    niri = {
+      url = "github:brittonr/niri";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     noctalia = {
       url = "github:noctalia-dev/noctalia-shell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
       inputs.nixpkgs.follows = "nixpkgs";
