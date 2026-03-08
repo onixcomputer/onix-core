@@ -213,6 +213,7 @@ _: {
         "creative"
         "taskwarrior"
         "udev-rules"
+        "gaming"
       ];
       deploy = {
         targetHost = "root@100.126.162.16"; # Update with actual hostname or IP

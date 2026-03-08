@@ -80,18 +80,18 @@ in
     };
   };
 
-  # SSH agent forwarding for remote builds
-  programs.ssh.extraConfig = ''
-    Host leviathan.cymric-daggertooth.ts.net
-      IdentityAgent /run/user/1555/gcr/ssh
-    Host britton-desktop
-      IdentityAgent /run/user/1555/gcr/ssh
-  '';
-
-  # Known host for britton-desktop remote builder
-  programs.ssh.knownHosts.britton-desktop = {
-    hostNames = [ "britton-desktop" ];
-    publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIe2N5OW2IY12lTvJZOFnMxw74eA/UhWJvCAd9OhUpsE";
+  # SSH configuration for remote builds
+  programs.ssh = {
+    extraConfig = ''
+      Host leviathan.cymric-daggertooth.ts.net
+        IdentityAgent /run/user/1555/gcr/ssh
+      Host britton-desktop
+        IdentityAgent /run/user/1555/gcr/ssh
+    '';
+    knownHosts.britton-desktop = {
+      hostNames = [ "britton-desktop" ];
+      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIe2N5OW2IY12lTvJZOFnMxw74eA/UhWJvCAd9OhUpsE";
+    };
   };
 
   # GPD hardware sensors for rotation detection
