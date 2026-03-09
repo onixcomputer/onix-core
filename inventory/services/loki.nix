@@ -96,34 +96,5 @@ _: {
       };
     };
 
-    # Promtail log collector (for non-monitoring machines)
-    "blr-promtail-collector" = {
-      module.name = "loki";
-      module.input = "self";
-      roles.promtail = {
-        tags."blr-logs" = { };
-        settings = {
-          # Loki URL is auto-discovered from exports. Override only if the
-          # Loki server is on a different network segment.
-          # lokiUrl = "http://loki-host:3100";
-
-          # Additional log sources
-          additionalScrapeConfigs = [
-            {
-              job_name = "varlogs";
-              static_configs = [
-                {
-                  targets = [ "localhost" ];
-                  labels = {
-                    job = "varlogs";
-                    __path__ = "/var/log/*.log";
-                  };
-                }
-              ];
-            }
-          ];
-        };
-      };
-    };
   };
 }
