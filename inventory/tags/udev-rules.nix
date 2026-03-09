@@ -45,6 +45,9 @@
     ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="9008", MODE="0666", GROUP="plugdev", TAG+="uaccess"
     ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="900e", MODE="0666", GROUP="plugdev", TAG+="uaccess"
     ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="9091", MODE="0666", GROUP="plugdev", TAG+="uaccess"
+
+    # Rockchip USB (maskrom/loader mode)
+    SUBSYSTEM=="usb", ATTR{idVendor}=="2207", MODE="0666", GROUP="plugdev", TAG+="uaccess"
   '';
 
   # Ensure groups exist and add users to dialout for serial access

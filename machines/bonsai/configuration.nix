@@ -99,8 +99,6 @@ in
         SUBSYSTEM=="usb", ATTR{idVendor}=="1f3a", ATTR{idProduct}=="efe8", MODE="0666", GROUP="plugdev", TAG+="uaccess"
         # Glasgow Digital Interface Explorer
         SUBSYSTEM=="usb", ATTRS{idVendor}=="20b7", ATTRS{idProduct}=="9db1", MODE="0666", GROUP="plugdev", TAG+="uaccess"
-        # Rockchip USB (maskrom/loader mode)
-        SUBSYSTEM=="usb", ATTR{idVendor}=="2207", MODE="0666"
       '';
     };
   };
