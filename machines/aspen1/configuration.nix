@@ -1,5 +1,14 @@
-{ config, pkgs, ... }:
 {
+  config,
+  inputs,
+  pkgs,
+  ...
+}:
+{
+  imports = [
+    inputs.nixos-hardware.nixosModules.framework-desktop-amd-ai-max-300-series
+  ];
+
   networking = {
     hostName = "aspen1";
   };
