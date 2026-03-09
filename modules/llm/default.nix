@@ -110,6 +110,12 @@ in
       perInstance =
         { settings, ... }:
         {
+          # Export this server's metrics endpoint so Prometheus can discover it
+          exports.serviceEndpoints.llm = {
+            url = "http://localhost:${toString settings.port}";
+            inherit (settings) port;
+          };
+
           nixosModule =
             {
               pkgs,

@@ -8,20 +8,9 @@ _: {
         tags."monitoring" = { };
         settings = {
           enablePrometheusIntegration = true;
-          prometheusUrl = "http://localhost:9090";
-
-          # Add Loki datasource
-          additionalDatasources = [
-            {
-              name = "Loki";
-              type = "loki";
-              access = "proxy";
-              url = "http://localhost:3100";
-              jsonData = {
-                maxLines = 1000;
-              };
-            }
-          ];
+          # prometheusUrl and Loki datasource are auto-discovered from exports.
+          # Override prometheusUrl here only if the Prometheus server is on a
+          # different host than Grafana.
 
           settings = {
             server = {

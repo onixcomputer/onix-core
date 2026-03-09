@@ -103,8 +103,9 @@ _: {
       roles.promtail = {
         tags."blr-logs" = { };
         settings = {
-          # Point to the Loki server on britton-desktop
-          lokiUrl = "http://localhost:3100";
+          # Loki URL is auto-discovered from exports. Override only if the
+          # Loki server is on a different network segment.
+          # lokiUrl = "http://loki-host:3100";
 
           # Additional log sources
           additionalScrapeConfigs = [

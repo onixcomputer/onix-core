@@ -27,7 +27,9 @@ _: {
           # Data retention
           retentionTime = "30d";
 
-          # Additional scrape configs beyond auto-discovery
+          # Additional scrape configs beyond auto-discovery.
+          # LLM/vLLM endpoints are now auto-discovered from exports — see
+          # the llm module's server role which exports serviceEndpoints.llm.
           additionalScrapeConfigs = [
             {
               job_name = "prometheus";
@@ -36,24 +38,6 @@ _: {
                   targets = [ "localhost:9090" ];
                 }
               ];
-            }
-            # vLLM metrics endpoint on aspen1
-            {
-              job_name = "vllm";
-              static_configs = [
-                {
-                  targets = [ "aspen1.bison-tailor.ts.net:8000" ];
-                  labels = {
-                    instance = "aspen1";
-                    model = "gpt-oss-20b";
-                    service = "vllm";
-                    gpu = "gfx1151";
-                  };
-                }
-              ];
-              metrics_path = "/metrics";
-              scrape_interval = "30s";
-              scrape_timeout = "10s";
             }
           ];
 
