@@ -5,7 +5,7 @@ _: {
       module.name = "iroh-ssh";
       module.input = "self";
       roles.peer = {
-        tags."tailnet-adeci" = { };
+        tags."tailnet-brittonr" = { };
         settings = {
           persist = true;
         };

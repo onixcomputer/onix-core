@@ -24,26 +24,8 @@ in
     splashImage = grubWallpaper;
   };
 
-  # Remote builder configuration
   nix = {
     buildMachines = [
-      {
-        protocol = "ssh-ng";
-        hostName = "leviathan.cymric-daggertooth.ts.net";
-        systems = [
-          "x86_64-linux"
-        ];
-        maxJobs = 7;
-        speedFactor = 20;
-        supportedFeatures = [
-          "nixos-test"
-          "benchmark"
-          "big-parallel"
-          "kvm"
-        ];
-        mandatoryFeatures = [ ];
-        sshUser = "brittonr";
-      }
       {
         protocol = "ssh-ng";
         hostName = "britton-desktop";
@@ -80,11 +62,8 @@ in
     };
   };
 
-  # SSH configuration for remote builds
   programs.ssh = {
     extraConfig = ''
-      Host leviathan.cymric-daggertooth.ts.net
-        IdentityAgent /run/user/1555/gcr/ssh
       Host britton-desktop
         IdentityAgent /run/user/1555/gcr/ssh
     '';

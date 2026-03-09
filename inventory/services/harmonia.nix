@@ -5,7 +5,6 @@ _: {
       module.input = "self";
       roles = {
         server = {
-          machines.leviathan = { };
           settings = {
             generateSigningKey = true;
             enableNginx = false;
@@ -20,7 +19,6 @@ _: {
           };
         };
         client = {
-          machines.sequoia = { };
           settings = {
             serverUrl = "";
             priority = 25;

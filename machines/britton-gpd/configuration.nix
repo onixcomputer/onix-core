@@ -24,25 +24,7 @@ in
     splashImage = grubWallpaper;
   };
 
-  # Remote builder configuration
   nix = {
-    buildMachines = [
-      {
-        protocol = "ssh-ng";
-        hostName = "leviathan.cymric-daggertooth.ts.net";
-        systems = [ "x86_64-linux" ];
-        maxJobs = 7;
-        speedFactor = 20;
-        supportedFeatures = [
-          "nixos-test"
-          "benchmark"
-          "big-parallel"
-          "kvm"
-        ];
-        mandatoryFeatures = [ ];
-        sshUser = "brittonr";
-      }
-    ];
     settings = {
       trusted-users = [ "brittonr" ];
       substituters = [
@@ -61,12 +43,6 @@ in
       ];
     };
   };
-
-  # SSH agent forwarding for remote builds
-  programs.ssh.extraConfig = ''
-    Host leviathan.cymric-daggertooth.ts.net
-      IdentityAgent /run/user/1555/gcr/ssh
-  '';
 
   # GPD Pocket 4 specific hardware
   hardware.sensor.iio.enable = true;

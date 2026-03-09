@@ -1,28 +1,28 @@
 _: {
   imports = [
     # Theme support (required by kitty and other apps)
-    ../../alex/hyprland/theme.nix
+    ../../shared/hyprland/theme.nix
     ../hyprland/theme-config.nix
 
     # Core system utilities
-    ../../alex/hyprland/audio-utils.nix
-    ../../alex/hyprland/clipboard.nix
-    ../../alex/hyprland/cursor.nix
+    ../../shared/hyprland/audio-utils.nix
+    ../../shared/hyprland/clipboard.nix
+    ../../shared/hyprland/cursor.nix
     ./mako.nix
-    ../../alex/hyprland/fonts.nix
-    ../../alex/hyprland/keyring.nix
-    ../../alex/hyprland/network.nix
+    ../../shared/hyprland/fonts.nix
+    ../../shared/hyprland/keyring.nix
+    ../../shared/hyprland/network.nix
     ./screenshot.nix
-    ../../alex/hyprland/swayosd.nix
-    ../../alex/hyprland/wallpaper.nix
-    # ../../alex/hyprland/xdg.nix # Commented out - using brittonr's own xdg.nix from dev profile
+    ../../shared/hyprland/swayosd.nix
+    ../../shared/hyprland/wallpaper.nix
+    # ../../shared/hyprland/xdg.nix # Commented out - using brittonr's own xdg.nix from dev profile
 
     # Applications
     ./firefox.nix
-    ../../alex/hyprland/thunar.nix
-    ../../alex/hyprland/media-viewers.nix
-    ../../alex/hyprland/btop.nix
-    ../../alex/hyprland/libreoffice.nix
+    ../../shared/hyprland/thunar.nix
+    ../../shared/hyprland/media-viewers.nix
+    ../../shared/hyprland/btop.nix
+    ../../shared/hyprland/libreoffice.nix
 
     # Niri specific
     ./niri.nix

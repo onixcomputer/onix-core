@@ -1,21 +1,6 @@
 _: {
   instances = {
 
-    "adeci-tailnet" = {
-      module.name = "tailscale";
-      module.input = "self";
-      roles.peer = {
-        tags."tailnet-adeci" = { };
-        settings = {
-          enableSSH = false;
-          exitNode = false;
-          enableHostAliases = true;
-          # disables magicdns, probably not needed
-          # extraUpFlags = [ "--accept-dns=false" ];
-        };
-      };
-    };
-
     "br-tailnet" = {
       module.name = "tailscale";
       module.input = "self";
@@ -29,17 +14,5 @@ _: {
       };
     };
 
-    "dima-tailnet" = {
-      module.name = "tailscale";
-      module.input = "self";
-      roles.peer = {
-        tags."tailnet-dima" = { };
-        settings = {
-          enableSSH = false;
-          exitNode = false;
-          enableHostAliases = true;
-        };
-      };
-    };
   };
 }

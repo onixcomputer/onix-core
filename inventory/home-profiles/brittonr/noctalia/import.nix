@@ -5,23 +5,23 @@
     inputs.noctalia.homeModules.default
 
     # Theme support (reuse from niri)
-    ../../alex/hyprland/theme.nix
+    ../../shared/hyprland/theme.nix
     ../hyprland/theme-config.nix
 
     # Core utilities (keep)
-    ../../alex/hyprland/audio-utils.nix
-    ../../alex/hyprland/clipboard.nix
-    ../../alex/hyprland/cursor.nix
-    ../../alex/hyprland/fonts.nix
-    ../../alex/hyprland/keyring.nix
-    ../../alex/hyprland/network.nix
+    ../../shared/hyprland/audio-utils.nix
+    ../../shared/hyprland/clipboard.nix
+    ../../shared/hyprland/cursor.nix
+    ../../shared/hyprland/fonts.nix
+    ../../shared/hyprland/keyring.nix
+    ../../shared/hyprland/network.nix
 
     # Applications (reuse)
     ./firefox.nix
-    ../../alex/hyprland/thunar.nix
-    ../../alex/hyprland/media-viewers.nix
-    ../../alex/hyprland/btop.nix
-    ../../alex/hyprland/libreoffice.nix
+    ../../shared/hyprland/thunar.nix
+    ../../shared/hyprland/media-viewers.nix
+    ../../shared/hyprland/btop.nix
+    ../../shared/hyprland/libreoffice.nix
 
     # Noctalia-specific
     ./noctalia-config.nix

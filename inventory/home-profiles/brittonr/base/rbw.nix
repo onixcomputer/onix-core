@@ -3,7 +3,7 @@ let
   rbw-pinentry = pkgs.callPackage ../../../../pkgs/rbw-pinentry { };
 in
 {
-  imports = [ ../../alex/base/rbw.nix ];
+  imports = [ ../../shared/base/rbw.nix ];
 
   programs.rbw.settings = {
     email = lib.mkForce "b@robitzs.ch";

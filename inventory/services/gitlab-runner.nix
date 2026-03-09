@@ -5,7 +5,6 @@ _: {
       module.name = "gitlab-runner";
       module.input = "self";
       roles.default = {
-        machines.leviathan = { };
         settings = {
           runners = {
             standard-1 = {

@@ -1,29 +1,29 @@
 _: {
   imports = [
-    # Import all of alex's hyprland configuration
-    ../../alex/hyprland/audio-utils.nix
-    ../../alex/hyprland/btop.nix
-    ../../alex/hyprland/clipboard.nix
-    ../../alex/hyprland/cursor.nix
-    ../../alex/hyprland/dunst.nix
-    ../../alex/hyprland/firefox.nix
-    ../../alex/hyprland/fonts.nix
-    ../../alex/hyprland/helpers.nix
-    ../../alex/hyprland/hyprland.nix
-    ../../alex/hyprland/hyprlock.nix
-    ../../alex/hyprland/keyring.nix
-    ../../alex/hyprland/libreoffice.nix
-    ../../alex/hyprland/media-viewers.nix
-    ../../alex/hyprland/network.nix
-    ../../alex/hyprland/rofi.nix
-    ../../alex/hyprland/screenshot.nix
-    ../../alex/hyprland/shared-config.nix
-    ../../alex/hyprland/swayosd.nix
-    ../../alex/hyprland/theme.nix
-    ../../alex/hyprland/thunar.nix
-    ../../alex/hyprland/wallpaper.nix
-    ../../alex/hyprland/waybar.nix
-    ../../alex/hyprland/xdg.nix
+    # Import shared hyprland configuration
+    ../../shared/hyprland/audio-utils.nix
+    ../../shared/hyprland/btop.nix
+    ../../shared/hyprland/clipboard.nix
+    ../../shared/hyprland/cursor.nix
+    ../../shared/hyprland/dunst.nix
+    ../../shared/hyprland/firefox.nix
+    ../../shared/hyprland/fonts.nix
+    ../../shared/hyprland/helpers.nix
+    ../../shared/hyprland/hyprland.nix
+    ../../shared/hyprland/hyprlock.nix
+    ../../shared/hyprland/keyring.nix
+    ../../shared/hyprland/libreoffice.nix
+    ../../shared/hyprland/media-viewers.nix
+    ../../shared/hyprland/network.nix
+    ../../shared/hyprland/rofi.nix
+    ../../shared/hyprland/screenshot.nix
+    ../../shared/hyprland/shared-config.nix
+    ../../shared/hyprland/swayosd.nix
+    ../../shared/hyprland/theme.nix
+    ../../shared/hyprland/thunar.nix
+    ../../shared/hyprland/wallpaper.nix
+    ../../shared/hyprland/waybar.nix
+    ../../shared/hyprland/xdg.nix
 
     # Override with brittonr's preferences
     ./kitty.nix
