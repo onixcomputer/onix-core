@@ -7,16 +7,13 @@ let
   };
 in
 {
-  imports = [ inputs.grub2-themes.nixosModules.default ];
+  imports = [
+    inputs.grub2-themes.nixosModules.default
+    inputs.nixos-hardware.nixosModules.gpd-pocket-4
+  ];
 
   networking.hostName = "bonsai";
   time.timeZone = "America/New_York";
-
-  # GPD screen orientation fixes
-  boot.kernelParams = [
-    "fbcon=rotate:1"
-    "video=eDP-1:panel_orientation=right_side_up"
-  ];
 
   # GRUB wallpaper (theme from grub-theme tag)
   boot.loader.grub2-theme = {
@@ -72,9 +69,6 @@ in
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIe2N5OW2IY12lTvJZOFnMxw74eA/UhWJvCAd9OhUpsE";
     };
   };
-
-  # GPD hardware sensors for rotation detection
-  hardware.sensor.iio.enable = true;
 
   services = {
     fprintd.enable = true;

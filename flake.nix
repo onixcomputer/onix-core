@@ -66,6 +66,7 @@
       url = "path:/home/brittonr/git/clonadic";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     niri = {
       url = "github:brittonr/niri";
       inputs.nixpkgs.follows = "nixpkgs";
