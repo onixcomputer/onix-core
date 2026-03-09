@@ -404,10 +404,7 @@ in
                 traefik = {
                   enable = true;
 
-                  # Set dynamic config directory (required by new nixpkgs traefik module)
-                  dynamic.dir = "/var/lib/traefik/dynamic";
-
-                  static.settings = mkMerge [
+                  staticConfigOptions = mkMerge [
                     {
                       entryPoints = {
                         web = {
@@ -456,7 +453,7 @@ in
                     extraTraefikConfig
                   ];
 
-                  dynamic.settings = mkMerge [
+                  dynamicConfigOptions = mkMerge [
                     {
                       http = {
                         routers = serviceRouters // dashboardRouter;
