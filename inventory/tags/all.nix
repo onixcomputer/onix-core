@@ -1,6 +1,11 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 {
   nixpkgs.config.allowUnfree = true;
+
+  # Disable clan-core's facter AMD graphics auto-detection — it has a typo
+  # ("modesettings" instead of "modesetting") and we manage GPU drivers
+  # through our own tag system (amd-gpu, nvidia) anyway.
+  facter.detected.graphics.amd.enable = lib.mkForce false;
   clan.core.settings.state-version.enable = true;
 
   # Modern firewall - nftables replaces iptables

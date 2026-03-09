@@ -1,7 +1,5 @@
 { pkgs, ... }:
 {
-  programs.light.enable = true;
-
   hardware.bluetooth = {
     enable = true;
     powerOnBoot = true;
