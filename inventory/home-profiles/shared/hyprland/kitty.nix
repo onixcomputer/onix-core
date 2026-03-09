@@ -1,6 +1,9 @@
-{ config, ... }:
+{ config, lib, ... }:
 let
   theme = config.theme.colors;
+  k = config.keymap;
+  mod = lib.toLower k.modifiers.terminal;
+  t = k.terminalActions;
 in
 {
   programs.kitty = {
@@ -127,36 +130,36 @@ in
 
     keybindings = {
       # Font size controls
-      "ctrl+shift+equal" = "change_font_size all +1.0";
-      "ctrl+shift+minus" = "change_font_size all -1.0";
-      "ctrl+shift+0" = "change_font_size all 0";
+      "${mod}+${t.fontUp}" = "change_font_size all +1.0";
+      "${mod}+${t.fontDown}" = "change_font_size all -1.0";
+      "${mod}+${t.fontReset}" = "change_font_size all 0";
 
       # Copy/paste
-      "ctrl+shift+c" = "copy_to_clipboard";
-      "ctrl+shift+v" = "paste_from_clipboard";
+      "${mod}+${t.copy}" = "copy_to_clipboard";
+      "${mod}+${t.paste}" = "paste_from_clipboard";
 
       # Tab management
-      "ctrl+shift+t" = "new_tab";
-      "ctrl+shift+q" = "close_tab";
-      "ctrl+shift+right" = "next_tab";
-      "ctrl+shift+left" = "previous_tab";
+      "${mod}+${t.newTab}" = "new_tab";
+      "${mod}+${t.closeTab}" = "close_tab";
+      "${mod}+${t.nextTab}" = "next_tab";
+      "${mod}+${t.prevTab}" = "previous_tab";
 
       # Window management
-      "ctrl+shift+enter" = "new_window";
-      "ctrl+shift+w" = "close_window";
-      "ctrl+shift+]" = "next_window";
-      "ctrl+shift+[" = "previous_window";
+      "${mod}+${t.newWindow}" = "new_window";
+      "${mod}+${t.closeWindow}" = "close_window";
+      "${mod}+${t.nextWindow}" = "next_window";
+      "${mod}+${t.prevWindow}" = "previous_window";
 
       # Scrolling
-      "ctrl+shift+up" = "scroll_line_up";
-      "ctrl+shift+down" = "scroll_line_down";
-      "ctrl+shift+page_up" = "scroll_page_up";
-      "ctrl+shift+page_down" = "scroll_page_down";
-      "ctrl+shift+home" = "scroll_home";
-      "ctrl+shift+end" = "scroll_end";
+      "${mod}+${t.scrollUp}" = "scroll_line_up";
+      "${mod}+${t.scrollDown}" = "scroll_line_down";
+      "${mod}+${t.scrollPageUp}" = "scroll_page_up";
+      "${mod}+${t.scrollPageDown}" = "scroll_page_down";
+      "${mod}+${t.scrollHome}" = "scroll_home";
+      "${mod}+${t.scrollEnd}" = "scroll_end";
 
       # Clear scrollback
-      "ctrl+shift+k" = "clear_terminal scrollback active";
+      "${mod}+${t.clearScrollback}" = "clear_terminal scrollback active";
     };
 
     # Extra config for advanced features

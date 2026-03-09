@@ -109,6 +109,34 @@
       description = "Characters used for link hint overlays (tridactyl, etc.)";
     };
 
+    terminalActions = lib.mkOption {
+      type = lib.types.attrs;
+      readOnly = true;
+      default = {
+        copy = "c";
+        paste = "v";
+        newTab = "t";
+        closeTab = "q";
+        nextTab = "right";
+        prevTab = "left";
+        newWindow = "enter";
+        closeWindow = "w";
+        nextWindow = "]";
+        prevWindow = "[";
+        fontUp = "equal";
+        fontDown = "minus";
+        fontReset = "0";
+        scrollUp = "up";
+        scrollDown = "down";
+        scrollPageUp = "page_up";
+        scrollPageDown = "page_down";
+        scrollHome = "home";
+        scrollEnd = "end";
+        clearScrollback = "k";
+      };
+      description = "Terminal emulator action keys (used with terminal modifier)";
+    };
+
     wm = lib.mkOption {
       type = lib.types.attrs;
       readOnly = true;
