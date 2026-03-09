@@ -340,6 +340,10 @@ let
 
                           prefer-no-csd
 
+                          overview {
+                              workspace-gap 0.0
+                          }
+
                           layout {
                               empty-workspace-above-first
                               gaps ${toString config.layout.gaps}
