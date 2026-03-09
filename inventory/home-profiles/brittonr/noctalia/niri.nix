@@ -111,6 +111,7 @@ let
                               empty-workspace-above-first
                               gaps ${toString config.layout.gaps}
                               center-focused-column "never"
+                              focus-column-tile "spatial"
                               preset-column-widths {
                                   ${builtins.concatStringsSep "\n                                  " (
                                     map (w: "proportion ${toString w}") config.layout.presetColumnWidths
