@@ -119,3 +119,10 @@
 {"text":"yes","timestamp":1773112208329}
 {"text":"that deployed. Now is it possible to get britton-air to be a linux builder for arm?","timestamp":1773112304463}
 {"text":"research if thats the right method","timestamp":1773112341038}
+{"text":"research the latest and lets get qwen3.5 running on aspen1","timestamp":1773161685952}
+{"text":"https://www.amd.com/en/developer/resources/technical-articles/2026/how-to-run-a-one-trillion-parameter-llm-locally-an-amd.html is there anything from here https://github.com/numtide/llm-agents.nix that we could utilize?","timestamp":1773162513513}
+{"text":"yes, also do the biggest model we can on the single aspen","timestamp":1773162655857}
+{"text":"is this a clan service?","timestamp":1773163698848}
+{"text":"leave it dormant","timestamp":1773163779389}
+{"text":"lets clean up the clan services if needed","timestamp":1773163800388}
+{"text":"yes","timestamp":1773163938067}

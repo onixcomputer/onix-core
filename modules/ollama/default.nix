@@ -100,6 +100,7 @@ in
 
                 environment = {
                   OLLAMA_HOST = "http://${host}:${toString port}";
+                  HOME = "/var/lib/ollama";
                 };
 
                 script =

@@ -8,6 +8,7 @@ _: {
         packages = [
           "pi"
           "openspec"
+          "qwen-code"
         ];
       };
     };
