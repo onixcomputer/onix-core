@@ -574,6 +574,8 @@ let
 
                               // Column layout
                               ${k.modifiers.wm}+${k.wm.maxColumn} { maximize-column; }
+                              ${k.modifiers.wm}+Shift+${k.wm.maxColumn} { fit-workspace-columns; }
+                              ${k.modifiers.wm}+Control+${k.wm.maxColumn} { fit-workspace-columns grid=true; }
                               ${k.modifiers.wm}+${k.wm.presetWidth} { switch-preset-column-width; }
 
                               // Power management
