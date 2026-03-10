@@ -38,6 +38,11 @@ _: {
         identityFile = "~/.ssh/framework";
         identitiesOnly = true;
       };
+
+      "britton-air" = {
+        hostname = "192.168.1.55";
+        user = "brittonr";
+      };
     };
   };
 }

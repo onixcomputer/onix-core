@@ -173,6 +173,7 @@ _: {
         "llm-client"
         "llm"
         "password-manager"
+        "remote-builders"
         "cross-compile"
         "udev-rules"
         # "radicle-seed"

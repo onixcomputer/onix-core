@@ -94,16 +94,8 @@
   ];
 
   # Linux builder VM for aarch64-linux builds on Apple Silicon
-  # M4 Air: 10 cores (4P+6E), 24GB RAM — give the VM 16GB and 8 cores
-  nix.linux-builder = {
-    enable = true;
-    maxJobs = 8;
-    config = {
-      virtualisation = {
-        darwin-builder.memorySize = 16384;
-        cores = 8;
-      };
-    };
-  };
+  # Step 1: Use defaults first (pre-built in NixOS cache)
+  # Step 2: After builder is running, customize memorySize/cores and redeploy
+  nix.linux-builder.enable = true;
 
 }
