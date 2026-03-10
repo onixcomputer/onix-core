@@ -80,3 +80,33 @@
 {"text":"add this for britton desktop services.udev.extraRules = ''\n     # Rockchip Maskrom/Loader\n     SUBSYSTEM==\"usb\", ATTR{idVendor}==\"2207\", MODE=\"0660\", GROUP=\"wheel\"\n     # SDWire (Realtek card reader with mux control)\n     SUBSYSTEM==\"usb\", ATTR{idVendor}==\"0bda\", ATTR{idProduct}==\"0316\", MODE=\"0660\", GROUP=\"wheel\"","timestamp":1773079757686}
 {"text":"i want to get rid of the popup. find in our config where this is added","timestamp":1773095949065}
 {"text":"remove both","timestamp":1773095992283}
+{"text":"can we remove hyperland and co ? we only want niri","timestamp":1773096309191}
+{"text":"our niri on our main tty is just red - i can see the cursor and move it around though","timestamp":1773096377957}
+{"text":"stilll working?","timestamp":1773096621909}
+{"text":"stilll working?","timestamp":1773096751689}
+{"text":"still working?","timestamp":1773096762602}
+{"text":"im not sure. maybe when i started telling pi to remove hyperland?","timestamp":1773096841661}
+{"text":"clean that up too","timestamp":1773097004848}
+{"text":"tty1 is still red screen","timestamp":1773097019416}
+{"text":"lets add my macbook air m4 that is at brittonr@192.168.1.60. https://docs.clan.lol/25.11/guides/macos/#install-nix-darwin","timestamp":1773106899911}
+{"text":"continue, but why eval?","timestamp":1773107802807}
+{"text":"rsync it over to the mac","timestamp":1773108123000}
+{"text":"rsync it over to the mac","timestamp":1773108139977}
+{"text":"done, what branch did it copy though","timestamp":1773108242541}
+{"text":"good. ssh and try to run nix develop","timestamp":1773108312354}
+{"text":"done","timestamp":1773109540118}
+{"text":"its .54 now","timestamp":1773109588248}
+{"text":"we've done that and already ran the rebuild","timestamp":1773109628049}
+{"text":"we've done that and already ran the rebuild","timestamp":1773109661111}
+{"text":"what is on the config for it","timestamp":1773109781482}
+{"text":"lets get our framework key working to ssh, i just rsynced it over","timestamp":1773109928639}
+{"text":"why is my ip keep changing","timestamp":1773110037229}
+{"text":"why does the ip keep changing","timestamp":1773110067601}
+{"text":"can we use this as an aarch builder for linux and darwin?","timestamp":1773110138321}
+{"text":"yes. ip is 192.168.1.55","timestamp":1773110796734}
+{"text":"yes. 192.168.1.55","timestamp":1773110824181}
+{"text":"add more resources","timestamp":1773110967768}
+{"text":"lets also make it where it doesnt sleep if plugged in","timestamp":1773111157331}
+{"text":"it has 24gb of ram total","timestamp":1773111189795}
+{"text":"it has 24gb of ram total","timestamp":1773111228542}
+{"text":"it has 24gb of ram","timestamp":1773111241722}

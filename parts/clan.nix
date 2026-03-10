@@ -30,7 +30,7 @@
     in
     {
       # Expose clan outputs using new API structure
-      inherit (clanModule.config) nixosConfigurations clanInternals;
+      inherit (clanModule.config) nixosConfigurations darwinConfigurations clanInternals;
       clan = clanModule.config;
     };
 }

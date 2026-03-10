@@ -35,24 +35,11 @@ let
             profiles = [
               "base"
               "dev"
-              # "hyprland"
-              # "hypr-laptop"
-              # "niri"
               "noctalia"
               "social"
             ];
           };
         };
-      };
-      homeManagerOptions = {
-        sharedModules = [
-          {
-            wayland.windowManager.hyprland.settings.monitor = [
-              "eDP-1,2880x1920@120,auto,2"
-              "DP-3,preferred,auto,1,mirror,eDP-1"
-            ];
-          }
-        ];
       };
     };
     britton-gpd = {
@@ -63,23 +50,11 @@ let
             profiles = [
               "base"
               "dev"
-              # "hyprland"
-              # "hypr-laptop"
-              # "niri"
               "noctalia"
               "social"
             ];
           };
         };
-      };
-      homeManagerOptions = {
-        sharedModules = [
-          {
-            # wayland.windowManager.hyprland.settings.monitor = [
-            #   "eDP-1,2880x1920@120,auto,1"
-            # ];
-          }
-        ];
       };
     };
 
@@ -178,20 +153,6 @@ let
           };
         };
       };
-      homeManagerOptions = {
-        sharedModules = [
-          {
-            wayland.windowManager.hyprland.settings = {
-              monitor = [
-                ",preferred,auto,1.5"
-              ];
-              xwayland = {
-                force_zero_scaling = true;
-              };
-            };
-          }
-        ];
-      };
     };
 
     pine = {
@@ -207,6 +168,9 @@ let
         };
       };
     };
+
+    # britton-air: darwin machine — roster requires `all` tag which
+    # imports NixOS-specific modules. Home-manager for darwin TBD.
 
   };
 in

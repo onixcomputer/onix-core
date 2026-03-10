@@ -161,7 +161,6 @@ _: {
         "audio"
         "xdg-portal"
         "nvidia"
-        "hyprland"
         "creative"
         "media"
         "prometheus"
@@ -197,6 +196,17 @@ _: {
       deploy = {
         targetHost = "root@pine.bison-tailor.ts.net";
         buildHost = "britton-desktop";
+      };
+    };
+
+    # ========== macOS Machines ===========
+    britton-air = {
+      name = "britton-air";
+      machineClass = "darwin";
+      tags = [ ];
+      deploy = {
+        targetHost = "brittonr@192.168.1.55";
+        buildHost = "";
       };
     };
 

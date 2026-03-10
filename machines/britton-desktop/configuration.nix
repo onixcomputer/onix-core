@@ -85,7 +85,7 @@
     # PAM services for desktop login (normally from greeter tag)
     login.enableGnomeKeyring = true;
     greetd.enableGnomeKeyring = true;
-    hyprlock = { };
+    # hyprlock = { }; # Removed: using noctalia lock screen with niri
   };
 
   # Gnome keyring for SSH agent and secrets

@@ -26,9 +26,7 @@ in
       {
         protocol = "ssh-ng";
         hostName = "britton-desktop";
-        systems = [
-          "aarch64-linux"
-        ];
+        systems = [ "aarch64-linux" ];
         maxJobs = 8;
         speedFactor = 15;
         supportedFeatures = [
@@ -36,7 +34,6 @@ in
           "big-parallel"
           "kvm"
         ];
-        mandatoryFeatures = [ ];
         sshUser = "brittonr";
       }
     ];

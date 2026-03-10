@@ -9,7 +9,29 @@
       builders-use-substitutes = lib.mkDefault true;
     };
 
-    # Individual machines can add build machines via their configuration
-    buildMachines = lib.mkDefault [ ];
+    buildMachines = [
+      {
+        protocol = "ssh-ng";
+        hostName = "britton-air";
+        systems = [
+          "aarch64-darwin"
+          "aarch64-linux"
+        ];
+        maxJobs = 10;
+        speedFactor = 12;
+        sshUser = "brittonr";
+        supportedFeatures = [ "big-parallel" ];
+      }
+    ];
+  };
+
+  programs.ssh = {
+    knownHosts.britton-air = {
+      hostNames = [
+        "britton-air"
+        "192.168.1.55"
+      ];
+      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJWYzE7FHHUK6h6wLFyV+dX3SubV80IA7b1+Pp0cIxgf";
+    };
   };
 }
