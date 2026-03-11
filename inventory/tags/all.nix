@@ -27,8 +27,40 @@
   # RAM-based /tmp (faster, reduces SSD wear, auto-cleanup on reboot)
   boot.tmp.useTmpfs = true;
 
-  # Redirect Nix builds to /var/tmp (not RAM) to avoid OOM on large builds
-  systemd.services.nix-daemon.environment.TMPDIR = "/var/tmp";
+  systemd = {
+    services = {
+      # Redirect Nix builds to /var/tmp (not RAM) to avoid OOM on large builds
+      nix-daemon.environment.TMPDIR = "/var/tmp";
+
+      # Prevent nixos-rebuild from tearing down networking mid-deploy.
+      # Without this, remote SSH deploys can brick the connection when
+      # systemd-networkd or systemd-resolved restarts.
+      systemd-networkd.stopIfChanged = false;
+      systemd-resolved.stopIfChanged = false;
+
+      # Nix GC root cleanup — stale gcroots prevent nix-collect-garbage from
+      # reclaiming store paths even after the referencing profile is gone.
+      nix-cleanup-gcroots.serviceConfig = {
+        Type = "oneshot";
+        ExecStart = [
+          # Delete automatic gcroots older than 30 days
+          "${pkgs.findutils}/bin/find /nix/var/nix/gcroots/auto /nix/var/nix/gcroots/per-user -type l -mtime +30 -delete"
+          # Clean stale temproots left by nix-collect-garbage
+          "${pkgs.findutils}/bin/find /nix/var/nix/temproots -type f -mtime +10 -delete"
+          # Remove broken symlinks from gcroots
+          "${pkgs.findutils}/bin/find /nix/var/nix/gcroots -xtype l -delete"
+        ];
+      };
+    };
+
+    timers.nix-cleanup-gcroots = {
+      timerConfig = {
+        OnCalendar = [ "weekly" ];
+        Persistent = true;
+      };
+      wantedBy = [ "timers.target" ];
+    };
+  };
 
   environment.systemPackages = with pkgs; [
     uutils-coreutils-noprefix

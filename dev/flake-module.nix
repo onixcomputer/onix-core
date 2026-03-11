@@ -17,6 +17,7 @@
     ../parts/devshells.nix
     ../parts/checks.nix
     ../parts/vm-checks.nix
+    ../parts/machine-checks.nix
 
     # Analysis and infrastructure tools
     ../parts/sops-viz.nix

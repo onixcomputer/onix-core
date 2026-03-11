@@ -1,10 +1,17 @@
-{ pkgs, ... }:
+{ pkgs, inputs, ... }:
 {
+  imports = [
+    inputs.nix-index-database.nixosModules.nix-index
+  ];
+
+  # Pre-built nix-index database — no local indexing needed.
+  # comma (`, htop`) runs any nixpkgs binary without installing it.
+  programs.nix-index-database.comma.enable = true;
+
   programs.direnv.enable = true;
   environment.systemPackages = with pkgs; [
     claude-code-bin
     codex
-    comma
     gh
     # Screen recording tool - requires GStreamer plugins for encoding
     # Wrap kooha with required GStreamer plugins for NVIDIA hardware encoding
