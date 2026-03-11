@@ -35,6 +35,10 @@
     # TUI tools
     ../parts/tuicr.nix
 
+    # Dev CLI tools
+    ../parts/tracey.nix
+    ../parts/ccusage.nix
+
     # Package management
     ../parts/updater.nix
   ];

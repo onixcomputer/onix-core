@@ -24,6 +24,8 @@ _: {
             config.packages.nix-eval-warnings
             config.packages.iroh-ssh
             config.packages.claude-md
+            config.packages.tracey
+            config.packages.ccusage
             (pkgs.writeShellScriptBin "eval-warnings" ''
               if [ -z "$1" ]; then
                 echo "Usage: eval-warnings <flake-ref>"
@@ -100,6 +102,8 @@ _: {
             echo "  eval-warnings    - Extract Nix evaluation warnings"
             echo "  iroh-ssh         - P2P SSH without public IPs or VPN"
             echo "  claude-md        - Centralize CLAUDE.local.md across repos"
+            echo "  tracey           - Spec coverage tracking (impl/verify annotations)"
+            echo "  ccusage          - Claude Code token usage analysis"
             echo ""
 
             if [ -f .env ]; then
