@@ -200,6 +200,20 @@ _: {
       };
     };
 
+    # ========== VMs ===========
+    utm-vm = {
+      name = "utm-vm";
+      tags = [
+        "all"
+        "ssd-optimization"
+        "dev"
+      ];
+      deploy = {
+        targetHost = "root@utm-vm";
+        buildHost = "";
+      };
+    };
+
     # ========== macOS Machines ===========
     britton-air = {
       name = "britton-air";

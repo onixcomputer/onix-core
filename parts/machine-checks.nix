@@ -22,6 +22,7 @@
         ];
         aarch64-linux = [
           "pine"
+          # utm-vm: needs `clan vars generate --machine utm-vm` before it can eval
         ];
         # aarch64-darwin = [ "britton-air" ];
       };

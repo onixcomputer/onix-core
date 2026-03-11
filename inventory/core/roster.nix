@@ -169,6 +169,20 @@ let
       };
     };
 
+    utm-vm = {
+      users = {
+        brittonr = {
+          homeManager = {
+            enable = true;
+            profiles = [
+              "base"
+              "dev"
+            ];
+          };
+        };
+      };
+    };
+
     # britton-air: darwin machine — roster requires `all` tag which
     # imports NixOS-specific modules. Home-manager for darwin TBD.
 

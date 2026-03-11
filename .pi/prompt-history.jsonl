@@ -161,6 +161,11 @@
 {"text":"what next","timestamp":1773230148261}
 {"text":"8","timestamp":1773230290451}
 {"text":"check for this  2. Cross-arch binfmt in cross-compile tag — You have the tag on 5 machines but I haven't checked if it actually sets up binfmt\n emulation. If not, adding boot.binfmt.emulatedSystems gives you native ARM/RISC-V builds via QEMU user-mode.","timestamp":1773230579369}
-{"text":"explain 1. system.etc.overlay + userborn — Faster NixOS activation, declarative user management. Mic92 runs these in production on his\n workstations. Drop into all tag, two lines.","timestamp":1773230640604}
+{"text":"explain 1. system.etc.overlay — Faster NixOS activation. Mic92 runs this in production on his\n workstations. Drop into all tag, two lines.","timestamp":1773230640604}
 {"text":"what are the pros and cons","timestamp":1773230744879}
 {"text":"lets start with system.etc.overlay","timestamp":1773230836730}
+{"text":"lets build and see if it works","timestamp":1773231911808}
+{"text":"https://github.com/Mic92/nix-update","timestamp":1773232051308}
+{"text":"https://github.com/Mic92/dotfiles/pull/4929 what this","timestamp":1773232276030}
+{"text":"whats the benefits of utm-vm for macos","timestamp":1773232392328}
+{"text":"lets do it","timestamp":1773232471599}
