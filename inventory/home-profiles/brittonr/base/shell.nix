@@ -61,29 +61,17 @@ in
     enable = true;
     plugins = [
       {
-        name = "async-prompt";
-        inherit (pkgs.fishPlugins.async-prompt) src;
-      }
-      {
         name = "autopair";
         inherit (pkgs.fishPlugins.autopair) src;
       }
     ];
     interactiveShellInit = ''
-      set fish_greeting # Disable greeting
-
-      # async-prompt: run prompt functions in background to avoid blocking on git status
-      set -g async_prompt_functions fish_prompt
-
-      # Custom prompt to show ZMX_SESSION if set
-      functions -c fish_prompt _original_fish_prompt 2>/dev/null
-
-      function fish_prompt --description 'Write out the prompt'
-        if set -q ZMX_SESSION
-          echo -n "[$ZMX_SESSION] "
-        end
-        _original_fish_prompt
+      # Remove fish 4.3 frozen theme/keybinding migration files
+      for f in ~/.config/fish/conf.d/fish_frozen_theme.fish ~/.config/fish/conf.d/fish_frozen_key_bindings.fish
+        test -f $f; and rm -f $f
       end
+
+      set fish_greeting # Disable greeting
 
       # Manual zellij attach function
       function zj
@@ -300,7 +288,8 @@ in
         bind -M insert \eOA _atuin_bind_up
       end
 
-      # Onix Dark colors
+      # Onix Dark theme
+      set -g fish_color_normal ${c.noHash c.fg}
       set -g fish_color_autosuggestion ${c.noHash c.comment}
       set -g fish_color_command ${c.noHash c.green}
       set -g fish_color_error ${c.noHash c.red} --bold
@@ -312,9 +301,23 @@ in
       set -g fish_color_operator ${c.noHash c.orange}
       set -g fish_color_escape ${c.noHash c.cyan}
       set -g fish_color_cwd ${c.noHash c.blue}
+      set -g fish_color_cwd_root ${c.noHash c.red}
       set -g fish_color_user ${c.noHash c.orange}
       set -g fish_color_host ${c.noHash c.green}
+      set -g fish_color_host_remote ${c.noHash c.yellow}
+      set -g fish_color_cancel -r
+      set -g fish_color_search_match --background=${c.noHash c.bg_highlight}
       set -g fish_color_selection --background=${c.noHash c.bg_highlight}
+      set -g fish_color_status ${c.noHash c.red}
+      set -g fish_color_valid_path --underline
+      set -g fish_color_history_current --bold
+
+      # Pager colors
+      set -g fish_pager_color_completion ${c.noHash c.fg}
+      set -g fish_pager_color_description ${c.noHash c.comment} --italics
+      set -g fish_pager_color_prefix ${c.noHash c.cyan} --bold --underline
+      set -g fish_pager_color_progress ${c.noHash c.fg} --background=${c.noHash c.bg_highlight}
+      set -g fish_pager_color_selected_background --background=${c.noHash c.bg_highlight}
 
       # Block cursor for vi modes
       set -g fish_cursor_default block

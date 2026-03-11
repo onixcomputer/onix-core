@@ -38,6 +38,8 @@
 - Assuming config parsing is the issue when traefik exits fast — port conflicts also cause instant exit
 
 ## Domain Notes
+- **Fish 4.3 frozen theme migration**: Fish 4.3 auto-generates `~/.config/fish/conf.d/fish_frozen_theme.fish` and `fish_frozen_key_bindings.fish` when upgrading, migrating universal vars to globals. These files set DEFAULT colors that load via conf.d BEFORE config.fish, stomping on home-manager's custom theme. Fix: delete the files and set ALL fish_color_* variables (including pager colors) in interactiveShellInit so nothing falls through to defaults.
+- **async-prompt + starship incompatibility**: fish async-prompt plugin spawns a non-interactive `fish -c` subprocess to render the prompt. Since `interactiveShellInit` (where starship inits) is guarded by `status is-interactive`, the subprocess never loads starship and renders the default fish prompt instead. Starship already handles slow modules asynchronously — async-prompt is redundant and harmful. Don't use them together.
 - ollama model-pull service needs HOME set — the ollama binary panics with `$HOME is not defined` if HOME isn't in the systemd environment. Fixed in modules/ollama/default.nix by adding `HOME = "/var/lib/ollama"`.
 - vLLM on aspen1 uses Docker image `kyuz0/vllm-therock-gfx1151:latest` which is broken (undefined symbol: rsmi_is_P2P_accessible). The llm-gptoss service has autoStart=false but the unit was still cycling.
 - aspen1/aspen2 are Framework Desktop with AMD Ryzen AI MAX+ 395, Radeon 8060S (gfx1151), 128GB unified memory. Kernel 6.18.2. TTM params allocate ~124GB as GPU VRAM.
