@@ -1,6 +1,8 @@
 { pkgs, ... }:
 let
   tuicr = pkgs.callPackage ../../../../pkgs/tuicr { };
+  tracey = pkgs.callPackage ../../../../pkgs/tracey { };
+  ccusage = pkgs.callPackage ../../../../pkgs/ccusage { };
 in
 {
   home.packages = with pkgs; [
@@ -47,5 +49,9 @@ in
 
     # TUI tools
     tuicr
+
+    # AI/dev tooling
+    tracey
+    ccusage
   ];
 }

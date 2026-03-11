@@ -12,5 +12,8 @@
     # PCB design
     kicad
     turbocase # Generate OpenSCAD case templates from KiCAD PCBs
+
+    # 2D graphics / vector editing
+    graphite
   ];
 }
