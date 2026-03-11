@@ -1,7 +1,4 @@
-_: {
-  perSystem =
-    { pkgs, ... }:
-    {
-      packages.tuicr = pkgs.callPackage ../pkgs/tuicr { };
-    };
+{ pkgs, ... }:
+{
+  packages.tuicr = pkgs.callPackage ../pkgs/tuicr { };
 }

@@ -1,7 +1,4 @@
-_: {
-  perSystem =
-    { pkgs, ... }:
-    {
-      packages.abp = pkgs.callPackage ../pkgs/abp { };
-    };
+{ pkgs, ... }:
+{
+  packages.abp = pkgs.callPackage ../pkgs/abp { };
 }

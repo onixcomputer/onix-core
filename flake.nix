@@ -3,7 +3,14 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+
+    adios-flake.url = "github:Mic92/adios-flake";
+
+    # Kept as a top-level input so upstream dependencies that use
+    # flake-parts all share a single copy via follows.
     flake-parts.url = "github:hercules-ci/flake-parts";
+    flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
+
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -16,8 +23,6 @@
       url = "git+file:///home/brittonr/git/wrappers";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # Dev inputs moved to dev/flake.nix for lazy evaluation
-    # treefmt-nix and pre-commit-hooks-nix are only fetched for dev outputs
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL/main";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -26,9 +31,6 @@
       url = "github:vinceliuice/grub2-themes";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # grafana-dashboards = {
-    #   url = "github:onixcomputer/grafana-dashboards";
-    # };
     mcp-servers-nix = {
       url = "github:natsukium/mcp-servers-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -37,6 +39,7 @@
     buildbot-nix = {
       url = "github:nix-community/buildbot-nix";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-parts.follows = "flake-parts";
     };
     nixos-avf = {
       url = "github:nix-community/nixos-avf";
@@ -79,52 +82,141 @@
       url = "github:noctalia-dev/noctalia-shell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Dev tooling inputs (previously in dev/flake.nix partition)
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    pre-commit-hooks-nix = {
+      url = "github:cachix/pre-commit-hooks.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    mics-skills = {
+      url = "github:Mic92/mics-skills";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
-    inputs@{ flake-parts, ... }:
-    flake-parts.lib.mkFlake { inherit inputs; } {
-      # Enable debug mode for nix repl inspection: nix repl .#debug
-      debug = true;
+    inputs@{ adios-flake, self, ... }:
+    let
+      inherit (inputs.nixpkgs) lib;
 
-      imports = [
-        # Enable partitions for lazy input fetching
-        inputs.flake-parts.flakeModules.partitions
+      # Import modules directly
+      modules = import "${self}/modules/default.nix" { inherit inputs; };
 
-        # Core parts (always evaluated)
-        ./parts/clan.nix
-        ./parts/lib.nix
-        ./parts/flake-modules.nix
-      ];
+      # Build clan using standalone API (system-agnostic)
+      clanModule = inputs.clan-core.lib.clan {
+        specialArgs = {
+          inherit inputs;
+          wrappers = inputs.wrappers.wrapperModules;
+        };
+        inherit self;
+        meta.name = "Onix";
+        inherit modules;
+        inventory = import "${self}/inventory" { inherit inputs; };
 
+        exportsModule = import "${self}/inventory/exports-module.nix" { inherit lib; };
+      };
+    in
+    adios-flake.lib.mkFlake {
+      inherit inputs self;
       systems = [
         "x86_64-linux"
         "aarch64-linux"
         "aarch64-darwin"
         "x86_64-darwin"
       ];
+      modules = [
+        # Dev environment (formatter, pre-commit, devShells, MCP servers)
+        ./parts/dev-env.nix
 
-      # Partition dev outputs so dev inputs are only fetched when needed
-      # Building nixosConfigurations won't fetch treefmt-nix, pre-commit-hooks, etc.
-      partitionedAttrs = {
-        checks = "dev";
-        devShells = "dev";
-        formatter = "dev";
-        packages = "dev";
-        # Custom transposed outputs
-        analysisTools = "dev";
-        clanTools = "dev";
-      };
+        # Checks
+        ./parts/checks.nix
+        ./parts/machine-checks.nix
+        ./parts/vm-checks.nix
 
-      partitions.dev = {
-        extraInputsFlake = ./dev;
-        module = ./dev/flake-module.nix;
+        # Analysis and infrastructure tools
+        ./parts/sops-viz.nix
+        ./parts/cloud-cli.nix
+
+        # Workflow tools
+        ./parts/merge-when-green.nix
+        ./parts/nix-eval-warnings.nix
+        ./parts/iroh-ssh.nix
+        ./parts/claude-md.nix
+
+        # TUI tools
+        ./parts/tuicr.nix
+
+        # Dev CLI tools
+        ./parts/tracey.nix
+        ./parts/ccusage.nix
+        ./parts/abp.nix
+
+        # Package management
+        ./parts/updater.nix
+      ];
+      flake = {
+        # Clan outputs
+        inherit (clanModule.config)
+          nixosConfigurations
+          darwinConfigurations
+          clanInternals
+          ;
+        clan = clanModule.config;
+
+        # Shared library utilities
+        lib = {
+          machines = {
+            names = builtins.attrNames (import ./inventory/core/machines.nix { });
+            hasTag =
+              machine: tag:
+              let
+                machinesDef = import ./inventory/core/machines.nix { };
+              in
+              builtins.elem tag (machinesDef.${machine}.tags or [ ]);
+          };
+          tags = {
+            all =
+              let
+                tagDir = ./inventory/tags;
+                contents = builtins.readDir tagDir;
+                nixFiles = builtins.filter (name: builtins.match ".*\\.nix" name != null && name != "default.nix") (
+                  builtins.attrNames contents
+                );
+              in
+              map (name: builtins.replaceStrings [ ".nix" ] [ "" ] name) nixFiles;
+          };
+          roster = {
+            users =
+              let
+                roster = import ./inventory/core/roster.nix { };
+              in
+              builtins.attrNames roster;
+          };
+          opentofu = import ./lib/opentofu/default.nix;
+          terranix = import ./lib/opentofu/terranix.nix;
+          opentofuTesting = {
+            pure = import ./lib/opentofu/test-pure.nix;
+            integration = import ./lib/opentofu/test-integration.nix;
+            system = import ./lib/opentofu/test-system.nix;
+            executionTests = import ./lib/opentofu/terraform-execution-tests.nix;
+            examples = {
+              simple = import ./lib/opentofu/examples/simple-terranix-example.nix;
+            };
+          };
+          terranixTesting = import ./lib/terranix-testing;
+          inherit inputs;
+        };
+
+        # NixOS modules for downstream consumers
+        nixosModules.default = ./nixosModules/default.nix;
       };
     };
 }

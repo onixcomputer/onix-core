@@ -1,7 +1,4 @@
-_: {
-  perSystem =
-    { pkgs, ... }:
-    {
-      packages.nix-eval-warnings = pkgs.callPackage ../pkgs/nix-eval-warnings { };
-    };
+{ pkgs, ... }:
+{
+  packages.nix-eval-warnings = pkgs.callPackage ../pkgs/nix-eval-warnings { };
 }

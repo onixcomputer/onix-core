@@ -1,7 +1,4 @@
-_: {
-  perSystem =
-    { pkgs, ... }:
-    {
-      packages.claude-md = pkgs.python3.pkgs.callPackage ../pkgs/claude-md { };
-    };
+{ pkgs, ... }:
+{
+  packages.claude-md = pkgs.python3.pkgs.callPackage ../pkgs/claude-md { };
 }
