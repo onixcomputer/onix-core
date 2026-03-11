@@ -4,12 +4,29 @@ _: {
     {
       treefmt = {
         programs = {
-          shellcheck.enable = true;
-          mypy.enable = true;
+          # Nix
           nixfmt.enable = true;
           nixfmt.package = pkgs.nixfmt-rfc-style;
           deadnix.enable = true;
+
+          # Shell
+          shellcheck.enable = true;
+          shfmt.enable = true;
+
+          # Python
+          mypy.enable = true;
+          ruff = {
+            check = true;
+            format = true;
+          };
+
+          # Rust
+          rustfmt.enable = true;
+
+          # C/C++
           clang-format.enable = true;
+
+          # Web / data
           prettier = {
             enable = true;
             includes = [
@@ -32,11 +49,8 @@ _: {
             ];
             excludes = [ "*/asciinema-player/*" ];
           };
-          ruff = {
-            check = true;
-            format = true;
-          };
         };
+
         settings = {
           global.excludes = [
             "*.png"
@@ -54,6 +68,8 @@ _: {
             "*.age"
             "*.list"
             "*.desktop"
+            "*.lock"
+
             # ignore symlink
             ".pre-commit-config.yaml"
             "*_test_cert"
@@ -69,20 +85,38 @@ _: {
 
             # exclude markdown files to prevent timestamp changes
             "*.md"
+
+            # machine-generated
+            "*/facter.json"
+            "inventory.json"
           ];
+
           formatter = {
-            ruff-format.includes = [
-              "*/bin/clan"
-              "*/bin/clan-app"
-              "*/bin/clan-config"
+            # Shell: format .sh files and .envrc
+            shfmt.includes = [
+              "*.sh"
+              "*.envrc"
             ];
+            shellcheck.includes = [
+              "*.sh"
+              "scripts/pre-commit"
+            ];
+            shellcheck.options = [
+              "--external-sources"
+              "--source-path=SCRIPTDIR"
+            ];
+
+            # Python: format all .py files, skip generated models
             ruff-format.excludes = [
               "*/clan_lib/nix_models/*"
             ];
-            shellcheck.includes = [ "scripts/pre-commit" ];
+            ruff-check.excludes = [
+              "*/clan_lib/nix_models/*"
+            ];
           };
         };
       };
+
       treefmt.programs.mypy.directories = { };
     };
 }

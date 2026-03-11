@@ -273,12 +273,7 @@ impl SkillMeta {
         }
         if config.tools.is_none() {
             if let Some(ref tools) = self.allowed_tools {
-                config.tools = Some(
-                    tools
-                        .split(',')
-                        .map(|s| s.trim().to_string())
-                        .collect(),
-                );
+                config.tools = Some(tools.split(',').map(|s| s.trim().to_string()).collect());
             }
         }
 
@@ -325,10 +320,7 @@ impl Skill {
     }
 
     /// Parse a SKILL.md file with source path.
-    pub fn parse_with_path(
-        input: &str,
-        path: std::path::PathBuf,
-    ) -> Result<Self, SkillParseError> {
+    pub fn parse_with_path(input: &str, path: std::path::PathBuf) -> Result<Self, SkillParseError> {
         let mut skill = Self::parse(input)?;
         skill.source_path = Some(path);
         Ok(skill)

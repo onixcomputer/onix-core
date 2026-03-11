@@ -2,15 +2,15 @@
 set -euo pipefail
 
 # Read API token (strip any trailing newlines)
-API_TOKEN=$(tr -d '\n' < "$CREDENTIALS_DIRECTORY/api_token")
+API_TOKEN=$(tr -d '\n' <"$CREDENTIALS_DIRECTORY/api_token")
 
 echo "Setting up Cloudflare tunnel: $TUNNEL_NAME"
 echo "Ensuring DNS records are up to date for all configured hostnames..."
 
 get_base_domain() {
-    local hostname="$1"
-    # Remove subdomain(s) - everything before the domain.tld
-    echo "$hostname" | grep -oE '[^.]+\.[^.]+$'
+  local hostname="$1"
+  # Remove subdomain(s) - everything before the domain.tld
+  echo "$hostname" | grep -oE '[^.]+\.[^.]+$'
 }
 
 # Step 1: Verify token
@@ -50,10 +50,10 @@ fi
 # Step 3: Check if we have existing credentials locally
 if [ -f "${TUNNEL_CREDENTIALS_FILE}" ]; then
   echo "Found existing tunnel credentials, loading them..."
-  TUNNEL_ID=$(jq -r '.TunnelID' < "${TUNNEL_CREDENTIALS_FILE}")
-  TUNNEL_SECRET=$(jq -r '.TunnelSecret' < "${TUNNEL_CREDENTIALS_FILE}")
-  EXISTING_ACCOUNT_ID=$(jq -r '.AccountTag' < "${TUNNEL_CREDENTIALS_FILE}")
-  
+  TUNNEL_ID=$(jq -r '.TunnelID' <"${TUNNEL_CREDENTIALS_FILE}")
+  TUNNEL_SECRET=$(jq -r '.TunnelSecret' <"${TUNNEL_CREDENTIALS_FILE}")
+  EXISTING_ACCOUNT_ID=$(jq -r '.AccountTag' <"${TUNNEL_CREDENTIALS_FILE}")
+
   # Verify the account ID matches
   if [ "$EXISTING_ACCOUNT_ID" != "$ACCOUNT_ID" ]; then
     echo "WARNING: Account ID mismatch. Recreating tunnel..."
@@ -167,7 +167,7 @@ for HOSTNAME in $HOSTNAMES; do
           \"name\": \"$SUBDOMAIN\",
           \"content\": \"$TUNNEL_TARGET\",
           \"proxied\": true
-        }" > /dev/null
+        }" >/dev/null
       echo "✓ DNS record for ${HOSTNAME} updated"
     fi
   else
@@ -180,7 +180,7 @@ for HOSTNAME in $HOSTNAMES; do
         if [ -n "$record_id" ]; then
           curl -sf -X DELETE \
             "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$record_id" \
-            -H "Authorization: Bearer $API_TOKEN" > /dev/null
+            -H "Authorization: Bearer $API_TOKEN" >/dev/null
         fi
       done
     fi
@@ -195,13 +195,13 @@ for HOSTNAME in $HOSTNAMES; do
         \"name\": \"$SUBDOMAIN\",
         \"content\": \"$TUNNEL_TARGET\",
         \"proxied\": true
-      }" > /dev/null
+      }" >/dev/null
     echo "✓ DNS record for ${HOSTNAME} created"
   fi
 done
 
 # Step 6: Write/Update credentials file
-cat > "${TUNNEL_CREDENTIALS_FILE}" <<EOF
+cat >"${TUNNEL_CREDENTIALS_FILE}" <<EOF
 {
   "AccountTag": "$ACCOUNT_ID",
   "TunnelID": "$TUNNEL_ID",

@@ -8,7 +8,7 @@ cd cloud
 # Generate Terraform configuration if needed
 if [ ! -f main.tf.json ] || [ infrastructure.nix -nt main.tf.json ]; then
   echo "Generating Terraform configuration..."
-  terranix infrastructure.nix > main.tf.json
+  terranix infrastructure.nix >main.tf.json
 fi
 
 # Initialize Terraform if needed
@@ -48,7 +48,7 @@ is_valid_resource() {
   if [ -f main.tf.json ]; then
     jq -e ".resource.aws_instance.\"$resource\" // .resource.aws_s3_bucket.\"$resource\" // false" main.tf.json >/dev/null 2>&1
   else
-    [[ "$resource" =~ ^(server|s3)-[0-9_]+$ ]]
+    [[ $resource =~ ^(server|s3)-[0-9_]+$ ]]
   fi
 }
 
@@ -149,63 +149,63 @@ show_status() {
 }
 
 case "$1" in
-  create)
-    if [ -n "$2" ]; then
-      if is_valid_resource "$2"; then
-        resource_targets=$(build_resource_targets "$2")
-        echo "Creating $2 and its associated resources..."
-        # shellcheck disable=SC2086
-        tofu apply $resource_targets -auto-approve
-      else
-        echo "Error: Invalid resource name '$2'"
-        list_resources
-        exit 1
-      fi
+create)
+  if [ -n "$2" ]; then
+    if is_valid_resource "$2"; then
+      resource_targets=$(build_resource_targets "$2")
+      echo "Creating $2 and its associated resources..."
+      # shellcheck disable=SC2086
+      tofu apply $resource_targets -auto-approve
     else
-      echo "Creating all infrastructure..."
-      tofu apply -auto-approve
+      echo "Error: Invalid resource name '$2'"
+      list_resources
+      exit 1
     fi
-    ;;
+  else
+    echo "Creating all infrastructure..."
+    tofu apply -auto-approve
+  fi
+  ;;
 
-  status)
-    show_status "$2"
-    ;;
+status)
+  show_status "$2"
+  ;;
 
-  destroy)
-    if [ -n "$2" ]; then
-      if is_valid_resource "$2"; then
-        resource_targets=$(build_resource_targets "$2")
-        echo "Destroying $2 and its associated resources..."
-        # shellcheck disable=SC2086
-        tofu destroy $resource_targets -auto-approve
-        echo "Refreshing state and outputs..."
-        tofu apply -refresh-only -auto-approve >/dev/null 2>&1
-      else
-        echo "Error: Invalid resource name '$2'"
-        list_resources
-        exit 1
-      fi
-    else
-      echo "Destroying all infrastructure..."
-      tofu destroy -auto-approve
+destroy)
+  if [ -n "$2" ]; then
+    if is_valid_resource "$2"; then
+      resource_targets=$(build_resource_targets "$2")
+      echo "Destroying $2 and its associated resources..."
+      # shellcheck disable=SC2086
+      tofu destroy $resource_targets -auto-approve
       echo "Refreshing state and outputs..."
       tofu apply -refresh-only -auto-approve >/dev/null 2>&1
-    fi
-    ;;
-
-  *)
-    echo "Cloud Infrastructure Management"
-    echo ""
-    echo "Usage: cloud <command> [resource]"
-    echo ""
-    echo "Commands:"
-    echo "  create [resource]  - Create all infrastructure or specific resource"
-    echo "  status [resource]  - Show infrastructure status (all or specific)"
-    echo "  destroy [resource] - Destroy all infrastructure or specific resource"
-    echo ""
-    if [ -f main.tf.json ]; then
+    else
+      echo "Error: Invalid resource name '$2'"
       list_resources
+      exit 1
     fi
-    echo ""
-    ;;
+  else
+    echo "Destroying all infrastructure..."
+    tofu destroy -auto-approve
+    echo "Refreshing state and outputs..."
+    tofu apply -refresh-only -auto-approve >/dev/null 2>&1
+  fi
+  ;;
+
+*)
+  echo "Cloud Infrastructure Management"
+  echo ""
+  echo "Usage: cloud <command> [resource]"
+  echo ""
+  echo "Commands:"
+  echo "  create [resource]  - Create all infrastructure or specific resource"
+  echo "  status [resource]  - Show infrastructure status (all or specific)"
+  echo "  destroy [resource] - Destroy all infrastructure or specific resource"
+  echo ""
+  if [ -f main.tf.json ]; then
+    list_resources
+  fi
+  echo ""
+  ;;
 esac

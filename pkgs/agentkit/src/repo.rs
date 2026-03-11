@@ -166,8 +166,7 @@ impl Repo {
                 let local_config_dir = repo_root.join(&config_dir_name);
                 let central_config_dir = central_project_dir.join(&config_dir_name);
 
-                let status =
-                    self.link_directory(&local_config_dir, &central_config_dir)?;
+                let status = self.link_directory(&local_config_dir, &central_config_dir)?;
                 result.items.push(LinkItem {
                     agent: agent_name.clone(),
                     name: config_dir_name,
@@ -216,9 +215,7 @@ impl Repo {
                     }
                 }
             }
-            return Err(RepoError::Conflict(
-                local_dir.to_string_lossy().to_string(),
-            ));
+            return Err(RepoError::Conflict(local_dir.to_string_lossy().to_string()));
         }
 
         // Central exists, local doesn't -> create symlink
@@ -242,11 +239,7 @@ impl Repo {
     }
 
     /// Link a file between a local path and central repo.
-    fn link_file(
-        &self,
-        local_file: &Path,
-        central_file: &Path,
-    ) -> Result<LinkStatus, RepoError> {
+    fn link_file(&self, local_file: &Path, central_file: &Path) -> Result<LinkStatus, RepoError> {
         // Both exist
         if local_file.exists() && central_file.exists() {
             if local_file.is_symlink() {
@@ -438,12 +431,7 @@ impl Repo {
     }
 
     /// Add a global item to central management.
-    pub fn add_item(
-        &self,
-        kind: &str,
-        name: &str,
-        agent: &str,
-    ) -> Result<LinkStatus, RepoError> {
+    pub fn add_item(&self, kind: &str, name: &str, agent: &str) -> Result<LinkStatus, RepoError> {
         let agent_config = self
             .config
             .get_agent(agent)
@@ -492,9 +480,24 @@ impl Repo {
 
             // Check if disabled for this agent
             let disabled = match agent {
-                "claude" => skill.meta.agents.claude.as_ref().is_some_and(|c| c.disabled),
-                "openai" => skill.meta.agents.openai.as_ref().is_some_and(|c| c.disabled),
-                "cursor" => skill.meta.agents.cursor.as_ref().is_some_and(|c| c.disabled),
+                "claude" => skill
+                    .meta
+                    .agents
+                    .claude
+                    .as_ref()
+                    .is_some_and(|c| c.disabled),
+                "openai" => skill
+                    .meta
+                    .agents
+                    .openai
+                    .as_ref()
+                    .is_some_and(|c| c.disabled),
+                "cursor" => skill
+                    .meta
+                    .agents
+                    .cursor
+                    .as_ref()
+                    .is_some_and(|c| c.disabled),
                 "pi" => skill.meta.agents.pi.as_ref().is_some_and(|c| c.disabled),
                 "goose" => skill.meta.agents.goose.as_ref().is_some_and(|c| c.disabled),
                 _ => false,

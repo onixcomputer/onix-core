@@ -198,10 +198,7 @@ fn cmd_add() -> anyhow::Result<()> {
 
     let result = repo.add_project()?;
 
-    println!(
-        "Managing agent config for: {}",
-        result.project_name.bold()
-    );
+    println!("Managing agent config for: {}", result.project_name.bold());
 
     for item in &result.items {
         let status_str = match &item.status {
@@ -211,12 +208,7 @@ fn cmd_add() -> anyhow::Result<()> {
             LinkStatus::Skipped => "skipped (not found)".dimmed().to_string(),
         };
 
-        println!(
-            "  [{}] {}: {}",
-            item.agent.cyan(),
-            item.name,
-            status_str
-        );
+        println!("  [{}] {}: {}", item.agent.cyan(), item.name, status_str);
     }
 
     Ok(())
@@ -270,11 +262,7 @@ fn cmd_list_items(kind: &str, verbose: bool) -> anyhow::Result<()> {
     }
 
     let singular = kind.strip_suffix('s').unwrap_or(kind);
-    println!(
-        "{:<10} {}",
-        "Status".bold(),
-        singular.to_uppercase().bold()
-    );
+    println!("{:<10} {}", "Status".bold(), singular.to_uppercase().bold());
     println!("{:<10} {}", "------", "----");
 
     for item in &items {
@@ -282,9 +270,7 @@ fn cmd_list_items(kind: &str, verbose: bool) -> anyhow::Result<()> {
         let agents_str = match &item.status {
             ItemStatus::Linked(agents) => format!(" ({})", agents.join(", ")).dimmed().to_string(),
             ItemStatus::Local(agents) => format!(" ({})", agents.join(", ")).dimmed().to_string(),
-            ItemStatus::Conflict(agents) => {
-                format!(" ({})", agents.join(", ")).red().to_string()
-            }
+            ItemStatus::Conflict(agents) => format!(" ({})", agents.join(", ")).red().to_string(),
             _ => String::new(),
         };
 
@@ -297,10 +283,7 @@ fn cmd_list_items(kind: &str, verbose: bool) -> anyhow::Result<()> {
                     println!("           {}", "(legacy Claude format)".yellow());
                 }
                 if !meta.capabilities.is_empty() {
-                    println!(
-                        "           capabilities: {:?}",
-                        meta.capabilities
-                    );
+                    println!("           capabilities: {:?}", meta.capabilities);
                 }
             }
         }
@@ -313,10 +296,7 @@ fn cmd_list_items(kind: &str, verbose: bool) -> anyhow::Result<()> {
         "  {}  central only (run 'agentkit sync' to restore)",
         "??".yellow()
     );
-    println!(
-        "  {}  conflict (exists in both locations)",
-        "!!".red()
-    );
+    println!("  {}  conflict (exists in both locations)", "!!".red());
 
     Ok(())
 }
