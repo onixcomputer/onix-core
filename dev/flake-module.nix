@@ -33,5 +33,8 @@
 
     # TUI tools
     ../parts/tuicr.nix
+
+    # Package management
+    ../parts/updater.nix
   ];
 }
