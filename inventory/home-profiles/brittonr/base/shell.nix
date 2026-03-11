@@ -57,8 +57,21 @@ in
   # Fish shell configuration
   programs.fish = {
     enable = true;
+    plugins = [
+      {
+        name = "async-prompt";
+        inherit (pkgs.fishPlugins.async-prompt) src;
+      }
+      {
+        name = "autopair";
+        inherit (pkgs.fishPlugins.autopair) src;
+      }
+    ];
     interactiveShellInit = ''
       set fish_greeting # Disable greeting
+
+      # async-prompt: run prompt functions in background to avoid blocking on git status
+      set -g async_prompt_functions fish_prompt
 
       # Custom prompt to show ZMX_SESSION if set
       functions -c fish_prompt _original_fish_prompt 2>/dev/null
