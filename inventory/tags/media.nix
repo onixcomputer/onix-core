@@ -94,6 +94,9 @@
 
   # Install music player clients and tools
   environment.systemPackages = with pkgs; [
+    # TIDAL
+    (pkgs.callPackage ../../pkgs/sone { })
+
     # TUI clients
     rmpc # Modern Rust-based MPD client with album art
     ncmpcpp # Feature-rich ncurses MPD client
