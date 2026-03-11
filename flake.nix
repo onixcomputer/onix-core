@@ -84,6 +84,19 @@
       url = "github:numtide/llm-agents.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    tracey = {
+      url = "github:bearcove/tracey";
+      flake = false;
+    };
+    graphite = {
+      url = "github:GraphiteEditor/Graphite";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    ccusage = {
+      url = "github:ryoppippi/ccusage";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
