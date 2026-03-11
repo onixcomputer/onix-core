@@ -160,3 +160,7 @@
 {"text":"continue","timestamp":1773230001264}
 {"text":"what next","timestamp":1773230148261}
 {"text":"8","timestamp":1773230290451}
+{"text":"check for this  2. Cross-arch binfmt in cross-compile tag — You have the tag on 5 machines but I haven't checked if it actually sets up binfmt\n emulation. If not, adding boot.binfmt.emulatedSystems gives you native ARM/RISC-V builds via QEMU user-mode.","timestamp":1773230579369}
+{"text":"explain 1. system.etc.overlay + userborn — Faster NixOS activation, declarative user management. Mic92 runs these in production on his\n workstations. Drop into all tag, two lines.","timestamp":1773230640604}
+{"text":"what are the pros and cons","timestamp":1773230744879}
+{"text":"lets start with system.etc.overlay","timestamp":1773230836730}
