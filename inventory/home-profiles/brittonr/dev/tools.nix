@@ -31,7 +31,6 @@ in
 
     # Debug and system tools
     lsof
-    gdb
     ast-grep
     graphicsmagick
     tea
