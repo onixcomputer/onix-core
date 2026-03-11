@@ -1,11 +1,5 @@
 { pkgs, ... }:
 {
-  # Overlay-based /etc — atomic layer swap instead of file-by-file diffing
-  # during activation. Requires systemd initrd.
-  system.etc.overlay.enable = true;
-  system.etc.overlay.mutable = true;
-  boot.initrd.systemd.enable = true;
-
   hardware.bluetooth = {
     enable = true;
     powerOnBoot = true;

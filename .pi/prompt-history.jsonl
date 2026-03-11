@@ -169,3 +169,7 @@
 {"text":"https://github.com/Mic92/dotfiles/pull/4929 what this","timestamp":1773232276030}
 {"text":"whats the benefits of utm-vm for macos","timestamp":1773232392328}
 {"text":"lets do it","timestamp":1773232471599}
+{"text":"build to see if it passes","timestamp":1773238215438}
+{"text":"fix our user- one of the last commits fucked it up (userborne) it was tried to repaired manually","timestamp":1773238597258}
+{"text":"❯ test\n❯ sudo su\nsudo: you do not exist in the passwd database\n❯ sudo echo hi\nsudo: you do not exist in the passwd database\n❯ sudo echo hi\nsudo: you do not exist in the passwd database\n\n brittonr  ~   10:23\n\n✗                                                                                                                                1ms","timestamp":1773239007742}
+{"text":"❯ test\n❯ sudo su\nsudo: you do not exist in the passwd database\n❯ sudo echo hi\nsudo: you do not exist in the passwd database\n❯ sudo echo hi\nsudo: you do not exist in the passwd database\n\n brittonr  ~   10:23\n\n✗                                                                                                                                1ms","timestamp":1773239011394}
