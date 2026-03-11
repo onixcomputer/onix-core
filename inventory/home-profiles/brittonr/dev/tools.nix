@@ -1,4 +1,7 @@
 { pkgs, ... }:
+let
+  tuicr = pkgs.callPackage ../../../../pkgs/tuicr { };
+in
 {
   home.packages = with pkgs; [
     # Search and file tools
@@ -42,5 +45,8 @@
     # Parser and formatter tools
     tree-sitter
     stylua
+
+    # TUI tools
+    tuicr
   ];
 }

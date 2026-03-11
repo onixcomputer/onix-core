@@ -30,5 +30,8 @@
 
     # MCP servers configuration
     ../parts/mcp-servers.nix
+
+    # TUI tools
+    ../parts/tuicr.nix
   ];
 }
