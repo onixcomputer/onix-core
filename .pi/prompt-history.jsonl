@@ -129,3 +129,14 @@
 {"text":"clan m update aspen1","timestamp":1773164893443}
 {"text":"send a real request to the model to confirm","timestamp":1773165141377}
 {"text":"yes","timestamp":1773165558615}
+{"text":"continue","timestamp":1773166471999}
+{"text":"how do i use this in pi?","timestamp":1773166555380}
+{"text":"yes","timestamp":1773166609391}
+{"text":"its not in my models","timestamp":1773166651287}
+{"text":"its not there. thats what im doing","timestamp":1773166727551}
+{"text":"what do you think of this repo","timestamp":1773166827918}
+{"text":"lets remove roster and switch to upstream clan.lol","timestamp":1773167135709}
+{"text":"add a niri shortcut that takes all windows of a workspace and fit them to the current display","timestamp":1773169833932}
+{"text":"why dont we modify niri itself in ../niri/","timestamp":1773170056110}
+{"text":"make sure there is also an option to divide columns into rows to make things fit","timestamp":1773171498328}
+{"text":"lets add this to britton-air Nix-darwin includes a module that manages a background Linux VM using Apple's Virtualization framework. Nix treats this VM as a \"remote\" builder, even though it's running on your hardware.\n1. Update your darwin-configuration.nix\n\nAdd these lines to your configuration to enable the VM and give it sufficient resources:\nNix\n\n{ pkgs, ... }: {\n  nix.linux-builder = {\n    enable = true;\n    ephemeral = true; # Wipes the VM state on restart for a clean build environment\n    maxJobs = 4;\n    config = {\n      virtualisation = {\n        darwin-builder = {\n          diskSize = 40 * 1024; # 40GB\n          memorySize = 8 * 1024; # 8GB\n        };\n        cores = 6;\n      };\n    };\n  };\n\n  # Essential: You must be a trusted user to delegate builds\n  nix.settings.trusted-users = [ \"root\" \"your-username\" ];\n}\n\n2. Apply and Verify\n\n    Run darwin-rebuild switch --flake ..\n\n    Verify the service is running: sudo launchctl list org.nixos.linux-builder.\n\n    Test a Linux build:\n    Bash\n\n    nix build --impure --expr '(with import <nixpkgs> { system = \"aarch64-linux\"; }; runCommand \"test\" {} \"uname -a > $out\")'\n    cat result\n\n    The output should say \"Linux\", even though you ran it on macOS.","timestamp":1773186573332}

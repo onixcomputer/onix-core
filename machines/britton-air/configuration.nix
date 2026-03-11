@@ -94,8 +94,20 @@
   ];
 
   # Linux builder VM for aarch64-linux builds on Apple Silicon
-  # Step 1: Use defaults first (pre-built in NixOS cache)
-  # Step 2: After builder is running, customize memorySize/cores and redeploy
-  nix.linux-builder.enable = true;
+  # Uses Apple Virtualization.framework via nix-darwin
+  nix.linux-builder = {
+    enable = true;
+    ephemeral = true; # Wipe VM state on restart for clean build environment
+    maxJobs = 4;
+    config = {
+      virtualisation = {
+        darwin-builder = {
+          diskSize = 40 * 1024; # 40 GB
+          memorySize = 8 * 1024; # 8 GB
+        };
+        cores = 6;
+      };
+    };
+  };
 
 }

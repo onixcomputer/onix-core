@@ -7,6 +7,11 @@
 ## User Preferences
 - (accumulate here as you learn them)
 
+## Domain Notes (continued)
+- **Screenshot flakiness on niri**: Two causes. (1) `grim` uses `zwlr_screencopy` which synchronously blocks niri's compositor thread for ~45ms on NVIDIA 3840x2160@240Hz (~10 dropped frames = visible freeze). niri's built-in `screenshot-screen` action is faster (~27ms) since it skips the Wayland client round-trip. (2) `screenshot-region`'s `flock -n` held the lock for satty's entire lifetime, so re-triggering right after closing satty silently exited. Fixed by replacing flock with `pkill -x satty`.
+- britton-desktop: NVIDIA RTX (PCI 10DE:2C02) card2 DP-3 3840x2160@240Hz, AMD iGPU (1002:13C0) card1. NVIDIA driver 580.126.18 open kernel module.
+- lisgd-niri service crash-loops continuously on britton-desktop (no touchscreen device found) — needs a condition or disable.
+
 ## Patterns That Work
 - SSH into target machines to get actual journal logs rather than guessing from deploy output
 - Building locally with `nix eval` to inspect generated configs (TOML, systemd units)

@@ -306,8 +306,10 @@ let
                               // Theme toggle via Noctalia dark mode
                               ${k.modifiers.wm}+${k.wm.themeToggle} { spawn ${ipc "darkMode" "toggle"}; }
 
-                              // Screenshots (unchanged - these use grim/slurp/satty)
-                              Print { spawn "screenshot-screen"; }
+                              // Screenshots: Print uses niri's built-in screenshot to avoid
+                              // wlr-screencopy compositor stall (~27ms vs ~45ms for grim).
+                              // Region/edit still use grim+slurp+satty for annotation.
+                              Print { screenshot-screen; }
                               ${k.modifiers.wm}+${k.wm.screenshot} { spawn "screenshot-region"; }
                               ${k.modifiers.wm}+Print { spawn "screenshot-screen-edit"; }
                               ${k.modifiers.wm}+Shift+P { spawn "color-picker"; }

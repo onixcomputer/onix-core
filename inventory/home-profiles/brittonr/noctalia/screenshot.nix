@@ -9,13 +9,10 @@ let
     SCREENSHOT_DIR="${screenshotDir}"
     mkdir -p "$SCREENSHOT_DIR"
 
-    # Use a lock file to prevent multiple instances
-    LOCKFILE="/tmp/screenshot-$USER.lock"
-    exec 9>"$LOCKFILE"
-    if ! ${pkgs.util-linux}/bin/flock -n 9; then
-      # Screenshot already in progress, exit silently
-      exit 0
-    fi
+    # Kill any lingering satty from a previous screenshot instead of
+    # silently failing. The old flock approach caused a "cooldown" where
+    # re-triggering right after closing satty would silently exit.
+    ${pkgs.procps}/bin/pkill -x satty 2>/dev/null || true
 
     # Capture region with slurp, pipe through satty for annotation
     ${pkgs.grim}/bin/grim -t ppm -g "$(${pkgs.slurp}/bin/slurp -d)" - | \
@@ -30,15 +27,12 @@ let
   '';
 
   # Full screen screenshot (no annotation)
+  # Uses niri's built-in screenshot to avoid wlr-screencopy compositor stall.
+  # niri renders directly into its own buffer (~27ms vs ~45ms for grim's
+  # Wayland client round-trip). At 3840x2160@240Hz on NVIDIA, this cuts
+  # dropped frames from ~10 to ~6.
   screenshot-screen = pkgs.writeShellScriptBin "screenshot-screen" ''
-    set -e
-    SCREENSHOT_DIR="${screenshotDir}"
-    mkdir -p "$SCREENSHOT_DIR"
-    FILENAME="$SCREENSHOT_DIR/screenshot_$(date +'%Y-%m-%d_%H-%M-%S').png"
-
-    ${pkgs.grim}/bin/grim "$FILENAME"
-    ${pkgs.wl-clipboard}/bin/wl-copy < "$FILENAME"
-    ${pkgs.libnotify}/bin/notify-send "Screenshot" "Saved to $FILENAME" -i camera-photo
+    niri msg action screenshot-screen
   '';
 
   # Full screen screenshot with satty annotation
@@ -47,12 +41,8 @@ let
     SCREENSHOT_DIR="${screenshotDir}"
     mkdir -p "$SCREENSHOT_DIR"
 
-    # Use a lock file to prevent multiple instances
-    LOCKFILE="/tmp/screenshot-$USER.lock"
-    exec 9>"$LOCKFILE"
-    if ! ${pkgs.util-linux}/bin/flock -n 9; then
-      exit 0
-    fi
+    # Kill any lingering satty from a previous screenshot
+    ${pkgs.procps}/bin/pkill -x satty 2>/dev/null || true
 
     ${pkgs.grim}/bin/grim -t ppm - | \
       ${pkgs.satty}/bin/satty --filename - \
@@ -76,12 +66,13 @@ in
 {
   home.packages = [
     # Screenshot tools
-    pkgs.grim
+    pkgs.grim # still needed for region/edit (slurp selection)
     pkgs.slurp
     pkgs.satty
     pkgs.hyprpicker
     pkgs.wl-clipboard
     pkgs.libnotify
+    pkgs.procps # for pkill in screenshot scripts
     # Custom wrappers
     screenshot-region
     screenshot-screen
