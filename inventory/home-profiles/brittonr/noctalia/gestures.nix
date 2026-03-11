@@ -32,8 +32,8 @@ let
       grep -B5 -i "touch" | grep "Kernel:" | head -1 | awk '{print $2}')
 
     if [ -z "$TOUCHSCREEN" ]; then
-      echo "No touchscreen device found"
-      exit 1
+      echo "No touchscreen device found, exiting gracefully"
+      exit 0
     fi
 
     echo "Starting lisgd on $TOUCHSCREEN"
