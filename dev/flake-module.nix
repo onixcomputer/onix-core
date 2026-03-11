@@ -38,6 +38,7 @@
     # Dev CLI tools
     ../parts/tracey.nix
     ../parts/ccusage.nix
+    ../parts/abp.nix
 
     # Package management
     ../parts/updater.nix
