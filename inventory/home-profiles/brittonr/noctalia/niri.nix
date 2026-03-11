@@ -85,6 +85,14 @@ let
                               }
                           }
 
+                          // Force AMD iGPU as render device for outputs without their own
+                          // render node (DisplayLink/evdi). NVIDIA's GBM allocator doesn't
+                          // export linear dmabufs in formats evdi accepts. AMD's amdgpu does.
+                          // NVIDIA outputs (DP-3) still use their own renderD129.
+                          debug {
+                              render-drm-device "/dev/dri/renderD128"
+                          }
+
                           // Primary monitor (top) - LG ULTRAGEAR+
                           output "${mon.primary.name}" {
                               ${
@@ -102,6 +110,12 @@ let
                               }
                               scale ${toString mon.secondary.scale}
                               position x=${toString mon.secondary.position.x} y=${toString mon.secondary.position.y}
+                          }
+
+                          // Elgato Prompter (DisplayLink/evdi via USB)
+                          output "DVI-I-1" {
+                              mode "1024x600@60"
+                              scale 1
                           }
 
 

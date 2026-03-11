@@ -16,6 +16,18 @@
 ## Reference Repos
 - **Mic92/dotfiles**: Clan-core infra, srvos, ZFS-first, borgbackup w/ ZFS snapshots, sops-nix, zerotier+wireguard mesh, promtail→loki, buildbot CI, limine secure boot via clan vars, update-prefetch (hourly background pull of next system), nix-index-database/comma, treefmt-nix comprehensive formatter, FHS compat (envfs + nix-ld), iroh-ssh module, TPM-based SSH agent, keyd, data-mesher
 
+## Domain Notes (dbus-broker)
+- **dbus-broker + NixOS symlink atomicity**: dbus-broker-launch monitors service file directories via inotify. When NixOS switches generations and atomically replaces `/run/current-system` symlink, the inotify watches on old store paths go stale. dbus-broker never discovers new D-Bus services (like `ca.desrt.dconf`) added in the new generation. Fix: SIGHUP `dbus-broker-launch` to force config reload before home-manager activation. Implemented in `inventory/tags/desktop.nix`.
+- The `hm-setup-env` script imports `DBUS_SESSION_BUS_ADDRESS` from the user's systemd session if logged in. When set, the activation script uses the user's session bus directly (skipping dbus-run-session fallback), making it dependent on the user's dbus-broker having up-to-date service catalogs.
+
+## Domain Notes (DisplayLink/evdi + NVIDIA)
+- Elgato Prompter (17e9:ff1a) is a DisplayLink device using evdi kernel driver. Connector: DVI-I-1, mode: 1024x600@60.
+- evdi creates a DRM card (card0) with NO render node (no renderD*). Niri falls back to the primary GPU's render node for buffer allocation.
+- NVIDIA's GBM allocator doesn't export linear dmabufs in formats evdi accepts (XRGB8888 etc.) → NoSupportedRendererFormat.
+- Fix: `debug { render-drm-device "/dev/dri/renderD128" }` in niri config → AMD iGPU renders for evdi. NVIDIA outputs still use their own renderD129.
+- GBM_BACKEND=nvidia-drm env var is fine — NVIDIA's GBM wrapper forwards non-NVIDIA device calls to mesa.
+- PR #2891 fixed DisplayLink for Asahi (open driver), not NVIDIA proprietary.
+
 ## Patterns That Work
 - SSH into target machines to get actual journal logs rather than guessing from deploy output
 - Building locally with `nix eval` to inspect generated configs (TOML, systemd units)

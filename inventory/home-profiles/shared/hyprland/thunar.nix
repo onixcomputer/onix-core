@@ -18,8 +18,6 @@
     };
   };
 
-  # xfconf settings removed - Thunar will use GTK theme from theme.nix
-
   xdg.mimeApps.defaultApplications = {
     "inode/directory" = [ "thunar.desktop" ];
   };
