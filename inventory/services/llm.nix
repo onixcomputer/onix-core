@@ -25,7 +25,8 @@ _: {
         tags."llm-client" = { };
         settings = {
           clientType = "ollama";
-          defaultServer = "http://aspen1:11434";
+          # Server URL auto-discovered from LLM/Ollama service exports.
+          # Override with defaultServer if needed.
           extraPackages = [
             "curl"
             "jq"

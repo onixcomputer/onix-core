@@ -26,35 +26,9 @@ _: {
             };
           };
 
-          # Services configuration
-          services = [
-            {
-              "Infrastructure" = [
-                {
-                  "Vaultwarden" = {
-                    icon = "bitwarden.png";
-                    href = "http://100.110.43.11:8222";
-                    description = "Password manager";
-                    siteMonitor = "http://100.110.43.11:8222";
-                  };
-                }
-                {
-                  "Grafana" = {
-                    icon = "grafana.png";
-                    href = "http://100.110.43.11:3000";
-                    description = "Metrics visualization";
-                  };
-                }
-                {
-                  "Prometheus" = {
-                    icon = "prometheus.png";
-                    href = "http://100.110.43.11:9090";
-                    description = "Metrics collection";
-                  };
-                }
-              ];
-            }
-          ];
+          # Manual service entries - auto-discovered services from exports will be appended
+          # Add manual entries here to supplement auto-discovered ones:
+          # services = [ ];
 
           # Widgets configuration
           widgets = [

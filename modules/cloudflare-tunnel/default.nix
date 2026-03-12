@@ -37,11 +37,28 @@ in
               Example: { "app.example.com" = "http://localhost:3000"; }
             '';
           };
+
+          autoIngress = mkOption {
+            type = attrsOf str;
+            default = { };
+            description = ''
+              Automatically resolve ingress backend URLs from service exports.
+              Maps hostnames to export service endpoint names.
+              Example: { "vault.robitzs.ch" = "vaultwarden"; }
+              The service must export serviceEndpoints.<name> with a url field.
+              Manual ingress entries take precedence over auto-resolved ones.
+            '';
+          };
         };
       };
 
       perInstance =
-        { instanceName, extendSettings, ... }:
+        {
+          instanceName,
+          extendSettings,
+          exports,
+          ...
+        }:
         {
           nixosModule =
             { config, pkgs, ... }:
@@ -50,23 +67,60 @@ in
                 tunnelName = mkDefault config.networking.hostName;
               };
 
-              inherit (localSettings) tunnelName ingress;
+              # Resolve auto-ingress from service exports
+              autoIngress = localSettings.autoIngress or { };
+              resolvedAutoIngress =
+                if autoIngress == { } then
+                  { }
+                else
+                  lib.mapAttrs (
+                    hostname: serviceName:
+                    let
+                      # Search all instances for the serviceEndpoint
+                      matchingInstances = lib.filterAttrs (
+                        _instanceName: instanceData: (instanceData.serviceEndpoints.${serviceName} or null) != null
+                      ) (exports.instances or { });
+
+                      availableInstances = lib.attrNames (exports.instances or { });
+                      availableEndpoints = lib.concatStringsSep ", " (
+                        lib.flatten (
+                          lib.mapAttrsToList (_: instanceData: lib.attrNames (instanceData.serviceEndpoints or { })) (
+                            exports.instances or { }
+                          )
+                        )
+                      );
+                    in
+                    if matchingInstances != { } then
+                      (lib.head (lib.attrValues matchingInstances)).serviceEndpoints.${serviceName}.url
+                    else
+                      throw ''
+                        cloudflare-tunnel: No export found for service '${serviceName}' (referenced by autoIngress for ${hostname})
+                        Available instances: ${lib.concatStringsSep ", " availableInstances}
+                        Available endpoints: ${availableEndpoints}
+                      ''
+                  ) autoIngress;
+
+              # Manual ingress takes precedence over auto-resolved
+              mergedIngress = resolvedAutoIngress // localSettings.ingress;
+
+              inherit (localSettings) tunnelName;
+              ingress = mergedIngress;
 
               # Tunnel credentials file path
               tunnelCredentialsFile = "/var/lib/cloudflared/${tunnelName}.json";
 
               # Extract all hostnames from ingress rules
-              hostnames = builtins.attrNames ingress;
+              hostnames = builtins.attrNames mergedIngress;
 
               # Get the setup script
               setupScript = ./setup-tunnel.sh;
 
               # Generate summary for the script output
               ingressSummary = lib.concatStringsSep "\n" (
-                lib.mapAttrsToList (hostname: service: "  - https://${hostname} → ${service}") ingress
+                lib.mapAttrsToList (hostname: service: "  - https://${hostname} → ${service}") mergedIngress
               );
             in
-            mkIf (ingress != { }) {
+            mkIf (mergedIngress != { }) {
               # Cloudflare tunnel setup service
               systemd.services."cloudflare-tunnel-setup-${tunnelName}" = {
                 description = "Setup Cloudflare tunnel ${tunnelName}";

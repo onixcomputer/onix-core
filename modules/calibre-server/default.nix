@@ -19,7 +19,15 @@ in
 
       perInstance =
         { extendSettings, ... }:
+        let
+          baseSettings = extendSettings { };
+          serverPort = baseSettings.port or 8080;
+        in
         {
+          exports.serviceEndpoints.calibre = {
+            url = "http://localhost:${toString serverPort}";
+            port = serverPort;
+          };
           nixosModule =
             { lib, config, ... }:
             let
