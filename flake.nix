@@ -17,7 +17,11 @@
     };
     clan-core = {
       url = "git+https://git.clan.lol/adeci/clan-core?ref=adeci-unstable";
-      inputs.home-manager.follows = "home-manager";
+      inputs = {
+        home-manager.follows = "home-manager";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+      };
     };
     wrappers = {
       url = "git+file:///home/brittonr/git/wrappers";
@@ -31,11 +35,21 @@
       url = "github:natsukium/mcp-servers-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    devblog.url = "github:adeci/devblog";
+    devblog = {
+      url = "github:adeci/devblog";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+      };
+    };
     buildbot-nix = {
       url = "github:nix-community/buildbot-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-parts.follows = "flake-parts";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+      };
     };
     nixos-avf = {
       url = "github:nix-community/nixos-avf";
@@ -43,11 +57,16 @@
     };
     adeci-nixvim = {
       url = "github:adeci/nixvim-config";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        nixvim.follows = "nixvim";
+        treefmt-nix.follows = "treefmt-nix";
+      };
     };
     nixvim = {
       url = "github:nix-community/nixvim";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-parts.follows = "flake-parts";
     };
     upmpdcli = {
       url = "github:brittonr/upmpdcli";
@@ -80,7 +99,11 @@
     };
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+      };
     };
 
     # Dev tooling inputs (previously in dev/flake.nix partition)
@@ -94,7 +117,11 @@
     };
     mics-skills = {
       url = "github:Mic92/mics-skills";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+      };
     };
   };
 

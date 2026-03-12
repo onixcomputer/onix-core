@@ -26,10 +26,14 @@ let
     # Wait for Wayland session to be ready
     while [ -z "$WAYLAND_DISPLAY" ]; do sleep ${config.timing.process.short}; done
 
-    # Find the touchscreen device
-    # GPD Pocket 4 uses i2c-hid touchscreen
+    # Find actual touchscreen devices (not touchpads) by checking
+    # for "touch" in the Capabilities line from libinput.
     TOUCHSCREEN=$(${pkgs.libinput}/bin/libinput list-devices 2>/dev/null | \
-      grep -B5 -i "touch" | grep "Kernel:" | head -1 | awk '{print $2}')
+      ${pkgs.gawk}/bin/awk '
+        /^Device:/ { dev="" }
+        /^Kernel:/ { dev=$2 }
+        /^Capabilities:.*\btouch\b/ { if (dev) { print dev; exit } }
+      ')
 
     if [ -z "$TOUCHSCREEN" ]; then
       echo "No touchscreen device found, exiting gracefully"
@@ -71,6 +75,9 @@ in
       Description = "Touchscreen gesture daemon for Niri";
       After = [ "graphical-session.target" ];
       PartOf = [ "graphical-session.target" ];
+      # Stop restarting if lisgd crashes repeatedly (wrong device, perms, etc.)
+      StartLimitBurst = 3;
+      StartLimitIntervalSec = 30;
     };
     Service = {
       Type = "simple";
