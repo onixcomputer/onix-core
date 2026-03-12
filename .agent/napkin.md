@@ -4,6 +4,7 @@
 | Date | Source | What Went Wrong | What To Do Instead |
 |------|--------|----------------|-------------------|
 | 2026-03-11 | user | `system.etc.overlay.enable = true` without `services.userborn.enable = true` broke passwd database — user disappeared from `/etc/passwd`, `sudo: you do not exist` | Overlayfs `/etc` REQUIRES userborn. Never enable overlay without also enabling `services.userborn.enable = true`. Or just don't use overlay `/etc` — the benefit is marginal. |
+| 2026-03-12 | self | Created `niri-keybinds.nix` as a plain function `{ config, pkgs, lib }:` directly in the `noctalia/` profile directory. Clan-core auto-imports all `.nix` files in a profile dir as modules, so it tried to pass module args (`inputs` etc.) to the function → crash. | Plain Nix data/function files that aren't modules must go in a subdirectory (e.g., `lib/` or `noctalia-sections/`) to avoid auto-import. Only put actual NixOS/HM modules directly in profile directories. |
 
 ## User Preferences
 - (accumulate here as you learn them)

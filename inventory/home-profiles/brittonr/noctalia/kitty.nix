@@ -1,7 +1,9 @@
-{ config, ... }:
+{ config, lib, ... }:
 let
   theme = config.theme.colors;
   k = config.keymap;
+  tm = lib.toLower k.modifiers.terminal; # "ctrl+shift"
+  ta = k.terminalActions;
 in
 {
   programs.kitty = {
@@ -141,44 +143,44 @@ in
 
     keybindings = {
       # Font size controls
-      "ctrl+shift+equal" = "change_font_size all +1.0";
-      "ctrl+shift+minus" = "change_font_size all -1.0";
-      "ctrl+shift+0" = "change_font_size all 0";
+      "${tm}+${ta.fontUp}" = "change_font_size all +1.0";
+      "${tm}+${ta.fontDown}" = "change_font_size all -1.0";
+      "${tm}+${ta.fontReset}" = "change_font_size all 0";
 
       # Copy/paste
-      "ctrl+shift+c" = "copy_to_clipboard";
-      "ctrl+shift+v" = "paste_from_clipboard";
+      "${tm}+${ta.copy}" = "copy_to_clipboard";
+      "${tm}+${ta.paste}" = "paste_from_clipboard";
 
       # Tab management
-      "ctrl+shift+t" = "new_tab";
-      "ctrl+shift+q" = "close_tab";
-      "ctrl+shift+right" = "next_tab";
-      "ctrl+shift+left" = "previous_tab";
+      "${tm}+${ta.newTab}" = "new_tab";
+      "${tm}+${ta.closeTab}" = "close_tab";
+      "${tm}+${ta.nextTab}" = "next_tab";
+      "${tm}+${ta.prevTab}" = "previous_tab";
 
       # Window management
-      "ctrl+shift+enter" = "new_window";
-      "ctrl+shift+w" = "close_window";
-      "ctrl+shift+]" = "next_window";
-      "ctrl+shift+[" = "previous_window";
+      "${tm}+${ta.newWindow}" = "new_window";
+      "${tm}+${ta.closeWindow}" = "close_window";
+      "${tm}+${ta.nextWindow}" = "next_window";
+      "${tm}+${ta.prevWindow}" = "previous_window";
 
       # Scrolling
-      "ctrl+shift+up" = "scroll_line_up";
-      "ctrl+shift+down" = "scroll_line_down";
-      "ctrl+shift+page_up" = "scroll_page_up";
-      "ctrl+shift+page_down" = "scroll_page_down";
-      "ctrl+shift+home" = "scroll_home";
-      "ctrl+shift+end" = "scroll_end";
+      "${tm}+${ta.scrollUp}" = "scroll_line_up";
+      "${tm}+${ta.scrollDown}" = "scroll_line_down";
+      "${tm}+${ta.scrollPageUp}" = "scroll_page_up";
+      "${tm}+${ta.scrollPageDown}" = "scroll_page_down";
+      "${tm}+${ta.scrollHome}" = "scroll_home";
+      "${tm}+${ta.scrollEnd}" = "scroll_end";
 
       # Clear scrollback (rebind from ctrl+shift+k to free k for window nav)
-      "ctrl+shift+backspace" = "clear_terminal scrollback active";
+      "${tm}+backspace" = "clear_terminal scrollback active";
 
       # Vim-style tab navigation (hjkl)
-      "ctrl+shift+${k.nav.right}" = "next_tab";
-      "ctrl+shift+${k.nav.left}" = "previous_tab";
+      "${tm}+${k.nav.right}" = "next_tab";
+      "${tm}+${k.nav.left}" = "previous_tab";
 
       # Vim-style window navigation (hjkl)
-      "ctrl+shift+${k.nav.down}" = "next_window";
-      "ctrl+shift+${k.nav.up}" = "previous_window";
+      "${tm}+${k.nav.down}" = "next_window";
+      "${tm}+${k.nav.up}" = "previous_window";
     };
 
     # Extra config for advanced features

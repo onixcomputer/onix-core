@@ -8,13 +8,10 @@
 let
   # Access the current theme colors
   theme = config.theme.colors;
-  # Access the shared keymap
-  k = config.keymap;
-  up = lib.toUpper;
   mon = config.monitors;
 
-  # Noctalia IPC helper - noctalia-shell wraps qs with the correct config path
-  ipc = target: action: ''"noctalia-shell" "ipc" "call" "${target}" "${action}"'';
+  # Import niri keybindings from separate file
+  niriBinds = import ./lib/niri-keybinds.nix { inherit config pkgs lib; };
 
   # Use niri from our fork
   niriPackage = inputs.niri.packages.${pkgs.stdenv.hostPlatform.system}.niri;
@@ -27,368 +24,205 @@ let
 
       "config.kdl" = {
         content = /* kdl */ ''
-                          // Niri configuration with Noctalia Shell integration
-                          // Noctalia provides: bar, notifications, launcher, OSD, wallpaper, lock screen
+                                    // Niri configuration with Noctalia Shell integration
+                                    // Noctalia provides: bar, notifications, launcher, OSD, wallpaper, lock screen
 
-                          input {
-                              keyboard {
-                                  xkb {
-                                      layout "${config.input.keyboard.layout}"
-                                  }
-                              }
+                                    input {
+                                        keyboard {
+                                            xkb {
+                                                layout "${config.input.keyboard.layout}"
+                                            }
+                                        }
 
-                              touchpad {
-                                  ${if config.input.touchpad.tap then "tap" else ""}
-                                  ${if config.input.touchpad.naturalScroll then "natural-scroll" else ""}
-                                  ${
-                                    if config.input.touchpad.disableWhileTyping then
-                                      ''
-                                        dwt  // disable while typing
-                                        dwtp // disable while trackpointing''
-                                    else
-                                      ""
-                                  }
-                                  drag true
-                                  drag-lock
-                                  click-method "${config.input.touchpad.clickMethod}"
-                                  scroll-method "${config.input.touchpad.scrollMethod}"
-                                  accel-speed ${toString config.input.touchpad.accelSpeed}
-                                  accel-profile "${config.input.touchpad.accelProfile}"
-                              }
+                                        touchpad {
+                                            ${if config.input.touchpad.tap then "tap" else ""}
+                                            ${
+                                              if config.input.touchpad.naturalScroll then "natural-scroll" else ""
+                                            }
+                                            ${
+                                              if config.input.touchpad.disableWhileTyping then
+                                                ''
+                                                  dwt  // disable while typing
+                                                  dwtp // disable while trackpointing''
+                                              else
+                                                ""
+                                            }
+                                            drag true
+                                            drag-lock
+                                            click-method "${config.input.touchpad.clickMethod}"
+                                            scroll-method "${config.input.touchpad.scrollMethod}"
+                                            accel-speed ${toString config.input.touchpad.accelSpeed}
+                                            accel-profile "${config.input.touchpad.accelProfile}"
+                                        }
 
-                              // Touchscreen settings for GPD Pocket 4
-                              touch {
-                                  map-to-output "${mon.builtin.name}"
-                              }
+                                        // Touchscreen settings for GPD Pocket 4
+                                        touch {
+                                            map-to-output "${mon.builtin.name}"
+                                        }
 
-                              // Tablet/stylus settings (if applicable)
-                              tablet {
-                                  map-to-output "${mon.builtin.name}"
-                              }
+                                        // Tablet/stylus settings (if applicable)
+                                        tablet {
+                                            map-to-output "${mon.builtin.name}"
+                                        }
 
-                              ${if config.input.mouse.focusFollows then "focus-follows-mouse" else ""}
-                              ${if config.input.mouse.warpToFocus then "warp-mouse-to-focus" else ""}
-                          }
+                                        ${
+                                          if config.input.mouse.focusFollows then "focus-follows-mouse" else ""
+                                        }
+                                        ${
+                                          if config.input.mouse.warpToFocus then "warp-mouse-to-focus" else ""
+                                        }
+                                    }
 
-                          // Gesture configuration for touchpad and touchscreen
-                          gestures {
-                              // Scroll the view when dragging near monitor edges
-                              dnd-edge-view-scroll {
-                                  trigger-width ${toString config.gestures.dndEdgeScroll.triggerWidth}
-                                  delay-ms ${toString config.gestures.dndEdgeScroll.delayMs}
-                                  max-speed ${toString config.gestures.dndEdgeScroll.maxSpeed}
-                              }
+                                    // Gesture configuration for touchpad and touchscreen
+                                    gestures {
+                                        // Scroll the view when dragging near monitor edges
+                                        dnd-edge-view-scroll {
+                                            trigger-width ${toString config.gestures.dndEdgeScroll.triggerWidth}
+                                            delay-ms ${toString config.gestures.dndEdgeScroll.delayMs}
+                                            max-speed ${toString config.gestures.dndEdgeScroll.maxSpeed}
+                                        }
 
-                              // Enable hot corner to toggle overview (top-left)
-                              hot-corners {
-                                  top-left
-                              }
-                          }
+                                        // Enable hot corner to toggle overview (top-left)
+                                        hot-corners {
+                                            top-left
+                                        }
+                                    }
 
-                          // Force AMD iGPU as render device for outputs without their own
-                          // render node (DisplayLink/evdi). NVIDIA's GBM allocator doesn't
-                          // export linear dmabufs in formats evdi accepts. AMD's amdgpu does.
-                          // NVIDIA outputs (DP-3) still use their own renderD129.
-                          debug {
-                              render-drm-device "/dev/dri/renderD128"
-                          }
+                                    // Force AMD iGPU as render device for outputs without their own
+                                    // render node (DisplayLink/evdi). NVIDIA's GBM allocator doesn't
+                                    // export linear dmabufs in formats evdi accepts. AMD's amdgpu does.
+                                    // NVIDIA outputs (DP-3) still use their own renderD129.
+                                    debug {
+                                        render-drm-device "/dev/dri/renderD128"
+                                    }
 
-                          // Primary monitor (top) - LG ULTRAGEAR+
-                          output "${mon.primary.name}" {
-                              ${
-                                if mon.primary.mode != "preferred" then ''mode "${mon.primary.mode}"'' else ""
-                              }
-                              scale ${toString mon.primary.scale}
-                              position x=${toString mon.primary.position.x} y=${toString mon.primary.position.y}
-                              ${if mon.primary.vrr then "variable-refresh-rate" else ""}
-                          }
+                                    // Primary monitor (top) - LG ULTRAGEAR+
+                                    output "${mon.primary.name}" {
+                                        ${
+                                          if mon.primary.mode != "preferred" then ''mode "${mon.primary.mode}"'' else ""
+                                        }
+                                        scale ${toString mon.primary.scale}
+                                        position x=${toString mon.primary.position.x} y=${toString mon.primary.position.y}
+                                        ${if mon.primary.vrr then "variable-refresh-rate" else ""}
+                                    }
 
-                          // Secondary monitor (below, centered) - Portable monitor via HDMI
-                          output "${mon.secondary.name}" {
-                              ${
-                                if mon.secondary.mode != "preferred" then ''mode "${mon.secondary.mode}"'' else ""
-                              }
-                              scale ${toString mon.secondary.scale}
-                              position x=${toString mon.secondary.position.x} y=${toString mon.secondary.position.y}
-                          }
+                                    // Secondary monitor (below, centered) - Portable monitor via HDMI
+                                    output "${mon.secondary.name}" {
+                                        ${
+                                          if mon.secondary.mode != "preferred" then ''mode "${mon.secondary.mode}"'' else ""
+                                        }
+                                        scale ${toString mon.secondary.scale}
+                                        position x=${toString mon.secondary.position.x} y=${toString mon.secondary.position.y}
+                                    }
 
-                          // Elgato Prompter (DisplayLink/evdi via USB)
-                          output "DVI-I-1" {
-                              mode "1024x600@60"
-                              scale 1
-                          }
+                                    // Elgato Prompter (DisplayLink/evdi via USB)
+                                    output "DVI-I-1" {
+                                        mode "1024x600@60"
+                                        scale 1
+                                    }
 
 
-                          prefer-no-csd
+                                    prefer-no-csd
 
-                          overview {
-                              workspace-gap 0.0
-                          }
+                                    overview {
+                                        workspace-gap 0.0
+                                    }
 
-                          layout {
-                              empty-workspace-above-first
-                              gaps ${toString config.layout.gaps}
-                              center-focused-column "never"
-                              focus-column-tile "spatial"
-                              preset-column-widths {
-                                  ${builtins.concatStringsSep "\n                                  " (
-                                    map (w: "proportion ${toString w}") config.layout.presetColumnWidths
-                                  )}
-                              }
+                                    layout {
+                                        empty-workspace-above-first
+                                        gaps ${toString config.layout.gaps}
+                                        center-focused-column "never"
+                                        focus-column-tile "spatial"
+                                        preset-column-widths {
+                                            ${builtins.concatStringsSep "\n                                  "
+                                              (map (w: "proportion ${toString w}") config.layout.presetColumnWidths)
+                                            }
+                                        }
 
-                              focus-ring {
-                                  active-color "${theme.accent}"
-                                  inactive-color "${theme.border}"
-                                  width ${toString config.layout.focusRingWidth}
-                              }
+                                        focus-ring {
+                                            active-color "${theme.accent}"
+                                            inactive-color "${theme.border}"
+                                            width ${toString config.layout.focusRingWidth}
+                                        }
 
-                              border {
-                                  width ${toString config.layout.borderWidth}
-                                  active-color "${theme.accent}"
-                                  inactive-color "${theme.border}"
-                              }
-                          }
+                                        border {
+                                            width ${toString config.layout.borderWidth}
+                                            active-color "${theme.accent}"
+                                            inactive-color "${theme.border}"
+                                        }
+                                    }
 
-                          ${builtins.concatStringsSep "\n                          " (
-                            map (name: "workspace \"${name}\"") config.workspaces.names
-                          )}
+                                    ${builtins.concatStringsSep "\n                          " (
+                                      map (name: "workspace \"${name}\"") config.workspaces.names
+                                    )}
 
-                          // Startup services - Noctalia replaces waybar, swayosd, swww, mako
-                          spawn-at-startup "noctalia-shell"
-                          spawn-at-startup "${pkgs.wl-clipboard}/bin/wl-paste" "--watch" "${pkgs.cliphist}/bin/cliphist" "store"
-                          spawn-at-startup "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
-                          spawn-at-startup "${pkgs.networkmanagerapplet}/bin/nm-applet"
-                          spawn-at-startup "${pkgs.blueman}/bin/blueman-applet"
+                                    // Startup services - Noctalia replaces waybar, swayosd, swww, mako
+                                    spawn-at-startup "noctalia-shell"
+                                    spawn-at-startup "${pkgs.wl-clipboard}/bin/wl-paste" "--watch" "${pkgs.cliphist}/bin/cliphist" "store"
+                                    spawn-at-startup "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
+                                    spawn-at-startup "${pkgs.networkmanagerapplet}/bin/nm-applet"
+                                    spawn-at-startup "${pkgs.blueman}/bin/blueman-applet"
 
-                          // Startup applications
-                          spawn-at-startup "vesktop" "--enable-features=UseOzonePlatform" "--ozone-platform=wayland" "--enable-wayland-ime" "--disable-gpu-sandbox"
-                          spawn-at-startup "element-desktop"
-                          spawn-at-startup "${config.apps.terminal.command}" "--title" "${config.apps.sysmon.name}" "-e" "${config.apps.sysmon.command}"
-                          spawn-at-startup "${config.apps.terminal.command}" "--title" "journalctl" "-e" "${pkgs.systemd}/bin/journalctl -f"
+                                    // Startup applications
+                                    spawn-at-startup "vesktop" "--enable-features=UseOzonePlatform" "--ozone-platform=wayland" "--enable-wayland-ime" "--disable-gpu-sandbox"
+                                    spawn-at-startup "element-desktop"
+                                    spawn-at-startup "${config.apps.terminal.command}" "--title" "${config.apps.sysmon.name}" "-e" "${config.apps.sysmon.command}"
+                                    spawn-at-startup "${config.apps.terminal.command}" "--title" "journalctl" "-e" "${pkgs.systemd}/bin/journalctl -f"
 
-                          // Window rules: workspace assignments
-                          ${builtins.concatStringsSep "\n                          " (
-                            map (rule: ''
-                              window-rule {
-                                  match app-id=r#"${rule.appId}$"#
-                                  open-on-workspace "${rule.workspace}"
-                                  ${if rule ? maximized && rule.maximized then "open-maximized true" else ""}
-                              }'') config.windowRules.assignments
-                          )}
+                                    // Window rules: workspace assignments
+                                    ${builtins.concatStringsSep "\n                          " (
+                                      map (rule: ''
+                                        window-rule {
+                                            match app-id=r#"${rule.appId}$"#
+                                            open-on-workspace "${rule.workspace}"
+                                            ${if rule ? maximized && rule.maximized then "open-maximized true" else ""}
+                                        }'') config.windowRules.assignments
+                                    )}
 
-                          // Window rules: title-specific overrides
-                          ${builtins.concatStringsSep "\n                          " (
-                            map (rule: ''
-                              window-rule {
-                                  match app-id=r#"${rule.appId}$"# title="${rule.title}"
-                                  ${if rule ? workspace then ''open-on-workspace "${rule.workspace}"'' else ""}
-                                  ${if rule ? maximized && rule.maximized then "open-maximized true" else ""}
-                                  ${if rule ? floating && rule.floating then "open-floating true" else ""}
-                              }'') config.windowRules.titleOverrides
-                          )}
+                                    // Window rules: title-specific overrides
+                                    ${builtins.concatStringsSep "\n                          " (
+                                      map (rule: ''
+                                        window-rule {
+                                            match app-id=r#"${rule.appId}$"# title="${rule.title}"
+                                            ${if rule ? workspace then ''open-on-workspace "${rule.workspace}"'' else ""}
+                                            ${if rule ? maximized && rule.maximized then "open-maximized true" else ""}
+                                            ${if rule ? floating && rule.floating then "open-floating true" else ""}
+                                        }'') config.windowRules.titleOverrides
+                                    )}
 
-                          window-rule {
-              match app-id=r#"${config.apps.terminal.appId}$"# title="^${config.apps.fileManager.name}$"
-          }
+                                    window-rule {
+                        match app-id=r#"${config.apps.terminal.appId}$"# title="^${config.apps.fileManager.name}$"
+                    }
 
-          // Indicate screencasted windows with red colors.
-          window-rule {
-              match is-window-cast-target=true
+                    // Indicate screencasted windows with red colors.
+                    window-rule {
+                        match is-window-cast-target=true
 
-              focus-ring {
-                  active-color "${config.colors.screencast_active}"
-                  inactive-color "${config.colors.screencast_inactive}"
-              }
+                        focus-ring {
+                            active-color "${config.colors.screencast_active}"
+                            inactive-color "${config.colors.screencast_inactive}"
+                        }
 
-              border {
-                  inactive-color "${config.colors.screencast_inactive}"
-              }
+                        border {
+                            inactive-color "${config.colors.screencast_inactive}"
+                        }
 
-              shadow {
-                  color "${config.colors.screencast_inactive}${config.opacity.hex.low}"
-              }
+                        shadow {
+                            color "${config.colors.screencast_inactive}${config.opacity.hex.low}"
+                        }
 
-              tab-indicator {
-                  active-color "${config.colors.screencast_active}"
-                  inactive-color "${config.colors.screencast_inactive}"
-              }
-          }
+                        tab-indicator {
+                            active-color "${config.colors.screencast_active}"
+                            inactive-color "${config.colors.screencast_inactive}"
+                        }
+                    }
 
-          xwayland-satellite {
-              // off
-              path "xwayland-satellite"
-          }
+                    xwayland-satellite {
+                        // off
+                        path "xwayland-satellite"
+                    }
 
-                          binds {
-                              ${k.modifiers.wm}+Shift+Slash { show-hotkey-overlay; }
-
-                              // Window management
-                              ${k.modifiers.wm}+${k.wm.close} { close-window; }
-                              ${k.modifiers.wm}+${k.wm.toggleTabs} { toggle-column-tabbed-display; }
-                              ${k.modifiers.wm}+${k.wm.fullscreen} { fullscreen-window; }
-                              ${k.modifiers.secondary}+F { toggle-window-floating; }
-                              ${k.modifiers.wm}+Y { spawn "toggle-sticky-window"; }
-                              ${k.modifiers.wm}+${k.wm.reload} { spawn "niri" "msg" "action" "load-config-file"; }
-
-                              // Vim bindings for focus
-                              ${k.modifiers.wm}+${up k.nav.left} { focus-column-left; }
-                              ${k.modifiers.wm}+${up k.nav.right} { focus-column-right; }
-                              ${k.modifiers.wm}+${up k.nav.up} { focus-window-or-workspace-up; }
-                              ${k.modifiers.wm}+${up k.nav.down} { focus-window-or-workspace-down; }
-
-                              // Scroll wheel for workspace switching
-                              ${k.modifiers.wm}+WheelScrollUp { focus-workspace-up; }
-                              ${k.modifiers.wm}+WheelScrollDown { focus-workspace-down; }
-
-                              // Arrow keys for compatibility
-                              ${k.modifiers.wm}+Left { focus-column-left; }
-                              ${k.modifiers.wm}+Right { focus-column-right; }
-                              ${k.modifiers.wm}+Up { focus-window-up; }
-                              ${k.modifiers.wm}+Down { focus-window-down; }
-
-                              // Alt+HJKL for unified navigation (same as Mod layer)
-                              ${k.modifiers.secondary}+${up k.nav.left} { focus-column-left; }
-                              ${k.modifiers.secondary}+${up k.nav.right} { focus-column-right; }
-                              ${k.modifiers.secondary}+${up k.nav.up} { focus-window-or-workspace-up; }
-                              ${k.modifiers.secondary}+${up k.nav.down} { focus-window-or-workspace-down; }
-
-                              // Vim bindings for moving windows/columns
-                              ${k.modifiers.wm}+Control+${up k.nav.left} { move-column-left; }
-                              ${k.modifiers.wm}+Control+${up k.nav.right} { move-column-right; }
-                              ${k.modifiers.wm}+Control+${up k.nav.up} { move-window-up-or-to-workspace-up; }
-                              ${k.modifiers.wm}+Control+${up k.nav.down} { move-window-down-or-to-workspace-down; }
-
-                              // Arrow keys for moving windows
-                              ${k.modifiers.wm}+Control+Left { move-column-left; }
-                              ${k.modifiers.wm}+Control+Right { move-column-right; }
-                              ${k.modifiers.wm}+Control+Up { move-window-up; }
-                              ${k.modifiers.wm}+Control+Down { move-window-down; }
-
-                              // Column operations - consume/expel focused window
-                              ${k.modifiers.wm}+BracketLeft { consume-or-expel-window-left; }
-                              ${k.modifiers.wm}+BracketRight { consume-or-expel-window-right; }
-
-                              // Resizing
-                              ${k.modifiers.wm}+Minus { set-column-width "-${toString config.layout.resizePercent}%"; }
-                              ${k.modifiers.wm}+Equal { set-column-width "+${toString config.layout.resizePercent}%"; }
-
-                              // Resizing height (Mod+Shift+Minus/Equal)
-                              ${k.modifiers.wm}+Shift+Minus { set-window-height "-${toString config.layout.resizePercent}%"; }
-                              ${k.modifiers.wm}+Shift+Equal { set-window-height "+${toString config.layout.resizePercent}%"; }
-
-                              // Workspaces (1-10)
-                              ${k.modifiers.wm}+1 { focus-workspace 1; }
-                              ${k.modifiers.wm}+2 { focus-workspace 2; }
-                              ${k.modifiers.wm}+3 { focus-workspace 3; }
-                              ${k.modifiers.wm}+4 { focus-workspace 4; }
-                              ${k.modifiers.wm}+5 { focus-workspace 5; }
-                              ${k.modifiers.wm}+6 { focus-workspace 6; }
-                              ${k.modifiers.wm}+7 { focus-workspace 7; }
-                              ${k.modifiers.wm}+8 { focus-workspace 8; }
-                              ${k.modifiers.wm}+9 { focus-workspace 9; }
-                              ${k.modifiers.wm}+0 { focus-workspace 10; }
-
-                              ${k.modifiers.wm}+Shift+1 { move-column-to-workspace 1; }
-                              ${k.modifiers.wm}+Shift+2 { move-column-to-workspace 2; }
-                              ${k.modifiers.wm}+Shift+3 { move-column-to-workspace 3; }
-                              ${k.modifiers.wm}+Shift+4 { move-column-to-workspace 4; }
-                              ${k.modifiers.wm}+Shift+5 { move-column-to-workspace 5; }
-                              ${k.modifiers.wm}+Shift+6 { move-column-to-workspace 6; }
-                              ${k.modifiers.wm}+Shift+7 { move-column-to-workspace 7; }
-                              ${k.modifiers.wm}+Shift+8 { move-column-to-workspace 8; }
-                              ${k.modifiers.wm}+Shift+9 { move-column-to-workspace 9; }
-                              ${k.modifiers.wm}+Shift+0 { move-column-to-workspace 10; }
-
-                              // Applications
-                              ${k.modifiers.wm}+${k.wm.terminal} { spawn "${config.apps.terminal.command}"; }
-                              ${k.modifiers.wm}+Shift+${k.wm.terminal} { spawn "sh" "-c" "cd $(${pkgs.xcwd}/bin/xcwd) && ${config.apps.terminal.command} --title float"; }
-                              ${k.modifiers.wm}+${k.wm.fileManager} { spawn "sh" "-c" "cd $(${pkgs.xcwd}/bin/xcwd) && ${config.apps.terminal.command} --title ${config.apps.fileManager.name} -e ${config.apps.fileManager.command}"; }
-                              ${k.modifiers.wm}+${k.wm.browser} { spawn "${config.apps.browser.command}"; }
-                              ${k.modifiers.wm}+${k.wm.sysmon} { spawn "${config.apps.terminal.command}" "--title" "${config.apps.sysmon.name}" "-e" "${config.apps.sysmon.command}"; }
-
-                              // Noctalia launcher (replaces fuzzel)
-                              ${k.modifiers.wm}+${k.wm.launcher} { spawn ${ipc "launcher" "toggle"}; }
-
-                              // Noctalia clipboard history (replaces cliphist + fuzzel)
-                              ${k.modifiers.wm}+${k.wm.clipboard} { spawn ${ipc "launcher" "clipboard"}; }
-
-                              // Noctalia control center and session menu (new features)
-                              ${k.modifiers.wm}+N { spawn ${ipc "controlCenter" "toggle"}; }
-                              ${k.modifiers.wm}+G { spawn ${ipc "sessionMenu" "toggle"}; }
-
-                              // Theme toggle via Noctalia dark mode
-                              ${k.modifiers.wm}+${k.wm.themeToggle} { spawn ${ipc "darkMode" "toggle"}; }
-
-                              // Screenshots: Print uses niri's built-in screenshot to avoid
-                              // wlr-screencopy compositor stall (~27ms vs ~45ms for grim).
-                              // Region/edit still use grim+slurp+satty for annotation.
-                              Print { screenshot-screen; }
-                              ${k.modifiers.wm}+${k.wm.screenshot} { spawn "screenshot-region"; }
-                              ${k.modifiers.wm}+Print { spawn "screenshot-screen-edit"; }
-                              ${k.modifiers.wm}+Shift+P { spawn "color-picker"; }
-
-                              // Notifications via Noctalia (replaces makoctl)
-                              ${k.modifiers.wm}+Comma { spawn ${ipc "notifications" "dismissAll"}; }
-                              ${k.modifiers.wm}+Shift+Comma { spawn ${ipc "notifications" "clear"}; }
-
-                              // Media controls via Noctalia OSD (replaces swayosd)
-                              XF86AudioRaiseVolume { spawn ${ipc "volume" "increase"}; }
-                              XF86AudioLowerVolume { spawn ${ipc "volume" "decrease"}; }
-                              XF86AudioMute { spawn ${ipc "volume" "muteOutput"}; }
-                              XF86AudioMicMute { spawn ${ipc "volume" "muteInput"}; }
-                              XF86AudioNext { spawn "playerctl" "next"; }
-                              XF86AudioPause { spawn "playerctl" "play-pause"; }
-                              XF86AudioPlay { spawn "playerctl" "play-pause"; }
-                              XF86AudioPrev { spawn "playerctl" "previous"; }
-
-                              // Brightness via Noctalia OSD (replaces swayosd/light)
-                              XF86MonBrightnessUp { spawn ${ipc "brightness" "increase"}; }
-                              XF86MonBrightnessDown { spawn ${ipc "brightness" "decrease"}; }
-
-                              // Lock screen (new - Noctalia built-in)
-                              // Mod+L is vim nav (focus-column-right), so use Mod+Shift+Escape
-                              ${k.modifiers.wm}+Shift+Escape { spawn ${ipc "lockScreen" "lock"}; }
-
-                              // Wallpaper picker (new - Noctalia built-in)
-                              ${k.modifiers.wm}+Shift+W { spawn ${ipc "wallpaper" "toggle"}; }
-
-                              // Overview toggle (also accessible via 4-finger swipe or hot corner)
-                              ${k.modifiers.wm}+${k.wm.overview} { toggle-overview; }
-
-                              // Touchpad scroll bindings for volume via Noctalia
-                              ${k.modifiers.wm}+TouchpadScrollUp { spawn ${ipc "volume" "increase"}; }
-                              ${k.modifiers.wm}+TouchpadScrollDown { spawn ${ipc "volume" "decrease"}; }
-
-                              // Monitor focus (Mod+Shift = monitor scope)
-                              ${k.modifiers.wm}+Escape { focus-monitor-previous; }
-                              ${k.modifiers.wm}+Shift+${up k.nav.left} { focus-monitor-left; }
-                              ${k.modifiers.wm}+Shift+${up k.nav.right} { focus-monitor-right; }
-                              ${k.modifiers.wm}+Shift+${up k.nav.up} { focus-monitor-up; }
-                              ${k.modifiers.wm}+Shift+${up k.nav.down} { focus-monitor-down; }
-                              ${k.modifiers.wm}+Shift+Left { focus-monitor-left; }
-                              ${k.modifiers.wm}+Shift+Right { focus-monitor-right; }
-                              ${k.modifiers.wm}+Shift+Up { focus-monitor-up; }
-                              ${k.modifiers.wm}+Shift+Down { focus-monitor-down; }
-
-                              // Move column to monitor (Mod+Ctrl+Shift = move + monitor scope)
-                              ${k.modifiers.wm}+Control+Shift+${up k.nav.left} { move-column-to-monitor-left; }
-                              ${k.modifiers.wm}+Control+Shift+${up k.nav.right} { move-column-to-monitor-right; }
-                              ${k.modifiers.wm}+Control+Shift+${up k.nav.up} { move-column-to-monitor-up; }
-                              ${k.modifiers.wm}+Control+Shift+${up k.nav.down} { move-column-to-monitor-down; }
-                              ${k.modifiers.wm}+Control+Shift+Left { move-column-to-monitor-left; }
-                              ${k.modifiers.wm}+Control+Shift+Right { move-column-to-monitor-right; }
-                              ${k.modifiers.wm}+Control+Shift+Up { move-column-to-monitor-up; }
-                              ${k.modifiers.wm}+Control+Shift+Down { move-column-to-monitor-down; }
-
-                              // Column layout
-                              ${k.modifiers.wm}+${k.wm.maxColumn} { maximize-column; }
-                              ${k.modifiers.wm}+Shift+${k.wm.maxColumn} { fit-workspace-columns; }
-                              ${k.modifiers.wm}+Control+${k.wm.maxColumn} { fit-workspace-columns grid=true; }
-                              ${k.modifiers.wm}+${k.wm.presetWidth} { switch-preset-column-width; }
-
-                              // Power management
-                              ${k.modifiers.wm}+Shift+O { power-off-monitors; }
-                          }
+          ${niriBinds}
         '';
       };
     }).wrapper;
