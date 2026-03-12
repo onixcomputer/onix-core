@@ -1,7 +1,7 @@
 # ---
 # schema = "single-disk"
 # [placeholders]
-# mainDisk = "/dev/disk/by-id/REPLACE_WITH_ACTUAL_DISK_ID"
+# mainDisk = "/dev/disk/by-id/nvme-Samsung_SSD_990_PRO_2TB_S7KHNU0YA15603E"
 # ---
 # This file was automatically generated!
 # CHANGING this configuration requires wiping and reinstalling the machine
@@ -21,7 +21,7 @@
     disk = {
       main = {
         name = "main-aspen2";
-        device = "/dev/disk/by-id/REPLACE_WITH_ACTUAL_DISK_ID";
+        device = "/dev/disk/by-id/nvme-Samsung_SSD_990_PRO_2TB_S7KHNU0YA15603E";
         type = "disk";
         content = {
           type = "gpt";
