@@ -1,6 +1,9 @@
 # Everblush theme - dark, vibrant, and beautiful
 { pkgs }:
-{
+let
+  mkTheme = import ./mk-theme.nix { inherit pkgs; };
+in
+mkTheme {
   name = "Everblush";
   author = "Everblush";
   variant = "dark";
@@ -16,27 +19,18 @@
   base07 = "#ffffff"; # Lightest (rarely used)
 
   # Semantic colors (8 accent colors)
-  red = "#e57474"; # Errors, urgent, failed
-  orange = "#fcb163"; # Warnings (bright) - interpolated
-  yellow = "#e5c76b"; # Warnings, caution
-  green = "#8ccf7e"; # Success, connected, charged
-  cyan = "#6cbfbf"; # Info, highlights
-  blue = "#67b0e8"; # Primary accent, links, focused
-  purple = "#c47fd5"; # Secondary accent (magenta in original)
-  magenta = "#c47fd5"; # Tertiary accent, special
+  red = "#e57474";
+  orange = "#fcb163";
+  yellow = "#e5c76b";
+  green = "#8ccf7e";
+  cyan = "#6cbfbf";
+  blue = "#67b0e8";
+  purple = "#c47fd5";
+  magenta = "#c47fd5";
 
-  # Terminal colors (16-color palette)
-  # Normal colors (matching semantic colors)
+  # Terminal colors (bright versions are slightly brightened)
   term_black = "#232a2d";
-  term_red = "#e57474";
-  term_green = "#8ccf7e";
-  term_yellow = "#e5c76b";
-  term_blue = "#67b0e8";
-  term_magenta = "#c47fd5";
-  term_cyan = "#6cbfbf";
   term_white = "#b3b9b8";
-
-  # Bright colors (slightly brightened versions)
   term_bright_black = "#3b4244";
   term_bright_red = "#ef7d7d";
   term_bright_green = "#96d988";
@@ -46,49 +40,18 @@
   term_bright_cyan = "#67cbe7";
   term_bright_white = "#dadada";
 
-  # Special UI colors (derived from base colors)
-  bg = "#141b1e"; # Alias for base00
+  # Special UI colors
   bg_dark = "#0d1316"; # Even darker variant
-  bg_highlight = "#2d3437"; # Alias for base02
-  fg = "#dadada"; # Alias for base06
-  fg_dim = "#b3b9b8"; # Alias for base05
-  border = "#3b4244"; # Alias for base03
-  accent = "#67b0e8"; # Alias for blue (primary accent)
-  accent2 = "#8ccf7e"; # Green for secondary (matching Hyprland border gradient)
-
-  # RGB values for colors that need transparency (derived from hex above)
-  accent_rgb = "103, 176, 232"; # RGB of accent (#67b0e8)
-  accent2_rgb = "140, 207, 126"; # RGB of accent2 (#8ccf7e)
-  bg_dark_rgb = "13, 19, 22"; # RGB of bg_dark (#0d1316)
-
-  # Opacity values (can be overridden per-theme)
-  opacity = {
-    terminal = "0.92";
-    popups = "0.90";
-    notifications = "0.90";
-  };
+  accent2 = "#8ccf7e"; # Green for secondary (matching Hyprland gradient)
 
   # Hyprland-specific styling
   hypr = {
-    active_border = "rgba(67b0e8ff) rgba(8ccf7eff) 45deg"; # Gradient using accent (#67b0e8) to accent2 (#8ccf7e)
-    inactive_border = "rgba(3b4244aa)"; # Using border color (#3b4244) with transparency
-    border_size = 4; # Slightly thicker borders for Everblush
-    gaps_in = 4; # Slightly larger gaps
+    active_border = "rgba(67b0e8ff) rgba(8ccf7eff) 45deg";
+    inactive_border = "rgba(3b4244aa)";
+    border_size = 4;
+    gaps_in = 4;
     gaps_out = 4;
-    rounding = 12; # More rounded corners for softer look
-  };
-
-  # Waybar-specific styling (colors derived from base theme)
-  waybar = {
-    # Just define the opacity values and styling here
-    workspace_hover_opacity = "0.15";
-    workspace_hover_border_opacity = "0.25";
-    workspace_active_shadow_opacity = "0.3";
-    workspace_active_hover_shadow_opacity = "0.4";
-
-    # Module styling
-    module_bg_opacity = "0.8";
-    module_radius = "0.5em";
+    rounding = 12; # Rounded corners for softer look
   };
 
   # GTK theme integration - using Adwaita light for testing theme swap
@@ -106,10 +69,7 @@
 
   # Matching wallpapers
   wallpapers = {
-    # Main wallpaper that gets auto-set
     main = "everblush_mountain.png";
-
-    # All wallpapers for this theme (including main)
     collection = {
       "everblush_mountain.png" = {
         url = "https://raw.githubusercontent.com/adeci/wallpapers/main/everblush/everblush_mountain.png";

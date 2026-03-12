@@ -166,7 +166,6 @@
 
         # Analysis and infrastructure tools
         ./parts/sops-viz.nix
-        ./parts/cloud-cli.nix
 
         # Workflow tools
         ./parts/merge-when-green.nix
@@ -223,18 +222,6 @@
               in
               builtins.attrNames roster;
           };
-          opentofu = import ./lib/opentofu/default.nix;
-          terranix = import ./lib/opentofu/terranix.nix;
-          opentofuTesting = {
-            pure = import ./lib/opentofu/test-pure.nix;
-            integration = import ./lib/opentofu/test-integration.nix;
-            system = import ./lib/opentofu/test-system.nix;
-            executionTests = import ./lib/opentofu/terraform-execution-tests.nix;
-            examples = {
-              simple = import ./lib/opentofu/examples/simple-terranix-example.nix;
-            };
-          };
-          terranixTesting = import ./lib/terranix-testing;
           inherit inputs;
         };
 

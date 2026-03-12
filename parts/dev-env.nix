@@ -239,7 +239,6 @@ in
         self'.packages.vars
         self'.packages.tags
         self'.packages.roster
-        self'.packages.cloud-cli
         self'.packages.merge-when-green
         self'.packages.nix-eval-warnings
         self'.packages.iroh-ssh
@@ -364,31 +363,6 @@ in
       shellHook = ''
         echo "Minimal Clan Shell"
         echo "Available: clan"
-      '';
-    };
-
-    # Cloud-focused shell for infrastructure work
-    cloud = pkgs.mkShell {
-      packages = [
-        self'.packages.cloud-cli
-        pkgs.terranix
-        pkgs.opentofu
-        pkgs.awscli2
-        pkgs.jq
-      ];
-
-      shellHook = ''
-        echo "Cloud Infrastructure Shell"
-        echo "Available: cloud, tofu, terranix, aws"
-        echo ""
-        if [ -f .env ]; then
-          set -a
-          source .env
-          set +a
-          if [ -n "$AWS_ACCESS_KEY_ID" ]; then
-            echo "AWS credentials loaded."
-          fi
-        fi
       '';
     };
 

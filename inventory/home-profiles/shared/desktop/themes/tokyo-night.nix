@@ -1,6 +1,9 @@
 # Tokyo Night theme by enkia
 { pkgs }:
-rec {
+let
+  mkTheme = import ./mk-theme.nix { inherit pkgs; };
+in
+mkTheme {
   name = "Tokyo Night";
   author = "enkia";
   variant = "dark";
@@ -16,17 +19,16 @@ rec {
   base07 = "#ffffff"; # Lightest (rarely used)
 
   # Semantic colors (8 accent colors)
-  red = "#f7768e"; # Errors, urgent, failed
-  orange = "#ff9e64"; # Warnings (bright)
-  yellow = "#e0af68"; # Warnings, caution
-  green = "#9ece6a"; # Success, connected, charged
-  cyan = "#7dcfff"; # Info, highlights
-  blue = "#7aa2f7"; # Primary accent, links, focused
-  purple = "#bb9af7"; # Secondary accent
-  magenta = "#ad8ee6"; # Tertiary accent, special
+  red = "#f7768e";
+  orange = "#ff9e64";
+  yellow = "#e0af68";
+  green = "#9ece6a";
+  cyan = "#7dcfff";
+  blue = "#7aa2f7";
+  purple = "#bb9af7";
+  magenta = "#ad8ee6";
 
   # Terminal colors (16-color palette)
-  # Normal colors
   term_black = "#32344a";
   term_red = "#f7768e";
   term_green = "#9ece6a";
@@ -36,7 +38,6 @@ rec {
   term_cyan = "#449dab";
   term_white = "#787c99";
 
-  # Bright colors
   term_bright_black = "#444b6a";
   term_bright_red = "#ff7a93";
   term_bright_green = "#b9f27c";
@@ -46,49 +47,17 @@ rec {
   term_bright_cyan = "#0db9d7";
   term_bright_white = "#acb0d0";
 
-  # Special UI colors (derived from base colors)
-  bg = "#1a1b26"; # Alias for base00
+  # Special UI colors
   bg_dark = "#16161e"; # Even darker variant
-  bg_highlight = "#414868"; # Alias for base02
-  fg = "#c0caf5"; # Alias for base06
-  fg_dim = "#a9b1d6"; # Alias for base05
-  border = "#565f89"; # Alias for base03
-  accent = "#7aa2f7"; # Alias for blue (primary accent)
-  accent2 = "#bb9af7"; # Alias for purple (secondary accent)
-
-  # RGB values for colors that need transparency (derived from hex above)
-  accent_rgb = "122, 162, 247"; # RGB of accent (#7aa2f7)
-  accent2_rgb = "187, 154, 247"; # RGB of accent2 (#bb9af7)
-  bg_dark_rgb = "22, 22, 30"; # RGB of bg_dark (#16161e)
-
-  # Opacity values (can be overridden per-theme)
-  opacity = {
-    terminal = "0.92";
-    popups = "0.90";
-    notifications = "0.90";
-  };
 
   # Hyprland-specific styling
   hypr = {
-    active_border = "rgba(7aa2f7ff) rgba(bb9af7ff) 45deg"; # Gradient using accent (#7aa2f7) to accent2 (#bb9af7)
-    inactive_border = "rgba(565f89aa)"; # Using border color (#565f89) with transparency
-    border_size = 3; # Slightly thicker borders for Tokyo Night
+    active_border = "rgba(7aa2f7ff) rgba(bb9af7ff) 45deg";
+    inactive_border = "rgba(565f89aa)";
+    border_size = 3;
     gaps_in = 3;
     gaps_out = 3;
     rounding = 0; # Sharp corners for Tokyo Night
-  };
-
-  # Waybar-specific styling (colors derived from base theme)
-  waybar = {
-    # Just define opacity values - colors come from theme
-    workspace_hover_opacity = "0.15";
-    workspace_hover_border_opacity = "0.25";
-    workspace_active_shadow_opacity = "0.3";
-    workspace_active_hover_shadow_opacity = "0.4";
-
-    # Module styling
-    module_bg_opacity = "0.8";
-    module_radius = "0.5em";
   };
 
   # GTK theme integration
@@ -106,10 +75,7 @@ rec {
 
   # Matching wallpapers
   wallpapers = {
-    # Main wallpaper that gets auto-set
     main = "tokyo-night_nix.png";
-
-    # All wallpapers for this theme (including main)
     collection = {
       "tokyo-night_nix.png" = {
         url = "https://raw.githubusercontent.com/adeci/wallpapers/main/tokyo-night/tokyo-night_nix.png";
@@ -119,10 +85,6 @@ rec {
         url = "https://raw.githubusercontent.com/adeci/wallpapers/main/tokyo-night/tokyo-night_street.jpg";
         sha256 = "sha256-XlSm8RzGwowJMT/DQBNwfsU4V6QuvP4kvwVm1pzw6SM=";
       };
-      # "tokyo-night_forest.jxl" = {
-      #   url = "https://raw.githubusercontent.com/adeci/wallpapers/main/tokyo-night/tokyo-night_forest.jxl";
-      #   sha256 = "sha256-jbY5p0vKLdearaZh1kuQytVsPia6h2AsEbOAqGpxEWw=";
-      # };
     };
   };
 }

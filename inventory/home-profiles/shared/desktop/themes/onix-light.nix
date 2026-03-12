@@ -1,6 +1,9 @@
 # Onix Light theme - professional light theme with orange accents
 { pkgs }:
-{
+let
+  mkTheme = import ./mk-theme.nix { inherit pkgs; };
+in
+mkTheme {
   name = "Onix Light";
   author = "Onix Computer";
   variant = "light";
@@ -16,27 +19,18 @@
   base07 = "#000000"; # Darkest (rarely used)
 
   # Semantic colors (8 accent colors) - adjusted for light background
-  red = "#cc0000"; # Errors, urgent, failed
+  red = "#cc0000";
   orange = "#ff6600"; # Primary accent (Onix orange)
-  yellow = "#cc8800"; # Warnings, caution
-  green = "#00aa00"; # Success, connected, charged
-  cyan = "#0088aa"; # Info, highlights
-  blue = "#0066cc"; # Links, focused
-  purple = "#8800cc"; # Secondary accent
-  magenta = "#cc00aa"; # Tertiary accent, special
+  yellow = "#cc8800";
+  green = "#00aa00";
+  cyan = "#0088aa";
+  blue = "#0066cc";
+  purple = "#8800cc";
+  magenta = "#cc00aa";
 
   # Terminal colors (16-color palette)
-  # Normal colors
   term_black = "#333333";
-  term_red = "#cc0000";
-  term_green = "#00aa00";
-  term_yellow = "#cc8800";
-  term_blue = "#0066cc";
-  term_magenta = "#cc00aa";
-  term_cyan = "#0088aa";
   term_white = "#e0e0e0";
-
-  # Bright colors
   term_bright_black = "#666666";
   term_bright_red = "#ff0000";
   term_bright_green = "#00ff00";
@@ -46,22 +40,12 @@
   term_bright_cyan = "#00ddff";
   term_bright_white = "#ffffff";
 
-  # Special UI colors (derived from base colors)
-  bg = "#ffffff"; # Alias for base00
+  # Special UI colors
   bg_dark = "#f5f5f5"; # Alias for base01
-  bg_highlight = "#e0e0e0"; # Alias for base02
-  fg = "#333333"; # Alias for base06
-  fg_dim = "#666666"; # Alias for base05
-  border = "#cccccc"; # Alias for base03
-  accent = "#ff6600"; # Onix orange (primary accent)
+  accent = "#ff6600"; # Onix orange
   accent2 = "#cc8800"; # Yellow for secondary
 
-  # RGB values for colors that need transparency
-  accent_rgb = "255, 102, 0"; # RGB of accent (#ff6600)
-  accent2_rgb = "204, 136, 0"; # RGB of accent2 (#cc8800)
-  bg_dark_rgb = "245, 245, 245"; # RGB of bg_dark (#f5f5f5)
-
-  # Opacity values
+  # Override opacity for more professional look
   opacity = {
     terminal = "0.95";
     popups = "0.95";
@@ -70,7 +54,7 @@
 
   # Hyprland-specific styling
   hypr = {
-    active_border = "rgba(ff6600ff) rgba(cc8800ff) 45deg"; # Orange gradient
+    active_border = "rgba(ff6600ff) rgba(cc8800ff) 45deg";
     inactive_border = "rgba(ccccccaa)";
     border_size = 2;
     gaps_in = 8;
@@ -78,13 +62,8 @@
     rounding = 0; # Sharp corners for professional look
   };
 
-  # Waybar-specific styling
+  # Override waybar for sharp corners to match hyprland
   waybar = {
-    workspace_hover_opacity = "0.15";
-    workspace_hover_border_opacity = "0.25";
-    workspace_active_shadow_opacity = "0.3";
-    workspace_active_hover_shadow_opacity = "0.4";
-    module_bg_opacity = "0.8";
     module_radius = "0";
   };
 
@@ -101,13 +80,9 @@
     preferDarkTheme = false;
   };
 
-  # Matching wallpapers - for onix themes, wallpapers are symlinked manually
-  # The main wallpaper should exist in ~/Pictures/Wallpapers/
+  # Matching wallpapers - manually symlinked
   wallpapers = {
-    # Main wallpaper that gets auto-set
     main = "1-kanagawa.jpg";
-
-    # No collection - we'll use manually symlinked wallpapers from ~/git/wallpapers
     collection = { };
   };
 }
