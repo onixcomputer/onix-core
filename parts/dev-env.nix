@@ -254,10 +254,6 @@ in
           fi
           exec ${self'.packages.nix-eval-warnings}/bin/nix-eval-warnings "$@"
         '')
-        pkgs.terranix
-        pkgs.opentofu
-        pkgs.awscli2
-        pkgs.jq
         (pkgs.writeShellScriptBin "nix-prefetch-sri" ''
           if [ -z "$1" ]; then
             echo "Usage: nix-prefetch-sri <url>"
@@ -297,7 +293,6 @@ in
         echo "Available commands:"
         echo "  clan             - Clan CLI for infrastructure management"
         echo "  build            - Build a machine configuration (test locally)"
-        echo "  cloud            - Cloud infrastructure management (create/status/destroy)"
         echo "  validate         - Run nix fmt and pre-commit checks"
         echo "  nix-prefetch-sri - Get SRI hash for a URL"
         echo ""

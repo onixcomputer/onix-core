@@ -160,9 +160,7 @@
         ./parts/dev-env.nix
 
         # Checks
-        ./parts/checks.nix
         ./parts/machine-checks.nix
-        ./parts/vm-checks.nix
 
         # Analysis and infrastructure tools
         ./parts/sops-viz.nix
@@ -224,9 +222,6 @@
           };
           inherit inputs;
         };
-
-        # NixOS modules for downstream consumers
-        nixosModules.default = ./nixosModules/default.nix;
       };
     };
 }
