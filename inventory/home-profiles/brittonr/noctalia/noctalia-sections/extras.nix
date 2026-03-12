@@ -1,16 +1,28 @@
 # Templates, hooks, plugins, and desktop widgets for noctalia-shell
 _config: {
   # -- Templates --
+  # Enable the built-in niri template so Noctalia generates
+  # ~/.config/niri/noctalia.kdl whenever colours change.
+  # The template-apply.sh post-hook adds `include "./noctalia.kdl"`
+  # to config.kdl on first run; subsequent changes are picked up by
+  # the systemd path watcher (noctalia-niri-sync).
   templates = {
-    activeTemplates = [ ];
+    activeTemplates = [
+      {
+        id = "niri";
+        enabled = true;
+      }
+    ];
     enableUserTheming = false;
   };
 
   # -- Hooks --
+  # Backup mechanism: if the systemd path watcher misses a change,
+  # these hooks ensure niri reloads on dark-mode or wallpaper events.
   hooks = {
-    enabled = false;
-    wallpaperChange = "";
-    darkModeChange = "";
+    enabled = true;
+    darkModeChange = "niri msg action load-config-file";
+    wallpaperChange = "niri msg action load-config-file";
     screenLock = "";
     screenUnlock = "";
     performanceModeEnabled = "";

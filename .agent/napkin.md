@@ -29,6 +29,17 @@
 - GBM_BACKEND=nvidia-drm env var is fine — NVIDIA's GBM wrapper forwards non-NVIDIA device calls to mesa.
 - PR #2891 fixed DisplayLink for Asahi (open driver), not NVIDIA proprietary.
 
+## Domain Notes (Noctalia ↔ Niri theme sync)
+- Noctalia stores runtime config in `~/.config/noctalia/` — `colors.json` (M3 palette), `settings.json` (all settings). HM module writes both as nix-store symlinks via `xdg.configFile`.
+- Noctalia has a built-in template system: `Assets/Templates/niri.kdl` generates `~/.config/niri/noctalia.kdl` with M3 colours. Post-hook (`template-apply.sh niri`) adds `include "./noctalia.kdl"` to config.kdl.
+- Template variables use `{{colors.primary.default.hex}}` syntax. Modes: dark/light/default. Formats: hex, hex_stripped, rgb, rgba, hsl, etc. Filters: `| set_alpha 0.5`, `| lighten 0.2`.
+- Niri merges duplicate blocks (later values override earlier). So `include` at the end of config.kdl safely overrides just the colour properties in the layout block without clobbering gaps/widths/presets.
+- Niri watches config.kdl for changes and auto-reloads, but does NOT watch included files. Need `niri msg action load-config-file` or a systemd path watcher on noctalia.kdl.
+- `colors.json` MUST be writable for Noctalia's template processor (writes generated colours). Use `xdg.configFile.force = true` + activation script to convert symlink to real file.
+- `settings.json` can stay as read-only symlink — template system doesn't write to it. Noctalia UI settings changes won't persist, but that's acceptable (use Nix for settings, Noctalia for live colours).
+- Wrappers lib `types.file` supports `path = "$HOME/.config/niri/config.kdl"` — env vars expand at runtime in the wrapper's bash script.
+- Noctalia IPC: `noctalia-shell ipc call colorScheme set <name>`, `darkMode toggle/setDark/setLight`. Full list via `noctalia-shell ipc show`.
+
 ## Patterns That Work
 - SSH into target machines to get actual journal logs rather than guessing from deploy output
 - Building locally with `nix eval` to inspect generated configs (TOML, systemd units)
