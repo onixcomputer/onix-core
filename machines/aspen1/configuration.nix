@@ -159,9 +159,6 @@
       deploy = true;
     };
     files.ssh_public_key = {
-      owner = "radicle";
-      group = "radicle";
-      mode = "0644";
       secret = false;
       deploy = true;
     };
