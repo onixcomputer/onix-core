@@ -29,7 +29,7 @@
     knownHosts.britton-air = {
       hostNames = [
         "britton-air"
-        "192.168.1.55"
+        "britton-air.local"
       ];
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJWYzE7FHHUK6h6wLFyV+dX3SubV80IA7b1+Pp0cIxgf";
     };

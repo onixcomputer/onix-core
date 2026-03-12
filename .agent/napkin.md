@@ -64,6 +64,14 @@
 - The old module had no vars generator — keys were generated at first run and lived only in `/var/lib/iroh-ssh-*/`. No way to know endpoint IDs without SSHing to the machine first (chicken-and-egg).
 - Pine's deploy changed from `pine.bison-tailor.ts.net` (Tailscale MagicDNS) to `iroh-pine` (iroh-ssh proxy). First machine fully off Tailscale for SSH deploy.
 
+## Domain Notes (iroh-ssh deploy migration)
+- All NixOS deploy targets now use `iroh-<machine>` except britton-desktop (local) and utm-vm.
+- britton-air uses `britton-air.local` (mDNS via Avahi nssmdns4).
+- Avahi reverse-resolved britton-air as `britton-air.localdomain` (not `.local`). Forward mDNS lookup timed out while Mac was sleeping — macOS sleep responds to ICMP but not mDNS/TCP. Works when awake.
+- Machines currently offline (can't deploy): britton-gpd (56d), bonsai (4d), aspen2 (not in Tailscale, DNS unresolvable). These still have iroh-ssh vars generated; they'll get the service on next deploy.
+- aspen1 has pre-existing failures: radicle-node (crash-loop), tailscaled-autoconnect (timeout — Tailscale offline 48d). Unrelated to iroh-ssh.
+- Pine (PineNote) is completely offline — not reachable via iroh, Tailscale, or DNS. Deploy target is `iroh-pine` from a previous session.
+
 ## Patterns That Work
 - SSH into target machines to get actual journal logs rather than guessing from deploy output
 - Building locally with `nix eval` to inspect generated configs (TOML, systemd units)
