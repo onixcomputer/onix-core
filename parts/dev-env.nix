@@ -18,7 +18,7 @@ let
     programs = {
       # Nix
       nixfmt.enable = true;
-      nixfmt.package = pkgs.nixfmt-rfc-style;
+      nixfmt.package = pkgs.nixfmt;
       deadnix.enable = true;
 
       # Shell

@@ -1,7 +1,7 @@
 # MCP (Model Context Protocol) servers for AI coding assistants
 { pkgs, inputs, ... }:
 let
-  mcp-pkgs = inputs.mcp-servers-nix.packages.${pkgs.system};
+  mcp-pkgs = inputs.mcp-servers-nix.packages.${pkgs.stdenv.hostPlatform.system};
 
   # MCP server packages - referenced by full path in mcpConfig below.
   # NOT added to home.packages to avoid node_modules path collisions

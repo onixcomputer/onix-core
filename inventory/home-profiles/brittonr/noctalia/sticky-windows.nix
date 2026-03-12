@@ -6,7 +6,7 @@
 }:
 let
   inherit (pkgs) writeShellScriptBin;
-  niriPackage = inputs.niri.packages.${pkgs.system}.niri;
+  niriPackage = inputs.niri.packages.${pkgs.stdenv.hostPlatform.system}.niri;
   niri = "${niriPackage}/bin/niri";
   jq = "${pkgs.jq}/bin/jq";
   notifySend = "${pkgs.libnotify}/bin/notify-send";

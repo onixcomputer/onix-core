@@ -17,7 +17,7 @@ let
   ipc = target: action: ''"noctalia-shell" "ipc" "call" "${target}" "${action}"'';
 
   # Use niri from our fork
-  niriPackage = inputs.niri.packages.${pkgs.system}.niri;
+  niriPackage = inputs.niri.packages.${pkgs.stdenv.hostPlatform.system}.niri;
 
   # Define wrapped niri package with custom config
   wrappedNiri =

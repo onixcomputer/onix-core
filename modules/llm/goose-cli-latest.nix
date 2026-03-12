@@ -19,7 +19,7 @@ pkgs.rustPlatform.buildRustPackage rec {
     protobuf
   ];
 
-  buildInputs = with pkgs; [ dbus ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [ pkgs.xorg.libxcb ];
+  buildInputs = with pkgs; [ dbus ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [ pkgs.libxcb ];
 
   doCheck = false; # Tests require network access
 

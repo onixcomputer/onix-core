@@ -1,11 +1,11 @@
 { pkgs, ... }:
 {
   home.packages = with pkgs; [
-    xfce.thunar
-    xfce.thunar-volman
-    xfce.thunar-archive-plugin
-    xfce.tumbler
-    xfce.xfconf
+    thunar
+    thunar-volman
+    thunar-archive-plugin
+    tumbler
+    xfconf
     ffmpegthumbnailer
     webp-pixbuf-loader
     file-roller

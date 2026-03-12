@@ -12,8 +12,8 @@
     pictures = "$HOME/Pictures";
     videos = "$HOME/Videos";
     extraConfig = {
-      XDG_SCREENSHOTS_DIR = lib.mkForce "$HOME/Pictures/Screenshots";
-      XDG_PROJECTS_DIR = lib.mkForce "$HOME/git";
+      SCREENSHOTS = lib.mkForce "$HOME/Pictures/Screenshots";
+      PROJECTS = lib.mkForce "$HOME/git";
     };
   };
 }

@@ -74,7 +74,7 @@
           xorg.libXrandr
           xorg.libXrender
           xorg.libXtst
-          xorg.libxcb
+          libxcb
           xorg.libxkbfile
         ];
     };

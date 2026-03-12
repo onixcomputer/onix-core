@@ -4,19 +4,21 @@
   # Running as user service to properly access PipeWire audio
   services.mpd = {
     enable = true;
-    musicDirectory = "/srv/music";
-    playlistDirectory = "/srv/music/playlists";
 
     # Run as user service instead of system service
     # This allows proper access to user's PipeWire session
     user = "brittonr";
     startWhenNeeded = false;
 
-    # Network configuration
-    network.port = 6600;
+    # Explicitly disable — we open ports manually below
+    openFirewall = false;
 
     # RFC42 declarative settings format
     settings = {
+      music_directory = "/srv/music";
+      playlist_directory = "/srv/music/playlists";
+      port = 6600;
+
       # Bind to network (socket binding done via extraConfig for multiple addresses)
       bind_to_address = lib.mkForce "any";
 

@@ -6,7 +6,7 @@
 }:
 let
   inherit (pkgs) writeShellScriptBin;
-  niriPackage = inputs.niri.packages.${pkgs.system}.niri;
+  niriPackage = inputs.niri.packages.${pkgs.stdenv.hostPlatform.system}.niri;
 
   # Handler script that executes niri action + shows notification
   gestureHandler = writeShellScriptBin "gesture-handler" ''
