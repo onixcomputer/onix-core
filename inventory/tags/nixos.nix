@@ -9,8 +9,11 @@
   networking.nftables.enable = true;
 
   services = {
-    # Enable Avahi for service discovery
-    avahi.enable = true;
+    # Enable Avahi for mDNS service discovery and .local hostname resolution
+    avahi = {
+      enable = true;
+      nssmdns4 = true;
+    };
 
     # Enable SSH agent forwarding on the server side
     openssh.settings.AllowAgentForwarding = true;

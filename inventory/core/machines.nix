@@ -33,7 +33,7 @@ _: {
         # "radicle-node"
       ];
       deploy = {
-        targetHost = "root@britton-fw";
+        targetHost = "root@iroh-britton-fw";
         buildHost = "";
       };
     };
@@ -68,7 +68,7 @@ _: {
         # "radicle-node"
       ];
       deploy = {
-        targetHost = "root@britton-gpd"; # Use hostname instead of hardcoded IP
+        targetHost = "root@iroh-britton-gpd";
         buildHost = "";
       };
     };
@@ -102,7 +102,7 @@ _: {
         "gaming"
       ];
       deploy = {
-        targetHost = "root@bonsai";
+        targetHost = "root@iroh-bonsai";
         buildHost = "";
       };
     };
@@ -122,7 +122,7 @@ _: {
         "amd-gpu" # AMD Ryzen AI MAX+ 395 with Radeon 8060S
       ];
       deploy = {
-        targetHost = "root@aspen1";
+        targetHost = "root@iroh-aspen1";
         buildHost = "";
       };
     };
@@ -141,7 +141,7 @@ _: {
         "amd-gpu" # AMD Ryzen AI MAX+ 395 with Radeon 8060S
       ];
       deploy = {
-        targetHost = "root@aspen2"; # Update with actual hostname or IP
+        targetHost = "root@iroh-aspen2";
         buildHost = "";
       };
     };
@@ -218,7 +218,7 @@ _: {
       machineClass = "darwin";
       tags = [ ];
       deploy = {
-        targetHost = "brittonr@192.168.1.55";
+        targetHost = "brittonr@britton-air.local";
         buildHost = "";
       };
     };
