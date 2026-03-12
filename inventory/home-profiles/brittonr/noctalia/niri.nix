@@ -264,9 +264,9 @@ let
                               ${k.modifiers.wm}+Control+Up { move-window-up; }
                               ${k.modifiers.wm}+Control+Down { move-window-down; }
 
-                              // Column operations - consume/expel windows
-                              ${k.modifiers.wm}+BracketLeft { consume-window-into-column; }
-                              ${k.modifiers.wm}+BracketRight { expel-window-from-column; }
+                              // Column operations - consume/expel focused window
+                              ${k.modifiers.wm}+BracketLeft { consume-or-expel-window-left; }
+                              ${k.modifiers.wm}+BracketRight { consume-or-expel-window-right; }
 
                               // Resizing
                               ${k.modifiers.wm}+Minus { set-column-width "-${toString config.layout.resizePercent}%"; }
