@@ -2,37 +2,36 @@
 
 # Onix Infrastructure
 
-A declarative NixOS infrastructure repository powered by [clan-core](https://clan.lol), implementing advanced user and machine management with integrated home configurations.
+A declarative NixOS infrastructure repository powered by [clan-core](https://clan.lol), implementing tag-based service deployment and modular home-manager configurations.
 
 ## Architecture Overview
 
-This repository manages NixOS machines with a holistic approach to user and home configuration management. The infrastructure provides centralized user definitions with per-machine customization, integrated home-manager profiles, and tag-based service deployment.
+This repository manages NixOS machines using upstream clan-core with a structured approach to user and home configuration management.
 
 ### Core Components
 
-**User Management**: Unified user management across all machines, combining:
+**User Management**: Users are defined through two mechanisms:
 
-- Centralized user definitions with global attributes (UID, groups, SSH keys)
-- Per-machine user customization (roles, shells, home-manager profiles)
-- Modular home-manager configurations organized by user and profile type
-- Role-based access control (owner, admin, basic, service)
+- **Upstream `users` module** — password generation and group membership via clan-core's `users` service
+- **Local NixOS config** (`inventory/tags/all.nix`) — UID, shell, SSH keys applied to all machines
 
 **Tag-Based System**: Services and configurations deploy based on machine tags:
 
-- `all` - Base configurations for every machine
-- `tailnet` - Tailscale VPN connectivity
-- `home-manager` - User home environment management
-- `dev` - Development tools and environments
-- `desktop` - Desktop environment configurations
-- `wsl` - Windows Subsystem for Linux specific settings
+- `all` — Base configurations for every NixOS machine
+- `hm-server` / `hm-laptop` — Home-manager profile groups
+- `tailnet-*` — Tailscale VPN connectivity
+- `dev` — Development tools and environments
+- `desktop` — Desktop environment configurations
 
-**Infrastructure Components**:
+**Home-Manager Profiles**: Modular HM configurations in `inventory/home-profiles/<user>/<profile>/`:
 
-- Manages physical, virtual, and WSL environments
-- Multi-user support with distinct preferences and toolchains
-- Tailscale mesh networking for zero-config connectivity
-- SOPS-encrypted secrets with clan vars integration
-- Declarative disk management with disko
+- `base/` — Core utilities (editor, shell, git)
+- `dev/` — Development tools (direnv, language toolchains)
+- `noctalia/` — Desktop theme and compositor config
+- `creative/` — Creative tools
+- `social/` — Communication apps
+
+Machines get profiles via tags: `hm-server` (base+dev), `hm-laptop` (base+dev+noctalia+social), or direct machine assignment for custom combos.
 
 ## Project Structure
 
@@ -40,7 +39,7 @@ This repository manages NixOS machines with a holistic approach to user and home
 .
 ├── flake.nix                # Nix flake entry point
 ├── inventory/               # Infrastructure definitions
-│   ├── core/               # Machine and user definitions
+│   ├── core/               # Machine defs, user instances
 │   ├── services/           # Service instances
 │   ├── tags/               # Tag-based configurations
 │   └── home-profiles/      # User home-manager profiles
@@ -49,39 +48,6 @@ This repository manages NixOS machines with a holistic approach to user and home
 ├── parts/                  # Flake parts for modularity
 └── vars/                   # SOPS-encrypted variables
 ```
-
-## User and Home Management
-
-The infrastructure enables sophisticated user management patterns:
-
-1. **Global User Definition** (`inventory/core/roster.nix`):
-
-   ```nix
-   username = {
-     defaultUid = 1000;
-     defaultGroups = ["audio", "networkmanager", "video"];
-     sshAuthorizedKeys = [...];
-   };
-   ```
-
-1. **Per-Machine Configuration**:
-
-   ```nix
-   machines.hostname = {
-     role = "owner";
-     shell = "zsh";
-     homeManager = {
-       enable = true;
-       profiles = ["base", "desktop", "dev"];
-     };
-   };
-   ```
-
-1. **Modular Home Profiles** (`inventory/home-profiles/<user>/<profile>/`):
-
-   - `base/` - Core utilities (editor, shell, git)
-   - `dev/` - Development tools (direnv, language toolchains)
-   - `desktop/` - GUI applications (browsers, desktop apps)
 
 ## Getting Started
 

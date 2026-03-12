@@ -1,11 +1,7 @@
-{ pkgs, lib, ... }:
+{ pkgs, ... }:
 {
   nixpkgs.config.allowUnfree = true;
 
-  # Disable clan-core's facter AMD graphics auto-detection — it has a typo
-  # ("modesettings" instead of "modesetting") and we manage GPU drivers
-  # through our own tag system (amd-gpu, nvidia) anyway.
-  facter.detected.graphics.amd.enable = lib.mkForce false;
   clan.core.settings.state-version.enable = true;
 
   # Modern firewall - nftables replaces iptables
@@ -104,4 +100,26 @@
     LC_TELEPHONE = "en_US.UTF-8";
     LC_TIME = "en_US.UTF-8";
   };
+
+  # User configuration — UID, shell, SSH keys, primary group.
+  # Password generation and extra groups are handled by the upstream
+  # clan-core users module (inventory/core/users.nix).
+  users = {
+    users.brittonr = {
+      uid = 1555;
+      group = "brittonr";
+      shell = pkgs.fish;
+      openssh.authorizedKeys.keys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILYzh3yIsSTOYXkJMFHBKzkakoDfonm3/RED5rqMqhIO britton@framework"
+      ];
+    };
+    groups.brittonr = { };
+    users.root.openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILYzh3yIsSTOYXkJMFHBKzkakoDfonm3/RED5rqMqhIO britton@framework"
+    ];
+  };
+
+  programs.fish.enable = true;
+
+  security.sudo.wheelNeedsPassword = false;
 }

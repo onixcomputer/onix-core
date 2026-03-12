@@ -19,6 +19,7 @@ let
     "clonadic" = import ./clonadic;
     "iroh-ssh" = import ./iroh-ssh;
     "llm-agents" = import ./llm-agents;
+    "home-manager-profiles" = import ./home-manager-profiles;
   };
 
 in

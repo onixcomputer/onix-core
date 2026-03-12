@@ -11,8 +11,8 @@ let
     let
       tagName = lib.removeSuffix ".nix" filename;
 
-      # all.nix -> base-settings, others -> tag-tools
-      instanceName = if tagName == "all" then "base-settings" else "${tagName}-tools";
+      # nixos.nix -> base-settings, others -> tag-tools
+      instanceName = if tagName == "nixos" then "base-settings" else "${tagName}-tools";
     in
     {
       ${instanceName} = {

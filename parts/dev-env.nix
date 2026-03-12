@@ -238,7 +238,6 @@ in
         self'.packages.acl
         self'.packages.vars
         self'.packages.tags
-        self'.packages.roster
         self'.packages.merge-when-green
         self'.packages.nix-eval-warnings
         self'.packages.iroh-ssh
@@ -300,7 +299,7 @@ in
         echo "  acl              - Analyze Clan secret ownership"
         echo "  vars             - Analyze Clan vars ownership"
         echo "  tags             - Analyze Clan machine tags"
-        echo "  roster           - Analyze Clan user roster configurations"
+
         echo ""
         echo "AI agent tools:"
         echo "  browser-cli    - Firefox browser automation"
@@ -367,12 +366,11 @@ in
         self'.packages.acl
         self'.packages.vars
         self'.packages.tags
-        self'.packages.roster
       ];
 
       shellHook = ''
         echo "Analysis Shell"
-        echo "Available: acl, vars, tags, roster"
+        echo "Available: acl, vars, tags"
       '';
     };
 

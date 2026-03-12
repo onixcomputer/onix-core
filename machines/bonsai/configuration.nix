@@ -12,6 +12,37 @@ in
     inputs.nixos-hardware.nixosModules.gpd-pocket-4
   ];
 
+  # Per-machine home-manager config: monitor layout for GPD Pocket 4
+  home-manager.sharedModules = [
+    {
+      monitors = {
+        primary = {
+          name = "eDP-1";
+          mode = "1600x2560@143.999";
+          scale = 2;
+          position = {
+            x = 0;
+            y = 0;
+          };
+          vrr = false;
+        };
+        secondary = {
+          name = "DP-3";
+          mode = "preferred";
+          scale = 1;
+          position = {
+            x = 1280;
+            y = 0;
+          };
+          vrr = false;
+        };
+        builtin = {
+          name = "eDP-1";
+        };
+      };
+    }
+  ];
+
   networking.hostName = "bonsai";
   time.timeZone = "America/New_York";
 

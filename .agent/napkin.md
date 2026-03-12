@@ -41,6 +41,19 @@
 - Wrappers lib `types.file` supports `path = "$HOME/.config/niri/config.kdl"` — env vars expand at runtime in the wrapper's bash script.
 - Noctalia IPC: `noctalia-shell ipc call colorScheme set <name>`, `darkMode toggle/setDark/setLight`. Full list via `noctalia-shell ipc show`.
 
+## Domain Notes (upstream clan-core migration — COMPLETED)
+- Switched from `adeci/clan-core` fork to upstream `clan/clan-core` main (March 2026).
+- Roster module deleted. User management decomposed: upstream `users` for passwords/groups, local `all.nix` for UID/shell/SSH keys, `home-manager-profiles` clan service for HM.
+- Upstream sshd module now ALWAYS generates openssh-ca shared var (no mkIf on searchDomains). Had to manually generate `vars/shared/openssh-ca/` keypair.
+- Upstream removed `exportsModule` — replaced by `exportInterfaces`/`exports` system. Our `exports-module.nix` deleted; monitoring modules' `exports.serviceEndpoints` discovery needs rework.
+- Upstream removed `facter.detected.graphics.amd.enable` — nixos-facter-modules integration changed. Removed the mkForce override.
+- Upstream doesn't have `home-manager` as a direct flake input anymore. HM module imported via our top-level `inputs.home-manager`.
+- Password vars renamed: `brittonr-password-hash` → `user-password-hash`, `brittonr-password` → `user-password`.
+- Home-manager profiles assigned via tags: `hm-server` (base+dev), `hm-laptop` (base+dev+noctalia+social), direct machine ref for desktop (base+dev+noctalia+creative+social).
+- Bonsai's monitor sharedModules moved from roster config to `machines/bonsai/configuration.nix`.
+- Upstream auto-computes `all`, `nixos`, `darwin` tags. The `all` tag includes EVERY machine (including darwin). `all.nix` renamed to `nixos.nix` to use the NixOS-only computed tag. Services switched from `tags.all` to `tags.nixos`.
+- The explicit `"all"` in each machine's tag list is now redundant (upstream auto-computes it). Removed from machines.nix.
+
 ## Patterns That Work
 - SSH into target machines to get actual journal logs rather than guessing from deploy output
 - Building locally with `nix eval` to inspect generated configs (TOML, systemd units)

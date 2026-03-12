@@ -4,7 +4,7 @@ _: {
     britton-fw = {
       name = "britton-fw";
       tags = [
-        "all"
+        "hm-laptop"
         "ssd-optimization"
         "perf-tuning"
         "dev"
@@ -40,7 +40,7 @@ _: {
     britton-gpd = {
       name = "britton-gpd";
       tags = [
-        "all"
+        "hm-laptop"
         "ssd-optimization"
         "perf-tuning"
         "dev"
@@ -76,7 +76,7 @@ _: {
     bonsai = {
       name = "bonsai";
       tags = [
-        "all"
+        "hm-laptop"
         "ssd-optimization"
         "perf-tuning"
         "dev"
@@ -110,7 +110,7 @@ _: {
     aspen1 = {
       name = "aspen1";
       tags = [
-        "all"
+        "hm-server"
         "ssd-optimization"
         "docker"
         "tailnet-brittonr"
@@ -130,7 +130,7 @@ _: {
     aspen2 = {
       name = "aspen2";
       tags = [
-        "all"
+        "hm-server"
         "ssd-optimization"
         "docker"
         "tailnet-brittonr"
@@ -149,7 +149,7 @@ _: {
     britton-desktop = {
       name = "britton-desktop";
       tags = [
-        "all"
+        # hm-desktop applied via direct machine reference in users.nix
         "ssd-optimization"
         "perf-tuning"
         "dev"
@@ -187,7 +187,7 @@ _: {
     pine = {
       name = "pine";
       tags = [
-        "all"
+        "hm-server"
         "pinenote"
         "tailnet-brittonr"
         "dev"
@@ -202,7 +202,7 @@ _: {
     utm-vm = {
       name = "utm-vm";
       tags = [
-        "all"
+        "hm-server"
         "ssd-optimization"
         "dev"
       ];

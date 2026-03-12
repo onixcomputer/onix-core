@@ -16,9 +16,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     clan-core = {
-      url = "git+https://git.clan.lol/adeci/clan-core?ref=adeci-unstable";
+      url = "git+https://git.clan.lol/clan/clan-core?ref=main";
       inputs = {
-        home-manager.follows = "home-manager";
+        nixpkgs.follows = "nixpkgs";
         flake-parts.follows = "flake-parts";
         treefmt-nix.follows = "treefmt-nix";
       };
@@ -128,7 +128,6 @@
   outputs =
     inputs@{ adios-flake, self, ... }:
     let
-      inherit (inputs.nixpkgs) lib;
 
       # Import modules directly
       modules = import "${self}/modules/default.nix" { inherit inputs; };
@@ -143,8 +142,6 @@
         meta.name = "Onix";
         inherit modules;
         inventory = import "${self}/inventory" { inherit inputs; };
-
-        exportsModule = import "${self}/inventory/exports-module.nix" { inherit lib; };
       };
     in
     adios-flake.lib.mkFlake {
@@ -213,12 +210,8 @@
               in
               map (name: builtins.replaceStrings [ ".nix" ] [ "" ] name) nixFiles;
           };
-          roster = {
-            users =
-              let
-                roster = import ./inventory/core/roster.nix { };
-              in
-              builtins.attrNames roster;
+          users = {
+            names = [ "brittonr" ];
           };
           inherit inputs;
         };
