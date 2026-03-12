@@ -118,7 +118,7 @@ _: {
         "prometheus"
         "monitoring"
         "homepage-server"
-        # "llm" # Disabled: Using llm-gptoss instance with vLLM instead of ollama
+        # "llm"
         "amd-gpu" # AMD Ryzen AI MAX+ 395 with Radeon 8060S
       ];
       deploy = {

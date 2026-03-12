@@ -70,8 +70,7 @@
 
     # GPU stress testing and benchmarking
     vulkan-tools # Vulkan utilities
-    # TODO: vkmark disabled due to Vulkan API compatibility issue in nixpkgs
-    # vkmark # Vulkan benchmarking tool
+    # vkmark — broken in nixpkgs (Vulkan API incompatibility)
   ];
 
   # Environment variables for ROCm/OpenCL/Vulkan

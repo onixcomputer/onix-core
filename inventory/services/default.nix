@@ -15,7 +15,7 @@ let
     homepage-dashboard = import ./homepage-dashboard.nix { inherit inputs; };
     cloudflare-tunnel = import ./cloudflare-tunnel.nix { inherit inputs; };
     llm = import ./llm.nix { inherit inputs; };
-    llm-gptoss = import ./llm-gptoss.nix { inherit inputs; };
+
     garage = import ./garage.nix { inherit inputs; };
     upmpdcli = import ./upmpdcli.nix { inherit inputs; };
     nix-gc = import ./nix-gc.nix { inherit inputs; };

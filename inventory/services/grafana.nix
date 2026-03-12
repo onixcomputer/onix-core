@@ -45,15 +45,6 @@ _: {
             };
           };
 
-          # TODO: Add dashboard provisioning when grafana-dashboards input is available
-          # dashboards = [
-          #   {
-          #     name = "System Dashboards";
-          #     type = "file";
-          #     options.path = inputs.grafana-dashboards;
-          #     options.foldersFromFilesStructure = false;
-          #   }
-          # ];
         };
       };
     };

@@ -5,9 +5,7 @@
 # ---
 # This file was automatically generated!
 # CHANGING this configuration requires wiping and reinstalling the machine
-#
-# TODO: Update mainDisk placeholder above with actual disk ID from:
-#   ls -la /dev/disk/by-id/ | grep -E 'nvme|sd|vd'
+
 {
 
   boot = {
