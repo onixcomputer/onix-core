@@ -272,11 +272,9 @@ let
                               ${k.modifiers.wm}+Minus { set-column-width "-${toString config.layout.resizePercent}%"; }
                               ${k.modifiers.wm}+Equal { set-column-width "+${toString config.layout.resizePercent}%"; }
 
-                              // Vim bindings for resizing
-                              ${k.modifiers.wm}+Shift+${up k.nav.left} { set-column-width "-${toString config.layout.resizePercent}%"; }
-                              ${k.modifiers.wm}+Shift+${up k.nav.right} { set-column-width "+${toString config.layout.resizePercent}%"; }
-                              ${k.modifiers.wm}+Shift+${up k.nav.down} { set-window-height "+${toString config.layout.resizePercent}%"; }
-                              ${k.modifiers.wm}+Shift+${up k.nav.up} { set-window-height "-${toString config.layout.resizePercent}%"; }
+                              // Resizing height (Mod+Shift+Minus/Equal)
+                              ${k.modifiers.wm}+Shift+Minus { set-window-height "-${toString config.layout.resizePercent}%"; }
+                              ${k.modifiers.wm}+Shift+Equal { set-window-height "+${toString config.layout.resizePercent}%"; }
 
                               // Workspaces (1-10)
                               ${k.modifiers.wm}+1 { focus-workspace 1; }
@@ -361,18 +359,26 @@ let
                               ${k.modifiers.wm}+TouchpadScrollUp { spawn ${ipc "volume" "increase"}; }
                               ${k.modifiers.wm}+TouchpadScrollDown { spawn ${ipc "volume" "decrease"}; }
 
-                              // Monitor navigation (for multi-monitor setups)
+                              // Monitor focus (Mod+Shift = monitor scope)
                               ${k.modifiers.wm}+Escape { focus-monitor-previous; }
-                              ${k.modifiers.wm}+Shift+Up { focus-monitor-up; }
-                              ${k.modifiers.wm}+Shift+Down { focus-monitor-down; }
+                              ${k.modifiers.wm}+Shift+${up k.nav.left} { focus-monitor-left; }
+                              ${k.modifiers.wm}+Shift+${up k.nav.right} { focus-monitor-right; }
+                              ${k.modifiers.wm}+Shift+${up k.nav.up} { focus-monitor-up; }
+                              ${k.modifiers.wm}+Shift+${up k.nav.down} { focus-monitor-down; }
                               ${k.modifiers.wm}+Shift+Left { focus-monitor-left; }
                               ${k.modifiers.wm}+Shift+Right { focus-monitor-right; }
+                              ${k.modifiers.wm}+Shift+Up { focus-monitor-up; }
+                              ${k.modifiers.wm}+Shift+Down { focus-monitor-down; }
 
-                              // Move focused column to another monitor
-                              ${k.modifiers.wm}+Control+Shift+Up { move-column-to-monitor-up; }
-                              ${k.modifiers.wm}+Control+Shift+Down { move-column-to-monitor-down; }
+                              // Move column to monitor (Mod+Ctrl+Shift = move + monitor scope)
+                              ${k.modifiers.wm}+Control+Shift+${up k.nav.left} { move-column-to-monitor-left; }
+                              ${k.modifiers.wm}+Control+Shift+${up k.nav.right} { move-column-to-monitor-right; }
+                              ${k.modifiers.wm}+Control+Shift+${up k.nav.up} { move-column-to-monitor-up; }
+                              ${k.modifiers.wm}+Control+Shift+${up k.nav.down} { move-column-to-monitor-down; }
                               ${k.modifiers.wm}+Control+Shift+Left { move-column-to-monitor-left; }
                               ${k.modifiers.wm}+Control+Shift+Right { move-column-to-monitor-right; }
+                              ${k.modifiers.wm}+Control+Shift+Up { move-column-to-monitor-up; }
+                              ${k.modifiers.wm}+Control+Shift+Down { move-column-to-monitor-down; }
 
                               // Column layout
                               ${k.modifiers.wm}+${k.wm.maxColumn} { maximize-column; }
