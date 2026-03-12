@@ -352,7 +352,7 @@ in
       };
 
       perInstance =
-        { settings, exports, ... }:
+        { settings, ... }:
         {
           nixosModule =
             {
@@ -363,35 +363,7 @@ in
             let
               inherit (settings) clientType extraPackages;
 
-              # Discover LLM server URL from exports if not explicitly set
-              llmFromExports =
-                let
-                  llmInstances = lib.filterAttrs (_: v: (v.serviceEndpoints.llm or null) != null) (
-                    exports.instances or { }
-                  );
-                  firstLlm = lib.head (lib.attrValues llmInstances);
-                in
-                if llmInstances != { } then firstLlm.serviceEndpoints.llm.url else null;
-
-              # Also check for Ollama exports as a fallback
-              ollamaFromExports =
-                let
-                  ollamaInstances = lib.filterAttrs (_: v: (v.serviceEndpoints.ollama or null) != null) (
-                    exports.instances or { }
-                  );
-                  firstOllama = lib.head (lib.attrValues ollamaInstances);
-                in
-                if ollamaInstances != { } then firstOllama.serviceEndpoints.ollama.url else null;
-
-              defaultServer =
-                if (settings.defaultServer or null) != null then
-                  settings.defaultServer
-                else if llmFromExports != null then
-                  llmFromExports
-                else if ollamaFromExports != null then
-                  ollamaFromExports
-                else
-                  null;
+              defaultServer = settings.defaultServer or null;
 
               # Import custom goose package
               goose-cli-latest = import ./goose-cli-latest.nix { inherit pkgs; };

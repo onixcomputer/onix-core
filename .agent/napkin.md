@@ -103,3 +103,28 @@
 - Darwin machines need `system.stateVersion = 6` and `system.primaryUser` set explicitly.
 - `claude-code-bin` only exists for linux in nixpkgs; darwin has `claude-code` instead.
 - The `all` tag (all.nix) has NixOS-specific options (boot, systemd, networking.nftables, etc.) — can't be applied to darwin machines. Roster requires `all` tag, so home-manager for darwin needs a different approach.
+## 2026-03-12 - Exports Cleanup Completed
+
+Successfully removed all dead `exports.instances or {}` consumer code from 12 clan service modules as requested:
+
+### Fixed Modules
+
+1. **prometheus**: Removed `llmScrapeConfigs` block that read exports.instances, updated `allConfigs` to not include it
+2. **grafana**: Removed `prometheusFromExports`, `lokiFromExports`, and `lokiDatasourceFromExports` blocks, simplified to use explicit settings only
+3. **loki**: Removed `lokiFromExports` in promtail role, removed `exports` parameter from promtail perInstance
+4. **llm**: Removed `llmFromExports` and `ollamaFromExports` blocks in client role, removed `exports` parameter from client perInstance  
+5. **homepage-dashboard**: Removed entire `discoveredServices` block and all related discovery code, simplified to just use local services
+6. **cloudflare-tunnel**: Replaced `exports.instances or {}` with `{}` in autoIngress resolution, added TODO comment for upstream clan-core API
+7. **tailscale-traefik**: Simplified `portFromExports` function to just return null, letting it fall back to `portDetectors`
+
+### Preserved Export Producers
+- All `exports.serviceEndpoints.*` assignments were kept unchanged in all modules (prometheus, grafana, loki, llm, vaultwarden, etc.)
+- These are the correct producers that upstream clan-core collects
+
+### Pattern Applied
+- `exports.instances or {}` always returns `{}` because upstream uses scope-keyed exports, not `exports.instances`
+- Replaced all consumer blocks with their default/fallback values
+- Removed unused `exports` parameters only where they were only used for dead consumer code
+- Kept `exports` parameters where modules SET exports.serviceEndpoints (producer side)
+
+The cleanup removes all dead code that silently returned empty objects, making the modules use their explicit configuration instead of false auto-discovery.

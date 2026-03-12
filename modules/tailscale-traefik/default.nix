@@ -204,7 +204,7 @@ in
       };
 
       perInstance =
-        { extendSettings, exports, ... }:
+        { extendSettings, ... }:
         {
           nixosModule =
             { config, pkgs, ... }:
@@ -288,27 +288,7 @@ in
                   inherit name;
                   subdomain = if svc.subdomain != null then svc.subdomain else name;
                   # Try to resolve port from service exports
-                  portFromExports =
-                    serviceName:
-                    let
-                      # Map service names to their export endpoint names
-                      exportNameMap = {
-                        homepage = "homepage";
-                        grafana = "grafana"; # Note: grafana doesn't export yet, but others do
-                        vaultwarden = "vaultwarden";
-                        prometheus = "prometheus";
-                        loki = "loki";
-                        calibre = "calibre";
-                        clonadic = "clonadic";
-                        ollama = "ollama";
-                      };
-                      exportName = exportNameMap.${serviceName} or serviceName;
-                      matchingInstances = lib.filterAttrs (_: v: (v.serviceEndpoints.${exportName} or null) != null) (
-                        exports.instances or { }
-                      );
-                      firstMatch = lib.head (lib.attrValues matchingInstances);
-                    in
-                    if matchingInstances != { } then firstMatch.serviceEndpoints.${exportName}.port else null;
+                  portFromExports = _serviceName: null;
 
                   # Service port detection mapping
                   # Maps service names to functions that extract their ports from NixOS config

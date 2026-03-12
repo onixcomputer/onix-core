@@ -117,7 +117,7 @@ in
       };
 
       perInstance =
-        { extendSettings, exports, ... }:
+        { extendSettings, ... }:
         let
           baseSettings = extendSettings { };
           serverPort = baseSettings.port or 9090;
@@ -139,29 +139,6 @@ in
             let
               # Get the extended settings
               settings = extendSettings { };
-
-              # Discover LLM server endpoints from exports for automatic scrape targets
-              llmScrapeConfigs =
-                let
-                  llmInstances = lib.filterAttrs (_: v: (v.serviceEndpoints.llm or null) != null) (
-                    exports.instances or { }
-                  );
-                in
-                lib.mapAttrsToList (instanceName: instanceExports: {
-                  job_name = "llm-${instanceName}";
-                  static_configs = [
-                    {
-                      targets = [ "localhost:${toString instanceExports.serviceEndpoints.llm.port}" ];
-                      labels = {
-                        instance = instanceName;
-                        service = "llm";
-                      };
-                    }
-                  ];
-                  metrics_path = "/metrics";
-                  scrape_interval = "30s";
-                  scrape_timeout = "10s";
-                }) llmInstances;
 
               # Extract clan-specific options
               enableAutoDiscovery = settings.enableAutoDiscovery or true;
@@ -368,7 +345,7 @@ in
                         else
                           autoDiscoveredConfigs;
 
-                      allConfigs = mergedConfigs ++ staticConfigs ++ llmScrapeConfigs ++ additionalScrapeConfigs;
+                      allConfigs = mergedConfigs ++ staticConfigs ++ additionalScrapeConfigs;
                     in
                     lib.mkIf (allConfigs != [ ]) allConfigs;
                 }

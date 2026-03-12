@@ -19,7 +19,7 @@ in
       };
 
       perInstance =
-        { extendSettings, exports, ... }:
+        { extendSettings, ... }:
         let
           baseSettings = extendSettings {
             listenPort = mkDefault 8082;
@@ -32,85 +32,8 @@ in
             port = serverPort;
           };
           nixosModule =
-            { lib, ... }:
+            _:
             let
-              # Build auto-discovered service entries from exports
-              discoveredServices =
-                let
-                  instances = exports.instances or { };
-
-                  # Map export endpoint names to display info
-                  serviceDisplayInfo = {
-                    vaultwarden = {
-                      name = "Vaultwarden";
-                      icon = "bitwarden.png";
-                      description = "Password manager";
-                    };
-                    prometheus = {
-                      name = "Prometheus";
-                      icon = "prometheus.png";
-                      description = "Metrics collection";
-                    };
-                    grafana = {
-                      name = "Grafana";
-                      icon = "grafana.png";
-                      description = "Metrics visualization";
-                    };
-                    loki = {
-                      name = "Loki";
-                      icon = "loki.png";
-                      description = "Log aggregation";
-                    };
-                    homepage = {
-                      name = "Homepage";
-                      icon = "homepage.png";
-                      description = "Dashboard";
-                    };
-                    ollama = {
-                      name = "Ollama";
-                      icon = "ollama.png";
-                      description = "LLM inference";
-                    };
-                    calibre = {
-                      name = "Calibre";
-                      icon = "calibre.png";
-                      description = "E-book library";
-                    };
-                    clonadic = {
-                      name = "Clonadic";
-                      icon = "spreadsheet.png";
-                      description = "LLM spreadsheet";
-                    };
-                  };
-
-                  # Collect all exported service endpoints
-                  allEndpoints = lib.foldlAttrs (
-                    acc: _instanceName: instanceExports:
-                    let
-                      endpoints = instanceExports.serviceEndpoints or { };
-                    in
-                    acc
-                    // (lib.mapAttrs (epName: ep: {
-                      inherit (ep) url port;
-                      displayInfo =
-                        serviceDisplayInfo.${epName} or {
-                          name = epName;
-                          icon = "mdi-server-#fff";
-                          description = epName;
-                        };
-                    }) endpoints)
-                  ) { } instances;
-
-                  # Convert to homepage service entries
-                  serviceEntries = lib.mapAttrsToList (_name: ep: {
-                    ${ep.displayInfo.name} = {
-                      inherit (ep.displayInfo) icon description;
-                      href = ep.url;
-                      siteMonitor = ep.url;
-                    };
-                  }) allEndpoints;
-                in
-                if serviceEntries != [ ] then [ { "Discovered Services" = serviceEntries; } ] else [ ];
 
               localSettings = extendSettings {
                 # Minimal defaults
@@ -135,11 +58,7 @@ in
                 bookmarks = mkDefault [ ];
               };
 
-              # Merge discovered services with manual ones
-              # Manual services come first, discovered services append
-              mergedSettings = localSettings // {
-                services = (localSettings.services or [ ]) ++ discoveredServices;
-              };
+              mergedSettings = localSettings;
             in
             {
               services.homepage-dashboard = mergedSettings;

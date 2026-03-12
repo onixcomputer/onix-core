@@ -173,7 +173,7 @@ in
       };
 
       perInstance =
-        { extendSettings, exports, ... }:
+        { extendSettings, ... }:
         {
           nixosModule =
             {
@@ -185,24 +185,7 @@ in
               # Get the extended settings
               settings = extendSettings { };
 
-              # Discover Loki URL from exports if not explicitly set.
-              # The Loki server role exports serviceEndpoints.loki with its URL.
-              lokiFromExports =
-                let
-                  lokiInstances = lib.filterAttrs (_: v: (v.serviceEndpoints.loki or null) != null) (
-                    exports.instances or { }
-                  );
-                  firstLoki = lib.head (lib.attrValues lokiInstances);
-                in
-                if lokiInstances != { } then firstLoki.serviceEndpoints.loki.url else null;
-
-              lokiUrl =
-                if (settings.lokiUrl or null) != null && settings.lokiUrl != "http://localhost:3100" then
-                  settings.lokiUrl
-                else if lokiFromExports != null then
-                  lokiFromExports
-                else
-                  settings.lokiUrl or "http://localhost:3100";
+              lokiUrl = settings.lokiUrl or "http://localhost:3100";
 
               additionalScrapeConfigs = settings.additionalScrapeConfigs or [ ];
 

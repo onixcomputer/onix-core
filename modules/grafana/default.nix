@@ -64,7 +64,7 @@ in
       };
 
       perInstance =
-        { extendSettings, exports, ... }:
+        { extendSettings, ... }:
         let
           baseSettings = extendSettings { };
           serverPort = baseSettings.settings.server.http_port or 3000;
@@ -88,50 +88,12 @@ in
               enablePrometheusIntegration = settings.enablePrometheusIntegration or true;
               additionalDatasources = settings.additionalDatasources or [ ];
 
-              # Discover Prometheus URL from exports, fall back to settings, then default.
-              prometheusFromExports =
-                let
-                  promInstances = lib.filterAttrs (_: v: (v.serviceEndpoints.prometheus or null) != null) (
-                    exports.instances or { }
-                  );
-                  firstProm = lib.head (lib.attrValues promInstances);
-                in
-                if promInstances != { } then firstProm.serviceEndpoints.prometheus.url else null;
-
               prometheusUrl =
                 if (settings.prometheusUrl or null) != null then
                   settings.prometheusUrl
-                else if prometheusFromExports != null then
-                  prometheusFromExports
                 else
                   "http://localhost:9090";
 
-              # Discover Loki URL from exports for auto-configured datasource.
-              lokiFromExports =
-                let
-                  lokiInstances = lib.filterAttrs (_: v: (v.serviceEndpoints.loki or null) != null) (
-                    exports.instances or { }
-                  );
-                  firstLoki = lib.head (lib.attrValues lokiInstances);
-                in
-                if lokiInstances != { } then firstLoki.serviceEndpoints.loki.url else null;
-
-              # Build Loki datasource from exports if available and not already
-              # present in additionalDatasources
-              hasManualLoki = lib.any (ds: (ds.type or "") == "loki") additionalDatasources;
-              lokiDatasourceFromExports =
-                if lokiFromExports != null && !hasManualLoki then
-                  [
-                    {
-                      name = "Loki";
-                      type = "loki";
-                      access = "proxy";
-                      url = lokiFromExports;
-                      jsonData.maxLines = 1000;
-                    }
-                  ]
-                else
-                  [ ];
               dashboards = settings.dashboards or [ ];
               notifiers = settings.notifiers or [ ];
 
@@ -160,11 +122,9 @@ in
                 };
               };
 
-              # Combine all datasources: Prometheus + exports-discovered Loki + manual additions
+              # Combine all datasources: Prometheus + manual additions
               allDatasources =
-                (if enablePrometheusIntegration then [ prometheusDatasource ] else [ ])
-                ++ lokiDatasourceFromExports
-                ++ additionalDatasources;
+                (if enablePrometheusIntegration then [ prometheusDatasource ] else [ ]) ++ additionalDatasources;
 
             in
             {

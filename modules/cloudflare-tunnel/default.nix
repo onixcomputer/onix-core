@@ -56,7 +56,6 @@ in
         {
           instanceName,
           extendSettings,
-          exports,
           ...
         }:
         {
@@ -76,17 +75,15 @@ in
                   lib.mapAttrs (
                     hostname: serviceName:
                     let
-                      # Search all instances for the serviceEndpoint
+                      # TODO: implement using upstream clan-core exports API (selectExports)
                       matchingInstances = lib.filterAttrs (
                         _instanceName: instanceData: (instanceData.serviceEndpoints.${serviceName} or null) != null
-                      ) (exports.instances or { });
+                      ) { };
 
-                      availableInstances = lib.attrNames (exports.instances or { });
+                      availableInstances = lib.attrNames { };
                       availableEndpoints = lib.concatStringsSep ", " (
                         lib.flatten (
-                          lib.mapAttrsToList (_: instanceData: lib.attrNames (instanceData.serviceEndpoints or { })) (
-                            exports.instances or { }
-                          )
+                          lib.mapAttrsToList (_: instanceData: lib.attrNames (instanceData.serviceEndpoints or { })) { }
                         )
                       );
                     in
