@@ -4,24 +4,24 @@
     # Noctalia home-manager module
     inputs.noctalia.homeModules.default
 
-    # Theme support (reuse from niri)
-    ../../shared/hyprland/theme.nix
-    ../hyprland/theme-config.nix
+    # Theme support
+    ../../shared/desktop/theme.nix
+    ../base/theme-config.nix
 
-    # Core utilities (keep)
-    ../../shared/hyprland/audio-utils.nix
-    ../../shared/hyprland/clipboard.nix
-    ../../shared/hyprland/cursor.nix
-    ../../shared/hyprland/fonts.nix
-    ../../shared/hyprland/keyring.nix
-    ../../shared/hyprland/network.nix
+    # Core utilities
+    ../../shared/desktop/audio-utils.nix
+    ../../shared/desktop/clipboard.nix
+    ../../shared/desktop/cursor.nix
+    ../../shared/desktop/fonts.nix
+    ../../shared/desktop/keyring.nix
+    ../../shared/desktop/network.nix
 
-    # Applications (reuse)
+    # Applications
     ./firefox.nix
-    ../../shared/hyprland/thunar.nix
-    ../../shared/hyprland/media-viewers.nix
-    ../../shared/hyprland/btop.nix
-    ../../shared/hyprland/libreoffice.nix
+    ../../shared/desktop/thunar.nix
+    ../../shared/desktop/media-viewers.nix
+    ../../shared/desktop/btop.nix
+    ../../shared/desktop/libreoffice.nix
 
     # Noctalia-specific
     ./noctalia-config.nix
@@ -30,14 +30,6 @@
     ./darkman.nix
     ./gestures.nix
     ./sticky-windows.nix
-    ../hyprland/kitty.nix
-
-    # Replaced by Noctalia (not imported):
-    # - waybar.nix (Noctalia bar)
-    # - mako.nix (Noctalia notifications)
-    # - fuzzel.nix (Noctalia launcher)
-    # - fuzzel-scripts.nix (Noctalia features replace most)
-    # - swayosd.nix (Noctalia OSD)
-    # - wallpaper.nix (Noctalia built-in wallpaper)
+    ../base/kitty.nix
   ];
 }

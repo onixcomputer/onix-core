@@ -66,7 +66,6 @@ let
             profiles = [
               "base"
               "dev"
-              # "niri"
               "noctalia"
               "social"
             ];
@@ -144,8 +143,6 @@ let
             profiles = [
               "base"
               "dev"
-              # "hyprland"
-              # "niri"
               "noctalia"
               "creative"
               "social"
