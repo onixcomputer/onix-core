@@ -154,6 +154,7 @@ _: {
       tags = [
         "all"
         "ssd-optimization"
+        "perf-tuning"
         "dev"
         "desktop"
         "laptop-input"

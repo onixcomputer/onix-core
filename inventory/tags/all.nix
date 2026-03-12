@@ -27,6 +27,20 @@
   # RAM-based /tmp (faster, reduces SSD wear, auto-cleanup on reboot)
   boot.tmp.useTmpfs = true;
 
+  boot.kernel.sysctl = {
+    # BBR congestion control — better throughput on lossy/high-latency links
+    # (Tailscale tunnels, remote deploys). fq qdisc required for BBR pacing.
+    "net.core.default_qdisc" = "fq";
+    "net.ipv4.tcp_congestion_control" = "bbr";
+
+    # TCP Fast Open — saves a round-trip on repeated connections (client+server)
+    "net.ipv4.tcp_fastopen" = 3;
+
+    # inotify limits — default 8192 is too low for IDEs, nix builds, file watchers
+    "fs.inotify.max_user_watches" = 1048576;
+    "fs.inotify.max_user_instances" = 1024;
+  };
+
   systemd = {
     services = {
       # Redirect Nix builds to /var/tmp (not RAM) to avoid OOM on large builds
