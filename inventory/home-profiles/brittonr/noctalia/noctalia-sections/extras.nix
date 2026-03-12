@@ -12,6 +12,10 @@ _config: {
         id = "niri";
         enabled = true;
       }
+      {
+        id = "kitty";
+        enabled = true;
+      }
     ];
     enableUserTheming = false;
   };

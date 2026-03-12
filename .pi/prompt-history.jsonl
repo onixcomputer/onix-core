@@ -237,3 +237,5 @@
 {"text":"lets make sure our noctalia and niri themes are linked and easily modifiable. is there a way we can do this through noctalia and not have to reload niri?","timestamp":1773320007909}
 {"text":"would also using home manager for these help? what are the olptions","timestamp":1773320399465}
 {"text":"lets do option B","timestamp":1773320798356}
+{"text":"where else can we adopt the mutable xdg path option? is there a chance this would drift on a nixos rebuild?","timestamp":1773322776298}
+{"text":"yes","timestamp":1773323122721}

@@ -185,8 +185,12 @@ in
 
     # Extra config for advanced features
     extraConfig = ''
-      # Add live config reload support
-      # When theme changes, kitty can be signaled to reload
+      # Noctalia writes ~/.config/kitty/themes/noctalia.conf when colours
+      # change, then signals all kitty instances to reload.  The include
+      # overrides the Nix-declared colour defaults above (last wins).
+      # kitty 0.36+ silently ignores missing includes, so this is safe
+      # before Noctalia runs its first colour generation.
+      include themes/noctalia.conf
 
       # Performance tuning for Wayland
       linux_display_server wayland
