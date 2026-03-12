@@ -29,6 +29,7 @@
     ./screenshot.nix
     ./darkman.nix
     ./gestures.nix
+    ./sticky-windows.nix
     ../hyprland/kitty.nix
 
     # Replaced by Noctalia (not imported):

@@ -227,6 +227,7 @@ let
                               ${k.modifiers.wm}+${k.wm.toggleTabs} { toggle-column-tabbed-display; }
                               ${k.modifiers.wm}+${k.wm.fullscreen} { fullscreen-window; }
                               ${k.modifiers.secondary}+F { toggle-window-floating; }
+                              ${k.modifiers.wm}+Y { spawn "toggle-sticky-window"; }
                               ${k.modifiers.wm}+${k.wm.reload} { spawn "niri" "msg" "action" "load-config-file"; }
 
                               // Vim bindings for focus

@@ -104,10 +104,10 @@
               compactShowVisualizer = false;
               hideMode = "hidden";
               hideWhenIdle = false;
-              maxWidth = 145;
+              maxWidth = 350;
               panelShowAlbumArt = true;
               panelShowVisualizer = true;
-              scrollingMode = "hover";
+              scrollingMode = "always";
               showAlbumArt = true;
               showArtistFirst = true;
               showProgressRing = true;
