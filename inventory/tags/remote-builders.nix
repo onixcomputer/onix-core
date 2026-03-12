@@ -12,7 +12,7 @@
     buildMachines = [
       {
         protocol = "ssh-ng";
-        hostName = "britton-air";
+        hostName = "britton-air.local";
         systems = [
           "aarch64-darwin"
           "aarch64-linux"

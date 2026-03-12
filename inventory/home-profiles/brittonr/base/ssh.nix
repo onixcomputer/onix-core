@@ -40,7 +40,7 @@ _: {
       };
 
       "britton-air" = {
-        hostname = "192.168.1.55";
+        hostname = "britton-air.local";
         user = "brittonr";
       };
     };
