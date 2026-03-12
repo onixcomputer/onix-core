@@ -23,10 +23,6 @@
       url = "git+file:///home/brittonr/git/wrappers";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nixos-wsl = {
-      url = "github:nix-community/NixOS-WSL/main";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     grub2-themes = {
       url = "github:vinceliuice/grub2-themes";
       inputs.nixpkgs.follows = "nixpkgs";

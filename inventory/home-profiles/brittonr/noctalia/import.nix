@@ -6,7 +6,7 @@
 
     # Theme support
     ../../shared/desktop/theme.nix
-    ../base/theme-config.nix
+    ./theme-config.nix
 
     # Core utilities
     ../../shared/desktop/audio-utils.nix
@@ -30,6 +30,6 @@
     ./darkman.nix
     ./gestures.nix
     ./sticky-windows.nix
-    ../base/kitty.nix
+    ./kitty.nix
   ];
 }
