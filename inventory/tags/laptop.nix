@@ -1,28 +1,57 @@
-{ config, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   hardware.bluetooth = {
     enable = true;
     powerOnBoot = true;
   };
 
+  programs.dconf.enable = true;
+
+  # dbus-broker caches service file paths via inotify. When NixOS switches
+  # generations, the inotify watches go stale and dbus-broker never discovers
+  # new D-Bus services (like ca.desrt.dconf). Reload each logged-in user's
+  # dbus-broker before home-manager activation so dconf.service is activatable.
+  systemd.services =
+    (lib.mapAttrs' (
+      name: _:
+      lib.nameValuePair "home-manager-${name}" {
+        environment.XDG_DATA_DIRS = "/run/current-system/sw/share";
+        preStart =
+          let
+            uid = toString config.users.users.${name}.uid;
+          in
+          ''
+            ${pkgs.procps}/bin/pkill -HUP -u ${uid} -x dbus-broker-lau 2>/dev/null || true
+            sleep 0.5
+          '';
+      }
+    ) config.home-manager.users)
+    // {
+      # Powertop aggressively suspends USB devices including keyboards/mice.
+      # Re-enable all HID devices after auto-tune runs.
+      powertop.postStart = ''
+        HIDDEVICES=$(ls /sys/bus/usb/drivers/usbhid | grep -oE '^[0-9]+-[0-9\.]+' | sort -u)
+        for i in $HIDDEVICES; do
+          echo -n "Enabling " | cat - /sys/bus/usb/devices/$i/product
+          echo 'on' > /sys/bus/usb/devices/$i/power/control
+        done
+      '';
+      powertop.serviceConfig = {
+        Restart = "on-failure";
+        RestartSec = "2s";
+      };
+    };
+
   # Faster WiFi reconnection and better power management
   networking.networkmanager.wifi.backend = "iwd";
 
   # Powertop auto-tune for battery life
   powerManagement.powertop.enable = true;
-  # Powertop aggressively suspends USB devices including keyboards/mice.
-  # Re-enable all HID devices after auto-tune runs.
-  systemd.services.powertop.postStart = ''
-    HIDDEVICES=$(ls /sys/bus/usb/drivers/usbhid | grep -oE '^[0-9]+-[0-9\.]+' | sort -u)
-    for i in $HIDDEVICES; do
-      echo -n "Enabling " | cat - /sys/bus/usb/devices/$i/product
-      echo 'on' > /sys/bus/usb/devices/$i/power/control
-    done
-  '';
-  systemd.services.powertop.serviceConfig = {
-    Restart = "on-failure";
-    RestartSec = "2s";
-  };
 
   services = {
     # High-performance D-Bus implementation (default on Arch/Fedora)

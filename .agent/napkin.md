@@ -54,6 +54,16 @@
 - Upstream auto-computes `all`, `nixos`, `darwin` tags. The `all` tag includes EVERY machine (including darwin). `all.nix` renamed to `nixos.nix` to use the NixOS-only computed tag. Services switched from `tags.all` to `tags.nixos`.
 - The explicit `"all"` in each machine's tag list is now redundant (upstream auto-computes it). Removed from machines.nix.
 
+## Domain Notes (iroh-ssh)
+- iroh-ssh uses ed25519 keypairs for persistent node identity. Keys stored as z32-encoded strings in `~/.ssh/irohssh_ed25519{,.pub}`.
+- The endpoint ID (used in `iroh-ssh proxy <id>` and `iroh-ssh user@<id>`) is the hex-encoded raw ed25519 public key (64 chars).
+- The z32-encoded public key and the hex endpoint ID are different representations of the same key. Both stored in clan vars; hex `node-id` is what SSH ProxyCommand uses.
+- `DynamicUser=true` requires explicit `HOME=/var/lib/iroh-ssh` and `ExecStartPre` to copy vars-managed keys into `$HOME/.ssh/`.
+- iroh-ssh handles its own UDP port allocation for QUIC — no need to open wide UDP port ranges in the firewall.
+- SSH Host entries use `iroh-<machine>` naming (e.g., `iroh-pine`) to coexist with regular hostname-based SSH entries. This lets you choose iroh vs direct path per-connection.
+- The old module had no vars generator — keys were generated at first run and lived only in `/var/lib/iroh-ssh-*/`. No way to know endpoint IDs without SSHing to the machine first (chicken-and-egg).
+- Pine's deploy changed from `pine.bison-tailor.ts.net` (Tailscale MagicDNS) to `iroh-pine` (iroh-ssh proxy). First machine fully off Tailscale for SSH deploy.
+
 ## Patterns That Work
 - SSH into target machines to get actual journal logs rather than guessing from deploy output
 - Building locally with `nix eval` to inspect generated configs (TOML, systemd units)

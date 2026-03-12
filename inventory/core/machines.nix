@@ -102,7 +102,7 @@ _: {
         "gaming"
       ];
       deploy = {
-        targetHost = "root@100.126.162.16"; # Update with actual hostname or IP
+        targetHost = "root@bonsai";
         buildHost = "";
       };
     };
@@ -193,7 +193,7 @@ _: {
         "dev"
       ];
       deploy = {
-        targetHost = "root@pine.bison-tailor.ts.net";
+        targetHost = "root@iroh-pine";
         buildHost = "britton-desktop";
       };
     };

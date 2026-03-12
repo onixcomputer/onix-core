@@ -7,7 +7,7 @@ _: {
       roles.peer = {
         tags."tailnet-brittonr" = { };
         settings = {
-          persist = true;
+          sshPort = 22;
         };
       };
     };
