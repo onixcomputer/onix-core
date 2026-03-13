@@ -31,6 +31,10 @@ in
       ];
     };
 
+    # Pin legacy <nixpkgs> to the flake input so `nix-shell -p foo` and
+    # `import <nixpkgs>` use our pinned nixpkgs, not stale channels.
+    nixPath = [ "nixpkgs=flake:nixpkgs" ];
+
     optimise.automatic = true;
 
     settings = {

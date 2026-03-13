@@ -9,6 +9,7 @@
     inputs.srvos.nixosModules.common
     inputs.srvos.nixosModules.mixins-nix-experimental
     inputs.srvos.nixosModules.mixins-trusted-nix-caches
+    inputs.nix-index-database.nixosModules.nix-index
     ./common/fhs-compat.nix
     ./common/zswap.nix
     ./common/nix-signing.nix
@@ -23,6 +24,12 @@
   system.configurationRevision = self.rev or self.dirtyRev or null;
 
   clan.core.settings.state-version.enable = true;
+
+  # nix-index-database: pre-built index for nix-locate (no local indexing).
+  # comma: run uninstalled packages with `, htop`.
+  # Replaces the broken default command-not-found handler.
+  programs.nix-index-database.comma.enable = true;
+  programs.command-not-found.enable = false;
 
   # Modern firewall - nftables replaces iptables
   # Provides build-time ruleset validation via checkRuleset

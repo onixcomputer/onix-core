@@ -16,10 +16,19 @@ let
   # --- treefmt ---
   treefmtEval = inputs'.treefmt-nix.lib.evalModule pkgs {
     programs = {
-      # Nix
-      nixfmt.enable = true;
-      nixfmt.package = pkgs.nixfmt;
+      # Nix — priority: deadnix (1) → statix (2) → nixfmt (3)
+      # deadnix removes unused code, statix catches anti-patterns, nixfmt formats.
       deadnix.enable = true;
+      deadnix.priority = 1;
+
+      statix.enable = true;
+      statix.priority = 2;
+
+      nixfmt = {
+        enable = true;
+        package = pkgs.nixfmt;
+        priority = 3;
+      };
 
       # Shell
       shellcheck.enable = true;
