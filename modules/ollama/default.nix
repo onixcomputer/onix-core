@@ -55,10 +55,6 @@ in
       perInstance =
         { settings, ... }:
         {
-          exports.serviceEndpoints.ollama = {
-            url = "http://localhost:${toString settings.port}";
-            inherit (settings) port;
-          };
           nixosModule =
             { pkgs, ... }:
             let

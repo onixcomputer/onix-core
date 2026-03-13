@@ -118,17 +118,7 @@ in
 
       perInstance =
         { extendSettings, ... }:
-        let
-          baseSettings = extendSettings { };
-          serverPort = baseSettings.port or 9090;
-        in
         {
-          # Export this server's endpoint so other services (Grafana) can discover it
-          exports.serviceEndpoints.prometheus = {
-            url = "http://localhost:${toString serverPort}";
-            port = serverPort;
-          };
-
           nixosModule =
             {
               config,

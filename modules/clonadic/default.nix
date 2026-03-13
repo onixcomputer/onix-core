@@ -67,10 +67,6 @@ in
       perInstance =
         { settings, ... }:
         {
-          exports.serviceEndpoints.clonadic = {
-            url = "http://localhost:${toString settings.port}";
-            inherit (settings) port;
-          };
           nixosModule =
             {
               pkgs,

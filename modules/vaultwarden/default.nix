@@ -38,17 +38,7 @@ in
 
       perInstance =
         { instanceName, extendSettings, ... }:
-        let
-          baseSettings = extendSettings {
-            ROCKET_PORT = lib.mkDefault 8222;
-          };
-          serverPort = baseSettings.ROCKET_PORT or 8222;
-        in
         {
-          exports.serviceEndpoints.vaultwarden = {
-            url = "http://localhost:${toString serverPort}";
-            port = serverPort;
-          };
           nixosModule =
             { config, pkgs, ... }:
             let

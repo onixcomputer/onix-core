@@ -44,17 +44,7 @@ in
 
       perInstance =
         { extendSettings, ... }:
-        let
-          baseSettings = extendSettings { };
-          serverPort = baseSettings.configuration.server.http_listen_port or 3100;
-        in
         {
-          # Export this server's endpoint so other services (Grafana, Promtail) can discover it
-          exports.serviceEndpoints.loki = {
-            url = "http://localhost:${toString serverPort}";
-            port = serverPort;
-          };
-
           nixosModule =
             {
               config,

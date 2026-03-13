@@ -65,15 +65,7 @@ in
 
       perInstance =
         { extendSettings, ... }:
-        let
-          baseSettings = extendSettings { };
-          serverPort = baseSettings.settings.server.http_port or 3000;
-        in
         {
-          exports.serviceEndpoints.grafana = {
-            url = "http://localhost:${toString serverPort}";
-            port = serverPort;
-          };
           nixosModule =
             {
               config,

@@ -20,17 +20,7 @@ in
 
       perInstance =
         { extendSettings, ... }:
-        let
-          baseSettings = extendSettings {
-            port = mkDefault 8888;
-          };
-          serverPort = baseSettings.port or 8888;
-        in
         {
-          exports.serviceEndpoints.static-server = {
-            url = "http://localhost:${toString serverPort}";
-            port = serverPort;
-          };
           nixosModule =
             { config, pkgs, ... }:
             let

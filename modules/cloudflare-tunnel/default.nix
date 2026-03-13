@@ -37,18 +37,6 @@ in
               Example: { "app.example.com" = "http://localhost:3000"; }
             '';
           };
-
-          autoIngress = mkOption {
-            type = attrsOf str;
-            default = { };
-            description = ''
-              Automatically resolve ingress backend URLs from service exports.
-              Maps hostnames to export service endpoint names.
-              Example: { "vault.robitzs.ch" = "vaultwarden"; }
-              The service must export serviceEndpoints.<name> with a url field.
-              Manual ingress entries take precedence over auto-resolved ones.
-            '';
-          };
         };
       };
 
@@ -66,58 +54,23 @@ in
                 tunnelName = mkDefault config.networking.hostName;
               };
 
-              # Resolve auto-ingress from service exports
-              autoIngress = localSettings.autoIngress or { };
-              resolvedAutoIngress =
-                if autoIngress == { } then
-                  { }
-                else
-                  lib.mapAttrs (
-                    hostname: serviceName:
-                    let
-                      # TODO: implement using upstream clan-core exports API (selectExports)
-                      matchingInstances = lib.filterAttrs (
-                        _instanceName: instanceData: (instanceData.serviceEndpoints.${serviceName} or null) != null
-                      ) { };
-
-                      availableInstances = lib.attrNames { };
-                      availableEndpoints = lib.concatStringsSep ", " (
-                        lib.flatten (
-                          lib.mapAttrsToList (_: instanceData: lib.attrNames (instanceData.serviceEndpoints or { })) { }
-                        )
-                      );
-                    in
-                    if matchingInstances != { } then
-                      (lib.head (lib.attrValues matchingInstances)).serviceEndpoints.${serviceName}.url
-                    else
-                      throw ''
-                        cloudflare-tunnel: No export found for service '${serviceName}' (referenced by autoIngress for ${hostname})
-                        Available instances: ${lib.concatStringsSep ", " availableInstances}
-                        Available endpoints: ${availableEndpoints}
-                      ''
-                  ) autoIngress;
-
-              # Manual ingress takes precedence over auto-resolved
-              mergedIngress = resolvedAutoIngress // localSettings.ingress;
-
-              inherit (localSettings) tunnelName;
-              ingress = mergedIngress;
+              inherit (localSettings) tunnelName ingress;
 
               # Tunnel credentials file path
               tunnelCredentialsFile = "/var/lib/cloudflared/${tunnelName}.json";
 
               # Extract all hostnames from ingress rules
-              hostnames = builtins.attrNames mergedIngress;
+              hostnames = builtins.attrNames ingress;
 
               # Get the setup script
               setupScript = ./setup-tunnel.sh;
 
               # Generate summary for the script output
               ingressSummary = lib.concatStringsSep "\n" (
-                lib.mapAttrsToList (hostname: service: "  - https://${hostname} → ${service}") mergedIngress
+                lib.mapAttrsToList (hostname: service: "  - https://${hostname} → ${service}") ingress
               );
             in
-            mkIf (mergedIngress != { }) {
+            mkIf (ingress != { }) {
               # Cloudflare tunnel setup service
               systemd.services."cloudflare-tunnel-setup-${tunnelName}" = {
                 description = "Setup Cloudflare tunnel ${tunnelName}";

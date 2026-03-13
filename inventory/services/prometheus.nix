@@ -27,9 +27,6 @@ _: {
           # Data retention
           retentionTime = "30d";
 
-          # Additional scrape configs beyond auto-discovery.
-          # LLM/vLLM endpoints are now auto-discovered from exports — see
-          # the llm module's server role which exports serviceEndpoints.llm.
           additionalScrapeConfigs = [
             {
               job_name = "prometheus";
