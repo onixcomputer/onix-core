@@ -6,6 +6,7 @@
 {
   imports = [
     inputs.nixos-hardware.nixosModules.framework-desktop-amd-ai-max-300-series
+    ./buildbot.nix
   ];
 
   networking = {
