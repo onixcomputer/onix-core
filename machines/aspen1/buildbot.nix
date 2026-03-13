@@ -56,6 +56,7 @@
   services.buildbot-nix.master = {
     enable = true;
     domain = "buildbot.blr.dev";
+    useHTTPS = true;
     workersFile = config.clan.core.vars.generators.buildbot-worker.files.workers.path;
     buildSystems = [
       "x86_64-linux"
