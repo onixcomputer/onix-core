@@ -2,7 +2,7 @@
 {
   imports = [
     inputs.nix-index-database.nixosModules.nix-index
-    # fhs-compat now applied to all NixOS machines via nixos.nix
+    ./common/shared-dev.nix
   ];
 
   # Pre-built nix-index database — no local indexing needed.
@@ -10,10 +10,10 @@
   programs.nix-index-database.comma.enable = true;
 
   programs.direnv.enable = true;
+
+  # NixOS-specific dev tools (shared tools from shared-dev.nix)
   environment.systemPackages = with pkgs; [
-    claude-code-bin
     codex
-    gh
     # Screen recording tool - requires GStreamer plugins for encoding
     # Wrap kooha with required GStreamer plugins for NVIDIA hardware encoding
     (pkgs.symlinkJoin {
@@ -34,10 +34,8 @@
           }"
       '';
     })
-    nixpkgs-review
     goose-cli
     net-tools
-    nix-output-monitor
     nmap
     pamtester
     # Reverse engineering & binary analysis
@@ -62,7 +60,6 @@
     radicle-node
     socat
     lsof
-    jujutsu
     # TUI tools
     television # Fast general-purpose fuzzy finder
     bandwhich # Per-process network bandwidth monitor

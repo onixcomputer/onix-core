@@ -5,6 +5,7 @@ _: {
       name = "britton-fw";
       tags = [
         "hm-laptop"
+        "update-prefetch"
         "ssd-optimization"
         "perf-tuning"
         "dev"
@@ -111,6 +112,7 @@ _: {
       name = "aspen1";
       tags = [
         "hm-server"
+        "minimal-docs"
         "ssd-optimization"
         "docker"
         "dev"
@@ -131,6 +133,7 @@ _: {
       name = "aspen2";
       tags = [
         "hm-server"
+        "minimal-docs"
         "ssd-optimization"
         "docker"
         "tailnet-brittonr"
@@ -151,6 +154,7 @@ _: {
       name = "britton-desktop";
       tags = [
         # hm-desktop applied via direct machine reference in users.nix
+        "update-prefetch"
         "ssd-optimization"
         "perf-tuning"
         "dev"
@@ -190,6 +194,7 @@ _: {
       name = "pine";
       tags = [
         "hm-server"
+        "minimal-docs"
         "pinenote"
         "tailnet-brittonr"
         "dev"
@@ -205,6 +210,7 @@ _: {
       name = "utm-vm";
       tags = [
         "hm-server"
+        "minimal-docs"
         "ssd-optimization"
         "dev"
       ];

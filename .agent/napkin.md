@@ -24,6 +24,7 @@
 
 ## Reference Repos
 - **Mic92/dotfiles**: Clan-core infra, srvos, ZFS-first, borgbackup w/ ZFS snapshots, sops-nix, zerotier+wireguard mesh, promtail→loki, buildbot CI, limine secure boot via clan vars, update-prefetch (hourly background pull of next system), nix-index-database/comma, treefmt-nix comprehensive formatter, FHS compat (envfs + nix-ld), iroh-ssh module, TPM-based SSH agent, keyd, data-mesher
+- **clan/clan-infra**: Official clan.lol infra. _class-aware admins.nix (darwin+nixos), signing.nix (auto-discover per-machine nix keys), initrd-networking.nix, vars+secrets flake checks, machinesPerSystem build checks, SSH key auto-propagation to root, buildbot-nix CI
 
 ## Domain Notes (dbus-broker)
 - **dbus-broker + NixOS symlink atomicity**: dbus-broker-launch monitors service file directories via inotify. When NixOS switches generations and atomically replaces `/run/current-system` symlink, the inotify watches on old store paths go stale. dbus-broker never discovers new D-Bus services (like `ca.desrt.dconf`) added in the new generation. Fix: SIGHUP `dbus-broker-launch` to force config reload before home-manager activation. Implemented in `inventory/tags/desktop.nix`.
@@ -80,6 +81,7 @@
 - Pine (PineNote) is completely offline — not reachable via iroh, Tailscale, or DNS. Deploy target is `iroh-pine` from a previous session.
 
 ## Patterns That Work
+- `_class` conditionals for darwin/nixos shared modules — set platform-specific attrs with `lib.optionalAttrs (_class == "nixos")` / `(_class == "darwin")`. Darwin lacks `isNormalUser`, needs `users.knownUsers`, uses `gid = 80` for admin instead of `extraGroups = ["wheel"]`, and has different GC schedule syntax (interval vs dates).
 - SSH into target machines to get actual journal logs rather than guessing from deploy output
 - Building locally with `nix eval` to inspect generated configs (TOML, systemd units)
 - Running the service binary locally against the generated config to reproduce errors

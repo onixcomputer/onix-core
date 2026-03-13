@@ -2,8 +2,6 @@
   pkgs,
   inputs,
   self,
-  config,
-  lib,
   ...
 }:
 {
@@ -14,6 +12,8 @@
     ./common/fhs-compat.nix
     ./common/zswap.nix
     ./common/nix-signing.nix
+    ./common/shared-nix.nix
+    ./common/shared-users.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
@@ -65,9 +65,6 @@
       # Redirect Nix builds to /var/tmp (not RAM) to avoid OOM on large builds
       nix-daemon.environment.TMPDIR = "/var/tmp";
 
-      # systemd-networkd.stopIfChanged and systemd-resolved.stopIfChanged
-      # are now set by srvos common module.
-
       # Nix GC root cleanup — stale gcroots prevent nix-collect-garbage from
       # reclaiming store paths even after the referencing profile is gone.
       nix-cleanup-gcroots.serviceConfig = {
@@ -92,15 +89,9 @@
     };
   };
 
+  # NixOS-specific packages (shared packages live in shared-dev.nix via dev tag)
   environment.systemPackages = with pkgs; [
-    uutils-coreutils-noprefix
     kitty.terminfo
-    btop
-    tree
-    pstree
-    # TUI tools
-    systemctl-tui # TUI for managing systemd services
-    dua # Fast disk space analyzer
   ];
 
   networking = {
@@ -120,35 +111,4 @@
     LC_TELEPHONE = "en_US.UTF-8";
     LC_TIME = "en_US.UTF-8";
   };
-
-  # User configuration — UID, shell, SSH keys, primary group.
-  # Password generation and extra groups are handled by the upstream
-  # clan-core users module (inventory/core/users.nix).
-  users = {
-    users.brittonr = {
-      uid = 1555;
-      group = "brittonr";
-      shell = pkgs.fish;
-      openssh.authorizedKeys.keys = [
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILYzh3yIsSTOYXkJMFHBKzkakoDfonm3/RED5rqMqhIO britton@framework"
-      ];
-    };
-    groups.brittonr = { };
-
-    # Auto-propagate SSH keys from all wheel users to root.
-    # No separate root key management needed — if you can sudo, you can SSH as root.
-    users.root.openssh.authorizedKeys.keys =
-      builtins.concatMap (user: user.openssh.authorizedKeys.keys)
-        (
-          builtins.attrValues (
-            lib.filterAttrs (
-              _: user: user.isNormalUser or false && builtins.elem "wheel" (user.extraGroups or [ ])
-            ) config.users.users
-          )
-        );
-  };
-
-  programs.fish.enable = true;
-
-  security.sudo.wheelNeedsPassword = false;
 }

@@ -1,8 +1,18 @@
 {
-  pkgs,
+  inputs,
   ...
 }:
 {
+  imports = [
+    # Shared cross-platform modules
+    ../../inventory/tags/common/shared-nix.nix
+    ../../inventory/tags/common/shared-users.nix
+    ../../inventory/tags/common/shared-dev.nix
+
+    # nix-index + comma
+    inputs.nix-index-database.darwinModules.nix-index
+  ];
+
   nixpkgs.hostPlatform = "aarch64-darwin";
   nixpkgs.config.allowUnfree = true;
 
@@ -46,52 +56,12 @@
   power.sleep.computer = "never";
   power.sleep.display = 15; # display off after 15 min, but machine stays awake
 
-  # Nix settings
-  nix = {
-    settings = {
-      experimental-features = [
-        "nix-command"
-        "flakes"
-      ];
-      trusted-users = [
-        "root"
-        "brittonr"
-      ];
-    };
-    optimise.automatic = true;
-    gc = {
-      automatic = true;
-      interval = {
-        Weekday = 0;
-        Hour = 2;
-        Minute = 0;
-      };
-      options = "--delete-older-than 30d";
-    };
-  };
-
   # Enable touch ID for sudo
   security.pam.services.sudo_local.touchIdAuth = true;
 
-  # System packages
-  environment.systemPackages = with pkgs; [
-    claude-code
-    comma
-    gh
-    nixpkgs-review
-    nix-output-monitor
-    jujutsu
-    btop
-    tree
-  ];
-
-  # Shell
-  programs.fish.enable = true;
-
-  # SSH authorized keys
-  users.users.brittonr.openssh.authorizedKeys.keys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILYzh3yIsSTOYXkJMFHBKzkakoDfonm3/RED5rqMqhIO britton@framework"
-  ];
+  # nix-index + comma
+  programs.nix-index-database.comma.enable = true;
+  programs.direnv.enable = true;
 
   # Linux builder VM for aarch64-linux builds on Apple Silicon
   # Uses Apple Virtualization.framework via nix-darwin
@@ -109,5 +79,4 @@
       };
     };
   };
-
 }
