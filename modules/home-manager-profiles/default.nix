@@ -45,16 +45,21 @@ _: {
           let
             userProfilePath = settings.profilesBasePath + "/${settings.username}";
 
-            # Collect all .nix files from each selected profile directory
+            # Collect all .nix files and directories (with default.nix) from each profile
             profileImports = builtins.concatMap (
               profileName:
               let
                 profileDir = userProfilePath + "/${profileName}";
-                nixFiles = lib.filterAttrs (name: type: type == "regular" && lib.hasSuffix ".nix" name) (
-                  builtins.readDir profileDir
-                );
+                entries = builtins.readDir profileDir;
+                # Regular .nix files
+                nixFiles = lib.filterAttrs (name: type: type == "regular" && lib.hasSuffix ".nix" name) entries;
+                # Directories containing a default.nix
+                nixDirs = lib.filterAttrs (
+                  name: type: type == "directory" && builtins.pathExists (profileDir + "/${name}/default.nix")
+                ) entries;
               in
-              lib.mapAttrsToList (name: _: profileDir + "/${name}") nixFiles
+              (lib.mapAttrsToList (name: _: profileDir + "/${name}") nixFiles)
+              ++ (lib.mapAttrsToList (name: _: profileDir + "/${name}") nixDirs)
             ) settings.profiles;
           in
           {
