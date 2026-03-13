@@ -31,6 +31,7 @@ _: {
         "creative"
         "docker"
         "taskwarrior"
+        "backup"
         # "radicle-node"
       ];
       deploy = {
@@ -66,6 +67,7 @@ _: {
         "cross-compile"
         "creative"
         "taskwarrior"
+        "backup"
         # "radicle-node"
       ];
       deploy = {
@@ -101,6 +103,7 @@ _: {
         "taskwarrior"
         "udev-rules"
         "gaming"
+        "backup"
       ];
       deploy = {
         targetHost = "root@iroh-bonsai";
@@ -143,6 +146,7 @@ _: {
         "homepage-server"
         "amd-gpu" # AMD Ryzen AI MAX+ 395 with Radeon 8060S
         "initrd-ssh"
+        "backup"
       ];
       deploy = {
         targetHost = "root@iroh-aspen2";
@@ -183,6 +187,7 @@ _: {
         "cloud-hypervisor-host" # TAP networking for RedoxOS development
         "taskwarrior"
         "initrd-ssh"
+        "backup"
       ];
       deploy = {
         targetHost = "root@britton-desktop";

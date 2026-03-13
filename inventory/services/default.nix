@@ -23,6 +23,8 @@ let
     clonadic = import ./clonadic.nix { inherit inputs; };
     iroh-ssh = import ./iroh-ssh.nix { inherit inputs; };
     llm-agents = import ./llm-agents.nix { inherit inputs; };
+    harmonia = import ./harmonia.nix { inherit inputs; };
+    borgbackup = import ./borgbackup.nix { inherit inputs; };
   };
 in
 lib.foldr lib.recursiveUpdate { } (lib.attrValues services)
