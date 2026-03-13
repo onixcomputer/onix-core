@@ -24,6 +24,7 @@
   system.configurationRevision = self.rev or self.dirtyRev or null;
 
   clan.core.settings.state-version.enable = true;
+  clan.core.sops.defaultGroups = [ "admins" ];
 
   # nix-index-database: pre-built index for nix-locate (no local indexing).
   # comma: run uninstalled packages with `, htop`.
