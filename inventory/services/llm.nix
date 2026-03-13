@@ -25,8 +25,6 @@ _: {
         tags."llm-client" = { };
         settings = {
           clientType = "ollama";
-          # Server URL auto-discovered from LLM/Ollama service exports.
-          # Override with defaultServer if needed.
           extraPackages = [
             "curl"
             "jq"

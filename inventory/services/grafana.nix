@@ -8,9 +8,6 @@ _: {
         tags."monitoring" = { };
         settings = {
           enablePrometheusIntegration = true;
-          # prometheusUrl and Loki datasource are auto-discovered from exports.
-          # Override prometheusUrl here only if the Prometheus server is on a
-          # different host than Grafana.
 
           settings = {
             server = {

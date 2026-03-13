@@ -40,21 +40,7 @@
     };
 
     # AMD GPU specific settings
-    amdgpu = {
-      # amdvlk = {
-      #   enable = true;
-      #   support32Bit.enable = true;
-      #   # Enable both AMDVLK and RADV for maximum compatibility
-      #   settings = {
-      #     # Allow both drivers to coexist (1 = enabled)
-      #     AllowVkDeviceSelection = "1";
-      #   };
-      # };
-      opencl.enable = true;
-    };
-
-    # Note: hardware.vulkan doesn't exist in NixOS
-    # Vulkan support is handled through hardware.graphics.extraPackages
+    amdgpu.opencl.enable = true;
   };
 
   # System packages for AMD GPU development and monitoring
