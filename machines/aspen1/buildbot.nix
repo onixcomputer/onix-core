@@ -55,7 +55,7 @@
 
   services.buildbot-nix.master = {
     enable = true;
-    domain = "buildbot.aspen1.local";
+    domain = "buildbot.blr.dev";
     workersFile = config.clan.core.vars.generators.buildbot-worker.files.workers.path;
     buildSystems = [
       "x86_64-linux"
