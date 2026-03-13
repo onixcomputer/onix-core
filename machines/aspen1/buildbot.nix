@@ -64,12 +64,10 @@
 
     authBackend = "github";
     github = {
-      # TODO: replace placeholder after creating GitHub App
-      appId = 0;
+      appId = 3086395;
       appSecretKeyFile = config.clan.core.vars.generators.buildbot-github.files.app-secret-key.path;
 
-      # TODO: replace placeholder after creating GitHub OAuth App
-      oauthId = "PLACEHOLDER";
+      oauthId = "Ov23livGR1RdLhArTbJI";
       oauthSecretFile = config.clan.core.vars.generators.buildbot-github.files.oauth-secret.path;
 
       webhookSecretFile = config.clan.core.vars.generators.buildbot-github.files.webhook-secret.path;
