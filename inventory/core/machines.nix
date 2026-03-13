@@ -113,7 +113,6 @@ _: {
         "hm-server"
         "ssd-optimization"
         "docker"
-        "tailnet-brittonr"
         "dev"
         "prometheus"
         "monitoring"

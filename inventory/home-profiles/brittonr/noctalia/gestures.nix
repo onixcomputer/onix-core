@@ -23,11 +23,9 @@ let
 
   # lisgd wrapper configured for GPD Pocket 4
   lisgdNiri = writeShellScriptBin "lisgd-niri" ''
-    # Wait for Wayland session to be ready
-    while [ -z "$WAYLAND_DISPLAY" ]; do sleep ${config.timing.process.short}; done
-
     # Find actual touchscreen devices (not touchpads) by checking
     # for "touch" in the Capabilities line from libinput.
+    # Check before waiting for Wayland — no point waiting on machines without a touchscreen.
     TOUCHSCREEN=$(${pkgs.libinput}/bin/libinput list-devices 2>/dev/null | \
       ${pkgs.gawk}/bin/awk '
         /^Device:/ { dev="" }
@@ -36,9 +34,12 @@ let
       ')
 
     if [ -z "$TOUCHSCREEN" ]; then
-      echo "No touchscreen device found, exiting gracefully"
+      echo "No touchscreen device found, exiting"
       exit 0
     fi
+
+    # Wait for Wayland session to be ready
+    while [ -z "$WAYLAND_DISPLAY" ]; do sleep ${config.timing.process.short}; done
 
     echo "Starting lisgd on $TOUCHSCREEN"
 
