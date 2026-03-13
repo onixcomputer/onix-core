@@ -179,6 +179,7 @@
         ./parts/tracey.nix
         ./parts/ccusage.nix
         ./parts/abp.nix
+        ./parts/branchfs.nix
 
         # Package management
         ./parts/updater.nix
