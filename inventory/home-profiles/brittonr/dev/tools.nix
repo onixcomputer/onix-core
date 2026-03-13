@@ -1,8 +1,9 @@
-{ pkgs, ... }:
+{ pkgs, inputs, ... }:
 let
   tuicr = pkgs.callPackage ../../../../pkgs/tuicr { };
   tracey = pkgs.callPackage ../../../../pkgs/tracey { };
   ccusage = pkgs.callPackage ../../../../pkgs/ccusage { };
+  nixdelta = inputs.nixdelta.packages.${pkgs.system}.default;
 in
 {
   home.packages = with pkgs; [
@@ -19,7 +20,11 @@ in
     deadnix
     statix
     dix
+    nvd
     flake-edit
+    nurl
+    nil
+    nix-init
     terranix
     nix-index
     nix-prefetch
@@ -53,5 +58,8 @@ in
     # AI/dev tooling
     tracey
     ccusage
+
+    # Flake inputs
+    nixdelta
   ];
 }

@@ -245,6 +245,7 @@ in
         self'.packages.tracey
         self'.packages.ccusage
         self'.packages.abp
+        pkgs.nix-output-monitor
         (pkgs.writeShellScriptBin "eval-warnings" ''
           if [ -z "$1" ]; then
             echo "Usage: eval-warnings <flake-ref>"

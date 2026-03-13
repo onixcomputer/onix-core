@@ -654,6 +654,26 @@
         "url": "https://git.clan.lol/clan/nix-select/archive/main.tar.gz"
       }
     },
+    "nixdelta": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1772944656,
+        "narHash": "sha256-0fo9raae9ksjNRcv6t7ULh22gUFd5LEAOWk3+Ni7IDI=",
+        "owner": "adeci",
+        "repo": "nixdelta",
+        "rev": "ffbd36511928cd3b6b7b9068ca0eaed0de6e31fc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "adeci",
+        "repo": "nixdelta",
+        "type": "github"
+      }
+    },
     "nixos-avf": {
       "inputs": {
         "nixpkgs": [
@@ -850,6 +870,7 @@
         "mics-skills": "mics-skills",
         "niri": "niri",
         "nix-index-database": "nix-index-database",
+        "nixdelta": "nixdelta",
         "nixos-avf": "nixos-avf",
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs",

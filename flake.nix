@@ -88,6 +88,10 @@
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixdelta = {
+      url = "github:adeci/nixdelta";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     niri = {
       url = "github:brittonr/niri";
