@@ -4,6 +4,8 @@
     inputs.srvos.nixosModules.common
     inputs.srvos.nixosModules.mixins-nix-experimental
     inputs.srvos.nixosModules.mixins-trusted-nix-caches
+    ./common/fhs-compat.nix
+    ./common/zswap.nix
   ];
 
   nixpkgs.config.allowUnfree = true;

@@ -2,7 +2,7 @@
 {
   imports = [
     inputs.nix-index-database.nixosModules.nix-index
-    ./fhs-compat.nix
+    # fhs-compat now applied to all NixOS machines via nixos.nix
   ];
 
   # Pre-built nix-index database — no local indexing needed.

@@ -5,9 +5,7 @@
   ...
 }:
 {
-  imports = [
-    ./fhs-compat.nix
-  ];
+  # fhs-compat now applied to all NixOS machines via nixos.nix
   hardware.bluetooth = {
     enable = true;
     powerOnBoot = true;
