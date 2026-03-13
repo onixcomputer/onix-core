@@ -1,4 +1,11 @@
-{ pkgs, inputs, ... }:
+{
+  pkgs,
+  inputs,
+  self,
+  config,
+  lib,
+  ...
+}:
 {
   imports = [
     inputs.srvos.nixosModules.common
@@ -6,9 +13,14 @@
     inputs.srvos.nixosModules.mixins-trusted-nix-caches
     ./common/fhs-compat.nix
     ./common/zswap.nix
+    ./common/nix-signing.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
+
+  # Stamp every built system with its git revision.
+  # Makes `nixos-version --json` show exactly what's deployed.
+  system.configurationRevision = self.rev or self.dirtyRev or null;
 
   clan.core.settings.state-version.enable = true;
 
@@ -122,9 +134,18 @@
       ];
     };
     groups.brittonr = { };
-    users.root.openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILYzh3yIsSTOYXkJMFHBKzkakoDfonm3/RED5rqMqhIO britton@framework"
-    ];
+
+    # Auto-propagate SSH keys from all wheel users to root.
+    # No separate root key management needed — if you can sudo, you can SSH as root.
+    users.root.openssh.authorizedKeys.keys =
+      builtins.concatMap (user: user.openssh.authorizedKeys.keys)
+        (
+          builtins.attrValues (
+            lib.filterAttrs (
+              _: user: user.isNormalUser or false && builtins.elem "wheel" (user.extraGroups or [ ])
+            ) config.users.users
+          )
+        );
   };
 
   programs.fish.enable = true;

@@ -1,36 +1,70 @@
 # Build all machine configurations as nix flake checks.
 # Catches eval/build failures in CI without deploying.
-# Inspired by Mic92/dotfiles checks/flake-module.nix
+#
+# Also validates that machinesPerSystem stays in sync with the
+# actual machine inventory — fails if a machine is added to
+# inventory but not listed here (or vice versa).
 {
   self,
   lib,
+  pkgs,
   system,
   ...
 }:
 let
-  # Map machine architectures to their system strings
   machinesPerSystem = {
     x86_64-linux = [
-      "britton-fw"
-      "britton-gpd"
-      "bonsai"
       "aspen1"
       "aspen2"
+      "bonsai"
       "britton-desktop"
+      "britton-fw"
+      "britton-gpd"
     ];
     aarch64-linux = [
       "pine"
-      # utm-vm: needs `clan vars generate --machine utm-vm` before it can eval
+      "utm-vm"
     ];
-    # aarch64-darwin = [ "britton-air" ];
+    aarch64-darwin = [
+      "britton-air"
+    ];
   };
 
-  nixosMachines = lib.mapAttrs' (n: lib.nameValuePair "nixos-${n}") (
-    lib.genAttrs (machinesPerSystem.${system} or [ ]) (
-      name: self.nixosConfigurations.${name}.config.system.build.toplevel
+  listedMachines = lib.sort lib.lessThan (lib.concatLists (lib.attrValues machinesPerSystem));
+  actualMachines = lib.sort lib.lessThan (
+    lib.attrNames (import ../inventory/core/machines.nix { }).machines
+  );
+
+  syncCheck = pkgs.runCommand "machines-per-system-check" { } ''
+    ${lib.optionalString (listedMachines != actualMachines) ''
+      echo "machinesPerSystem out of sync with inventory/core/machines.nix:"
+      echo "  listed: ${lib.concatStringsSep " " listedMachines}"
+      echo "  actual: ${lib.concatStringsSep " " actualMachines}"
+      exit 1
+    ''}
+    touch $out
+  '';
+
+  nixosMachines = lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux (
+    lib.mapAttrs' (n: lib.nameValuePair "nixos-${n}") (
+      lib.genAttrs (machinesPerSystem.${system} or [ ]) (
+        name: self.nixosConfigurations.${name}.config.system.build.toplevel
+      )
+    )
+  );
+
+  darwinMachines = lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin (
+    lib.mapAttrs' (n: lib.nameValuePair "darwin-${n}") (
+      lib.genAttrs (machinesPerSystem.${system} or [ ]) (
+        name: self.darwinConfigurations.${name}.config.system.build.toplevel
+      )
     )
   );
 in
 {
-  checks = nixosMachines;
+  checks = {
+    machines-per-system-sync = syncCheck;
+  }
+  // nixosMachines
+  // darwinMachines;
 }

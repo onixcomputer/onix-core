@@ -9,6 +9,10 @@
 | 2026-03-11 | user | `system.etc.overlay.enable = true` without `services.userborn.enable = true` broke passwd database — user disappeared from `/etc/passwd`, `sudo: you do not exist` | Overlayfs `/etc` REQUIRES userborn. Never enable overlay without also enabling `services.userborn.enable = true`. Or just don't use overlay `/etc` — the benefit is marginal. |
 | 2026-03-12 | self | Created `niri-keybinds.nix` as a plain function `{ config, pkgs, lib }:` directly in the `noctalia/` profile directory. Clan-core auto-imports all `.nix` files in a profile dir as modules, so it tried to pass module args (`inputs` etc.) to the function → crash. | Plain Nix data/function files that aren't modules must go in a subdirectory (e.g., `lib/` or `noctalia-sections/`) to avoid auto-import. Only put actual NixOS/HM modules directly in profile directories. |
 
+| 2026-03-13 | self | `import ../inventory/core/machines.nix { }` returns `{ machines = { ... }; }`, not the machines attrset directly | Use `(import ../inventory/core/machines.nix { }).machines` to get the machine names |
+| 2026-03-13 | self | `inputs'` in adios-flake doesn't give access to `legacyPackages` on clan-core — use `self.inputs.clan-core.legacyPackages.${system}` instead | adios-flake `inputs'` maps to perSystem outputs (packages, etc.). For legacyPackages access, go through `self.inputs.<input>.legacyPackages.${system}` |
+| 2026-03-13 | self | `time.timeZone = null` in a tag conflicts with hardcoded `time.timeZone = "America/New_York"` in machine configs | Remove hardcoded timezone from machines that get the tag with `automatic-timezoned` |
+
 ## User Preferences
 - Prefers deleting dead code over commenting it out
 - When cleanup items overlap (e.g., opentofu lib + cloud/ + parts/checks.nix + parts/vm-checks.nix + cloud devShell all reference each other), chase all the references down in one pass

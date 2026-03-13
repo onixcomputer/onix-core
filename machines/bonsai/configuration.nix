@@ -44,7 +44,7 @@ in
   ];
 
   networking.hostName = "bonsai";
-  time.timeZone = "America/New_York";
+  # timeZone handled by automatic-timezoned via laptop tag
 
   # GRUB wallpaper (theme from grub-theme tag)
   boot.loader.grub2-theme = {

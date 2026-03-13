@@ -285,3 +285,9 @@
 {"text":"what next","timestamp":1773418360153}
 {"text":"5, 6","timestamp":1773418508572}
 {"text":"what next","timestamp":1773418943188}
+{"text":"read mic92's repo and see what we should incorporate from it. also clan-infa. https://github.com/Mic92/dotfiles https://git.clan.lol/clan/clan-infra","timestamp":1773419100925}
+{"text":"lets do 1-7, and add dynamic timezone, intrd ssh (over iroh-ssh)","timestamp":1773419623944}
+{"text":"1 doesnt work with fish","timestamp":1773420300599}
+{"text":"i just did clan vars generate.","timestamp":1773420318432}
+{"text":"we generated the vars for nix sighning is what i mean.","timestamp":1773420341243}
+{"text":"we're good. add init ssh to brittondesktop and aspen 1 and aspen 2","timestamp":1773420382209}

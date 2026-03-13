@@ -10,7 +10,7 @@ in
   imports = [ inputs.grub2-themes.nixosModules.default ];
 
   networking.hostName = "britton-fw";
-  time.timeZone = "America/New_York";
+  # timeZone handled by automatic-timezoned via laptop tag
 
   # GRUB wallpaper (theme from grub-theme tag)
   boot.loader.grub2-theme = {

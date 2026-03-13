@@ -10,7 +10,7 @@ in
   imports = [ inputs.grub2-themes.nixosModules.default ];
 
   networking.hostName = "britton-gpd";
-  time.timeZone = "America/New_York";
+  # timeZone handled by automatic-timezoned via laptop tag
 
   # GPD Pocket 4 screen orientation fixes
   boot.kernelParams = [

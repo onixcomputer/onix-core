@@ -192,6 +192,7 @@
 
         # Checks
         ./parts/machine-checks.nix
+        ./parts/vars-checks.nix
 
         # Analysis and infrastructure tools
         ./parts/sops-viz.nix

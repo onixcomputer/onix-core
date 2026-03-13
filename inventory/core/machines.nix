@@ -119,6 +119,7 @@ _: {
         "homepage-server"
         # "llm"
         "amd-gpu" # AMD Ryzen AI MAX+ 395 with Radeon 8060S
+        "initrd-ssh"
       ];
       deploy = {
         targetHost = "root@iroh-aspen1";
@@ -138,6 +139,7 @@ _: {
         "monitoring"
         "homepage-server"
         "amd-gpu" # AMD Ryzen AI MAX+ 395 with Radeon 8060S
+        "initrd-ssh"
       ];
       deploy = {
         targetHost = "root@iroh-aspen2";
@@ -176,6 +178,7 @@ _: {
         # "radicle-seed"
         "cloud-hypervisor-host" # TAP networking for RedoxOS development
         "taskwarrior"
+        "initrd-ssh"
       ];
       deploy = {
         targetHost = "root@britton-desktop";

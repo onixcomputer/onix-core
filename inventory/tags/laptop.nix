@@ -52,6 +52,11 @@ in
       };
     };
 
+  # Dynamic timezone — let NetworkManager dispatcher scripts handle
+  # timezone changes automatically when traveling. No hardcoded zone.
+  time.timeZone = null;
+  services.automatic-timezoned.enable = true;
+
   # Faster WiFi reconnection and better power management
   networking.networkmanager.wifi.backend = "iwd";
 
