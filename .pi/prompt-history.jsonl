@@ -315,3 +315,5 @@
 {"text":"check and see. its hosted on my cloudflare","timestamp":1773438182526}
 {"text":"lets do it","timestamp":1773438235074}
 {"text":"Warning: c['buildbotURL'] is misconfigured to\n\nhttp://buildbot.blr.dev/\n\nShould be:\n\nhttps://buildbot.blr.dev/","timestamp":1773439541147}
+{"text":"how do i use it","timestamp":1773439697561}
+{"text":"buildbot-nix-brittonr is the topic. ive added it to my clankers repo at github.com/brittonr/clankers","timestamp":1773439830839}

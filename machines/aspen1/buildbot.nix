@@ -74,7 +74,7 @@
       webhookSecretFile = config.clan.core.vars.generators.buildbot-github.files.webhook-secret.path;
 
       # Repos with this topic are auto-discovered
-      topic = "buildbot-onix";
+      topic = "buildbot-nix-brittonr";
     };
 
     admins = [ "brittonr" ];
