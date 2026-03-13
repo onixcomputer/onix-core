@@ -1,4 +1,9 @@
-{ config, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   networking = {
     hostName = "britton-desktop";
@@ -80,12 +85,34 @@
 
   };
 
-  security.pam.services = {
-    sudo.fprintAuth = false;
-    # PAM services for desktop login (normally from greeter tag)
-    login.enableGnomeKeyring = true;
-    greetd.enableGnomeKeyring = true;
-    # hyprlock = { }; # Removed: using noctalia lock screen with niri
+  security = {
+    pam.services = {
+      sudo.fprintAuth = false;
+      # PAM services for desktop login (normally from greeter tag)
+      login.enableGnomeKeyring = true;
+      greetd.enableGnomeKeyring = true;
+    };
+
+    # srvos sets security.sudo.execWheelOnly = true, which asserts that
+    # extraRules only reference root/wheel. We need per-user rules here,
+    # so disable it on this machine.
+    sudo.execWheelOnly = lib.mkForce false;
+
+    sudo.extraRules = [
+      {
+        users = [ "brittonr" ];
+        commands = [
+          {
+            command = "${pkgs.bpftrace}/bin/bpftrace";
+            options = [ "NOPASSWD" ];
+          }
+          {
+            command = "/home/brittonr/.cargo-target/release/chaoscontrol-trace";
+            options = [ "NOPASSWD" ];
+          }
+        ];
+      }
+    ];
   };
 
   # Gnome keyring for SSH agent and secrets
@@ -105,22 +132,6 @@
   };
 
   programs.fuse.userAllowOther = true;
-
-  security.sudo.extraRules = [
-    {
-      users = [ "brittonr" ];
-      commands = [
-        {
-          command = "${pkgs.bpftrace}/bin/bpftrace";
-          options = [ "NOPASSWD" ];
-        }
-        {
-          command = "/home/brittonr/.cargo-target/release/chaoscontrol-trace";
-          options = [ "NOPASSWD" ];
-        }
-      ];
-    }
-  ];
 
   environment.systemPackages = with pkgs; [
     bpftrace

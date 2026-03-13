@@ -1,5 +1,11 @@
-{ pkgs, ... }:
+{ pkgs, inputs, ... }:
 {
+  imports = [
+    inputs.srvos.nixosModules.common
+    inputs.srvos.nixosModules.mixins-nix-experimental
+    inputs.srvos.nixosModules.mixins-trusted-nix-caches
+  ];
+
   nixpkgs.config.allowUnfree = true;
 
   clan.core.settings.state-version.enable = true;
@@ -45,11 +51,8 @@
       # Redirect Nix builds to /var/tmp (not RAM) to avoid OOM on large builds
       nix-daemon.environment.TMPDIR = "/var/tmp";
 
-      # Prevent nixos-rebuild from tearing down networking mid-deploy.
-      # Without this, remote SSH deploys can brick the connection when
-      # systemd-networkd or systemd-resolved restarts.
-      systemd-networkd.stopIfChanged = false;
-      systemd-resolved.stopIfChanged = false;
+      # systemd-networkd.stopIfChanged and systemd-resolved.stopIfChanged
+      # are now set by srvos common module.
 
       # Nix GC root cleanup — stale gcroots prevent nix-collect-garbage from
       # reclaiming store paths even after the referencing profile is gone.

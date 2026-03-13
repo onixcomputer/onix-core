@@ -149,7 +149,9 @@
     "clan-core": {
       "inputs": {
         "data-mesher": "data-mesher",
-        "disko": "disko",
+        "disko": [
+          "disko"
+        ],
         "flake-parts": [
           "flake-parts"
         ],
@@ -158,23 +160,28 @@
         "nixpkgs": [
           "nixpkgs"
         ],
-        "sops-nix": "sops-nix",
-        "systems": "systems_2",
+        "sops-nix": [
+          "sops-nix"
+        ],
+        "systems": [
+          "systems"
+        ],
         "treefmt-nix": [
           "treefmt-nix"
         ]
       },
       "locked": {
-        "lastModified": 1773325341,
-        "narHash": "sha256-S04h071Fbgn01ukwynoKboIrASBVjsH4R0KEJhGIjNU=",
+        "lastModified": 1773406897,
+        "narHash": "sha256-XiOpc9J1a+rfDnE3mNHCkEShNBtJ1ZN84EOUpszmPA4=",
         "ref": "main",
-        "rev": "1fcdc1f692ce6d37d2eda326c07732d47fac71f8",
-        "revCount": 13557,
+        "rev": "19ded1316e131ebc339f487b44908921bd96c2bd",
+        "shallow": true,
         "type": "git",
         "url": "https://git.clan.lol/clan/clan-core"
       },
       "original": {
         "ref": "main",
+        "shallow": true,
         "type": "git",
         "url": "https://git.clan.lol/clan/clan-core"
       }
@@ -236,11 +243,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1773259940,
-        "narHash": "sha256-zPr98JtgmA6FOEz1CysYfYod6lR5guHy2DsOtma/p/o=",
-        "rev": "83fe63ab625d6213e91dcd27b186847ccd0fbf06",
+        "lastModified": 1773328131,
+        "narHash": "sha256-8C+xj/RvpW8Q4yYExJ7lYXKEw4Fch4VRtBacST6OzmE=",
+        "rev": "a0e5e08e856acacb0917940398c126f27b2e0566",
         "type": "tarball",
-        "url": "https://git.clan.lol/api/v1/repos/clan/data-mesher/archive/83fe63ab625d6213e91dcd27b186847ccd0fbf06.tar.gz"
+        "url": "https://git.clan.lol/api/v1/repos/clan/data-mesher/archive/a0e5e08e856acacb0917940398c126f27b2e0566.tar.gz"
       },
       "original": {
         "type": "tarball",
@@ -277,7 +284,6 @@
     "disko": {
       "inputs": {
         "nixpkgs": [
-          "clan-core",
           "nixpkgs"
         ]
       },
@@ -351,7 +357,7 @@
     },
     "flake-utils_2": {
       "inputs": {
-        "systems": "systems_3"
+        "systems": "systems_2"
       },
       "locked": {
         "lastModified": 1731533236,
@@ -369,7 +375,7 @@
     },
     "flake-utils_3": {
       "inputs": {
-        "systems": "systems_4"
+        "systems": "systems_3"
       },
       "locked": {
         "lastModified": 1731533236,
@@ -387,7 +393,7 @@
     },
     "flake-utils_4": {
       "inputs": {
-        "systems": "systems_7"
+        "systems": "systems_5"
       },
       "locked": {
         "lastModified": 1731533236,
@@ -514,7 +520,9 @@
         "nixpkgs": [
           "nixpkgs"
         ],
-        "systems": "systems_5",
+        "systems": [
+          "systems"
+        ],
         "treefmt-nix": [
           "treefmt-nix"
         ]
@@ -734,7 +742,9 @@
         "nixpkgs": [
           "nixpkgs"
         ],
-        "systems": "systems_6"
+        "systems": [
+          "systems"
+        ]
       },
       "locked": {
         "lastModified": 1772402258,
@@ -862,6 +872,7 @@
         "clan-core": "clan-core",
         "clonadic": "clonadic",
         "devblog": "devblog",
+        "disko": "disko",
         "flake-parts": "flake-parts",
         "grub2-themes": "grub2-themes",
         "home-manager": "home-manager",
@@ -879,6 +890,9 @@
         "pinenote-nixos": "pinenote-nixos",
         "pre-commit-hooks-nix": "pre-commit-hooks-nix",
         "radicle-nix-adapter": "radicle-nix-adapter",
+        "sops-nix": "sops-nix",
+        "srvos": "srvos",
+        "systems": "systems_4",
         "treefmt-nix": "treefmt-nix",
         "upmpdcli": "upmpdcli",
         "wrappers": "wrappers"
@@ -929,7 +943,6 @@
     "sops-nix": {
       "inputs": {
         "nixpkgs": [
-          "clan-core",
           "nixpkgs"
         ]
       },
@@ -944,6 +957,26 @@
       "original": {
         "owner": "Mic92",
         "repo": "sops-nix",
+        "type": "github"
+      }
+    },
+    "srvos": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1773369348,
+        "narHash": "sha256-6UwMEAi6X3oMjKQm51i0+3i10DrsrSdXi/4YgmJxfhE=",
+        "owner": "nix-community",
+        "repo": "srvos",
+        "rev": "f3f0277b1dee1bfd058c5b8b98cb25558d95f03f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "srvos",
         "type": "github"
       }
     },
@@ -1008,36 +1041,6 @@
       }
     },
     "systems_5": {
-      "locked": {
-        "lastModified": 1681028828,
-        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
-        "owner": "nix-systems",
-        "repo": "default",
-        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-systems",
-        "repo": "default",
-        "type": "github"
-      }
-    },
-    "systems_6": {
-      "locked": {
-        "lastModified": 1681028828,
-        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
-        "owner": "nix-systems",
-        "repo": "default",
-        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-systems",
-        "repo": "default",
-        "type": "github"
-      }
-    },
-    "systems_7": {
       "locked": {
         "lastModified": 1681028828,
         "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",

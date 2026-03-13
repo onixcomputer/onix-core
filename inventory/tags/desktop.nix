@@ -5,6 +5,9 @@
   ...
 }:
 {
+  imports = [
+    ./fhs-compat.nix
+  ];
   hardware.bluetooth = {
     enable = true;
     powerOnBoot = true;

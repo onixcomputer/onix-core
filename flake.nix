@@ -1,8 +1,31 @@
 {
   description = "Onix Infrastructure";
 
+  # Uncomment when a binary cache is available:
+  # nixConfig = {
+  #   extra-substituters = [ "https://onix.cachix.org" ];
+  #   extra-trusted-public-keys = [ "onix.cachix.org-1:PLACEHOLDER" ];
+  # };
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+
+    srvos = {
+      url = "github:nix-community/srvos";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    systems.url = "github:nix-systems/default";
 
     adios-flake.url = "github:Mic92/adios-flake";
 
@@ -16,11 +39,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     clan-core = {
-      url = "git+https://git.clan.lol/clan/clan-core?ref=main";
+      url = "git+https://git.clan.lol/clan/clan-core?ref=main&shallow=1";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         flake-parts.follows = "flake-parts";
         treefmt-nix.follows = "treefmt-nix";
+        disko.follows = "disko";
+        sops-nix.follows = "sops-nix";
+        systems.follows = "systems";
       };
     };
     wrappers = {
@@ -65,8 +91,11 @@
     };
     nixvim = {
       url = "github:nix-community/nixvim";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-parts.follows = "flake-parts";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        systems.follows = "systems";
+      };
     };
     upmpdcli = {
       url = "github:brittonr/upmpdcli";
@@ -107,6 +136,7 @@
         nixpkgs.follows = "nixpkgs";
         flake-parts.follows = "flake-parts";
         treefmt-nix.follows = "treefmt-nix";
+        systems.follows = "systems";
       };
     };
 

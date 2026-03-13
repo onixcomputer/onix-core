@@ -4,6 +4,11 @@
   pkgs,
   ...
 }:
+let
+  # Battery percentage at which to auto-suspend while discharging.
+  # Override per-machine with mkForce if needed.
+  powerInPercent = 10;
+in
 {
   hardware.bluetooth = {
     enable = true;
@@ -57,9 +62,9 @@
     # High-performance D-Bus implementation (default on Arch/Fedora)
     dbus.implementation = "broker";
 
-    # Auto-suspend at 10% battery — pure udev, no daemon or polling
+    # Auto-suspend at low battery — pure udev, no daemon or polling
     udev.extraRules = ''
-      SUBSYSTEM=="power_supply", ATTR{status}=="Discharging", ATTR{capacity}=="10", RUN+="${config.systemd.package}/bin/systemctl suspend"
+      SUBSYSTEM=="power_supply", ATTR{status}=="Discharging", ATTR{capacity}=="${toString powerInPercent}", RUN+="${config.systemd.package}/bin/systemctl suspend"
     '';
 
     xserver = {

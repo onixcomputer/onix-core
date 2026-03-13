@@ -3,6 +3,9 @@
 ## Corrections
 | Date | Source | What Went Wrong | What To Do Instead |
 |------|--------|----------------|-------------------|
+| 2026-03-13 | self | New files in `inventory/tags/` not found by nix eval — "path does not exist" in store | Must `git add` new files before nix can see them (nix copies flake source from git index, not working tree) |
+| 2026-03-13 | self | srvos `security.sudo.execWheelOnly = true` conflicts with per-user `sudo.extraRules` on britton-desktop | Need `lib.mkForce false` to override srvos's non-mkDefault setting. Also needed to add `lib` to module args. |
+| 2026-03-13 | self | statix rejects repeated attrset keys (`inputs.X.follows` style on separate lines, multiple `security` blocks) | Use nested attrset `inputs = { ... }` form and merge all `security.*` into a single `security = { ... }` block |
 | 2026-03-11 | user | `system.etc.overlay.enable = true` without `services.userborn.enable = true` broke passwd database — user disappeared from `/etc/passwd`, `sudo: you do not exist` | Overlayfs `/etc` REQUIRES userborn. Never enable overlay without also enabling `services.userborn.enable = true`. Or just don't use overlay `/etc` — the benefit is marginal. |
 | 2026-03-12 | self | Created `niri-keybinds.nix` as a plain function `{ config, pkgs, lib }:` directly in the `noctalia/` profile directory. Clan-core auto-imports all `.nix` files in a profile dir as modules, so it tried to pass module args (`inputs` etc.) to the function → crash. | Plain Nix data/function files that aren't modules must go in a subdirectory (e.g., `lib/` or `noctalia-sections/`) to avoid auto-import. Only put actual NixOS/HM modules directly in profile directories. |
 
@@ -80,6 +83,13 @@
 ## Patterns That Don't Work
 - Speculating about config issues without checking actual server logs — the deploy output only shows systemd wrapper messages, not the actual service error
 - Assuming config parsing is the issue when traefik exits fast — port conflicts also cause instant exit
+
+## Domain Notes (srvos)
+- srvos `common` sets: networking.useNetworkd (mkDefault true), firewall.allowPing, stopIfChanged for networkd/resolved, nix optimise/trusted-users/daemon scheduling, userborn, initrd.systemd, boot.tmp.cleanOnBoot, openssh hardening, sudo.execWheelOnly, serial console.
+- srvos `common` does NOT set: networking.nftables, programs.nano.
+- srvos `mixins-nix-experimental` sets: nix.package = nixVersions.latest, auto-allocate-uids, cgroups, fetch-closure, recursive-nix, ca-derivations, impure-derivations, blake3-hashes.
+- srvos `mixins-trusted-nix-caches` adds: nix-community, garnix, numtide cachix as trusted-substituters.
+- Our `networking.useNetworkd = false` (no mkDefault) overrides srvos's mkDefault true — we use NetworkManager.
 
 ## Domain Notes
 - **Fish 4.3 frozen theme migration**: Fish 4.3 auto-generates `~/.config/fish/conf.d/fish_frozen_theme.fish` and `fish_frozen_key_bindings.fish` when upgrading, migrating universal vars to globals. These files set DEFAULT colors that load via conf.d BEFORE config.fish, stomping on home-manager's custom theme. Fix: delete the files and set ALL fish_color_* variables (including pager colors) in interactiveShellInit so nothing falls through to defaults.
