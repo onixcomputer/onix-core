@@ -331,3 +331,12 @@
 {"text":"does it work","timestamp":1773453444844}
 {"text":"https://buildbot.blr.dev/#/","timestamp":1773453604269}
 {"text":"lets just use aspen1 as buildbot and harmonia cache. move the llm stuff to aspen2","timestamp":1773453785769}
+{"text":"are we doing the prefetch thing now","timestamp":1773455122214}
+{"text":"how would we do 1","timestamp":1773455179829}
+{"text":"i only have it as available for brittonr, not onixcomputer","timestamp":1773455263552}
+{"text":"do i need to make it public? is there danger in doing so","timestamp":1773456229932}
+{"text":"is our vars properly encrypted for buildbot?","timestamp":1773456345288}
+{"text":"done. added to onix-core","timestamp":1773456468504}
+{"text":"its there","timestamp":1773456554664}
+{"text":"will that do the prefetch cache thing now","timestamp":1773456661133}
+{"text":"yeah","timestamp":1773456730348}
