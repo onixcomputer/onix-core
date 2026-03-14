@@ -5,7 +5,6 @@ _: {
       name = "britton-fw";
       tags = [
         "hm-laptop"
-        "update-prefetch"
         "ssd-optimization"
         "perf-tuning"
         "dev"
@@ -158,7 +157,6 @@ _: {
       name = "britton-desktop";
       tags = [
         # hm-desktop applied via direct machine reference in users.nix
-        "update-prefetch"
         "ssd-optimization"
         "perf-tuning"
         "dev"

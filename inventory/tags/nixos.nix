@@ -15,6 +15,7 @@
     ./common/nix-signing.nix
     ./common/shared-nix.nix
     ./common/shared-users.nix
+    ./common/update-prefetch.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
