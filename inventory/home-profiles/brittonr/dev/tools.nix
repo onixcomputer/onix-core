@@ -3,6 +3,8 @@ let
   tuicr = pkgs.callPackage ../../../../pkgs/tuicr { };
   tracey = pkgs.callPackage ../../../../pkgs/tracey { };
   ccusage = pkgs.callPackage ../../../../pkgs/ccusage { };
+  dumbpipe = pkgs.callPackage ../../../../pkgs/dumbpipe { };
+  sendme = pkgs.callPackage ../../../../pkgs/sendme { };
   nixdelta = inputs.nixdelta.packages.${pkgs.system}.default;
 in
 {
@@ -58,6 +60,10 @@ in
     # AI/dev tooling
     tracey
     ccusage
+
+    # Iroh P2P tools
+    dumbpipe
+    sendme
 
     # Flake inputs
     nixdelta
