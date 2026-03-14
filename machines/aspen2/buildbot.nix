@@ -194,15 +194,6 @@ in
       workers = 16;
     };
 
-    # --- Nginx: serve buildbot UI + outputs index ---
-    nginx.virtualHosts."buildbot.blr.dev" = {
-      locations."/nix-outputs/" = {
-        alias = "/var/www/buildbot/nix-outputs/";
-        extraConfig = ''
-          autoindex on;
-        '';
-      };
-    };
   };
 
   systemd.tmpfiles.rules = [
