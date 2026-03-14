@@ -1,7 +1,7 @@
 # Background system prefetch — downloads the next system closure hourly.
 #
 # Fetches the store path from buildbot's outputsPath index, then downloads
-# the closure from the harmonia binary cache on aspen2. No local eval or
+# the closure from the harmonia binary cache on aspen1. No local eval or
 # build needed — the entire closure is pre-built by CI.
 #
 # Fallback: if the buildbot index is unreachable (offline, CI hasn't run

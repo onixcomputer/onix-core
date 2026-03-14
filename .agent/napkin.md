@@ -85,6 +85,15 @@
 - aspen1 has pre-existing failures: radicle-node (crash-loop), tailscaled-autoconnect (timeout — Tailscale offline 48d). Unrelated to iroh-ssh.
 - Pine (PineNote) is completely offline — not reachable via iroh, Tailscale, or DNS. Deploy target is `iroh-pine` from a previous session.
 
+## Domain Notes (buildbot migration to aspen2)
+- Buildbot master moved from aspen1 to aspen2 (co-located with harmonia binary cache).
+- `clan vars fix` and `clan vars generate` deadlock when shared vars don't exist yet — fix needs existing file, generate needs fix to pass health check. Break the cycle by creating the sops-encrypted file manually.
+- Manually-created clan vars MUST use symlinks for `machines/<name>` and `users/<name>` entries (pointing to `../../../../../../sops/machines/<name>` etc.). Plain files/directories cause clan to compute wrong recipient sets.
+- `clan vars fix` determines required sops recipients from: machine's own key + all keys in `groups/<groupname>` symlink targets + `users/<username>` symlink targets. If `machines/aspen2` is a plain file instead of a symlink to `sops/machines/aspen2`, clan can't resolve aspen2's age key → strips it from recipients → sops-install-secrets fails on the target.
+- The `admins` sops group (`sops/groups/admins/`) can include other machines — e.g., aspen1 is in admins, so ALL secrets with `groups/admins` get aspen1's key as a recipient regardless of which machine the secret belongs to.
+- buildbot-nix master module auto-creates nginx `/nix-outputs/` location with `autoindex on` when `outputsPath` is set. Don't add a duplicate location block.
+- Cloudflare tunnel can proxy to remote hosts: `"buildbot.blr.dev" = "http://aspen2:80"` in aspen1's ingress forwards to aspen2.
+
 ## Patterns That Work
 - `_class` conditionals for darwin/nixos shared modules — set platform-specific attrs with `lib.optionalAttrs (_class == "nixos")` / `(_class == "darwin")`. Darwin lacks `isNormalUser`, needs `users.knownUsers`, uses `gid = 80` for admin instead of `extraGroups = ["wheel"]`, and has different GC schedule syntax (interval vs dates).
 - SSH into target machines to get actual journal logs rather than guessing from deploy output

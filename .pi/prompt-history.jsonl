@@ -330,3 +330,4 @@
 {"text":"commit and deploy","timestamp":1773452276749}
 {"text":"does it work","timestamp":1773453444844}
 {"text":"https://buildbot.blr.dev/#/","timestamp":1773453604269}
+{"text":"lets just use aspen1 as buildbot and harmonia cache. move the llm stuff to aspen2","timestamp":1773453785769}

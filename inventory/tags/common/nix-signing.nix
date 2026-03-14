@@ -54,7 +54,7 @@ in
     # Trust substituters from flake config if present
     substituters = flake.nixConfig.extra-substituters or [ ];
 
-    # Harmonia binary cache on aspen2
-    extra-substituters = [ "http://aspen2:5000" ];
+    # Harmonia binary cache on aspen1
+    extra-substituters = [ "http://aspen1:5000" ];
   };
 }
