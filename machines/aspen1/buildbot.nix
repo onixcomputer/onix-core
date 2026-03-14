@@ -1,3 +1,8 @@
+# Buildbot worker on aspen1.
+#
+# Connects to the master on aspen2. Builds are distributed across both
+# aspen machines for parallel capacity. Build outputs get pushed to
+# aspen2's harmonia cache via the master's postBuildSteps.
 {
   config,
   inputs,
@@ -6,87 +11,24 @@
 }:
 {
   imports = [
-    inputs.buildbot-nix.nixosModules.buildbot-master
     inputs.buildbot-nix.nixosModules.buildbot-worker
   ];
 
-  clan.core.vars.generators = {
-    # Worker password + workers JSON generated together (avoids cross-generator deps)
-    buildbot-worker = {
-      files.password = { };
-      files.workers = { };
-      runtimeInputs = with pkgs; [ jq ];
-      script = ''
-        head -c 32 /dev/urandom | base64 | tr -d '\n' > $out/password
-        jq -n --arg pass "$(cat $out/password)" \
-          '[{"name": "aspen1", "pass": $pass, "cores": 16}]' \
-          > $out/workers
-      '';
-    };
-
-    # GitHub secrets (prompted — fill in after creating GitHub App + OAuth app)
-    buildbot-github = {
-      files = {
-        oauth-secret = { };
-        webhook-secret = { };
-        app-secret-key = { };
-      };
-      prompts = {
-        oauth-secret = {
-          description = "GitHub OAuth client secret (github.com/settings/developers)";
-          type = "hidden";
-        };
-        webhook-secret = {
-          description = "GitHub webhook secret (random string, used when adding repo webhook)";
-          type = "hidden";
-        };
-        app-secret-key = {
-          description = "GitHub App private key PEM (github.com/settings/apps -> Generate a private key)";
-          type = "hidden";
-        };
-      };
-      script = ''
-        cp $prompts/oauth-secret $out/oauth-secret
-        cp $prompts/webhook-secret $out/webhook-secret
-        cp $prompts/app-secret-key $out/app-secret-key
-      '';
-    };
-  };
-
-  services.buildbot-nix.master = {
-    enable = true;
-    domain = "buildbot.blr.dev";
-    useHTTPS = true;
-    workersFile = config.clan.core.vars.generators.buildbot-worker.files.workers.path;
-    buildSystems = [
-      "x86_64-linux"
-      "aarch64-linux"
-    ];
-
-    authBackend = "github";
-    github = {
-      appId = 3086395;
-      appSecretKeyFile = config.clan.core.vars.generators.buildbot-github.files.app-secret-key.path;
-
-      oauthId = "Ov23livGR1RdLhArTbJI";
-      oauthSecretFile = config.clan.core.vars.generators.buildbot-github.files.oauth-secret.path;
-
-      webhookSecretFile = config.clan.core.vars.generators.buildbot-github.files.webhook-secret.path;
-
-      # Repos with this topic are auto-discovered
-      topic = "buildbot-nix-brittonr";
-    };
-
-    admins = [ "brittonr" ];
-    evalWorkerCount = 8;
-    evalMaxMemorySize = 4096;
+  # Same shared generator as on aspen2 — clan vars deduplicates via share = true.
+  # Both machines need the definition so the module system can resolve the path.
+  clan.core.vars.generators.buildbot-worker-aspen1 = {
+    share = true;
+    files.password = { };
+    runtimeInputs = [ pkgs.coreutils ];
+    script = ''
+      head -c 32 /dev/urandom | base64 | tr -d '\n' > $out/password
+    '';
   };
 
   services.buildbot-nix.worker = {
     enable = true;
-    workerPasswordFile = config.clan.core.vars.generators.buildbot-worker.files.password.path;
+    workerPasswordFile = config.clan.core.vars.generators.buildbot-worker-aspen1.files.password.path;
+    masterUrl = "tcp:host=aspen2:port=9989";
     workers = 16;
   };
-
-  networking.firewall.allowedTCPPorts = [ 80 ];
 }

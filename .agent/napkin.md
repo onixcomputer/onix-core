@@ -14,6 +14,8 @@
 
 | 2026-03-13 | self | `import ../inventory/core/machines.nix { }` returns `{ machines = { ... }; }`, not the machines attrset directly | Use `(import ../inventory/core/machines.nix { }).machines` to get the machine names |
 | 2026-03-13 | self | `inputs'` in adios-flake doesn't give access to `legacyPackages` on clan-core — use `self.inputs.clan-core.legacyPackages.${system}` instead | adios-flake `inputs'` maps to perSystem outputs (packages, etc.). For legacyPackages access, go through `self.inputs.<input>.legacyPackages.${system}` |
+| 2026-03-13 | self | adios-flake wrapper modules with `@args` pattern get formal args stripped by nixfmt → adios can't detect system dependency → passes wrong arg set | Never use `@args` pass-through with adios-flake. Explicitly destructure ALL needed args AND reference them in the body (e.g. via `inherit`). nixfmt strips unused destructured bindings. |
+| 2026-03-13 | self | adios-flake `flake` parameter handles non-standard outputs (clan, clanInternals) that modules can't — only `defaultFlakeOutputs` (nixosConfigurations, lib, etc.) work from modules | Use `flake = import ./file.nix { ... }` for clan outputs. Use modules only for per-system outputs (checks, packages, devShells, formatter). |
 | 2026-03-13 | self | `time.timeZone = null` in a tag conflicts with hardcoded `time.timeZone = "America/New_York"` in machine configs | Remove hardcoded timezone from machines that get the tag with `automatic-timezoned` |
 
 ## User Preferences

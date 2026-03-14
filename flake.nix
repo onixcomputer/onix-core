@@ -161,26 +161,10 @@
   };
 
   outputs =
-    inputs@{ adios-flake, self, ... }:
-    let
-
-      # Import modules directly
-      modules = import "${self}/modules/default.nix" { inherit inputs; };
-
-      # Build clan using standalone API (system-agnostic)
-      clanModule = inputs.clan-core.lib.clan {
-        specialArgs = {
-          inherit inputs;
-          wrappers = inputs.wrappers.wrapperModules;
-        };
-        inherit self;
-        meta.name = "Onix";
-        inherit modules;
-        inventory = import "${self}/inventory" { inherit inputs; };
-      };
-    in
+    inputs@{ adios-flake, ... }:
     adios-flake.lib.mkFlake {
-      inherit inputs self;
+      inherit inputs;
+      inherit (inputs) self;
       systems = [
         "x86_64-linux"
         "aarch64-linux"
@@ -188,70 +172,13 @@
         "x86_64-darwin"
       ];
       modules = [
-        # Dev environment (formatter, pre-commit, devShells, MCP servers)
-        ./parts/dev-env.nix
-
-        # Checks
-        ./parts/machine-checks.nix
-        ./parts/vars-checks.nix
-
-        # Analysis and infrastructure tools
-        ./parts/sops-viz.nix
-
-        # Workflow tools
-        ./parts/merge-when-green.nix
-        ./parts/nix-eval-warnings.nix
-        ./parts/iroh-ssh.nix
-        ./parts/claude-md.nix
-
-        # TUI tools
-        ./parts/tuicr.nix
-
-        # Dev CLI tools
-        ./parts/tracey.nix
-        ./parts/ccusage.nix
-        ./parts/abp.nix
-        ./parts/branchfs.nix
-
-        # Package management
-        ./parts/updater.nix
+        ./flake-outputs/checks.nix # machine builds, vars, packages, devShells
+        ./flake-outputs/dev-env.nix # formatter, pre-commit, devShells, MCP
+        ./flake-outputs/tools.nix # CLI tools (acl, vars, tags, merge-when-green, etc.)
       ];
-      flake = {
-        # Clan outputs
-        inherit (clanModule.config)
-          nixosConfigurations
-          darwinConfigurations
-          clanInternals
-          ;
-        clan = clanModule.config;
-
-        # Shared library utilities
-        lib = {
-          machines = {
-            names = builtins.attrNames (import ./inventory/core/machines.nix { });
-            hasTag =
-              machine: tag:
-              let
-                machinesDef = import ./inventory/core/machines.nix { };
-              in
-              builtins.elem tag (machinesDef.${machine}.tags or [ ]);
-          };
-          tags = {
-            all =
-              let
-                tagDir = ./inventory/tags;
-                contents = builtins.readDir tagDir;
-                nixFiles = builtins.filter (name: builtins.match ".*\\.nix" name != null && name != "default.nix") (
-                  builtins.attrNames contents
-                );
-              in
-              map (name: builtins.replaceStrings [ ".nix" ] [ "" ] name) nixFiles;
-          };
-          users = {
-            names = [ "brittonr" ];
-          };
-          inherit inputs;
-        };
+      flake = import ./flake-outputs/clan.nix {
+        inherit (inputs) self;
+        inherit inputs;
       };
     };
 }

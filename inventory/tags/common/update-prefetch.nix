@@ -1,11 +1,11 @@
-# Background system prefetch — builds the next system closure hourly.
+# Background system prefetch — downloads the next system closure hourly.
 #
-# After `git pull` on the flake repo, the next `clan machines update` is
-# fast because the closure is already in the store. Runs at idle priority
-# so it doesn't interfere with interactive work or builds.
+# Fetches the store path from buildbot's outputsPath index, then downloads
+# the closure from the harmonia binary cache on aspen2. No local eval or
+# build needed — the entire closure is pre-built by CI.
 #
-# Without a CI/build server this evaluates + builds locally. With CI,
-# adapt the script to curl a store path URL instead of building.
+# Fallback: if the buildbot index is unreachable (offline, CI hasn't run
+# yet, branch not built), falls back to a local build from the flake repo.
 #
 # Adapted from Mic92/dotfiles nixosModules/update-prefetch.nix.
 {
@@ -14,6 +14,18 @@
   ...
 }:
 let
+  # Buildbot writes store paths to this URL after successful builds.
+  # Format: <base>/<owner>/<repo>/<branch>/<system>.<attr>
+  buildbotOutputsBase = "https://buildbot.blr.dev/nix-outputs";
+
+  # GitHub owner/repo for this flake
+  owner = "brittonr";
+  repo = "onix-core";
+  branch = "main";
+
+  hostname = config.networking.hostName;
+  inherit (pkgs.stdenv.hostPlatform) system;
+
   flakeDir = "/home/brittonr/git/onix-core";
 in
 {
@@ -27,7 +39,7 @@ in
   };
 
   systemd.services.update-prefetch = {
-    description = "Pre-build next system closure in the background";
+    description = "Pre-fetch next system closure from CI cache";
 
     script = ''
       set -eux -o pipefail
@@ -38,7 +50,24 @@ in
         exit 0
       fi
 
-      # Skip if flake dir doesn't exist
+      # Try fetching store path from buildbot's output index.
+      # The file contains just the store path string, e.g. /nix/store/abc...-nixos-system-...
+      outputs_url="${buildbotOutputsBase}/${owner}/${repo}/${branch}/${system}.nixos-${hostname}"
+      store_path=$(${pkgs.curl}/bin/curl -sfL "$outputs_url" 2>/dev/null) || store_path=""
+
+      if [ -n "$store_path" ] && [[ "$store_path" == /nix/store/* ]]; then
+        echo "Got store path from buildbot: $store_path"
+        # Download from harmonia cache (or any configured substituter)
+        ${config.nix.package}/bin/nix-store --add-root /run/next-system -r "$store_path" && {
+          echo "Prefetched from cache: $store_path"
+          exit 0
+        }
+        echo "Cache download failed — falling back to local build"
+      else
+        echo "Buildbot index unavailable or no build for ${hostname} — falling back to local build"
+      fi
+
+      # Fallback: build locally from the flake repo
       if [ ! -d "${flakeDir}" ]; then
         echo "Flake directory ${flakeDir} not found — skipping"
         exit 0
@@ -51,17 +80,15 @@ in
         ${pkgs.gitMinimal}/bin/git pull --ff-only || true
       fi
 
-      # Build the current machine's system closure and pin as GC root
-      hostname=$(${pkgs.hostname}/bin/hostname)
       store_path=$(${config.nix.package}/bin/nix build \
-        ".#nixosConfigurations.$hostname.config.system.build.toplevel" \
+        ".#nixosConfigurations.${hostname}.config.system.build.toplevel" \
         --no-link --print-out-paths 2>/dev/null) || {
-        echo "Build failed for $hostname — skipping"
+        echo "Local build failed for ${hostname} — skipping"
         exit 0
       }
 
       ${config.nix.package}/bin/nix-store --add-root /run/next-system -r "$store_path"
-      echo "Prefetched: $store_path"
+      echo "Prefetched (local build): $store_path"
     '';
 
     serviceConfig = {
@@ -70,7 +97,6 @@ in
       CPUSchedulingPolicy = "idle";
       IOSchedulingClass = "idle";
       Nice = 19;
-      # Don't clog the journal on frequent runs
       StandardOutput = "journal";
       StandardError = "journal";
     };

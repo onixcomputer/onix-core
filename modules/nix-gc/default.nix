@@ -76,6 +76,13 @@ _: {
                 dates = cfg.optimizeSchedule;
               };
             };
+
+            # Run GC at lowest priority — never steal resources from builds or interactive work
+            systemd.services.nix-gc.serviceConfig = {
+              CPUSchedulingPolicy = "idle";
+              IOSchedulingClass = "idle";
+              Nice = 19;
+            };
           };
       };
   };

@@ -102,6 +102,11 @@
     kitty.terminfo
   ];
 
+  # Don't restart network services during rebuild — prevents SSH disconnects
+  # when deploying remotely. Applies whether using networkd or resolved.
+  systemd.services.systemd-networkd.stopIfChanged = false;
+  systemd.services.systemd-resolved.stopIfChanged = false;
+
   networking = {
     networkmanager.enable = true;
     useNetworkd = false;
