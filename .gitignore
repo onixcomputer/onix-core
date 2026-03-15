@@ -19,6 +19,7 @@ CLAUDE.md
 # Pi agent state
 .pi/
 .agent/
+openspec/
 
 # Generated pre-commit config
 .pre-commit-config.yaml
