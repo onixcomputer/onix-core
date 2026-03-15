@@ -260,9 +260,11 @@ in
         self'.packages.sendme
         self'.packages.verify-deploy
         self'.packages.claude-md
-        self'.packages.tracey
         self'.packages.ccusage
-        self'.packages.abp
+      ]
+      ++ lib.optionals (self'.packages ? tracey) [ self'.packages.tracey ]
+      ++ lib.optionals (self'.packages ? abp) [ self'.packages.abp ]
+      ++ [
         pkgs.nix-output-monitor
         (pkgs.writeShellScriptBin "eval-warnings" ''
           if [ -z "$1" ]; then
