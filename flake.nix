@@ -62,14 +62,6 @@
       url = "github:natsukium/mcp-servers-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    devblog = {
-      url = "github:adeci/devblog";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-parts.follows = "flake-parts";
-        treefmt-nix.follows = "treefmt-nix";
-      };
-    };
     buildbot-nix = {
       url = "github:nix-community/buildbot-nix";
       inputs = {
@@ -78,32 +70,8 @@
         treefmt-nix.follows = "treefmt-nix";
       };
     };
-    nixos-avf = {
-      url = "github:nix-community/nixos-avf";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    adeci-nixvim = {
-      url = "github:adeci/nixvim-config";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        nixvim.follows = "nixvim";
-        treefmt-nix.follows = "treefmt-nix";
-      };
-    };
-    nixvim = {
-      url = "github:nix-community/nixvim";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-parts.follows = "flake-parts";
-        systems.follows = "systems";
-      };
-    };
     upmpdcli = {
       url = "github:brittonr/upmpdcli";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    radicle-nix-adapter = {
-      url = "git+https://radicle.defelo.de/zhSTd5vZ9K8aqtLecgSU5zDAZaS8.git";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     pinenote-nixos = {

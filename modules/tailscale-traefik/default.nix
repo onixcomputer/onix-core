@@ -287,9 +287,6 @@ in
                 let
                   inherit name;
                   subdomain = if svc.subdomain != null then svc.subdomain else name;
-                  # Try to resolve port from service exports
-                  portFromExports = _serviceName: null;
-
                   # Service port detection mapping
                   # Maps service names to functions that extract their ports from NixOS config
                   portDetectors = {
@@ -325,22 +322,15 @@ in
                     # First try explicit portPath
                     if svc.portPath != null then
                       getConfigValue svc.portPath config
-                    # Then try service exports
-                    else
+                    # Then try built-in detectors
+                    else if portDetectors ? ${name} then
                       let
-                        exportPort = portFromExports name;
+                        detector = portDetectors.${name};
+                        result = detector config;
                       in
-                      if exportPort != null then
-                        exportPort
-                      # Then fall back to built-in detectors
-                      else if portDetectors ? ${name} then
-                        let
-                          detector = portDetectors.${name};
-                          result = detector config;
-                        in
-                        if result != null then result else null
-                      else
-                        null;
+                      if result != null then result else null
+                    else
+                      null;
 
                   # Determine final port
                   actualPort =

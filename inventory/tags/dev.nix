@@ -57,7 +57,6 @@
     volatility3
     usbmuxd
     usbutils
-    radicle-node
     socat
     lsof
     # TUI tools

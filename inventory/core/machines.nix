@@ -31,7 +31,6 @@ _: {
         "docker"
         "taskwarrior"
         "backup"
-        # "radicle-node"
       ];
       deploy = {
         targetHost = "root@iroh-britton-fw";
@@ -55,9 +54,6 @@ _: {
         "prometheus"
         "monitoring"
         "homepage-server"
-        # "static-test"
-        # "static-demo"
-        # "traefik-blr"
         "tailnet-brittonr"
         "openpgp"
         "password-manager"
@@ -67,7 +63,6 @@ _: {
         "creative"
         "taskwarrior"
         "backup"
-        # "radicle-node"
       ];
       deploy = {
         targetHost = "root@iroh-britton-gpd";
@@ -182,7 +177,6 @@ _: {
         "remote-builders"
         "cross-compile"
         "udev-rules"
-        # "radicle-seed"
         "cloud-hypervisor-host" # TAP networking for RedoxOS development
         "taskwarrior"
         "initrd-ssh"
