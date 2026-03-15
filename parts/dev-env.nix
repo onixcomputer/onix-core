@@ -1,9 +1,9 @@
-# Development environment: formatter, pre-commit, MCP servers, and dev shells.
+# Development environment: formatter, pre-commit, and dev shells.
 #
-# Consolidates formatter.nix, pre-commit.nix, mcp-servers.nix, and devshells.nix
-# into a single module. These were previously separate flake-parts modules wired
-# together via `config.*`; adios-flake modules communicate through `self'` instead,
-# so we evaluate all the dev tooling in one place to avoid circular references.
+# Consolidates formatter.nix, pre-commit.nix, and devshells.nix into a single
+# module. These were previously separate flake-parts modules wired together via
+# `config.*`; adios-flake modules communicate through `self'` instead, so we
+# evaluate all the dev tooling in one place to avoid circular references.
 {
   pkgs,
   lib,
@@ -180,56 +180,6 @@ let
       };
     }).config;
 
-  # --- MCP servers ---
-  mcpLib = inputs'.mcp-servers-nix.lib;
-
-  mcpBaseConfig = {
-    programs = {
-      filesystem = {
-        enable = true;
-        args = [ "." ];
-      };
-      git.enable = true;
-      context7.enable = true;
-      memory.enable = true;
-      time.enable = true;
-      sequential-thinking.enable = true;
-      fetch.enable = true;
-      playwright.enable = true;
-    };
-  };
-
-  mcpClaudeConfig = lib.recursiveUpdate mcpBaseConfig {
-    flavor = "claude-code";
-    programs.filesystem.args = [
-      "."
-      ".."
-    ];
-  };
-
-  mcpVscodeConfig = lib.recursiveUpdate mcpBaseConfig {
-    flavor = "vscode";
-  };
-
-  mcpClaudeEval = mcpLib.evalModule pkgs mcpClaudeConfig;
-  mcpVscodeEval = mcpLib.evalModule pkgs mcpVscodeConfig;
-
-  mcpClaudeConfigFile = mcpClaudeEval.config.configFile;
-  mcpVscodeConfigFile = mcpVscodeEval.config.configFile;
-
-  # Collect enabled MCP server packages from the claude flavor
-  mcpPackages =
-    let
-      programs = lib.filterAttrs (_: v: v.enable or false) mcpClaudeEval.config.programs;
-    in
-    lib.mapAttrsToList (_: v: v.package) programs;
-
-  mcpShellHook = ''
-    ln -sf ${mcpClaudeConfigFile} .mcp.json
-    mkdir -p .vscode
-    ln -sf ${mcpVscodeConfigFile} .vscode/mcp.json
-  '';
-
 in
 {
   # treefmt formatter output
@@ -305,8 +255,7 @@ in
         inputs'.mics-skills.pexpect-cli
         inputs'.mics-skills.screenshot-cli
         inputs'.mics-skills.weather-cli
-      ]
-      ++ mcpPackages;
+      ];
 
       shellHook = ''
         echo "Clan Infrastructure Development Shell"
@@ -367,9 +316,6 @@ in
         echo ""
 
         ${preCommitEval.installationScript}
-
-        # Configure MCP servers for AI coding assistants
-        ${mcpShellHook}
       '';
     };
 
