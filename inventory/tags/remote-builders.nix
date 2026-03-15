@@ -1,5 +1,25 @@
-{ lib, ... }:
 {
+  lib,
+  config,
+  pkgs,
+  ...
+}:
+let
+  builderKeyPath = config.clan.core.vars.generators.nix-builder-ssh.files."id_ed25519".path;
+in
+{
+  # Dedicated SSH keypair for the nix daemon (root) to authenticate
+  # to remote builders. Root can't access user SSH agents, so it
+  # needs its own key on disk.
+  clan.core.vars.generators.nix-builder-ssh = {
+    files."id_ed25519" = { };
+    files."id_ed25519.pub".secret = false;
+    runtimeInputs = [ pkgs.openssh ];
+    script = ''
+      ssh-keygen -t ed25519 -N "" -C "nix-builder@${config.networking.hostName}" -f "$out/id_ed25519"
+    '';
+  };
+
   # Enable distributed builds to offload compilation to faster machines
   nix = {
     distributedBuilds = lib.mkDefault true;
@@ -20,6 +40,7 @@
         maxJobs = 10;
         speedFactor = 12;
         sshUser = "brittonr";
+        sshKey = builderKeyPath;
         supportedFeatures = [ "big-parallel" ];
       }
       # High-performance x86_64 servers via iroh-ssh
@@ -30,6 +51,7 @@
         maxJobs = 16;
         speedFactor = 20;
         sshUser = "root";
+        sshKey = builderKeyPath;
         supportedFeatures = [
           "nixos-test"
           "big-parallel"
@@ -43,6 +65,7 @@
         maxJobs = 16;
         speedFactor = 20;
         sshUser = "root";
+        sshKey = builderKeyPath;
         supportedFeatures = [
           "nixos-test"
           "big-parallel"
