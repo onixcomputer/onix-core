@@ -13,7 +13,7 @@ let
     loki = import ./loki.nix { inherit inputs; };
     vaultwarden = import ./vaultwarden.nix { inherit inputs; };
     homepage-dashboard = import ./homepage-dashboard.nix { inherit inputs; };
-    # cloudflare-tunnel = import ./cloudflare-tunnel.nix { inherit inputs; };
+    cloudflare-tunnel = import ./cloudflare-tunnel.nix { inherit inputs; };
     llm = import ./llm.nix { inherit inputs; };
 
     upmpdcli = import ./upmpdcli.nix { inherit inputs; };
