@@ -64,6 +64,11 @@
     pmset -b displaysleep 5
   '';
 
+  # SSH — allow root login with key only (for clan deploys)
+  services.openssh.extraConfig = ''
+    PermitRootLogin prohibit-password
+  '';
+
   # Enable touch ID for sudo
   security.pam.services.sudo_local.touchIdAuth = true;
 

@@ -224,7 +224,7 @@ _: {
       machineClass = "darwin";
       tags = [ ];
       deploy = {
-        targetHost = "brittonr@britton-air.local";
+        targetHost = "root@britton-air.local";
         buildHost = "";
       };
     };

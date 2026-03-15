@@ -86,8 +86,6 @@
   users.users.root.openssh.authorizedKeys.keys = [
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILYzh3yIsSTOYXkJMFHBKzkakoDfonm3/RED5rqMqhIO britton@framework"
   ];
-  security.sudo.wheelNeedsPassword = false;
-
   # SSH server — primary access method
   services.openssh = {
     enable = true;

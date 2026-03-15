@@ -58,6 +58,11 @@
             ) config.users.users
           )
         );
+      }
+      // lib.optionalAttrs (_class == "darwin") {
+        # Authorize root for SSH deploys (same pattern as NixOS).
+        # macOS root home is /var/root.
+        root.openssh.authorizedKeys.keys = sshKeys;
       };
 
     # brittonr group only on NixOS (darwin uses gid=80 admin group)
@@ -67,8 +72,8 @@
 
     programs.fish.enable = true;
 
-    security.sudo = lib.optionalAttrs (_class == "nixos") {
-      wheelNeedsPassword = false;
-    };
+    # sudo authentication: password, YubiKey, or fprintd — no NOPASSWD.
+    # NixOS deploys SSH as root (no sudo needed).
+    # Darwin deploys need interactive auth or local rebuild.
   };
 }
