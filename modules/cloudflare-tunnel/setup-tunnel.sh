@@ -7,6 +7,9 @@ API_TOKEN=$(tr -d '\n' <"$CREDENTIALS_DIRECTORY/api_token")
 echo "Setting up Cloudflare tunnel: $TUNNEL_NAME"
 echo "Ensuring DNS records are up to date for all configured hostnames..."
 
+# Track whether we have a working API token
+API_TOKEN_VALID=false
+
 get_base_domain() {
   local hostname="$1"
   # Remove subdomain(s) - everything before the domain.tld
@@ -15,13 +18,33 @@ get_base_domain() {
 
 # Step 1: Verify token
 echo "Verifying API token..."
-VERIFY_RESPONSE=$(curl -sf "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+if VERIFY_RESPONSE=$(curl -sf "https://api.cloudflare.com/client/v4/user/tokens/verify" \
   -H "Authorization: Bearer $API_TOKEN" \
-  -H "Content-Type: application/json")
+  -H "Content-Type: application/json" 2>&1); then
+  if [ "$(echo "$VERIFY_RESPONSE" | jq -r '.success')" = "true" ]; then
+    API_TOKEN_VALID=true
+    echo "✓ API token valid"
+  fi
+fi
 
-if [ "$(echo "$VERIFY_RESPONSE" | jq -r '.success')" != "true" ]; then
-  echo "ERROR: Token verification failed"
-  exit 1
+if [ "$API_TOKEN_VALID" = "false" ]; then
+  if [ -f "${TUNNEL_CREDENTIALS_FILE}" ]; then
+    echo "WARNING: API token verification failed, but tunnel credentials exist"
+    echo "The tunnel will continue running with existing credentials"
+    echo "DNS records will NOT be updated until the token is refreshed"
+    echo "Regenerate with: clan vars generate --generator cloudflare-<instance>"
+    echo ""
+    echo "Cloudflare tunnel setup skipped (existing credentials preserved)"
+    exit 0
+  else
+    echo "ERROR: API token verification failed and no existing credentials"
+    echo "Regenerate with: clan vars generate --generator cloudflare-<instance>"
+    # Show the actual error for debugging
+    curl -s "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+      -H "Authorization: Bearer $API_TOKEN" \
+      -H "Content-Type: application/json" 2>&1 | jq '.' || true
+    exit 1
+  fi
 fi
 
 # Step 2: Get account ID from the first domain
