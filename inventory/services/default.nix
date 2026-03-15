@@ -24,6 +24,7 @@ let
     llm-agents = import ./llm-agents.nix { inherit inputs; };
     harmonia = import ./harmonia.nix { inherit inputs; };
     borgbackup = import ./borgbackup.nix { inherit inputs; };
+    matrix-synapse = import ./matrix-synapse.nix { inherit inputs; };
   };
 in
 lib.foldr lib.recursiveUpdate { } (lib.attrValues services)

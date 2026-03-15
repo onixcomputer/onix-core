@@ -13,6 +13,9 @@ _: {
               "auth.robitzs.ch" = "http://localhost:9081";
               "clonadic.blr.dev" = "http://localhost:8080";
               "buildbot.blr.dev" = "http://localhost:80";
+              "matrix.onix.computer" = "http://localhost:80";
+              # Matrix well-known delegation (federation discovery on server_tld)
+              "onix.computer" = "http://localhost:80";
             };
           };
         };
