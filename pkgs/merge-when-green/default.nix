@@ -9,6 +9,7 @@
   nix,
   lib,
   makeWrapper,
+  buildbot-pr-check,
 }:
 let
   runtimeDeps = [
@@ -18,6 +19,7 @@ let
     coreutils
     gh
     tea
+    buildbot-pr-check
   ];
 in
 python3.pkgs.buildPythonApplication {
