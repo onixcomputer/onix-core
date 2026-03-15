@@ -908,15 +908,15 @@
       "locked": {
         "lastModified": 1771349036,
         "narHash": "sha256-yMmwpa5Y0qVkLbhjb8GP3SGMFZhkhH6Jxu/O8yNfM5E=",
-        "ref": "refs/heads/main",
+        "owner": "brittonr",
+        "repo": "wrappers",
         "rev": "4eac3c9ab7018ed1154e8a9f5e3a298a9ff707e9",
-        "revCount": 182,
-        "type": "git",
-        "url": "file:///home/brittonr/git/wrappers"
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "file:///home/brittonr/git/wrappers"
+        "owner": "brittonr",
+        "repo": "wrappers",
+        "type": "github"
       }
     }
   },

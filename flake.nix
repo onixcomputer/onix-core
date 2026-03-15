@@ -51,7 +51,7 @@
       };
     };
     wrappers = {
-      url = "git+file:///home/brittonr/git/wrappers";
+      url = "github:brittonr/wrappers";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     grub2-themes = {
