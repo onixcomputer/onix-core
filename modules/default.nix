@@ -1,7 +1,8 @@
-_:
+{ inputs, ... }:
 let
 
   module_definitions = {
+    "buildbot" = import ./buildbot { inherit inputs; };
     "tailscale" = import ./tailscale;
     "tailscale-traefik" = import ./tailscale-traefik;
     "static-server" = import ./static-server;

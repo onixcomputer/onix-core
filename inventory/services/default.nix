@@ -25,6 +25,7 @@ let
     harmonia = import ./harmonia.nix { inherit inputs; };
     borgbackup = import ./borgbackup.nix { inherit inputs; };
     matrix-synapse = import ./matrix-synapse.nix { inherit inputs; };
+    buildbot = import ./buildbot.nix { inherit inputs; };
   };
 in
 lib.foldr lib.recursiveUpdate { } (lib.attrValues services)
