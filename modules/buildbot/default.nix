@@ -207,6 +207,8 @@ in
                 };
 
                 # Effects secrets — prompted GitHub PAT in hercules-ci JSON format
+                # Format: {"token": {"type": "GitToken", "data": {"token": "ghp_..."}}}
+                # The "token" key matches secretsMap.token in hci-effects.flakeUpdate
                 onix-effects-secrets = lib.mkIf (cfg.effectsSecrets != { }) {
                   files.secrets-json = { };
                   runtimeInputs = [ pkgs.jq ];
@@ -216,7 +218,7 @@ in
                   };
                   script = ''
                     jq -n --arg token "$(cat $prompts/github-pat)" \
-                      '{"github": {"data": {"token": $token}}}' \
+                      '{"token": {"type": "GitToken", "data": {"token": $token}}}' \
                       > $out/secrets-json
                   '';
                 };
