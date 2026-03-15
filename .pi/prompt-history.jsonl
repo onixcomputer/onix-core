@@ -362,3 +362,12 @@
 {"text":"lets figure out the lockrace","timestamp":1773522348782}
 {"text":"yes","timestamp":1773532744403}
 {"text":"deploy","timestamp":1773532844319}
+{"text":"check the status of our builbot and harmonia","timestamp":1773533163985}
+{"text":"yeah","timestamp":1773533222110}
+{"text":"try now","timestamp":1773534020924}
+{"text":"what next","timestamp":1773534216547}
+{"text":"how do we fix the tailscale issues?","timestamp":1773534465351}
+{"text":"yes","timestamp":1773534538166}
+{"text":"done","timestamp":1773534894144}
+{"text":"remove garage","timestamp":1773535029110}
+{"text":"lets comment out cloudflare tunnel so we pass checks for now","timestamp":1773535198921}

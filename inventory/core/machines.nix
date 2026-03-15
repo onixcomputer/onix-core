@@ -117,6 +117,7 @@ _: {
         "minimal-docs"
         "ssd-optimization"
         "docker"
+        "tailnet-brittonr"
         "dev"
         "prometheus"
         "monitoring"
