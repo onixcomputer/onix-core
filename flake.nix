@@ -75,7 +75,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     clonadic = {
-      url = "path:/home/brittonr/git/clonadic";
+      url = "github:brittonr/clonadic";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-index-database = {

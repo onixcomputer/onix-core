@@ -190,14 +190,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1772671781,
-        "narHash": "sha256-1aHBGsHFLOqefqRuFWIKgcOEVGweSYt84jyYWMC0V7k=",
-        "path": "/home/brittonr/git/clonadic",
-        "type": "path"
+        "lastModified": 1771355255,
+        "narHash": "sha256-oxlpj/UBwduL1Q3SbuCmuPW3UGCC75wO+ZQZJjvYtpo=",
+        "owner": "brittonr",
+        "repo": "clonadic",
+        "rev": "93872453c96e69d17939625032b304e54a5b4b93",
+        "type": "github"
       },
       "original": {
-        "path": "/home/brittonr/git/clonadic",
-        "type": "path"
+        "owner": "brittonr",
+        "repo": "clonadic",
+        "type": "github"
       }
     },
     "data-mesher": {
