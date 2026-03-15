@@ -73,6 +73,7 @@ in
           ${clanLegacy.setupNixInNix}
           mkdir -p self
           cp -r --no-target-directory ${self} self
+          chmod -R u+w self
           ${lib.concatMapStringsSep "\n" (machine: ''
             clan vars check ${machine} --flake ./self --debug
             clan vars fix ${machine} --flake ./self --debug
