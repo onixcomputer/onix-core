@@ -99,7 +99,7 @@ def detect_platform() -> Platform:
 
 
 def ensure_auto_merge_enabled(platform: Platform) -> None:
-    """Enable auto-merge on the repo if it isn't already."""
+    """Bail early if auto-merge is not enabled on the repo."""
     if platform != Platform.GITHUB:
         return
     result = run(
@@ -108,20 +108,12 @@ def ensure_auto_merge_enabled(platform: Platform) -> None:
         capture=True,
     )
     if result.returncode == 0 and result.stdout.strip() == "false":
-        run(
-            [
-                "gh",
-                "api",
-                "repos/{owner}/{repo}",
-                "--method",
-                "PATCH",
-                "--field",
-                "allow_auto_merge=true",
-            ],
-            check=False,
-            capture=True,
+        print_error(
+            "Auto-merge is not enabled on this repository.\n"
+            "Enable it with:\n"
+            "  gh api repos/{owner}/{repo} --method PATCH -f allow_auto_merge=true"
         )
-        print_subtle("Enabled auto-merge on repository")
+        sys.exit(1)
 
 
 def get_default_branch(platform: Platform) -> str:
