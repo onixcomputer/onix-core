@@ -249,6 +249,11 @@ in
         self'.packages.tags
         self'.packages.merge-when-green
         self'.packages.buildbot-pr-check
+        (pkgs.python3.withPackages (ps: [
+          ps.pytest
+          ps.vcrpy
+          ps.pytest-vcr
+        ]))
         self'.packages.nix-eval-warnings
         self'.packages.iroh-ssh
         self'.packages.dumbpipe

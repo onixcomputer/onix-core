@@ -4,6 +4,7 @@
 import argparse
 import logging
 import sys
+import urllib.request
 
 from .build_status import BuildStatus
 from .buildbot_api import filter_builds_with_triggers, get_parent_build_status
@@ -121,6 +122,13 @@ def check_pr(pr_url: str, included_statuses: set[BuildStatus] | None = None) -> 
         return 1
 
 
+def _install_url_opener() -> None:
+    """Set a User-Agent so Cloudflare doesn't block urllib requests."""
+    opener = urllib.request.build_opener()
+    opener.addheaders = [("User-Agent", "buildbot-pr-check/0.1")]
+    urllib.request.install_opener(opener)
+
+
 def main() -> None:
     """Main entry point for command-line usage."""
     parser = argparse.ArgumentParser(
@@ -152,6 +160,8 @@ Optional: Set GITHUB_TOKEN environment variable for API rate limits
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
 
     args = parser.parse_args()
+
+    _install_url_opener()
 
     # Configure logging
     if args.debug:
