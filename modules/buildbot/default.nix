@@ -96,6 +96,18 @@ in
             default = 16;
             description = "CPU cores for the co-located worker (used in workers JSON)";
           };
+          effectsSecrets = mkOption {
+            type = attrsOf bool;
+            default = { };
+            description = ''
+              Map of repo identifiers to enable effects secrets for.
+              Keys are "github:owner/repo" strings. A clan vars generator
+              prompts for a GitHub PAT and produces the hercules-ci JSON format.
+            '';
+            example = {
+              "github:onixcomputer/onix-core" = true;
+            };
+          };
         };
       };
 
@@ -121,6 +133,7 @@ in
                 postBuildSteps = mkDefault [ ];
                 github = mkDefault { };
                 workerCores = mkDefault 16;
+                effectsSecrets = mkDefault { };
               };
 
               # Attrs handled explicitly — don't pass through to services.buildbot-nix.master
@@ -137,6 +150,7 @@ in
                 "github"
                 "workerName"
                 "workerCores"
+                "effectsSecrets"
               ];
               passthroughSettings = builtins.removeAttrs cfg managedAttrs;
 
@@ -178,45 +192,62 @@ in
             {
               imports = [ inputs.buildbot-nix.nixosModules.buildbot-master ];
 
-              # Worker password + workers JSON generated together (avoids cross-generator deps)
-              clan.core.vars.generators.buildbot-worker = {
-                files.password = { };
-                files.workers = { };
-                runtimeInputs = [ pkgs.jq ];
-                script = ''
-                  head -c 32 /dev/urandom | base64 | tr -d '\n' > $out/password
-                  jq -n --arg pass "$(cat $out/password)" \
-                    '[{"name": "${cfg.workerName}", "pass": $pass, "cores": ${toString cfg.workerCores}}]' \
-                    > $out/workers
-                '';
-              };
+              clan.core.vars.generators = {
+                # Worker password + workers JSON generated together (avoids cross-generator deps)
+                buildbot-worker = {
+                  files.password = { };
+                  files.workers = { };
+                  runtimeInputs = [ pkgs.jq ];
+                  script = ''
+                    head -c 32 /dev/urandom | base64 | tr -d '\n' > $out/password
+                    jq -n --arg pass "$(cat $out/password)" \
+                      '[{"name": "${cfg.workerName}", "pass": $pass, "cores": ${toString cfg.workerCores}}]' \
+                      > $out/workers
+                  '';
+                };
 
-              # GitHub secrets (prompted — fill in after creating GitHub App + OAuth app)
-              clan.core.vars.generators.buildbot-github = {
-                files = {
-                  oauth-secret = { };
-                  webhook-secret = { };
-                  app-secret-key = { };
+                # Effects secrets — prompted GitHub PAT in hercules-ci JSON format
+                onix-effects-secrets = lib.mkIf (cfg.effectsSecrets != { }) {
+                  files.secrets-json = { };
+                  runtimeInputs = [ pkgs.jq ];
+                  prompts.github-pat = {
+                    description = "GitHub PAT for effects (fine-grained, contents:write + pull_requests:write)";
+                    type = "hidden";
+                  };
+                  script = ''
+                    jq -n --arg token "$(cat $prompts/github-pat)" \
+                      '{"github": {"data": {"token": $token}}}' \
+                      > $out/secrets-json
+                  '';
                 };
-                prompts = {
-                  oauth-secret = {
-                    description = "GitHub OAuth client secret (github.com/settings/developers)";
-                    type = "hidden";
+
+                # GitHub secrets (prompted — fill in after creating GitHub App + OAuth app)
+                buildbot-github = {
+                  files = {
+                    oauth-secret = { };
+                    webhook-secret = { };
+                    app-secret-key = { };
                   };
-                  webhook-secret = {
-                    description = "GitHub webhook secret (random string, used when adding repo webhook)";
-                    type = "hidden";
+                  prompts = {
+                    oauth-secret = {
+                      description = "GitHub OAuth client secret (github.com/settings/developers)";
+                      type = "hidden";
+                    };
+                    webhook-secret = {
+                      description = "GitHub webhook secret (random string, used when adding repo webhook)";
+                      type = "hidden";
+                    };
+                    app-secret-key = {
+                      description = "GitHub App private key PEM (github.com/settings/apps -> Generate a private key)";
+                      type = "hidden";
+                    };
                   };
-                  app-secret-key = {
-                    description = "GitHub App private key PEM (github.com/settings/apps -> Generate a private key)";
-                    type = "hidden";
-                  };
+                  script = ''
+                    cp $prompts/oauth-secret $out/oauth-secret
+                    cp $prompts/webhook-secret $out/webhook-secret
+                    cp $prompts/app-secret-key $out/app-secret-key
+                  '';
                 };
-                script = ''
-                  cp $prompts/oauth-secret $out/oauth-secret
-                  cp $prompts/webhook-secret $out/webhook-secret
-                  cp $prompts/app-secret-key $out/app-secret-key
-                '';
               };
 
               services.buildbot-nix.master = lib.mkMerge [
@@ -240,6 +271,10 @@ in
                   };
 
                   postBuildSteps = ntfySteps ++ cfg.postBuildSteps;
+
+                  effects.perRepoSecretFiles = lib.mapAttrs (
+                    _repoId: _enabled: config.clan.core.vars.generators.onix-effects-secrets.files.secrets-json.path
+                  ) (lib.filterAttrs (_: enabled: enabled) cfg.effectsSecrets);
                 }
                 (lib.mkIf (cfg.outputsPath != null) {
                   inherit (cfg) outputsPath;

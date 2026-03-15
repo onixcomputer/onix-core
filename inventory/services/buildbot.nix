@@ -22,6 +22,9 @@ _: {
             oauthId = "Ov23livGR1RdLhArTbJI";
             topic = "buildbot-nix-brittonr";
           };
+          effectsSecrets = {
+            "github:onixcomputer/onix-core" = true;
+          };
         };
       };
 

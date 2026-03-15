@@ -140,9 +140,11 @@
         ./flake-outputs/dev-env.nix # formatter, pre-commit, devShells, MCP
         ./flake-outputs/tools.nix # CLI tools (acl, vars, tags, merge-when-green, etc.)
       ];
-      flake = import ./flake-outputs/clan.nix {
-        inherit (inputs) self;
-        inherit inputs;
-      };
+      flake =
+        (import ./flake-outputs/clan.nix {
+          inherit (inputs) self;
+          inherit inputs;
+        })
+        // (import ./flake-outputs/effects.nix { inherit inputs; });
     };
 }
