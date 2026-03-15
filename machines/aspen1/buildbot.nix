@@ -89,7 +89,6 @@ in
       workersFile = config.clan.core.vars.generators.buildbot-worker.files.workers.path;
       buildSystems = [
         "x86_64-linux"
-        "aarch64-linux"
       ];
 
       authBackend = "github";
