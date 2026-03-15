@@ -61,3 +61,4 @@ temp/
 *.zip
 *.tar.gz
 *.tar.bz2
+/.pi/prompt-history.jsonl
