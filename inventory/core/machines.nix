@@ -207,13 +207,11 @@ _: {
     utm-vm = {
       name = "utm-vm";
       tags = [
-        "hm-server"
         "minimal-docs"
         "ssd-optimization"
-        "dev"
       ];
       deploy = {
-        targetHost = "root@utm-vm";
+        targetHost = "root@iroh-utm-vm";
         buildHost = "";
       };
     };
