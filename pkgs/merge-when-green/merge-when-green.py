@@ -98,6 +98,32 @@ def detect_platform() -> Platform:
     return Platform.GITHUB
 
 
+def ensure_auto_merge_enabled(platform: Platform) -> None:
+    """Enable auto-merge on the repo if it isn't already."""
+    if platform != Platform.GITHUB:
+        return
+    result = run(
+        ["gh", "api", "repos/{owner}/{repo}", "--jq", ".allow_auto_merge"],
+        check=False,
+        capture=True,
+    )
+    if result.returncode == 0 and result.stdout.strip() == "false":
+        run(
+            [
+                "gh",
+                "api",
+                "repos/{owner}/{repo}",
+                "--method",
+                "PATCH",
+                "--field",
+                "allow_auto_merge=true",
+            ],
+            check=False,
+            capture=True,
+        )
+        print_subtle("Enabled auto-merge on repository")
+
+
 def get_default_branch(platform: Platform) -> str:
     """Get default branch."""
     if platform == Platform.GITHUB:
@@ -605,6 +631,7 @@ def main() -> int:
     args = parser.parse_args()
 
     platform = detect_platform()
+    ensure_auto_merge_enabled(platform)
 
     print_header("Getting repository information...")
     default_branch = get_default_branch(platform)
