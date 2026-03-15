@@ -13,8 +13,25 @@
   config,
   lib,
   pkgs,
+  self,
   ...
 }:
+let
+  # Collect nix-builder SSH public keys from all machines that have generated one.
+  # These keys let the nix daemon (root) on builder-consumers authenticate to
+  # builder hosts. Same auto-discovery pattern as nix-signing.nix.
+  varsDir = "${self}/vars/per-machine";
+  machines = lib.attrNames (builtins.readDir varsDir);
+  builderPubKeys = lib.flatten (
+    map (
+      machine:
+      let
+        keyPath = "${varsDir}/${machine}/nix-builder-ssh/id_ed25519.pub/value";
+      in
+      lib.optional (builtins.pathExists keyPath) (lib.fileContents keyPath)
+    ) machines
+  );
+in
 {
   # Darwin needs users.knownUsers to manage users declaratively.
   # List users we define here so nix-darwin knows to manage them.
@@ -29,7 +46,8 @@
 
         sshKeys = [
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILYzh3yIsSTOYXkJMFHBKzkakoDfonm3/RED5rqMqhIO britton@framework"
-        ];
+        ]
+        ++ builderPubKeys;
       in
       {
         brittonr = {

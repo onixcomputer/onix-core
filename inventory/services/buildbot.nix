@@ -9,7 +9,11 @@ _: {
         settings = {
           domain = "buildbot.blr.dev";
           useHTTPS = true;
-          buildSystems = [ "x86_64-linux" ];
+          buildSystems = [
+            "x86_64-linux"
+            "aarch64-darwin"
+            "aarch64-linux"
+          ];
           admins = [ "brittonr" ];
           evalWorkerCount = 8;
           evalMaxMemorySize = 4096;
