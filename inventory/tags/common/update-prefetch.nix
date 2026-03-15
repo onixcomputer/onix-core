@@ -30,6 +30,9 @@ in
       OnCalendar = "hourly";
       Persistent = true;
       RandomizedDelaySec = "15min";
+      # Run shortly after boot so offline machines catch up without
+      # racing the switch-to-configuration that just activated us.
+      OnBootSec = "2min";
     };
   };
 
@@ -37,9 +40,6 @@ in
     description = "Pre-fetch next system closure from CI cache";
     wants = [ "network-online.target" ];
     after = [ "network-online.target" ];
-
-    # Also trigger on boot for machines that were offline
-    wantedBy = [ "multi-user.target" ];
 
     path = [
       config.nix.package
@@ -92,6 +92,13 @@ in
 
       if [ -n "$current" ] && [ -n "$target" ] && [ "$current" != "$target" ]; then
         echo "New system available: $target (current: $current)"
+
+        # Bail if another switch-to-configuration is already running
+        if systemctl is-active --quiet nixos-rebuild-switch-to-configuration.service 2>/dev/null; then
+          echo "Another switch is in progress — skipping (will retry next cycle)"
+          exit 0
+        fi
+
         echo "Switching..."
         nix-env --profile /nix/var/nix/profiles/system --set "$target"
         "$target/bin/switch-to-configuration" switch
