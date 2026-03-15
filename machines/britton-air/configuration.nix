@@ -56,6 +56,14 @@
   power.sleep.computer = "never";
   power.sleep.display = 15; # display off after 15 min, but machine stays awake
 
+  # nix-darwin's power.sleep only affects AC (via systemsetup).
+  # Explicitly set battery sleep via pmset so the Mac doesn't sleep
+  # after 1 minute on battery (macOS default).
+  system.activationScripts.postActivation.text = ''
+    pmset -b sleep 15
+    pmset -b displaysleep 5
+  '';
+
   # Enable touch ID for sudo
   security.pam.services.sudo_local.touchIdAuth = true;
 
