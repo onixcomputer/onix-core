@@ -25,6 +25,7 @@ let
     ../parts/branchfs.nix
     ../parts/updater.nix
     ../parts/iroh-tools.nix
+    ../parts/buildbot-pr-check.nix
   ];
 
   merged = builtins.foldl' (acc: part: lib.recursiveUpdate acc part) { } parts;
