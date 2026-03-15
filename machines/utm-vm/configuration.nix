@@ -108,6 +108,10 @@
     vim
   ];
 
+  # envfs FUSE causes "Freezing execution" under QEMU aarch64 VMs.
+  # Mic92 hit the same issue. Disable it.
+  services.envfs.enable = lib.mkForce false;
+
   # zram swap — no physical swap partition needed in a VM
   zramSwap.enable = true;
 

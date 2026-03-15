@@ -17,6 +17,7 @@ let
     "aspen1"
     "aspen2"
     "pine"
+    "utm-vm"
   ];
 
   iroh-ssh = pkgs.callPackage "${flakeSrc}/pkgs/iroh-ssh" { };
