@@ -82,6 +82,14 @@
     enable = true;
     ephemeral = true; # Wipe VM state on restart for clean build environment
     maxJobs = 4;
+    # Default is [ "kvm" "benchmark" "big-parallel" ]; add nixos-test
+    # so NixOS VM integration tests can run here.
+    supportedFeatures = [
+      "kvm"
+      "benchmark"
+      "big-parallel"
+      "nixos-test"
+    ];
     config = {
       virtualisation = {
         darwin-builder = {

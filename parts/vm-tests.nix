@@ -1,12 +1,12 @@
 # NixOS VM integration tests.
 #
 # Each test boots QEMU VMs and exercises real service configurations.
-# Restricted to x86_64-linux: the aarch64-linux builder (macOS linux-builder VM)
-# lacks KVM and the nixos-test feature required to run QEMU VM tests.
+# Runs on Linux only (VMs need KVM). The aarch64-linux builder (macOS
+# linux-builder VM) has KVM via Virtualization.framework and the
+# nixos-test feature enabled in britton-air's config.
 { pkgs, lib, ... }:
 let
-  isX86Linux = pkgs.stdenv.hostPlatform.system == "x86_64-linux";
-  vmTests = lib.optionalAttrs isX86Linux {
+  vmTests = lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
     vm-static-server = import ../tests/static-server.nix { inherit pkgs; };
     vm-prometheus = import ../tests/prometheus.nix { inherit pkgs; };
     vm-loki = import ../tests/loki.nix { inherit pkgs; };
