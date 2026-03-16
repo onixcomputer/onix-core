@@ -22,6 +22,9 @@
 | 2026-03-16 | self | nix fork's lowdown 2.0.2 override kept 2.0.4 patches from followed nixpkgs → build failure | When overriding `.src` version in `overrideAttrs`, also clear `patches = []` if the patches are version-specific |
 | 2026-03-16 | self | nix flake's `packages.*.nix` includes functional tests as `checkInputs` → stale-file-handle overlayfs test fails in sandbox | Use `.overrideAttrs (_: { doCheck = false; })` to skip upstream tests in fork packages |
 | 2026-03-16 | self | SSH `%t` token in `IdentityAgent` path unsupported by OpenSSH 10.2 | Use `${XDG_RUNTIME_DIR}` env var expansion (supported per ssh_config ENVIRONMENT VARIABLES section), NOT hardcoded `/run/user/<uid>`. The HM module already generates the correct syntax. |
+| 2026-03-16 | self | wasm-opt rejects Rust wasm32-unknown-unknown output: `memory.copy operations require bulk memory operations` | Rust's wasm32 target emits bulk-memory ops by default. Pass `--enable-bulk-memory` to wasm-opt. |
+| 2026-03-16 | self | Nix fork binary inside sandbox check fails: `experimental Nix feature 'nix-command' is disabled` and `creating directory '/nix/var/nix/profiles': Permission denied` | In sandbox checks, use `--store dummy:// --offline --extra-experimental-features 'nix-command flakes wasm-builtin'` and `export HOME=$TMPDIR` |
+| 2026-03-16 | self | CARGO_TARGET_DIR env var set to `~/.cargo-target` — cargo build output not in `./target/` | Check `$CARGO_TARGET_DIR` when looking for build artifacts; don't assume `./target/` |
 
 ## User Preferences
 - Prefers deleting dead code over commenting it out
