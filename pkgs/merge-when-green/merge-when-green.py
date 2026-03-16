@@ -640,7 +640,62 @@ def query_buildbot_subbuilds(
     return results
 
 
-def wait_for_merge(platform: Platform, pr_id: str) -> bool:
+def _format_check_line(name: str, symbol: str) -> str:
+    """Format a single check line."""
+    return f"  {symbol} {name}"
+
+
+def _format_subbuild_line(sub_name: str, sub_symbol: str, step_info: str | None) -> str:
+    """Format a single sub-build line."""
+    if step_info:
+        return f"    {sub_symbol} {sub_name} {Colors.GRAY}({step_info}){Colors.RESET}"
+    return f"    {sub_symbol} {sub_name}"
+
+
+def _print_check_details(
+    details: list[tuple[str, str, str | None]],
+) -> int:
+    """Print per-check details with buildbot sub-builds expanded.
+
+    Returns the number of extra sub-build lines printed.
+    """
+    extra_lines = 0
+    for name, symbol, details_url in details:
+        print(_format_check_line(name, symbol))
+        if details_url and "buildbot" in details_url:
+            subbuilds = query_buildbot_subbuilds(details_url)
+            for sub_name, sub_symbol, step_info in subbuilds:
+                print(_format_subbuild_line(sub_name, sub_symbol, step_info))
+                extra_lines += 1
+    return extra_lines
+
+
+def _print_summary(passed: int, failed: int, pending: int) -> None:
+    """Print the check summary line with timestamp."""
+    print(
+        f"[{time.strftime('%H:%M:%S')}] "
+        f"Checks - {Colors.GREEN}Passed: {passed}{Colors.RESET}, "
+        f"{Colors.RED}Failed: {failed}{Colors.RESET}, "
+        f"{Colors.YELLOW}Pending: {pending}{Colors.RESET}"
+    )
+
+
+def _checks_changed(
+    details: list[tuple[str, str, str | None]],
+    prev_details: list[tuple[str, str, str | None]],
+) -> bool:
+    """Check if check states changed since last poll."""
+    if len(details) != len(prev_details):
+        return True
+    for (name, symbol, _), (prev_name, prev_symbol, _) in zip(
+        details, prev_details, strict=True
+    ):
+        if name != prev_name or symbol != prev_symbol:
+            return True
+    return False
+
+
+def wait_for_merge(platform: Platform, pr_id: str, verbose: bool = False) -> bool:
     """Wait for PR to be merged."""
     print_header(f"Waiting for PR '{pr_id}' to merge...")
 
@@ -656,6 +711,7 @@ def wait_for_merge(platform: Platform, pr_id: str) -> bool:
     # GitHub: detailed check monitoring
     buildbot_check_done = False
     prev_lines = 0
+    prev_details: list[tuple[str, str, str | None]] = []
     while True:
         pr_data, error = get_pr_status_github(pr_id)
         if pr_data is None:
@@ -665,34 +721,22 @@ def wait_for_merge(platform: Platform, pr_id: str) -> bool:
         checks = pr_data.get("statusCheckRollup", [])
         pending, failed, passed, details = classify_checks(checks)
 
-        # Move cursor up to overwrite previous output
-        if prev_lines > 0:
-            sys.stdout.write(f"\033[{prev_lines}A\033[J")
+        if verbose:
+            # Append-only: print every update on new lines
+            changed = _checks_changed(details, prev_details)
+            if changed or not prev_details:
+                _print_summary(passed, failed, pending)
+                _print_check_details(details)
+                prev_details = list(details)
+        else:
+            # Compact: overwrite previous output in-place
+            if prev_lines > 0:
+                sys.stdout.write(f"\033[{prev_lines}A\033[J")
 
-        # Print summary line
-        print(
-            f"[{time.strftime('%H:%M:%S')}] "
-            f"Checks - {Colors.GREEN}Passed: {passed}{Colors.RESET}, "
-            f"{Colors.RED}Failed: {failed}{Colors.RESET}, "
-            f"{Colors.YELLOW}Pending: {pending}{Colors.RESET}"
-        )
-        # Print per-check details, with buildbot sub-builds expanded
-        extra_lines = 0
-        for name, symbol, details_url in details:
-            print(f"  {symbol} {name}")
-            if details_url and "buildbot" in details_url:
-                subbuilds = query_buildbot_subbuilds(details_url)
-                for sub_name, sub_symbol, step_info in subbuilds:
-                    if step_info:
-                        print(
-                            f"    {sub_symbol} {sub_name}"
-                            f" {Colors.GRAY}({step_info}){Colors.RESET}"
-                        )
-                    else:
-                        print(f"    {sub_symbol} {sub_name}")
-                    extra_lines += 1
-        sys.stdout.flush()
-        prev_lines = 1 + len(details) + extra_lines
+            _print_summary(passed, failed, pending)
+            extra_lines = _print_check_details(details)
+            sys.stdout.flush()
+            prev_lines = 1 + len(details) + extra_lines
 
         # Run buildbot-pr-check if we have failing checks
         buildbot_check_done = run_buildbot_check_if_needed(
@@ -850,9 +894,11 @@ def enable_automerge_existing_pr(branch_name: str, platform: Platform) -> str:
     return branch_name
 
 
-def finalize_merge(platform: Platform, pr_id: str, default_branch: str) -> int:
+def finalize_merge(
+    platform: Platform, pr_id: str, default_branch: str, verbose: bool = False
+) -> int:
     """Wait for merge and rebase. Returns exit code."""
-    if wait_for_merge(platform, pr_id):
+    if wait_for_merge(platform, pr_id, verbose=verbose):
         print_success("\nPR merged!")
         run(["git", "fetch", "origin", default_branch])
         run(["git", "rebase", f"origin/{default_branch}"])
@@ -869,6 +915,12 @@ def main() -> int:
     )
     parser.add_argument(
         "-m", "--message", help="PR title and body (separated by newline)"
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Show append-only log of check status changes instead of compact overwrite",
     )
     args = parser.parse_args()
 
@@ -898,7 +950,7 @@ def main() -> int:
         print_success("Pull request created")
 
     if not args.no_wait:
-        return finalize_merge(platform, pr_id, default_branch)
+        return finalize_merge(platform, pr_id, default_branch, verbose=args.verbose)
 
     return 0
 

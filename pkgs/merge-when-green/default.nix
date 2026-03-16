@@ -24,7 +24,7 @@ let
 in
 python3.pkgs.buildPythonApplication {
   pname = "merge-when-green";
-  version = "0.3.0";
+  version = "0.3.1";
   src = ./.;
   format = "other";
 
