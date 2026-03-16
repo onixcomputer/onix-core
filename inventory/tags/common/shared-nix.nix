@@ -25,6 +25,29 @@ in
           doCheck = false;
         });
       };
+
+      # FIXME: remove after nixpkgs updates past the electron 39.8.2 patch failure.
+      # The 39-angle-patchdir.patch context drifted; replace with sed.
+      # The sed must run before postPatch's apply_all_patches loop reads config.json,
+      # so we also drop the original patch from the patches list to avoid the patchPhase error.
+      electron_39 = prev.electron_39.override {
+        electron-unwrapped = prev.electron_39.unwrapped.overrideAttrs (old: {
+          patches = builtins.filter (p: !(lib.hasSuffix "39-angle-patchdir.patch" (toString p))) (
+            old.patches or [ ]
+          );
+          postPatch =
+            lib.replaceStrings
+              [ "config=src/electron/patches/config.json" ]
+              [
+                ''
+                  config=src/electron/patches/config.json
+                  # Fix angle repo path (replaces 39-angle-patchdir.patch whose context drifted)
+                  sed -i 's|"repo": "src/third_party/angle/src"|"repo": "src/third_party/angle"|' "$config"
+                ''
+              ]
+              (old.postPatch or "");
+        });
+      };
     })
   ];
 

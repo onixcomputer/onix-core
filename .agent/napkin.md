@@ -25,6 +25,7 @@
 | 2026-03-16 | self | wasm-opt rejects Rust wasm32-unknown-unknown output: `memory.copy operations require bulk memory operations` | Rust's wasm32 target emits bulk-memory ops by default. Pass `--enable-bulk-memory` to wasm-opt. |
 | 2026-03-16 | self | Nix fork binary inside sandbox check fails: `experimental Nix feature 'nix-command' is disabled` and `creating directory '/nix/var/nix/profiles': Permission denied` | In sandbox checks, use `--store dummy:// --offline --extra-experimental-features 'nix-command flakes wasm-builtin'` and `export HOME=$TMPDIR` |
 | 2026-03-16 | self | CARGO_TARGET_DIR env var set to `~/.cargo-target` — cargo build output not in `./target/` | Check `$CARGO_TARGET_DIR` when looking for build artifacts; don't assume `./target/` |
+| 2026-03-16 | self | SSH `HostName` resolution causes host key check against resolved name, not the `Host` alias. System known_hosts has `iroh-aspen2` but SSH checks for `aspen2` (the `HostName`). User SSH works because `~/.ssh/known_hosts` has `aspen2`; nix daemon (root) fails because `/etc/ssh/ssh_known_hosts` only has `iroh-aspen2` | Add `HostkeyAlias iroh-<machine>` to ProxyCommand SSH configs so host key verification uses the alias name that matches known_hosts entries |
 
 ## User Preferences
 - Prefers deleting dead code over commenting it out
