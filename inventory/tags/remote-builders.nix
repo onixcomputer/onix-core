@@ -77,7 +77,22 @@ in
         protocol = "ssh-ng";
         hostName = "iroh-aspen2";
         systems = [ "x86_64-linux" ];
-        maxJobs = 8;
+        maxJobs = 16;
+        speedFactor = 20;
+        sshUser = "root";
+        sshKey = builderKeyPath;
+        supportedFeatures = [
+          "nixos-test"
+          "big-parallel"
+          "kvm"
+        ];
+      }
+      # Desktop workstation (direct LAN/Tailscale, no iroh-ssh)
+      {
+        protocol = "ssh-ng";
+        hostName = "britton-desktop";
+        systems = [ "x86_64-linux" ];
+        maxJobs = 16;
         speedFactor = 20;
         sshUser = "root";
         sshKey = builderKeyPath;
@@ -106,6 +121,10 @@ in
       iroh-aspen2 = {
         hostNames = [ "iroh-aspen2" ];
         publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOtI+OcaTRozgRVulDWgL8d8eICp6oh1Ola5N46uUt/r";
+      };
+      britton-desktop = {
+        hostNames = [ "britton-desktop" ];
+        publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIe2N5OW2IY12lTvJZOFnMxw74eA/UhWJvCAd9OhUpsE";
       };
     };
 
