@@ -5,7 +5,7 @@ let
   ccusage = pkgs.callPackage ../../../../pkgs/ccusage { };
   dumbpipe = pkgs.callPackage ../../../../pkgs/dumbpipe { };
   sendme = pkgs.callPackage ../../../../pkgs/sendme { };
-  nixdelta = inputs.nixdelta.packages.${pkgs.system}.default;
+  nixdelta = inputs.nixdelta.packages.${pkgs.stdenv.hostPlatform.system}.default;
 in
 {
   home.packages = with pkgs; [

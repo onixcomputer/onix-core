@@ -27,7 +27,7 @@
         vulkan-extension-layer # Vulkan extensions
 
         # Mesa Vulkan driver (RADV) - alternative to AMDVLK
-        mesa.drivers # Includes RADV Vulkan driver
+        mesa # Includes RADV Vulkan driver
 
         # Additional Vulkan tools
         vulkan-tools # vulkaninfo, vkcube, etc.
@@ -35,7 +35,7 @@
       ];
       extraPackages32 = with pkgs; [
         # driversi686Linux.amdvlk
-        driversi686Linux.mesa.drivers
+        driversi686Linux.mesa
       ];
     };
 

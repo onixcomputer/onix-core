@@ -4,6 +4,7 @@ _: {
   manifest = {
     name = "home-manager-profiles";
     description = "Profile-based home-manager configuration for user environments";
+    readme = "Profile-based home-manager configuration for declarative user environments";
     categories = [ "System" ];
   };
 
