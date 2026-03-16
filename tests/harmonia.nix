@@ -58,10 +58,10 @@ pkgs.testers.runNixOSTest {
     assert "Priority: 30" in output, f"Missing priority in cache info: {output}"
 
     # Build something trivial on the server so the store has a path to serve
-    server.succeed("nix-build -E 'derivation { name = \"test-pkg\"; system = \"x86_64-linux\"; builder = \"/bin/sh\"; args = [\"-c\" \"echo hello > $out\"]; }' --no-out-link")
+    server.succeed("nix-build -E 'derivation { name = \"test-pkg\"; system = builtins.currentSystem; builder = \"/bin/sh\"; args = [\"-c\" \"echo hello > $out\"]; }' --no-out-link")
 
     # The narinfo endpoint works for that path
-    store_path = server.succeed("nix-build -E 'derivation { name = \"test-pkg\"; system = \"x86_64-linux\"; builder = \"/bin/sh\"; args = [\"-c\" \"echo hello > $out\"]; }' --no-out-link").strip()
+    store_path = server.succeed("nix-build -E 'derivation { name = \"test-pkg\"; system = builtins.currentSystem; builder = \"/bin/sh\"; args = [\"-c\" \"echo hello > $out\"]; }' --no-out-link").strip()
     hash_part = store_path.split("/")[-1].split("-")[0]
 
     narinfo = client.succeed(f"curl -sf http://server:5000/{hash_part}.narinfo")
