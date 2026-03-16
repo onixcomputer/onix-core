@@ -14,6 +14,7 @@ import tempfile
 import time
 import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -320,28 +321,43 @@ def check_gitea_pr_state(pr_id: str) -> bool | None:
     return None
 
 
-def count_check_states(checks: list[dict[str, Any]]) -> tuple[int, int, int]:
-    """Count check states from PR status checks."""
+def classify_checks(
+    checks: list[dict[str, Any]],
+) -> tuple[int, int, int, list[tuple[str, str, str | None]]]:
+    """Classify check states from PR status checks.
+
+    Returns (pending, failed, passed, details) where details is a list of
+    (name, status_symbol, details_url) tuples for each check.
+    """
     pending = failed = passed = 0
+    details: list[tuple[str, str, str | None]] = []
     for check in checks:
+        name = check.get("name") or check.get("context") or "unknown"
+        url = check.get("detailsUrl") or check.get("targetUrl")
         if check.get("__typename") == "CheckRun":
             status = check.get("status")
             conclusion = check.get("conclusion")
             if status != "COMPLETED":
                 pending += 1
+                details.append((name, "⏳", url))
             elif conclusion in ["SUCCESS", "NEUTRAL", "SKIPPED"]:
                 passed += 1
+                details.append((name, "✅", url))
             else:
                 failed += 1
+                details.append((name, "❌", url))
         elif check.get("__typename") == "StatusContext":
             check_state = check.get("state")
             if check_state == "PENDING":
                 pending += 1
+                details.append((name, "⏳", url))
             elif check_state in ["SUCCESS", "NEUTRAL"]:
                 passed += 1
+                details.append((name, "✅", url))
             else:
                 failed += 1
-    return pending, failed, passed
+                details.append((name, "❌", url))
+    return pending, failed, passed, details
 
 
 def check_pr_completion(
@@ -412,6 +428,218 @@ def run_buildbot_check_if_needed(
     return buildbot_check_done
 
 
+def parse_buildbot_url(url: str) -> tuple[str, str, str] | None:
+    """Parse buildbot URL into (base_url, builder_id, build_num)."""
+    match = re.search(r"/builders/(\d+)/builds/(\d+)", url)
+    if not match:
+        return None
+    # Extract hostname from https://buildbot.example.com/#/builders/...
+    try:
+        base_url = url.split("//")[1].split("/")[0]
+    except IndexError:
+        return None
+    return base_url, match.group(1), match.group(2)
+
+
+def _fetch_buildbot_json(url: str) -> Any:
+    """Fetch JSON from buildbot API with timeout."""
+    req = urllib.request.Request(url)  # noqa: S310
+    req.add_header("User-Agent", "merge-when-green/0.3")
+    with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310
+        return json.loads(resp.read())
+
+
+def _parse_nix_log_tail(raw: str) -> str | None:
+    """Extract the last meaningful status line from nix build log output."""
+    # Walk backwards through lines for the last interesting event
+    for line in reversed(raw.splitlines()):
+        line = line.strip()
+        # "building '/nix/store/hash-name.drv'..."
+        m = re.search(r"building '/nix/store/[a-z0-9]+-(.+?)\.drv'", line)
+        if m:
+            return f"building {m.group(1)}"
+        # "copying path '/nix/store/hash-name' to ..."
+        m = re.search(r"copying path '/nix/store/[a-z0-9]+-(.+?)'", line)
+        if m:
+            return f"copying {m.group(1)}"
+        # "fetching path '/nix/store/hash-name'..."
+        m = re.search(r"fetching path '/nix/store/[a-z0-9]+-(.+?)'", line)
+        if m:
+            return f"fetching {m.group(1)}"
+        # nix3-style: "building foo-1.2.3 (3 built, 12 to do)"
+        # nom-style: sometimes "building foo (3/47)"
+        m = re.search(r"(building|evaluating) .+", line)
+        if m:
+            return m.group(0)[:80]
+    return None
+
+
+def _get_step_log_tail(base_url: str, step_id: int) -> str | None:
+    """Fetch the last ~4KB of the active step's log."""
+    try:
+        logs_data = _fetch_buildbot_json(
+            f"https://{base_url}/api/v2/steps/{step_id}/logs"
+        )
+        logs = logs_data.get("logs", [])
+        if not logs:
+            return None
+
+        log_id = logs[0].get("logid")
+        num_lines = logs[0].get("num_lines", 0)
+        if not log_id or num_lines == 0:
+            return None
+
+        # Fetch last 30 lines of log content
+        offset = max(0, num_lines - 30)
+        content_data = _fetch_buildbot_json(
+            f"https://{base_url}/api/v2/logs/{log_id}/contents?offset={offset}&limit=30"
+        )
+        chunks = content_data.get("logchunks", [])
+        raw = "".join(c.get("content", "") for c in chunks)
+        return _parse_nix_log_tail(raw)
+    except (
+        urllib.error.URLError,
+        urllib.error.HTTPError,
+        json.JSONDecodeError,
+        KeyError,
+    ):
+        return None
+
+
+def _get_active_step(base_url: str, req_id: int) -> str | None:
+    """Get the currently running step and what it's doing."""
+    try:
+        builds_data = _fetch_buildbot_json(
+            f"https://{base_url}/api/v2/buildrequests/{req_id}/builds"
+        )
+        builds = builds_data.get("builds", [])
+        if not builds:
+            return "queued"
+
+        build_id = builds[0].get("buildid")
+        if not build_id:
+            return None
+
+        steps_data = _fetch_buildbot_json(
+            f"https://{base_url}/api/v2/builds/{build_id}/steps"
+        )
+        # Find the currently running step (last incomplete one)
+        for step in steps_data.get("steps", []):
+            if not step.get("complete", False):
+                step_name = step.get("name", "")
+                state = step.get("state_string", "")
+                label = state if state else step_name
+
+                # For build steps, dig into the log for derivation detail
+                step_id = step.get("stepid")
+                if step_id and "build" in step_name.lower():
+                    drv = _get_step_log_tail(base_url, step_id)
+                    if drv:
+                        return drv
+
+                return label
+        return None
+    except (
+        urllib.error.URLError,
+        urllib.error.HTTPError,
+        json.JSONDecodeError,
+        KeyError,
+    ):
+        return None
+
+
+def _check_one_build_request(
+    base_url: str, req_id: int
+) -> tuple[str, str, str | None] | None:
+    """Check status of a single build request. Returns (name, symbol, step_info)."""
+    try:
+        data = _fetch_buildbot_json(
+            f"https://{base_url}/api/v2/buildrequests/{req_id}?property=*"
+        )
+        request = data["buildrequests"][0]
+        result_code = request.get("results")
+        properties = request.get("properties", {})
+
+        # Get name from virtual_builder_name property
+        name = None
+        if "virtual_builder_name" in properties:
+            vname = properties["virtual_builder_name"][0]
+            name = vname.split("#", 1)[1] if "#" in vname else vname
+        if not name:
+            name = f"request-{req_id}"
+
+        # Map result code to symbol
+        step_info = None
+        if result_code is None:
+            symbol = "🔨"
+            step_info = _get_active_step(base_url, req_id)
+        elif result_code == 0:
+            symbol = "✅"
+        elif result_code in (1, 3):  # warnings, skipped
+            symbol = "⏭️"
+        else:
+            symbol = "❌"
+
+        return name, symbol, step_info
+    except (
+        urllib.error.URLError,
+        urllib.error.HTTPError,
+        json.JSONDecodeError,
+        KeyError,
+        IndexError,
+    ):
+        return None
+
+
+def query_buildbot_subbuilds(
+    details_url: str,
+) -> list[tuple[str, str, str | None]]:
+    """Query Buildbot API for sub-build statuses.
+
+    Returns list of (name, symbol, step_info) for each triggered sub-build.
+    """
+    parsed = parse_buildbot_url(details_url)
+    if not parsed:
+        return []
+    base_url, builder_id, build_num = parsed
+
+    # Get triggered build request IDs from build steps
+    try:
+        steps_data = _fetch_buildbot_json(
+            f"https://{base_url}/api/v2/builders/{builder_id}/builds/{build_num}/steps"
+        )
+    except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError):
+        return []
+
+    request_ids = []
+    for step in steps_data.get("steps", []):
+        if "build" in step.get("name", "").lower():
+            for url_info in step.get("urls", []):
+                match = re.search(r"buildrequests/(\d+)", url_info.get("url", ""))
+                if match:
+                    request_ids.append(int(match.group(1)))
+
+    if not request_ids:
+        return []
+
+    # Query all build requests in parallel
+    results: list[tuple[str, str, str | None]] = []
+    workers = min(20, len(request_ids))
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {
+            pool.submit(_check_one_build_request, base_url, rid): rid
+            for rid in sorted(request_ids)
+        }
+        for future in as_completed(futures):
+            result = future.result()
+            if result:
+                results.append(result)
+
+    # Sort by name for stable output
+    results.sort(key=lambda r: r[0])
+    return results
+
+
 def wait_for_merge(platform: Platform, pr_id: str) -> bool:
     """Wait for PR to be merged."""
     print_header(f"Waiting for PR '{pr_id}' to merge...")
@@ -427,6 +655,7 @@ def wait_for_merge(platform: Platform, pr_id: str) -> bool:
 
     # GitHub: detailed check monitoring
     buildbot_check_done = False
+    prev_lines = 0
     while True:
         pr_data, error = get_pr_status_github(pr_id)
         if pr_data is None:
@@ -434,15 +663,36 @@ def wait_for_merge(platform: Platform, pr_id: str) -> bool:
             return False
 
         checks = pr_data.get("statusCheckRollup", [])
-        pending, failed, passed = count_check_states(checks)
+        pending, failed, passed, details = classify_checks(checks)
 
-        # Print status
+        # Move cursor up to overwrite previous output
+        if prev_lines > 0:
+            sys.stdout.write(f"\033[{prev_lines}A\033[J")
+
+        # Print summary line
         print(
             f"[{time.strftime('%H:%M:%S')}] "
             f"Checks - {Colors.GREEN}Passed: {passed}{Colors.RESET}, "
             f"{Colors.RED}Failed: {failed}{Colors.RESET}, "
             f"{Colors.YELLOW}Pending: {pending}{Colors.RESET}"
         )
+        # Print per-check details, with buildbot sub-builds expanded
+        extra_lines = 0
+        for name, symbol, details_url in details:
+            print(f"  {symbol} {name}")
+            if details_url and "buildbot" in details_url:
+                subbuilds = query_buildbot_subbuilds(details_url)
+                for sub_name, sub_symbol, step_info in subbuilds:
+                    if step_info:
+                        print(
+                            f"    {sub_symbol} {sub_name}"
+                            f" {Colors.GRAY}({step_info}){Colors.RESET}"
+                        )
+                    else:
+                        print(f"    {sub_symbol} {sub_name}")
+                    extra_lines += 1
+        sys.stdout.flush()
+        prev_lines = 1 + len(details) + extra_lines
 
         # Run buildbot-pr-check if we have failing checks
         buildbot_check_done = run_buildbot_check_if_needed(
