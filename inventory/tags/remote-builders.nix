@@ -2,10 +2,23 @@
   lib,
   config,
   pkgs,
+  self,
   ...
 }:
 let
   builderKeyPath = config.clan.core.vars.generators.nix-builder-ssh.files."id_ed25519".path;
+  iroh-ssh = pkgs.callPackage "${self}/pkgs/iroh-ssh" { };
+
+  # Read iroh-ssh node-id from vars for ProxyCommand config
+  getNodeId =
+    machine:
+    let
+      path = self + "/vars/per-machine/${machine}/iroh-ssh/node-id/value";
+    in
+    if builtins.pathExists path then builtins.readFile path else null;
+
+  aspen1NodeId = getNodeId "aspen1";
+  aspen2NodeId = getNodeId "aspen2";
 in
 {
   # Dedicated SSH keypair for the nix daemon (root) to authenticate
@@ -97,5 +110,21 @@ in
         publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOtI+OcaTRozgRVulDWgL8d8eICp6oh1Ola5N46uUt/r";
       };
     };
+
+    # System-wide ProxyCommand so the nix daemon (root) can reach
+    # iroh-ssh builders. Without this, root has no SSH config for
+    # these hosts and hostname resolution fails.
+    extraConfig = lib.concatStrings [
+      (lib.optionalString (aspen1NodeId != null) ''
+        Host iroh-aspen1
+          HostName aspen1
+          ProxyCommand ${iroh-ssh}/bin/iroh-ssh proxy ${aspen1NodeId}
+      '')
+      (lib.optionalString (aspen2NodeId != null) ''
+        Host iroh-aspen2
+          HostName aspen2
+          ProxyCommand ${iroh-ssh}/bin/iroh-ssh proxy ${aspen2NodeId}
+      '')
+    ];
   };
 }
