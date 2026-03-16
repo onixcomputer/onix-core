@@ -94,6 +94,14 @@
 - buildbot-nix master module auto-creates nginx `/nix-outputs/` location with `autoindex on` when `outputsPath` is set. Don't add a duplicate location block.
 - Cloudflare tunnel can proxy to remote hosts: `"buildbot.blr.dev" = "http://aspen2:80"` in aspen1's ingress forwards to aspen2.
 
+## Domain Notes (Nix string escaping for shell XDG vars)
+- `''${XDG_CONFIG_HOME:-$HOME/.config}` in `''...''` strings produces literal `${XDG_CONFIG_HOME:-$HOME/.config}` in bash output
+- `\${XDG_CONFIG_HOME:-$HOME/.config}` in `"..."` strings produces the same literal `${...}` in output
+- Writing bare `${XDG_CONFIG_HOME:-...}` in a `''...''` string triggers Nix interpolation — nixfmt silently "fixes" it to `${"XDG_CONFIG_HOME:-..."}` (Nix string literal interpolation) which drops the `${...}` shell wrapper from the output
+- Always verify generated shell scripts with `nix eval --raw .#nixosConfigurations.<machine>.config.home-manager.users.<user>.home.activation.<name>.data`
+- SSH config uses `%t` for `$XDG_RUNTIME_DIR` (same specifier as systemd)
+- Fish uses `$__fish_config_dir` for its own config directory (respects `XDG_CONFIG_HOME`)
+
 ## Patterns That Work
 - `_class` conditionals for darwin/nixos shared modules — set platform-specific attrs with `lib.optionalAttrs (_class == "nixos")` / `(_class == "darwin")`. Darwin lacks `isNormalUser`, needs `users.knownUsers`, uses `gid = 80` for admin instead of `extraGroups = ["wheel"]`, and has different GC schedule syntax (interval vs dates).
 - SSH into target machines to get actual journal logs rather than guessing from deploy output

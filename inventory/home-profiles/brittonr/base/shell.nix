@@ -63,7 +63,7 @@
     ];
     interactiveShellInit = ''
       # Remove fish 4.3 frozen theme/keybinding migration files
-      for f in ~/.config/fish/conf.d/fish_frozen_theme.fish ~/.config/fish/conf.d/fish_frozen_key_bindings.fish
+      for f in $__fish_config_dir/conf.d/fish_frozen_theme.fish $__fish_config_dir/conf.d/fish_frozen_key_bindings.fish
         test -f $f; and rm -f $f
       end
 

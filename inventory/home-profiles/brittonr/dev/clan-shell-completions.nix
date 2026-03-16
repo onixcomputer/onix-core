@@ -1,7 +1,7 @@
 { pkgs, ... }:
 {
   # Put completions directly in fish's completions directory where they'll be auto-loaded
-  home.file.".config/fish/completions/clan.fish" = {
+  xdg.configFile."fish/completions/clan.fish" = {
     text = ''
       # Dynamically generate clan completions if clan is available
       if command -q clan

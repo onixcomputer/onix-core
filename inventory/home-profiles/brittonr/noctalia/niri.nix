@@ -288,7 +288,7 @@ let
       inherit pkgs;
       package = lib.mkForce niriPackage;
 
-      "config.kdl".path = "$HOME/.config/niri/config.kdl";
+      "config.kdl".path = "\${XDG_CONFIG_HOME:-$HOME/.config}/niri/config.kdl";
     }).wrapper;
 in
 {
@@ -320,13 +320,14 @@ in
       # Force the validation derivation to build
       : ${niriConfigValidated}
 
-      mkdir -p "$HOME/.config/niri"
-      install -m 644 ${niriConfigFile} "$HOME/.config/niri/config.kdl"
+      niri_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/niri"
+      mkdir -p "$niri_dir"
+      install -m 644 ${niriConfigFile} "$niri_dir/config.kdl"
 
       # Seed noctalia.kdl only if it doesn't exist yet — once
       # Noctalia's template processor runs, it owns this file.
-      if [ ! -f "$HOME/.config/niri/noctalia.kdl" ]; then
-        install -m 644 ${initialNoctaliaKdl} "$HOME/.config/niri/noctalia.kdl"
+      if [ ! -f "$niri_dir/noctalia.kdl" ]; then
+        install -m 644 ${initialNoctaliaKdl} "$niri_dir/noctalia.kdl"
       fi
     '';
 
@@ -336,7 +337,7 @@ in
     # colours.  The activation script converts the symlink to a real
     # copy after linkGeneration.
     activation.makeNoctaliaColorsMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-      target="$HOME/.config/noctalia/colors.json"
+      target="''${XDG_CONFIG_HOME:-$HOME/.config}/noctalia/colors.json"
       if [ -L "$target" ]; then
         content=$(cat "$target")
         rm "$target"
@@ -350,7 +351,7 @@ in
       text = ''
         #!/bin/sh
         # Log to file for debugging
-        LOG="$HOME/.local/share/rot8-debug.log"
+        LOG="''${XDG_STATE_HOME:-$HOME/.local/state}/rot8-debug.log"
         mkdir -p "$(dirname "$LOG")"
         echo "$(date '+%Y-%m-%d %H:%M:%S') - Orientation: $ORIENTATION (prev: $PREV_ORIENTATION)" >> "$LOG"
 

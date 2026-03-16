@@ -81,5 +81,5 @@ in
   ];
 
   # Ensure Screenshots directory exists
-  home.file."Screenshots/.keep".text = "";
+  home.file."Pictures/Screenshots/.keep".text = "";
 }

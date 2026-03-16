@@ -4,7 +4,7 @@
     type = lib.types.attrs;
     readOnly = true;
     default = {
-      screenshots = "~/Screenshots";
+      screenshots = "~/Pictures/Screenshots";
       wallpapers = "~/Pictures/Wallpapers";
       downloads = "~/Downloads";
       wallpapersRepo = "~/git/wallpapers";

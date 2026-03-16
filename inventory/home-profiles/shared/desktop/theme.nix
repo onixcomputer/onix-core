@@ -75,7 +75,7 @@ in
         mkIf (config.theme.autoSetMatchingWallpaper && config.theme.colors ? wallpapers) ''
           # Simply update the state file that restore-wallpaper uses
           WALLPAPER="$HOME/Pictures/Wallpapers/${config.theme.colors.wallpapers.main}"
-          STATE_FILE="$HOME/.cache/wallpaper-state"
+          STATE_FILE="''${XDG_CACHE_HOME:-$HOME/.cache}/wallpaper-state"
 
           if [[ -e "$WALLPAPER" ]]; then
             mkdir -p "$(dirname "$STATE_FILE")"

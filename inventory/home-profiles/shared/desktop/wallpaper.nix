@@ -75,7 +75,7 @@ in
     '';
     onChange = ''
       # Clear any temporary testing overrides on rebuild
-      OVERRIDE_FILE="$HOME/.config/wallpaper/override"
+      OVERRIDE_FILE="''${XDG_CONFIG_HOME:-$HOME/.config}/wallpaper/override"
       if [[ -f "$OVERRIDE_FILE" ]]; then
         rm -f "$OVERRIDE_FILE"
         echo "Cleared temporary wallpaper testing overrides."
