@@ -1,11 +1,14 @@
 # Wasm plugin wrappers.
 #
-# Provides fromYAML, toYAML, fromINI as pure Nix functions backed
+# Provides format parsers (fromYAML, toYAML, fromINI) and a Nickel
+# evaluator (evalNickel, evalNickelFile) as pure Nix functions backed
 # by builtins.wasm. Requires the wasm-builtin experimental feature.
 #
 # Usage:
 #   let wasm = import ./lib/wasm.nix { inherit plugins; };
 #   in wasm.fromYAML (builtins.readFile ./config.yaml)
+#   in wasm.evalNickel ''{ x = 1, y = "hello" }''
+#   in wasm.evalNickelFile ./config.ncl
 #
 { plugins }:
 {
@@ -25,6 +28,32 @@
       path = "${plugins}/yaml_plugin.wasm";
       function = "toYAML";
     } vals;
+
+  # Evaluate a Nickel source string, returning the result as a Nix value.
+  # Single values, records, lists, and nested structures are all supported.
+  # The full Nickel standard library is available during evaluation.
+  #
+  # Usage: wasm.evalNickel ''{ x = 1, y = "hello" }''
+  evalNickel =
+    str:
+    builtins.wasm {
+      path = "${plugins}/nickel_plugin.wasm";
+      function = "evalNickel";
+    } str;
+
+  # Evaluate a Nickel file from a Nix path, returning the result as a Nix value.
+  # The file is read via the host WASM ABI (not std::fs).
+  # The file must be self-contained — Nickel `import` statements are not yet
+  # supported in the WASM plugin (requires upstream Nickel changes for WASM
+  # path normalization). Standard library functions are available.
+  #
+  # Usage: wasm.evalNickelFile ./config.ncl
+  evalNickelFile =
+    path:
+    builtins.wasm {
+      path = "${plugins}/nickel_plugin.wasm";
+      function = "evalNickelFile";
+    } path;
 
   # Parse an INI string into a nested attrset (section → key → value).
   fromINI =

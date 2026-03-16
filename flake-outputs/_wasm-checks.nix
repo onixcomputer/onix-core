@@ -59,5 +59,87 @@ in
         function = "fromINI";
       } "[s]\nk = v\n"
     '' ''{ s = { k = "v"; }; }'';
+
+    # Nickel plugin: evalNickel (string input)
+    wasm-evalNickel-int = mkWasmTest "evalNickel-int" ''
+      builtins.wasm {
+        path = ${plugins}/nickel_plugin.wasm;
+        function = "evalNickel";
+      } "42"
+    '' "42";
+
+    wasm-evalNickel-record = mkWasmTest "evalNickel-record" ''
+      builtins.wasm {
+        path = ${plugins}/nickel_plugin.wasm;
+        function = "evalNickel";
+      } "{ x = 1, y = \"hello\" }"
+    '' ''{ x = 1; y = "hello"; }'';
+
+    wasm-evalNickel-list = mkWasmTest "evalNickel-list" ''
+      builtins.wasm {
+        path = ${plugins}/nickel_plugin.wasm;
+        function = "evalNickel";
+      } "[1, 2, 3]"
+    '' "[ 1 2 3 ]";
+
+    wasm-evalNickel-nested = mkWasmTest "evalNickel-nested" ''
+      builtins.wasm {
+        path = ${plugins}/nickel_plugin.wasm;
+        function = "evalNickel";
+      } "{ a = { b = [true, null] } }"
+    '' "{ a = { b = [ true null ]; }; }";
+
+    wasm-evalNickel-let = mkWasmTest "evalNickel-let" ''
+      builtins.wasm {
+        path = ${plugins}/nickel_plugin.wasm;
+        function = "evalNickel";
+      } "let double = fun x => x * 2 in { result = double 21 }"
+    '' "{ result = 42; }";
+
+    # Nickel plugin: evalNickelFile (path input)
+    wasm-evalNickelFile-simple =
+      let
+        ncl = pkgs.writeText "test.ncl" ''{ port = 8080, host = "localhost" }'';
+      in
+      mkWasmTest "evalNickelFile-simple" ''
+        builtins.wasm {
+          path = ${plugins}/nickel_plugin.wasm;
+          function = "evalNickelFile";
+        } ${ncl}
+      '' ''{ host = "localhost"; port = 8080; }'';
+
+    wasm-evalNickel-error =
+      pkgs.runCommand "wasm-check-evalNickel-error" { nativeBuildInputs = [ nixWasm ]; }
+        ''
+          export HOME=$TMPDIR
+          # A malformed Nickel expression must cause nix eval to fail
+          if nix eval --store dummy:// --offline \
+              --extra-experimental-features 'nix-command flakes wasm-builtin' \
+              --impure --expr '
+                builtins.wasm {
+                  path = ${plugins}/nickel_plugin.wasm;
+                  function = "evalNickel";
+                } "{ x = }"
+              ' 2>/dev/null; then
+            echo "FAIL: evalNickel-error — expected failure but got success"
+            exit 1
+          else
+            echo "PASS: evalNickel-error — malformed Nickel correctly caused an error"
+            echo "ok" > $out
+          fi
+        '';
+
+    wasm-evalNickelFile-stdlib =
+      let
+        ncl = pkgs.writeText "stdlib.ncl" ''
+          { result = std.array.length [1, 2, 3, 4, 5] }
+        '';
+      in
+      mkWasmTest "evalNickelFile-stdlib" ''
+        builtins.wasm {
+          path = ${plugins}/nickel_plugin.wasm;
+          function = "evalNickelFile";
+        } ${ncl}
+      '' "{ result = 5; }";
   };
 }

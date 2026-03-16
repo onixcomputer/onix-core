@@ -39,6 +39,10 @@ rustPlatform.buildRustPackage {
         yaml_plugin.wasm|ini_plugin.wasm)
           wasm-opt -O3 --enable-bulk-memory -o "$out/$name" "$f"
           ;;
+        nickel_plugin.wasm)
+          # Nickel's malachite (big numbers) uses trunc_sat instructions
+          wasm-opt -O3 --enable-bulk-memory --enable-nontrapping-float-to-int -o "$out/$name" "$f"
+          ;;
       esac
     done
   '';

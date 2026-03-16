@@ -1,5 +1,5 @@
 [workspace]
-members = ["nix-wasm-rust", "yaml-plugin", "ini-plugin"]
+members = ["nix-wasm-rust", "yaml-plugin", "ini-plugin", "nickel-plugin"]
 resolver = "2"
 
 [profile.release]

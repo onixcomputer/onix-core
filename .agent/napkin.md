@@ -26,6 +26,10 @@
 | 2026-03-16 | self | Nix fork binary inside sandbox check fails: `experimental Nix feature 'nix-command' is disabled` and `creating directory '/nix/var/nix/profiles': Permission denied` | In sandbox checks, use `--store dummy:// --offline --extra-experimental-features 'nix-command flakes wasm-builtin'` and `export HOME=$TMPDIR` |
 | 2026-03-16 | self | CARGO_TARGET_DIR env var set to `~/.cargo-target` — cargo build output not in `./target/` | Check `$CARGO_TARGET_DIR` when looking for build artifacts; don't assume `./target/` |
 | 2026-03-16 | self | SSH `HostName` resolution causes host key check against resolved name, not the `Host` alias. System known_hosts has `iroh-aspen2` but SSH checks for `aspen2` (the `HostName`). User SSH works because `~/.ssh/known_hosts` has `aspen2`; nix daemon (root) fails because `/etc/ssh/ssh_known_hosts` only has `iroh-aspen2` | Add `HostkeyAlias iroh-<machine>` to ProxyCommand SSH configs so host key verification uses the alias name that matches known_hosts entries |
+| 2026-03-16 | self | `nix_wasm_init_v1` defined in both `nix-wasm-rust` crate AND plugin crate → `symbol multiply defined` linker error with LTO | Don't redefine `nix_wasm_init_v1` in plugin crates — it's already exported by the `nix-wasm-rust` dependency |
+| 2026-03-16 | self | Nickel's malachite (big numbers) emits `trunc_sat` WASM instructions that wasm-opt rejects with `--enable-bulk-memory` alone | Add `--enable-nontrapping-float-to-int` to wasm-opt flags for crates using malachite/nickel |
+| 2026-03-16 | self | Nickel's `CacheHub::resolve` calls `std::env::current_dir()` and `std::fs::read_to_string()` during import resolution — both fail on wasm32-unknown-unknown | Nickel `import` statements can't work in WASM plugins without upstream changes. `evalNickelFile` works for self-contained files only. |
+| 2026-03-16 | self | Nickel `Error` and `PointedExportErrorData` don't implement `Display` — `format!("{e}")` fails | Use `{e:?}` (Debug) format for Nickel error types in WASM plugin panic messages |
 
 ## User Preferences
 - Prefers deleting dead code over commenting it out
