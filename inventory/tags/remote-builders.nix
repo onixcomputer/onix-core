@@ -56,8 +56,6 @@ in
         sshKey = builderKeyPath;
         supportedFeatures = [
           "big-parallel"
-          "kvm"
-          "nixos-test"
         ];
       }
       # High-performance x86_64 servers via iroh-ssh
