@@ -1,33 +1,43 @@
 # CLI tools, analysis utilities, and workflow helpers.
 #
-# Composes all parts/tool modules into a single adios-flake module.
-# Explicit inherit prevents nixfmt from stripping args that adios-flake
-# needs for system-dependency detection.
+# Inline package definitions (formerly in parts/) plus sops-viz import.
 {
   pkgs,
   lib,
   ...
 }:
 let
-  # All parts take { pkgs, ... } — pass full set so they get whatever they need
-  callPart = p: (import p) { inherit pkgs lib; };
+  sopsViz = (import ./_sops-viz.nix) { inherit pkgs; };
 
-  parts = map callPart [
-    ../parts/sops-viz.nix
-    ../parts/merge-when-green.nix
-    ../parts/nix-eval-warnings.nix
-    ../parts/iroh-ssh.nix
-    ../parts/claude-md.nix
-    ../parts/tuicr.nix
-    ../parts/tracey.nix
-    ../parts/ccusage.nix
-    ../parts/abp.nix
-    ../parts/branchfs.nix
-    ../parts/updater.nix
-    ../parts/iroh-tools.nix
-    ../parts/buildbot-pr-check.nix
-  ];
-
-  merged = builtins.foldl' (acc: part: lib.recursiveUpdate acc part) { } parts;
+  buildbot-pr-check = pkgs.callPackage ../pkgs/buildbot-pr-check { };
 in
-merged
+{
+  packages = {
+    ccusage = pkgs.callPackage ../pkgs/ccusage { };
+    nix-eval-warnings = pkgs.callPackage ../pkgs/nix-eval-warnings { };
+    iroh-ssh = pkgs.callPackage ../pkgs/iroh-ssh { };
+    claude-md = pkgs.python3.pkgs.callPackage ../pkgs/claude-md { };
+    tuicr = pkgs.callPackage ../pkgs/tuicr { };
+    updater = pkgs.callPackage ../pkgs/updater { };
+    inherit buildbot-pr-check;
+    merge-when-green = pkgs.callPackage ../pkgs/merge-when-green { inherit buildbot-pr-check; };
+    dumbpipe = pkgs.callPackage ../pkgs/dumbpipe { };
+    sendme = pkgs.callPackage ../pkgs/sendme { };
+    verify-deploy = pkgs.callPackage ../pkgs/verify-deploy { };
+  }
+  // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+    branchfs = pkgs.callPackage ../pkgs/branchfs { };
+  }
+  // lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") {
+    abp = pkgs.callPackage ../pkgs/abp { };
+  }
+  // (
+    let
+      traceyPkg = pkgs.callPackage ../pkgs/tracey { };
+    in
+    lib.optionalAttrs (builtins.elem pkgs.stdenv.hostPlatform.system (
+      traceyPkg.meta.platforms or [ ]
+    )) { tracey = traceyPkg; }
+  )
+  // (sopsViz.packages or { });
+}
