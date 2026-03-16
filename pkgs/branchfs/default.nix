@@ -23,5 +23,6 @@ rustPlatform.buildRustPackage (_finalAttrs: {
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [ ];
     mainProgram = "branchfs";
+    platforms = lib.platforms.linux;
   };
 })
