@@ -128,38 +128,49 @@ in
 {
   home.packages = [ wrappedFirefox ];
 
-  # Prevent mimeapps.list backup conflict during home-manager activation
-  xdg.configFile."mimeapps.list".force = true;
+  xdg = {
+    # Set LibreWolf as the default browser for all web MIME types
+    mimeApps.enable = true;
+    mimeApps.defaultApplications = {
+      "x-scheme-handler/http" = [ "librewolf.desktop" ];
+      "x-scheme-handler/https" = [ "librewolf.desktop" ];
+      "text/html" = [ "librewolf.desktop" ];
+      "application/xhtml+xml" = [ "librewolf.desktop" ];
+    };
 
-  xdg.configFile."tridactyl/tridactylrc".text = ''
-    " Reset to defaults
-    sanitise tridactyllocal tridactylsync
+    # Prevent mimeapps.list backup conflict during home-manager activation
+    configFile."mimeapps.list".force = true;
 
-    " --- Visual mode (Helix-like select-then-act) ---
-    " v enters visual, hjkl/w/b/e extend selection, y yanks, o swaps cursor end
-    " These are built-in defaults that match Helix already.
-    " Extend with Helix-style binds:
-    bind --mode=visual x js document.getSelection().modify("extend","forward","line")
-    bind --mode=visual d composite js document.getSelection().toString() | clipboard yank | js document.getSelection().empty()
+    configFile."tridactyl/tridactylrc".text = ''
+      " Reset to defaults
+      sanitise tridactyllocal tridactylsync
 
-    " --- Helix-inspired goto (g prefix) ---
-    bind ${k.goto.prefix}${k.goto.bottom} scrollto 100
-    bind ${k.goto.prefix}${k.goto.top} scrollto 0
-    bind ${k.goto.prefix}${k.goto.nextTab} tabnext
-    bind ${k.goto.prefix}${k.goto.prevTab} tabprev
+      " --- Visual mode (Helix-like select-then-act) ---
+      " v enters visual, hjkl/w/b/e extend selection, y yanks, o swaps cursor end
+      " These are built-in defaults that match Helix already.
+      " Extend with Helix-style binds:
+      bind --mode=visual x js document.getSelection().modify("extend","forward","line")
+      bind --mode=visual d composite js document.getSelection().toString() | clipboard yank | js document.getSelection().empty()
 
-    " --- Space leader (matching user's Helix config) ---
-    bind <Space><Space> fillcmdline tabopen
-    bind <Space>${k.leaderActions.search} fillcmdline find
-    bind <Space>${k.leaderActions.bufferPicker} fillcmdline buffer
-    bind <Space>${k.leaderActions.close} tabclose
+      " --- Helix-inspired goto (g prefix) ---
+      bind ${k.goto.prefix}${k.goto.bottom} scrollto 100
+      bind ${k.goto.prefix}${k.goto.top} scrollto 0
+      bind ${k.goto.prefix}${k.goto.nextTab} tabnext
+      bind ${k.goto.prefix}${k.goto.prevTab} tabprev
 
-    " --- Tab navigation ---
-    bind ${k.tabs.prev} tabprev
-    bind ${k.tabs.next} tabnext
+      " --- Space leader (matching user's Helix config) ---
+      bind <Space><Space> fillcmdline tabopen
+      bind <Space>${k.leaderActions.search} fillcmdline find
+      bind <Space>${k.leaderActions.bufferPicker} fillcmdline buffer
+      bind <Space>${k.leaderActions.close} tabclose
 
-    " --- General settings ---
-    set smoothscroll true
-    set hintchars ${k.hintChars}
-  '';
+      " --- Tab navigation ---
+      bind ${k.tabs.prev} tabprev
+      bind ${k.tabs.next} tabnext
+
+      " --- General settings ---
+      set smoothscroll true
+      set hintchars ${k.hintChars}
+    '';
+  };
 }

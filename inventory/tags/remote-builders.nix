@@ -77,7 +77,7 @@ in
         protocol = "ssh-ng";
         hostName = "iroh-aspen2";
         systems = [ "x86_64-linux" ];
-        maxJobs = 16;
+        maxJobs = 8;
         speedFactor = 20;
         sshUser = "root";
         sshKey = builderKeyPath;
@@ -117,11 +117,17 @@ in
         Host iroh-aspen1
           HostName aspen1
           ProxyCommand ${iroh-ssh}/bin/iroh-ssh proxy ${aspen1NodeId}
+          ServerAliveInterval 15
+          ServerAliveCountMax 3
+          ConnectionAttempts 5
       '')
       (lib.optionalString (aspen2NodeId != null) ''
         Host iroh-aspen2
           HostName aspen2
           ProxyCommand ${iroh-ssh}/bin/iroh-ssh proxy ${aspen2NodeId}
+          ServerAliveInterval 15
+          ServerAliveCountMax 3
+          ConnectionAttempts 5
       '')
     ];
   };
