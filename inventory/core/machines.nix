@@ -37,39 +37,6 @@ _: {
         buildHost = "";
       };
     };
-    britton-gpd = {
-      name = "britton-gpd";
-      tags = [
-        "hm-laptop"
-        "ssd-optimization"
-        "perf-tuning"
-        "dev"
-        "laptop"
-        "laptop-input"
-        "greeter"
-        "audio"
-        "grub-theme"
-        "remote-builders"
-        "xdg-portal"
-        "prometheus"
-        "monitoring"
-        "homepage-server"
-        "tailnet-brittonr"
-        "openpgp"
-        "password-manager"
-        "typst"
-        "llm-client"
-        "cross-compile"
-        "creative"
-        "taskwarrior"
-        "backup"
-      ];
-      deploy = {
-        targetHost = "root@iroh-britton-gpd";
-        buildHost = "";
-      };
-    };
-
     bonsai = {
       name = "bonsai";
       tags = [

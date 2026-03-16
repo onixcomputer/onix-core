@@ -19,7 +19,6 @@ let
       "bonsai"
       "britton-desktop"
       "britton-fw"
-      "britton-gpd"
     ];
     aarch64-linux = [
       "pine"

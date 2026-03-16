@@ -12,7 +12,6 @@ let
   # Machines that run iroh-ssh (tagged tailnet-brittonr in inventory)
   irohMachines = [
     "britton-fw"
-    "britton-gpd"
     "bonsai"
     "aspen1"
     "aspen2"
