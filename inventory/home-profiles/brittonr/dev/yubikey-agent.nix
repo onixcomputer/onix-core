@@ -13,7 +13,8 @@ _:
   programs.ssh = {
     extraConfig = ''
       # Use YubiKey for SSH authentication (socket in XDG_RUNTIME_DIR)
-      IdentityAgent %t/yubikey-agent/yubikey-agent.sock
+      # OpenSSH 10.x dropped %t — use environment variable expansion instead
+      IdentityAgent ''${XDG_RUNTIME_DIR}/yubikey-agent/yubikey-agent.sock
     '';
   };
 }
