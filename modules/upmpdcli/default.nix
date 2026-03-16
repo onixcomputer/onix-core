@@ -113,11 +113,11 @@ in
                   done
                 '';
 
-                meta = with lib; {
+                meta = {
                   description = "UPnP Media Renderer front-end for MPD with Tidal support";
                   homepage = "https://www.lesbonscomptes.com/upmpdcli/";
-                  license = licenses.gpl2Plus;
-                  platforms = platforms.linux;
+                  license = lib.licenses.gpl2Plus;
+                  platforms = lib.platforms.linux;
                 };
               };
 

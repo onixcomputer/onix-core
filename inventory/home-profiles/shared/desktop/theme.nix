@@ -5,9 +5,14 @@
   ...
 }:
 
-with lib;
-
 let
+  inherit (lib)
+    attrNames
+    mkIf
+    mkOption
+    types
+    ;
+
   themes = {
     tokyo-night = import ./themes/tokyo-night.nix { inherit pkgs; };
     everblush = import ./themes/everblush.nix { inherit pkgs; };

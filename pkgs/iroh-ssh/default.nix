@@ -23,10 +23,10 @@ rustPlatform.buildRustPackage rec {
 
   buildInputs = [ openssl ];
 
-  meta = with lib; {
+  meta = {
     description = "SSH server and client built on Iroh networking";
     homepage = "https://github.com/rustonbsd/iroh-ssh";
-    license = with licenses; [
+    license = with lib.licenses; [
       mit
       asl20
     ];

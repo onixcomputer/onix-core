@@ -48,7 +48,7 @@ stdenv.mkDerivation rec {
     runHook postConfigure
   '';
 
-  meta = with lib; {
+  meta = {
     description = "Qt-based UPnP audio control point";
     longDescription = ''
       Upplay is a desktop UPnP audio Control Point for Linux/Unix, MS Windows, and Mac OS.
@@ -56,7 +56,7 @@ stdenv.mkDerivation rec {
       lightweight but capable control point in its own right.
     '';
     homepage = "https://www.lesbonscomptes.com/upplay/";
-    license = licenses.gpl2Plus;
-    platforms = platforms.linux;
+    license = lib.licenses.gpl2Plus;
+    platforms = lib.platforms.linux;
   };
 }

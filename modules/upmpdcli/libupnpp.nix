@@ -30,11 +30,11 @@ stdenv.mkDerivation rec {
     libnpupnp
   ];
 
-  meta = with lib; {
+  meta = {
     description = "Application-oriented C++ layer over the libnpupnp base UPnP library";
     homepage = "https://www.lesbonscomptes.com/upmpdcli/libupnpp-refdoc/libupnpp-ctl.html";
-    license = licenses.lgpl21Plus;
+    license = lib.licenses.lgpl21Plus;
     maintainers = [ ];
-    platforms = platforms.linux;
+    platforms = lib.platforms.linux;
   };
 }

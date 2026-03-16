@@ -30,11 +30,11 @@ stdenv.mkDerivation rec {
     libmicrohttpd
   ];
 
-  meta = with lib; {
+  meta = {
     description = "A C++ base UPnP library, derived from Portable UPnP, a.k.a libupnp";
     homepage = "https://www.lesbonscomptes.com/upmpdcli/npupnp-doc/libnpupnp.html";
-    license = licenses.bsd3;
+    license = lib.licenses.bsd3;
     maintainers = [ ];
-    platforms = platforms.linux;
+    platforms = lib.platforms.linux;
   };
 }
