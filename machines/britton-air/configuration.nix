@@ -56,10 +56,14 @@
   power.sleep.computer = "never";
   power.sleep.display = 15; # display off after 15 min, but machine stays awake
 
-  # nix-darwin's power.sleep only affects AC (via systemsetup).
-  # Explicitly set battery sleep via pmset so the Mac doesn't sleep
-  # after 1 minute on battery (macOS default).
+  # Closing the lid on a MacBook forces sleep regardless of the
+  # power.sleep.computer = "never" setting (which only sets the idle
+  # timer via systemsetup). `disablesleep 1` is the only pmset knob
+  # that prevents lid-close sleep. Required so the Mac stays
+  # reachable as a remote nix builder with the lid shut.
   system.activationScripts.postActivation.text = ''
+    pmset -c disablesleep 1
+    pmset -c tcpkeepalive 1
     pmset -b sleep 15
     pmset -b displaysleep 5
   '';
