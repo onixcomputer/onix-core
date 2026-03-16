@@ -6,12 +6,28 @@
   _class,
   lib,
   self,
+  inputs,
+  pkgs,
   ...
 }:
 let
   flake = import "${self}/flake.nix";
 in
 {
+  # Override nixVersions.latest with our wasm-enabled build so srvos
+  # (which sets nix.package = nixVersions.latest) picks it up automatically.
+  nixpkgs.overlays = [
+    (_final: prev: {
+      nixVersions = prev.nixVersions // {
+        latest = inputs.nix-wasm.packages.${pkgs.stdenv.hostPlatform.system}.nix.overrideAttrs (_: {
+          # Skip functional tests — the stale-file-handle overlayfs test
+          # fails in sandbox. Tests are tracked upstream, not our concern.
+          doCheck = false;
+        });
+      };
+    })
+  ];
+
   nix = {
     # GC: both platforms, different schedule syntax
     gc = {
@@ -41,6 +57,7 @@ in
       experimental-features = [
         "nix-command"
         "flakes"
+        "wasm-builtin"
       ];
       trusted-users = [
         "root"

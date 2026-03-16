@@ -105,6 +105,13 @@
       };
     };
 
+    # Nix with builtins.wasm support (cherry-picked NixOS/nix#15380 onto 2.33.3)
+    nix-wasm = {
+      url = "github:brittonr/nix/wasm-2.33.3";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-parts.follows = "flake-parts";
+    };
+
     # Dev tooling inputs (previously in dev/flake.nix partition)
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";

@@ -17,6 +17,11 @@
 | 2026-03-13 | self | adios-flake wrapper modules with `@args` pattern get formal args stripped by nixfmt → adios can't detect system dependency → passes wrong arg set | Never use `@args` pass-through with adios-flake. Explicitly destructure ALL needed args AND reference them in the body (e.g. via `inherit`). nixfmt strips unused destructured bindings. |
 | 2026-03-13 | self | adios-flake `flake` parameter handles non-standard outputs (clan, clanInternals) that modules can't — only `defaultFlakeOutputs` (nixosConfigurations, lib, etc.) work from modules | Use `flake = import ./file.nix { ... }` for clan outputs. Use modules only for per-system outputs (checks, packages, devShells, formatter). |
 | 2026-03-13 | self | `time.timeZone = null` in a tag conflicts with hardcoded `time.timeZone = "America/New_York"` in machine configs | Remove hardcoded timezone from machines that get the tag with `automatic-timezoned` |
+| 2026-03-16 | self | nix-wasm fork's flake pin brought old nixpkgs (rustc 1.86), wasmtime 40.0.2 needs 1.89+ | Always add `inputs.nixpkgs.follows = "nixpkgs"` when importing flakes with heavy native builds |
+| 2026-03-16 | self | Cherry-picked PR compiled textually but API differences caused 6 C++ errors (`realisePath` as method vs free function, `.impl` vs `.fun`, brace-init issues) | Cherry-picks across API boundaries need compile testing, not just clean git apply |
+| 2026-03-16 | self | nix fork's lowdown 2.0.2 override kept 2.0.4 patches from followed nixpkgs → build failure | When overriding `.src` version in `overrideAttrs`, also clear `patches = []` if the patches are version-specific |
+| 2026-03-16 | self | nix flake's `packages.*.nix` includes functional tests as `checkInputs` → stale-file-handle overlayfs test fails in sandbox | Use `.overrideAttrs (_: { doCheck = false; })` to skip upstream tests in fork packages |
+| 2026-03-16 | self | SSH `%t` token in `IdentityAgent` path unsupported by OpenSSH 10.2 | Use `${XDG_RUNTIME_DIR}` env var expansion (supported per ssh_config ENVIRONMENT VARIABLES section), NOT hardcoded `/run/user/<uid>`. The HM module already generates the correct syntax. |
 
 ## User Preferences
 - Prefers deleting dead code over commenting it out
