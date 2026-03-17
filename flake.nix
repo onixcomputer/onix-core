@@ -112,6 +112,12 @@
       inputs.flake-parts.follows = "flake-parts";
     };
 
+    # Patched nickel-lang crates for wasm32-unknown-unknown (SourceIO trait)
+    nickel-wasm-vendor = {
+      url = "git+file:///home/brittonr/git/nickel-wasm-vendor";
+      flake = false;
+    };
+
     # Dev tooling inputs (previously in dev/flake.nix partition)
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";

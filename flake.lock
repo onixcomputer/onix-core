@@ -545,6 +545,22 @@
         "type": "github"
       }
     },
+    "nickel-wasm-vendor": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1773706186,
+        "narHash": "sha256-+As4gjPnzJIDriLGot+oDDtW3YFlordDGIYNLf59Nws=",
+        "ref": "refs/heads/main",
+        "rev": "e197db683fc6d1584d3a7f7c51fd52b34a82fe5e",
+        "revCount": 1,
+        "type": "git",
+        "url": "file:///home/brittonr/git/nickel-wasm-vendor"
+      },
+      "original": {
+        "type": "git",
+        "url": "file:///home/brittonr/git/nickel-wasm-vendor"
+      }
+    },
     "niri": {
       "inputs": {
         "nixpkgs": [
@@ -846,6 +862,7 @@
         "home-manager": "home-manager",
         "llm-agents": "llm-agents",
         "mics-skills": "mics-skills",
+        "nickel-wasm-vendor": "nickel-wasm-vendor",
         "niri": "niri",
         "nix-index-database": "nix-index-database",
         "nix-wasm": "nix-wasm",

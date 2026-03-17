@@ -4,6 +4,7 @@
 {
   pkgs,
   lib,
+  self,
   ...
 }:
 let
@@ -13,7 +14,10 @@ let
 in
 {
   packages = {
-    wasm-plugins = pkgs.callPackage ../wasm-plugins { inherit (pkgs.llvmPackages) lld; };
+    wasm-plugins = pkgs.callPackage ../wasm-plugins {
+      inherit (pkgs.llvmPackages) lld;
+      inherit (self.inputs) nickel-wasm-vendor;
+    };
     ccusage = pkgs.callPackage ../pkgs/ccusage { };
     nix-eval-warnings = pkgs.callPackage ../pkgs/nix-eval-warnings { };
     iroh-ssh = pkgs.callPackage ../pkgs/iroh-ssh { };

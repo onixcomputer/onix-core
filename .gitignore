@@ -44,6 +44,12 @@ Thumbs.db
 *.age
 age.key
 
+# Vendored Rust crates (kept locally, tracked in separate repo)
+wasm-plugins/vendor/
+
+# Rust build artifacts
+**/target/
+
 # Logs
 *.log
 

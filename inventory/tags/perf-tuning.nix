@@ -1,22 +1,21 @@
-{ lib, ... }:
 {
-  boot.kernel.sysctl = {
-    # Swappiness 60: balanced between keeping working set in RAM vs using swap
-    "vm.swappiness" = lib.mkDefault 60;
-    # Reduced dirty ratios: prevent large write bursts that stall compilation
-    "vm.dirty_ratio" = lib.mkDefault 15;
-    "vm.dirty_background_ratio" = lib.mkDefault 5;
-    # Overcommit: allow memory-hungry compilers to allocate optimistically
-    "vm.overcommit_memory" = lib.mkDefault 1;
-    # Single-page reads optimal for ZRAM (no sequential benefit on compressed RAM)
-    "vm.page-cluster" = lib.mkDefault 0;
-    # Keep VFS dentries/inodes cached longer — big win for compilation and nix builds
-    # (lots of stat/readdir). Default 100 evicts too aggressively.
-    "vm.vfs_cache_pressure" = lib.mkDefault 50;
-    # Prevent allocation stalls on 32GB+ machines under memory pressure.
-    # Default is auto-calculated and often too low.
-    "vm.min_free_kbytes" = lib.mkDefault 65536;
+  lib,
+  pkgs,
+  self,
+  ...
+}:
+let
+  plugins = pkgs.callPackage "${self}/wasm-plugins" {
+    inherit (pkgs.llvmPackages) lld;
+    inherit (self.inputs) nickel-wasm-vendor;
   };
+  wasm = import "${self}/lib/wasm.nix" { inherit plugins; };
+
+  # Sysctl defaults defined in Nickel — imports sysctl-lib.ncl for helpers.
+  sysctlDefaults = wasm.evalNickelFile ./perf-tuning/sysctl-defaults.ncl;
+in
+{
+  boot.kernel.sysctl = lib.mapAttrs (_: lib.mkDefault) sysctlDefaults;
 
   # Transparent Huge Pages: madvise instead of always.
   # Avoids latency spikes from background compaction/defrag.

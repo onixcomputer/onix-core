@@ -7,6 +7,7 @@
   rustPlatform,
   lld,
   binaryen,
+  nickel-wasm-vendor,
 }:
 rustPlatform.buildRustPackage {
   pname = "nix-wasm-plugins";
@@ -14,6 +15,11 @@ rustPlatform.buildRustPackage {
 
   src = ./.;
   cargoLock.lockFile = ./Cargo.lock;
+
+  postUnpack = ''
+    cp -r ${nickel-wasm-vendor} $sourceRoot/vendor
+    chmod -R u+w $sourceRoot/vendor
+  '';
 
   CARGO_BUILD_TARGET = "wasm32-unknown-unknown";
 
