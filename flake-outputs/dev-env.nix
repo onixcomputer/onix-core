@@ -184,6 +184,13 @@ let
       };
     }).config;
 
+  # clan-cli bundles its own nix; override it with our wasm-capable build
+  # so that `builtins.wasm` is available for inventory evaluation.
+  # doCheck = false mirrors shared-nix.nix — the overlayfs stale-file-handle
+  # test fails in sandbox.
+  nix-wasm = inputs'.nix-wasm.nix.overrideAttrs (_: { doCheck = false; });
+  clan-cli = inputs'.clan-core.clan-cli.override { nix = nix-wasm; };
+
 in
 {
   # treefmt formatter output
@@ -196,7 +203,7 @@ in
     # Full development environment with all tools
     default = pkgs.mkShell {
       packages = [
-        inputs'.clan-core.clan-cli
+        clan-cli
         preCommitEval.package
         self'.packages.acl
         self'.packages.vars
@@ -327,7 +334,7 @@ in
     # Minimal shell with just clan CLI
     minimal = pkgs.mkShell {
       packages = [
-        inputs'.clan-core.clan-cli
+        clan-cli
       ];
 
       shellHook = ''

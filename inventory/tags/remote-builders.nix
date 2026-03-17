@@ -40,19 +40,6 @@ in
     settings = {
       # Allow build machines to fetch from caches directly
       builders-use-substitutes = lib.mkDefault true;
-    }
-    # Push newly-built paths to harmonia cache on aspen1.
-    # Runs after each build; failures are logged but don't block the build.
-    # Skipped on aspen1 itself since paths are already in its local store.
-    // lib.optionalAttrs (config.networking.hostName != "aspen1") {
-      post-build-hook = toString (
-        pkgs.writeShellScript "push-to-cache" ''
-          set -eu
-          set -f
-          export NIX_SSHOPTS="-i ${builderKeyPath} -o StrictHostKeyChecking=yes -o ConnectTimeout=10"
-          exec nix copy --to ssh-ng://root@iroh-aspen1 $OUT_PATHS
-        ''
-      );
     };
 
     buildMachines = [

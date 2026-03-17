@@ -74,12 +74,13 @@ in
       else
         echo "Fetching $store_path ..."
 
-        # Primary: harmonia HTTP cache
-        if nix-store --add-root /run/next-system -r "$store_path" 2>/dev/null; then
+        # Primary: harmonia HTTP cache (5 min timeout — nix-store -r
+        # hangs indefinitely when substituters are unreachable)
+        if timeout 300 nix-store --add-root /run/next-system -r "$store_path" 2>/dev/null; then
           echo "Fetched via harmonia"
         # Fallback: nix copy over iroh-ssh (works through NAT)
-        elif nix copy --from ssh://iroh-aspen1 "$store_path" 2>/dev/null; then
-          nix-store --add-root /run/next-system -r "$store_path"
+        elif timeout 300 nix copy --from ssh://iroh-aspen1 "$store_path" 2>/dev/null; then
+          timeout 60 nix-store --add-root /run/next-system -r "$store_path"
           echo "Fetched via iroh-ssh fallback"
         else
           echo "All fetch methods failed for $store_path"
@@ -121,6 +122,11 @@ in
 
     serviceConfig = {
       Type = "oneshot";
+      # Kill the service after 10 min. Prevents nix-store -r from
+      # blocking switch-to-configuration indefinitely when substituters
+      # are unreachable (the timeout commands above should fire first,
+      # this is the safety net).
+      TimeoutStartSec = "10min";
       CPUSchedulingPolicy = lib.mkForce "idle";
       IOSchedulingClass = "idle";
     };
