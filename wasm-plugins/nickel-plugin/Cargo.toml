@@ -8,5 +8,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 nix-wasm-rust = { path = "../nix-wasm-rust" }
-nickel-lang-core = { version = "=0.17.0", default-features = false }
+nickel-lang-core = { path = "../vendor/nickel-lang-core", default-features = false }
 serde_json = "1"

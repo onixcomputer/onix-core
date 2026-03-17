@@ -1,5 +1,13 @@
 [workspace]
-members = ["nix-wasm-rust", "yaml-plugin", "ini-plugin", "nickel-plugin"]
+members = [
+  "nix-wasm-rust",
+  "yaml-plugin",
+  "ini-plugin",
+  "nickel-plugin",
+  "vendor/nickel-lang-core",
+  "vendor/nickel-lang-parser",
+  "vendor/nickel-lang-vector",
+]
 resolver = "2"
 
 [profile.release]

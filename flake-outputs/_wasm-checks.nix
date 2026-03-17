@@ -129,6 +129,74 @@ in
           fi
         '';
 
+    wasm-evalNickelFile-import =
+      let
+        testDir = pkgs.runCommand "nickel-import-test" { } ''
+          mkdir -p $out
+          cat > $out/main.ncl <<'EOF'
+          let lib = import "lib.ncl" in { result = lib.value + 1 }
+          EOF
+          cat > $out/lib.ncl <<'EOF'
+          { value = 41 }
+          EOF
+        '';
+      in
+      mkWasmTest "evalNickelFile-import" ''
+        builtins.wasm {
+          path = ${plugins}/nickel_plugin.wasm;
+          function = "evalNickelFile";
+        } ${testDir}/main.ncl
+      '' "{ result = 42; }";
+
+    wasm-evalNickelFile-nested-import =
+      let
+        testDir = pkgs.runCommand "nickel-nested-import-test" { } ''
+          mkdir -p $out/sub
+          cat > $out/main.ncl <<'EOF'
+          let a = import "sub/a.ncl" in { result = a.val }
+          EOF
+          cat > $out/sub/a.ncl <<'EOF'
+          let b = import "../b.ncl" in { val = b.x * 2 }
+          EOF
+          cat > $out/b.ncl <<'EOF'
+          { x = 10 }
+          EOF
+        '';
+      in
+      mkWasmTest "evalNickelFile-nested-import" ''
+        builtins.wasm {
+          path = ${plugins}/nickel_plugin.wasm;
+          function = "evalNickelFile";
+        } ${testDir}/main.ncl
+      '' "{ result = 20; }";
+
+    wasm-evalNickelFile-import-error =
+      let
+        testDir = pkgs.runCommand "nickel-import-error-test" { } ''
+          mkdir -p $out
+          cat > $out/main.ncl <<'EOF'
+          let x = import "nonexistent.ncl" in x
+          EOF
+        '';
+      in
+      pkgs.runCommand "wasm-check-evalNickelFile-import-error" { nativeBuildInputs = [ nixWasm ]; } ''
+        export HOME=$TMPDIR
+        if nix eval --store dummy:// --offline \
+            --extra-experimental-features 'nix-command flakes wasm-builtin' \
+            --impure --expr '
+              builtins.wasm {
+                path = ${plugins}/nickel_plugin.wasm;
+                function = "evalNickelFile";
+              } ${testDir}/main.ncl
+            ' 2>/dev/null; then
+          echo "FAIL: expected import error but got success"
+          exit 1
+        else
+          echo "PASS: missing import correctly caused an error"
+          echo "ok" > $out
+        fi
+      '';
+
     wasm-evalNickelFile-stdlib =
       let
         ncl = pkgs.writeText "stdlib.ncl" ''

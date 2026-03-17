@@ -43,9 +43,9 @@
 
   # Evaluate a Nickel file from a Nix path, returning the result as a Nix value.
   # The file is read via the host WASM ABI (not std::fs).
-  # The file must be self-contained — Nickel `import` statements are not yet
-  # supported in the WASM plugin (requires upstream Nickel changes for WASM
-  # path normalization). Standard library functions are available.
+  # Relative `import` statements are supported — imported files are resolved
+  # relative to the input file's directory via the host ABI.
+  # Standard library functions are available.
   #
   # Usage: wasm.evalNickelFile ./config.ncl
   evalNickelFile =

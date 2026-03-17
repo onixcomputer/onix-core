@@ -69,16 +69,85 @@ fn eval_nickel_source(source: &str) -> Value {
     json_to_nix(&json)
 }
 
+/// IO provider that routes filesystem operations through the nix-wasm host ABI.
+///
+/// `current_dir()` returns the parent directory of the base file path.
+/// `read_to_string()` uses `Value::make_path()` + `Value::read_file()`.
+/// `metadata_timestamp()` returns `UNIX_EPOCH` (Nix store paths are immutable).
+struct WasmHostIO {
+    base_path: Value,
+}
+
+impl nickel_lang_core::cache::SourceIO for WasmHostIO {
+    fn current_dir(&self) -> std::io::Result<std::path::PathBuf> {
+        let full = self.base_path.get_path();
+        Ok(full.parent().unwrap_or(&full).to_owned())
+    }
+
+    fn read_to_string(&self, path: &std::path::Path) -> std::io::Result<String> {
+        let path_str = path.to_str().unwrap_or_default();
+        let nix_path = self.base_path.make_path(path_str);
+        let bytes = nix_path.read_file();
+        String::from_utf8(bytes)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
+    }
+
+    fn metadata_timestamp(
+        &self,
+        _path: &std::path::Path,
+    ) -> std::io::Result<std::time::SystemTime> {
+        // Nix store paths are immutable — no staleness possible.
+        Ok(std::time::SystemTime::UNIX_EPOCH)
+    }
+}
+
 /// Evaluate a Nickel file from a Nix path, returning the result as a Nix value.
 ///
 /// The argument must be a Nix path pointing to a `.ncl` file. The file is
 /// read via the host's `read_file` ABI (no std::fs access from WASM).
-/// Nickel `import` statements within the file are not yet supported —
-/// the file must be self-contained or use only the standard library.
+/// Relative `import` statements are supported — imported files are resolved
+/// relative to the input file's directory via the host ABI.
 #[no_mangle]
 pub extern "C" fn evalNickelFile(arg: Value) -> Value {
+    use nickel_lang_core::{
+        cache::CacheHub,
+        error::NullReporter,
+        eval::cache::CacheImpl,
+        program::{Input, Program},
+        serialize::{self, ExportFormat},
+    };
+    use std::io::Cursor;
+    use std::sync::Arc;
+
+    // Read the file via host ABI
     let contents = arg.read_file();
     let source = String::from_utf8(contents)
         .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("nickel file is not valid UTF-8: {e}")));
-    eval_nickel_source(&source)
+
+    // Build a CacheHub with WasmHostIO so import resolution routes through the host
+    let io = Arc::new(WasmHostIO { base_path: arg });
+    let cache = CacheHub::with_io(io);
+
+    let reader = Cursor::new(source.as_bytes());
+    let input = Input::Source(
+        reader,
+        "<wasm>",
+        nickel_lang_core::cache::InputFormat::Nickel,
+    );
+
+    let mut program: Program<CacheImpl> =
+        Program::new_from_input_with_cache(input, cache, std::io::sink(), NullReporter {})
+            .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("nickel I/O error: {e}")));
+
+    let value = program
+        .eval_full_for_export()
+        .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("nickel eval error: {e:?}")));
+
+    let json_str = serialize::to_string(ExportFormat::Json, &value)
+        .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("nickel serialize error: {e:?}")));
+
+    let json: serde_json::Value = serde_json::from_str(&json_str)
+        .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("json parse error: {e}")));
+
+    json_to_nix(&json)
 }
