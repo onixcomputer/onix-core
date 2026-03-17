@@ -105,9 +105,10 @@
       };
     };
 
-    # Nix with builtins.wasm support (cherry-picked NixOS/nix#15380 onto 2.33.3)
+    # Nix with builtins.wasm support + nix ps (cherry-picked NixOS/nix#15380
+    # and DeterminateSystems/nix-src#282 onto 2.33.3)
     nix-wasm = {
-      url = "github:brittonr/nix/wasm-2.33.3";
+      url = "github:brittonr/nix/nix-ps-port";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-parts.follows = "flake-parts";
     };
