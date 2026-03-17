@@ -115,7 +115,7 @@
 
     # Patched nickel-lang crates for wasm32-unknown-unknown (SourceIO trait)
     nickel-wasm-vendor = {
-      url = "github:brittonr/nickel-wasm";
+      url = "github:brittonr/nickel-wasm/wasm-vendor";
       flake = false;
     };
 

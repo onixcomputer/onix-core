@@ -17,8 +17,18 @@ rustPlatform.buildRustPackage {
   cargoLock.lockFile = ./Cargo.lock;
 
   postUnpack = ''
-    cp -r ${nickel-wasm-vendor} $sourceRoot/vendor
+    mkdir -p $sourceRoot/vendor
+    cp -r ${nickel-wasm-vendor}/core   $sourceRoot/vendor/nickel-lang-core
+    cp -r ${nickel-wasm-vendor}/parser $sourceRoot/vendor/nickel-lang-parser
+    cp -r ${nickel-wasm-vendor}/vector $sourceRoot/vendor/nickel-lang-vector
     chmod -R u+w $sourceRoot/vendor
+
+    # Fix inter-crate paths: monorepo layout (../parser) -> vendor layout (../nickel-lang-parser)
+    substituteInPlace $sourceRoot/vendor/nickel-lang-core/Cargo.toml \
+      --replace-fail 'path = "../parser"'  'path = "../nickel-lang-parser"' \
+      --replace-fail 'path = "../vector"'  'path = "../nickel-lang-vector"'
+    substituteInPlace $sourceRoot/vendor/nickel-lang-parser/Cargo.toml \
+      --replace-fail 'path = "../vector"'  'path = "../nickel-lang-vector"'
   '';
 
   CARGO_BUILD_TARGET = "wasm32-unknown-unknown";
