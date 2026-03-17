@@ -41,8 +41,43 @@ let
         format = true;
       };
 
-      # Nickel
-      nickel.enable = true;
+      # Nickel — wrapped to preserve mtime when content is unchanged.
+      # Upstream nickel format unconditionally does tmp+rename even for
+      # already-formatted files, bumping mtime and tripping treefmt's
+      # --fail-on-change. The wrapper saves each file's mtime before
+      # formatting and restores it when the content hash is identical.
+      nickel = {
+        enable = true;
+        package = pkgs.writeShellScriptBin "nickel" ''
+          set -euo pipefail
+          nickel=${pkgs.nickel}/bin/nickel
+
+          if [ "''${1:-}" != "format" ]; then
+            exec "$nickel" "$@"
+          fi
+          shift
+
+          opts=()
+          files=()
+          for arg in "$@"; do
+            case "$arg" in
+              -*) opts+=("$arg") ;;
+              *)  files+=("$arg") ;;
+            esac
+          done
+
+          for f in "''${files[@]}"; do
+            [ -f "$f" ] || continue
+            mtime=$(stat -c %Y "$f")
+            hash_before=$(sha256sum "$f" | cut -d' ' -f1)
+            "$nickel" format "''${opts[@]}" "$f"
+            hash_after=$(sha256sum "$f" | cut -d' ' -f1)
+            if [ "$hash_before" = "$hash_after" ]; then
+              touch -d "@$mtime" "$f"
+            fi
+          done
+        '';
+      };
 
       # Rust
       rustfmt.enable = true;
