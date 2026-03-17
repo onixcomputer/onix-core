@@ -1,18 +1,29 @@
 {
+  config,
   lib,
-  pkgs,
   self,
+  wasm,
   ...
 }:
 let
-  plugins = pkgs.callPackage "${self}/wasm-plugins" {
-    inherit (pkgs.llvmPackages) lld;
-    inherit (self.inputs) nickel-wasm-vendor;
-  };
-  wasm = import "${self}/lib/wasm.nix" { inherit plugins; };
+  # Extract physical RAM from facter.json (phys_mem resource in memory devices).
+  facterFile = "${self}/machines/${config.networking.hostName}/facter.json";
+  facter = builtins.fromJSON (builtins.readFile facterFile);
+  ramBytes =
+    let
+      memDevices = facter.hardware.memory or [ ];
+      getPhysMem =
+        dev:
+        let
+          physRes = builtins.filter (r: r.type or "" == "phys_mem") (dev.resources or [ ]);
+        in
+        if physRes == [ ] then 0 else (builtins.head physRes).range or 0;
+      perDevice = map getPhysMem memDevices;
+    in
+    builtins.foldl' (a: b: if b > a then b else a) 0 perDevice;
+  ramGB = ramBytes / (1024 * 1024 * 1024);
 
-  # Sysctl defaults defined in Nickel — imports sysctl-lib.ncl for helpers.
-  sysctlDefaults = wasm.evalNickelFile ./perf-tuning/sysctl-defaults.ncl;
+  sysctlDefaults = wasm.evalNickelFileWith ./perf-tuning/sysctl-defaults.ncl { inherit ramGB; };
 in
 {
   boot.kernel.sysctl = lib.mapAttrs (_: lib.mkDefault) sysctlDefaults;

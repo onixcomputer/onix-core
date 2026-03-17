@@ -1,24 +1,36 @@
-# Default sysctl tuning for workstations with 32GB+ RAM running
-# compilation-heavy workloads (Nix builds, Rust, kernel builds).
+# Sysctl tuning parameterized by machine hardware.
+#
+# Args (from Nix via evalNickelFileWith):
+#   ramGB : Number — physical RAM in GiB
 let lib = import "sysctl-lib.ncl" in
-{
-  # Balanced swappiness — keep working set in RAM without wasting swap entirely.
-  "vm.swappiness" = 60,
 
-  # Tighter dirty ratios prevent large write bursts that stall compilation.
-  "vm.dirty_ratio" = 15,
-  "vm.dirty_background_ratio" = 5,
+fun { ramGB, .. } =>
+  {
+    # Scale swappiness: small-RAM machines swap more aggressively to avoid OOM,
+    # large-RAM machines keep working set resident.
+    "vm.swappiness" = if ramGB < 16 then 80 else 60,
 
-  # Overcommit: let memory-hungry compilers allocate optimistically.
-  "vm.overcommit_memory" = 1,
+    # Tighter dirty ratios prevent large write bursts that stall compilation.
+    # Machines with 64GB+ can afford slightly looser ratios.
+    "vm.dirty_ratio" = if ramGB > 64 then 20 else 15,
+    "vm.dirty_background_ratio" = if ramGB > 64 then 8 else 5,
 
-  # Single-page reads — no sequential benefit on ZRAM-compressed RAM.
-  "vm.page-cluster" = 0,
+    # Overcommit: let memory-hungry compilers allocate optimistically.
+    "vm.overcommit_memory" = 1,
 
-  # Keep VFS dentries/inodes cached longer.  Big win for stat-heavy
-  # workloads like nix builds and ccache lookups.
-  "vm.vfs_cache_pressure" = 50,
+    # Single-page reads — no sequential benefit on ZRAM-compressed RAM.
+    "vm.page-cluster" = 0,
 
-  # Prevent allocation stalls on machines with 32GB+ under pressure.
-  "vm.min_free_kbytes" = lib.kb_from_mb 64,
-}
+    # Keep VFS dentries/inodes cached longer. Big win for stat-heavy
+    # workloads like nix builds and ccache lookups.
+    "vm.vfs_cache_pressure" = 50,
+
+    # Scale min_free_kbytes with RAM to prevent allocation stalls under pressure.
+    "vm.min_free_kbytes" =
+      if ramGB >= 128 then
+        lib.kb_from_mb 256
+      else if ramGB >= 64 then
+        lib.kb_from_mb 128
+      else
+        lib.kb_from_mb 64,
+  }
