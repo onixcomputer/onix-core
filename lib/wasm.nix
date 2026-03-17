@@ -55,6 +55,34 @@
       function = "evalNickelFile";
     } path;
 
+  # Evaluate a Nickel file with Nix arguments applied.
+  # The .ncl file must be a function: fun { key1, key2, .. } => ...
+  # The args attrset is converted to Nickel and applied as the argument.
+  #
+  # Usage: wasm.evalNickelFileWith ./config.ncl { cores = 8; ramGB = 32; }
+  evalNickelFileWith =
+    path: args:
+    builtins.wasm
+      {
+        path = "${plugins}/nickel_plugin.wasm";
+        function = "evalNickelFileWith";
+      }
+      {
+        file = path;
+        inherit args;
+      };
+
+  # Evaluate a Nickel source string with Nix arguments applied.
+  # The source must be a function: fun { key1, key2, .. } => ...
+  #
+  # Usage: wasm.evalNickelWith "fun { x, .. } => x + 1" { x = 41; }
+  evalNickelWith =
+    source: args:
+    builtins.wasm {
+      path = "${plugins}/nickel_plugin.wasm";
+      function = "evalNickelWith";
+    } { inherit source args; };
+
   # Parse an INI string into a nested attrset (section → key → value).
   fromINI =
     str:

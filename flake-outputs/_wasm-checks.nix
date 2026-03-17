@@ -209,5 +209,147 @@ in
           function = "evalNickelFile";
         } ${ncl}
       '' "{ result = 5; }";
+
+    # ---- evalNickelFileWith: file function with Nix arguments ----
+
+    # 5.1: Scalar args (int, string, bool)
+    wasm-evalNickelFileWith-scalars =
+      let
+        ncl = pkgs.writeText "scalars.ncl" ''
+          fun { cores, name, verbose, .. } =>
+            { workers = cores * 2, greeting = name, debug = verbose }
+        '';
+      in
+      mkWasmTest "evalNickelFileWith-scalars" ''
+        builtins.wasm {
+          path = ${plugins}/nickel_plugin.wasm;
+          function = "evalNickelFileWith";
+        } { file = ${ncl}; args = { cores = 4; name = "test"; verbose = true; }; }
+      '' ''{ debug = true; greeting = "test"; workers = 8; }'';
+
+    # 5.2: Nested attrset args
+    wasm-evalNickelFileWith-nested-args =
+      let
+        ncl = pkgs.writeText "nested-args.ncl" ''
+          fun { net, .. } => { port = net.port, bind = net.host }
+        '';
+      in
+      mkWasmTest "evalNickelFileWith-nested-args" ''
+        builtins.wasm {
+          path = ${plugins}/nickel_plugin.wasm;
+          function = "evalNickelFileWith";
+        } { file = ${ncl}; args = { net = { port = 8080; host = "0.0.0.0"; }; }; }
+      '' ''{ bind = "0.0.0.0"; port = 8080; }'';
+
+    # 5.3: List args
+    wasm-evalNickelFileWith-list-args =
+      let
+        ncl = pkgs.writeText "list-args.ncl" ''
+          fun { ports, .. } => { count = std.array.length ports }
+        '';
+      in
+      mkWasmTest "evalNickelFileWith-list-args" ''
+        builtins.wasm {
+          path = ${plugins}/nickel_plugin.wasm;
+          function = "evalNickelFileWith";
+        } { file = ${ncl}; args = { ports = [80 443 8080]; }; }
+      '' "{ count = 3; }";
+
+    # 5.4: Contract on args — passing case
+    wasm-evalNickelFileWith-contract-pass =
+      let
+        ncl = pkgs.writeText "contract-pass.ncl" ''
+          fun { cores | Number, name | String, .. } =>
+            { result = cores, label = name }
+        '';
+      in
+      mkWasmTest "evalNickelFileWith-contract-pass" ''
+        builtins.wasm {
+          path = ${plugins}/nickel_plugin.wasm;
+          function = "evalNickelFileWith";
+        } { file = ${ncl}; args = { cores = 8; name = "test"; }; }
+      '' ''{ label = "test"; result = 8; }'';
+
+    # 5.5: Contract on args — failing case
+    wasm-evalNickelFileWith-contract-fail =
+      let
+        ncl = pkgs.writeText "contract-fail.ncl" ''
+          fun { cores | Number, .. } => { result = cores }
+        '';
+      in
+      pkgs.runCommand "wasm-check-evalNickelFileWith-contract-fail" { nativeBuildInputs = [ nixWasm ]; }
+        ''
+          export HOME=$TMPDIR
+          if nix eval --store dummy:// --offline \
+              --extra-experimental-features 'nix-command flakes wasm-builtin' \
+              --impure --expr '
+                builtins.wasm {
+                  path = ${plugins}/nickel_plugin.wasm;
+                  function = "evalNickelFileWith";
+                } { file = ${ncl}; args = { cores = "eight"; }; }
+              ' 2>/dev/null; then
+            echo "FAIL: expected contract violation but got success"
+            exit 1
+          else
+            echo "PASS: contract violation on args correctly caused an error"
+            echo "ok" > $out
+          fi
+        '';
+
+    # 5.6: evalNickelWith (source string + args)
+    wasm-evalNickelWith-basic = mkWasmTest "evalNickelWith-basic" ''
+      builtins.wasm {
+        path = ${plugins}/nickel_plugin.wasm;
+        function = "evalNickelWith";
+      } { source = "fun { x, y, .. } => { sum = x + y }"; args = { x = 10; y = 32; }; }
+    '' "{ sum = 42; }";
+
+    # 5.7: Non-function file — Nickel will error on application, which is the
+    # correct behavior (the source-wrapping approach makes `(data) {args}` a
+    # type error). This verifies the error is raised.
+    wasm-evalNickelFileWith-non-function =
+      let
+        ncl = pkgs.writeText "non-function.ncl" ''
+          { static_value = 42 }
+        '';
+      in
+      pkgs.runCommand "wasm-check-evalNickelFileWith-non-function" { nativeBuildInputs = [ nixWasm ]; } ''
+        export HOME=$TMPDIR
+        if nix eval --store dummy:// --offline \
+            --extra-experimental-features 'nix-command flakes wasm-builtin' \
+            --impure --expr '
+              builtins.wasm {
+                path = ${plugins}/nickel_plugin.wasm;
+                function = "evalNickelFileWith";
+              } { file = ${ncl}; args = { x = 1; }; }
+            ' 2>/dev/null; then
+          echo "FAIL: expected error when applying args to non-function but got success"
+          exit 1
+        else
+          echo "PASS: applying args to non-function correctly caused an error"
+          echo "ok" > $out
+        fi
+      '';
+
+    # 5.8: File with imports + args
+    wasm-evalNickelFileWith-import =
+      let
+        testDir = pkgs.runCommand "nickel-with-import-test" { } ''
+          mkdir -p $out
+          cat > $out/main.ncl <<'EOF'
+          let lib = import "lib.ncl" in
+          fun { factor, .. } => { result = lib.base * factor }
+          EOF
+          cat > $out/lib.ncl <<'EOF'
+          { base = 7 }
+          EOF
+        '';
+      in
+      mkWasmTest "evalNickelFileWith-import" ''
+        builtins.wasm {
+          path = ${plugins}/nickel_plugin.wasm;
+          function = "evalNickelFileWith";
+        } { file = ${testDir}/main.ncl; args = { factor = 6; }; }
+      '' "{ result = 42; }";
   };
 }
