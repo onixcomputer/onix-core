@@ -16,6 +16,7 @@ let { Machines, .. } = import "contracts.ncl" in
     # ========== Laptops ==========
 
     britton-fw = {
+      system = "x86_64-linux",
       tags = [
         "hm-laptop",
         "ssd-optimization",
@@ -49,6 +50,7 @@ let { Machines, .. } = import "contracts.ncl" in
     },
 
     bonsai = {
+      system = "x86_64-linux",
       tags = [
         "hm-laptop",
         "ssd-optimization",
@@ -82,6 +84,7 @@ let { Machines, .. } = import "contracts.ncl" in
     # ========== Servers ==========
 
     aspen1 = {
+      system = "x86_64-linux",
       tags = [
         "hm-server",
         "minimal-docs",
@@ -100,6 +103,7 @@ let { Machines, .. } = import "contracts.ncl" in
     },
 
     aspen2 = {
+      system = "x86_64-linux",
       tags = [
         "hm-server",
         "minimal-docs",
@@ -121,6 +125,7 @@ let { Machines, .. } = import "contracts.ncl" in
     # ========== Desktop ==========
 
     britton-desktop = {
+      system = "x86_64-linux",
       tags = [
         "ssd-optimization",
         "perf-tuning",
@@ -157,6 +162,7 @@ let { Machines, .. } = import "contracts.ncl" in
     # ========== SBCs ==========
 
     pine = {
+      system = "aarch64-linux",
       tags = [
         "hm-server",
         "minimal-docs",
@@ -171,6 +177,7 @@ let { Machines, .. } = import "contracts.ncl" in
     # ========== VMs ==========
 
     utm-vm = {
+      system = "aarch64-linux",
       tags = [
         "minimal-docs",
         "ssd-optimization",
@@ -181,6 +188,7 @@ let { Machines, .. } = import "contracts.ncl" in
     # ========== macOS ==========
 
     britton-air = {
+      system = "aarch64-darwin",
       machineClass = "darwin",
       tags = [],
       deploy.targetHost = "root@britton-air.local",

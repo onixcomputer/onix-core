@@ -90,12 +90,34 @@ let all_tags = std.array.flatten [tag_file_tags, service_tags, profile_tags] in
     }
     ),
 
+  System =
+    let valid_systems = [
+      "x86_64-linux",
+      "aarch64-linux",
+      "x86_64-darwin",
+      "aarch64-darwin",
+    ]
+    in
+    std.contract.from_validator (match {
+      value if std.is_string value && std.array.elem value valid_systems => 'Ok,
+      value if std.is_string value =>
+        'Error {
+          message = "unknown system: \"%{value}\"",
+          notes = ["Valid: %{std.serialize 'Json valid_systems}"],
+        },
+      _ => 'Error { message = "system must be a string" },
+    }
+    ),
+
   Deploy = {
     targetHost | doc "SSH target (user@host)" | SshHost,
     buildHost | doc "Remote build host; omit to build locally" | SshHost | optional,
   },
 
   Machine = {
+    system
+      | doc "Nix system double (e.g. x86_64-linux, aarch64-darwin)"
+      | System,
     machineClass
       | doc "NixOS or nix-darwin"
       | std.enum.TagOrString
