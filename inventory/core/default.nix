@@ -5,10 +5,15 @@ let
   plugins = self.packages.x86_64-linux.wasm-plugins;
   wasm = import "${self}/lib/wasm.nix" { inherit plugins; };
 
-  machines = wasm.evalNickelFile ./machines.ncl;
+  allMachines = (wasm.evalNickelFile ./machines.ncl).machines;
+
+  # Strip `system` — it's consumed by flake checks (machinesPerSystem)
+  # but isn't a clan-core inventory option.
+  machines = builtins.mapAttrs (_: m: removeAttrs m [ "system" ]) allMachines;
+
   users = import ./users.nix { inherit inputs; };
 in
 {
-  inherit (machines) machines;
+  inherit machines;
   inherit (users) instances;
 }
