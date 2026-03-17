@@ -2,92 +2,91 @@
 #
 # Shared contract definitions for the machine registry.
 # Imported by machines.ncl.
+
+# --- Tag registry ---
+#
+# Single source of truth — a typo fails at `ncl export` time
+# instead of silently producing a misconfigured machine.
+let tag_file_tags = [
+  "amd-gpu",
+  "audio",
+  "cloud-hypervisor-host",
+  "creative",
+  "cross-compile",
+  "desktop",
+  "dev",
+  "docker",
+  "gaming",
+  "greeter",
+  "grub-theme",
+  "initrd-ssh",
+  "laptop",
+  "laptop-input",
+  "media",
+  "minimal-docs",
+  "nvidia",
+  "openpgp",
+  "password-manager",
+  "perf-tuning",
+  "pinenote",
+  "remote-builders",
+  "ssd-optimization",
+  "taskwarrior",
+  "typst",
+  "udev-rules",
+  "xdg-portal",
+]
+in
+
+let service_tags = [
+  "backup",
+  "homepage-server",
+  "llm",
+  "llm-client",
+  "monitoring",
+  "prometheus",
+  "static-demo",
+  "static-test",
+  "tailnet-brittonr",
+  "traefik-blr",
+  "traefik-desktop",
+]
+in
+
+let profile_tags = ["hm-laptop", "hm-server"] in
+
+let all_tags = std.array.flatten [tag_file_tags, service_tags, profile_tags] in
+
+# --- Contracts ---
 {
-  # All valid machine tags.
-  #
-  # This is the single source of truth — a typo here fails at
-  # `ncl export` time instead of silently producing a misconfigured machine.
-  #
-  # Tags fall into three categories:
-  #   - Tag-file tags: have a corresponding inventory/tags/<name>.nix
-  #   - Service tags:  consumed by inventory/services/ instances
-  #   - Profile tags:  select home-manager profile sets (hm-laptop, hm-server)
   Tag =
-    std.contract.from_validator (fun value =>
-      let valid = [
-        # --- tag-file tags (inventory/tags/*.nix) ---
-        "amd-gpu",
-        "audio",
-        "cloud-hypervisor-host",
-        "creative",
-        "cross-compile",
-        "desktop",
-        "dev",
-        "docker",
-        "gaming",
-        "greeter",
-        "grub-theme",
-        "initrd-ssh",
-        "laptop",
-        "laptop-input",
-        "media",
-        "minimal-docs",
-        "nvidia",
-        "openpgp",
-        "password-manager",
-        "perf-tuning",
-        "pinenote",
-        "remote-builders",
-        "ssd-optimization",
-        "taskwarrior",
-        "typst",
-        "udev-rules",
-        "xdg-portal",
-
-        # --- service instance tags ---
-        "backup",
-        "homepage-server",
-        "llm",
-        "llm-client",
-        "monitoring",
-        "prometheus",
-        "static-demo",
-        "static-test",
-        "tailnet-brittonr",
-        "traefik-blr",
-        "traefik-desktop",
-
-        # --- home-manager profile tags ---
-        "hm-laptop",
-        "hm-server",
-      ]
-      in
-      if !(std.is_string value) then
-        'Error { message = "tag must be a string, got %{std.typeof value}" }
-      else if !(std.array.elem value valid) then
+    std.contract.from_validator (match {
+      value if std.is_string value && std.array.elem value all_tags => 'Ok,
+      value if std.is_string value =>
         'Error {
           message = "unknown tag: \"%{value}\"",
-          notes = ["Check inventory/core/contracts.ncl for the list of valid tags."],
-        }
-      else
-        'Ok
+          notes = ["Valid tags defined in contracts.ncl"],
+        },
+      _ => 'Error { message = "tag must be a string" },
+    }
+    ),
+
+  SshHost =
+    std.contract.from_validator (match {
+      value if std.is_string value
+        && std.string.is_match "^([a-zA-Z0-9._-]+@)?[a-zA-Z0-9._-]+$" value => 'Ok,
+      value if std.is_string value =>
+        'Error { message = "must be [user@]host, got \"%{value}\"" },
+      _ => 'Error { message = "must be a string" },
+    }
     ),
 
   Deploy = {
-    targetHost
-      | doc "SSH target, typically root@<hostname>"
-      | String
-      | std.string.NonEmpty,
-    buildHost
-      | doc "Remote build host (empty string = build locally)"
-      | String,
+    targetHost | doc "SSH target (user@host)" | SshHost,
+    buildHost | doc "Remote build host; omit to build locally" | SshHost | optional,
   },
 
   Machine = {
-    name
-      | doc "Machine name — must match the attrset key"
-      | String
-      | std.string.NonEmpty,
     machineClass
       | doc "NixOS or nix-darwin"
       | std.enum.TagOrString
@@ -95,15 +94,36 @@
       | default
       = "nixos",
     tags
-      | doc "Tags that select services, profiles, and tag-file configs"
+      | doc "Tags selecting services, profiles, and tag configs"
       | Array Tag,
     deploy
       | doc "Deployment target and build delegation"
       | Deploy,
   },
 
+  NoConflictingProfiles =
+    std.contract.from_validator (fun machines =>
+      let profiles = ["hm-laptop", "hm-server"] in
+      std.record.to_array machines
+      |> std.array.map (fun { field, value } =>
+        let hits =
+          value.tags
+          |> std.array.filter (fun t => std.array.elem t profiles)
+        in
+        if std.array.length hits > 1 then
+          'Error { message = "%{field}: conflicting profiles %{std.serialize 'Json hits}" }
+        else
+          'Ok
+      )
+      |> std.array.filter (match { 'Error _ => true, _ => false })
+      |> match {
+        [] => 'Ok,
+        [err, ..] => err,
+      }
+    ),
+
   # Top-level inventory shape.
   Machines = {
-    machines | { _ : Machine },
+    machines | { _ : Machine } | NoConflictingProfiles,
   },
 }

@@ -5,17 +5,17 @@
 #
 # Workflow:
 #   1. Edit this file
-#   2. Run: ncl export inventory/core/machines.ncl > inventory/core/machines.json
+#   2. Run: ncl export inventory/core/machines.ncl
 #   3. Contracts are checked during export — typos and missing fields fail immediately
-#   4. Commit both .ncl and .json
+#   4. Commit .ncl
 #
 let { Machines, .. } = import "contracts.ncl" in
 
 {
   machines = {
-    # ========== Britton Machines ===========
+    # ========== Laptops ==========
+
     britton-fw = {
-      name = "britton-fw",
       tags = [
         "hm-laptop",
         "ssd-optimization",
@@ -45,14 +45,10 @@ let { Machines, .. } = import "contracts.ncl" in
         "taskwarrior",
         "backup",
       ],
-      deploy = {
-        targetHost = "root@iroh-britton-fw",
-        buildHost = "",
-      },
+      deploy.targetHost = "root@iroh-britton-fw",
     },
 
     bonsai = {
-      name = "bonsai",
       tags = [
         "hm-laptop",
         "ssd-optimization",
@@ -80,14 +76,12 @@ let { Machines, .. } = import "contracts.ncl" in
         "gaming",
         "backup",
       ],
-      deploy = {
-        targetHost = "root@iroh-bonsai",
-        buildHost = "",
-      },
+      deploy.targetHost = "root@iroh-bonsai",
     },
 
+    # ========== Servers ==========
+
     aspen1 = {
-      name = "aspen1",
       tags = [
         "hm-server",
         "minimal-docs",
@@ -102,14 +96,10 @@ let { Machines, .. } = import "contracts.ncl" in
         "initrd-ssh",
         "remote-builders",
       ],
-      deploy = {
-        targetHost = "root@iroh-aspen1",
-        buildHost = "",
-      },
+      deploy.targetHost = "root@iroh-aspen1",
     },
 
     aspen2 = {
-      name = "aspen2",
       tags = [
         "hm-server",
         "minimal-docs",
@@ -125,14 +115,12 @@ let { Machines, .. } = import "contracts.ncl" in
         "remote-builders",
         "backup",
       ],
-      deploy = {
-        targetHost = "root@iroh-aspen2",
-        buildHost = "",
-      },
+      deploy.targetHost = "root@iroh-aspen2",
     },
 
+    # ========== Desktop ==========
+
     britton-desktop = {
-      name = "britton-desktop",
       tags = [
         "ssd-optimization",
         "perf-tuning",
@@ -163,14 +151,12 @@ let { Machines, .. } = import "contracts.ncl" in
         "initrd-ssh",
         "backup",
       ],
-      deploy = {
-        targetHost = "root@britton-desktop",
-        buildHost = "",
-      },
+      deploy.targetHost = "root@britton-desktop",
     },
 
+    # ========== SBCs ==========
+
     pine = {
-      name = "pine",
       tags = [
         "hm-server",
         "minimal-docs",
@@ -178,34 +164,26 @@ let { Machines, .. } = import "contracts.ncl" in
         "tailnet-brittonr",
         "dev",
       ],
-      deploy = {
-        targetHost = "root@iroh-pine",
-        buildHost = "britton-desktop",
-      },
+      deploy.targetHost = "root@iroh-pine",
+      deploy.buildHost = "britton-desktop",
     },
 
-    # ========== VMs ===========
+    # ========== VMs ==========
+
     utm-vm = {
-      name = "utm-vm",
       tags = [
         "minimal-docs",
         "ssd-optimization",
       ],
-      deploy = {
-        targetHost = "root@iroh-utm-vm",
-        buildHost = "",
-      },
+      deploy.targetHost = "root@iroh-utm-vm",
     },
 
-    # ========== macOS Machines ===========
+    # ========== macOS ==========
+
     britton-air = {
-      name = "britton-air",
       machineClass = "darwin",
       tags = [],
-      deploy = {
-        targetHost = "root@britton-air.local",
-        buildHost = "",
-      },
+      deploy.targetHost = "root@britton-air.local",
     },
   },
 } | Machines
