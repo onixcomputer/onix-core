@@ -116,6 +116,12 @@
 - SSH config uses `%t` for `$XDG_RUNTIME_DIR` (same specifier as systemd)
 - Fish uses `$__fish_config_dir` for its own config directory (respects `XDG_CONFIG_HOME`)
 
+## Domain Notes (update-prefetch self-kill)
+- `update-prefetch` calling `switch-to-configuration switch` directly is lethal: the switch stops `update-prefetch.service` (because it changed), killing the process running the switch. Result: switch never completes, retries every hour, each time killing itself.
+- Fix: `systemd-run --unit=nixos-upgrade-switch --service-type=exec` launches the switch in a transient unit that survives the service stop.
+- Also guard against the transient unit already running (`systemctl is-active nixos-upgrade-switch.service`).
+- Buildbot-nix upstream sets NO `Restart` or `TimeoutStopSec` on the master service. Default `Restart=no` means any crash or failed stop leaves CI dead until manual intervention. Default 90s `TimeoutStopSec` is too short for graceful shutdown when many builds are in flight (16 workers × active builds = lots of cancel+cleanup). Fixed with `Restart=on-failure` + `TimeoutStopSec=300` in our clan module.
+
 ## Patterns That Work
 - `_class` conditionals for darwin/nixos shared modules — set platform-specific attrs with `lib.optionalAttrs (_class == "nixos")` / `(_class == "darwin")`. Darwin lacks `isNormalUser`, needs `users.knownUsers`, uses `gid = 80` for admin instead of `extraGroups = ["wheel"]`, and has different GC schedule syntax (interval vs dates).
 - SSH into target machines to get actual journal logs rather than guessing from deploy output

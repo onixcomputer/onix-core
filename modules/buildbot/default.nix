@@ -284,6 +284,16 @@ in
                 passthroughSettings
               ];
 
+              # Upstream buildbot-nix sets no Restart or TimeoutStopSec.
+              # Graceful shutdown cancels all in-flight builds one by one,
+              # which can exceed the default 90s. And a CI service should
+              # recover from transient failures without manual intervention.
+              systemd.services.buildbot-master.serviceConfig = {
+                Restart = "on-failure";
+                RestartSec = 10;
+                TimeoutStopSec = 300;
+              };
+
               systemd.tmpfiles.rules = lib.optionals (cfg.outputsPath != null) [
                 "d ${lib.removeSuffix "/" cfg.outputsPath} 0755 buildbot buildbot -"
               ];

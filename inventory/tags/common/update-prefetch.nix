@@ -45,6 +45,7 @@ in
       config.nix.package
       pkgs.curl
       pkgs.iproute2
+      pkgs.systemd # systemd-run for detached switch-to-configuration
     ];
 
     script = ''
@@ -94,15 +95,25 @@ in
         echo "New system available: $target (current: $current)"
 
         # Bail if another switch-to-configuration is already running
-        if systemctl is-active --quiet nixos-rebuild-switch-to-configuration.service 2>/dev/null; then
+        if systemctl is-active --quiet nixos-rebuild-switch-to-configuration.service 2>/dev/null ||
+           systemctl is-active --quiet nixos-upgrade-switch.service 2>/dev/null; then
           echo "Another switch is in progress — skipping (will retry next cycle)"
           exit 0
         fi
 
         echo "Switching..."
         nix-env --profile /nix/var/nix/profiles/system --set "$target"
-        "$target/bin/switch-to-configuration" switch
-        echo "Switched to $target"
+        # Run the switch in a transient systemd scope so it survives
+        # update-prefetch.service being stopped during the switch.
+        # Without this, switch-to-configuration stops our own service
+        # (because it changed), killing the switch mid-flight.
+        systemd-run \
+          --unit=nixos-upgrade-switch \
+          --description="NixOS switch-to-configuration (from update-prefetch)" \
+          --service-type=exec \
+          --property=CPUSchedulingPolicy=other \
+          "$target/bin/switch-to-configuration" switch
+        echo "Switch initiated (running in nixos-upgrade-switch.service)"
       else
         echo "System is up to date"
       fi
