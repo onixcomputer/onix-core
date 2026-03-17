@@ -1,9 +1,9 @@
-{ inputs, ... }:
+{ inputs, self, ... }:
 let
   inherit (inputs.nixpkgs) lib;
 
   # Import modules
-  core = import ./core { inherit inputs; };
+  core = import ./core { inherit inputs self; };
   services = import ./services { inherit inputs; };
   tags = import ./tags { inherit inputs; };
 

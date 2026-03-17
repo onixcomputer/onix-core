@@ -16,6 +16,7 @@
     ./common/shared-nix.nix
     ./common/shared-users.nix
     ./common/update-prefetch.nix
+    ./common/wasm-lib.nix
   ];
 
   nixpkgs.config.allowUnfree = true;

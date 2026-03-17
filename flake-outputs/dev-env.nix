@@ -41,6 +41,9 @@ let
         format = true;
       };
 
+      # Nickel
+      nickel.enable = true;
+
       # Rust
       rustfmt.enable = true;
 
@@ -110,6 +113,7 @@ let
         # machine-generated
         "*/facter.json"
         "inventory.json"
+
       ];
 
       formatter = {
@@ -215,6 +219,7 @@ in
       ++ lib.optionals (self'.packages ? tracey) [ self'.packages.tracey ]
       ++ lib.optionals (self'.packages ? abp) [ self'.packages.abp ]
       ++ [
+        pkgs.nickel
         pkgs.nix-output-monitor
         (pkgs.writeShellScriptBin "eval-warnings" ''
           if [ -z "$1" ]; then

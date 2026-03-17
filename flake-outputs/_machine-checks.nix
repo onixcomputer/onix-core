@@ -30,13 +30,15 @@ let
   };
 
   listedMachines = lib.sort lib.lessThan (lib.concatLists (lib.attrValues machinesPerSystem));
+  plugins = self.packages.x86_64-linux.wasm-plugins;
+  wasm = import ../lib/wasm.nix { inherit plugins; };
   actualMachines = lib.sort lib.lessThan (
-    lib.attrNames (import ../inventory/core/machines.nix { }).machines
+    lib.attrNames (wasm.evalNickelFile ../inventory/core/machines.ncl).machines
   );
 
   syncCheck = pkgs.runCommand "machines-per-system-check" { } ''
     ${lib.optionalString (listedMachines != actualMachines) ''
-      echo "machinesPerSystem out of sync with inventory/core/machines.nix:"
+      echo "machinesPerSystem out of sync with inventory/core/machines.ncl"
       echo "  listed: ${lib.concatStringsSep " " listedMachines}"
       echo "  actual: ${lib.concatStringsSep " " actualMachines}"
       exit 1

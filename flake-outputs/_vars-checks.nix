@@ -37,7 +37,9 @@ let
 
   flakeInputsClosure = pkgs.closureInfo { rootPaths = allInputPaths; };
 
-  machineNames = lib.attrNames (import ../inventory/core/machines.nix { }).machines;
+  plugins = self.packages.x86_64-linux.wasm-plugins;
+  wasm = import ../lib/wasm.nix { inherit plugins; };
+  machineNames = lib.attrNames (wasm.evalNickelFile ../inventory/core/machines.ncl).machines;
 in
 {
   checks = lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {

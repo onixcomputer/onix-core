@@ -11,7 +11,7 @@ let
     inherit self;
     meta.name = "Onix";
     inherit modules;
-    inventory = import "${self}/inventory" { inherit inputs; };
+    inventory = import "${self}/inventory" { inherit inputs self; };
     specialArgs = {
       inherit inputs;
       wrappers = inputs.wrappers.wrapperModules;
@@ -27,15 +27,25 @@ in
   clan = clanModule.config;
 
   lib = {
-    machines = {
-      names = builtins.attrNames (import ../inventory/core/machines.nix { });
-      hasTag =
-        machine: tag:
-        let
-          machinesDef = import ../inventory/core/machines.nix { };
-        in
-        builtins.elem tag (machinesDef.${machine}.tags or [ ]);
-    };
+    # Wasm plugin library — call with a system string to get evalNickelFile, fromYAML, etc.
+    # Usage: self.lib.wasm "x86_64-linux" → { evalNickelFile, evalNickel, fromYAML, toYAML, fromINI }
+    wasm =
+      system:
+      import ../lib/wasm.nix {
+        plugins = self.packages.${system}.wasm-plugins;
+      };
+
+    machines =
+      let
+        wasmLib = import ../lib/wasm.nix {
+          plugins = self.packages.x86_64-linux.wasm-plugins;
+        };
+        machinesDef = (wasmLib.evalNickelFile ../inventory/core/machines.ncl).machines;
+      in
+      {
+        names = builtins.attrNames machinesDef;
+        hasTag = machine: tag: builtins.elem tag (machinesDef.${machine}.tags or [ ]);
+      };
     tags = {
       all =
         let
