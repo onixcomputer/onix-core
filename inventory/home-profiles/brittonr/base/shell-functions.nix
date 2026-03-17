@@ -180,6 +180,40 @@ _: {
     # CDPATH: cd to repos from anywhere (e.g. `cd onix-core` finds ~/git/onix-core)
     set -x CDPATH . ~/git
 
+    # Quick command lookup via Claude
+    function cheat
+      if test (count $argv) -eq 0
+        echo "Usage: cheat <question>"
+        echo "Example: cheat scp a folder to remote host"
+        return 1
+      end
+      set -l key "$ANTHROPIC_API_KEY"
+      if test -z "$key"
+        echo "Error: ANTHROPIC_API_KEY not set" >&2
+        return 1
+      end
+      set -l query "$argv"
+      set -l payload (jq -nc \
+        --arg q "$query" \
+        '{
+          model: "claude-haiku-4-5",
+          max_tokens: 256,
+          system: "Reply with only the command. Nothing else. No markdown, no code fences, no explanation.",
+          messages: [{role: "user", content: $q}]
+        }')
+      set -l response (curl -s https://api.anthropic.com/v1/messages \
+        -H "content-type: application/json" \
+        -H "x-api-key: $key" \
+        -H "anthropic-version: 2023-06-01" \
+        -d "$payload")
+      set -l error (echo "$response" | jq -r '.error.message // empty')
+      if test -n "$error"
+        echo "Error: $error" >&2
+        return 1
+      end
+      echo "$response" | jq -r '.content[0].text'
+    end
+
     # Delta side-by-side on wide terminals
     function _delta_side_by_side --on-signal WINCH
       if test $COLUMNS -ge 140
