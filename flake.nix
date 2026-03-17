@@ -136,6 +136,10 @@
         treefmt-nix.follows = "treefmt-nix";
       };
     };
+    horizon = {
+      url = "github:peters/horizon";
+      flake = false;
+    };
   };
 
   outputs =

@@ -473,6 +473,22 @@
         "type": "github"
       }
     },
+    "horizon": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1773771057,
+        "narHash": "sha256-eYXbLn5mp82Z7CYsnsz3ex82Y5AJIzgl7og8de5Cubo=",
+        "owner": "peters",
+        "repo": "horizon",
+        "rev": "953a4f46996ac7fb724e81cd9184805964f0dc69",
+        "type": "github"
+      },
+      "original": {
+        "owner": "peters",
+        "repo": "horizon",
+        "type": "github"
+      }
+    },
     "import-tree": {
       "locked": {
         "lastModified": 1763762820,
@@ -861,6 +877,7 @@
         "flake-parts": "flake-parts",
         "grub2-themes": "grub2-themes",
         "home-manager": "home-manager",
+        "horizon": "horizon",
         "llm-agents": "llm-agents",
         "mics-skills": "mics-skills",
         "nickel-wasm-vendor": "nickel-wasm-vendor",
