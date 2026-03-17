@@ -57,8 +57,17 @@ let profile_tags = ["hm-laptop", "hm-server"] in
 
 let all_tags = std.array.flatten [tag_file_tags, service_tags, profile_tags] in
 
+# --- Exported tag lists (consumed by Nix flake checks) ---
+#
+# `tagFileTags` lets the Nix-side tag-sync check verify that every
+# registered tag has a .nix file and every tag .nix file is registered.
+# `autoTagsWithFiles` lists auto-computed tags (e.g. "nixos") that have
+# .nix files but aren't manually assigned to machines.
+
 # --- Contracts ---
 {
+  tagFileTags = tag_file_tags,
+  autoTagsWithFiles = ["nixos"],
   Tag =
     std.contract.from_validator (match {
       value if std.is_string value && std.array.elem value all_tags => 'Ok,

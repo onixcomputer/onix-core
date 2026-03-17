@@ -27,6 +27,7 @@ let
   varsChecks = (import ./_vars-checks.nix) innerArgs;
   vmTests = (import ./_vm-tests.nix) { inherit pkgs lib; };
   wasmChecks = (import ./_wasm-checks.nix) innerArgs;
+  tagChecks = (import ./_tag-checks.nix) innerArgs;
 
   packageChecks = lib.mapAttrs' (n: lib.nameValuePair "package-${n}") self'.packages;
   devShellChecks = lib.mapAttrs' (n: lib.nameValuePair "devShell-${n}") self'.devShells;
@@ -37,6 +38,7 @@ in
     // (varsChecks.checks or { })
     // (vmTests.checks or { })
     // (wasmChecks.checks or { })
+    // (tagChecks.checks or { })
     // packageChecks
     // devShellChecks;
 }
