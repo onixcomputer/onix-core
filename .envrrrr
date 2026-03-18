@@ -12,5 +12,7 @@ fi
 # Don't fan out devshell builds to remote builders (aspen1, aspen2, desktop).
 # The devshell is for the local machine — substituters are fine, but building
 # on remotes just adds SSH overhead and store lock contention.
-export NIX_CONFIG="builders ="
-use flake
+# NIX_CONFIG doesn't work here — the daemon ignores client-side builders
+# overrides. Passing --builders directly to nix print-dev-env via use_flake
+# forces it through the daemon protocol.
+use flake . --builders ""
