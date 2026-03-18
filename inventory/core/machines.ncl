@@ -126,6 +126,7 @@ let { Machines, .. } = import "contracts.ncl" in
 
     britton-desktop = {
       system = "x86_64-linux",
+      addresses.lan = "britton-desktop",
       tags = [
         "ssd-optimization",
         "perf-tuning",
@@ -190,6 +191,7 @@ let { Machines, .. } = import "contracts.ncl" in
     britton-air = {
       system = "aarch64-darwin",
       machineClass = "darwin",
+      addresses.lan = "britton-air.local",
       tags = [],
       deploy.targetHost = "root@britton-air.local",
     },

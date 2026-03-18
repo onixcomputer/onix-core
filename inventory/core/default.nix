@@ -7,9 +7,14 @@ let
 
   allMachines = (wasm.evalNickelFile ./machines.ncl).machines;
 
-  # Strip `system` — it's consumed by flake checks (machinesPerSystem)
-  # but isn't a clan-core inventory option.
-  machines = builtins.mapAttrs (_: m: removeAttrs m [ "system" ]) allMachines;
+  # Strip fields consumed by our tooling but not by clan-core's inventory.
+  machines = builtins.mapAttrs (
+    _: m:
+    removeAttrs m [
+      "system"
+      "addresses"
+    ]
+  ) allMachines;
 
   users = import ./users.nix { inherit inputs; };
 in

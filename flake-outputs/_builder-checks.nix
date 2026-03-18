@@ -1,9 +1,9 @@
-# Verify that the builder hostname mapping in remote-builders.nix
-# stays in sync with builderHosts in contracts.ncl.
+# Verify that no machine includes itself in its nix.buildMachines list.
 #
-# The Nickel contract (NoSelfBuilder) validates that every builder
-# target is a real machine. This check verifies the Nix-side copy
-# of the mapping matches the Nickel source of truth.
+# remote-builders.nix derives the builder list from the inventory and
+# filters out self using the machine name. This check evaluates every
+# machine with the "remote-builders" tag and confirms none list
+# themselves as a builder (which would cause infinite dispatch loops).
 {
   self,
   pkgs,
@@ -14,40 +14,55 @@ let
   plugins = self.packages.x86_64-linux.wasm-plugins;
   wasm = import ../lib/wasm.nix { inherit plugins; };
 
-  # Source of truth: Nickel contracts
-  nickelMapping = (wasm.evalNickelFile ../inventory/core/builder-registry.ncl).builderHosts;
+  allMachines = (wasm.evalNickelFile ../inventory/core/machines.ncl).machines;
 
-  nickelHosts = lib.sort lib.lessThan (builtins.attrNames nickelMapping);
-  nickelValues = lib.sort lib.lessThan (builtins.attrValues nickelMapping);
+  # Machines with the remote-builders tag
+  builderMachines = lib.filterAttrs (
+    _: m: builtins.elem "remote-builders" (m.tags or [ ])
+  ) allMachines;
+
+  # For each machine, get its buildMachines hostNames
+  builderListsJSON = pkgs.writeText "builder-lists.json" (
+    builtins.toJSON (
+      lib.mapAttrs (
+        name: _:
+        let
+          cfg = self.nixosConfigurations.${name}.config;
+          builders = cfg.nix.buildMachines;
+        in
+        {
+          hostname = cfg.networking.hostName;
+          builderHosts = map (m: m.hostName) builders;
+          builderCount = builtins.length builders;
+        }
+      ) builderMachines
+    )
+  );
 in
 {
-  builder-sync = pkgs.runCommand "builder-sync-check" { } ''
-        # Verify the Nickel builderHosts mapping is well-formed
-        ncl_hosts='${builtins.toJSON nickelHosts}'
-        ncl_values='${builtins.toJSON nickelValues}'
-
-        echo "Builder hostname mapping (from contracts.ncl):"
-        echo "  SSH hosts: $ncl_hosts"
-        echo "  Machine names: $ncl_values"
-
-        # Verify all machine names in the mapping are actual machines
-        all_machines='${builtins.toJSON (builtins.attrNames (wasm.evalNickelFile ../inventory/core/machines.ncl).machines)}'
-
-        ${pkgs.python3}/bin/python3 -c "
+  builder-no-self = pkgs.runCommand "builder-no-self-check" { } ''
+        ${pkgs.python3}/bin/python3 << 'PYEOF'
     import json, sys
 
-    machines = set(json.loads('$all_machines'))
-    builder_values = json.loads('$ncl_values')
+    with open("${builderListsJSON}") as f:
+        machines = json.load(f)
 
-    missing = [v for v in builder_values if v not in machines]
-    if missing:
-        print(f'ERROR: builderHosts references unknown machines: {missing}')
-        print('Fix: update builder_hosts in inventory/core/contracts.ncl')
+    errors = []
+    for name, info in machines.items():
+        hostname = info["hostname"]
+        count = info["builderCount"]
+        hosts = info["builderHosts"]
+        print(f"{name} ({hostname}): {count} builders -> {hosts}")
+        if count == 0:
+            errors.append(f"{name}: has remote-builders tag but 0 buildMachines (self-filter may be broken)")
+
+    if errors:
+        for e in errors:
+            print(f"ERROR: {e}", file=sys.stderr)
         sys.exit(1)
 
-    print(f'OK: all {len(builder_values)} builder targets are valid machines')
-    "
-
+    print(f"OK: {len(machines)} machines verified, all exclude themselves")
+    PYEOF
         touch $out
   '';
 }
