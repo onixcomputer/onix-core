@@ -57,6 +57,20 @@ let profile_tags = ["hm-laptop", "hm-server"] in
 
 let all_tags = std.array.flatten [tag_file_tags, service_tags, profile_tags] in
 
+# --- Builder registry ---
+#
+# Maps remote-builder SSH hostnames to inventory machine names.
+# Used by Nix (remote-builders.nix) to filter self from buildMachines,
+# preventing infinite dispatch loops. If you add a machine as a nix
+# build machine, it MUST appear here.
+let builder_hosts = {
+  "britton-air.local" = "britton-air",
+  "iroh-aspen1" = "aspen1",
+  "iroh-aspen2" = "aspen2",
+  "britton-desktop" = "britton-desktop",
+}
+in
+
 # --- Exported tag lists (consumed by Nix flake checks) ---
 #
 # `tagFileTags` lets the Nix-side tag-sync check verify that every
@@ -68,6 +82,7 @@ let all_tags = std.array.flatten [tag_file_tags, service_tags, profile_tags] in
 {
   tagFileTags = tag_file_tags,
   autoTagsWithFiles = ["nixos"],
+  builderHosts = builder_hosts,
   Tag =
     std.contract.from_validator (match {
       value if std.is_string value && std.array.elem value all_tags => 'Ok,
@@ -132,6 +147,56 @@ let all_tags = std.array.flatten [tag_file_tags, service_tags, profile_tags] in
       | Deploy,
   },
 
+  # Every builder SSH hostname must map to a real machine in the inventory,
+  # and every machine with "remote-builders" tag that IS a builder target
+  # must have a mapping entry. Without a mapping, the Nix self-filter can't
+  # identify the machine and it dispatches builds to itself (infinite loop).
+  NoSelfBuilder =
+    std.contract.from_validator (fun machines =>
+      let machine_names = std.record.fields machines in
+      let builder_machine_names = std.record.values builder_hosts in
+      let builder_ssh_hosts = std.record.fields builder_hosts in
+
+      # Check 1: every builder target maps to a real machine
+      let unknown_targets =
+        builder_machine_names
+        |> std.array.filter (fun name => !(std.array.elem name machine_names))
+      in
+
+      # Check 2: every machine with "remote-builders" tag that is also
+      # a builder target has a mapping (so self-filter works)
+      let unmapped_builders =
+        std.record.to_array machines
+        |> std.array.filter (fun { field, value } =>
+          std.array.elem "remote-builders" value.tags
+          && std.array.elem field builder_machine_names
+        )
+        |> std.array.map (fun { field, .. } => field)
+        |> std.array.filter (fun name =>
+          !(std.array.elem name builder_machine_names)
+        )
+      in
+
+      if std.array.length unknown_targets > 0 then
+        'Error {
+          message = "builderHosts maps to unknown machine: \"%{std.array.first unknown_targets}\"",
+          notes = [
+            "Every value in builderHosts must be a machine name in the inventory.",
+            "Either add the machine or remove the stale builderHosts entry.",
+          ],
+        }
+      else if std.array.length unmapped_builders > 0 then
+        'Error {
+          message = "%{std.array.first unmapped_builders}: has remote-builders tag and is a builder target but missing from builderHosts",
+          notes = [
+            "Add a builderHosts entry mapping the SSH hostname to this machine.",
+            "Without it, the machine will dispatch builds to itself (infinite loop).",
+          ],
+        }
+      else
+        'Ok
+    ),
+
   NoConflictingProfiles =
     std.contract.from_validator (fun machines =>
       let profiles = ["hm-laptop", "hm-server"] in
@@ -155,6 +220,6 @@ let all_tags = std.array.flatten [tag_file_tags, service_tags, profile_tags] in
 
   # Top-level inventory shape.
   Machines = {
-    machines | { _ : Machine } | NoConflictingProfiles,
+    machines | { _ : Machine } | NoConflictingProfiles | NoSelfBuilder,
   },
 }

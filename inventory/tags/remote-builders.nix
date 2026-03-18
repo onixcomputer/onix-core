@@ -22,9 +22,9 @@ let
 
   hostname = config.networking.hostName;
 
-  # Map builder SSH hostnames to NixOS hostnames so machines can
-  # filter themselves out of the builder list (prevents infinite
-  # dispatch loops where a machine dispatches a build to itself).
+  # SSH hostname → NixOS hostname mapping for self-exclusion.
+  # MUST match builderHosts in inventory/core/contracts.ncl — validated
+  # by the builder-sync flake check and the NoSelfBuilder Nickel contract.
   builderHostToNixosHost = {
     "britton-air.local" = "britton-air";
     "iroh-aspen1" = "aspen1";
