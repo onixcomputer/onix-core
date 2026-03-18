@@ -122,6 +122,15 @@
 - Also guard against the transient unit already running (`systemctl is-active nixos-upgrade-switch.service`).
 - Buildbot-nix upstream sets NO `Restart` or `TimeoutStopSec` on the master service. Default `Restart=no` means any crash or failed stop leaves CI dead until manual intervention. Default 90s `TimeoutStopSec` is too short for graceful shutdown when many builds are in flight (16 workers × active builds = lots of cancel+cleanup). Fixed with `Restart=on-failure` + `TimeoutStopSec=300` in our clan module.
 
+## Domain Notes (drift + clankers integration)
+- **clankers unit2nix IFD broken**: clankers Cargo.toml has `path = "../subwayrat/crates/rat-*"` path deps to a sibling repo. unit2nix's `buildFromUnitGraphAuto` can't resolve these in sandbox. Created local `pkgs/clankers/default.nix` using `rustPlatform.buildRustPackage` that assembles both repos via `fetchFromGitHub` + `postUnpack`.
+- **openspec has no git remote**: The `openspec = { path = "../openspec", optional = true }` dep has no remote — local-only repo. Solved by building with `--no-default-features --features tui-validate,zellij-share` to skip it.
+- **clankers needs nightly Rust**: Added `rust-overlay` as a top-level flake input with `follows` from drift and clankers to deduplicate. Nightly toolchain constructed per-use site (`import nixpkgs { overlays = [(import inputs.rust-overlay)]; }`).
+- **adios-flake `inputs'` doesn't resolve plain flakes**: `inputs'.drift.packages.default` fails because drift uses `forAllSystems` (not adios-flake/flake-parts). Use `self.inputs.drift.packages.${pkgs.system}.default` instead.
+- **media HM profile had pre-existing bugs**: `lutris.nix` had `runners.*.enable` options that don't exist in the HM lutris module. `mpv.nix` bindings conflicted with `shared/desktop/media-viewers.nix`. Fixed with `lib.mkForce` on mpv and removing invalid lutris runner enables.
+- **drift config.toml**: Managed declaratively via `xdg.configFile` in `inventory/home-profiles/brittonr/media/drift-config.nix`. References `mpdConfig` and `mediaPaths` options from base profile.
+- **clankers clan service module**: Two roles: `daemon` (persistent agent sessions over iroh QUIC) and `router` (multi-provider LLM proxy). Daemon deployed to all `dev`-tagged machines, router to britton-desktop only.
+
 ## Patterns That Work
 - `_class` conditionals for darwin/nixos shared modules — set platform-specific attrs with `lib.optionalAttrs (_class == "nixos")` / `(_class == "darwin")`. Darwin lacks `isNormalUser`, needs `users.knownUsers`, uses `gid = 80` for admin instead of `extraGroups = ["wheel"]`, and has different GC schedule syntax (interval vs dates).
 - SSH into target machines to get actual journal logs rather than guessing from deploy output

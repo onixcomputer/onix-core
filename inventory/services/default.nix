@@ -19,6 +19,7 @@ let
     upmpdcli = import ./upmpdcli.nix { inherit inputs; };
     nix-gc = import ./nix-gc.nix { inherit inputs; };
     ollama = import ./ollama.nix { inherit inputs; };
+    clankers = import ./clankers.nix { inherit inputs; };
     clonadic = import ./clonadic.nix { inherit inputs; };
     iroh-ssh = import ./iroh-ssh.nix { inherit inputs; };
     llm-agents = import ./llm-agents.nix { inherit inputs; };

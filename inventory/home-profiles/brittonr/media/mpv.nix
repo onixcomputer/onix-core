@@ -1,10 +1,10 @@
-{ pkgs, config, ... }:
+{ pkgs, lib, config, ... }:
 
 {
   programs.mpv = {
     enable = true;
 
-    config = {
+    config = lib.mkForce {
       # Video
       profile = "gpu-hq";
       vo = "gpu-next";
@@ -44,7 +44,7 @@
       screenshot-template = config.media.mpv.screenshotTemplate;
     };
 
-    bindings = {
+    bindings = lib.mkForce {
       # Mouse controls
       "WHEEL_UP" = "add volume ${toString config.media.mpv.volumeStep}";
       "WHEEL_DOWN" = "add volume -${toString config.media.mpv.volumeStep}";
