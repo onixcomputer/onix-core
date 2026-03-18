@@ -10,6 +10,7 @@
       main = {
         device = "/dev/disk/by-id/nvme-Samsung_SSD_9100_PRO_2TB_S7YCNJ0Y202518L";
         type = "disk";
+        destroy = false;
         content = {
           type = "gpt";
           partitions = {
@@ -38,6 +39,24 @@
                 type = "filesystem";
                 format = "ext4";
                 mountpoint = "/";
+              };
+            };
+          };
+        };
+      };
+      data = {
+        device = "/dev/disk/by-id/nvme-Samsung_SSD_9100_PRO_4TB_S7YANJ0Y308565Y";
+        type = "disk";
+        destroy = false;
+        content = {
+          type = "gpt";
+          partitions = {
+            data = {
+              size = "100%";
+              content = {
+                type = "filesystem";
+                format = "ext4";
+                mountpoint = "/data";
               };
             };
           };

@@ -75,10 +75,12 @@ in
                 heartbeat
                 extraArgs
                 ;
-              args =
-                [ "--heartbeat" (toString heartbeat) ]
-                ++ lib.optionals allowAll [ "--allow-all" ]
-                ++ extraArgs;
+              args = [
+                "--heartbeat"
+                (toString heartbeat)
+              ]
+              ++ lib.optionals allowAll [ "--allow-all" ]
+              ++ extraArgs;
             in
             {
               systemd.services.clankers-daemon = {

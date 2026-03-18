@@ -53,11 +53,7 @@
         enable = true;
         device = "nodev";
         efiSupport = true;
-        useOSProber = true;
         configurationLimit = 5;
-        extraConfig = ''
-          GRUB_DISABLE_OS_PROBER=false
-        '';
         extraEntries = ''
           menuentry "Reboot" {
             reboot
@@ -136,7 +132,6 @@
   environment.systemPackages = with pkgs; [
     bpftrace
     imagemagick
-    os-prober
     nirius
     displaylink
   ];

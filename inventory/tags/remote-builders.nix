@@ -30,11 +30,18 @@ let
     in
     if builtins.pathExists path then lib.trim (builtins.readFile path) else null;
 
-  # Machines with the remote-builders tag that are also builders
-  # (i.e., they exist in the inventory and have this tag).
-  # Each builder is reached via addresses.lan if set, otherwise via iroh-${name}.
+  # Machines that can be used as remote builder targets.
+  # Separate from the remote-builders tag, which controls whether a
+  # machine *uses* remote builders.  A machine can be a target without
+  # using remote builders itself (e.g. britton-air is darwin).
+  builderTargets = [
+    "britton-air"
+    "aspen1"
+    "aspen2"
+  ];
+
   builderMachines = lib.filterAttrs (
-    name: m: builtins.elem "remote-builders" (m.tags or [ ]) && name != hostname # exclude self
+    name: _: builtins.elem name builderTargets && name != hostname # exclude self
   ) allMachines;
 
   # Build the nix.buildMachines list from inventory data

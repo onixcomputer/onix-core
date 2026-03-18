@@ -76,13 +76,9 @@ let
   tomlSection =
     name: attrs:
     "[${name}]\n"
-    + lib.concatStringsSep "\n" (
-      lib.mapAttrsToList (k: v: "${k} = ${tomlValue v}") attrs
-    );
+    + lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: "${k} = ${tomlValue v}") attrs);
 
-  configToml = lib.concatStringsSep "\n\n" (
-    lib.mapAttrsToList tomlSection driftConfig
-  );
+  configToml = lib.concatStringsSep "\n\n" (lib.mapAttrsToList tomlSection driftConfig);
 in
 {
   xdg.configFile."drift/config.toml" = {

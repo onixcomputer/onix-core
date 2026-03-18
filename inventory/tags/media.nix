@@ -1,4 +1,9 @@
-{ pkgs, lib, inputs, ... }:
+{
+  pkgs,
+  lib,
+  inputs,
+  ...
+}:
 {
   # MPD (Music Player Daemon) configuration - User service
   # Running as user service to properly access PipeWire audio
