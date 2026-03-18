@@ -16,6 +16,7 @@ let { Machines, .. } = import "contracts.ncl" in
     # ========== Laptops ==========
 
     britton-fw = {
+      name = "britton-fw",
       system = "x86_64-linux",
       tags = [
         "hm-laptop",
@@ -50,6 +51,7 @@ let { Machines, .. } = import "contracts.ncl" in
     },
 
     bonsai = {
+      name = "bonsai",
       system = "x86_64-linux",
       tags = [
         "hm-laptop",
@@ -84,6 +86,7 @@ let { Machines, .. } = import "contracts.ncl" in
     # ========== Servers ==========
 
     aspen1 = {
+      name = "aspen1",
       system = "x86_64-linux",
       tags = [
         "hm-server",
@@ -103,6 +106,7 @@ let { Machines, .. } = import "contracts.ncl" in
     },
 
     aspen2 = {
+      name = "aspen2",
       system = "x86_64-linux",
       tags = [
         "hm-server",
@@ -125,6 +129,7 @@ let { Machines, .. } = import "contracts.ncl" in
     # ========== Desktop ==========
 
     britton-desktop = {
+      name = "britton-desktop",
       system = "x86_64-linux",
       addresses.lan = "britton-desktop",
       tags = [
@@ -163,6 +168,7 @@ let { Machines, .. } = import "contracts.ncl" in
     # ========== SBCs ==========
 
     pine = {
+      name = "pine",
       system = "aarch64-linux",
       tags = [
         "hm-server",
@@ -178,6 +184,7 @@ let { Machines, .. } = import "contracts.ncl" in
     # ========== VMs ==========
 
     utm-vm = {
+      name = "utm-vm",
       system = "aarch64-linux",
       tags = [
         "minimal-docs",
@@ -189,6 +196,7 @@ let { Machines, .. } = import "contracts.ncl" in
     # ========== macOS ==========
 
     britton-air = {
+      name = "britton-air",
       system = "aarch64-darwin",
       machineClass = "darwin",
       addresses.lan = "britton-air.local",

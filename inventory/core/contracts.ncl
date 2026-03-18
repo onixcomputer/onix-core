@@ -121,7 +121,24 @@ let all_tags = std.array.flatten [tag_file_tags, service_tags, profile_tags] in
       | optional,
   },
 
+  Name =
+    std.contract.from_validator (match {
+      value if std.is_string value
+        && std.string.is_match "^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$" value
+        && std.string.length value <= 63 => 'Ok,
+      value if std.is_string value =>
+        'Error {
+          message = "invalid name: \"%{value}\"",
+          notes = ["Must be RFC 1123: alphanumeric, hyphens, 1-63 chars, no leading/trailing hyphen"],
+        },
+      _ => 'Error { message = "name must be a string" },
+    }
+    ),
+
   Machine = {
+    name
+      | doc "Machine name (sets networking.hostName). Must match the attr key."
+      | Name,
     system
       | doc "Nix system double (e.g. x86_64-linux, aarch64-darwin)"
       | System,
@@ -165,8 +182,24 @@ let all_tags = std.array.flatten [tag_file_tags, service_tags, profile_tags] in
       }
     ),
 
+  NameMatchesKey =
+    std.contract.from_validator (fun machines =>
+      std.record.to_array machines
+      |> std.array.map (fun { field, value } =>
+        if value.name != field then
+          'Error { message = "%{field}: name \"%{value.name}\" does not match attr key" }
+        else
+          'Ok
+      )
+      |> std.array.filter (match { 'Error _ => true, _ => false })
+      |> match {
+        [] => 'Ok,
+        [err, ..] => err,
+      }
+    ),
+
   # Top-level inventory shape.
   Machines = {
-    machines | { _ : Machine } | NoConflictingProfiles,
+    machines | { _ : Machine } | NoConflictingProfiles | NameMatchesKey,
   },
 }
