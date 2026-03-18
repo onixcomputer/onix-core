@@ -19,6 +19,78 @@ let
 
   aspen1NodeId = getNodeId "aspen1";
   aspen2NodeId = getNodeId "aspen2";
+
+  hostname = config.networking.hostName;
+
+  # Map builder SSH hostnames to NixOS hostnames so machines can
+  # filter themselves out of the builder list (prevents infinite
+  # dispatch loops where a machine dispatches a build to itself).
+  builderHostToNixosHost = {
+    "britton-air.local" = "britton-air";
+    "iroh-aspen1" = "aspen1";
+    "iroh-aspen2" = "aspen2";
+    "britton-desktop" = "britton-desktop";
+  };
+
+  allBuildMachines = [
+    {
+      protocol = "ssh-ng";
+      hostName = "britton-air.local";
+      systems = [
+        "aarch64-darwin"
+        "aarch64-linux"
+      ];
+      maxJobs = 10;
+      speedFactor = 12;
+      sshUser = "brittonr";
+      sshKey = builderKeyPath;
+      supportedFeatures = [
+        "big-parallel"
+      ];
+    }
+    {
+      protocol = "ssh-ng";
+      hostName = "iroh-aspen1";
+      systems = [ "x86_64-linux" ];
+      maxJobs = 16;
+      speedFactor = 20;
+      sshUser = "root";
+      sshKey = builderKeyPath;
+      supportedFeatures = [
+        "nixos-test"
+        "big-parallel"
+        "kvm"
+      ];
+    }
+    {
+      protocol = "ssh-ng";
+      hostName = "iroh-aspen2";
+      systems = [ "x86_64-linux" ];
+      maxJobs = 16;
+      speedFactor = 20;
+      sshUser = "root";
+      sshKey = builderKeyPath;
+      supportedFeatures = [
+        "nixos-test"
+        "big-parallel"
+        "kvm"
+      ];
+    }
+    {
+      protocol = "ssh-ng";
+      hostName = "britton-desktop";
+      systems = [ "x86_64-linux" ];
+      maxJobs = 16;
+      speedFactor = 20;
+      sshUser = "root";
+      sshKey = builderKeyPath;
+      supportedFeatures = [
+        "nixos-test"
+        "big-parallel"
+        "kvm"
+      ];
+    }
+  ];
 in
 {
   # Dedicated SSH keypair for the nix daemon (root) to authenticate
@@ -42,67 +114,10 @@ in
       builders-use-substitutes = lib.mkDefault true;
     };
 
-    buildMachines = [
-      {
-        protocol = "ssh-ng";
-        hostName = "britton-air.local";
-        systems = [
-          "aarch64-darwin"
-          "aarch64-linux"
-        ];
-        maxJobs = 10;
-        speedFactor = 12;
-        sshUser = "brittonr";
-        sshKey = builderKeyPath;
-        supportedFeatures = [
-          "big-parallel"
-        ];
-      }
-      # High-performance x86_64 servers via iroh-ssh
-      {
-        protocol = "ssh-ng";
-        hostName = "iroh-aspen1";
-        systems = [ "x86_64-linux" ];
-        maxJobs = 16;
-        speedFactor = 20;
-        sshUser = "root";
-        sshKey = builderKeyPath;
-        supportedFeatures = [
-          "nixos-test"
-          "big-parallel"
-          "kvm"
-        ];
-      }
-      {
-        protocol = "ssh-ng";
-        hostName = "iroh-aspen2";
-        systems = [ "x86_64-linux" ];
-        maxJobs = 16;
-        speedFactor = 20;
-        sshUser = "root";
-        sshKey = builderKeyPath;
-        supportedFeatures = [
-          "nixos-test"
-          "big-parallel"
-          "kvm"
-        ];
-      }
-      # Desktop workstation (direct LAN/Tailscale, no iroh-ssh)
-      {
-        protocol = "ssh-ng";
-        hostName = "britton-desktop";
-        systems = [ "x86_64-linux" ];
-        maxJobs = 16;
-        speedFactor = 20;
-        sshUser = "root";
-        sshKey = builderKeyPath;
-        supportedFeatures = [
-          "nixos-test"
-          "big-parallel"
-          "kvm"
-        ];
-      }
-    ];
+    # Filter out self to prevent infinite dispatch loops
+    buildMachines = builtins.filter (
+      m: (builderHostToNixosHost.${m.hostName} or m.hostName) != hostname
+    ) allBuildMachines;
   };
 
   programs.ssh = {
