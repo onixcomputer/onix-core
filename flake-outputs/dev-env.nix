@@ -263,6 +263,24 @@ in
       ++ lib.optionals (self'.packages ? tracey) [ self'.packages.tracey ]
       ++ lib.optionals (self'.packages ? abp) [ self'.packages.abp ]
       ++ [
+        self.inputs.drift.packages.${pkgs.system}.default
+        (
+          let
+            rustPkgs = import self.inputs.nixpkgs {
+              inherit (pkgs) system;
+              overlays = [ (import self.inputs.rust-overlay) ];
+            };
+            nightlyToolchain = rustPkgs.rust-bin.nightly.latest.default.override {
+              extensions = [ "rust-src" ];
+            };
+          in
+          pkgs.callPackage ../pkgs/clankers {
+            rustc = nightlyToolchain;
+            cargo = nightlyToolchain;
+          }
+        )
+      ]
+      ++ [
         pkgs.nickel
         pkgs.nix-output-monitor
         (pkgs.writeShellScriptBin "eval-warnings" ''
@@ -329,6 +347,10 @@ in
         echo "  pexpect-cli    - Interactive terminal automation"
         echo "  screenshot-cli - Screenshots (grim/spectacle/macOS)"
         echo "  weather-cli    - Weather forecasts (DWD data)"
+        echo ""
+        echo "Project tools:"
+        echo "  drift            - Terminal music player (Tidal/YouTube/Bandcamp)"
+        echo "  clankers         - Terminal coding agent"
         echo ""
         echo "Workflow tools:"
         echo "  merge-when-green  - Auto-create PRs and merge when CI passes"

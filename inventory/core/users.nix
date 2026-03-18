@@ -61,7 +61,7 @@ _: {
       };
     };
 
-    # Desktop: base + dev + noctalia + creative + social
+    # Desktop: base + dev + noctalia + creative + social + media
     hm-desktop = {
       module.name = "home-manager-profiles";
       module.input = "self";
@@ -75,6 +75,7 @@ _: {
             "noctalia"
             "creative"
             "social"
+            "media"
           ];
           profilesBasePath = ../home-profiles;
         };

@@ -54,24 +54,7 @@
 
     runners = {
       wine = {
-        enable = true;
         package = pkgs.wineWowPackages.staging;
-      };
-
-      steam = {
-        enable = true;
-      };
-
-      dosbox = {
-        enable = true;
-      };
-
-      scummvm = {
-        enable = true;
-      };
-
-      retroarch = {
-        enable = true;
       };
     };
   };

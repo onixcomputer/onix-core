@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, inputs, ... }:
 {
   # MPD (Music Player Daemon) configuration - User service
   # Running as user service to properly access PipeWire audio
@@ -96,6 +96,9 @@
 
   # Install music player clients and tools
   environment.systemPackages = with pkgs; [
+    # Drift — terminal music player for Tidal/YouTube/Bandcamp
+    inputs.drift.packages.${pkgs.system}.default
+
     # TIDAL
     (pkgs.callPackage ../../pkgs/sone { })
 
