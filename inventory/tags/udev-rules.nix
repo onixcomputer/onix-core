@@ -1,56 +1,48 @@
-{ config, pkgs, ... }:
+# Udev rules — generates rules from structured data in udev-rules.ncl.
 {
-  # Dolphin Emulator udev rules (GameCube controller adapter, etc.)
-  services.udev.packages = [ pkgs.dolphin-emu ];
+  config,
+  pkgs,
+  wasm,
+  ...
+}:
+let
+  data = wasm.evalNickelFile ./udev-rules.ncl;
+
+  # Generate a single udev rule line from a device record.
+  mkRule =
+    dev:
+    if dev ? match_attr then
+      ''ATTRS{product}=="${dev.match_attr}", MODE="0666", GROUP="plugdev", TAG+="uaccess"''
+    else if dev ? subsystem && !(dev ? product) then
+      ''SUBSYSTEM=="${dev.subsystem}", ATTR{idVendor}=="${dev.vendor}", MODE="0666", GROUP="plugdev", TAG+="uaccess"''
+    else if dev ? product then
+      ''ATTRS{idVendor}=="${dev.vendor}", ATTRS{idProduct}=="${dev.product}", MODE="0666", GROUP="plugdev", TAG+="uaccess"''
+    else
+      # Vendor-only match (e.g. SEGGER J-Link)
+      ''ATTRS{idVendor}=="${dev.vendor}", MODE="0666", GROUP="plugdev", TAG+="uaccess"'';
+
+  rulesText = builtins.concatStringsSep "\n" (
+    builtins.map (dev: "# ${dev.name}\n${mkRule dev}") data.devices
+  );
+in
+{
+  # Udev packages from nixpkgs (e.g. dolphin-emu controller rules)
+  services.udev.packages = builtins.map (name: pkgs.${name}) data.udev_packages;
 
   # GameCube adapter overclock kernel module
-  boot.extraModulePackages = [
-    config.boot.kernelPackages.gcadapter-oc-kmod
-  ];
+  boot.extraModulePackages = builtins.map (
+    name: config.boot.kernelPackages.${name}
+  ) data.kernel_module_packages;
 
-  # Autoload at boot
-  boot.kernelModules = [
-    "gcadapter_oc"
-  ];
+  boot.kernelModules = data.kernel_modules;
 
-  # Add udev rules for embedded hardware and debug probes
-  services.udev.extraRules = ''
-    # STLink V1
-    ATTRS{idVendor}=="0483", ATTRS{idProduct}=="3744", MODE="0666", GROUP="plugdev", TAG+="uaccess"
+  services.udev.extraRules = rulesText;
 
-    # STLink V2
-    ATTRS{idVendor}=="0483", ATTRS{idProduct}=="3748", MODE="0666", GROUP="plugdev", TAG+="uaccess"
-
-    # STLink V2-1
-    ATTRS{idVendor}=="0483", ATTRS{idProduct}=="374b", MODE="0666", GROUP="plugdev", TAG+="uaccess"
-    ATTRS{idVendor}=="0483", ATTRS{idProduct}=="3752", MODE="0666", GROUP="plugdev", TAG+="uaccess"
-
-    # STLink V3
-    ATTRS{idVendor}=="0483", ATTRS{idProduct}=="374d", MODE="0666", GROUP="plugdev", TAG+="uaccess"
-    ATTRS{idVendor}=="0483", ATTRS{idProduct}=="374e", MODE="0666", GROUP="plugdev", TAG+="uaccess"
-    ATTRS{idVendor}=="0483", ATTRS{idProduct}=="374f", MODE="0666", GROUP="plugdev", TAG+="uaccess"
-    ATTRS{idVendor}=="0483", ATTRS{idProduct}=="3753", MODE="0666", GROUP="plugdev", TAG+="uaccess"
-    ATTRS{idVendor}=="0483", ATTRS{idProduct}=="3754", MODE="0666", GROUP="plugdev", TAG+="uaccess"
-
-    # SEGGER J-Link
-    ATTRS{idVendor}=="1366", MODE="0666", GROUP="plugdev", TAG+="uaccess"
-
-    # CMSIS-DAP compatible adapters
-    ATTRS{product}=="*CMSIS-DAP*", MODE="0666", GROUP="plugdev", TAG+="uaccess"
-
-    # Daisy Seed DFU mode
-    ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", MODE="0666", GROUP="plugdev", TAG+="uaccess"
-
-    # Qualcomm EDL/Firehose mode (for OnePlus, Xiaomi, etc.)
-    ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="9008", MODE="0666", GROUP="plugdev", TAG+="uaccess"
-    ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="900e", MODE="0666", GROUP="plugdev", TAG+="uaccess"
-    ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="9091", MODE="0666", GROUP="plugdev", TAG+="uaccess"
-
-    # Rockchip USB (maskrom/loader mode)
-    SUBSYSTEM=="usb", ATTR{idVendor}=="2207", MODE="0666", GROUP="plugdev", TAG+="uaccess"
-  '';
-
-  # Ensure groups exist and add users to dialout for serial access
-  users.groups.plugdev = { };
-  users.groups.dialout = { };
+  # Ensure groups exist
+  users.groups = builtins.listToAttrs (
+    builtins.map (g: {
+      name = g;
+      value = { };
+    }) data.groups
+  );
 }

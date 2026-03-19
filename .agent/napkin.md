@@ -131,6 +131,13 @@
 - **drift config.toml**: Managed declaratively via `xdg.configFile` in `inventory/home-profiles/brittonr/media/drift-config.nix`. References `mpdConfig` and `mediaPaths` options from base profile.
 - **clankers clan service module**: Two roles: `daemon` (persistent agent sessions over iroh QUIC) and `router` (multi-provider LLM proxy). Daemon deployed to all `dev`-tagged machines, router to britton-desktop only.
 
+## Domain Notes (Nickel WASM evalNickelFileWith)
+- **Re-entrancy bug**: `evalNickelFileWith` calls `nix_to_nickel_source()` which recursively walks the args attrset via host ABI (`copy_attrset`, `get_attr`). If any arg is a lazy Nix thunk that triggers another WASM eval (e.g. `config.theme.data` wraps `wasm.evalNickelFile`), re-entrant WASM execution → crash (`Bindings::operator[]` assertion). Fixed in `lib/wasm.nix` with `forceDeep` — a recursive `mapAttrs`/`map` that rebuilds the value tree in normal Nix eval before entering WASM.
+- **WASM stack limit**: even with forceDeep, large data (~500 fields, 4-5 nesting levels) overflows the WASM stack when `nix_to_nickel_source` serializes it to Nickel source text and Nickel parses it back. For large args (full theme data), flatten to simple strings in the Nix stub. For small args (sysctl params, builder targets, bat colors), forceDeep handles it transparently.
+- **Approaches that don't work**: `builtins.deepSeq` — NixOS `config.*` has cycles → `max-call-depth exceeded`. `builtins.fromJSON(builtins.toJSON args)` — `toJSON` can't serialize Nix store paths (e.g. `gtk.theme.package`).
+- **Flattening patterns**: extract `.hex` values in Nix (`c.bg.hex`), or bulk-flatten sub-records via `builtins.mapAttrs (_: v: v.hex) c.zen.dark`.
+- **Nickel gotchas**: `fun { bg, .. } =>` destructuring causes `InfiniteRecursion` when field names match nested keys. Use `fun args =>` with `let` bindings. Don't name bindings `c` if the output has a `c` field (e.g. starship C language module shadows it).
+
 ## Patterns That Work
 - `_class` conditionals for darwin/nixos shared modules — set platform-specific attrs with `lib.optionalAttrs (_class == "nixos")` / `(_class == "darwin")`. Darwin lacks `isNormalUser`, needs `users.knownUsers`, uses `gid = 80` for admin instead of `extraGroups = ["wheel"]`, and has different GC schedule syntax (interval vs dates).
 - SSH into target machines to get actual journal logs rather than guessing from deploy output

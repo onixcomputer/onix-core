@@ -3,13 +3,12 @@
   config,
   pkgs,
   self,
+  wasm,
   ...
 }:
 let
-  plugins = self.packages.${pkgs.stdenv.hostPlatform.system}.wasm-plugins;
-  wasm = import "${self}/lib/wasm.nix" { inherit plugins; };
-
   allMachines = (wasm.evalNickelFile ../core/machines.ncl).machines;
+  builderData = wasm.evalNickelFile ./builder-targets.ncl;
   builderKeyPath = config.clan.core.vars.generators.nix-builder-ssh.files."id_ed25519".path;
   iroh-ssh = pkgs.callPackage "${self}/pkgs/iroh-ssh" { };
   hostname = config.networking.hostName;
@@ -30,53 +29,38 @@ let
     in
     if builtins.pathExists path then lib.trim (builtins.readFile path) else null;
 
-  # Machines that can be used as remote builder targets.
-  # Separate from the remote-builders tag, which controls whether a
-  # machine *uses* remote builders.  A machine can be a target without
-  # using remote builders itself (e.g. britton-air is darwin).
-  builderTargets = [
-    "britton-air"
-    "aspen1"
-    "aspen2"
-  ];
+  # Builder targets from Nickel (validated against machine registry).
+  builderTargetNames = builtins.map (t: t.name) builderData.targets;
+  builderTargetsByName = builtins.listToAttrs (
+    builtins.map (t: {
+      inherit (t) name;
+      value = t;
+    }) builderData.targets
+  );
 
   builderMachines = lib.filterAttrs (
-    name: _: builtins.elem name builderTargets && name != hostname # exclude self
+    name: _: builtins.elem name builderTargetNames && name != hostname
   ) allMachines;
 
-  # Build the nix.buildMachines list from inventory data
+  # Build the nix.buildMachines list from Nickel target metadata + machine addresses.
   allBuildMachines = lib.mapAttrsToList (
     name: m:
     let
+      target = builderTargetsByName.${name};
       lan = m.addresses.lan or null;
-      # Prefer LAN if available, otherwise use iroh alias
       sshHostName = if lan != null then lan else "iroh-${name}";
-      systems =
-        if m.system == "aarch64-darwin" then
-          [
-            "aarch64-darwin"
-            "aarch64-linux"
-          ]
-        else
-          [ m.system ];
     in
     {
       protocol = "ssh-ng";
       hostName = sshHostName;
-      inherit systems;
-      maxJobs = 16;
-      speedFactor = if m.system == "aarch64-darwin" then 12 else 20;
-      sshUser = if (m.machineClass or "nixos") == "darwin" then "brittonr" else "root";
+      inherit (target)
+        systems
+        maxJobs
+        speedFactor
+        sshUser
+        supportedFeatures
+        ;
       sshKey = builderKeyPath;
-      supportedFeatures =
-        if m.system == "aarch64-darwin" then
-          [ "big-parallel" ]
-        else
-          [
-            "nixos-test"
-            "big-parallel"
-            "kvm"
-          ];
     }
   ) builderMachines;
 
@@ -97,7 +81,6 @@ let
       lan = m.addresses.lan or null;
       hasIroh = getNodeId name != null;
       hostKey = getHostKey name;
-      # The SSH hostname used to reach this machine
       sshAlias = if lan == null && hasIroh then "iroh-${name}" else null;
       hostNames =
         lib.optional (lan != null) lan
@@ -108,12 +91,9 @@ let
       inherit hostNames;
       publicKey = hostKey;
     }
-  ) (lib.filterAttrs (_: _: true) (lib.filterAttrs (name: _: getHostKey name != null) allMachines));
+  ) (lib.filterAttrs (name: _: getHostKey name != null) allMachines);
 in
 {
-  # Dedicated SSH keypair for the nix daemon (root) to authenticate
-  # to remote builders. Root can't access user SSH agents, so it
-  # needs its own key on disk.
   clan.core.vars.generators.nix-builder-ssh = {
     files."id_ed25519" = { };
     files."id_ed25519.pub".secret = false;
@@ -123,23 +103,15 @@ in
     '';
   };
 
-  # Enable distributed builds to offload compilation to faster machines
   nix = {
     distributedBuilds = lib.mkDefault true;
-
-    settings = {
-      # Allow build machines to fetch from caches directly
-      builders-use-substitutes = lib.mkDefault true;
-    };
-
+    settings.builders-use-substitutes = lib.mkDefault true;
     buildMachines = allBuildMachines;
   };
 
   programs.ssh = {
     knownHosts = knownHostEntries;
 
-    # System-wide ProxyCommand for iroh-ssh reachable machines.
-    # Root's nix-daemon needs this to reach builders behind NAT.
     extraConfig = lib.concatStrings (
       lib.mapAttrsToList (
         name: _m:

@@ -1,163 +1,27 @@
-{ lib, ... }:
+# Keymap options — thin stub over keymap.ncl.
+#
+# Data and contracts live in keymap.ncl.
+# This module exposes the data as readOnly HM options so other
+# modules can reference config.keymap.*.
 {
-  options.keymap = {
-    nav = lib.mkOption {
-      type = lib.types.attrs;
-      readOnly = true;
-      default = {
-        left = "h";
-        down = "j";
-        up = "k";
-        right = "l";
-      };
-      description = "Directional navigation keys (hjkl)";
-    };
-
-    word = lib.mkOption {
-      type = lib.types.attrs;
-      readOnly = true;
-      default = {
-        forward = "w";
-        backward = "b";
-        end = "e";
-      };
-      description = "Word-level motion keys";
-    };
-
-    page = lib.mkOption {
-      type = lib.types.attrs;
-      readOnly = true;
-      default = {
-        up = "u";
-        down = "d";
-      };
-      description = "Page-level motion keys";
-    };
-
-    line = lib.mkOption {
-      type = lib.types.attrs;
-      readOnly = true;
-      default = {
-        start = "0";
-        end = "4";
-      };
-      description = "Line start/end keys (0 = Home, 4 = $ position)";
-    };
-
-    leader = lib.mkOption {
-      type = lib.types.str;
-      readOnly = true;
-      default = "space";
-      description = "Leader key";
-    };
-
-    leaderActions = lib.mkOption {
-      type = lib.types.attrs;
-      readOnly = true;
-      default = {
-        filePicker = "space";
-        save = "w";
-        quit = "q";
-        search = "/";
-        bufferPicker = "b";
-        format = "f";
-        close = "d";
-      };
-      description = "Actions available under leader prefix";
-    };
-
-    goto = lib.mkOption {
-      type = lib.types.attrs;
-      readOnly = true;
-      default = {
-        prefix = "g";
-        top = "g";
-        bottom = "e";
-        nextTab = "t";
-        prevTab = "T";
-      };
-      description = "Goto prefix (g + key)";
-    };
-
-    tabs = lib.mkOption {
-      type = lib.types.attrs;
-      readOnly = true;
-      default = {
-        next = "K";
-        prev = "J";
-      };
-      description = "Tab/buffer navigation in normal context";
-    };
-
-    modifiers = lib.mkOption {
-      type = lib.types.attrs;
-      readOnly = true;
-      default = {
-        wm = "Mod";
-        secondary = "Alt";
-        terminal = "Ctrl+Shift";
-        insertNav = "Alt";
-        systemNav = "CapsLock";
-      };
-      description = "Modifier conventions per context";
-    };
-
-    hintChars = lib.mkOption {
-      type = lib.types.str;
-      readOnly = true;
-      default = "neiohtsrad";
-      description = "Characters used for link hint overlays (tridactyl, etc.)";
-    };
-
-    terminalActions = lib.mkOption {
-      type = lib.types.attrs;
-      readOnly = true;
-      default = {
-        copy = "c";
-        paste = "v";
-        newTab = "t";
-        closeTab = "q";
-        nextTab = "right";
-        prevTab = "left";
-        newWindow = "enter";
-        closeWindow = "w";
-        nextWindow = "]";
-        prevWindow = "[";
-        fontUp = "equal";
-        fontDown = "minus";
-        fontReset = "0";
-        scrollUp = "up";
-        scrollDown = "down";
-        scrollPageUp = "page_up";
-        scrollPageDown = "page_down";
-        scrollHome = "home";
-        scrollEnd = "end";
-        clearScrollback = "k";
-      };
-      description = "Terminal emulator action keys (used with terminal modifier)";
-    };
-
-    wm = lib.mkOption {
-      type = lib.types.attrs;
-      readOnly = true;
-      default = {
-        close = "Q";
-        terminal = "Return";
-        browser = "B";
-        fileManager = "F";
-        launcher = "Space";
-        clipboard = "V";
-        screenshot = "Shift+S";
-        toggleTabs = "W";
-        fullscreen = "Shift+I";
-        maxColumn = "M";
-        presetWidth = "P";
-        overview = "Tab";
-        sysmon = "S";
-        reload = "Shift+R";
-        themeToggle = "T";
-      };
-      description = "Window manager actions (Mod + key)";
-    };
+  inputs,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  wasm = import "${inputs.self}/lib/wasm.nix" {
+    plugins = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.wasm-plugins;
   };
+  data = wasm.evalNickelFile ./keymap.ncl;
+in
+{
+  options.keymap = lib.mapAttrs (
+    _name: value:
+    lib.mkOption {
+      type = if builtins.isString value then lib.types.str else lib.types.attrs;
+      readOnly = true;
+      default = value;
+    }
+  ) data;
 }
