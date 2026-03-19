@@ -4,10 +4,11 @@
   pkgs,
   self,
   wasm,
+  nclMachines,
   ...
 }:
 let
-  allMachines = (wasm.evalNickelFile ../core/machines.ncl).machines;
+  allMachines = nclMachines;
   builderData = wasm.evalNickelFile ./builder-targets.ncl;
   builderKeyPath = config.clan.core.vars.generators.nix-builder-ssh.files."id_ed25519".path;
   iroh-ssh = pkgs.callPackage "${self}/pkgs/iroh-ssh" { };

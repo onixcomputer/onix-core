@@ -1,5 +1,4 @@
 {
-  inputs,
   config,
   lib,
   pkgs,
@@ -11,25 +10,12 @@ let
     mkIf
     ;
 
-  # WASM-based Nickel evaluator
-  wasm = import "${inputs.self}/lib/wasm.nix" {
-    plugins = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.wasm-plugins;
-  };
+  # Theme NCL data from the shared lazy cache in theme-data.nix.
+  # Each theme is a separate thunk — only forced when accessed.
+  allThemeData = config.theme.allData;
+  activeThemeData = allThemeData.${config.theme.active};
 
-  # Path to NCL theme files
-  themesDir = ./themes;
-
-  # Available themes (NCL files without extension)
-  themeNames = [
-    "tokyo-night"
-    "onix-dark"
-    "onix-light"
-    "everblush"
-    "solarized-dark"
-  ];
-
-  # Evaluate the active theme's NCL file
-  activeThemeData = wasm.evalNickelFile (themesDir + "/${config.theme.active}.ncl");
+  themeNames = builtins.attrNames allThemeData;
 
   # Package-dependent fields per theme (can't live in NCL)
   themePackages = {
@@ -165,7 +151,7 @@ in
           allWallpapers = lib.foldl' (
             acc: themeName:
             let
-              themeData = wasm.evalNickelFile (themesDir + "/${themeName}.ncl");
+              themeData = allThemeData.${themeName};
               pkgs' = themePackages.${themeName} or { };
             in
             if themeData ? wallpapers && themeData.wallpapers ? collection then

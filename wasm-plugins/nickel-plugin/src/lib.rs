@@ -2,6 +2,137 @@ use nix_wasm_rust::Value;
 
 // nix_wasm_init_v1 is exported by the nix-wasm-rust crate (linked into this cdylib).
 
+// ---------------------------------------------------------------------------
+// Stdlib cache: parse/compile/transform the Nickel stdlib once per WASM
+// instance lifetime, then clone_for_eval on each call. Saves ~184KB of
+// LALRPOP parsing per invocation.
+// ---------------------------------------------------------------------------
+
+use std::cell::RefCell;
+use std::sync::Arc;
+
+use nickel_lang_core::cache::{CacheHub, InputFormat, SourceIO, SourcePath};
+use nickel_lang_core::error::NullReporter;
+use nickel_lang_core::eval::cache::CacheImpl;
+use nickel_lang_core::eval::{VirtualMachine, VmContext};
+use nickel_lang_core::position::PosTable;
+
+/// Pre-prepared stdlib state: CacheHub with stdlib in both AstCache and
+/// TermCache, plus the PosTable containing stdlib position indices.
+/// The PosTable must be cloned alongside the CacheHub so that position
+/// references in the cloned TermCache remain valid.
+struct PreparedStdlib {
+    cache: CacheHub,
+    pos_table: PosTable,
+}
+
+thread_local! {
+    static STDLIB_CACHE: RefCell<Option<PreparedStdlib>> = RefCell::new(None);
+}
+
+/// No-op SourceIO for string-based evaluations that don't need filesystem access.
+/// All methods return errors — string eval never resolves imports.
+struct NoopSourceIO;
+
+impl SourceIO for NoopSourceIO {
+    fn current_dir(&self) -> std::io::Result<std::path::PathBuf> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "no filesystem in string eval mode",
+        ))
+    }
+
+    fn read_to_string(&self, path: &std::path::Path) -> std::io::Result<String> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            format!(
+                "cannot import '{}' in string eval mode — use evalNickelFile for file imports",
+                path.display()
+            ),
+        ))
+    }
+
+    fn metadata_timestamp(
+        &self,
+        _path: &std::path::Path,
+    ) -> std::io::Result<std::time::SystemTime> {
+        Ok(std::time::SystemTime::UNIX_EPOCH)
+    }
+}
+
+/// Get a CacheHub with the stdlib already prepared. On first call, creates
+/// the cache and runs prepare_stdlib. On subsequent calls, returns
+/// clone_for_eval() with the given IO provider swapped in.
+fn get_prepared_cache(io: Arc<dyn SourceIO>) -> (CacheHub, PosTable) {
+    STDLIB_CACHE.with(|cell| {
+        let mut slot = cell.borrow_mut();
+        if slot.is_none() {
+            let mut cache = CacheHub::new();
+            let mut pos_table = PosTable::new();
+            cache
+                .prepare_stdlib(&mut pos_table)
+                .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("stdlib init failed: {e:?}")));
+            *slot = Some(PreparedStdlib { cache, pos_table });
+        }
+        let prepared = slot.as_ref().unwrap();
+        let mut cloned = prepared.cache.clone_for_eval();
+        cloned.sources.io = io;
+        (cloned, prepared.pos_table.clone())
+    })
+}
+
+/// Core evaluation: add source to a prepared CacheHub, prepare without
+/// typechecking, build VM with stdlib env from TermCache, evaluate, convert.
+fn eval_with_cache(source: &str, cache: CacheHub, pos_table: PosTable) -> Value {
+    use std::io::Cursor;
+    use std::path::PathBuf;
+
+    let mut cache = cache;
+    let mut pos_table = pos_table;
+
+    // Add user source to cache
+    let main_id = cache
+        .sources
+        .add_source(
+            SourcePath::Path(PathBuf::from("<wasm>"), InputFormat::Nickel),
+            Cursor::new(source.as_bytes()),
+        )
+        .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("nickel I/O error: {e}")));
+
+    // Prepare user source only — no typecheck, no prepare_stdlib.
+    // The cloned TermCache already has stdlib entries, so mk_eval_env
+    // can build the initial environment without re-parsing the stdlib.
+    cache
+        .prepare_eval_only(&mut pos_table, main_id)
+        .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("nickel prepare error: {e:?}")));
+
+    // Build VmContext (moves cache in as import_resolver)
+    let mut vm_ctxt: VmContext<CacheHub, CacheImpl> =
+        VmContext::new_with_pos_table(cache, pos_table, std::io::sink(), NullReporter {});
+
+    // Closurize the main term (needs eval cache from VmContext)
+    vm_ctxt
+        .import_resolver
+        .closurize(&mut vm_ctxt.cache, main_id)
+        .unwrap_or_else(|e| {
+            nix_wasm_rust::panic(&format!("nickel closurize error: {e:?}"));
+        });
+
+    // Get the prepared term
+    let prepared = vm_ctxt
+        .import_resolver
+        .terms
+        .get_owned(main_id)
+        .unwrap_or_else(|| nix_wasm_rust::panic("nickel: prepared term not found in cache"));
+
+    // Create VM — mk_eval_env reads stdlib from TermCache — and evaluate
+    let value = VirtualMachine::new(&mut vm_ctxt)
+        .eval_full_for_export_closure(prepared.into())
+        .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("nickel eval error: {e:?}")));
+
+    nickel_to_nix(&value)
+}
+
 /// Convert a fully-evaluated Nickel value directly to a Nix value.
 ///
 /// Walks the NickelValue tree via `content_ref()` dispatch and builds
@@ -168,19 +299,8 @@ pub extern "C" fn evalNickel(arg: Value) -> Value {
 }
 
 fn eval_nickel_source(source: &str) -> Value {
-    use nickel_lang_core::{error::NullReporter, eval::cache::CacheImpl, program::Program};
-    use std::io::Cursor;
-
-    let reader = Cursor::new(source.as_bytes());
-    let mut program: Program<CacheImpl> =
-        Program::new_from_source(reader, "<wasm>", std::io::sink(), NullReporter {})
-            .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("nickel I/O error: {e}")));
-
-    let value = program
-        .eval_full_for_export()
-        .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("nickel eval error: {e:?}")));
-
-    nickel_to_nix(&value)
+    let (cache, pos_table) = get_prepared_cache(Arc::new(NoopSourceIO));
+    eval_with_cache(source, cache, pos_table)
 }
 
 /// IO provider that routes filesystem operations through the nix-wasm host ABI.
@@ -218,34 +338,9 @@ impl nickel_lang_core::cache::SourceIO for WasmHostIO {
 /// Shared helper: evaluate Nickel source with WasmHostIO-backed import resolution
 /// and return the result as a Nix value via direct term walk.
 fn eval_nickel_file_source(source: &str, base_path: Value) -> Value {
-    use nickel_lang_core::{
-        cache::CacheHub,
-        error::NullReporter,
-        eval::cache::CacheImpl,
-        program::{Input, Program},
-    };
-    use std::io::Cursor;
-    use std::sync::Arc;
-
     let io = Arc::new(WasmHostIO { base_path });
-    let cache = CacheHub::with_io(io);
-
-    let reader = Cursor::new(source.as_bytes());
-    let input = Input::Source(
-        reader,
-        "<wasm>",
-        nickel_lang_core::cache::InputFormat::Nickel,
-    );
-
-    let mut program: Program<CacheImpl> =
-        Program::new_from_input_with_cache(input, cache, std::io::sink(), NullReporter {})
-            .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("nickel I/O error: {e}")));
-
-    let value = program
-        .eval_full_for_export()
-        .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("nickel eval error: {e:?}")));
-
-    nickel_to_nix(&value)
+    let (cache, pos_table) = get_prepared_cache(io);
+    eval_with_cache(source, cache, pos_table)
 }
 
 /// Evaluate a Nickel file from a Nix path, returning the result as a Nix value.
