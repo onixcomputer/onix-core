@@ -1,4 +1,4 @@
-{ inputs, self, ... }:
+{ self, ... }:
 let
   # Wasm plugins are arch-independent (wasm32-unknown-unknown) —
   # pick any host system to build them.
@@ -16,9 +16,30 @@ let
     ]
   ) allMachines;
 
-  users = import ./users.nix { inherit inputs; };
+  # Contract-validated user instances from Nickel.
+  # profilesBasePath is a Nix path (triggers store copy) — can't be expressed
+  # in Nickel. Inject it into every home-manager-profiles instance after eval.
+  usersRaw = wasm.evalNickelFile ./users.ncl;
+
+  instances = builtins.mapAttrs (
+    _: inst:
+    if (inst.module.name or "") == "home-manager-profiles" then
+      inst
+      // {
+        roles = builtins.mapAttrs (
+          _: role:
+          role
+          // {
+            settings = (role.settings or { }) // {
+              profilesBasePath = ../home-profiles;
+            };
+          }
+        ) inst.roles;
+      }
+    else
+      inst
+  ) usersRaw.instances;
 in
 {
-  inherit machines;
-  inherit (users) instances;
+  inherit machines instances;
 }

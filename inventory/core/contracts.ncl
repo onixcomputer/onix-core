@@ -57,6 +57,9 @@ let profile_tags = ["hm-laptop", "hm-server"] in
 
 let all_tags = std.array.flatten [tag_file_tags, service_tags, profile_tags] in
 
+# --- Home-manager profile registry ---
+let profile_names = ["base", "dev", "noctalia", "creative", "social", "media"] in
+
 # --- Exported tag lists (consumed by Nix flake checks) ---
 #
 # `tagFileTags` lets the Nix-side tag-sync check verify that every
@@ -70,7 +73,21 @@ let all_tags = std.array.flatten [tag_file_tags, service_tags, profile_tags] in
 {
   tagFileTags = tag_file_tags,
   allTags = all_tags,
+  profileNames = profile_names,
   autoTagsWithFiles = ["nixos"],
+
+  ProfileName =
+    std.contract.from_validator (match {
+      value if std.is_string value && std.array.elem value profile_names => 'Ok,
+      value if std.is_string value =>
+        'Error {
+          message = "unknown profile: \"%{value}\"",
+          notes = ["Valid profiles: %{std.serialize 'Json profile_names}"],
+        },
+      _ => 'Error { message = "profile name must be a string" },
+    }
+    ),
+
   Tag =
     std.contract.from_validator (match {
       value if std.is_string value && std.array.elem value all_tags => 'Ok,
