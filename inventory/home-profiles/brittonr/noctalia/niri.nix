@@ -16,6 +16,9 @@ let
   # Use niri from our fork
   niriPackage = inputs.niri.packages.${pkgs.stdenv.hostPlatform.system}.niri;
 
+  # Animated harmonograph wallpaper
+  wl-harmonograph = inputs.wl-harmonograph.packages.${pkgs.stdenv.hostPlatform.system}.default;
+
   # ── Niri config content ────────────────────────────────────────────────
   # Generated at build time, copied to ~/.config/niri/config.kdl by the
   # activation script so it's mutable at runtime. Noctalia's template
@@ -156,6 +159,7 @@ let
 
                               // Startup services - Noctalia replaces waybar, swayosd, swww, mako
                               spawn-at-startup "noctalia-shell"
+                              spawn-at-startup "${wl-harmonograph}/bin/wl-harmonograph"
                               spawn-at-startup "${pkgs.wl-clipboard}/bin/wl-paste" "--watch" "${pkgs.cliphist}/bin/cliphist" "store"
                               spawn-at-startup "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
                               spawn-at-startup "${pkgs.networkmanagerapplet}/bin/nm-applet"
@@ -296,6 +300,7 @@ in
     packages = [
       pkgs.xwayland-satellite
       wrappedNiri
+      wl-harmonograph
       # Portals for cross-desktop functionality (file pickers, screencasting, etc.)
       pkgs.xdg-desktop-portal-gtk
       pkgs.xdg-desktop-portal-gnome

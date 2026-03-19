@@ -987,6 +987,7 @@
         "systems": "systems_5",
         "treefmt-nix": "treefmt-nix_2",
         "upmpdcli": "upmpdcli",
+        "wl-harmonograph": "wl-harmonograph",
         "wrappers": "wrappers"
       }
     },
@@ -1260,6 +1261,26 @@
       "original": {
         "owner": "brittonr",
         "repo": "upmpdcli",
+        "type": "github"
+      }
+    },
+    "wl-harmonograph": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1773875843,
+        "narHash": "sha256-8C8vLBZrFcvf22D+kmR6nvsoS9AByFeCtcQkuvSDKJQ=",
+        "owner": "pinpox",
+        "repo": "wl-harmonograph",
+        "rev": "a86c07a479b6ce257e08e40a4e0a77840b9c252c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "pinpox",
+        "repo": "wl-harmonograph",
         "type": "github"
       }
     },
