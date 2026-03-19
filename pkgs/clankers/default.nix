@@ -14,6 +14,7 @@
   fetchFromGitHub,
   pkg-config,
   clang,
+  mold,
   openssl,
   sqlite,
   libgit2,
@@ -56,10 +57,27 @@ rustPlatform.buildRustPackage {
   # Nightly Rust (edition 2024)
   inherit rustc cargo;
 
-  # Place sibling repos where Cargo.toml path deps expect them
+  # Place sibling repos where Cargo.toml path deps expect them.
+  # openspec has no git remote — provide a stub crate so Cargo can
+  # resolve the path dep at manifest parse time, and strip it from
+  # clankers-agent's default features so nothing actually compiles it.
   postUnpack = ''
     cp -r ${subwayratSource} subwayrat
     chmod -R u+w subwayrat
+
+    mkdir -p openspec/src
+    cat > openspec/Cargo.toml <<'EOF'
+    [package]
+    name = "openspec"
+    version = "0.1.0"
+    edition = "2024"
+    [dependencies]
+    EOF
+    echo "" > openspec/src/lib.rs
+
+    # Disable openspec in clankers-agent default features
+    substituteInPlace source/crates/clankers-agent/Cargo.toml \
+      --replace-fail 'default = ["openspec"]' 'default = []'
   '';
 
   cargoLock = {
@@ -77,6 +95,7 @@ rustPlatform.buildRustPackage {
   nativeBuildInputs = [
     pkg-config
     clang
+    mold
     cmake
     go
     perl
