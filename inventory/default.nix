@@ -4,7 +4,7 @@ let
 
   # Import modules
   core = import ./core { inherit inputs self; };
-  services = import ./services { inherit inputs; };
+  services = import ./services { inherit inputs self; };
   tags = import ./tags { inherit inputs; };
 
   inventory = {

@@ -63,10 +63,13 @@ let all_tags = std.array.flatten [tag_file_tags, service_tags, profile_tags] in
 # registered tag has a .nix file and every tag .nix file is registered.
 # `autoTagsWithFiles` lists auto-computed tags (e.g. "nixos") that have
 # .nix files but aren't manually assigned to machines.
+# `allTags` is the full set of manually-assignable tags (consumed by
+# services/contracts.ncl for service-instance tag validation).
 
 # --- Contracts ---
 {
   tagFileTags = tag_file_tags,
+  allTags = all_tags,
   autoTagsWithFiles = ["nixos"],
   Tag =
     std.contract.from_validator (match {
