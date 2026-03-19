@@ -32,6 +32,7 @@ let tag_file_tags = [
   "remote-builders",
   "ssd-optimization",
   "taskwarrior",
+  "thunderbolt-link",
   "typst",
   "udev-rules",
   "xdg-portal",
