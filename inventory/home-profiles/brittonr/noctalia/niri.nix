@@ -336,18 +336,22 @@ in
       fi
     '';
 
-    # ── Make noctalia colors.json writable ─────────────────────────────
-    # The Noctalia HM module writes colors.json as a nix-store symlink.
-    # The template processor needs to overwrite it with generated
-    # colours.  The activation script converts the symlink to a real
-    # copy after linkGeneration.
-    activation.makeNoctaliaColorsMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-      target="''${XDG_CONFIG_HOME:-$HOME/.config}/noctalia/colors.json"
-      if [ -L "$target" ]; then
-        content=$(cat "$target")
-        rm "$target"
-        printf '%s\n' "$content" > "$target"
-      fi
+    # ── Make noctalia config files writable ────────────────────────────
+    # The Noctalia HM module writes colors.json and settings.json as
+    # nix-store symlinks.  Noctalia needs to write both at runtime:
+    # colors.json for live palette updates, settings.json for persisting
+    # UI changes (color scheme selection, dark mode toggle, etc.).
+    # Convert both symlinks to real writable files after linkGeneration.
+    activation.makeNoctaliaConfigMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+      noctalia_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/noctalia"
+      for f in colors.json settings.json; do
+        target="$noctalia_dir/$f"
+        if [ -L "$target" ]; then
+          content=$(cat "$target")
+          rm "$target"
+          printf '%s\n' "$content" > "$target"
+        fi
+      done
     '';
 
     # Configure rot8 for automatic screen rotation
@@ -433,30 +437,35 @@ in
   };
 
   # Enable portals for file pickers, screencasting, etc.
-  xdg.portal = {
-    enable = true;
-    extraPortals = [
-      pkgs.xdg-desktop-portal-gtk
-      pkgs.xdg-desktop-portal-gnome
-    ];
-    config = {
-      common = {
-        default = [ "gtk" ];
-        "org.freedesktop.impl.portal.Secret" = [ "gnome-keyring" ];
-      };
-      niri = {
-        default = [
-          "gnome"
-          "gtk"
-        ];
-        "org.freedesktop.impl.portal.Screenshot" = [ "gnome" ];
-        "org.freedesktop.impl.portal.ScreenCast" = [ "gnome" ];
+  # force=true on configFile lets HM replace the previous real file on each
+  # activation, before the activation script converts it back to a writable copy.
+  xdg = {
+    portal = {
+      enable = true;
+      extraPortals = [
+        pkgs.xdg-desktop-portal-gtk
+        pkgs.xdg-desktop-portal-gnome
+      ];
+      config = {
+        common = {
+          default = [ "gtk" ];
+          "org.freedesktop.impl.portal.Secret" = [ "gnome-keyring" ];
+        };
+        niri = {
+          default = [
+            "gnome"
+            "gtk"
+          ];
+          "org.freedesktop.impl.portal.Screenshot" = [ "gnome" ];
+          "org.freedesktop.impl.portal.ScreenCast" = [ "gnome" ];
+        };
       };
     };
+    configFile = {
+      "noctalia/colors.json".force = true;
+      "noctalia/settings.json".force = true;
+    };
   };
-
-  # force=true lets HM replace the previous real file on each activation
-  xdg.configFile."noctalia/colors.json".force = true;
 
   # Set GNOME preferences for portal UI settings
   dconf.settings = {

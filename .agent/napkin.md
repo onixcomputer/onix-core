@@ -64,7 +64,7 @@
 - Niri merges duplicate blocks (later values override earlier). So `include` at the end of config.kdl safely overrides just the colour properties in the layout block without clobbering gaps/widths/presets.
 - Niri watches config.kdl for changes and auto-reloads, but does NOT watch included files. Need `niri msg action load-config-file` or a systemd path watcher on noctalia.kdl.
 - `colors.json` MUST be writable for Noctalia's template processor (writes generated colours). Use `xdg.configFile.force = true` + activation script to convert symlink to real file.
-- `settings.json` can stay as read-only symlink — template system doesn't write to it. Noctalia UI settings changes won't persist, but that's acceptable (use Nix for settings, Noctalia for live colours).
+- `settings.json` MUST also be writable. Noctalia's Settings singleton persists all UI changes (color scheme selection, dark mode toggle, scheduling mode, etc.) to `settings.json` via a `FileView` with `watchChanges: true`. Read-only symlink causes silent write failures, and the `watchChanges` listener can reload the stale store file mid-flight, reverting in-memory state. Both files use the same activation pattern: `force = true` + symlink-to-file conversion.
 - Wrappers lib `types.file` supports `path = "$HOME/.config/niri/config.kdl"` — env vars expand at runtime in the wrapper's bash script.
 - Noctalia IPC: `noctalia-shell ipc call colorScheme set <name>`, `darkMode toggle/setDark/setLight`. Full list via `noctalia-shell ipc show`.
 
