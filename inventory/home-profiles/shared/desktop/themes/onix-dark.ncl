@@ -81,30 +81,4 @@ mk_theme {
     main = "1-matte-black.jpg",
     collection = {},
   },
-
-  # Extension block overrides (CLI sub-palettes baked in)
-  btop = {
-    main_fg = "#cfc9c2",
-    hi_fg = "#7dcfff",
-    selected_bg = "#414868",
-    inactive_fg = "#565f89",
-  },
-
-  bar_waybar = {
-    bg = "#16161e",
-    fg = "#c0caf5",
-    accent = "#7aa2f7",
-    tooltip_bg = "#24283b",
-    muted = "#313244",
-    warning = "#f9e2af",
-    critical = "#f38ba8",
-    critical_bg = "#1e1e2e",
-    charging = "#a6e3a1",
-  },
-
-  misc = {
-    docker_accent = "#83a598",
-    screencast_active = "#f38ba8",
-    screencast_inactive = "#7d0d2d",
-  },
 }

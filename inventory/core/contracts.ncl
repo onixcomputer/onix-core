@@ -60,6 +60,10 @@ let all_tags = std.array.flatten [tag_file_tags, service_tags, profile_tags] in
 # --- Home-manager profile registry ---
 let profile_names = ["base", "dev", "noctalia", "creative", "social", "media"] in
 
+# Auto-computed tags valid for role targeting (clan-core generates these;
+# not manually assigned to machines).
+let auto_role_tags = ["nixos", "darwin", "all"] in
+
 # --- Exported tag lists (consumed by Nix flake checks) ---
 #
 # `tagFileTags` lets the Nix-side tag-sync check verify that every
@@ -75,18 +79,8 @@ let profile_names = ["base", "dev", "noctalia", "creative", "social", "media"] i
   allTags = all_tags,
   profileNames = profile_names,
   autoTagsWithFiles = ["nixos"],
-
-  ProfileName =
-    std.contract.from_validator (match {
-      value if std.is_string value && std.array.elem value profile_names => 'Ok,
-      value if std.is_string value =>
-        'Error {
-          message = "unknown profile: \"%{value}\"",
-          notes = ["Valid profiles: %{std.serialize 'Json profile_names}"],
-        },
-      _ => 'Error { message = "profile name must be a string" },
-    }
-    ),
+  autoRoleTags = auto_role_tags,
+  allServiceTags = std.array.flatten [all_tags, auto_role_tags],
 
   Tag =
     std.contract.from_validator (match {
@@ -222,4 +216,48 @@ let profile_names = ["base", "dev", "noctalia", "creative", "social", "media"] i
   Machines = {
     machines | { _ : Machine } | NoConflictingProfiles | NameMatchesKey,
   },
+
+  # Build a from_validator for instance→role ref checking.
+  # Callers provide valid tag/machine lists and optional per-role checks.
+  mkRefValidator = fun { valid_tags, valid_machines, error_notes, extra_role_errors } =>
+    std.contract.from_validator (fun data =>
+      let instances = data.instances in
+      let errors =
+        std.record.to_array instances
+        |> std.array.flat_map (fun { field = inst_name, value = inst } =>
+          std.record.to_array inst.roles
+          |> std.array.flat_map (fun { field = role_name, value = role_val } =>
+            let tag_errors =
+              if std.record.has_field "tags" role_val && std.is_record role_val.tags then
+                std.record.fields role_val.tags
+                |> std.array.filter (fun t => !std.array.elem t valid_tags)
+                |> std.array.map (fun t =>
+                  "%{inst_name}.roles.%{role_name}: unknown tag \"%{t}\""
+                )
+              else
+                []
+            in
+            let machine_errors =
+              if std.record.has_field "machines" role_val && std.is_record role_val.machines then
+                std.record.fields role_val.machines
+                |> std.array.filter (fun m => !std.array.elem m valid_machines)
+                |> std.array.map (fun m =>
+                  "%{inst_name}.roles.%{role_name}: unknown machine \"%{m}\""
+                )
+              else
+                []
+            in
+            let extra = extra_role_errors inst_name role_name role_val in
+            std.array.flatten [tag_errors, machine_errors, extra]
+          )
+        )
+      in
+      if std.array.length errors > 0 then
+        'Error {
+          message = std.string.join ", " errors,
+          notes = error_notes,
+        }
+      else
+        'Ok
+    ),
 }

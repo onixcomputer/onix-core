@@ -35,7 +35,22 @@ let hex_byte_to_dec_ = fun hi lo =>
   hex_chars."%{hi}" * 16 + hex_chars."%{lo}"
 in
 
-let mk_color_ = fun hex =>
+let HexColor_ =
+  std.contract.from_validator (match {
+    value if std.is_string value
+      && std.string.is_match "^#[0-9a-fA-F]{6}$" value => 'Ok,
+    value if std.is_string value =>
+      'Error {
+        message = "invalid hex color: \"%{value}\"",
+        notes = ["Expected format: #rrggbb (e.g. #ff6600)"],
+      },
+    _ => 'Error { message = "hex color must be a string" },
+  }
+  )
+in
+
+let mk_color_ = fun raw =>
+  let hex | HexColor_ = raw in
   let lo = std.string.lowercase hex in
   let r = hex_byte_to_dec_ (std.string.substring 1 2 lo) (std.string.substring 2 3 lo) in
   let g = hex_byte_to_dec_ (std.string.substring 3 4 lo) (std.string.substring 4 5 lo) in
@@ -53,18 +68,7 @@ in
 
 # --- Exported contracts and utilities ---
 {
-  HexColor =
-    std.contract.from_validator (match {
-      value if std.is_string value
-        && std.string.is_match "^#[0-9a-fA-F]{6}$" value => 'Ok,
-      value if std.is_string value =>
-        'Error {
-          message = "invalid hex color: \"%{value}\"",
-          notes = ["Expected format: #rrggbb (e.g. #ff6600)"],
-        },
-      _ => 'Error { message = "hex color must be a string" },
-    }
-    ),
+  HexColor = HexColor_,
 
   mk_color = mk_color_,
 

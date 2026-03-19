@@ -2,7 +2,7 @@
 #
 # Args (from Nix via evalNickelFileWith):
 #   ramGB : Number — physical RAM in GiB
-let lib = import "sysctl-lib.ncl" in
+let kb_from_mb = fun mb => mb * 1024 in
 
 fun { ramGB, .. } =>
   {
@@ -28,9 +28,9 @@ fun { ramGB, .. } =>
     # Scale min_free_kbytes with RAM to prevent allocation stalls under pressure.
     "vm.min_free_kbytes" =
       if ramGB >= 128 then
-        lib.kb_from_mb 256
+        kb_from_mb 256
       else if ramGB >= 64 then
-        lib.kb_from_mb 128
+        kb_from_mb 128
       else
-        lib.kb_from_mb 64,
+        kb_from_mb 64,
   }
