@@ -1,6 +1,6 @@
 { config, ... }:
 let
-  c = config.colors;
+  c = config.theme.data;
 in
 {
   programs.starship = {
@@ -17,20 +17,20 @@ in
     enableFishIntegration = true;
     enableZshIntegration = true;
     settings = {
-      format = "[](color_orange)$username[](bg:color_cyan fg:color_orange)$directory[](fg:color_cyan bg:color_gray)$git_branch$git_status[](fg:color_gray bg:color_green)$c$rust$golang$nodejs$php$python[](fg:color_green bg:color_bg3)$docker_context[](fg:color_bg3 bg:color_bg1)$time[ ](fg:color_bg1)\n$line_break$character";
+      format = "[](color_orange)$username[](bg:color_cyan fg:color_orange)$directory[](fg:color_cyan bg:color_gray)$git_branch$git_status[](fg:color_gray bg:color_green)$c$rust$golang$nodejs$php$python[](fg:color_green bg:color_bg3)$docker_context[](fg:color_bg3 bg:color_bg1)$time[ ](fg:color_bg1)\n$line_break$character";
 
       palette = "onix-dark";
 
       palettes.onix-dark = {
-        color_orange = c.grayscale.white;
-        color_cyan = c.grayscale.light;
-        color_gray = c.grayscale.medium;
-        color_green = c.grayscale.dim;
-        color_yellow = c.editor.type_dark;
-        color_red = c.grayscale.muted;
-        color_bg1 = c.bg;
-        color_bg3 = c.bg_highlight;
-        color_fg0 = c.fg;
+        color_orange = c.grayscale.white.hex;
+        color_cyan = c.grayscale.light.hex;
+        color_gray = c.grayscale.medium.hex;
+        color_green = c.grayscale.dim.hex;
+        color_yellow = c.editor.type_dark.hex;
+        color_red = c.grayscale.muted.hex;
+        color_bg1 = c.bg.hex;
+        color_bg3 = c.bg_highlight.hex;
+        color_fg0 = c.fg.hex;
       };
 
       right_format = "$cmd_duration";
@@ -98,7 +98,7 @@ in
 
       docker_context = {
         symbol = "";
-        style = "bg:color_bg3 fg:${c.docker_accent}";
+        style = "bg:color_bg3 fg:${c.misc.docker_accent.hex}";
         format = "[ $symbol $context ]($style)";
       };
 
@@ -110,13 +110,13 @@ in
       };
 
       character = {
-        success_symbol = "[➜](bold fg:${c.grayscale.medium})";
-        error_symbol = "[✗](bold fg:${c.grayscale.dim})";
+        success_symbol = "[➜](bold fg:${c.grayscale.medium.hex})";
+        error_symbol = "[✗](bold fg:${c.grayscale.dim.hex})";
       };
 
       cmd_duration = {
         min_time = config.shellConfig.starship.cmdDurationMinTime;
-        format = " [$duration](fg:${c.grayscale.dim})";
+        format = " [$duration](fg:${c.grayscale.dim.hex})";
         show_milliseconds = true;
       };
     };

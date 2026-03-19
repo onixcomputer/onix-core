@@ -1,6 +1,6 @@
 { config, ... }:
 let
-  theme = config.theme.colors;
+  theme = config.theme.data;
 in
 {
   services.swayosd = {
@@ -13,18 +13,18 @@ in
     window {
       border-radius: ${toString theme.hypr.rounding}px;
       opacity: 0.97;
-      border: 2px solid ${theme.accent};
-      background-color: ${theme.bg}e6; /* 90% opacity */
+      border: 2px solid ${theme.accent.hex};
+      background-color: ${theme.bg.hex}e6; /* 90% opacity */
     }
 
     label {
       font-family: 'CaskaydiaMono Nerd Font', monospace;
       font-size: 11pt;
-      color: ${theme.fg};
+      color: ${theme.fg.hex};
     }
 
     image {
-      color: ${theme.accent};
+      color: ${theme.accent.hex};
     }
 
     progressbar {
@@ -32,7 +32,7 @@ in
     }
 
     progress {
-      background-color: ${theme.accent};
+      background-color: ${theme.accent.hex};
     }
   '';
 }

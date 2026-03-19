@@ -1,6 +1,6 @@
 { config, ... }:
 let
-  c = config.colors;
+  c = config.theme.data;
 in
 {
   programs.git = {
@@ -43,21 +43,21 @@ in
       light = false;
       side-by-side = true;
       line-numbers = true;
-      # Onix Dark colors
+      # Theme colors
       syntax-theme = "base16";
-      plus-style = "syntax \"${c.green}\"";
-      minus-style = "syntax \"${c.red}\"";
-      plus-emph-style = "syntax \"${c.green}\"";
-      minus-emph-style = "syntax \"${c.red}\"";
-      line-numbers-plus-style = c.green;
-      line-numbers-minus-style = c.red;
-      line-numbers-left-style = c.comment;
-      line-numbers-right-style = c.comment;
-      line-numbers-zero-style = c.comment;
-      file-style = "${c.orange} bold";
-      file-decoration-style = "${c.orange} ul";
-      hunk-header-style = "${c.blue} bold";
-      hunk-header-decoration-style = "${c.blue} box";
+      plus-style = "syntax \"${c.green.hex}\"";
+      minus-style = "syntax \"${c.red.hex}\"";
+      plus-emph-style = "syntax \"${c.green.hex}\"";
+      minus-emph-style = "syntax \"${c.red.hex}\"";
+      line-numbers-plus-style = c.green.hex;
+      line-numbers-minus-style = c.red.hex;
+      line-numbers-left-style = c.comment.hex;
+      line-numbers-right-style = c.comment.hex;
+      line-numbers-zero-style = c.comment.hex;
+      file-style = "${c.orange.hex} bold";
+      file-decoration-style = "${c.orange.hex} ul";
+      hunk-header-style = "${c.blue.hex} bold";
+      hunk-header-decoration-style = "${c.blue.hex} box";
     };
   };
 }

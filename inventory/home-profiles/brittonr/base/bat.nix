@@ -1,6 +1,6 @@
 { pkgs, config, ... }:
 let
-  c = config.colors;
+  c = config.theme.data;
   mkBatTmTheme = import ../../shared/lib/mk-bat-theme.nix;
 in
 {
@@ -16,19 +16,17 @@ in
         src = pkgs.writeText "onix-dark.tmTheme" (mkBatTmTheme {
           name = "Onix Dark";
           colors = {
-            inherit (c)
-              bg
-              fg
-              orange
-              blue
-              cyan
-              green
-              yellow
-              red
-              comment
-              bg_highlight
-              border
-              ;
+            bg = c.bg.hex;
+            fg = c.fg.hex;
+            orange = c.orange.hex;
+            blue = c.blue.hex;
+            cyan = c.cyan.hex;
+            green = c.green.hex;
+            yellow = c.yellow.hex;
+            red = c.red.hex;
+            comment = c.comment.hex;
+            bg_highlight = c.bg_highlight.hex;
+            border = c.border.hex;
           };
         });
         file = "onix-dark.tmTheme";

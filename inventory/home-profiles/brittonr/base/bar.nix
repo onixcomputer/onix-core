@@ -22,11 +22,11 @@
         module = 40;
       };
       calendar = {
-        months = config.colors.orange;
-        days = config.colors.accent2;
-        weeks = config.colors.green;
-        weekdays = config.colors.yellow;
-        today = config.colors.red;
+        months = config.theme.data.orange.hex;
+        days = config.theme.data.accent2.hex;
+        weeks = config.theme.data.green.hex;
+        weekdays = config.theme.data.yellow.hex;
+        today = config.theme.data.red.hex;
       };
       waybar = {
         workspaceHoverOpacity = "0.15";
@@ -40,17 +40,15 @@
         workspaceMinWidth = "24px";
         blinkDuration = "0.5s";
         colors = {
-          inherit (config.colors.waybar)
-            bg
-            fg
-            accent
-            tooltip_bg
-            muted
-            warning
-            critical
-            critical_bg
-            charging
-            ;
+          bg = config.theme.data.bar_waybar.bg.hex;
+          fg = config.theme.data.bar_waybar.fg.hex;
+          accent = config.theme.data.bar_waybar.accent.hex;
+          tooltip_bg = config.theme.data.bar_waybar.tooltip_bg.hex;
+          muted = config.theme.data.bar_waybar.muted.hex;
+          warning = config.theme.data.bar_waybar.warning.hex;
+          critical = config.theme.data.bar_waybar.critical.hex;
+          critical_bg = config.theme.data.bar_waybar.critical_bg.hex;
+          charging = config.theme.data.bar_waybar.charging.hex;
         };
       };
     };

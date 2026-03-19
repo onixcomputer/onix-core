@@ -21,12 +21,14 @@ _config: {
   };
 
   # -- Hooks --
-  # Backup mechanism: if the systemd path watcher misses a change,
-  # these hooks ensure niri reloads on dark-mode or wallpaper events.
+  # noctalia-theme-sync propagates colors to all themed apps (fish,
+  # starship, helix, btop, bat, delta, eza, swayosd). The built-in
+  # niri and kitty templates handle those two. The niri reload
+  # is chained after the sync script.
   hooks = {
     enabled = true;
-    darkModeChange = "niri msg action load-config-file";
-    wallpaperChange = "niri msg action load-config-file";
+    darkModeChange = "noctalia-theme-sync; niri msg action load-config-file";
+    wallpaperChange = "noctalia-theme-sync; niri msg action load-config-file";
     screenLock = "";
     screenUnlock = "";
     performanceModeEnabled = "";

@@ -1,6 +1,6 @@
 { config, lib, ... }:
 let
-  theme = config.theme.colors;
+  theme = config.theme.data;
   # Remove # from hex colors for btop
   c = color: lib.removePrefix "#" color;
 in
@@ -22,82 +22,82 @@ in
     # Dynamically generated from theme system
 
     # Main bg
-    theme[main_bg]="#${c theme.bg}"
+    theme[main_bg]="#${c theme.bg.hex}"
 
     # Main text color
-    theme[main_fg]="#${c theme.fg}"
+    theme[main_fg]="#${c theme.fg.hex}"
 
     # Title color for boxes
-    theme[title]="#${c theme.fg}"
+    theme[title]="#${c theme.fg.hex}"
 
     # Highlight color for keyboard shortcuts
-    theme[hi_fg]="#${c theme.accent}"
+    theme[hi_fg]="#${c theme.accent.hex}"
 
     # Background color of selected item in processes box
-    theme[selected_bg]="#${c theme.bg_highlight}"
+    theme[selected_bg]="#${c theme.bg_highlight.hex}"
 
     # Foreground color of selected item in processes box
-    theme[selected_fg]="#${c theme.fg}"
+    theme[selected_fg]="#${c theme.fg.hex}"
 
     # Color of inactive/disabled text
-    theme[inactive_fg]="#${c theme.fg_dim}"
+    theme[inactive_fg]="#${c theme.fg_dim.hex}"
 
     # Misc colors for processes box including mini cpu graphs, details memory graph and details status text
-    theme[proc_misc]="#${c theme.cyan}"
+    theme[proc_misc]="#${c theme.cyan.hex}"
 
     # Cpu box outline color
-    theme[cpu_box]="#${c theme.border}"
+    theme[cpu_box]="#${c theme.border.hex}"
 
     # Memory/disks box outline color
-    theme[mem_box]="#${c theme.border}"
+    theme[mem_box]="#${c theme.border.hex}"
 
     # Net up/down box outline color
-    theme[net_box]="#${c theme.border}"
+    theme[net_box]="#${c theme.border.hex}"
 
     # Processes box outline color
-    theme[proc_box]="#${c theme.border}"
+    theme[proc_box]="#${c theme.border.hex}"
 
     # Box divider line and small boxes line color
-    theme[div_line]="#${c theme.border}"
+    theme[div_line]="#${c theme.border.hex}"
 
     # Temperature graph colors
-    theme[temp_start]="#${c theme.green}"
-    theme[temp_mid]="#${c theme.yellow}"
-    theme[temp_end]="#${c theme.red}"
+    theme[temp_start]="#${c theme.green.hex}"
+    theme[temp_mid]="#${c theme.yellow.hex}"
+    theme[temp_end]="#${c theme.red.hex}"
 
     # CPU graph colors
-    theme[cpu_start]="#${c theme.green}"
-    theme[cpu_mid]="#${c theme.yellow}"
-    theme[cpu_end]="#${c theme.red}"
+    theme[cpu_start]="#${c theme.green.hex}"
+    theme[cpu_mid]="#${c theme.yellow.hex}"
+    theme[cpu_end]="#${c theme.red.hex}"
 
     # Mem/Disk free meter
-    theme[free_start]="#${c theme.green}"
-    theme[free_mid]="#${c theme.yellow}"
-    theme[free_end]="#${c theme.red}"
+    theme[free_start]="#${c theme.green.hex}"
+    theme[free_mid]="#${c theme.yellow.hex}"
+    theme[free_end]="#${c theme.red.hex}"
 
     # Mem/Disk cached meter
-    theme[cached_start]="#${c theme.green}"
-    theme[cached_mid]="#${c theme.yellow}"
-    theme[cached_end]="#${c theme.red}"
+    theme[cached_start]="#${c theme.green.hex}"
+    theme[cached_mid]="#${c theme.yellow.hex}"
+    theme[cached_end]="#${c theme.red.hex}"
 
     # Mem/Disk available meter
-    theme[available_start]="#${c theme.green}"
-    theme[available_mid]="#${c theme.yellow}"
-    theme[available_end]="#${c theme.red}"
+    theme[available_start]="#${c theme.green.hex}"
+    theme[available_mid]="#${c theme.yellow.hex}"
+    theme[available_end]="#${c theme.red.hex}"
 
     # Mem/Disk used meter
-    theme[used_start]="#${c theme.green}"
-    theme[used_mid]="#${c theme.yellow}"
-    theme[used_end]="#${c theme.red}"
+    theme[used_start]="#${c theme.green.hex}"
+    theme[used_mid]="#${c theme.yellow.hex}"
+    theme[used_end]="#${c theme.red.hex}"
 
     # Download graph colors
-    theme[download_start]="#${c theme.green}"
-    theme[download_mid]="#${c theme.yellow}"
-    theme[download_end]="#${c theme.red}"
+    theme[download_start]="#${c theme.green.hex}"
+    theme[download_mid]="#${c theme.yellow.hex}"
+    theme[download_end]="#${c theme.red.hex}"
 
     # Upload graph colors
-    theme[upload_start]="#${c theme.green}"
-    theme[upload_mid]="#${c theme.yellow}"
-    theme[upload_end]="#${c theme.red}"
+    theme[upload_start]="#${c theme.green.hex}"
+    theme[upload_mid]="#${c theme.yellow.hex}"
+    theme[upload_end]="#${c theme.red.hex}"
   '';
 }

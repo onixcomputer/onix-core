@@ -1,6 +1,6 @@
 { config, ... }:
 let
-  c = config.colors;
+  c = config.theme.data;
 in
 {
   programs.eza = {
@@ -25,28 +25,28 @@ in
       "--header"
     ];
 
-    # Onix Dark theme colors
+    # Theme colors
     theme = {
       # File type colors
-      "fi" = c.hexToAnsi c.fg;
-      "di" = c.hexToAnsi c.blue;
-      "ex" = c.hexToAnsi c.green;
-      "ln" = c.hexToAnsi c.cyan;
-      "so" = c.hexToAnsi c.magenta;
-      "pi" = c.hexToAnsi c.yellow;
+      "fi" = c.fg.ansi;
+      "di" = c.blue.ansi;
+      "ex" = c.green.ansi;
+      "ln" = c.cyan.ansi;
+      "so" = c.magenta.ansi;
+      "pi" = c.yellow.ansi;
 
       # Permission bits
-      "ur" = c.hexToAnsi c.red;
-      "uw" = c.hexToAnsi c.green;
-      "ux" = c.hexToAnsi c.yellow;
-      "ue" = c.hexToAnsi c.yellow;
+      "ur" = c.red.ansi;
+      "uw" = c.green.ansi;
+      "ux" = c.yellow.ansi;
+      "ue" = c.yellow.ansi;
 
       # Git status
-      "gm" = c.hexToAnsi c.yellow;
-      "ga" = c.hexToAnsi c.green;
-      "gd" = c.hexToAnsi c.red;
-      "gv" = c.hexToAnsi c.cyan;
-      "gt" = c.hexToAnsi c.blue;
+      "gm" = c.yellow.ansi;
+      "ga" = c.green.ansi;
+      "gd" = c.red.ansi;
+      "gv" = c.cyan.ansi;
+      "gt" = c.blue.ansi;
     };
   };
 

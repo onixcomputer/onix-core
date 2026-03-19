@@ -44,6 +44,12 @@ in
             description = "Heartbeat interval in seconds (0 to disable)";
           };
 
+          apiBase = mkOption {
+            type = nullOr str;
+            default = null;
+            description = "API base URL (e.g. http://127.0.0.1:4000 for local router)";
+          };
+
           extraArgs = mkOption {
             type = listOf str;
             default = [ ];
@@ -74,6 +80,7 @@ in
                 allowAll
                 heartbeat
                 extraArgs
+                apiBase
                 ;
               args = [
                 "--heartbeat"
@@ -87,8 +94,9 @@ in
                 description = "Clankers agent daemon";
                 after = [
                   "network-online.target"
-                ];
-                wants = [ "network-online.target" ];
+                ]
+                ++ lib.optionals (apiBase != null) [ "clanker-router.service" ];
+                wants = [ "network-online.target" ] ++ lib.optionals (apiBase != null) [ "clanker-router.service" ];
                 wantedBy = [ "multi-user.target" ];
 
                 serviceConfig = {
@@ -108,10 +116,13 @@ in
                   StateDirectory = "clankers";
                 };
 
-                environment = {
-                  HOME = "/home/${user}";
-                  RUST_LOG = "info";
-                };
+                environment = mkMerge [
+                  {
+                    HOME = "/home/${user}";
+                    RUST_LOG = "info";
+                  }
+                  (mkIf (apiBase != null) { ANTHROPIC_BASE_URL = apiBase; })
+                ];
               };
             };
         };

@@ -1,6 +1,6 @@
 { lib, config, ... }:
 let
-  c = config.colors;
+  c = config.theme.data;
   d = c.zen.dark;
   l = c.zen.light;
 in
@@ -10,355 +10,235 @@ in
     readOnly = true;
     default = {
       dark = {
-        "ui.background" = {
-          inherit (d) bg;
-        };
-        "ui.text" = {
-          inherit (d) fg;
-        };
+        "ui.background".bg = d.bg.hex;
+        "ui.text".fg = d.fg.hex;
 
         "ui.statusline" = {
-          bg = d.bg_elevated;
-          fg = d.fg_muted;
+          bg = d.bg_elevated.hex;
+          fg = d.fg_muted.hex;
         };
         "ui.statusline.insert" = {
-          bg = d.statusline_insert_bg;
-          inherit (d) fg;
+          bg = d.statusline_insert_bg.hex;
+          fg = d.fg.hex;
         };
         "ui.statusline.select" = {
-          bg = d.statusline_select_bg;
-          inherit (d) fg;
+          bg = d.statusline_select_bg.hex;
+          fg = d.fg.hex;
         };
         "ui.statusline.inactive" = {
-          inherit (d) bg;
-          fg = d.fg_inactive;
+          bg = d.bg.hex;
+          fg = d.fg_inactive.hex;
         };
 
-        "ui.cursor" = {
-          bg = d.cursor;
-        };
-        "ui.cursor.primary" = {
-          bg = d.cursor_primary;
-        };
-        "ui.cursor.match" = {
-          bg = d.cursor_match;
-        };
+        "ui.cursor".bg = d.cursor.hex;
+        "ui.cursor.primary".bg = d.cursor_primary.hex;
+        "ui.cursor.match".bg = d.cursor_match.hex;
 
-        "ui.selection" = {
-          bg = d.selection;
-        };
-        "ui.selection.primary" = {
-          bg = d.selection_primary;
-        };
+        "ui.selection".bg = d.selection.hex;
+        "ui.selection.primary".bg = d.selection_primary.hex;
 
         "ui.menu" = {
-          bg = d.bg_surface;
-          inherit (d) fg;
+          bg = d.bg_surface.hex;
+          fg = d.fg.hex;
         };
         "ui.menu.selected" = {
-          bg = d.menu_selected_bg;
-          fg = d.menu_selected_fg;
+          bg = d.menu_selected_bg.hex;
+          fg = d.menu_selected_fg.hex;
         };
         "ui.popup" = {
-          bg = d.bg_surface;
-          inherit (d) fg;
+          bg = d.bg_surface.hex;
+          fg = d.fg.hex;
         };
 
-        "ui.linenr" = {
-          fg = d.fg_linenr;
-        };
-        "ui.linenr.selected" = {
-          fg = d.fg_linenr_selected;
-        };
+        "ui.linenr".fg = d.fg_linenr.hex;
+        "ui.linenr.selected".fg = d.fg_linenr_selected.hex;
 
-        "ui.virtual" = {
-          fg = d.fg_inactive;
-        };
+        "ui.virtual".fg = d.fg_inactive.hex;
         "ui.virtual.inlay-hint" = {
-          fg = d.fg_inactive;
+          fg = d.fg_inactive.hex;
           modifiers = [ "italic" ];
         };
-        "ui.virtual.ruler" = {
-          bg = d.bg_elevated;
-        };
-
-        "ui.cursorline.primary" = {
-          bg = d.bg_surface;
-        };
+        "ui.virtual.ruler".bg = d.bg_elevated.hex;
+        "ui.cursorline.primary".bg = d.bg_surface.hex;
 
         "markup.heading" = {
-          fg = d.heading;
+          fg = d.heading.hex;
           modifiers = [ "bold" ];
         };
         "markup.heading.1" = {
-          fg = d.heading1;
+          fg = d.heading1.hex;
           modifiers = [ "bold" ];
         };
         "markup.heading.2" = {
-          fg = d.heading;
+          fg = d.heading.hex;
           modifiers = [ "bold" ];
         };
         "markup.heading.3" = {
-          fg = d.heading3;
+          fg = d.heading3.hex;
           modifiers = [ "bold" ];
         };
-        "markup.heading.marker" = {
-          fg = d.fg_inactive;
-        };
+        "markup.heading.marker".fg = d.fg_inactive.hex;
 
         "markup.bold" = {
-          inherit (d) fg;
+          fg = d.fg.hex;
           modifiers = [ "bold" ];
         };
         "markup.italic" = {
-          fg = d.italic;
+          fg = d.italic.hex;
           modifiers = [ "italic" ];
         };
         "markup.strikethrough" = {
-          fg = d.fg_muted;
+          fg = d.fg_muted.hex;
           modifiers = [ "crossed_out" ];
         };
 
-        "markup.link" = {
-          fg = d.link;
-        };
+        "markup.link".fg = d.link.hex;
         "markup.link.url" = {
-          fg = d.link_url;
+          fg = d.link_url.hex;
           modifiers = [ "underlined" ];
         };
-        "markup.link.text" = {
-          fg = d.link;
-        };
+        "markup.link.text".fg = d.link.hex;
 
-        "markup.list" = {
-          fg = d.fg_muted;
-        };
-        "markup.list.checked" = {
-          fg = d.list_checked;
-        };
-        "markup.list.unchecked" = {
-          fg = d.list_unchecked;
-        };
+        "markup.list".fg = d.fg_muted.hex;
+        "markup.list.checked".fg = d.list_checked.hex;
+        "markup.list.unchecked".fg = d.list_unchecked.hex;
 
         "markup.quote" = {
-          fg = d.quote;
+          fg = d.quote.hex;
           modifiers = [ "italic" ];
         };
 
-        "markup.raw" = {
-          fg = d.raw;
-        };
-        "markup.raw.block" = {
-          fg = d.raw;
-        };
-        "markup.raw.inline" = {
-          fg = d.raw;
-        };
+        "markup.raw".fg = d.raw.hex;
+        "markup.raw.block".fg = d.raw.hex;
+        "markup.raw.inline".fg = d.raw.hex;
 
-        "keyword" = {
-          fg = d.keyword;
-        };
-        "function" = {
-          fg = d.cursor_primary;
-        };
-        "type" = {
-          fg = d.type;
-        };
-        "string" = {
-          fg = d.type;
-        };
+        "keyword".fg = d.keyword.hex;
+        "function".fg = d.cursor_primary.hex;
+        "type".fg = d.type.hex;
+        "string".fg = d.type.hex;
         "comment" = {
-          fg = d.fg_linenr_selected;
+          fg = d.fg_linenr_selected.hex;
           modifiers = [ "italic" ];
         };
-        "variable" = {
-          fg = d.variable;
+        "variable".fg = d.variable.hex;
+        "constant".fg = d.constant.hex;
+        "operator".fg = d.fg_muted.hex;
+        "punctuation".fg = d.fg_punctuation.hex;
+
+        "diagnostic.hint".underline = {
+          color = d.diag_hint.hex;
+          style = "dotted";
         };
-        "constant" = {
-          fg = d.constant;
+        "diagnostic.info".underline = {
+          color = d.diag_info.hex;
+          style = "dotted";
         };
-        "operator" = {
-          fg = d.fg_muted;
+        "diagnostic.warning".underline = {
+          color = d.diag_warning.hex;
+          style = "curl";
         };
-        "punctuation" = {
-          fg = d.fg_punctuation;
+        "diagnostic.error".underline = {
+          color = d.diag_error.hex;
+          style = "curl";
         };
 
-        "diagnostic.hint" = {
-          underline = {
-            color = d.diag_hint;
-            style = "dotted";
-          };
-        };
-        "diagnostic.info" = {
-          underline = {
-            color = d.diag_info;
-            style = "dotted";
-          };
-        };
-        "diagnostic.warning" = {
-          underline = {
-            color = d.diag_warning;
-            style = "curl";
-          };
-        };
-        "diagnostic.error" = {
-          underline = {
-            color = d.diag_error;
-            style = "curl";
-          };
-        };
-
-        "diff.plus" = {
-          fg = d.diff_plus;
-        };
-        "diff.minus" = {
-          fg = d.diff_minus;
-        };
-        "diff.delta" = {
-          fg = d.diff_delta;
-        };
+        "diff.plus".fg = d.diff_plus.hex;
+        "diff.minus".fg = d.diff_minus.hex;
+        "diff.delta".fg = d.diff_delta.hex;
       };
 
       light = {
-        "ui.background" = {
-          inherit (l) bg;
-        };
-        "ui.text" = {
-          inherit (l) fg;
-        };
+        "ui.background".bg = l.bg.hex;
+        "ui.text".fg = l.fg.hex;
 
         "ui.statusline" = {
-          bg = l.bg_elevated;
-          fg = l.fg_muted;
+          bg = l.bg_elevated.hex;
+          fg = l.fg_muted.hex;
         };
         "ui.statusline.insert" = {
-          bg = l.statusline_insert_bg;
-          inherit (l) fg;
+          bg = l.statusline_insert_bg.hex;
+          fg = l.fg.hex;
         };
         "ui.statusline.select" = {
-          bg = l.statusline_select_bg;
-          inherit (l) fg;
+          bg = l.statusline_select_bg.hex;
+          fg = l.fg.hex;
         };
         "ui.statusline.inactive" = {
-          bg = l.bg_surface;
-          fg = l.fg_inactive;
+          bg = l.bg_surface.hex;
+          fg = l.fg_inactive.hex;
         };
 
-        "ui.cursor" = {
-          bg = l.cursor;
-        };
-        "ui.cursor.primary" = {
-          bg = l.cursor_primary;
-        };
-
-        "ui.selection" = {
-          bg = l.selection;
-        };
+        "ui.cursor".bg = l.cursor.hex;
+        "ui.cursor.primary".bg = l.cursor_primary.hex;
+        "ui.selection".bg = l.selection.hex;
 
         "ui.menu" = {
-          bg = l.bg_surface;
-          inherit (l) fg;
+          bg = l.bg_surface.hex;
+          fg = l.fg.hex;
         };
         "ui.menu.selected" = {
-          bg = l.menu_selected_bg;
-          fg = l.menu_selected_fg;
+          bg = l.menu_selected_bg.hex;
+          fg = l.menu_selected_fg.hex;
         };
         "ui.popup" = {
-          bg = l.bg_surface;
-          inherit (l) fg;
+          bg = l.bg_surface.hex;
+          fg = l.fg.hex;
         };
 
-        "ui.linenr" = {
-          fg = l.fg_linenr;
-        };
-        "ui.linenr.selected" = {
-          fg = l.fg_linenr_selected;
-        };
-
-        "ui.virtual" = {
-          fg = l.fg_virtual;
-        };
-        "ui.virtual.ruler" = {
-          bg = l.bg_elevated;
-        };
-
-        "ui.cursorline.primary" = {
-          bg = l.bg_surface;
-        };
+        "ui.linenr".fg = l.fg_linenr.hex;
+        "ui.linenr.selected".fg = l.fg_linenr_selected.hex;
+        "ui.virtual".fg = l.fg_virtual.hex;
+        "ui.virtual.ruler".bg = l.bg_elevated.hex;
+        "ui.cursorline.primary".bg = l.bg_surface.hex;
 
         "markup.heading" = {
-          fg = l.heading;
+          fg = l.heading.hex;
           modifiers = [ "bold" ];
         };
         "markup.bold" = {
-          inherit (l) fg;
+          fg = l.fg.hex;
           modifiers = [ "bold" ];
         };
         "markup.italic" = {
-          fg = l.italic;
+          fg = l.italic.hex;
           modifiers = [ "italic" ];
         };
-        "markup.link" = {
-          fg = l.link;
-        };
+        "markup.link".fg = l.link.hex;
         "markup.link.url" = {
-          fg = l.link_url;
+          fg = l.link_url.hex;
           modifiers = [ "underlined" ];
         };
-        "markup.list" = {
-          fg = l.fg_muted;
-        };
+        "markup.list".fg = l.fg_muted.hex;
         "markup.quote" = {
-          fg = l.quote;
+          fg = l.quote.hex;
           modifiers = [ "italic" ];
         };
-        "markup.raw" = {
-          fg = l.raw;
-        };
+        "markup.raw".fg = l.raw.hex;
 
-        "keyword" = {
-          fg = l.keyword;
-        };
-        "function" = {
-          fg = l.heading;
-        };
-        "string" = {
-          fg = l.raw;
-        };
+        "keyword".fg = l.keyword.hex;
+        "function".fg = l.heading.hex;
+        "string".fg = l.raw.hex;
         "comment" = {
-          fg = l.comment;
+          fg = l.comment.hex;
           modifiers = [ "italic" ];
         };
 
-        "diagnostic.hint" = {
-          underline = {
-            color = l.diag_hint;
-            style = "dotted";
-          };
+        "diagnostic.hint".underline = {
+          color = l.diag_hint.hex;
+          style = "dotted";
         };
-        "diagnostic.warning" = {
-          underline = {
-            color = l.diag_warning;
-            style = "curl";
-          };
+        "diagnostic.warning".underline = {
+          color = l.diag_warning.hex;
+          style = "curl";
         };
-        "diagnostic.error" = {
-          underline = {
-            color = l.diag_error;
-            style = "curl";
-          };
+        "diagnostic.error".underline = {
+          color = l.diag_error.hex;
+          style = "curl";
         };
 
-        "diff.plus" = {
-          fg = l.diff_plus;
-        };
-        "diff.minus" = {
-          fg = l.diff_minus;
-        };
-        "diff.delta" = {
-          fg = l.diff_delta;
-        };
+        "diff.plus".fg = l.diff_plus.hex;
+        "diff.minus".fg = l.diff_minus.hex;
+        "diff.delta".fg = l.diff_delta.hex;
       };
     };
     description = "Helix zen mode theme colors for distraction-free prose writing";

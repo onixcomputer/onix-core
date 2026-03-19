@@ -339,16 +339,6 @@ let prom_rules = import "prometheus-rules.ncl" in
       },
     },
 
-    "clanker-router" = {
-      module = { name = "clankers", input = "self" },
-      roles.router.machines.britton-desktop.settings = {
-        user = "brittonr",
-        listenAddr = "0.0.0.0",
-        listenPort = 4000,
-        enableIroh = true,
-      },
-    },
-
     clonadic = {
       module = { name = "clonadic", input = "self" },
       roles.default.machines.aspen1.settings.model = "qwen3:4b",

@@ -6,8 +6,8 @@
   ...
 }:
 let
-  # Access the current theme colors
-  theme = config.theme.colors;
+  # Access the current theme
+  theme = config.theme.data;
   mon = config.monitors;
 
   # Import niri keybindings from separate file
@@ -141,15 +141,15 @@ let
                                   }
 
                                   focus-ring {
-                                      active-color "${theme.accent}"
-                                      inactive-color "${theme.border}"
+                                      active-color "${theme.accent.hex}"
+                                      inactive-color "${theme.border.hex}"
                                       width ${toString config.layout.focusRingWidth}
                                   }
 
                                   border {
                                       width ${toString config.layout.borderWidth}
-                                      active-color "${theme.accent}"
-                                      inactive-color "${theme.border}"
+                                      active-color "${theme.accent.hex}"
+                                      inactive-color "${theme.border.hex}"
                                   }
                               }
 
@@ -201,21 +201,21 @@ let
                   match is-window-cast-target=true
 
                   focus-ring {
-                      active-color "${config.colors.screencast_active}"
-                      inactive-color "${config.colors.screencast_inactive}"
+                      active-color "${config.theme.data.misc.screencast_active.hex}"
+                      inactive-color "${config.theme.data.misc.screencast_inactive.hex}"
                   }
 
                   border {
-                      inactive-color "${config.colors.screencast_inactive}"
+                      inactive-color "${config.theme.data.misc.screencast_inactive.hex}"
                   }
 
                   shadow {
-                      color "${config.colors.screencast_inactive}${config.opacity.hex.low}"
+                      color "${config.theme.data.misc.screencast_inactive.hex}${config.opacity.hex.low}"
                   }
 
                   tab-indicator {
-                      active-color "${config.colors.screencast_active}"
-                      inactive-color "${config.colors.screencast_inactive}"
+                      active-color "${config.theme.data.misc.screencast_active.hex}"
+                      inactive-color "${config.theme.data.misc.screencast_inactive.hex}"
                   }
               }
 
@@ -244,32 +244,32 @@ let
   initialNoctaliaKdl = pkgs.writeText "noctalia-initial.kdl" ''
     layout {
         focus-ring {
-            active-color   "${theme.accent}"
-            inactive-color "${theme.border}"
-            urgent-color   "${theme.red}"
+            active-color   "${theme.accent.hex}"
+            inactive-color "${theme.border.hex}"
+            urgent-color   "${theme.red.hex}"
         }
         border {
-            active-color   "${theme.accent}"
-            inactive-color "${theme.border}"
-            urgent-color   "${theme.red}"
+            active-color   "${theme.accent.hex}"
+            inactive-color "${theme.border.hex}"
+            urgent-color   "${theme.red.hex}"
         }
         shadow {
-            color "${theme.bg_dark}70"
+            color "${theme.bg_dark.hex}70"
         }
         tab-indicator {
-            active-color   "${theme.accent}"
-            inactive-color "${theme.bg_highlight}"
-            urgent-color   "${theme.red}"
+            active-color   "${theme.accent.hex}"
+            inactive-color "${theme.bg_highlight.hex}"
+            urgent-color   "${theme.red.hex}"
         }
         insert-hint {
-            color "${theme.accent}80"
+            color "${theme.accent.hex}80"
         }
     }
 
     recent-windows {
         highlight {
-            active-color "${theme.accent}"
-            urgent-color "${theme.red}"
+            active-color "${theme.accent.hex}"
+            urgent-color "${theme.red.hex}"
         }
     }
   '';

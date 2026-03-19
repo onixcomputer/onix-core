@@ -1,6 +1,6 @@
 { lib, config, ... }:
 let
-  c = config.colors;
+  c = config.theme.data;
   r = c.rainbow;
 in
 {
@@ -24,22 +24,22 @@ in
       };
 
       subtitles = {
-        color = "#FF${c.noHash c.grayscale.white}";
-        borderColor = "#FF${c.noHash c.editor.black}";
+        color = "#FF${c.grayscale.white.no_hash}";
+        borderColor = "#FF${c.editor.black.no_hash}";
       };
 
-      # Gradient colors sourced from colors.rainbow palette
+      # Gradient colors sourced from rainbow palette
       cava = {
         framerate = 60;
         gradient = [
-          "'${r.green}'"
-          "'${r.cyan}'"
-          "'${r.blue}'"
-          "'${r.yellow}'"
-          "'${r.orange}'"
-          "'${r.red}'"
-          "'${r.violet}'"
-          "'${r.red}'" # repeated for 8-entry gradient
+          "'${r.green.hex}'"
+          "'${r.cyan.hex}'"
+          "'${r.blue.hex}'"
+          "'${r.yellow.hex}'"
+          "'${r.orange.hex}'"
+          "'${r.red.hex}'"
+          "'${r.violet.hex}'"
+          "'${r.red.hex}'" # repeated for 8-entry gradient
         ];
         sensitivity = 100;
         bars = 0;

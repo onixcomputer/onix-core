@@ -29,6 +29,7 @@ let
   wasmChecks = (import ./_wasm-checks.nix) innerArgs;
   tagChecks = (import ./_tag-checks.nix) innerArgs;
   builderChecks = (import ./_builder-checks.nix) innerArgs;
+  colorChecks = (import ./_color-checks.nix) { inherit pkgs; };
 
   packageChecks = lib.mapAttrs' (n: lib.nameValuePair "package-${n}") self'.packages;
   devShellChecks = lib.mapAttrs' (n: lib.nameValuePair "devShell-${n}") self'.devShells;
@@ -41,6 +42,7 @@ in
     // (wasmChecks.checks or { })
     // (tagChecks.checks or { })
     // builderChecks
+    // colorChecks.checks
     // packageChecks
     // devShellChecks;
 }

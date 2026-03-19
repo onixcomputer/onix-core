@@ -1,6 +1,6 @@
 { config, lib, ... }:
 let
-  theme = config.theme.colors;
+  theme = config.theme.data;
   k = config.keymap;
   tm = lib.toLower k.modifiers.terminal; # "ctrl+shift"
   ta = k.terminalActions;
@@ -31,51 +31,51 @@ in
       cursor_trail = config.terminal.cursorTrail;
 
       # Theme colors
-      background = theme.bg;
-      foreground = theme.fg; # Use normal foreground, not dim
+      background = theme.bg.hex;
+      foreground = theme.fg.hex; # Use normal foreground, not dim
 
       # Color adjustments for better readability
       # Higher values = more aggressive contrast adjustment (max 21)
       minimum_contrast = toString config.terminal.minimumContrast;
 
       # Selection colors
-      selection_background = theme.accent;
-      selection_foreground = theme.bg;
+      selection_background = theme.accent.hex;
+      selection_foreground = theme.bg.hex;
 
       # Cursor color
-      cursor = theme.fg; # Use normal foreground for cursor
-      cursor_text_color = theme.bg;
+      cursor = theme.fg.hex; # Use normal foreground for cursor
+      cursor_text_color = theme.bg.hex;
 
       # Terminal colors - Normal
-      color0 = theme.term_black;
-      color1 = theme.term_red;
-      color2 = theme.term_green;
-      color3 = theme.term_yellow;
-      color4 = theme.term_blue;
-      color5 = theme.term_magenta;
-      color6 = theme.term_cyan;
-      color7 = theme.term_white;
+      color0 = theme.term_black.hex;
+      color1 = theme.term_red.hex;
+      color2 = theme.term_green.hex;
+      color3 = theme.term_yellow.hex;
+      color4 = theme.term_blue.hex;
+      color5 = theme.term_magenta.hex;
+      color6 = theme.term_cyan.hex;
+      color7 = theme.term_white.hex;
 
       # Terminal colors - Bright
-      color8 = theme.term_bright_black;
-      color9 = theme.term_bright_red;
-      color10 = theme.term_bright_green;
-      color11 = theme.term_bright_yellow;
-      color12 = theme.term_bright_blue;
-      color13 = theme.term_bright_magenta;
-      color14 = theme.term_bright_cyan;
-      color15 = theme.term_bright_white;
+      color8 = theme.term_bright_black.hex;
+      color9 = theme.term_bright_red.hex;
+      color10 = theme.term_bright_green.hex;
+      color11 = theme.term_bright_yellow.hex;
+      color12 = theme.term_bright_blue.hex;
+      color13 = theme.term_bright_magenta.hex;
+      color14 = theme.term_bright_cyan.hex;
+      color15 = theme.term_bright_white.hex;
 
       # URL colors
-      url_color = theme.accent;
+      url_color = theme.accent.hex;
       url_style = "single";
 
       # Tab bar colors
-      active_tab_background = theme.accent;
-      active_tab_foreground = theme.bg;
-      inactive_tab_background = theme.bg_highlight;
-      inactive_tab_foreground = theme.fg_dim;
-      tab_bar_background = theme.bg_dark;
+      active_tab_background = theme.accent.hex;
+      active_tab_foreground = theme.bg.hex;
+      inactive_tab_background = theme.bg_highlight.hex;
+      inactive_tab_foreground = theme.fg_dim.hex;
+      tab_bar_background = theme.bg_dark.hex;
 
       # Performance
       repaint_delay = config.terminal.repaintDelay;
@@ -96,8 +96,8 @@ in
       scrollbar_interactive = true;
       scrollbar_jump_on_click = true;
       scrollbar_min_handle_height = config.terminal.scrollbar.minHandleHeight;
-      scrollbar_handle_color = theme.fg_dim;
-      scrollbar_track_color = theme.bg_highlight;
+      scrollbar_handle_color = theme.fg_dim.hex;
+      scrollbar_track_color = theme.bg_highlight.hex;
 
       # Bell and notifications - all disabled
       enable_audio_bell = false;

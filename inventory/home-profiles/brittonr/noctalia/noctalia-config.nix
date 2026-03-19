@@ -14,24 +14,24 @@ in
   programs.noctalia-shell = {
     enable = true;
 
-    # Material 3 color mapping from onix-dark palette
+    # Material 3 color mapping from theme palette
     colors = {
-      mPrimary = config.colors.accent;
-      mOnPrimary = config.colors.bg;
-      mSecondary = config.colors.accent2;
-      mOnSecondary = config.colors.bg;
-      mTertiary = config.colors.purple;
-      mOnTertiary = config.colors.bg;
-      mError = config.colors.red;
-      mOnError = config.colors.bg;
-      mSurface = config.colors.bg;
-      mSurfaceVariant = config.colors.bg_highlight;
-      mOnSurface = config.colors.fg;
-      mOnSurfaceVariant = config.colors.fg_dim;
-      mOutline = config.colors.border;
-      mShadow = config.colors.bg_dark;
-      mHover = config.colors.bg_highlight;
-      mOnHover = config.colors.fg;
+      mPrimary = config.theme.data.accent.hex;
+      mOnPrimary = config.theme.data.bg.hex;
+      mSecondary = config.theme.data.accent2.hex;
+      mOnSecondary = config.theme.data.bg.hex;
+      mTertiary = config.theme.data.purple.hex;
+      mOnTertiary = config.theme.data.bg.hex;
+      mError = config.theme.data.red.hex;
+      mOnError = config.theme.data.bg.hex;
+      mSurface = config.theme.data.bg.hex;
+      mSurfaceVariant = config.theme.data.bg_highlight.hex;
+      mOnSurface = config.theme.data.fg.hex;
+      mOnSurfaceVariant = config.theme.data.fg_dim.hex;
+      mOutline = config.theme.data.border.hex;
+      mShadow = config.theme.data.bg_dark.hex;
+      mHover = config.theme.data.bg_highlight.hex;
+      mOnHover = config.theme.data.fg.hex;
     };
 
     # Merge all section settings
