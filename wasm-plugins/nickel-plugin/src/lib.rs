@@ -2,6 +2,59 @@ use nix_wasm_rust::Value;
 
 // nix_wasm_init_v1 is exported by the nix-wasm-rust crate (linked into this cdylib).
 
+/// Convert a fully-evaluated Nickel value directly to a Nix value.
+///
+/// Walks the NickelValue tree via `content_ref()` dispatch and builds
+/// nix-wasm-rust Values without any intermediate JSON serialization.
+/// Handles Null, Bool, Number, String, Array, and Record variants.
+/// Panics on any non-data variant (functions, thunks, etc.).
+fn nickel_to_nix(value: &nickel_lang_core::eval::value::NickelValue) -> Value {
+    use nickel_lang_core::eval::value::{Container, ValueContentRef};
+
+    match value.content_ref() {
+        ValueContentRef::Null => Value::make_null(),
+        ValueContentRef::Bool(b) => Value::make_bool(b),
+        ValueContentRef::Number(n) => {
+            use nickel_lang_core::term::{IsInteger, RoundingFrom, RoundingMode};
+            if n.is_integer() {
+                if let Ok(i) = i64::try_from(n) {
+                    return Value::make_int(i);
+                }
+            }
+            let f = f64::rounding_from(n, RoundingMode::Nearest).0;
+            Value::make_float(f)
+        }
+        ValueContentRef::String(s) => Value::make_string(s),
+        ValueContentRef::Array(Container::Empty) => Value::make_list(&[]),
+        ValueContentRef::Array(Container::Alloc(arr)) => {
+            let items: Vec<Value> = arr.array.iter().map(|v| nickel_to_nix(v)).collect();
+            Value::make_list(&items)
+        }
+        ValueContentRef::Record(Container::Empty) => Value::make_attrset(&[]),
+        ValueContentRef::Record(Container::Alloc(record)) => {
+            let mut entries: Vec<(String, Value)> = record
+                .iter_serializable()
+                .map(|entry| {
+                    let (id, val) = entry.unwrap_or_else(|e| {
+                        nix_wasm_rust::panic(&format!(
+                            "nickel_to_nix: missing field definition for `{}`",
+                            e.id
+                        ))
+                    });
+                    (id.to_string(), nickel_to_nix(val))
+                })
+                .collect();
+            entries.sort_by(|(a, _), (b, _)| a.cmp(b));
+            let refs: Vec<(&str, Value)> = entries.iter().map(|(k, v)| (k.as_str(), *v)).collect();
+            Value::make_attrset(&refs)
+        }
+        ValueContentRef::EnumVariant(ev) if ev.arg.is_none() => Value::make_string(ev.tag.label()),
+        other => nix_wasm_rust::panic(&format!(
+            "nickel_to_nix: unexpected value variant after full eval: {other:?}"
+        )),
+    }
+}
+
 /// Convert a Nix value to Nickel source text.
 ///
 /// Walks the Nix value tree via `get_type()` dispatch and produces a string
@@ -102,40 +155,12 @@ fn needs_quoting(s: &str) -> bool {
     )
 }
 
-/// Convert a serde_json::Value tree into a nix-wasm-rust Value.
-fn json_to_nix(json: &serde_json::Value) -> Value {
-    match json {
-        serde_json::Value::Null => Value::make_null(),
-        serde_json::Value::Bool(b) => Value::make_bool(*b),
-        serde_json::Value::Number(n) => {
-            if let Some(i) = n.as_i64() {
-                Value::make_int(i)
-            } else {
-                Value::make_float(n.as_f64().unwrap_or(0.0))
-            }
-        }
-        serde_json::Value::String(s) => Value::make_string(s),
-        serde_json::Value::Array(arr) => {
-            let items: Vec<Value> = arr.iter().map(json_to_nix).collect();
-            Value::make_list(&items)
-        }
-        serde_json::Value::Object(map) => {
-            let pairs: Vec<(String, Value)> = map
-                .iter()
-                .map(|(k, v)| (k.clone(), json_to_nix(v)))
-                .collect();
-            let refs: Vec<(&str, Value)> = pairs.iter().map(|(k, v)| (k.as_str(), *v)).collect();
-            Value::make_attrset(&refs)
-        }
-    }
-}
-
 /// Evaluate a Nickel source string, returning the result as a Nix value.
 ///
 /// The argument must be a Nix string containing valid Nickel source code.
 /// The full Nickel standard library is available during evaluation.
 /// The result is fully evaluated and converted to a Nix value (attrset, list,
-/// string, number, bool, or null) via a JSON round-trip.
+/// string, number, bool, or null) via direct term walk.
 #[no_mangle]
 pub extern "C" fn evalNickel(arg: Value) -> Value {
     let source = arg.get_string();
@@ -143,12 +168,7 @@ pub extern "C" fn evalNickel(arg: Value) -> Value {
 }
 
 fn eval_nickel_source(source: &str) -> Value {
-    use nickel_lang_core::{
-        error::NullReporter,
-        eval::cache::CacheImpl,
-        program::Program,
-        serialize::{self, ExportFormat},
-    };
+    use nickel_lang_core::{error::NullReporter, eval::cache::CacheImpl, program::Program};
     use std::io::Cursor;
 
     let reader = Cursor::new(source.as_bytes());
@@ -160,13 +180,7 @@ fn eval_nickel_source(source: &str) -> Value {
         .eval_full_for_export()
         .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("nickel eval error: {e:?}")));
 
-    let json_str = serialize::to_string(ExportFormat::Json, &value)
-        .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("nickel serialize error: {e:?}")));
-
-    let json: serde_json::Value = serde_json::from_str(&json_str)
-        .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("json parse error: {e}")));
-
-    json_to_nix(&json)
+    nickel_to_nix(&value)
 }
 
 /// IO provider that routes filesystem operations through the nix-wasm host ABI.
@@ -202,14 +216,13 @@ impl nickel_lang_core::cache::SourceIO for WasmHostIO {
 }
 
 /// Shared helper: evaluate Nickel source with WasmHostIO-backed import resolution
-/// and return the result as a Nix value via the JSON round-trip.
+/// and return the result as a Nix value via direct term walk.
 fn eval_nickel_file_source(source: &str, base_path: Value) -> Value {
     use nickel_lang_core::{
         cache::CacheHub,
         error::NullReporter,
         eval::cache::CacheImpl,
         program::{Input, Program},
-        serialize::{self, ExportFormat},
     };
     use std::io::Cursor;
     use std::sync::Arc;
@@ -232,13 +245,7 @@ fn eval_nickel_file_source(source: &str, base_path: Value) -> Value {
         .eval_full_for_export()
         .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("nickel eval error: {e:?}")));
 
-    let json_str = serialize::to_string(ExportFormat::Json, &value)
-        .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("nickel serialize error: {e:?}")));
-
-    let json: serde_json::Value = serde_json::from_str(&json_str)
-        .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("json parse error: {e}")));
-
-    json_to_nix(&json)
+    nickel_to_nix(&value)
 }
 
 /// Evaluate a Nickel file from a Nix path, returning the result as a Nix value.

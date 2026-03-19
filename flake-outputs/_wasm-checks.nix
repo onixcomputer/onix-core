@@ -351,5 +351,23 @@ in
           function = "evalNickelFileWith";
         } { file = ${testDir}/main.ncl; args = { factor = 6; }; }
       '' "{ result = 42; }";
+
+    # ---- Number edge cases (direct term walk) ----
+
+    # Large integer within i64 range
+    wasm-evalNickel-large-int = mkWasmTest "evalNickel-large-int" ''
+      builtins.wasm {
+        path = ${plugins}/nickel_plugin.wasm;
+        function = "evalNickel";
+      } "9999999999"
+    '' "9999999999";
+
+    # Fractional number stays float
+    wasm-evalNickel-float = mkWasmTest "evalNickel-float" ''
+      builtins.wasm {
+        path = ${plugins}/nickel_plugin.wasm;
+        function = "evalNickel";
+      } "3.14"
+    '' "3.14";
   };
 }
