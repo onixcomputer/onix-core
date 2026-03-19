@@ -1,8 +1,7 @@
 # Service inventory loader.
 #
-# Data-only service instances live in services.ncl (validated by
-# Nickel contracts). Services needing Nix-specific features
-# (extraModules) remain as .nix files and are merged in here.
+# Service data lives in services.ncl (validated by Nickel contracts).
+# Nix path stubs (extraModules) are merged in via recursiveUpdate.
 { inputs, self, ... }:
 let
   inherit (inputs.nixpkgs) lib;
@@ -14,10 +13,10 @@ let
   # Contract-validated service instances from Nickel.
   nclServices = wasm.evalNickelFile ./services.ncl;
 
-  # Services that need Nix paths (extraModules) stay as .nix.
-  nixServices = {
-    borgbackup = import ./borgbackup.nix { inherit inputs; };
-    matrix-synapse = import ./matrix-synapse.nix { inherit inputs; };
-  };
+  # Thin stubs that add Nix-only extraModules paths.
+  nixStubs = [
+    (import ./borgbackup.nix)
+    (import ./matrix-synapse.nix)
+  ];
 in
-lib.foldr lib.recursiveUpdate nclServices (lib.attrValues nixServices)
+lib.foldr lib.recursiveUpdate nclServices nixStubs

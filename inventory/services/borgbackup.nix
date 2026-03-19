@@ -1,20 +1,7 @@
-_: {
-  instances = {
-    borgbackup = {
-      module.name = "borgbackup";
-      module.input = "clan-core";
-      roles = {
-        server = {
-          machines.aspen1 = { };
-          settings = {
-            directory = "/var/lib/borg";
-          };
-        };
-        client = {
-          tags.backup = { };
-          extraModules = [ ../../modules/borgbackup-extras.nix ];
-        };
-      };
-    };
+# Nix path stub — data lives in services.ncl.
+# extraModules requires a Nix path that can't be expressed in Nickel.
+{
+  instances.borgbackup.roles.client = {
+    extraModules = [ ../../modules/borgbackup-extras.nix ];
   };
 }

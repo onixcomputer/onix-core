@@ -4,8 +4,8 @@
 # (tags and machines), and settings.
 # Validated by Nickel contracts at export time.
 #
-# Services that need Nix-specific features (extraModules) remain
-# in .nix files: borgbackup.nix, matrix-synapse.nix.
+# Services needing Nix paths (extraModules) have their data here
+# and a thin .nix stub that adds the path. The loader merges them.
 #
 # Workflow:
 #   1. Edit this file
@@ -481,6 +481,27 @@ let prom_rules = import "prometheus-rules.ncl" in
     upmpdcli = {
       module = { name = "upmpdcli", input = "self" },
       roles.server.tags.media = {},
+    },
+
+    # ========== Upstream clan-core services ==========
+    # (borgbackup and matrix-synapse have extraModules stubs in .nix)
+
+    borgbackup = {
+      module = { name = "borgbackup", input = "clan-core" },
+      roles = {
+        server.machines.aspen1.settings.directory = "/var/lib/borg",
+        client.tags.backup = {},
+      },
+    },
+
+    matrix-synapse = {
+      module = { name = "matrix-synapse", input = "clan-core" },
+      roles.default.machines.aspen1.settings = {
+        server_tld = "onix.computer",
+        app_domain = "matrix.onix.computer",
+        acmeEmail = "admin@onix.computer",
+        users.brittonr.admin = true,
+      },
     },
   },
 } | Services | ValidateRefs
