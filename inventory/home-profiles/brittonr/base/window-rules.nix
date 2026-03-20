@@ -7,7 +7,7 @@
       # Workspace assignments by app-id regex
       assignments = [
         {
-          appId = "kitty";
+          appId = "org.wezfurlong.wezterm";
           workspace = "1";
         }
         {
@@ -33,13 +33,13 @@
           floating = true;
         }
         {
-          appId = "kitty";
+          appId = "org.wezfurlong.wezterm";
           title = "^${config.apps.sysmon.name}$";
           workspace = "4";
           maximized = true;
         }
         {
-          appId = "kitty";
+          appId = "org.wezfurlong.wezterm";
           title = "^journalctl$";
           workspace = "4";
           maximized = true;

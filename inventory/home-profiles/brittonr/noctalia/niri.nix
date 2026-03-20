@@ -168,8 +168,8 @@ let
                               // Startup applications
                               spawn-at-startup "vesktop" "--enable-features=UseOzonePlatform" "--ozone-platform=wayland" "--enable-wayland-ime" "--disable-gpu-sandbox"
                               spawn-at-startup "element-desktop"
-                              spawn-at-startup "${config.apps.terminal.command}" "--title" "${config.apps.sysmon.name}" "-e" "${config.apps.sysmon.command}"
-                              spawn-at-startup "${config.apps.terminal.command}" "--title" "journalctl" "-e" "${pkgs.systemd}/bin/journalctl -f"
+                              spawn-at-startup "${config.apps.terminal.command}" "start" "--" "${config.apps.sysmon.command}"
+                              spawn-at-startup "${config.apps.terminal.command}" "start" "--" "${pkgs.systemd}/bin/journalctl" "-f"
 
                               // Window rules: workspace assignments
                               ${builtins.concatStringsSep "\n                          " (

@@ -1,6 +1,6 @@
 # Unified keymap — source of truth for all keybindings.
 #
-# Consumed by: niri, kitty, helix, tridactyl, zellij, shell-keybinds.
+# Consumed by: niri, wezterm, kitty, helix, tridactyl, zellij, shell-keybinds.
 # Validated at `ncl export` time — typos fail immediately instead of
 # silently breaking one of the five consumers.
 #
@@ -134,6 +134,10 @@ in
       scrollHome | Key,
       scrollEnd | Key,
       clearScrollback | Key,
+      search | Key,
+      quickSelect | Key,
+      copyMode | Key,
+      commandPalette | Key,
     }
     = {
       copy = "c",
@@ -156,6 +160,10 @@ in
       scrollHome = "home",
       scrollEnd = "end",
       clearScrollback = "k",
+      search = "/",
+      quickSelect = "s",
+      copyMode = "x",
+      commandPalette = "p",
     },
 
   # Window manager actions (Mod + key)

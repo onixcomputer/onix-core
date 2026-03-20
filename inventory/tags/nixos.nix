@@ -103,6 +103,7 @@
   # NixOS-specific packages (shared packages live in shared-dev.nix via dev tag)
   environment.systemPackages = with pkgs; [
     kitty.terminfo
+    wezterm.terminfo
   ];
 
   # Don't restart network services during rebuild — prevents SSH disconnects

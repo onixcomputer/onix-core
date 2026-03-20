@@ -28,6 +28,7 @@
       claude-code-bin
       uutils-coreutils-noprefix
       kitty.terminfo
+      wezterm.terminfo
       pstree
       systemctl-tui
       dua

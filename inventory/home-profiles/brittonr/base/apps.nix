@@ -5,9 +5,9 @@
       type = lib.types.attrs;
       readOnly = true;
       default = {
-        name = "kitty";
-        command = "${pkgs.kitty}/bin/kitty";
-        appId = "kitty";
+        name = "wezterm";
+        command = "${pkgs.wezterm}/bin/wezterm";
+        appId = "org.wezfurlong.wezterm";
       };
       description = "Default terminal emulator";
     };

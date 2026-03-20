@@ -8,7 +8,7 @@ config: {
       viewMode
       enableClipboardHistory
       ;
-    terminalCommand = "${config.apps.terminal.command} -e";
+    terminalCommand = "${config.apps.terminal.command} start --";
     autoPasteClipboard = false;
     enableClipPreview = true;
     clipboardWrapText = true;

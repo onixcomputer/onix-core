@@ -92,11 +92,11 @@ in
       ${k.modifiers.wm}+Shift+0 { move-column-to-workspace 10; }
 
       // Applications
-      ${k.modifiers.wm}+${k.wm.terminal} { spawn "${config.apps.terminal.command}"; }
-      ${k.modifiers.wm}+Shift+${k.wm.terminal} { spawn "sh" "-c" "cd $(${pkgs.xcwd}/bin/xcwd) && ${config.apps.terminal.command} --title float"; }
-      ${k.modifiers.wm}+${k.wm.fileManager} { spawn "sh" "-c" "cd $(${pkgs.xcwd}/bin/xcwd) && ${config.apps.terminal.command} --title ${config.apps.fileManager.name} -e ${config.apps.fileManager.command}"; }
+      ${k.modifiers.wm}+${k.wm.terminal} { spawn "${config.apps.terminal.command}" "start"; }
+      ${k.modifiers.wm}+Shift+${k.wm.terminal} { spawn "sh" "-c" "cd $(${pkgs.xcwd}/bin/xcwd) && exec ${config.apps.terminal.command} start"; }
+      ${k.modifiers.wm}+${k.wm.fileManager} { spawn "sh" "-c" "cd $(${pkgs.xcwd}/bin/xcwd) && exec ${config.apps.terminal.command} start -- ${config.apps.fileManager.command}"; }
       ${k.modifiers.wm}+${k.wm.browser} { spawn "${config.apps.browser.command}"; }
-      ${k.modifiers.wm}+${k.wm.sysmon} { spawn "${config.apps.terminal.command}" "--title" "${config.apps.sysmon.name}" "-e" "${config.apps.sysmon.command}"; }
+      ${k.modifiers.wm}+${k.wm.sysmon} { spawn "${config.apps.terminal.command}" "start" "--" "${config.apps.sysmon.command}"; }
 
       // Noctalia launcher (replaces fuzzel)
       ${k.modifiers.wm}+${k.wm.launcher} { spawn ${ipc "launcher" "toggle"}; }
