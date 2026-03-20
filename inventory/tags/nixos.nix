@@ -35,10 +35,6 @@
   programs.nix-index-database.comma.enable = true;
   programs.command-not-found.enable = false;
 
-  # Modern firewall - nftables replaces iptables
-  # Provides build-time ruleset validation via checkRuleset
-  networking.nftables.enable = true;
-
   services = {
     # Enable Avahi for mDNS service discovery and .local hostname resolution
     avahi = {
@@ -114,6 +110,19 @@
   networking = {
     networkmanager.enable = true;
     useNetworkd = false;
+
+    # nftables replaces iptables — build-time ruleset validation via checkRuleset
+    nftables.enable = true;
+
+    # Explicit NTP servers — systemd-timesyncd can't discover them via DHCP
+    # when NetworkManager manages interfaces instead of systemd-networkd.
+    # Without this, timesyncd never syncs (Server: n/a, Packet count: 0).
+    timeServers = [
+      "0.nixos.pool.ntp.org"
+      "1.nixos.pool.ntp.org"
+      "2.nixos.pool.ntp.org"
+      "3.nixos.pool.ntp.org"
+    ];
   };
 
   i18n.defaultLocale = "en_US.UTF-8";
