@@ -5,6 +5,11 @@ _config: {
   # colors change.  User templates (enableUserTheming) extend this
   # to fish, bat, delta, eza, starship, and swayosd via
   # ~/.config/noctalia/user-templates.toml (provided by home-manager).
+  #
+  # helix is NOT templated here — both hx and zen use wrappers that
+  # set XDG_CONFIG_HOME to a read-only nix store path, so Noctalia
+  # can't write themes into them.  Helix theming goes through the
+  # build-time Nickel pipeline (helix-theme.nix / helix-zen-theme.nix).
   templates = {
     activeTemplates = [
       {
@@ -17,10 +22,6 @@ _config: {
       }
       {
         id = "btop";
-        enabled = true;
-      }
-      {
-        id = "helix";
         enabled = true;
       }
     ];
