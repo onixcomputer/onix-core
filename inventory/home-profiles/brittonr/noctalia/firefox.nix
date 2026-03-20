@@ -26,6 +26,13 @@ let
     fixedExtid = "{446900e4-71c2-419f-a6a7-df9c091e268b}";
   };
 
+  alby = pkgs.fetchFirefoxAddon {
+    name = "alby";
+    url = "https://addons.mozilla.org/firefox/downloads/file/4668366/alby-3.14.1.xpi";
+    hash = "sha256:a9be04bd7b9dba189e808f14a3766aaebdc27b920e27e838497ca073289d5a87";
+    fixedExtid = "extension@getalby.com";
+  };
+
   k = config.keymap;
 
   wrappedFirefox =
@@ -36,6 +43,7 @@ let
         tridactyl
         ublock-origin
         bitwarden
+        alby
       ];
 
       nativeMessagingHosts = [ pkgs.tridactyl-native ];
