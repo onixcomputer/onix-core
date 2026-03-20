@@ -1363,11 +1363,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1773843663,
-        "narHash": "sha256-BDVwZUFwDr4uQGsVDvs3e/gfULD2c2ZCHLMcosuQt08=",
+        "lastModified": 1774029376,
+        "narHash": "sha256-VmD1jJVs2GnQXorVrLEwF0kNtK34nHSxrcsYNtVvPEU=",
         "owner": "brittonr",
         "repo": "wrappers",
-        "rev": "2ccd88646e0346bdc62a450aa1722aa1e56224e7",
+        "rev": "dc3a664bc01b46c704621cdf647a2293ea1dddff",
         "type": "github"
       },
       "original": {

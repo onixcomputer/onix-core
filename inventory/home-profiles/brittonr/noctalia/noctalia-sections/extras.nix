@@ -6,10 +6,9 @@ _config: {
   # to fish, bat, delta, eza, starship, and swayosd via
   # ~/.config/noctalia/user-templates.toml (provided by home-manager).
   #
-  # helix is NOT templated here — both hx and zen use wrappers that
-  # set XDG_CONFIG_HOME to a read-only nix store path, so Noctalia
-  # can't write themes into them.  Helix theming goes through the
-  # build-time Nickel pipeline (helix-theme.nix / helix-zen-theme.nix).
+  # helix wrappers use a preHook to overlay ~/.config/helix/themes/
+  # over the immutable store config, so Noctalia's built-in template
+  # writing to that directory now works at runtime.
   templates = {
     activeTemplates = [
       {
@@ -22,6 +21,10 @@ _config: {
       }
       {
         id = "btop";
+        enabled = true;
+      }
+      {
+        id = "helix";
         enabled = true;
       }
     ];

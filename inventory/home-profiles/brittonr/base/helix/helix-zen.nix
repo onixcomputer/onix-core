@@ -11,9 +11,35 @@ let
   k = config.keymap;
   ed = config.editor;
 
+  # Runtime theme overlay (same as hx, different cache dir)
+  zenThemeOverlay = ''
+    _store_cfg="$XDG_CONFIG_HOME"
+    _merged="''${XDG_CACHE_HOME:-$HOME/.cache}/helix-wrapper-zen"
+    _mutable="$HOME/.config/helix/themes"
+    mkdir -p "$_merged/helix/themes"
+    for f in "$_store_cfg"/helix/*; do
+      [ -e "$f" ] || continue
+      case "$(basename "$f")" in
+        themes) ;;
+        *) ln -sfn "$f" "$_merged/helix/" ;;
+      esac
+    done
+    for t in "$_store_cfg"/helix/themes/*; do
+      [ -e "$t" ] && ln -sf "$t" "$_merged/helix/themes/"
+    done
+    if [ -d "$_mutable" ]; then
+      for t in "$_mutable"/*.toml; do
+        [ -e "$t" ] && ln -sf "$t" "$_merged/helix/themes/"
+      done
+    fi
+    export XDG_CONFIG_HOME="$_merged"
+  '';
+
   # Build the full helix-zen wrapper
   helixZenWrapper = inputs.wrappers.wrapperModules.helix.apply {
     inherit pkgs;
+
+    preHook = zenThemeOverlay;
 
     # Provide the binary as 'zen' to differentiate from regular helix
     binName = "zen";

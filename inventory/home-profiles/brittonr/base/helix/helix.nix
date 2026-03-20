@@ -6,11 +6,40 @@
 }:
 let
   k = config.keymap;
+
+  # Runtime theme overlay: on launch, create a merged config dir that
+  # includes both the immutable store themes and any mutable themes
+  # written by Noctalia at ~/.config/helix/themes/.  Store themes are
+  # linked first so mutable ones win on conflict.
+  helixThemeOverlay = ''
+    _store_cfg="$XDG_CONFIG_HOME"
+    _merged="''${XDG_CACHE_HOME:-$HOME/.cache}/helix-wrapper-hx"
+    _mutable="$HOME/.config/helix/themes"
+    mkdir -p "$_merged/helix/themes"
+    for f in "$_store_cfg"/helix/*; do
+      [ -e "$f" ] || continue
+      case "$(basename "$f")" in
+        themes) ;;
+        *) ln -sfn "$f" "$_merged/helix/" ;;
+      esac
+    done
+    for t in "$_store_cfg"/helix/themes/*; do
+      [ -e "$t" ] && ln -sf "$t" "$_merged/helix/themes/"
+    done
+    if [ -d "$_mutable" ]; then
+      for t in "$_mutable"/*.toml; do
+        [ -e "$t" ] && ln -sf "$t" "$_merged/helix/themes/"
+      done
+    fi
+    export XDG_CONFIG_HOME="$_merged"
+  '';
 in
 {
   home.packages = [
     (inputs.wrappers.wrapperModules.helix.apply {
       inherit pkgs;
+
+      preHook = helixThemeOverlay;
 
       extraPackages = with pkgs; [
         cargo
