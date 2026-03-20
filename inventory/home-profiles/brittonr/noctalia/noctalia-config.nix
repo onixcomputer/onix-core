@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, pkgs, ... }:
 let
   # Import each section, passing config as parameter
   bar = import ./noctalia-sections/bar.nix config;
@@ -9,6 +9,20 @@ let
   session = import ./noctalia-sections/session.nix config;
   system = import ./noctalia-sections/system.nix config;
   extras = import ./noctalia-sections/extras.nix config;
+
+  templateDir = ./templates;
+
+  # Post-hook: replace starship palette section with template output,
+  # then reload running instances via SIGHUP.
+  starshipPostHook = pkgs.writeShellScript "starship-palette-update" ''
+    STARSHIP="''${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml"
+    PALETTE="''${XDG_CACHE_HOME:-$HOME/.cache}/noctalia/starship-palette.toml"
+    [ -f "$STARSHIP" ] && [ -f "$PALETTE" ] || exit 0
+    # Strip the header line from the generated palette fragment
+    COLORS=$(${pkgs.gnused}/bin/sed '1d' "$PALETTE")
+    ${pkgs.gnused}/bin/sed -i '/^\[palettes\.onix-dark\]/,/^\[/{/^\[palettes\.onix-dark\]/!{/^\[/!d}}' "$STARSHIP"
+    ${pkgs.gnused}/bin/sed -i "/^\[palettes\.onix-dark\]/a\\$COLORS" "$STARSHIP"
+  '';
 in
 {
   programs.noctalia-shell = {
@@ -32,6 +46,41 @@ in
       mShadow = config.theme.data.bg_dark.hex;
       mHover = config.theme.data.bg_highlight.hex;
       mOnHover = config.theme.data.fg.hex;
+    };
+
+    # User templates for apps without built-in Noctalia support.
+    # Built-in templates handle: niri, kitty, btop, helix.
+    # User templates handle: fish, bat, delta, eza, starship, swayosd.
+    user-templates = {
+      templates = {
+        fish = {
+          input_path = "${templateDir}/fish-colors.fish";
+          output_path = "~/.config/fish/conf.d/noctalia-colors.fish";
+        };
+        bat = {
+          input_path = "${templateDir}/bat.tmTheme";
+          output_path = "~/.config/bat/themes/noctalia.tmTheme";
+          post_hook = "bat cache --build 2>/dev/null || true";
+        };
+        delta = {
+          input_path = "${templateDir}/delta.gitconfig";
+          output_path = "~/.config/git/noctalia-delta-colors";
+        };
+        eza = {
+          input_path = "${templateDir}/eza-theme.yml";
+          output_path = "~/.config/eza/theme.yml";
+        };
+        starship = {
+          input_path = "${templateDir}/starship-palette.toml";
+          output_path = "~/.cache/noctalia/starship-palette.toml";
+          post_hook = "${starshipPostHook}";
+        };
+        swayosd = {
+          input_path = "${templateDir}/swayosd.css";
+          output_path = "~/.config/swayosd/style.css";
+          post_hook = "systemctl --user restart swayosd.service 2>/dev/null || true";
+        };
+      };
     };
 
     # Merge all section settings

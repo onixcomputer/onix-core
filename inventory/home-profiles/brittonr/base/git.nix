@@ -26,6 +26,10 @@ in
       };
     };
 
+    includes = [
+      { path = "~/.config/git/noctalia-delta-colors"; }
+    ];
+
     ignores = [
       ".DS_Store"
       "*.swp"

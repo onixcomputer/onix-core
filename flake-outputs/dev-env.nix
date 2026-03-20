@@ -106,7 +106,10 @@ let
           "*.yaml"
           "*.yml"
         ];
-        excludes = [ "*/asciinema-player/*" ];
+        excludes = [
+          "*/asciinema-player/*"
+          "*/noctalia/templates/*" # contain {{...}} template syntax
+        ];
       };
     };
 

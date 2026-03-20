@@ -8,9 +8,6 @@
     ../../shared/desktop/theme.nix
     ./theme-config.nix
 
-    # Runtime theme sync for all apps
-    ../../shared/desktop/noctalia-theme-sync.nix
-
     # Core utilities
     ../../shared/desktop/audio-utils.nix
     ../../shared/desktop/clipboard.nix

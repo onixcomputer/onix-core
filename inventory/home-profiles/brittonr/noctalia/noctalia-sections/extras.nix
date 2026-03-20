@@ -1,11 +1,10 @@
 # Templates, hooks, plugins, and desktop widgets for noctalia-shell
 _config: {
   # -- Templates --
-  # Enable the built-in niri template so Noctalia generates
-  # ~/.config/niri/noctalia.kdl whenever colours change.
-  # The template-apply.sh post-hook adds `include "./noctalia.kdl"`
-  # to config.kdl on first run; subsequent changes are picked up by
-  # the systemd path watcher (noctalia-niri-sync).
+  # Built-in templates generate per-app config fragments whenever
+  # colors change.  User templates (enableUserTheming) extend this
+  # to fish, bat, delta, eza, starship, and swayosd via
+  # ~/.config/noctalia/user-templates.toml (provided by home-manager).
   templates = {
     activeTemplates = [
       {
@@ -16,19 +15,25 @@ _config: {
         id = "kitty";
         enabled = true;
       }
+      {
+        id = "btop";
+        enabled = true;
+      }
+      {
+        id = "helix";
+        enabled = true;
+      }
     ];
-    enableUserTheming = false;
+    enableUserTheming = true;
   };
 
   # -- Hooks --
-  # noctalia-theme-sync propagates colors to all themed apps (fish,
-  # starship, helix, btop, bat, delta, eza, swayosd). The built-in
-  # niri and kitty templates handle those two. The niri reload
-  # is chained after the sync script.
+  # Built-in + user templates handle all app theming. Hooks only
+  # need to reload niri after templates write noctalia.kdl.
   hooks = {
     enabled = true;
-    darkModeChange = "noctalia-theme-sync; niri msg action load-config-file";
-    wallpaperChange = "noctalia-theme-sync; niri msg action load-config-file";
+    darkModeChange = "niri msg action load-config-file";
+    wallpaperChange = "niri msg action load-config-file";
     screenLock = "";
     screenUnlock = "";
     performanceModeEnabled = "";
