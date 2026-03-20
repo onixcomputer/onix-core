@@ -358,14 +358,23 @@ let prom_rules = import "prometheus-rules.ncl" in
       },
     },
 
-    "clankers-daemon" = {
+    clankers = {
       module = { name = "clankers", input = "self" },
-      roles.daemon = {
-        tags.dev = {},
-        settings = {
-          user = "brittonr",
-          allowAll = false,
-          heartbeat = 30,
+      roles = {
+        daemon = {
+          tags.dev = {},
+          settings = {
+            user = "brittonr",
+            allowAll = false,
+            heartbeat = 30,
+          },
+        },
+        router = {
+          machines."britton-desktop" = {},
+          settings = {
+            user = "brittonr",
+            listenPort = 4000,
+          },
         },
       },
     },

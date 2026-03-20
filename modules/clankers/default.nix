@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ clanLib, lib, ... }:
 let
   inherit (lib)
     mkOption
@@ -18,6 +18,7 @@ in
   manifest = {
     name = "clankers";
     readme = "Clankers coding agent daemon and router services";
+    exports.out = [ "endpoints" ];
   };
 
   roles = {
@@ -47,7 +48,10 @@ in
           apiBase = mkOption {
             type = nullOr str;
             default = null;
-            description = "API base URL (e.g. http://127.0.0.1:4000 for local router)";
+            description = ''
+              API base URL override (e.g. http://127.0.0.1:4000).
+              If null, auto-discovered from the router role's exported endpoint.
+            '';
           };
 
           extraArgs = mkOption {
@@ -59,7 +63,47 @@ in
       };
 
       perInstance =
-        { settings, ... }:
+        {
+          settings,
+          exports,
+          machine,
+          ...
+        }:
+        let
+          # Find the router endpoint from exports.
+          # Router exports: { "clankers:<inst>:router:<machine>" = { endpoints.hosts = ["host:port"]; }; }
+          routerExports = clanLib.selectExports (
+            scope: scope.serviceName == "clankers" && scope.roleName == "router"
+          ) exports;
+          routerEntries = lib.attrValues routerExports;
+
+          # Extract first router's host:port from exports.
+          routerHostPort =
+            let
+              first = lib.head routerEntries;
+              hosts = first.endpoints.hosts or [ ];
+            in
+            if routerEntries != [ ] && hosts != [ ] then lib.head hosts else null;
+
+          routerScopes = lib.attrNames routerExports;
+          routerMachines = map (s: (clanLib.parseScope s).machineName) routerScopes;
+          isColocated = lib.elem machine.name routerMachines;
+
+          # Explicit apiBase wins; otherwise use discovered endpoint.
+          # If the daemon runs on the same machine as the router, use localhost.
+          resolvedApiBase =
+            if settings.apiBase != null then
+              settings.apiBase
+            else if routerHostPort == null then
+              null
+            else
+              let
+                # Parse port from "host:port" string
+                parts = lib.splitString ":" routerHostPort;
+                routerPort = lib.elemAt parts 1;
+              in
+              if isColocated then "http://127.0.0.1:${routerPort}" else "http://${routerHostPort}";
+        in
         {
           nixosModule =
             { pkgs, inputs, ... }:
@@ -80,8 +124,8 @@ in
                 allowAll
                 heartbeat
                 extraArgs
-                apiBase
                 ;
+              apiBase = resolvedApiBase;
               args = [
                 "--heartbeat"
                 (toString heartbeat)
@@ -95,8 +139,9 @@ in
                 after = [
                   "network-online.target"
                 ]
-                ++ lib.optionals (apiBase != null) [ "clanker-router.service" ];
-                wants = [ "network-online.target" ] ++ lib.optionals (apiBase != null) [ "clanker-router.service" ];
+                # Only add router dependency when it runs on the same machine.
+                ++ lib.optionals isColocated [ "clanker-router.service" ];
+                wants = [ "network-online.target" ] ++ lib.optionals isColocated [ "clanker-router.service" ];
                 wantedBy = [ "multi-user.target" ];
 
                 serviceConfig = {
@@ -141,7 +186,7 @@ in
 
           listenAddr = mkOption {
             type = str;
-            default = "127.0.0.1";
+            default = "0.0.0.0";
             description = "Address to bind the HTTP proxy";
           };
 
@@ -166,8 +211,19 @@ in
       };
 
       perInstance =
-        { settings, ... }:
         {
+          settings,
+          mkExports,
+          machine,
+          ...
+        }:
+        {
+          # Export the router's endpoint so daemons can discover it.
+          # Format: "host:port" — daemons parse this to build ANTHROPIC_BASE_URL.
+          exports = mkExports {
+            endpoints.hosts = [ "${machine.name}:${toString settings.listenPort}" ];
+          };
+
           nixosModule =
             { pkgs, inputs, ... }:
             let
