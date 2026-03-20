@@ -1,3 +1,13 @@
+# Clankers clan service — thin wrapper around upstream NixOS modules.
+#
+# The clankers flake (inputs.clankers) exports:
+#   nixosModules.clankers-daemon  — services.clankers-daemon.*
+#   nixosModules.clanker-router   — services.clanker-router.*
+#
+# This clan module adds:
+#   - Router auto-discovery via clan exports (daemon finds router endpoint)
+#   - Colocation detection (localhost when on same machine)
+#   - ANTHROPIC_BASE_URL injection so daemon proxies through router
 { clanLib, lib, ... }:
 let
   inherit (lib)
@@ -22,15 +32,14 @@ in
   };
 
   roles = {
-    # The daemon hosts agent sessions accessible via iroh QUIC.
     daemon = {
       description = "Clankers daemon — persistent agent sessions over iroh QUIC";
       interface = {
         options = {
-          user = mkOption {
+          model = mkOption {
             type = str;
-            default = "brittonr";
-            description = "User to run the daemon as";
+            default = "claude-sonnet-4-20250514";
+            description = "Default LLM model for agent sessions";
           };
 
           allowAll = mkOption {
@@ -71,13 +80,11 @@ in
         }:
         let
           # Find the router endpoint from exports.
-          # Router exports: { "clankers:<inst>:router:<machine>" = { endpoints.hosts = ["host:port"]; }; }
           routerExports = clanLib.selectExports (
             scope: scope.serviceName == "clankers" && scope.roleName == "router"
           ) exports;
           routerEntries = lib.attrValues routerExports;
 
-          # Extract first router's host:port from exports.
           routerHostPort =
             let
               first = lib.head routerEntries;
@@ -89,8 +96,6 @@ in
           routerMachines = map (s: (clanLib.parseScope s).machineName) routerScopes;
           isColocated = lib.elem machine.name routerMachines;
 
-          # Explicit apiBase wins; otherwise use discovered endpoint.
-          # If the daemon runs on the same machine as the router, use localhost.
           resolvedApiBase =
             if settings.apiBase != null then
               settings.apiBase
@@ -98,7 +103,6 @@ in
               null
             else
               let
-                # Parse port from "host:port" string
                 parts = lib.splitString ":" routerHostPort;
                 routerPort = lib.elemAt parts 1;
               in
@@ -108,6 +112,8 @@ in
           nixosModule =
             { pkgs, inputs, ... }:
             let
+              # Local build — upstream unit2nix IFD can't resolve the
+              # cross-repo subwayrat path deps in sandbox.
               rustPkgs = import inputs.nixpkgs {
                 inherit (pkgs) system;
                 overlays = [ (import inputs.rust-overlay) ];
@@ -119,71 +125,39 @@ in
                 rustc = nightlyToolchain;
                 cargo = nightlyToolchain;
               };
-              inherit (settings)
-                user
-                allowAll
-                heartbeat
-                extraArgs
-                ;
-              apiBase = resolvedApiBase;
-              args = [
-                "--heartbeat"
-                (toString heartbeat)
-              ]
-              ++ lib.optionals allowAll [ "--allow-all" ]
-              ++ extraArgs;
             in
             {
-              systemd.services.clankers-daemon = {
-                description = "Clankers agent daemon";
-                after = [
-                  "network-online.target"
-                ]
-                # Only add router dependency when it runs on the same machine.
-                ++ lib.optionals isColocated [ "clanker-router.service" ];
-                wants = [ "network-online.target" ] ++ lib.optionals isColocated [ "clanker-router.service" ];
-                wantedBy = [ "multi-user.target" ];
+              imports = [ inputs.clankers.nixosModules.clankers-daemon ];
 
-                serviceConfig = {
-                  Type = "simple";
-                  User = user;
-                  ExecStart = "${clankersPkg}/bin/clankers daemon start ${lib.concatStringsSep " " args}";
-                  Restart = "on-failure";
-                  RestartSec = "10s";
-
-                  # Hardening
-                  NoNewPrivileges = true;
-                  ProtectSystem = "strict";
-                  ProtectHome = "tmpfs";
-                  # Bind-mount the user's home for session state + iroh keys
-                  BindPaths = [ "/home/${user}" ];
-                  PrivateTmp = true;
-                  StateDirectory = "clankers";
-                };
-
-                environment = mkMerge [
-                  {
-                    HOME = "/home/${user}";
-                    RUST_LOG = "info";
-                  }
-                  (mkIf (apiBase != null) { ANTHROPIC_BASE_URL = apiBase; })
-                ];
+              services.clankers-daemon = {
+                enable = true;
+                package = clankersPkg;
+                inherit (settings)
+                  model
+                  allowAll
+                  heartbeat
+                  extraArgs
+                  ;
               };
+
+              # Router auto-discovery: order after colocated router, inject base URL.
+              systemd.services.clankers-daemon = mkMerge [
+                (mkIf isColocated {
+                  after = [ "clanker-router.service" ];
+                  wants = [ "clanker-router.service" ];
+                })
+                (mkIf (resolvedApiBase != null) {
+                  environment.ANTHROPIC_BASE_URL = resolvedApiBase;
+                })
+              ];
             };
         };
     };
 
-    # The router proxies LLM requests across providers with failover.
     router = {
       description = "Clanker-router — multi-provider LLM proxy with failover and caching";
       interface = {
         options = {
-          user = mkOption {
-            type = str;
-            default = "brittonr";
-            description = "User to run the router as";
-          };
-
           listenAddr = mkOption {
             type = str;
             default = "0.0.0.0";
@@ -196,93 +170,97 @@ in
             description = "Port for the OpenAI-compatible HTTP proxy";
           };
 
-          enableIroh = mkOption {
-            type = bool;
-            default = false;
-            description = "Expose the router over iroh QUIC tunnel";
+          proxyKeys = mkOption {
+            type = listOf str;
+            default = [ ];
+            description = "API keys allowed to access the proxy. Empty = no auth.";
           };
 
-          configFile = mkOption {
-            type = nullOr str;
-            default = null;
-            description = "Path to router config file (uses default if null)";
+          extraArgs = mkOption {
+            type = listOf str;
+            default = [ ];
+            description = "Extra arguments passed to `clanker-router serve`";
           };
         };
       };
 
       perInstance =
         {
+          instanceName,
           settings,
           mkExports,
           machine,
           ...
         }:
         {
-          # Export the router's endpoint so daemons can discover it.
-          # Format: "host:port" — daemons parse this to build ANTHROPIC_BASE_URL.
           exports = mkExports {
             endpoints.hosts = [ "${machine.name}:${toString settings.listenPort}" ];
           };
 
           nixosModule =
-            { pkgs, inputs, ... }:
+            {
+              config,
+              pkgs,
+              inputs,
+              ...
+            }:
             let
-              rustPkgs = import inputs.nixpkgs {
-                inherit (pkgs) system;
-                overlays = [ (import inputs.rust-overlay) ];
-              };
-              nightlyToolchain = rustPkgs.rust-bin.nightly.latest.default.override {
-                extensions = [ "rust-src" ];
-              };
-              clankersPkg = pkgs.callPackage "${inputs.self}/pkgs/clankers" {
-                rustc = nightlyToolchain;
-                cargo = nightlyToolchain;
-              };
-              inherit (settings)
-                user
-                listenAddr
-                listenPort
-                enableIroh
-                configFile
-                ;
+              generatorName = "clanker-router-${instanceName}";
+              envFilePath = config.clan.core.vars.generators.${generatorName}.files.env-file.path;
             in
             {
-              systemd.services.clanker-router = {
-                description = "Clanker-router LLM proxy";
-                after = [
-                  "network-online.target"
-                ];
-                wants = [ "network-online.target" ];
-                wantedBy = [ "multi-user.target" ];
+              imports = [ inputs.clankers.nixosModules.clanker-router ];
 
-                serviceConfig = {
-                  Type = "simple";
-                  User = user;
-                  ExecStart = "${clankersPkg}/bin/clankers router start";
-                  Restart = "on-failure";
-                  RestartSec = "10s";
-
-                  # Hardening
-                  NoNewPrivileges = true;
-                  ProtectSystem = "strict";
-                  ProtectHome = "tmpfs";
-                  BindPaths = [ "/home/${user}" ];
-                  PrivateTmp = true;
-                  StateDirectory = "clanker-router";
-                };
-
-                environment = mkMerge [
-                  {
-                    HOME = "/home/${user}";
-                    RUST_LOG = "info";
-                    CLANKER_ROUTER_LISTEN = "${listenAddr}:${toString listenPort}";
-                  }
-                  (mkIf enableIroh { CLANKER_ROUTER_IROH = "1"; })
-                  (mkIf (configFile != null) { CLANKER_ROUTER_CONFIG = configFile; })
-                ];
+              services.clanker-router = {
+                enable = true;
+                package = inputs.clankers.packages.${pkgs.system}.clanker-router;
+                proxyAddr = "${settings.listenAddr}:${toString settings.listenPort}";
+                openFirewall = true;
+                environmentFile = envFilePath;
+                inherit (settings) proxyKeys extraArgs;
               };
 
-              networking.firewall.allowedTCPPorts = [ listenPort ];
+              # Provider API keys — prompted once, SOPS-encrypted, deployed to target.
+              clan.core.vars.generators.${generatorName} = {
+                share = true;
+                files.env-file = {
+                  secret = true;
+                  deploy = true;
+                };
+
+                prompts = {
+                  anthropic-api-key = {
+                    description = "Anthropic API key (sk-ant-...)";
+                    type = "hidden";
+                    persist = true;
+                  };
+                  openai-api-key = {
+                    description = "OpenAI API key (sk-...) — leave empty to skip";
+                    type = "hidden";
+                    persist = true;
+                  };
+                  openrouter-api-key = {
+                    description = "OpenRouter API key (sk-or-...) — leave empty to skip";
+                    type = "hidden";
+                    persist = true;
+                  };
+                };
+
+                runtimeInputs = [ pkgs.coreutils ];
+
+                script = ''
+                  : > "$out/env-file"
+                  for pair in \
+                    "ANTHROPIC_API_KEY:$prompts/anthropic-api-key" \
+                    "OPENAI_API_KEY:$prompts/openai-api-key" \
+                    "OPENROUTER_API_KEY:$prompts/openrouter-api-key"; do
+                    var="''${pair%%:*}"
+                    file="''${pair#*:}"
+                    val="$(tr -d '\n' < "$file")"
+                    [ -n "$val" ] && printf '%s=%s\n' "$var" "$val" >> "$out/env-file"
+                  done
+                '';
+              };
             };
         };
     };

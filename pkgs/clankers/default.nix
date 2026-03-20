@@ -1,14 +1,15 @@
-# Clankers — terminal coding agent.
+# Clankers — terminal coding agent (CLI binary only).
 #
-# Clankers has path deps on sibling repos (subwayrat, openspec).
-# The upstream flake uses unit2nix auto mode which breaks on these
-# cross-repo path deps in IFD. This package builds from source
-# using rustPlatform.buildRustPackage with all sources assembled.
+# The clankers workspace has path deps on sibling repos (subwayrat).
+# The upstream flake's unit2nix IFD can't resolve cross-repo path deps
+# in sandbox. This package builds from source using
+# rustPlatform.buildRustPackage with all sources assembled.
+#
+# The clanker-router binary is built separately by the upstream flake
+# (inputs.clankers.packages.${system}.clanker-router) — it has no
+# path dep issues since it's a standalone repo.
 #
 # openspec is skipped (has no git remote, feature is optional).
-#
-# Requires the rust-overlay overlay for nightly toolchain access.
-# Caller must pass `rust-bin` (from rust-overlay).
 {
   lib,
   fetchFromGitHub,
@@ -25,27 +26,26 @@
   go,
   perl,
   makeWrapper,
-  # Caller provides these (rust-overlay applied pkgs)
   rustPlatform,
   rustc,
   cargo,
 }:
 let
-  clankersRev = "5a298beb0452a69e9fa95854d48234f25ef57b33";
-  subwayratRev = "66147cb60f8168c9fa71d79cf1b5ae604b6429f1";
+  clankersRev = "5a767f656fdbffeee16becebbd6de35b757a1ac9";
+  subwayratRev = "d4f7db8d0b6d251f6860b9c216bdb1bc806fefde";
 
   clankersSource = fetchFromGitHub {
     owner = "brittonr";
     repo = "clankers";
     rev = clankersRev;
-    hash = "sha256-8Dgtawjri7bkSJDzx/kN4FlnTtQnzfN8/uz6F6j0/zM=";
+    hash = "sha256-L3Ba3IxtbPwZ9oowJ6LOGZq7u1psddnVPMGU8a1MdVg=";
   };
 
   subwayratSource = fetchFromGitHub {
     owner = "brittonr";
     repo = "subwayrat";
     rev = subwayratRev;
-    hash = "sha256-r16AbcS7TJqZffrrq1v7RoPTuUK/KyHnD74YeNCwjUA=";
+    hash = "sha256-OqX9V0CgoGkZCgfMXt3blJ9J9IJBQI5M6djReFQMLWE=";
   };
 in
 rustPlatform.buildRustPackage {
@@ -54,7 +54,6 @@ rustPlatform.buildRustPackage {
 
   src = clankersSource;
 
-  # Nightly Rust (edition 2024)
   inherit rustc cargo;
 
   # Place sibling repos where Cargo.toml path deps expect them.
@@ -111,10 +110,8 @@ rustPlatform.buildRustPackage {
     zstd
   ];
 
-  # aws-lc-rs needs cmake + go in build environment
   env.AWS_LC_SYS_CMAKE_BUILDER = "1";
 
-  # Integration tests need CARGO_BIN_EXE env vars
   doCheck = false;
 
   meta = {

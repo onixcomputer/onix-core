@@ -364,7 +364,6 @@ let prom_rules = import "prometheus-rules.ncl" in
         daemon = {
           tags.dev = {},
           settings = {
-            user = "brittonr",
             allowAll = false,
             heartbeat = 30,
           },
@@ -372,7 +371,6 @@ let prom_rules = import "prometheus-rules.ncl" in
         router = {
           machines."britton-desktop" = {},
           settings = {
-            user = "brittonr",
             listenPort = 4000,
           },
         },

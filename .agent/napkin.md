@@ -138,6 +138,14 @@
 - **Flattening patterns**: extract `.hex` values in Nix (`c.bg.hex`), or bulk-flatten sub-records via `builtins.mapAttrs (_: v: v.hex) c.zen.dark`.
 - **Nickel gotchas**: `fun { bg, .. } =>` destructuring causes `InfiniteRecursion` when field names match nested keys. Use `fun args =>` with `let` bindings. Don't name bindings `c` if the output has a `c` field (e.g. starship C language module shadows it).
 
+## Domain Notes (clankers upstream NixOS modules)
+- Upstream clankers flake now exports `nixosModules.clankers-daemon` and `nixosModules.clanker-router` with proper NixOS options (`services.clankers-daemon.*`, `services.clanker-router.*`).
+- The router is a separate binary (`clanker-router serve`) from the `clanker-router` repo, not a subcommand of `clankers`. Built with `features = "cli"`.
+- `inputs.clankers.packages.${system}.clanker-router` works (standalone repo, no path dep issues). `inputs.clankers.packages.${system}.clankers` fails (unit2nix IFD can't resolve `../subwayrat/` path deps in sandbox).
+- Hybrid approach: import upstream NixOS modules for service definitions, use upstream package for the router, keep local `pkgs/clankers/default.nix` build for the daemon binary.
+- Upstream modules create system users (`clankers`, `clanker-router`) with dedicated state dirs (`/var/lib/clankers`, `/var/lib/clanker-router`). API keys via `environmentFile`.
+- Nix is lazy: accessing `inputs.clankers.packages.${system}.clanker-router` only evaluates `routerBuild`, not the broken `ws` workspace build.
+
 ## Patterns That Work
 - `_class` conditionals for darwin/nixos shared modules — set platform-specific attrs with `lib.optionalAttrs (_class == "nixos")` / `(_class == "darwin")`. Darwin lacks `isNormalUser`, needs `users.knownUsers`, uses `gid = 80` for admin instead of `extraGroups = ["wheel"]`, and has different GC schedule syntax (interval vs dates).
 - SSH into target machines to get actual journal logs rather than guessing from deploy output

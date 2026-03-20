@@ -159,8 +159,25 @@
         "url": "https://git.clan.lol/clan/clan-core"
       }
     },
+    "clanker-router-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1773601720,
+        "narHash": "sha256-AxDz0hZQFt+Ulzru2kSE4n1Ldr42R5EpvFnXKOIhGRw=",
+        "owner": "brittonr",
+        "repo": "clanker-router",
+        "rev": "fe50bb1174cedc3b18e663a253d02842c19ef328",
+        "type": "github"
+      },
+      "original": {
+        "owner": "brittonr",
+        "repo": "clanker-router",
+        "type": "github"
+      }
+    },
     "clankers": {
       "inputs": {
+        "clanker-router-src": "clanker-router-src",
         "flake-utils": "flake-utils",
         "nixpkgs": [
           "nixpkgs"
@@ -171,11 +188,11 @@
         "unit2nix": "unit2nix"
       },
       "locked": {
-        "lastModified": 1773848102,
-        "narHash": "sha256-po0D33QG4Vx7lm/5XqwzrDMi8r1ZQsxUZEa5kQg1kG4=",
+        "lastModified": 1774003956,
+        "narHash": "sha256-L3Ba3IxtbPwZ9oowJ6LOGZq7u1psddnVPMGU8a1MdVg=",
         "owner": "brittonr",
         "repo": "clankers",
-        "rev": "5cfec87a777e610a615d7b8109b63e67f7aa07d3",
+        "rev": "5a767f656fdbffeee16becebbd6de35b757a1ac9",
         "type": "github"
       },
       "original": {
@@ -1209,11 +1226,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1773792671,
-        "narHash": "sha256-faeuOzA4SUe8RxRrvDqwmhpU6FixDceplj2RTtJcUng=",
+        "lastModified": 1774003653,
+        "narHash": "sha256-aSEU+AX0rQsxNceG1iZyIyf4bz2YFQg0VzNwgb35GxQ=",
         "owner": "brittonr",
         "repo": "unit2nix",
-        "rev": "16148065bb23ba697103dbc04e69113bd8f0aa3d",
+        "rev": "69e697c446715698f1937e237450c4a28823babf",
         "type": "github"
       },
       "original": {
