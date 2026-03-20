@@ -185,6 +185,7 @@ in
                 wantedBy = [ "multi-user.target" ];
 
                 serviceConfig = {
+                  ExecCondition = "${pkgs.bash}/bin/bash -c 'test -f ${modelPath}'";
                   ExecStart = concatStringsSep " " (
                     [
                       "${pkg}/bin/llama-server"
@@ -200,7 +201,10 @@ in
                       (toString contextSize)
                     ]
                     ++ rpcFlag
-                    ++ lib.optionals flashAttention [ "-fa" ]
+                    ++ lib.optionals flashAttention [
+                      "-fa"
+                      "on"
+                    ]
                     ++ lib.optionals noMmap [ "--no-mmap" ]
                     ++ extraArgs
                   );
