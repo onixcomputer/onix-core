@@ -23,6 +23,7 @@ let
     "llm-agents" = import ./llm-agents;
     "home-manager-profiles" = import ./home-manager-profiles;
     "harmonia" = import ./harmonia;
+    "llamacpp-rpc" = import ./llamacpp-rpc;
   };
 
 in

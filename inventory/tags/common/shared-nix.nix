@@ -17,6 +17,9 @@ in
   # Override nixVersions.latest with our wasm-enabled build so srvos
   # (which sets nix.package = nixVersions.latest) picks it up automatically.
   nixpkgs.overlays = [
+    (_final: _prev: {
+      llamacpp-rocm-rpc = self.packages.${pkgs.stdenv.hostPlatform.system}.llamacpp-rocm-rpc or null;
+    })
     (_final: prev: {
       nixVersions = prev.nixVersions // {
         latest = inputs.nix-wasm.packages.${pkgs.stdenv.hostPlatform.system}.nix.overrideAttrs (_: {

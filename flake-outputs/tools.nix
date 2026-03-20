@@ -33,6 +33,7 @@ in
   // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
     branchfs = pkgs.callPackage ../pkgs/branchfs { };
     horizon = pkgs.callPackage ../pkgs/horizon { horizon-src = self.inputs.horizon; };
+    llamacpp-rocm-rpc = pkgs.callPackage ../pkgs/llamacpp-rocm-rpc { };
   }
   // lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") {
     abp = pkgs.callPackage ../pkgs/abp { };

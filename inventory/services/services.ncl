@@ -327,6 +327,34 @@ let prom_rules = import "prometheus-rules.ncl" in
       },
     },
 
+    "llamacpp-cluster" = {
+      module = { name = "llamacpp-rpc", input = "self" },
+      roles = {
+        worker = {
+          tags."llamacpp-worker" = {},
+          settings = {
+            bindAddress = "0.0.0.0",
+            port = 50052,
+            enableCache = true,
+          },
+        },
+        server = {
+          tags."llamacpp-server" = {},
+          settings = {
+            host = "0.0.0.0",
+            port = 8081,
+            modelPath = "/var/lib/llamacpp/models/model.gguf",
+            rpcWorkers = ["10.10.10.2:50052"],
+            gpuLayers = 999,
+            flashAttention = true,
+            contextSize = 8192,
+            noMmap = true,
+            extraArgs = [],
+          },
+        },
+      },
+    },
+
     "clankers-daemon" = {
       module = { name = "clankers", input = "self" },
       roles.daemon = {

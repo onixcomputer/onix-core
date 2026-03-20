@@ -42,6 +42,8 @@ in
 let service_tags = [
   "backup",
   "homepage-server",
+  "llamacpp-server",
+  "llamacpp-worker",
   "llm",
   "llm-client",
   "monitoring",

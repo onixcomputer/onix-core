@@ -25,6 +25,7 @@ let self_modules = [
   "home-manager-profiles",
   "homepage-dashboard",
   "iroh-ssh",
+  "llamacpp-rpc",
   "llm",
   "llm-agents",
   "loki",
