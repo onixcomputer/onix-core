@@ -159,8 +159,15 @@ in
       -- Disable update checks
       config.check_for_updates = false
 
-      -- Colors loaded from Nix-generated file
-      config.colors = dofile(wezterm.home_dir .. '/.config/wezterm/colors.lua')
+      -- Colors: prefer Noctalia runtime colors (updated on wallpaper/mode
+      -- change), fall back to Nix-generated build-time defaults.
+      -- Wezterm auto-reloads when dofile'd paths change on disk.
+      local noctalia_ok, noctalia_colors = pcall(dofile, wezterm.home_dir .. '/.config/wezterm/noctalia-colors.lua')
+      if noctalia_ok and noctalia_colors then
+        config.colors = noctalia_colors
+      else
+        config.colors = dofile(wezterm.home_dir .. '/.config/wezterm/colors.lua')
+      end
 
       -- Keybindings
       local act = wezterm.action
