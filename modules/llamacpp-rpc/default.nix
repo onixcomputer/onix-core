@@ -82,21 +82,16 @@ in
                   );
                   Restart = "on-failure";
                   RestartSec = 5;
-                  DynamicUser = true;
-                  StateDirectory = "llamacpp";
 
-                  # GPU access
-                  SupplementaryGroups = [
-                    "render"
-                    "video"
-                  ];
-                  DeviceAllow = [
-                    "/dev/kfd rw"
-                    "/dev/dri/* rw"
-                  ];
+                  # Run as root for GPU device access (kfd + dri).
+                  # DynamicUser can't access /dev/kfd reliably.
+                  User = "root";
+                  Group = "root";
+                  StateDirectory = "llamacpp";
                 };
 
                 environment = {
+                  HOME = "/var/lib/llamacpp";
                   HSA_OVERRIDE_GFX_VERSION = "11.5.1";
                 };
               };
@@ -211,21 +206,15 @@ in
                   );
                   Restart = "on-failure";
                   RestartSec = 10;
-                  DynamicUser = true;
-                  StateDirectory = "llamacpp";
 
-                  # GPU access
-                  SupplementaryGroups = [
-                    "render"
-                    "video"
-                  ];
-                  DeviceAllow = [
-                    "/dev/kfd rw"
-                    "/dev/dri/* rw"
-                  ];
+                  # Run as root for GPU device access (kfd + dri)
+                  User = "root";
+                  Group = "root";
+                  StateDirectory = "llamacpp";
                 };
 
                 environment = {
+                  HOME = "/var/lib/llamacpp";
                   HSA_OVERRIDE_GFX_VERSION = "11.5.1";
                 };
               };
