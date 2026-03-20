@@ -1,17 +1,4 @@
 { pkgs, inputs, ... }:
-let
-  rustPkgs = import inputs.nixpkgs {
-    inherit (pkgs) system;
-    overlays = [ (import inputs.rust-overlay) ];
-  };
-  nightlyToolchain = rustPkgs.rust-bin.nightly.latest.default.override {
-    extensions = [ "rust-src" ];
-  };
-  clankersPkg = pkgs.callPackage ../../pkgs/clankers {
-    rustc = nightlyToolchain;
-    cargo = nightlyToolchain;
-  };
-in
 {
   imports = [
     inputs.nix-index-database.nixosModules.nix-index
@@ -27,7 +14,6 @@ in
   # NixOS-specific dev tools (shared tools from shared-dev.nix)
   environment.systemPackages = with pkgs; [
     # Coding agents
-    clankersPkg
     codex
     # Screen recording tool - requires GStreamer plugins for encoding
     # Wrap kooha with required GStreamer plugins for NVIDIA hardware encoding

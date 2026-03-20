@@ -358,25 +358,6 @@ let prom_rules = import "prometheus-rules.ncl" in
       },
     },
 
-    clankers = {
-      module = { name = "clankers", input = "self" },
-      roles = {
-        daemon = {
-          tags.dev = {},
-          settings = {
-            allowAll = false,
-            heartbeat = 30,
-          },
-        },
-        router = {
-          machines."britton-desktop" = {},
-          settings = {
-            listenPort = 4000,
-          },
-        },
-      },
-    },
-
     clonadic = {
       module = { name = "clonadic", input = "self" },
       roles.default.machines.aspen1.settings.model = "qwen3:4b",
