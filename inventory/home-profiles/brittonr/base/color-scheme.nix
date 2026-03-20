@@ -4,10 +4,10 @@
     type = lib.types.attrs;
     readOnly = true;
     default = {
-      useWallpaperColors = true;
+      useWallpaperColors = false;
       darkMode = true;
       schedulingMode = "off"; # darkman handles light/dark switching
-      generationMethod = "rainbow";
+      generationMethod = "tonal-spot";
     };
     description = "Color scheme generation settings (Material You)";
   };
