@@ -19,10 +19,11 @@ in
       window_padding_width = config.layout.terminal.padding;
       background_opacity = "1.0"; # No transparency
 
-      # Font settings
-      bold_font = "${config.font.mono} Bold";
-      italic_font = "${config.font.mono} Italic";
-      bold_italic_font = "${config.font.mono} Bold Italic";
+      # Font settings — use auto so fontconfig resolves the correct
+      # weight/slant variants (Berkeley Mono uses Oblique, not Italic)
+      bold_font = "auto";
+      italic_font = "auto";
+      bold_italic_font = "auto";
 
       # Cursor settings - block cursor with blinking and trail effect
       cursor_shape = "block";

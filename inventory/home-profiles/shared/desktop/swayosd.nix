@@ -18,7 +18,7 @@ in
     }
 
     label {
-      font-family: 'CaskaydiaMono Nerd Font', monospace;
+      font-family: '${config.font.ui}', 'CaskaydiaMono Nerd Font', monospace;
       font-size: 11pt;
       color: ${theme.fg.hex};
     }

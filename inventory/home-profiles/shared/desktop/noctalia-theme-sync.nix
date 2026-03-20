@@ -240,7 +240,7 @@ let
       background-color: ''${SURFACE}e6;
     }
     label {
-      font-family: 'CaskaydiaMono Nerd Font', monospace;
+      font-family: '${config.font.ui}', 'CaskaydiaMono Nerd Font', monospace;
       font-size: 11pt;
       color: $ON_SURFACE;
     }

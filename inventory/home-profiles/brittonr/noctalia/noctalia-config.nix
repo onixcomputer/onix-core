@@ -86,4 +86,7 @@ in
     # Merge all section settings
     settings = bar // general // notifications // wallpaper // launcher // session // system // extras;
   };
+
+  # Install Onix color scheme where Noctalia discovers downloaded schemes
+  xdg.configFile."noctalia/colorschemes/Onix/Onix.json".source = ./colorschemes/Onix.json;
 }

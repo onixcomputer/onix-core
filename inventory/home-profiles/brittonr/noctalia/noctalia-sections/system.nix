@@ -63,7 +63,7 @@ config: {
       schedulingMode
       generationMethod
       ;
-    predefinedScheme = "Noctalia (default)";
+    predefinedScheme = "Onix";
     manualSunrise = "06:30";
     manualSunset = "18:30";
     monitorForColors = "";

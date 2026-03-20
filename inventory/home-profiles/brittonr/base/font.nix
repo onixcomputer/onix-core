@@ -4,14 +4,14 @@
     mono = lib.mkOption {
       type = lib.types.str;
       readOnly = true;
-      default = "CaskaydiaMono Nerd Font Mono";
+      default = "Berkeley Mono";
       description = "Monospace font for terminals and code editors";
     };
 
     ui = lib.mkOption {
       type = lib.types.str;
       readOnly = true;
-      default = "CaskaydiaMono Nerd Font";
+      default = "Berkeley Mono";
       description = "UI font for bars, notifications, menus";
     };
 
@@ -42,6 +42,7 @@
           "DejaVu Serif"
         ];
         monospace = [
+          "Berkeley Mono"
           "CaskaydiaMono Nerd Font"
           "Liberation Mono"
           "DejaVu Sans Mono"

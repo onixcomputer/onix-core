@@ -13,6 +13,7 @@
     ./common/fhs-compat.nix
     ./common/zswap.nix
     ./common/nix-signing.nix
+    ./common/berkeley-mono-font.nix
     ./common/shared-nix.nix
     ./common/shared-users.nix
     ./common/update-prefetch.nix
