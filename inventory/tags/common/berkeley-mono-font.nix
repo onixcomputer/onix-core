@@ -53,6 +53,7 @@ in
       Type = "oneshot";
       RemainAfterExit = true;
     };
+    path = [ pkgs.gzip ];
     script = ''
       set -euo pipefail
       mkdir -p ${fontDir}
