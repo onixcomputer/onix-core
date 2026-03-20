@@ -343,7 +343,10 @@ let prom_rules = import "prometheus-rules.ncl" in
           settings = {
             host = "0.0.0.0",
             port = 8081,
-            modelPath = "/var/lib/llamacpp/models/model.gguf",
+            model = {
+              repo = "unsloth/gpt-oss-20b-GGUF",
+              file = "gpt-oss-20b-F16.gguf",
+            },
             rpcWorkers = ["10.10.10.2:50052"],
             gpuLayers = 999,
             flashAttention = true,
