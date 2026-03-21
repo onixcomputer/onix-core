@@ -1,5 +1,6 @@
 { pkgs, inputs, ... }:
 let
+  abp = pkgs.callPackage ../../../../pkgs/abp { };
   tuicr = pkgs.callPackage ../../../../pkgs/tuicr { };
   tracey = pkgs.callPackage ../../../../pkgs/tracey { };
   ccusage = pkgs.callPackage ../../../../pkgs/ccusage { };
@@ -56,6 +57,9 @@ in
 
     # TUI tools
     tuicr
+
+    # Browser automation
+    abp
 
     # AI/dev tooling
     tracey

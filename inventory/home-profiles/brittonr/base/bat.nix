@@ -36,7 +36,7 @@ in
     };
     themes = {
       onix-dark = {
-        src = pkgs.writeText "onix-dark.tmTheme" batThemeXml;
+        src = pkgs.writeTextDir "onix-dark.tmTheme" batThemeXml;
         file = "onix-dark.tmTheme";
       };
     };
