@@ -18,6 +18,7 @@ let
     "nix-gc" = import ./nix-gc;
     "ollama" = import ./ollama;
     "clonadic" = import ./clonadic;
+    "clankers" = import ./clankers;
     "iroh-ssh" = import ./iroh-ssh;
     "llm-agents" = import ./llm-agents;
     "home-manager-profiles" = import ./home-manager-profiles;

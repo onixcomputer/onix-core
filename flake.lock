@@ -162,11 +162,11 @@
     "clanker-router-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1773601720,
-        "narHash": "sha256-AxDz0hZQFt+Ulzru2kSE4n1Ldr42R5EpvFnXKOIhGRw=",
+        "lastModified": 1774109850,
+        "narHash": "sha256-jq1xwLyTW8844FwSPVtxZcPz8D+iybJUOU/kR2hNqMY=",
         "owner": "brittonr",
         "repo": "clanker-router",
-        "rev": "fe50bb1174cedc3b18e663a253d02842c19ef328",
+        "rev": "e3a6169ba9661c179987cda212e383e88ca5579b",
         "type": "github"
       },
       "original": {
@@ -185,14 +185,15 @@
         "rust-overlay": [
           "rust-overlay"
         ],
+        "subwayrat-src": "subwayrat-src",
         "unit2nix": "unit2nix"
       },
       "locked": {
-        "lastModified": 1774003956,
-        "narHash": "sha256-L3Ba3IxtbPwZ9oowJ6LOGZq7u1psddnVPMGU8a1MdVg=",
+        "lastModified": 1774115272,
+        "narHash": "sha256-zL7Jq1XuBuHVUFkkjjIcS1tUcwWPaar5Jhml7o+k6DI=",
         "owner": "brittonr",
         "repo": "clankers",
-        "rev": "5a767f656fdbffeee16becebbd6de35b757a1ac9",
+        "rev": "37e48a9cd2a28f3adb56f0221982dcfdfd2f938e",
         "type": "github"
       },
       "original": {
@@ -1129,6 +1130,22 @@
         "type": "github"
       }
     },
+    "subwayrat-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1774106012,
+        "narHash": "sha256-LrZ4u1I8xcU9CbfB7gvZMPmQUNwzVMdqwSj60cB2WHM=",
+        "owner": "brittonr",
+        "repo": "subwayrat",
+        "rev": "b824c860b60d800a7511a4fcbe9af98f1e50af79",
+        "type": "github"
+      },
+      "original": {
+        "owner": "brittonr",
+        "repo": "subwayrat",
+        "type": "github"
+      }
+    },
     "systems": {
       "locked": {
         "lastModified": 1681028828,
@@ -1281,11 +1298,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1774003653,
-        "narHash": "sha256-aSEU+AX0rQsxNceG1iZyIyf4bz2YFQg0VzNwgb35GxQ=",
+        "lastModified": 1774052302,
+        "narHash": "sha256-6XXv5UdWVCHfvumf2Hq5/L/FtA4em6v61F51cX7M3no=",
         "owner": "brittonr",
         "repo": "unit2nix",
-        "rev": "69e697c446715698f1937e237450c4a28823babf",
+        "rev": "0117093fc377c0e8b4a04bc564557db123fd1683",
         "type": "github"
       },
       "original": {

@@ -5,10 +5,15 @@
 #   nixosModules.clanker-router   — services.clanker-router.*
 #
 # This clan module adds:
-#   - Router auto-discovery via clan exports (daemon finds router endpoint)
-#   - Colocation detection (localhost when on same machine)
 #   - ANTHROPIC_BASE_URL injection so daemon proxies through router
-{ clanLib, lib, ... }:
+#   - Colocation detection (after/wants when router is on same machine)
+#   - Vars-based secret management for router API keys
+#
+# The upstream clankers workspace has path deps on sibling repos
+# (subwayrat), so unit2nix IFD can't build it in sandbox. The daemon
+# uses a local package build (pkgs/clankers/). The router is a
+# standalone repo and builds fine from upstream.
+{ lib, ... }:
 let
   inherit (lib)
     mkOption
@@ -28,7 +33,6 @@ in
   manifest = {
     name = "clankers";
     readme = "Clankers coding agent daemon and router services";
-    exports.out = [ "endpoints" ];
   };
 
   roles = {
@@ -58,8 +62,9 @@ in
             type = nullOr str;
             default = null;
             description = ''
-              API base URL override (e.g. http://127.0.0.1:4000).
-              If null, auto-discovered from the router role's exported endpoint.
+              API base URL for the LLM proxy (e.g. http://127.0.0.1:4000).
+              Sets ANTHROPIC_BASE_URL so the daemon routes through
+              the clanker-router instead of hitting providers directly.
             '';
           };
 
@@ -72,45 +77,15 @@ in
       };
 
       perInstance =
-        {
-          settings,
-          exports,
-          machine,
-          ...
-        }:
-        let
-          # Find the router endpoint from exports.
-          routerExports = clanLib.selectExports (
-            scope: scope.serviceName == "clankers" && scope.roleName == "router"
-          ) exports;
-          routerEntries = lib.attrValues routerExports;
-
-          routerHostPort =
-            let
-              first = lib.head routerEntries;
-              hosts = first.endpoints.hosts or [ ];
-            in
-            if routerEntries != [ ] && hosts != [ ] then lib.head hosts else null;
-
-          routerScopes = lib.attrNames routerExports;
-          routerMachines = map (s: (clanLib.parseScope s).machineName) routerScopes;
-          isColocated = lib.elem machine.name routerMachines;
-
-          resolvedApiBase =
-            if settings.apiBase != null then
-              settings.apiBase
-            else if routerHostPort == null then
-              null
-            else
-              let
-                parts = lib.splitString ":" routerHostPort;
-                routerPort = lib.elemAt parts 1;
-              in
-              if isColocated then "http://127.0.0.1:${routerPort}" else "http://${routerHostPort}";
-        in
+        { settings, ... }:
         {
           nixosModule =
-            { pkgs, inputs, ... }:
+            {
+              config,
+              pkgs,
+              inputs,
+              ...
+            }:
             let
               # Local build — upstream unit2nix IFD can't resolve the
               # cross-repo subwayrat path deps in sandbox.
@@ -125,9 +100,14 @@ in
                 rustc = nightlyToolchain;
                 cargo = nightlyToolchain;
               };
+
+              routerEnabled = config.services.clanker-router.enable or false;
             in
             {
               imports = [ inputs.clankers.nixosModules.clankers-daemon ];
+
+              # Make the CLI available system-wide for `clankers rpc`, `clankers attach`, etc.
+              environment.systemPackages = [ clankersPkg ];
 
               services.clankers-daemon = {
                 enable = true;
@@ -140,14 +120,15 @@ in
                   ;
               };
 
-              # Router auto-discovery: order after colocated router, inject base URL.
               systemd.services.clankers-daemon = mkMerge [
-                (mkIf isColocated {
+                # When router is colocated, order daemon after it.
+                (mkIf routerEnabled {
                   after = [ "clanker-router.service" ];
                   wants = [ "clanker-router.service" ];
                 })
-                (mkIf (resolvedApiBase != null) {
-                  environment.ANTHROPIC_BASE_URL = resolvedApiBase;
+                # Route through the proxy when apiBase is set.
+                (mkIf (settings.apiBase != null) {
+                  environment.ANTHROPIC_BASE_URL = settings.apiBase;
                 })
               ];
             };
@@ -170,6 +151,17 @@ in
             description = "Port for the OpenAI-compatible HTTP proxy";
           };
 
+          useOAuth = mkOption {
+            type = bool;
+            default = false;
+            description = ''
+              Use OAuth credentials instead of API keys.
+              Run `sudo -u clanker-router clanker-router auth login`
+              on the target machine to complete the OAuth flow.
+              When true, the API key vars generator is skipped.
+            '';
+          };
+
           proxyKeys = mkOption {
             type = listOf str;
             default = [ ];
@@ -185,18 +177,8 @@ in
       };
 
       perInstance =
+        { instanceName, settings, ... }:
         {
-          instanceName,
-          settings,
-          mkExports,
-          machine,
-          ...
-        }:
-        {
-          exports = mkExports {
-            endpoints.hosts = [ "${machine.name}:${toString settings.listenPort}" ];
-          };
-
           nixosModule =
             {
               config,
@@ -206,60 +188,69 @@ in
             }:
             let
               generatorName = "clanker-router-${instanceName}";
-              envFilePath = config.clan.core.vars.generators.${generatorName}.files.env-file.path;
+              inherit (settings) useOAuth;
+              routerPkg = inputs.clankers.packages.${pkgs.stdenv.hostPlatform.system}.clanker-router;
             in
             {
               imports = [ inputs.clankers.nixosModules.clanker-router ];
 
               services.clanker-router = {
                 enable = true;
-                package = inputs.clankers.packages.${pkgs.stdenv.hostPlatform.system}.clanker-router;
+                package = routerPkg;
                 proxyAddr = "${settings.listenAddr}:${toString settings.listenPort}";
                 openFirewall = true;
-                environmentFile = envFilePath;
                 inherit (settings) proxyKeys extraArgs;
+              }
+              // lib.optionalAttrs (!useOAuth) {
+                environmentFile = config.clan.core.vars.generators.${generatorName}.files.env-file.path;
               };
 
+              # Make clanker-router CLI available for `auth login`.
+              environment.systemPackages = [ routerPkg ];
+
               # Provider API keys — prompted once, SOPS-encrypted, deployed to target.
-              clan.core.vars.generators.${generatorName} = {
-                share = true;
-                files.env-file = {
-                  secret = true;
-                  deploy = true;
+              # Skipped when useOAuth = true (credentials managed via `clanker-router auth login`).
+              clan.core.vars.generators = mkIf (!useOAuth) {
+                ${generatorName} = {
+                  share = true;
+                  files.env-file = {
+                    secret = true;
+                    deploy = true;
+                  };
+
+                  prompts = {
+                    anthropic-api-key = {
+                      description = "Anthropic API key (sk-ant-...)";
+                      type = "hidden";
+                      persist = true;
+                    };
+                    openai-api-key = {
+                      description = "OpenAI API key (sk-...) — leave empty to skip";
+                      type = "hidden";
+                      persist = true;
+                    };
+                    openrouter-api-key = {
+                      description = "OpenRouter API key (sk-or-...) — leave empty to skip";
+                      type = "hidden";
+                      persist = true;
+                    };
+                  };
+
+                  runtimeInputs = [ pkgs.coreutils ];
+
+                  script = ''
+                    : > "$out/env-file"
+                    for pair in \
+                      "ANTHROPIC_API_KEY:$prompts/anthropic-api-key" \
+                      "OPENAI_API_KEY:$prompts/openai-api-key" \
+                      "OPENROUTER_API_KEY:$prompts/openrouter-api-key"; do
+                      var="''${pair%%:*}"
+                      file="''${pair#*:}"
+                      val="$(tr -d '\n' < "$file")"
+                      [ -n "$val" ] && printf '%s=%s\n' "$var" "$val" >> "$out/env-file"
+                    done
+                  '';
                 };
-
-                prompts = {
-                  anthropic-api-key = {
-                    description = "Anthropic API key (sk-ant-...)";
-                    type = "hidden";
-                    persist = true;
-                  };
-                  openai-api-key = {
-                    description = "OpenAI API key (sk-...) — leave empty to skip";
-                    type = "hidden";
-                    persist = true;
-                  };
-                  openrouter-api-key = {
-                    description = "OpenRouter API key (sk-or-...) — leave empty to skip";
-                    type = "hidden";
-                    persist = true;
-                  };
-                };
-
-                runtimeInputs = [ pkgs.coreutils ];
-
-                script = ''
-                  : > "$out/env-file"
-                  for pair in \
-                    "ANTHROPIC_API_KEY:$prompts/anthropic-api-key" \
-                    "OPENAI_API_KEY:$prompts/openai-api-key" \
-                    "OPENROUTER_API_KEY:$prompts/openrouter-api-key"; do
-                    var="''${pair%%:*}"
-                    file="''${pair#*:}"
-                    val="$(tr -d '\n' < "$file")"
-                    [ -n "$val" ] && printf '%s=%s\n' "$var" "$val" >> "$out/env-file"
-                  done
-                '';
               };
             };
         };
