@@ -19,9 +19,12 @@ let
     PALETTE="''${XDG_CACHE_HOME:-$HOME/.cache}/noctalia/starship-palette.toml"
     [ -f "$STARSHIP" ] && [ -f "$PALETTE" ] || exit 0
     # Strip the header line from the generated palette fragment
-    COLORS=$(${pkgs.gnused}/bin/sed '1d' "$PALETTE")
+    TMPCOLORS=$(${pkgs.coreutils}/bin/mktemp)
+    ${pkgs.gnused}/bin/sed '1d' "$PALETTE" > "$TMPCOLORS"
+    # Delete existing palette values, then insert new ones from file
     ${pkgs.gnused}/bin/sed -i '/^\[palettes\.onix-dark\]/,/^\[/{/^\[palettes\.onix-dark\]/!{/^\[/!d}}' "$STARSHIP"
-    ${pkgs.gnused}/bin/sed -i "/^\[palettes\.onix-dark\]/a\\$COLORS" "$STARSHIP"
+    ${pkgs.gnused}/bin/sed -i "/^\[palettes\.onix-dark\]/r $TMPCOLORS" "$STARSHIP"
+    rm -f "$TMPCOLORS"
   '';
 in
 {
