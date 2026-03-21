@@ -1,54 +1,46 @@
-{ lib, config, ... }:
+# Status bar settings — thin stub over bar.ncl.
+#
+# Data and contracts live in bar.ncl.
+# Theme-dependent values (calendar colors, waybar colors) are merged
+# here from config.theme.data since themes are resolved at Nix eval time.
+{
+  inputs,
+  lib,
+  config,
+  ...
+}:
+let
+  plugins = inputs.self.packages.x86_64-linux.wasm-plugins;
+  wasm = import "${inputs.self}/lib/wasm.nix" { inherit plugins; };
+  data = wasm.evalNickelFile ./bar.ncl;
+
+  theme = config.theme.data;
+in
 {
   options.bar = lib.mkOption {
     type = lib.types.attrs;
     readOnly = true;
-    default = {
-      height = 30;
-      spacing = 4;
-      position = "top";
-      floating = false;
-      density = "default";
-      displayMode = "always_visible";
-      showCapsule = true;
-      outerCorners = false;
-      clockFormat = "HH:mm ddd, MMM dd";
-      calendarScrollSensitivity = 1;
-      tray = {
-        spacing = 10;
-      };
-      maxLength = {
-        title = 50;
-        module = 40;
-      };
+    default = data // {
+      # Calendar colors from active theme
       calendar = {
-        months = config.theme.data.orange.hex;
-        days = config.theme.data.accent2.hex;
-        weeks = config.theme.data.green.hex;
-        weekdays = config.theme.data.yellow.hex;
-        today = config.theme.data.red.hex;
+        months = theme.orange.hex;
+        days = theme.accent2.hex;
+        weeks = theme.green.hex;
+        weekdays = theme.yellow.hex;
+        today = theme.red.hex;
       };
-      waybar = {
-        workspaceHoverOpacity = "0.15";
-        workspaceHoverBorderOpacity = "0.25";
-        workspaceActiveShadowOpacity = "0.3";
-        workspaceActiveHoverShadowOpacity = "0.4";
-        moduleBgOpacity = "0.8";
-        moduleRadius = "0.5em";
-        modulePadding = "0 0.6em";
-        moduleMargin = "0 0.15em";
-        workspaceMinWidth = "24px";
-        blinkDuration = "0.5s";
+      # Waybar colors from active theme
+      waybar = data.waybar // {
         colors = {
-          bg = config.theme.data.bar_waybar.bg.hex;
-          fg = config.theme.data.bar_waybar.fg.hex;
-          accent = config.theme.data.bar_waybar.accent.hex;
-          tooltip_bg = config.theme.data.bar_waybar.tooltip_bg.hex;
-          muted = config.theme.data.bar_waybar.muted.hex;
-          warning = config.theme.data.bar_waybar.warning.hex;
-          critical = config.theme.data.bar_waybar.critical.hex;
-          critical_bg = config.theme.data.bar_waybar.critical_bg.hex;
-          charging = config.theme.data.bar_waybar.charging.hex;
+          bg = theme.bar_waybar.bg.hex;
+          fg = theme.bar_waybar.fg.hex;
+          accent = theme.bar_waybar.accent.hex;
+          tooltip_bg = theme.bar_waybar.tooltip_bg.hex;
+          muted = theme.bar_waybar.muted.hex;
+          warning = theme.bar_waybar.warning.hex;
+          critical = theme.bar_waybar.critical.hex;
+          critical_bg = theme.bar_waybar.critical_bg.hex;
+          charging = theme.bar_waybar.charging.hex;
         };
       };
     };
