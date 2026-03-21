@@ -11,7 +11,13 @@ let
   mon = config.monitors;
 
   # Import niri keybindings from separate file
-  niriBinds = import ./lib/niri-keybinds.nix { inherit config pkgs lib; };
+  niriBinds = import ./lib/niri-keybinds.nix {
+    inherit
+      inputs
+      config
+      pkgs
+      ;
+  };
 
   # Use niri from our fork
   niriPackage = inputs.niri.packages.${pkgs.stdenv.hostPlatform.system}.niri;
