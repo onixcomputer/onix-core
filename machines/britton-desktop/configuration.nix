@@ -16,15 +16,6 @@
   time.hardwareClockInLocalTime = true; # Prevent time sync issues with Windows
 
   nix.settings = {
-    trusted-users = [
-      "root"
-      "brittonr"
-    ];
-    substituters = [ "https://cache.dataaturservice.se/spectrum/" ];
-    trusted-public-keys = [
-      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-      "spectrum-os.org-2:foQk3r7t2VpRx92CaXb5ROyy/NBdRJQG2uX2XJMYZfU="
-    ];
     # Enable experimental features for uid-range support
     experimental-features = [
       "auto-allocate-uids"
@@ -84,9 +75,6 @@
   security = {
     pam.services = {
       sudo.fprintAuth = false;
-      # PAM services for desktop login (normally from greeter tag)
-      login.enableGnomeKeyring = true;
-      greetd.enableGnomeKeyring = true;
     };
 
     # srvos sets security.sudo.execWheelOnly = true, which asserts that
@@ -110,9 +98,6 @@
       }
     ];
   };
-
-  # Gnome keyring for SSH agent and secrets
-  services.gnome.gnome-keyring.enable = true;
 
   # DisplayLink Manager service
   systemd.services.dlm = {

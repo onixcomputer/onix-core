@@ -94,9 +94,16 @@ in
       warn-dirty = false;
       auto-optimise-store = true;
 
-      # Trust signing keys from flake config if present
-      substituters = flake.nixConfig.extra-substituters or [ ];
-      trusted-public-keys = flake.nixConfig.extra-trusted-public-keys or [ ];
+      # Caches: flake.nixConfig provides nix-community.cachix.org;
+      # additional caches are appended here so all machines share them.
+      substituters = (flake.nixConfig.extra-substituters or [ ]) ++ [
+        "https://cache.dataaturservice.se/spectrum/"
+        "https://cache.snix.dev"
+      ];
+      trusted-public-keys = (flake.nixConfig.extra-trusted-public-keys or [ ]) ++ [
+        "spectrum-os.org-2:foQk3r7t2VpRx92CaXb5ROyy/NBdRJQG2uX2XJMYZfU="
+        "cache.snix.dev-1:miTqzIzmCbX/DyK2tLNXDROk77CbbvcRdWA4y2F8pno="
+      ];
     };
   };
 }

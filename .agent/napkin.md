@@ -147,6 +147,7 @@
 - Nix is lazy: accessing `inputs.clankers.packages.${system}.clanker-router` only evaluates `routerBuild`, not the broken `ws` workspace build.
 
 ## Patterns That Work
+- Home-profile auto-import only covers `profilesBasePath/<username>/<profileName>/`. Files under `shared/` are NOT auto-imported — they must be explicitly imported by user profile files (e.g., via `import.nix`). Files under `shared/lib/` are pure utility libraries, never modules.
 - `_class` conditionals for darwin/nixos shared modules — set platform-specific attrs with `lib.optionalAttrs (_class == "nixos")` / `(_class == "darwin")`. Darwin lacks `isNormalUser`, needs `users.knownUsers`, uses `gid = 80` for admin instead of `extraGroups = ["wheel"]`, and has different GC schedule syntax (interval vs dates).
 - SSH into target machines to get actual journal logs rather than guessing from deploy output
 - Building locally with `nix eval` to inspect generated configs (TOML, systemd units)

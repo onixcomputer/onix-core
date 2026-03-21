@@ -86,7 +86,7 @@ let
   '';
 in
 {
-  imports = [ ../../brittonr/base/timeouts.nix ];
+  imports = [ ./timeouts.nix ];
 
   programs.rbw = {
     enable = true;

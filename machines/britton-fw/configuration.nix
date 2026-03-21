@@ -18,36 +18,21 @@ in
     splashImage = grubWallpaper;
   };
 
-  nix = {
-    settings = {
-      # Enable experimental features for uid-range support
-      experimental-features = [
-        "auto-allocate-uids"
-        "cgroups"
-      ];
-      auto-allocate-uids = true;
-      trusted-users = [ "brittonr" ];
-      # System features for NixOS container tests
-      system-features = [
-        "uid-range"
-        "kvm"
-        "nixos-test"
-        "big-parallel"
-        "benchmark"
-      ];
-      substituters = [
-        "https://cache.dataaturservice.se/spectrum/"
-        "https://cache.snix.dev"
-        "https://nix-community.cachix.org"
-        "https://cache.nixos.org/"
-      ];
-      trusted-public-keys = [
-        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-        "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-        "spectrum-os.org-2:foQk3r7t2VpRx92CaXb5ROyy/NBdRJQG2uX2XJMYZfU="
-        "cache.snix.dev-1:miTqzIzmCbX/DyK2tLNXDROk77CbbvcRdWA4y2F8pno="
-      ];
-    };
+  nix.settings = {
+    # Enable experimental features for uid-range support
+    experimental-features = [
+      "auto-allocate-uids"
+      "cgroups"
+    ];
+    auto-allocate-uids = true;
+    # System features for NixOS container tests
+    system-features = [
+      "uid-range"
+      "kvm"
+      "nixos-test"
+      "big-parallel"
+      "benchmark"
+    ];
   };
 
   services = {
