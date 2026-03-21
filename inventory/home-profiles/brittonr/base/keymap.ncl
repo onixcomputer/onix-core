@@ -138,6 +138,8 @@ in
       quickSelect | Key,
       copyMode | Key,
       commandPalette | Key,
+      promptPrev | Key,
+      promptNext | Key,
     }
     = {
       copy = "c",
@@ -164,6 +166,8 @@ in
       quickSelect = "s",
       copyMode = "x",
       commandPalette = "p",
+      promptPrev = "u",
+      promptNext = "d",
     },
 
   # Window manager actions (Mod + key)

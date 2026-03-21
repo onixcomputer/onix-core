@@ -175,6 +175,10 @@ in
       # Clear scrollback (rebind from ctrl+shift+k to free k for window nav)
       "${tm}+backspace" = "clear_terminal scrollback active";
 
+      # Prompt/codeblock navigation (helix: C-u / C-d at block granularity)
+      "${tm}+${ta.promptPrev}" = "scroll_to_prompt -1";
+      "${tm}+${ta.promptNext}" = "scroll_to_prompt 1";
+
       # Vim-style tab navigation (hjkl)
       "${tm}+${k.nav.right}" = "next_tab";
       "${tm}+${k.nav.left}" = "previous_tab";

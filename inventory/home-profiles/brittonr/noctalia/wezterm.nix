@@ -222,6 +222,10 @@ in
 
         -- Command palette (helix: space pickers)
         { key = '${weztermKey ta.commandPalette}', mods = '${weztermMods}', action = act.ActivateCommandPalette },
+
+        -- Prompt navigation (helix: C-u / C-d, but at block granularity)
+        { key = '${weztermKey ta.promptPrev}', mods = '${weztermMods}', action = act.ScrollToPrompt(-1) },
+        { key = '${weztermKey ta.promptNext}', mods = '${weztermMods}', action = act.ScrollToPrompt(1) },
       }
 
       -- URL handling
