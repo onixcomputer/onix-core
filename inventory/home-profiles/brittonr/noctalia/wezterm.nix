@@ -110,7 +110,7 @@ in
         bottom = ${toString config.layout.terminal.padding},
       }
       config.window_background_opacity = 1.0
-      config.window_decorations = 'RESIZE'
+      config.window_decorations = 'NONE'
       config.window_close_confirmation = 'NeverPrompt'
 
       -- Cursor
