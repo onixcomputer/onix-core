@@ -1,5 +1,19 @@
-{ lib, config, ... }:
+# Media player settings — thin stub over media.ncl.
+#
+# Data and contracts live in media.ncl.
+# Theme-dependent values (subtitles.color, subtitles.borderColor, cava.gradient)
+# are merged here from config.theme.data since themes are resolved at Nix eval time.
+{
+  inputs,
+  lib,
+  config,
+  ...
+}:
 let
+  plugins = inputs.self.packages.x86_64-linux.wasm-plugins;
+  wasm = import "${inputs.self}/lib/wasm.nix" { inherit plugins; };
+  data = wasm.evalNickelFile ./media.ncl;
+
   c = config.theme.data;
   r = c.rainbow;
 in
@@ -7,30 +21,15 @@ in
   options.media = lib.mkOption {
     type = lib.types.attrs;
     readOnly = true;
-    default = {
-      mpv = {
-        subFontSize = 36;
-        osdFontSize = 30;
-        seekShort = 5;
-        seekLong = 60;
-        defaultVolume = 100;
-        maxVolume = 200;
-        subBorderSize = 3;
-        cacheSecs = 300;
-        demuxerMaxBytes = "1024MiB";
-        volumeStep = 2;
-        speedStep = 0.25;
-        screenshotTemplate = "%F-%P-%n";
-      };
-
+    default = data // {
+      # Subtitle colors from active theme
       subtitles = {
         color = "#FF${c.grayscale.white.no_hash}";
         borderColor = "#FF${c.editor.black.no_hash}";
       };
 
-      # Gradient colors sourced from rainbow palette
-      cava = {
-        framerate = 60;
+      # Cava with theme-dependent gradient colors
+      cava = data.cava // {
         gradient = [
           "'${r.green.hex}'"
           "'${r.cyan.hex}'"
@@ -41,17 +40,6 @@ in
           "'${r.violet.hex}'"
           "'${r.red.hex}'" # repeated for 8-entry gradient
         ];
-        sensitivity = 100;
-        bars = 0;
-        barWidth = 2;
-        barSpacing = 1;
-        lowerCutoffFreq = 50;
-        higherCutoffFreq = 10000;
-        smoothing = {
-          integral = 77;
-          gravity = 100;
-          noiseReduction = 0.77;
-        };
       };
     };
     description = "Media player and visualizer settings";

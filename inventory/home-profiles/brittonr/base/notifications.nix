@@ -1,31 +1,21 @@
-{ lib, ... }:
+# Notification daemon settings — thin stub over notifications.ncl.
+#
+# Data and contracts live in notifications.ncl.
+{
+  inputs,
+  lib,
+  ...
+}:
+let
+  plugins = inputs.self.packages.x86_64-linux.wasm-plugins;
+  wasm = import "${inputs.self}/lib/wasm.nix" { inherit plugins; };
+  data = wasm.evalNickelFile ./notifications.ncl;
+in
 {
   options.notifications = lib.mkOption {
     type = lib.types.attrs;
     readOnly = true;
-    default = {
-      timeout = 5000;
-      maxVisible = 5;
-      width = 300;
-      height = 100;
-      padding = 15;
-      margin = 10;
-      position = "top-right";
-      location = "top_right";
-      gap = 10;
-      iconSize = 32;
-      maxHistory = 20;
-      urgency = {
-        low = 3;
-        normal = 5;
-        critical = 10;
-      };
-      noctalia = {
-        lowUrgencyDuration = 3;
-        normalUrgencyDuration = 8;
-        criticalUrgencyDuration = 15;
-      };
-    };
+    default = data;
     description = "Notification daemon settings";
   };
 }

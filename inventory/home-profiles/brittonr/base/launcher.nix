@@ -1,25 +1,21 @@
-{ lib, ... }:
+# Application launcher settings — thin stub over launcher.ncl.
+#
+# Data and contracts live in launcher.ncl.
+{
+  inputs,
+  lib,
+  ...
+}:
+let
+  plugins = inputs.self.packages.x86_64-linux.wasm-plugins;
+  wasm = import "${inputs.self}/lib/wasm.nix" { inherit plugins; };
+  data = wasm.evalNickelFile ./launcher.ncl;
+in
 {
   options.launcher = lib.mkOption {
     type = lib.types.attrs;
     readOnly = true;
-    default = {
-      width = 600;
-      height = 500;
-      iconSize = 40;
-      spacing = 10;
-      position = "center";
-      viewMode = "list";
-      sortByMostUsed = true;
-      enableClipboardHistory = true;
-      fuzzel = {
-        widthPercent = 50;
-        horizontalPad = 20;
-        verticalPad = 10;
-        innerPad = 10;
-        scriptWidth = 60;
-      };
-    };
+    default = data;
     description = "Application launcher settings";
   };
 }
