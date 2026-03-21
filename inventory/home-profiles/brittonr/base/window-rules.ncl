@@ -11,6 +11,7 @@
 #   2. Run: ncl export inventory/home-profiles/brittonr/base/window-rules.ncl
 #   3. Commit .ncl
 let settings = import "./settings.ncl" in
+let apps = import "./apps.ncl" in
 
 let workspaceNames = settings.workspaces.names in
 
@@ -53,9 +54,10 @@ in
 
 {
   # Workspace assignments by app-id regex.
+  # Use apps.<name>.appId for apps defined in apps.ncl to stay in sync.
   assignments | Array Assignment = [
-    { appId = "org.wezfurlong.wezterm", workspace = "1" },
-    { appId = "librewolf", workspace = "2", maximized = true },
+    { appId = apps.terminal.appId, workspace = "1" },
+    { appId = apps.browser.appId, workspace = "2", maximized = true },
     { appId = "vesktop", workspace = "3" },
     { appId = "Element", workspace = "3" },
   ],
@@ -63,8 +65,8 @@ in
   # App-specific overrides matched by title within an app-id.
   # Use @placeholder@ tokens for values resolved at Nix eval time.
   titleOverrides | Array TitleOverride = [
-    { appId = "librewolf", title = "^Picture-in-Picture$", floating = true },
-    { appId = "org.wezfurlong.wezterm", title = "@sysmon-title@", workspace = "4", maximized = true },
-    { appId = "org.wezfurlong.wezterm", title = "^journalctl$", workspace = "4", maximized = true },
+    { appId = apps.browser.appId, title = "^Picture-in-Picture$", floating = true },
+    { appId = apps.terminal.appId, title = "@sysmon-title@", workspace = "4", maximized = true },
+    { appId = apps.terminal.appId, title = "^journalctl$", workspace = "4", maximized = true },
   ],
 }
