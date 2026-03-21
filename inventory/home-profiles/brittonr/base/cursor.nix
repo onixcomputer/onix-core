@@ -1,10 +1,24 @@
-{ lib, pkgs, ... }:
+# Cursor theme — thin stub over cursor.ncl.
+#
+# Data and contracts live in cursor.ncl.
+# The package reference stays here since Nickel can't resolve Nix packages.
+{
+  inputs,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  plugins = inputs.self.packages.x86_64-linux.wasm-plugins;
+  wasm = import "${inputs.self}/lib/wasm.nix" { inherit plugins; };
+  data = wasm.evalNickelFile ./cursor.ncl;
+in
 {
   options.cursor = {
     name = lib.mkOption {
       type = lib.types.str;
       readOnly = true;
-      default = "phinger-cursors-dark";
+      default = data.name;
       description = "Cursor theme name";
     };
 
@@ -18,7 +32,7 @@
     size = lib.mkOption {
       type = lib.types.int;
       readOnly = true;
-      default = 24;
+      default = data.size;
       description = "Cursor size in pixels";
     };
   };
