@@ -449,4 +449,10 @@ in
       schedulingMode = "off",
       generationMethod = "tonal-spot",
     },
+
+  build | { pueue | { parallelTasks | Positive } } = {
+    pueue = {
+      parallelTasks = 4,
+    },
+  },
 }
