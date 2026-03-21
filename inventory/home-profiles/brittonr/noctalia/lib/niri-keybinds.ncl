@@ -318,7 +318,6 @@ in
     { key = "%{mod}+%{wm.screenshot}", spawn = ["screenshot-region"] },
     { key = "%{mod}+Print", spawn = ["screenshot-screen-edit"] },
     { key = "%{mod}+Shift+P", spawn = ["color-picker"] },
-    { key = "%{mod}+Shift+R", spawn = ["record-screen"] },
     { key = "%{mod}+Control+R", spawn = ["record-region"] },
     { key = "%{mod}+Shift+%{wm.close}", spawn = ["record-stop"] },
   ],

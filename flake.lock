@@ -1343,11 +1343,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1774007033,
-        "narHash": "sha256-pBjuc46Lk+nr0QlDCBIjLrOEgjBy0N9RS4jQzcDX5/Y=",
+        "lastModified": 1774106453,
+        "narHash": "sha256-h9ObIWhDP/Cz/Gz6UcP37axAI+L3u8U2gpje2mXPtZQ=",
         "owner": "brittonr",
         "repo": "wl-walls",
-        "rev": "0d65e51592fcbf1421d959299d0249d5c59a2f20",
+        "rev": "c3f7d6b8632510ca6bc2e8bb2dbd208a0707cfc5",
         "type": "github"
       },
       "original": {
