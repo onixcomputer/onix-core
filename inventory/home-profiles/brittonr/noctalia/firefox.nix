@@ -34,6 +34,8 @@ let
   };
 
   k = config.keymap;
+  lw = config.librewolf;
+  ff = config.firefox;
 
   wrappedFirefox =
     (inputs.wrappers.wrapperModules.firefox.apply {
@@ -49,65 +51,70 @@ let
       nativeMessagingHosts = [ pkgs.tridactyl-native ];
 
       settings = {
-        # Hardware acceleration - WebRender
-        "gfx.webrender.all" = true;
-        "layers.acceleration.force-enabled" = true;
+        # --- LibreWolf overrides (source: librewolf.ncl) ---
 
-        # VA-API hardware video decoding (Firefox 137+)
-        "media.hardware-video-decoding.force-enabled" = true;
-        "media.rdd-ffmpeg.enabled" = true;
+        # Fingerprinting
+        "privacy.resistFingerprinting" = lw.fingerprinting.resistFingerprinting;
+        "privacy.fingerprintingProtection" = lw.fingerprinting.protection;
+        "privacy.fingerprintingProtection.overrides" = lw.fingerprinting.protectionOverrides;
 
-        # Wayland-native settings
-        "widget.dmabuf.force-enabled" = false;
-        "gfx.x11-egl.force-enabled" = false;
+        # WebGL
+        "webgl.disabled" = lw.webgl.disabled;
 
-        # Compact UI
-        "browser.compactmode.show" = true;
-        "browser.uidensity" = config.firefox.ui.density;
+        # GPU / video acceleration
+        "gfx.webrender.all" = lw.acceleration.webrender;
+        "layers.acceleration.force-enabled" = lw.acceleration.forceLayers;
+        "media.hardware-video-decoding.force-enabled" = lw.acceleration.hardwareVideoDecode;
+        "media.rdd-ffmpeg.enabled" = lw.acceleration.rddFfmpeg;
+        "widget.dmabuf.force-enabled" = lw.acceleration.forceDmabuf;
+        "gfx.x11-egl.force-enabled" = lw.acceleration.forceX11Egl;
 
-        # Disable new-tab-page noise
-        "browser.newtabpage.activity-stream.feeds.topsites" = false;
-        "browser.newtabpage.activity-stream.showSponsoredTopSites" = false;
-        "browser.newtabpage.activity-stream.feeds.section.topstories" = false;
+        # UI chrome
+        "browser.compactmode.show" = lw.ui.compactMode;
+        "browser.uidensity" = ff.ui.density;
 
-        # Auto-close cookie banners
-        "cookiebanners.service.mode" = config.firefox.privacy.cookieBannerMode;
-        "cookiebanners.service.mode.privateBrowsing" = config.firefox.privacy.cookieBannerMode;
+        # New tab page
+        "browser.newtabpage.activity-stream.feeds.topsites" = lw.newTab.topSites;
+        "browser.newtabpage.activity-stream.showSponsoredTopSites" = lw.newTab.sponsoredTopSites;
+        "browser.newtabpage.activity-stream.feeds.section.topstories" = lw.newTab.topStories;
 
-        # URL bar calculator and unit conversion
-        "browser.urlbar.suggest.calculator" = true;
-        "browser.urlbar.unitConversion.enabled" = true;
+        # Cookie banners (source: base/firefox.ncl)
+        "cookiebanners.service.mode" = ff.privacy.cookieBannerMode;
+        "cookiebanners.service.mode.privateBrowsing" = ff.privacy.cookieBannerMode;
 
-        # Disable Firefox welcome/tour/discovery
-        "browser.aboutwelcome.enabled" = false;
-        "browser.uitour.enabled" = false;
-        "browser.discovery.enabled" = false;
-        "extensions.getAddons.showPane" = false;
+        # URL bar
+        "browser.urlbar.suggest.calculator" = lw.urlbar.calculator;
+        "browser.urlbar.unitConversion.enabled" = lw.urlbar.unitConversion;
 
-        # Canvas acceleration cache
-        "gfx.canvas.accelerated.cache-items" = config.firefox.cache.canvasItems;
-        "gfx.canvas.accelerated.cache-size" = config.firefox.cache.canvasSize;
+        # Onboarding
+        "browser.aboutwelcome.enabled" = lw.onboarding.welcome;
+        "browser.uitour.enabled" = lw.onboarding.tour;
+        "browser.discovery.enabled" = lw.onboarding.discovery;
+        "extensions.getAddons.showPane" = lw.onboarding.addonsPane;
 
-        # DNS cache tuning
-        "network.dnsCacheEntries" = config.firefox.dns.cacheEntries;
-        "network.dnsCacheExpiration" = config.firefox.dns.cacheExpiration;
+        # Canvas acceleration cache (source: base/firefox.ncl)
+        "gfx.canvas.accelerated.cache-items" = ff.cache.canvasItems;
+        "gfx.canvas.accelerated.cache-size" = ff.cache.canvasSize;
 
-        # Network connection limits
-        "network.http.max-connections" = config.firefox.network.maxConnections;
-        "network.http.max-persistent-connections-per-server" =
-          config.firefox.network.maxPersistentPerServer;
+        # DNS cache (source: base/firefox.ncl)
+        "network.dnsCacheEntries" = ff.dns.cacheEntries;
+        "network.dnsCacheExpiration" = ff.dns.cacheExpiration;
+
+        # Connection limits (source: base/firefox.ncl)
+        "network.http.max-connections" = ff.network.maxConnections;
+        "network.http.max-persistent-connections-per-server" = ff.network.maxPersistentPerServer;
         "network.http.max-urgent-start-excessive-connections-per-host" =
-          config.firefox.network.maxUrgentStartExcessivePerHost;
+          ff.network.maxUrgentStartExcessivePerHost;
+        "network.http.speculative-parallel-limit" = ff.network.speculativeParallelLimit;
 
-        # Speculative/predictive loading
-        "network.http.speculative-parallel-limit" = config.firefox.network.speculativeParallelLimit;
-        "network.predictor.enabled" = true;
-        "network.prefetch-next" = true;
-        "network.dns.disablePrefetch" = false;
+        # Network prefetch overrides (source: librewolf.ncl)
+        "network.predictor.enabled" = lw.network.predictor;
+        "network.prefetch-next" = lw.network.prefetchNext;
+        "network.dns.disablePrefetch" = !lw.network.dnsPrefetch;
 
-        # Memory cache (disable disk cache, use memory)
-        "browser.cache.memory.enable" = true;
-        "browser.cache.disk.enable" = false;
+        # Cache strategy (source: librewolf.ncl)
+        "browser.cache.memory.enable" = lw.cache.memory;
+        "browser.cache.disk.enable" = lw.cache.disk;
       };
 
       extraPolicies = {

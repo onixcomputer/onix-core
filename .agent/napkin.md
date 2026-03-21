@@ -146,6 +146,14 @@
 - Upstream modules create system users (`clankers`, `clanker-router`) with dedicated state dirs (`/var/lib/clankers`, `/var/lib/clanker-router`). API keys via `environmentFile`.
 - Nix is lazy: accessing `inputs.clankers.packages.${system}.clanker-router` only evaluates `routerBuild`, not the broken `ws` workspace build.
 
+## Domain Notes (clankers clan service — deployed)
+- Upstream clankers flake at rev 5a767f6 has NixOS module that passes `--model` as CLI flag, but the binary doesn't accept it (`unexpected argument '--model'`). Fixed at rev 37e48a9 — model set via `CLANKERS_MODEL` env var.
+- Updated flake input to 37e48a9 for the NixOS module fix. Kept local package build (`pkgs/clankers/`) at old source rev (5a767f6) because the new source added `ort-sys` dep that downloads prebuilt binaries during build (fails in nix sandbox).
+- The old binary is compatible with the new module — `--heartbeat` and `--allow-all` work fine; `--model` was never a real CLI flag.
+- `clanLib.selectExports`, `clanLib.parseScope`, `mkExports` — none of these exist in current clan-core. The original module used them speculatively. Replaced with direct settings (`apiBase`) and `config.services.clanker-router.enable or false` for colocation detection.
+- Router mDNS warning is cosmetic: `Failed to create an address lookup service` — the sandboxed systemd service can't do mDNS, but iroh relay works.
+- Daemon heartbeat warning: `iroh endpoint unavailable: Failed to create an address lookup service` — same mDNS issue. Heartbeat uses iroh for peer discovery; falls back gracefully.
+
 ## Patterns That Work
 - Home-profile auto-import only covers `profilesBasePath/<username>/<profileName>/`. Files under `shared/` are NOT auto-imported — they must be explicitly imported by user profile files (e.g., via `import.nix`). Files under `shared/lib/` are pure utility libraries, never modules.
 - `_class` conditionals for darwin/nixos shared modules — set platform-specific attrs with `lib.optionalAttrs (_class == "nixos")` / `(_class == "darwin")`. Darwin lacks `isNormalUser`, needs `users.knownUsers`, uses `gid = 80` for admin instead of `extraGroups = ["wheel"]`, and has different GC schedule syntax (interval vs dates).
