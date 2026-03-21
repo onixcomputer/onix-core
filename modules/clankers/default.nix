@@ -213,7 +213,7 @@ in
 
               services.clanker-router = {
                 enable = true;
-                package = inputs.clankers.packages.${pkgs.system}.clanker-router;
+                package = inputs.clankers.packages.${pkgs.stdenv.hostPlatform.system}.clanker-router;
                 proxyAddr = "${settings.listenAddr}:${toString settings.listenPort}";
                 openFirewall = true;
                 environmentFile = envFilePath;

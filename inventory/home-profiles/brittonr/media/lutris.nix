@@ -43,8 +43,8 @@
     ];
 
     winePackages = with pkgs; [
-      wineWowPackages.staging
-      wineWowPackages.waylandFull
+      wineWow64Packages.staging
+      wineWow64Packages.waylandFull
       winetricks
     ];
 
@@ -52,10 +52,6 @@
       proton-ge-bin
     ];
 
-    runners = {
-      wine = {
-        package = pkgs.wineWowPackages.staging;
-      };
-    };
+    defaultWinePackage = pkgs.wineWow64Packages.staging;
   };
 }

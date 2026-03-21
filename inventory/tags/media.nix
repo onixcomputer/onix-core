@@ -102,7 +102,7 @@
   # Install music player clients and tools
   environment.systemPackages = with pkgs; [
     # Drift — terminal music player for Tidal/YouTube/Bandcamp
-    inputs.drift.packages.${pkgs.system}.default
+    inputs.drift.packages.${pkgs.stdenv.hostPlatform.system}.default
 
     # TIDAL
     (pkgs.callPackage ../../pkgs/sone { })

@@ -1,6 +1,6 @@
 { inputs, pkgs, ... }:
 {
   home.packages = [
-    inputs.nitrous.packages.${pkgs.system}.default
+    inputs.nitrous.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
 }

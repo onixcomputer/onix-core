@@ -266,7 +266,7 @@ in
       ++ lib.optionals (self'.packages ? tracey) [ self'.packages.tracey ]
       ++ lib.optionals (self'.packages ? abp) [ self'.packages.abp ]
       ++ [
-        self.inputs.drift.packages.${pkgs.system}.default
+        self.inputs.drift.packages.${pkgs.stdenv.hostPlatform.system}.default
         (
           let
             rustPkgs = import self.inputs.nixpkgs {
