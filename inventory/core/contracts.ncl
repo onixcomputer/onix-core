@@ -11,6 +11,7 @@ let tag_file_tags = [
   "amd-gpu",
   "audio",
   "cloud-hypervisor-host",
+  "cosmic",
   "creative",
   "cross-compile",
   "desktop",
