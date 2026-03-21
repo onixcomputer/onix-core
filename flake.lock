@@ -1044,7 +1044,7 @@
         "systems": "systems_6",
         "treefmt-nix": "treefmt-nix_2",
         "upmpdcli": "upmpdcli",
-        "wl-harmonograph": "wl-harmonograph",
+        "wl-walls": "wl-walls",
         "wrappers": "wrappers"
       }
     },
@@ -1336,23 +1336,23 @@
         "type": "github"
       }
     },
-    "wl-harmonograph": {
+    "wl-walls": {
       "inputs": {
         "nixpkgs": [
           "nixpkgs"
         ]
       },
       "locked": {
-        "lastModified": 1773875843,
-        "narHash": "sha256-8C8vLBZrFcvf22D+kmR6nvsoS9AByFeCtcQkuvSDKJQ=",
-        "owner": "pinpox",
-        "repo": "wl-harmonograph",
-        "rev": "a86c07a479b6ce257e08e40a4e0a77840b9c252c",
+        "lastModified": 1774007033,
+        "narHash": "sha256-pBjuc46Lk+nr0QlDCBIjLrOEgjBy0N9RS4jQzcDX5/Y=",
+        "owner": "brittonr",
+        "repo": "wl-walls",
+        "rev": "0d65e51592fcbf1421d959299d0249d5c59a2f20",
         "type": "github"
       },
       "original": {
-        "owner": "pinpox",
-        "repo": "wl-harmonograph",
+        "owner": "brittonr",
+        "repo": "wl-walls",
         "type": "github"
       }
     },

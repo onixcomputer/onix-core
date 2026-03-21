@@ -16,8 +16,10 @@ let
   # Use niri from our fork
   niriPackage = inputs.niri.packages.${pkgs.stdenv.hostPlatform.system}.niri;
 
-  # Animated harmonograph wallpaper
-  wl-harmonograph = inputs.wl-harmonograph.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  # Animated mathematical wallpaper (spirographs, attractors, 3D surfaces)
+  inherit (inputs.wl-walls.packages.${pkgs.stdenv.hostPlatform.system}) wl-walls wl-walls-ctl;
+  wl-walls-noctalia-plugin =
+    inputs.wl-walls.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-plugin;
 
   # ── Niri config content ────────────────────────────────────────────────
   # Generated at build time, copied to ~/.config/niri/config.kdl by the
@@ -159,7 +161,8 @@ let
 
                               // Startup services - Noctalia replaces waybar, swayosd, swww, mako
                               spawn-at-startup "noctalia-shell"
-                              spawn-at-startup "${wl-harmonograph}/bin/wl-harmonograph"
+                              // wl-walls is started by its Noctalia plugin (autoStart: true)
+                              // spawn-at-startup not needed — plugin manages lifecycle
                               spawn-at-startup "${pkgs.wl-clipboard}/bin/wl-paste" "--watch" "${pkgs.cliphist}/bin/cliphist" "store"
                               spawn-at-startup "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
                               spawn-at-startup "${pkgs.networkmanagerapplet}/bin/nm-applet"
@@ -217,6 +220,16 @@ let
                       active-color "${config.theme.data.misc.screencast_active.hex}"
                       inactive-color "${config.theme.data.misc.screencast_inactive.hex}"
                   }
+              }
+
+              // Screensaver — fullscreen floating, no focus ring, dismiss on input
+              window-rule {
+                  match app-id="screensaver"
+                  open-floating true
+                  open-maximized true
+                  focus-ring { off; }
+                  border { off; }
+                  shadow { off; }
               }
 
               xwayland-satellite {
@@ -300,7 +313,8 @@ in
     packages = [
       pkgs.xwayland-satellite
       wrappedNiri
-      wl-harmonograph
+      wl-walls
+      wl-walls-ctl
       # Portals for cross-desktop functionality (file pickers, screencasting, etc.)
       pkgs.xdg-desktop-portal-gtk
       pkgs.xdg-desktop-portal-gnome
@@ -321,38 +335,57 @@ in
     # so Noctalia's template-apply.sh can add the include line and niri
     # can pick up runtime changes.  Seed noctalia.kdl with current theme
     # colours so the include never points at a missing file.
-    activation.installNiriConfig = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-      # Force the validation derivation to build
-      : ${niriConfigValidated}
+    activation = {
+      installNiriConfig = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+        # Force the validation derivation to build
+        : ${niriConfigValidated}
 
-      niri_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/niri"
-      mkdir -p "$niri_dir"
-      install -m 644 ${niriConfigFile} "$niri_dir/config.kdl"
+        niri_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/niri"
+        mkdir -p "$niri_dir"
+        install -m 644 ${niriConfigFile} "$niri_dir/config.kdl"
 
-      # Seed noctalia.kdl only if it doesn't exist yet — once
-      # Noctalia's template processor runs, it owns this file.
-      if [ ! -f "$niri_dir/noctalia.kdl" ]; then
-        install -m 644 ${initialNoctaliaKdl} "$niri_dir/noctalia.kdl"
-      fi
-    '';
-
-    # ── Make noctalia config files writable ────────────────────────────
-    # The Noctalia HM module writes colors.json and settings.json as
-    # nix-store symlinks.  Noctalia needs to write both at runtime:
-    # colors.json for live palette updates, settings.json for persisting
-    # UI changes (color scheme selection, dark mode toggle, etc.).
-    # Convert both symlinks to real writable files after linkGeneration.
-    activation.makeNoctaliaConfigMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-      noctalia_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/noctalia"
-      for f in colors.json settings.json; do
-        target="$noctalia_dir/$f"
-        if [ -L "$target" ]; then
-          content=$(cat "$target")
-          rm "$target"
-          printf '%s\n' "$content" > "$target"
+        # Seed noctalia.kdl only if it doesn't exist yet — once
+        # Noctalia's template processor runs, it owns this file.
+        if [ ! -f "$niri_dir/noctalia.kdl" ]; then
+          install -m 644 ${initialNoctaliaKdl} "$niri_dir/noctalia.kdl"
         fi
-      done
-    '';
+      '';
+
+      # ── Install wl-walls Noctalia plugin ──────────────────────────────
+      # Copy plugin files from the nix store into the mutable plugins dir
+      # so Noctalia discovers it at runtime. Replaces the old wl-harmonograph
+      # plugin if present.
+      installWlWallsPlugin = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+        plugin_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/noctalia/plugins"
+        mkdir -p "$plugin_dir"
+
+        # Remove old wl-harmonograph plugin (symlink or directory)
+        rm -rf "$plugin_dir/wl-harmonograph"
+
+        # Install wl-walls plugin (copy from store so Noctalia can write settings)
+        rm -rf "$plugin_dir/wl-walls"
+        cp -r ${wl-walls-noctalia-plugin}/share/noctalia/plugins/wl-walls "$plugin_dir/wl-walls"
+        chmod -R u+w "$plugin_dir/wl-walls"
+      '';
+
+      # ── Make noctalia config files writable ────────────────────────────
+      # The Noctalia HM module writes colors.json and settings.json as
+      # nix-store symlinks.  Noctalia needs to write both at runtime:
+      # colors.json for live palette updates, settings.json for persisting
+      # UI changes (color scheme selection, dark mode toggle, etc.).
+      # Convert both symlinks to real writable files after linkGeneration.
+      makeNoctaliaConfigMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+        noctalia_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/noctalia"
+        for f in colors.json settings.json; do
+          target="$noctalia_dir/$f"
+          if [ -L "$target" ]; then
+            content=$(cat "$target")
+            rm "$target"
+            printf '%s\n' "$content" > "$target"
+          fi
+        done
+      '';
+    };
 
     # Configure rot8 for automatic screen rotation
     # GPD Pocket 4 rotations mapped to match device orientation (270 default)

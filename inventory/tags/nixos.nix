@@ -68,6 +68,11 @@
   };
 
   systemd = {
+    # Faster shutdown — default 90s timeout is painful when a service hangs.
+    # Hung services get SIGKILL after 5s instead of blocking reboot for
+    # a minute and a half.
+    settings.Manager.DefaultTimeoutStopSec = "5s";
+
     services = {
       # Redirect Nix builds to /var/tmp (not RAM) to avoid OOM on large builds
       nix-daemon.environment.TMPDIR = "/var/tmp";

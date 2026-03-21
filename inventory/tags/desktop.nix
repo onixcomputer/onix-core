@@ -65,5 +65,6 @@
     shared-mime-info
     powertop
     acpi
+    bluetui # TUI Bluetooth device manager (scan, pair, connect)
   ];
 }

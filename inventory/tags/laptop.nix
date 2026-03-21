@@ -100,5 +100,6 @@ in
     powertop
     acpi
     libnotify
+    bluetui # TUI Bluetooth device manager (scan, pair, connect)
   ];
 }

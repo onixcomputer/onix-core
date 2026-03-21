@@ -91,8 +91,8 @@
       url = "github:brittonr/niri";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    wl-harmonograph = {
-      url = "github:pinpox/wl-harmonograph";
+    wl-walls = {
+      url = "github:brittonr/wl-walls";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     noctalia = {

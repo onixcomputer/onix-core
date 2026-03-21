@@ -180,5 +180,9 @@ in
 
       // Power management
       ${k.modifiers.wm}+Shift+O { power-off-monitors; }
+
+      // Hardware TUIs (Mod+Ctrl = control panels, matching omarchy convention)
+      ${k.modifiers.wm}+Control+W { spawn "${config.apps.terminal.command}" "start" "--" "impala"; }
+      ${k.modifiers.wm}+Control+B { spawn "${config.apps.terminal.command}" "start" "--" "bluetui"; }
   }
 ''
