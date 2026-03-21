@@ -22,6 +22,8 @@
     ../../shared/desktop/media-viewers.nix
     ../../shared/desktop/btop.nix
     ../../shared/desktop/libreoffice.nix
+    ../../shared/desktop/screen-recording.nix
+    ../../shared/desktop/emoji-picker.nix
 
     # Noctalia-specific
     ./noctalia-config.nix

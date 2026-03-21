@@ -32,6 +32,7 @@ let self_modules = [
   "ollama",
   "prometheus",
   "static-server",
+  "syncthing",
   "tailscale",
   "tailscale-traefik",
   "upmpdcli",

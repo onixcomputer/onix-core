@@ -23,6 +23,7 @@ let
     "home-manager-profiles" = import ./home-manager-profiles;
     "harmonia" = import ./harmonia;
     "llamacpp-rpc" = import ./llamacpp-rpc;
+    "syncthing" = import ./syncthing;
   };
 
 in

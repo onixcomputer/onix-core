@@ -104,6 +104,9 @@ in
       // Noctalia clipboard history (replaces cliphist + fuzzel)
       ${k.modifiers.wm}+${k.wm.clipboard} { spawn ${ipc "launcher" "clipboard"}; }
 
+      // Emoji picker (Mod+. — matches macOS Ctrl+Cmd+Space convention)
+      ${k.modifiers.wm}+Period { spawn "bemoji" "-t"; }
+
       // Noctalia control center and session menu (new features)
       ${k.modifiers.wm}+N { spawn ${ipc "controlCenter" "toggle"}; }
       ${k.modifiers.wm}+G { spawn ${ipc "sessionMenu" "toggle"}; }
@@ -118,6 +121,11 @@ in
       ${k.modifiers.wm}+${k.wm.screenshot} { spawn "screenshot-region"; }
       ${k.modifiers.wm}+Print { spawn "screenshot-screen-edit"; }
       ${k.modifiers.wm}+Shift+P { spawn "color-picker"; }
+
+      // Screen recording
+      ${k.modifiers.wm}+Shift+R { spawn "record-screen"; }
+      ${k.modifiers.wm}+Control+R { spawn "record-region"; }
+      ${k.modifiers.wm}+Shift+${k.wm.close} { spawn "record-stop"; }
 
       // Notifications via Noctalia (replaces makoctl)
       ${k.modifiers.wm}+Comma { spawn ${ipc "notifications" "dismissAll"}; }

@@ -502,6 +502,18 @@ let prom_rules = import "prometheus-rules.ncl" in
       roles.server.tags.media = {},
     },
 
+    syncthing = {
+      module = { name = "syncthing", input = "self" },
+      roles.peer = {
+        tags.syncthing = {},
+        settings = {
+          user = "brittonr",
+          dataDir = "/home/brittonr",
+          openFirewall = true,
+        },
+      },
+    },
+
     # ========== Upstream clan-core services ==========
     # (borgbackup and matrix-synapse have extraModules stubs in .nix)
 
