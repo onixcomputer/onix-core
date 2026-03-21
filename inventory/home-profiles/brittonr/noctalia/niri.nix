@@ -159,20 +159,19 @@ let
                                 map (name: "workspace \"${name}\"") config.workspaces.names
                               )}
 
-                              // Startup services - Noctalia replaces waybar, swayosd, swww, mako
-                              spawn-at-startup "noctalia-shell"
-                              // wl-walls is started by its Noctalia plugin (autoStart: true)
-                              // spawn-at-startup not needed — plugin manages lifecycle
-                              spawn-at-startup "${pkgs.wl-clipboard}/bin/wl-paste" "--watch" "${pkgs.cliphist}/bin/cliphist" "store"
-                              spawn-at-startup "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1"
-                              spawn-at-startup "${pkgs.networkmanagerapplet}/bin/nm-applet"
-                              spawn-at-startup "${pkgs.blueman}/bin/blueman-applet"
-
-                              // Startup applications
-                              spawn-at-startup "vesktop" "--enable-features=UseOzonePlatform" "--ozone-platform=wayland" "--enable-wayland-ime" "--disable-gpu-sandbox"
-                              spawn-at-startup "element-desktop"
-                              spawn-at-startup "${config.apps.terminal.command}" "start" "--" "${config.apps.sysmon.command}"
-                              spawn-at-startup "${config.apps.terminal.command}" "start" "--" "${pkgs.systemd}/bin/journalctl" "-f"
+                              // Startup services and applications (from startup.ncl)
+                              ${
+                                let
+                                  mkSpawn =
+                                    entry:
+                                    let
+                                      args = builtins.concatStringsSep " " (map (a: ''"${a}"'') entry.args);
+                                    in
+                                    ''spawn-at-startup "${entry.command}"${if entry.args == [ ] then "" else " ${args}"}'';
+                                  all = config.startup.services ++ config.startup.apps;
+                                in
+                                builtins.concatStringsSep "\n                          " (map mkSpawn all)
+                              }
 
                               // Window rules: workspace assignments
                               ${builtins.concatStringsSep "\n                          " (
