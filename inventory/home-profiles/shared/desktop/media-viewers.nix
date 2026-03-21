@@ -66,29 +66,5 @@
     ffmpeg # Video/audio converter and processor
   ];
 
-  # Set default applications
-  xdg.mimeApps = {
-    enable = true;
-    defaultApplications = {
-      # Images - gThumb first, then imv
-      "image/png" = [ "org.gnome.gThumb.desktop" ];
-      "image/jpeg" = [ "org.gnome.gThumb.desktop" ];
-      "image/jpg" = [ "org.gnome.gThumb.desktop" ];
-      "image/gif" = [ "org.gnome.gThumb.desktop" ];
-      "image/webp" = [ "org.gnome.gThumb.desktop" ];
-      "image/bmp" = [ "org.gnome.gThumb.desktop" ];
-      "image/svg+xml" = [ "org.gnome.gThumb.desktop" ];
-      "image/tiff" = [ "org.gnome.gThumb.desktop" ];
-
-      # Videos
-      "video/mp4" = [ "mpv.desktop" ];
-      "video/x-matroska" = [ "mpv.desktop" ];
-      "video/webm" = [ "mpv.desktop" ];
-      "video/avi" = [ "mpv.desktop" ];
-      "video/quicktime" = [ "mpv.desktop" ];
-
-      # PDFs
-      "application/pdf" = [ "org.gnome.Evince.desktop" ];
-    };
-  };
+  # MIME associations for images, video, PDFs are in xdg.ncl
 }

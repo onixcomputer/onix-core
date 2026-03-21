@@ -18,8 +18,5 @@
     typstPackages.may # Simple document template
   ];
 
-  # Set up file associations for Typst files
-  xdg.mimeApps.defaultApplications = {
-    "text/x-typst" = [ "typstwriter.desktop" ];
-  };
+  # MIME association for typst files is in xdg.ncl
 }

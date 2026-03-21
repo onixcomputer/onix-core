@@ -137,17 +137,7 @@ in
   home.packages = [ wrappedFirefox ];
 
   xdg = {
-    # Set LibreWolf as the default browser for all web MIME types
-    mimeApps.enable = true;
-    mimeApps.defaultApplications = {
-      "x-scheme-handler/http" = [ "librewolf.desktop" ];
-      "x-scheme-handler/https" = [ "librewolf.desktop" ];
-      "text/html" = [ "librewolf.desktop" ];
-      "application/xhtml+xml" = [ "librewolf.desktop" ];
-    };
-
-    # Prevent mimeapps.list backup conflict during home-manager activation
-    configFile."mimeapps.list".force = true;
+    # MIME associations for web types are in xdg.ncl
 
     configFile."tridactyl/tridactylrc".text = ''
       " Reset to defaults

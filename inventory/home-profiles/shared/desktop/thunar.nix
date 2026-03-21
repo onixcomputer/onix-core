@@ -18,7 +18,5 @@
     };
   };
 
-  xdg.mimeApps.defaultApplications = {
-    "inode/directory" = [ "thunar.desktop" ];
-  };
+  # MIME association for inode/directory is in xdg.ncl
 }
