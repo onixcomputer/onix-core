@@ -59,7 +59,7 @@
   # Aggressive GC to keep the fixed-size disk image from filling up.
   nix.gc = {
     automatic = true;
-    dates = "daily";
+    dates = lib.mkForce "daily";
     options = lib.mkForce "--delete-older-than 7d";
   };
 }
