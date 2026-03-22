@@ -2,10 +2,11 @@
 #
 # Provides:
 # - KVM kernel modules and tun device
-# - IP forwarding and NAT
-# - dnsmasq in DHCP-only mode (bind-dynamic, listens on all tap-* interfaces)
+# - br-chv bridge with 172.16.0.1/24 gateway (all VM TAPs attach here)
+# - IP forwarding and NAT through the bridge
+# - dnsmasq in DHCP-only mode on the bridge
 # - cloud-hypervisor and related tools
-# - Legacy tap0 interface for RedoxOS development
+# - Legacy tap0 interface for RedoxOS development (also bridged)
 #
 # Per-VM TAP interfaces and DHCP reservations are added by the
 # cloud-hypervisor-vm clan service module instances.
@@ -16,12 +17,16 @@
 }:
 
 let
-  # Legacy RedoxOS TAP — kept for backward compat with redox flake.
-  legacyTap = "tap0";
+  bridge = "br-chv";
   hostIp = "172.16.0.1";
   netmask = 24;
+
+  # Legacy RedoxOS TAP — kept for backward compat with redox flake.
+  legacyTap = "tap0";
   legacyGuestIp = "172.16.0.2";
   legacyGuestMac = "52:54:00:12:34:56";
+
+  ip = "${pkgs.iproute2}/bin/ip";
 in
 {
   users.users.brittonr.extraGroups = [ "kvm" ];
@@ -44,30 +49,19 @@ in
   networking = {
     nat = {
       enable = true;
-      # Legacy tap0 always included; service module adds per-VM taps via mkAfter.
-      internalInterfaces = [ legacyTap ];
+      internalInterfaces = [ bridge ];
     };
 
     firewall = {
       enable = true;
-      trustedInterfaces = [ legacyTap ];
-    };
-
-    # Legacy tap0 host-side IP.
-    interfaces.${legacyTap} = {
-      ipv4.addresses = [
-        {
-          address = hostIp;
-          prefixLength = netmask;
-        }
-      ];
+      trustedInterfaces = [ bridge ];
     };
   };
 
-  # --- Legacy TAP setup (RedoxOS) ---
+  # --- Bridge + legacy TAP setup ---
 
   systemd.services.cloud-hypervisor-network = {
-    description = "Cloud Hypervisor TAP Network Setup (legacy tap0)";
+    description = "Cloud Hypervisor bridge and legacy TAP setup";
     wantedBy = [ "multi-user.target" ];
     after = [ "network.target" ];
     before = [ "network-online.target" ];
@@ -76,19 +70,36 @@ in
       Type = "oneshot";
       RemainAfterExit = true;
 
-      ExecStart = pkgs.writeScript "setup-cloud-hypervisor-tap" ''
+      ExecStart = pkgs.writeScript "setup-cloud-hypervisor-network" ''
         #!${pkgs.bash}/bin/bash
         set -e
-        if ! ${pkgs.iproute2}/bin/ip link show "${legacyTap}" &>/dev/null; then
-          ${pkgs.iproute2}/bin/ip tuntap add dev "${legacyTap}" mode tap user brittonr
+
+        # Create the bridge if it doesn't exist.
+        if ! ${ip} link show "${bridge}" &>/dev/null; then
+          ${ip} link add name "${bridge}" type bridge
         fi
-        ${pkgs.iproute2}/bin/ip link set "${legacyTap}" up
+        ${ip} link set "${bridge}" up
+
+        # Assign the gateway IP to the bridge (shared by all VMs).
+        if ! ${ip} addr show "${bridge}" | grep -q '${hostIp}/${toString netmask}'; then
+          ${ip} addr add ${hostIp}/${toString netmask} dev "${bridge}"
+        fi
+
+        # Legacy RedoxOS TAP — attach to the bridge.
+        if ! ${ip} link show "${legacyTap}" &>/dev/null; then
+          ${ip} tuntap add dev "${legacyTap}" mode tap user brittonr
+        fi
+        ${ip} link set "${legacyTap}" master "${bridge}"
+        ${ip} link set "${legacyTap}" up
       '';
 
-      ExecStop = pkgs.writeScript "teardown-cloud-hypervisor-tap" ''
+      ExecStop = pkgs.writeScript "teardown-cloud-hypervisor-network" ''
         #!${pkgs.bash}/bin/bash
-        if ${pkgs.iproute2}/bin/ip link show "${legacyTap}" &>/dev/null; then
-          ${pkgs.iproute2}/bin/ip link delete "${legacyTap}"
+        if ${ip} link show "${legacyTap}" &>/dev/null; then
+          ${ip} link delete "${legacyTap}"
+        fi
+        if ${ip} link show "${bridge}" &>/dev/null; then
+          ${ip} link delete "${bridge}"
         fi
       '';
     };
@@ -102,15 +113,15 @@ in
     dnsmasq
   ];
 
-  # --- dnsmasq: DHCP-only for all TAP interfaces ---
+  # --- dnsmasq: DHCP-only on the bridge ---
 
   services.dnsmasq = {
     enable = true;
     resolveLocalQueries = false;
     settings = {
-      # bind-dynamic handles interfaces that appear after dnsmasq starts.
+      # Listen only on the bridge — not on physical interfaces.
+      interface = bridge;
       bind-dynamic = true;
-      except-interface = "lo";
 
       # Disable DNS — DHCP only.
       port = 0;

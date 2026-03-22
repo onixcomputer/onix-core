@@ -545,6 +545,32 @@ let prom_rules = import "prometheus-rules.ncl" in
       },
     },
 
+    chv-dev2 = {
+      module = { name = "cloud-hypervisor-vm", input = "self" },
+      roles.host.machines.britton-desktop.settings = {
+        guestMachine = "chv-dev2",
+        cpus = 2,
+        memory = 2048,
+        diskPath = "/var/lib/cloud-hypervisor/chv-dev2.img",
+        tapInterface = "tap-chv-dev2",
+        macAddress = "52:54:00:c0:ff:02",
+        guestIp = "172.16.0.11",
+      },
+    },
+
+    chv-dev3 = {
+      module = { name = "cloud-hypervisor-vm", input = "self" },
+      roles.host.machines.britton-desktop.settings = {
+        guestMachine = "chv-dev3",
+        cpus = 2,
+        memory = 2048,
+        diskPath = "/var/lib/cloud-hypervisor/chv-dev3.img",
+        tapInterface = "tap-chv-dev3",
+        macAddress = "52:54:00:c0:ff:03",
+        guestIp = "172.16.0.12",
+      },
+    },
+
     # ========== Upstream clan-core services ==========
     # (borgbackup and matrix-synapse have extraModules stubs in .nix)
 

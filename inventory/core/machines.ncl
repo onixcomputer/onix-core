@@ -213,8 +213,32 @@ let { Machines, .. } = import "contracts.ncl" in
       ],
       deploy = {
         targetHost = "root@172.16.0.10",
-        # Build on the host (britton-desktop) since the guest's DNS resolver
-        # can't reach github.com to fetch flake inputs.
+        buildHost = "britton-desktop",
+      },
+    },
+
+    chv-dev2 = {
+      name = "chv-dev2",
+      system = "x86_64-linux",
+      tags = [
+        "cloud-hypervisor-guest",
+        "minimal-docs",
+      ],
+      deploy = {
+        targetHost = "root@172.16.0.11",
+        buildHost = "britton-desktop",
+      },
+    },
+
+    chv-dev3 = {
+      name = "chv-dev3",
+      system = "x86_64-linux",
+      tags = [
+        "cloud-hypervisor-guest",
+        "minimal-docs",
+      ],
+      deploy = {
+        targetHost = "root@172.16.0.12",
         buildHost = "britton-desktop",
       },
     },

@@ -152,17 +152,11 @@ in
                       ${ip} link delete ${tapInterface}
                     fi
                     ${ip} tuntap add dev ${tapInterface} mode tap ${if multiQueue then "multi_queue" else ""} vnet_hdr
+
+                    # Attach to the shared bridge. The bridge (br-chv) owns the
+                    # gateway IP 172.16.0.1/24 — individual TAPs get no IP.
+                    ${ip} link set ${tapInterface} master br-chv
                     ${ip} link set ${tapInterface} up
-
-                    # Assign gateway IP on the host side of the TAP.
-                    # Can't rely on networking.interfaces — that service runs once at boot
-                    # and doesn't re-trigger when the TAP is recreated.
-                    ${ip} addr add 172.16.0.1/24 dev ${tapInterface}
-
-                    # Kick dnsmasq to rescan interfaces immediately. bind-dynamic
-                    # rescans every ~1s, but the guest's first DHCP discover could
-                    # arrive before dnsmasq notices the new TAP.
-                    ${pkgs.systemd}/bin/systemctl kill dnsmasq.service --signal=HUP 2>/dev/null || true
                   '';
 
                   ExecStart = lib.concatStringsSep " " [
@@ -213,10 +207,8 @@ in
                 ];
               };
 
-              networking = {
-                firewall.trustedInterfaces = [ tapInterface ];
-                nat.internalInterfaces = [ tapInterface ];
-              };
+              # No per-TAP firewall or NAT entries needed — the br-chv bridge
+              # is already trusted and NAT'd by the cloud-hypervisor-host tag.
             };
         };
     };
