@@ -42,7 +42,11 @@
   systemd.network = {
     enable = true;
     networks."10-virtio" = {
-      matchConfig.Driver = "virtio_net";
+      matchConfig = {
+        # Match by name (ens*) since systemd-networkd may not see the
+        # kernel driver name for virtio-net via udev in all configurations.
+        Name = "ens*";
+      };
       networkConfig = {
         DHCP = "yes";
         IPv6AcceptRA = true;
