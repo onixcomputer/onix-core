@@ -22,8 +22,13 @@
       ];
     };
 
-    # Serial console for cloud-hypervisor --serial tty.
-    kernelParams = [ "console=ttyS0,115200" ];
+    kernelParams = [
+      # Serial console for cloud-hypervisor --serial tty.
+      "console=ttyS0,115200"
+      # Skip fsck — cloud-hypervisor rejects writes to sector 0 of raw disk images,
+      # which breaks e2fsck superblock repair. Run e2fsck from the host if needed.
+      "fsck.mode=skip"
+    ];
   };
 
   # --- Networking ---
