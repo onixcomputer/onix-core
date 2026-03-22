@@ -107,10 +107,14 @@
     wezterm.terminfo
   ];
 
-  # Don't restart network services during rebuild — prevents SSH disconnects
-  # when deploying remotely. Applies whether using networkd or resolved.
+  # Don't restart networkd during rebuild — prevents SSH disconnects
+  # when deploying remotely.
   systemd.services.systemd-networkd.stopIfChanged = false;
-  systemd.services.systemd-resolved.stopIfChanged = false;
+
+  # srvos common/networking.nix sets systemd-resolved.stopIfChanged = false,
+  # which creates a broken unit (no ExecStart) unless resolved is enabled.
+  # resolved also integrates well with Tailscale MagicDNS.
+  services.resolved.enable = true;
 
   networking = {
     networkmanager.enable = true;

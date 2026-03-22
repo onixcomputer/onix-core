@@ -99,16 +99,26 @@
     ];
   };
 
-  # DisplayLink Manager service
-  systemd.services.dlm = {
-    description = "DisplayLink Manager Service";
-    after = [ "display-manager.service" ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
-      ExecStart = "${pkgs.displaylink}/bin/DisplayLinkManager";
-      Restart = "always";
-      RestartSec = 5;
-      LogsDirectory = "displaylink";
+  systemd = {
+    # DisplayLink Manager service
+    services.dlm = {
+      description = "DisplayLink Manager Service";
+      after = [ "display-manager.service" ];
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        ExecStart = "${pkgs.displaylink}/bin/DisplayLinkManager";
+        Restart = "always";
+        RestartSec = 5;
+        LogsDirectory = "displaylink";
+      };
+    };
+
+    # Prevent suspend/sleep entirely — this machine should always stay on
+    targets = {
+      sleep.enable = false;
+      suspend.enable = false;
+      hibernate.enable = false;
+      hybrid-sleep.enable = false;
     };
   };
 
