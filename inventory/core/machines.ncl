@@ -211,7 +211,12 @@ let { Machines, .. } = import "contracts.ncl" in
         "cloud-hypervisor-guest",
         "minimal-docs",
       ],
-      deploy.targetHost = "root@172.16.0.10",
+      deploy = {
+        targetHost = "root@172.16.0.10",
+        # Build on the host (britton-desktop) since the guest's DNS resolver
+        # can't reach github.com to fetch flake inputs.
+        buildHost = "britton-desktop",
+      },
     },
 
     # ========== macOS ==========
