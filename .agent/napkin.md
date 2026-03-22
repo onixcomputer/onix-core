@@ -3,6 +3,9 @@
 ## Corrections
 | Date | Source | What Went Wrong | What To Do Instead |
 |------|--------|----------------|-------------------|
+| 2026-03-22 | self | `nix.gc.dates = "daily"` in guest tag conflicts with nix-gc service module's `"weekly"` — both target nixos machines | Use `lib.mkForce` on tag-specific GC settings that intentionally override service-level defaults |
+| 2026-03-22 | self | `nix eval` of britton-desktop's ExecStart fails with `dynamic-derivations` error when referencing `kernel.dev` output | Use `nix build` instead of `nix eval` for attributes that reference multi-output derivation paths — build resolves them, eval may not |
+| 2026-03-22 | self | `clan vars generate` needs a TTY for password prompts — can't run from pueue or non-interactive shell | Run `clan vars generate <machine>` interactively in a terminal before building machines that need vars |
 | 2026-03-13 | self | New files in `inventory/tags/` not found by nix eval — "path does not exist" in store | Must `git add` new files before nix can see them (nix copies flake source from git index, not working tree) |
 | 2026-03-13 | self | srvos `security.sudo.execWheelOnly = true` conflicts with per-user `sudo.extraRules` on britton-desktop | Need `lib.mkForce false` to override srvos's non-mkDefault setting. Also needed to add `lib` to module args. |
 | 2026-03-13 | self | statix rejects repeated attrset keys (`inputs.X.follows` style on separate lines, multiple `security` blocks) | Use nested attrset `inputs = { ... }` form and merge all `security.*` into a single `security = { ... }` block |

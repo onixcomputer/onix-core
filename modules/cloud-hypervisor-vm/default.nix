@@ -148,8 +148,12 @@ in
                     fi
                     ${ip} link set ${tapInterface} up
 
-                    # Add to bridge subnet — NixOS networking.interfaces handles the IP.
-                    # Just make sure it's up.
+                    # Assign gateway IP on the host side of the TAP.
+                    # Can't rely on networking.interfaces — that service runs once at boot
+                    # and doesn't re-trigger when the TAP is recreated.
+                    if ! ${ip} addr show ${tapInterface} | grep -q '172.16.0.1/24'; then
+                      ${ip} addr add 172.16.0.1/24 dev ${tapInterface}
+                    fi
                   '';
 
                   ExecStart = lib.concatStringsSep " " [
@@ -202,17 +206,6 @@ in
 
               networking = {
                 firewall.trustedInterfaces = [ tapInterface ];
-
-                # Host-side IP on the TAP — gateway for the guest.
-                interfaces.${tapInterface} = {
-                  ipv4.addresses = [
-                    {
-                      address = "172.16.0.1";
-                      prefixLength = 24;
-                    }
-                  ];
-                };
-
                 nat.internalInterfaces = [ tapInterface ];
               };
             };
