@@ -102,7 +102,9 @@ in
               kernel = "${guestSystem.kernel.dev}/vmlinux";
               initrd = "${guestSystem.initialRamdisk}/initrd";
               inherit (guestSystem) toplevel;
-              kernelParams = "root=/dev/vda init=${toplevel}/init console=ttyS0,115200";
+              # root=PARTLABEL matches the disko GPT partition name.
+              # /dev/vda is the whole disk; /dev/vda1 is the root partition.
+              kernelParams = "root=PARTLABEL=disk-main-root init=${toplevel}/init console=ttyS0,115200";
 
               # Multi-queue: scale with vCPU count for throughput.
               multiQueue = cpus > 1;
