@@ -1,21 +1,9 @@
-# Disk layout for cloud-hypervisor guest.
-# Single ext4 partition on virtio-blk /dev/vda — no ESP, no bootloader.
+# Filesystem for cloud-hypervisor guest.
+# Raw ext4 on /dev/vda — no partition table, no bootloader.
+# Cloud-hypervisor presents the disk image directly as a virtio-blk device.
 {
-  disko.devices.disk.main = {
+  fileSystems."/" = {
     device = "/dev/vda";
-    type = "disk";
-    content = {
-      type = "gpt";
-      partitions = {
-        root = {
-          size = "100%";
-          content = {
-            type = "filesystem";
-            format = "ext4";
-            mountpoint = "/";
-          };
-        };
-      };
-    };
+    fsType = "ext4";
   };
 }
