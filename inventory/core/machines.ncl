@@ -202,6 +202,18 @@ let { Machines, .. } = import "contracts.ncl" in
       deploy.targetHost = "root@iroh-utm-vm",
     },
 
+    # ========== Cloud Hypervisor VMs ==========
+
+    chv-dev1 = {
+      name = "chv-dev1",
+      system = "x86_64-linux",
+      tags = [
+        "cloud-hypervisor-guest",
+        "minimal-docs",
+      ],
+      deploy.targetHost = "root@172.16.0.10",
+    },
+
     # ========== macOS ==========
 
     britton-air = {

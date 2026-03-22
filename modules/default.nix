@@ -19,6 +19,7 @@ let
     "ollama" = import ./ollama;
     "clonadic" = import ./clonadic;
     "clankers" = import ./clankers;
+    "cloud-hypervisor-vm" = import ./cloud-hypervisor-vm;
     "iroh-ssh" = import ./iroh-ssh;
     "llm-agents" = import ./llm-agents;
     "home-manager-profiles" = import ./home-manager-profiles;

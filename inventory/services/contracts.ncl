@@ -19,6 +19,7 @@ let self_modules = [
   "calibre-server",
   "clankers",
   "clonadic",
+  "cloud-hypervisor-vm",
   "cloudflare-tunnel",
   "grafana",
   "harmonia",

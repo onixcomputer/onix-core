@@ -10,6 +10,7 @@
 let tag_file_tags = [
   "amd-gpu",
   "audio",
+  "cloud-hypervisor-guest",
   "cloud-hypervisor-host",
   "cosmic",
   "creative",
