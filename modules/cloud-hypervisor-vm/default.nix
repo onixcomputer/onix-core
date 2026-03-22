@@ -174,7 +174,7 @@ in
                     "--net tap=${tapInterface},mac=${macAddress}${lib.optionalString multiQueue ",num_queues=${toString netQueues}"}"
                     "--cpus boot=${toString cpus}"
                     "--memory size=${toString memory}M"
-                    "--serial pty"
+                    "--serial tty"
                     "--console off"
                     "--api-socket path=${apiSocket}"
                     "--seccomp true"

@@ -71,6 +71,14 @@ mount "$PART" "$MNT"
 echo "Installing NixOS system..."
 nixos-install --root "$MNT" --system "$TOPLEVEL" --no-root-password --no-channel-copy
 
+# Generate machine-id. Without this, systemd-networkd's DHCPv4 client
+# fails with ENOENT because it needs machine-id for DUID generation.
+# nixos-install in a chroot can't create it when /etc/ is read-only
+# (nix store overlay), so we create it explicitly.
+echo "Generating machine-id..."
+systemd-id128 new >"$MNT/etc/machine-id"
+chmod 444 "$MNT/etc/machine-id"
+
 echo "Syncing..."
 sync
 
