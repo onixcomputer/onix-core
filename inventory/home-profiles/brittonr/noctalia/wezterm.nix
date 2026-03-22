@@ -42,6 +42,7 @@ in
       cursor_border = '${theme.fg.hex}',
       selection_bg = '${theme.accent.hex}',
       selection_fg = '${theme.bg.hex}',
+      scrollbar_thumb = '${theme.bg_highlight.hex}',
 
       ansi = {
         '${theme.term_black.hex}',
@@ -140,6 +141,7 @@ in
 
       -- Scrollback
       config.scrollback_lines = ${toString config.terminal.scrollbackLines}
+      config.enable_scroll_bar = true
 
       -- Bell
       config.audible_bell = 'Disabled'
@@ -228,12 +230,23 @@ in
         { key = '${weztermKey ta.promptNext}', mods = '${weztermMods}', action = act.ScrollToPrompt(1) },
       }
 
-      -- URL handling
+      -- URL handling & scroll speed
       config.mouse_bindings = {
         {
           event = { Up = { streak = 1, button = 'Left' } },
           mods = 'CTRL',
           action = act.OpenLinkAtMouseCursor,
+        },
+        -- Scroll 1 line per wheel tick (default is ~3-5)
+        {
+          event = { Down = { streak = 1, button = { WheelUp = 1 } } },
+          mods = 'NONE',
+          action = act.ScrollByLine(-1),
+        },
+        {
+          event = { Down = { streak = 1, button = { WheelDown = 1 } } },
+          mods = 'NONE',
+          action = act.ScrollByLine(1),
         },
       }
 
