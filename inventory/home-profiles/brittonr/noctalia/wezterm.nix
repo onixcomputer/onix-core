@@ -195,8 +195,8 @@ in
         { key = '${weztermKey ta.prevWindow}', mods = '${weztermMods}', action = act.ActivatePaneDirection 'Prev' },
 
         -- Scrolling
-        { key = '${weztermKey ta.scrollUp}', mods = '${weztermMods}', action = act.ScrollByLine(-1) },
-        { key = '${weztermKey ta.scrollDown}', mods = '${weztermMods}', action = act.ScrollByLine(1) },
+        { key = '${weztermKey ta.scrollUp}', mods = '${weztermMods}', action = act.ScrollByLine(-2) },
+        { key = '${weztermKey ta.scrollDown}', mods = '${weztermMods}', action = act.ScrollByLine(2) },
         { key = '${weztermKey ta.scrollPageUp}', mods = '${weztermMods}', action = act.ScrollByPage(-1) },
         { key = '${weztermKey ta.scrollPageDown}', mods = '${weztermMods}', action = act.ScrollByPage(1) },
         { key = '${weztermKey ta.scrollHome}', mods = '${weztermMods}', action = act.ScrollToTop },
@@ -241,12 +241,12 @@ in
         {
           event = { Down = { streak = 1, button = { WheelUp = 1 } } },
           mods = 'NONE',
-          action = act.ScrollByLine(-1),
+          action = act.ScrollByLine(-3),
         },
         {
           event = { Down = { streak = 1, button = { WheelDown = 1 } } },
           mods = 'NONE',
-          action = act.ScrollByLine(1),
+          action = act.ScrollByLine(3),
         },
       }
 
