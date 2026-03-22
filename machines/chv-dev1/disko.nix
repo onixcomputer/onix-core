@@ -5,5 +5,12 @@
   fileSystems."/" = {
     device = "/dev/vda";
     fsType = "ext4";
+    options = [
+      "rw"
+      "noatime"
+      # Disable barriers — cloud-hypervisor's virtio-blk rejects writes to
+      # sector 0 which breaks ext4's journal barrier writes.
+      "nobarrier"
+    ];
   };
 }
