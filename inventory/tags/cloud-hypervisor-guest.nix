@@ -43,13 +43,24 @@
     enable = true;
     networks."10-virtio" = {
       matchConfig = {
-        # Match by name (ens*) since systemd-networkd may not see the
-        # kernel driver name for virtio-net via udev in all configurations.
-        Name = "ens*";
+        # Match by kernel driver, not interface name. Name depends on
+        # cloud-hypervisor's PCI slot assignment (ens2, enp0s3, etc.)
+        # and can change if devices are reordered.
+        Driver = "virtio_net";
       };
       networkConfig = {
         DHCP = "yes";
         IPv6AcceptRA = true;
+        # Start DHCP even before carrier is detected. Handles the timing
+        # race where the TAP is UP on the host but the guest's virtio-net
+        # hasn't reported carrier yet.
+        ConfigureWithoutCarrier = true;
+      };
+      linkConfig = {
+        # Force the interface administratively UP regardless of carrier state.
+        # Without this, networkd may leave the interface DOWN if carrier
+        # detection is delayed during virtio-net initialization.
+        ActivationPolicy = "up";
       };
     };
   };

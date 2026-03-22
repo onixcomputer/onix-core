@@ -144,18 +144,25 @@ in
                       exit 1
                     fi
 
-                    # Create TAP interface if it doesn't exist.
-                    if ! ${ip} link show ${tapInterface} &>/dev/null; then
-                      ${ip} tuntap add dev ${tapInterface} mode tap ${if multiQueue then "multi_queue" else ""} vnet_hdr
+                    # Always delete+recreate the TAP. A stale TAP from a crashed run
+                    # may have wrong flags (missing multi_queue or vnet_hdr), causing
+                    # cloud-hypervisor's ioctl to fail when opening queue pairs.
+                    # This matches microvm.nix's tap-up pattern.
+                    if [ -e /sys/class/net/${tapInterface} ]; then
+                      ${ip} link delete ${tapInterface}
                     fi
+                    ${ip} tuntap add dev ${tapInterface} mode tap ${if multiQueue then "multi_queue" else ""} vnet_hdr
                     ${ip} link set ${tapInterface} up
 
                     # Assign gateway IP on the host side of the TAP.
                     # Can't rely on networking.interfaces — that service runs once at boot
                     # and doesn't re-trigger when the TAP is recreated.
-                    if ! ${ip} addr show ${tapInterface} | grep -q '172.16.0.1/24'; then
-                      ${ip} addr add 172.16.0.1/24 dev ${tapInterface}
-                    fi
+                    ${ip} addr add 172.16.0.1/24 dev ${tapInterface}
+
+                    # Kick dnsmasq to rescan interfaces immediately. bind-dynamic
+                    # rescans every ~1s, but the guest's first DHCP discover could
+                    # arrive before dnsmasq notices the new TAP.
+                    ${pkgs.systemd}/bin/systemctl kill dnsmasq.service --signal=HUP 2>/dev/null || true
                   '';
 
                   ExecStart = lib.concatStringsSep " " [
