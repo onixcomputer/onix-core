@@ -1,4 +1,5 @@
-# Onix Dark theme — professional dark theme with orange accents
+# Onix Dark theme — OLED-optimized dark theme with orange accents
+# Pure black backgrounds let OLED pixels turn off completely.
 let mk_theme = import "./mk-theme.ncl" in
 
 mk_theme {
@@ -6,12 +7,12 @@ mk_theme {
   author = "Onix Computer",
   variant = "dark",
 
-  # Surface colors
-  base00 = "#0d0d0d",
-  base01 = "#1a1a1a",
-  base02 = "#262626",
-  base03 = "#404040",
-  base04 = "#595959",
+  # Surface colors — ramp starts at true black for OLED
+  base00 = "#000000",
+  base01 = "#0a0a0a",
+  base02 = "#151515",
+  base03 = "#303030",
+  base04 = "#505050",
   base05 = "#b3b3b3",
   base06 = "#e6e6e6",
   base07 = "#ffffff",
@@ -27,9 +28,9 @@ mk_theme {
   magenta = "#ff44ff",
 
   # Terminal colors
-  term_black = "#1a1a1a",
+  term_black = "#0a0a0a",
   term_white = "#b3b3b3",
-  term_bright_black = "#404040",
+  term_bright_black = "#303030",
   term_bright_red = "#ff6666",
   term_bright_green = "#66ff66",
   term_bright_yellow = "#ffcc00",
@@ -38,26 +39,26 @@ mk_theme {
   term_bright_cyan = "#66ffff",
   term_bright_white = "#e6e6e6",
 
-  # Special
-  bg = "#1a1a1a",
+  # Special — pure black backgrounds for OLED
+  bg = "#000000",
   accent = "#ff6600",
   accent2 = "#ffaa00",
-  comment = "#595959",
-  term_bg = "#1a1a1a",
+  comment = "#505050",
+  term_bg = "#000000",
   term_fg = "#e6e6e6",
   term_selection = "#ff6600",
 
-  # Opacity overrides
+  # Opacity — fully opaque so black stays black (transparency defeats OLED)
   opacity = {
-    terminal = "0.95",
-    popups = "0.95",
-    notifications = "0.95",
+    terminal = "1.0",
+    popups = "0.97",
+    notifications = "0.97",
   },
 
   # Hyprland
   hypr = {
     active_border = "rgba(ff6600ff) rgba(ffaa00ff) 45deg",
-    inactive_border = "rgba(404040aa)",
+    inactive_border = "rgba(303030aa)",
     border_size = 2,
     gaps_in = 8,
     gaps_out = 8,
