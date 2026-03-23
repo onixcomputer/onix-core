@@ -461,7 +461,7 @@ let prom_rules = import "prometheus-rules.ncl" in
     calibre = {
       module = { name = "calibre-server", input = "self" },
       roles.server.machines.britton-desktop.settings = {
-        libraries = ["/home/brittonr/Calibre-Library"],
+        libraries = ["/home/brittonr/Calibre Library"],
         host = "0.0.0.0",
         port = 6767,
         user = "brittonr",

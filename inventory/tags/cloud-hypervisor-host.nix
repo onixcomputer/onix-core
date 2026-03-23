@@ -33,8 +33,9 @@ in
 
   # --- Kernel ---
 
+  # Only kvm-amd — all current cloud-hypervisor hosts are AMD.
+  # Loading kvm-intel on AMD produces a noisy "VMX not supported" error.
   boot.kernelModules = [
-    "kvm-intel"
     "kvm-amd"
     "tun"
   ];

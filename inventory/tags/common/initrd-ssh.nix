@@ -28,7 +28,20 @@
 
   boot = {
     initrd = {
-      systemd.enable = true;
+      systemd = {
+        enable = true;
+
+        # The initrd includes systemd unit files for resolved and networkd
+        # but not their binaries (we use NetworkManager, not networkd).
+        # Without suppression they log "Service has no ExecStart" at every
+        # boot — harmless but noisy.
+        suppressedUnits = [
+          "systemd-resolved.service"
+          "systemd-networkd.service"
+          "systemd-networkd.socket"
+          "systemd-networkd-wait-online.service"
+        ];
+      };
 
       network = {
         enable = true;
