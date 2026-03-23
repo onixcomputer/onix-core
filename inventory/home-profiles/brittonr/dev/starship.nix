@@ -37,4 +37,9 @@ in
     enableZshIntegration = true;
     inherit settings;
   };
+
+  # Force-overwrite so HM doesn't fail when a .hm-bak already exists
+  # from a prior activation.  programs.starship uses home.file with
+  # the full configPath, not xdg.configFile.
+  home.file.${config.programs.starship.configPath}.force = true;
 }

@@ -16,6 +16,11 @@ in
     };
   };
 
+  # btop rewrites its config on exit, replacing the HM symlink with a
+  # regular file.  force = true lets HM overwrite it without trying to
+  # create a .hm-bak (which would collide with the previous backup).
+  xdg.configFile."btop/btop.conf".force = true;
+
   # Dynamic theme based on active theme selection
   xdg.configFile."btop/themes/custom-theme.theme".text = ''
     # Theme: ${theme.name}
