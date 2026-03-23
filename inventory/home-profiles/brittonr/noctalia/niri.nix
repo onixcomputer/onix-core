@@ -231,7 +231,7 @@ let
               window-rule {
                   match app-id="screensaver"
                   open-floating true
-                  open-maximized true
+                  open-fullscreen true
                   focus-ring { off; }
                   border { off; }
                   shadow { off; }
