@@ -253,9 +253,13 @@ in
               );
 
               # Script to get Tailscale IP
-              getTailscaleIP = pkgs.writeShellScript "get-tailscale-ip" ''
-                ${pkgs.tailscale}/bin/tailscale ip -4 | head -n1
-              '';
+              getTailscaleIP = pkgs.writeShellApplication {
+                name = "get-tailscale-ip";
+                runtimeInputs = [ pkgs.tailscale ];
+                text = ''
+                  tailscale ip -4 | head -n1
+                '';
+              };
 
               # Check if any services are public
               hasPublicServices = publicSubdomainsList != [ ];
@@ -516,79 +520,97 @@ in
                     wantedBy = [ "multi-user.target" ];
                     partOf = [ "traefik.service" ]; # Restart when traefik restarts
 
-                    preStart = ''
-                      echo "Waiting for Tailscale to be ready..."
-                      for i in $(seq 1 30); do
-                        if ${getTailscaleIP} >/dev/null 2>&1; then
-                          echo "Tailscale IP available: $(${getTailscaleIP})"
-                          break
-                        fi
-                        echo "Attempt $i/30..."
-                        sleep 2
-                      done
-                    '';
+                    serviceConfig =
+                      let
+                        waitForTailscale = pkgs.writeShellApplication {
+                          name = "ddclient-private-wait-tailscale";
+                          runtimeInputs = [ pkgs.tailscale ];
+                          text = ''
+                            echo "Waiting for Tailscale to be ready..."
+                            for i in $(seq 1 30); do
+                              if ${lib.getExe getTailscaleIP} >/dev/null 2>&1; then
+                                echo "Tailscale IP available: $(${lib.getExe getTailscaleIP})"
+                                break
+                              fi
+                              echo "Attempt $i/30..."
+                              sleep 2
+                            done
+                          '';
+                        };
+                        ddclientPrivateStart = pkgs.writeShellApplication {
+                          name = "ddclient-private-start";
+                          # SC2043: false positive — Nix interpolates a space-separated list
+                          excludeShellChecks = [ "SC2043" ];
+                          runtimeInputs = [
+                            pkgs.curl
+                            pkgs.jq
+                            pkgs.coreutils
+                            pkgs.ddclient
+                          ];
+                          text = ''
+                            # Get Cloudflare zone ID
+                            CF_TOKEN=$(cat ${cloudflareTokenFile})
+                            ZONE_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${domain}" \
+                              -H "Authorization: Bearer $CF_TOKEN" \
+                              -H "Content-Type: application/json" | jq -r '.result[0].id')
 
-                    serviceConfig = {
-                      Type = "forking";
-                      PIDFile = "/run/ddclient-private.pid";
-                      RuntimeDirectory = "ddclient-private";
-                      StateDirectory = "ddclient-private";
-                    };
+                            # Ensure DNS records exist for all private subdomains
+                            TS_IP=$(${lib.getExe getTailscaleIP})
+                            for subdomain in ${lib.concatStringsSep " " privateSubdomainsList}; do
+                              echo "Checking if $subdomain.${domain} exists..."
+
+                              # Check if record exists
+                              RECORD_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=A&name=$subdomain.${domain}" \
+                                -H "Authorization: Bearer $CF_TOKEN" \
+                                -H "Content-Type: application/json" | jq -r '.result[0].id // empty')
+
+                              if [ -z "$RECORD_ID" ]; then
+                                echo "Creating DNS record for $subdomain.${domain} → $TS_IP"
+                                curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
+                                  -H "Authorization: Bearer $CF_TOKEN" \
+                                  -H "Content-Type: application/json" \
+                                  --data "{\"type\":\"A\",\"name\":\"$subdomain.${domain}\",\"content\":\"$TS_IP\",\"ttl\":1,\"proxied\":false}" \
+                                  | jq -r '.success'
+                              else
+                                echo "DNS record for $subdomain.${domain} already exists"
+                              fi
+                            done
+
+                            # Create config file for private domains
+                            cat > /run/ddclient-private/ddclient.conf <<EOF
+                            # Private domains (Tailscale)
+                            ssl=yes
+                            protocol=cloudflare
+                            zone=${domain}
+                            login=token
+                            password=$(cat ${cloudflareTokenFile})
+                            use=cmd, cmd='${lib.getExe getTailscaleIP}'
+                            verbose=yes
+                            pid=/run/ddclient-private.pid
+                            cache=/var/lib/ddclient-private/ddclient.cache
+                            ${lib.concatMapStringsSep "," (s: "${s}.${domain}") privateSubdomainsList}
+                            EOF
+
+                            # Fix permissions
+                            chmod 600 /run/ddclient-private/ddclient.conf
+
+                            ddclient -daemon ${toString ddclientInterval} -file /run/ddclient-private/ddclient.conf
+                          '';
+                        };
+                      in
+                      {
+                        Type = "forking";
+                        PIDFile = "/run/ddclient-private.pid";
+                        RuntimeDirectory = "ddclient-private";
+                        StateDirectory = "ddclient-private";
+                        ExecStartPre = lib.getExe waitForTailscale;
+                        ExecStart = lib.getExe ddclientPrivateStart;
+                      };
 
                     restartTriggers = [
                       (builtins.toString privateSubdomainsList)
                       (builtins.hashString "sha256" (builtins.toJSON services))
                     ];
-
-                    script = ''
-                      # Get Cloudflare zone ID
-                      CF_TOKEN=$(cat ${cloudflareTokenFile})
-                      ZONE_ID=$(${pkgs.curl}/bin/curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${domain}" \
-                        -H "Authorization: Bearer $CF_TOKEN" \
-                        -H "Content-Type: application/json" | ${pkgs.jq}/bin/jq -r '.result[0].id')
-
-                      # Ensure DNS records exist for all private subdomains
-                      TS_IP=$(${getTailscaleIP})
-                      for subdomain in ${lib.concatStringsSep " " privateSubdomainsList}; do
-                        echo "Checking if $subdomain.${domain} exists..."
-                        
-                        # Check if record exists
-                        RECORD_ID=$(${pkgs.curl}/bin/curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=A&name=$subdomain.${domain}" \
-                          -H "Authorization: Bearer $CF_TOKEN" \
-                          -H "Content-Type: application/json" | ${pkgs.jq}/bin/jq -r '.result[0].id // empty')
-                        
-                        if [ -z "$RECORD_ID" ]; then
-                          echo "Creating DNS record for $subdomain.${domain} → $TS_IP"
-                          ${pkgs.curl}/bin/curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
-                            -H "Authorization: Bearer $CF_TOKEN" \
-                            -H "Content-Type: application/json" \
-                            --data "{\"type\":\"A\",\"name\":\"$subdomain.${domain}\",\"content\":\"$TS_IP\",\"ttl\":1,\"proxied\":false}" \
-                            | ${pkgs.jq}/bin/jq -r '.success'
-                        else
-                          echo "DNS record for $subdomain.${domain} already exists"
-                        fi
-                      done
-
-                      # Create config file for private domains
-                      cat > /run/ddclient-private/ddclient.conf <<EOF
-                      # Private domains (Tailscale)
-                      ssl=yes
-                      protocol=cloudflare
-                      zone=${domain}
-                      login=token
-                      password=$(cat ${cloudflareTokenFile})
-                      use=cmd, cmd='${getTailscaleIP}'
-                      verbose=yes
-                      pid=/run/ddclient-private.pid
-                      cache=/var/lib/ddclient-private/ddclient.cache
-                      ${lib.concatMapStringsSep "," (s: "${s}.${domain}") privateSubdomainsList}
-                      EOF
-
-                      # Fix permissions
-                      chmod 600 /run/ddclient-private/ddclient.conf
-
-                      ${pkgs.ddclient}/bin/ddclient -daemon ${toString ddclientInterval} -file /run/ddclient-private/ddclient.conf
-                    '';
                   };
                 })
 
@@ -604,69 +626,83 @@ in
                     wantedBy = [ "multi-user.target" ];
                     partOf = [ "traefik.service" ]; # Restart when traefik restarts
 
-                    serviceConfig = {
-                      Type = "forking";
-                      PIDFile = "/run/ddclient-public.pid";
-                      RuntimeDirectory = "ddclient-public";
-                      StateDirectory = "ddclient-public";
-                    };
+                    serviceConfig =
+                      let
+                        ddclientPublicStart = pkgs.writeShellApplication {
+                          name = "ddclient-public-start";
+                          # SC2043: false positive — Nix interpolates a space-separated list
+                          excludeShellChecks = [ "SC2043" ];
+                          runtimeInputs = [
+                            pkgs.curl
+                            pkgs.jq
+                            pkgs.coreutils
+                            pkgs.ddclient
+                          ];
+                          text = ''
+                            # Get Cloudflare zone ID
+                            CF_TOKEN=$(cat ${cloudflareTokenFile})
+                            ZONE_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${domain}" \
+                              -H "Authorization: Bearer $CF_TOKEN" \
+                              -H "Content-Type: application/json" | jq -r '.result[0].id')
+
+                            # Get public IP
+                            PUBLIC_IP=$(curl -s https://ipinfo.io/ip)
+
+                            # Ensure DNS records exist for all public subdomains
+                            for subdomain in ${lib.concatStringsSep " " publicSubdomainsList}; do
+                              echo "Checking if $subdomain.${domain} exists..."
+
+                              # Check if record exists
+                              RECORD_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=A&name=$subdomain.${domain}" \
+                                -H "Authorization: Bearer $CF_TOKEN" \
+                                -H "Content-Type: application/json" | jq -r '.result[0].id // empty')
+
+                              if [ -z "$RECORD_ID" ]; then
+                                echo "Creating DNS record for $subdomain.${domain} → $PUBLIC_IP"
+                                curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
+                                  -H "Authorization: Bearer $CF_TOKEN" \
+                                  -H "Content-Type: application/json" \
+                                  --data "{\"type\":\"A\",\"name\":\"$subdomain.${domain}\",\"content\":\"$PUBLIC_IP\",\"ttl\":1,\"proxied\":false}" \
+                                  | jq -r '.success'
+                              else
+                                echo "DNS record for $subdomain.${domain} already exists"
+                              fi
+                            done
+
+                            # Create config file for public domains
+                            cat > /run/ddclient-public/ddclient.conf <<EOF
+                            # Public domains
+                            ssl=yes
+                            protocol=cloudflare
+                            zone=${domain}
+                            login=token
+                            password=$(cat ${cloudflareTokenFile})
+                            use=web, web=ipinfo.io/ip
+                            verbose=yes
+                            pid=/run/ddclient-public.pid
+                            cache=/var/lib/ddclient-public/ddclient.cache
+                            ${lib.concatMapStringsSep "," (s: "${s}.${domain}") publicSubdomainsList}
+                            EOF
+
+                            # Fix permissions
+                            chmod 600 /run/ddclient-public/ddclient.conf
+
+                            ddclient -daemon ${toString ddclientInterval} -file /run/ddclient-public/ddclient.conf
+                          '';
+                        };
+                      in
+                      {
+                        Type = "forking";
+                        PIDFile = "/run/ddclient-public.pid";
+                        RuntimeDirectory = "ddclient-public";
+                        StateDirectory = "ddclient-public";
+                        ExecStart = lib.getExe ddclientPublicStart;
+                      };
 
                     restartTriggers = [
                       (builtins.toString publicSubdomainsList)
                       (builtins.hashString "sha256" (builtins.toJSON services))
                     ];
-
-                    script = ''
-                      # Get Cloudflare zone ID
-                      CF_TOKEN=$(cat ${cloudflareTokenFile})
-                      ZONE_ID=$(${pkgs.curl}/bin/curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${domain}" \
-                        -H "Authorization: Bearer $CF_TOKEN" \
-                        -H "Content-Type: application/json" | ${pkgs.jq}/bin/jq -r '.result[0].id')
-
-                      # Get public IP
-                      PUBLIC_IP=$(${pkgs.curl}/bin/curl -s https://ipinfo.io/ip)
-
-                      # Ensure DNS records exist for all public subdomains
-                      for subdomain in ${lib.concatStringsSep " " publicSubdomainsList}; do
-                        echo "Checking if $subdomain.${domain} exists..."
-                        
-                        # Check if record exists
-                        RECORD_ID=$(${pkgs.curl}/bin/curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=A&name=$subdomain.${domain}" \
-                          -H "Authorization: Bearer $CF_TOKEN" \
-                          -H "Content-Type: application/json" | ${pkgs.jq}/bin/jq -r '.result[0].id // empty')
-                        
-                        if [ -z "$RECORD_ID" ]; then
-                          echo "Creating DNS record for $subdomain.${domain} → $PUBLIC_IP"
-                          ${pkgs.curl}/bin/curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
-                            -H "Authorization: Bearer $CF_TOKEN" \
-                            -H "Content-Type: application/json" \
-                            --data "{\"type\":\"A\",\"name\":\"$subdomain.${domain}\",\"content\":\"$PUBLIC_IP\",\"ttl\":1,\"proxied\":false}" \
-                            | ${pkgs.jq}/bin/jq -r '.success'
-                        else
-                          echo "DNS record for $subdomain.${domain} already exists"
-                        fi
-                      done
-
-                      # Create config file for public domains
-                      cat > /run/ddclient-public/ddclient.conf <<EOF
-                      # Public domains
-                      ssl=yes
-                      protocol=cloudflare
-                      zone=${domain}
-                      login=token
-                      password=$(cat ${cloudflareTokenFile})
-                      use=web, web=ipinfo.io/ip
-                      verbose=yes
-                      pid=/run/ddclient-public.pid
-                      cache=/var/lib/ddclient-public/ddclient.cache
-                      ${lib.concatMapStringsSep "," (s: "${s}.${domain}") publicSubdomainsList}
-                      EOF
-
-                      # Fix permissions
-                      chmod 600 /run/ddclient-public/ddclient.conf
-
-                      ${pkgs.ddclient}/bin/ddclient -daemon ${toString ddclientInterval} -file /run/ddclient-public/ddclient.conf
-                    '';
                   };
                 })
 

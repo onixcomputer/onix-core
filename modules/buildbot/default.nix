@@ -155,25 +155,28 @@ in
               passthroughSettings = builtins.removeAttrs cfg managedAttrs;
 
               # ntfy notification script (only evaluated when ntfyUrl is set, via laziness)
-              notify-build = pkgs.writeShellScript "notify-build" ''
-                set -euo pipefail
-                status="$BUILD_STATUS"
+              notify-build = pkgs.writeShellApplication {
+                name = "notify-build";
+                runtimeInputs = [ pkgs.curl ];
+                text = ''
+                  status="$BUILD_STATUS"
 
-                # Only notify on failures
-                if [ "$status" = "success" ]; then
-                  exit 0
-                fi
+                  # Only notify on failures
+                  if [ "$status" = "success" ]; then
+                    exit 0
+                  fi
 
-                title="Build $status: $PROJECT"
-                body="$ATTR_NAME failed on $PROJECT (branch: $BRANCH)"
+                  title="Build $status: $PROJECT"
+                  body="$ATTR_NAME failed on $PROJECT (branch: $BRANCH)"
 
-                ${pkgs.curl}/bin/curl -sf \
-                  -H "Title: $title" \
-                  -H "Priority: high" \
-                  -H "Tags: warning" \
-                  -d "$body" \
-                  "${cfg.ntfyUrl}" 2>/dev/null || true
-              '';
+                  curl -sf \
+                    -H "Title: $title" \
+                    -H "Priority: high" \
+                    -H "Tags: warning" \
+                    -d "$body" \
+                    "${cfg.ntfyUrl}" 2>/dev/null || true
+                '';
+              };
 
               ntfySteps = lib.optionals (cfg.ntfyUrl != null) [
                 {
@@ -184,7 +187,7 @@ in
                     ATTR_NAME = interpolate "%(prop:attr)s";
                     BRANCH = interpolate "%(prop:branch)s";
                   };
-                  command = [ "${notify-build}" ];
+                  command = [ (lib.getExe notify-build) ];
                   warnOnly = true;
                 }
               ];

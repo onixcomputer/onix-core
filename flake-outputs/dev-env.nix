@@ -48,35 +48,41 @@ let
       # formatting and restores it when the content hash is identical.
       nickel = {
         enable = true;
-        package = pkgs.writeShellScriptBin "nickel" ''
-          set -euo pipefail
-          nickel=${pkgs.nickel}/bin/nickel
+        package = pkgs.writeShellApplication {
+          name = "nickel";
+          runtimeInputs = [
+            pkgs.nickel
+            pkgs.coreutils
+          ];
+          text = ''
+            nickel_bin=${pkgs.nickel}/bin/nickel
 
-          if [ "''${1:-}" != "format" ]; then
-            exec "$nickel" "$@"
-          fi
-          shift
-
-          opts=()
-          files=()
-          for arg in "$@"; do
-            case "$arg" in
-              -*) opts+=("$arg") ;;
-              *)  files+=("$arg") ;;
-            esac
-          done
-
-          for f in "''${files[@]}"; do
-            [ -f "$f" ] || continue
-            mtime=$(stat -c %Y "$f")
-            hash_before=$(sha256sum "$f" | cut -d' ' -f1)
-            "$nickel" format "''${opts[@]}" "$f"
-            hash_after=$(sha256sum "$f" | cut -d' ' -f1)
-            if [ "$hash_before" = "$hash_after" ]; then
-              touch -d "@$mtime" "$f"
+            if [ "''${1:-}" != "format" ]; then
+              exec "$nickel_bin" "$@"
             fi
-          done
-        '';
+            shift
+
+            opts=()
+            files=()
+            for arg in "$@"; do
+              case "$arg" in
+                -*) opts+=("$arg") ;;
+                *)  files+=("$arg") ;;
+              esac
+            done
+
+            for f in "''${files[@]}"; do
+              [ -f "$f" ] || continue
+              mtime=$(stat -c %Y "$f")
+              hash_before=$(sha256sum "$f" | cut -d' ' -f1)
+              "$nickel_bin" format "''${opts[@]}" "$f"
+              hash_after=$(sha256sum "$f" | cut -d' ' -f1)
+              if [ "$hash_before" = "$hash_after" ]; then
+                touch -d "@$mtime" "$f"
+              fi
+            done
+          '';
+        };
       };
 
       # Rust
@@ -286,36 +292,53 @@ in
       ++ [
         pkgs.nickel
         pkgs.nix-output-monitor
-        (pkgs.writeShellScriptBin "eval-warnings" ''
-          if [ -z "$1" ]; then
-            echo "Usage: eval-warnings <flake-ref>"
-            echo "Example: eval-warnings '.#checks'"
-            exit 1
-          fi
-          exec ${self'.packages.nix-eval-warnings}/bin/nix-eval-warnings "$@"
-        '')
-        (pkgs.writeShellScriptBin "nix-prefetch-sri" ''
-          if [ -z "$1" ]; then
-            echo "Usage: nix-prefetch-sri <url>"
-            exit 1
-          fi
-          ${pkgs.curl}/bin/curl -sL "$1" | ${pkgs.nix}/bin/nix hash file --sri /dev/stdin
-        '')
-        (pkgs.writeShellScriptBin "build" ''
-          if [ -z "$1" ]; then
-            echo "Usage: build <machine-name>"
-            exit 1
-          fi
-          if command -v nom &> /dev/null; then
-            nom build .#nixosConfigurations.$1.config.system.build.toplevel
-          else
-            nix build .#nixosConfigurations.$1.config.system.build.toplevel
-          fi
-        '')
-        (pkgs.writeShellScriptBin "validate" ''
-          echo "Running nix fmt..."
-          nix fmt && echo "Running pre-commit checks..." && pre-commit run --all-files
-        '')
+        (pkgs.writeShellApplication {
+          name = "eval-warnings";
+          runtimeInputs = [ self'.packages.nix-eval-warnings ];
+          text = ''
+            if [ -z "''${1:-}" ]; then
+              echo "Usage: eval-warnings <flake-ref>"
+              echo "Example: eval-warnings '.#checks'"
+              exit 1
+            fi
+            exec nix-eval-warnings "$@"
+          '';
+        })
+        (pkgs.writeShellApplication {
+          name = "nix-prefetch-sri";
+          runtimeInputs = [
+            pkgs.curl
+            pkgs.nix
+          ];
+          text = ''
+            if [ -z "''${1:-}" ]; then
+              echo "Usage: nix-prefetch-sri <url>"
+              exit 1
+            fi
+            curl -sL "$1" | nix hash file --sri /dev/stdin
+          '';
+        })
+        (pkgs.writeShellApplication {
+          name = "build";
+          text = ''
+            if [ -z "''${1:-}" ]; then
+              echo "Usage: build <machine-name>"
+              exit 1
+            fi
+            if command -v nom &> /dev/null; then
+              nom build ".#nixosConfigurations.$1.config.system.build.toplevel"
+            else
+              nix build ".#nixosConfigurations.$1.config.system.build.toplevel"
+            fi
+          '';
+        })
+        (pkgs.writeShellApplication {
+          name = "validate";
+          text = ''
+            echo "Running nix fmt..."
+            nix fmt && echo "Running pre-commit checks..." && pre-commit run --all-files
+          '';
+        })
         # AI agent CLI tools (mics-skills)
         inputs'.mics-skills.browser-cli
         inputs'.mics-skills.context7-cli
@@ -423,10 +446,13 @@ in
     ci = pkgs.mkShell {
       packages = [
         preCommitEval.package
-        (pkgs.writeShellScriptBin "validate" ''
-          echo "Running nix fmt..."
-          nix fmt && echo "Running pre-commit checks..." && pre-commit run --all-files
-        '')
+        (pkgs.writeShellApplication {
+          name = "validate";
+          text = ''
+            echo "Running nix fmt..."
+            nix fmt && echo "Running pre-commit checks..." && pre-commit run --all-files
+          '';
+        })
       ];
 
       shellHook = ''

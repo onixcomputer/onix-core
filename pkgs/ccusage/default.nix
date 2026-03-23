@@ -1,9 +1,12 @@
 {
-  writeShellScriptBin,
+  writeShellApplication,
   nodejs,
 }:
 
-writeShellScriptBin "ccusage" ''
-  export PATH="${nodejs}/bin:$PATH"
-  exec ${nodejs}/bin/npx ccusage@latest "$@"
-''
+writeShellApplication {
+  name = "ccusage";
+  runtimeInputs = [ nodejs ];
+  text = ''
+    exec npx ccusage@latest "$@"
+  '';
+}

@@ -12,6 +12,7 @@
 #   suspend   : system suspends
 {
   pkgs,
+  lib,
   config,
   ...
 }:
@@ -27,21 +28,32 @@ let
   # opens it fullscreen + floating.
   # WezTerm overrides force pure black (#000000) background for OLED —
   # unlit pixels draw zero power and avoid burn-in.
-  screensaver-start = pkgs.writeShellScript "screensaver-start" ''
-    # Don't stack screensavers
-    ${pkgs.procps}/bin/pgrep -f "pipes-rs" >/dev/null && exit 0
-    ${config.apps.terminal.command} start \
-      --class screensaver \
-      --config 'colors = { background = "#000000" }' \
-      --config 'window_padding = { left = 0, right = 0, top = 0, bottom = 0 }' \
-      --config 'enable_tab_bar = false' \
-      --config 'window_decorations = "NONE"' \
-      -- ${pkgs.pipes-rs}/bin/pipes-rs -p 5 -r 0.002 &
-  '';
+  screensaver-start = pkgs.writeShellApplication {
+    name = "screensaver-start";
+    runtimeInputs = [
+      pkgs.procps
+      pkgs.pipes-rs
+    ];
+    text = ''
+      # Don't stack screensavers
+      pgrep -f "pipes-rs" >/dev/null && exit 0
+      ${config.apps.terminal.command} start \
+        --class screensaver \
+        --config 'colors = { background = "#000000" }' \
+        --config 'window_padding = { left = 0, right = 0, top = 0, bottom = 0 }' \
+        --config 'enable_tab_bar = false' \
+        --config 'window_decorations = "NONE"' \
+        -- pipes-rs -p 5 -r 0.002 &
+    '';
+  };
 
-  screensaver-stop = pkgs.writeShellScript "screensaver-stop" ''
-    ${pkgs.procps}/bin/pkill -f "pipes-rs" 2>/dev/null || true
-  '';
+  screensaver-stop = pkgs.writeShellApplication {
+    name = "screensaver-stop";
+    runtimeInputs = [ pkgs.procps ];
+    text = ''
+      pkill -f "pipes-rs" 2>/dev/null || true
+    '';
+  };
 in
 {
   home.packages = [
@@ -64,8 +76,8 @@ in
         "${pkgs.swayidle}/bin/swayidle -w"
 
         # Screensaver — visual grace period before lock
-        "timeout ${toString screensaverTimeout} '${screensaver-start}'"
-        "resume '${screensaver-stop}'"
+        "timeout ${toString screensaverTimeout} '${lib.getExe screensaver-start}'"
+        "resume '${lib.getExe screensaver-stop}'"
 
         # Dim screen
         "timeout ${toString dimTimeout} '${pkgs.brightnessctl}/bin/brightnessctl -s set 10%'"
@@ -73,7 +85,7 @@ in
 
         # Lock via noctalia
         "timeout ${toString lockTimeout} 'noctalia-shell ipc call lockScreen lock'"
-        "resume '${screensaver-stop}'"
+        "resume '${lib.getExe screensaver-stop}'"
 
         # DPMS off
         "timeout ${toString dpmsTimeout} 'niri msg action power-off-monitors'"

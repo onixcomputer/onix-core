@@ -33,6 +33,7 @@ _: {
         nixosModule =
           {
             config,
+            lib,
             pkgs,
             ...
           }:
@@ -111,17 +112,21 @@ _: {
                 # via "+" prefix because secrets are 0400 root:root).
                 ExecStartPre =
                   let
-                    script = pkgs.writeShellScript "iroh-ssh-setup-keys" ''
-                      mkdir -p /var/lib/iroh-ssh/.ssh
-                      install -o iroh-ssh -g iroh-ssh -m 0600 \
-                        ${config.clan.core.vars.generators."iroh-ssh".files."irohssh_ed25519".path} \
-                        /var/lib/iroh-ssh/.ssh/irohssh_ed25519
-                      install -o iroh-ssh -g iroh-ssh -m 0644 \
-                        ${config.clan.core.vars.generators."iroh-ssh".files."irohssh_ed25519.pub".path} \
-                        /var/lib/iroh-ssh/.ssh/irohssh_ed25519.pub
-                    '';
+                    script = pkgs.writeShellApplication {
+                      name = "iroh-ssh-setup-keys";
+                      runtimeInputs = [ pkgs.coreutils ];
+                      text = ''
+                        mkdir -p /var/lib/iroh-ssh/.ssh
+                        install -o iroh-ssh -g iroh-ssh -m 0600 \
+                          ${config.clan.core.vars.generators."iroh-ssh".files."irohssh_ed25519".path} \
+                          /var/lib/iroh-ssh/.ssh/irohssh_ed25519
+                        install -o iroh-ssh -g iroh-ssh -m 0644 \
+                          ${config.clan.core.vars.generators."iroh-ssh".files."irohssh_ed25519.pub".path} \
+                          /var/lib/iroh-ssh/.ssh/irohssh_ed25519.pub
+                      '';
+                    };
                   in
-                  "+${script}";
+                  "+${lib.getExe script}";
 
                 ExecStart = "${iroh-ssh}/bin/iroh-ssh server --persist --ssh-port ${toString sshPort}";
                 Environment = "HOME=/var/lib/iroh-ssh";

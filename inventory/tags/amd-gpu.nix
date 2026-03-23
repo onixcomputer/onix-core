@@ -1,5 +1,6 @@
 {
   pkgs,
+  lib,
   ...
 }:
 {
@@ -133,47 +134,48 @@
         "video"
       ];
 
-      ExecStart = pkgs.writeShellScript "amd-gpu-exporter" ''
-        set -euo pipefail
+      ExecStart =
+        let
+          script = pkgs.writeShellApplication {
+            name = "amd-gpu-exporter";
+            runtimeInputs = [
+              pkgs.rocmPackages.rocm-smi
+              pkgs.coreutils
+            ];
+            text = ''
+                    METRICS_FILE="/tmp/amd_gpu_metrics.prom"
 
-        # Simple script to export AMD GPU metrics
-        # This creates a basic text file with metrics that can be scraped
+                    while true; do
+                      GPU_UTIL=$(rocm-smi --showuse --csv 2>/dev/null | tail -n +2 | cut -d',' -f2 | tr -d '%' || echo "0")
+                      GPU_TEMP=$(rocm-smi --showtemp --csv 2>/dev/null | tail -n +2 | cut -d',' -f2 | tr -d 'c' || echo "0")
+                      GPU_MEM=$(rocm-smi --showmemuse --csv 2>/dev/null | tail -n +2 | cut -d',' -f2 | tr -d '%' || echo "0")
+                      GPU_POWER=$(rocm-smi --showpower --csv 2>/dev/null | tail -n +2 | cut -d',' -f2 | tr -d 'W' || echo "0")
 
-        METRICS_FILE="/tmp/amd_gpu_metrics.prom"
+                      cat > "$METRICS_FILE.tmp" << EOF
+              # HELP amd_gpu_utilization_percent AMD GPU utilization percentage
+              # TYPE amd_gpu_utilization_percent gauge
+              amd_gpu_utilization_percent{device="0"} $GPU_UTIL
 
-        while true; do
-          # Get GPU utilization from rocm-smi
-          if command -v rocm-smi >/dev/null 2>&1; then
-            GPU_UTIL=$(rocm-smi --showuse --csv 2>/dev/null | tail -n +2 | cut -d',' -f2 | tr -d '%' || echo "0")
-            GPU_TEMP=$(rocm-smi --showtemp --csv 2>/dev/null | tail -n +2 | cut -d',' -f2 | tr -d 'c' || echo "0")
-            GPU_MEM=$(rocm-smi --showmemuse --csv 2>/dev/null | tail -n +2 | cut -d',' -f2 | tr -d '%' || echo "0")
-            GPU_POWER=$(rocm-smi --showpower --csv 2>/dev/null | tail -n +2 | cut -d',' -f2 | tr -d 'W' || echo "0")
+              # HELP amd_gpu_temperature_celsius AMD GPU temperature in Celsius
+              # TYPE amd_gpu_temperature_celsius gauge
+              amd_gpu_temperature_celsius{device="0"} $GPU_TEMP
 
-            # Write Prometheus metrics
-            cat > "$METRICS_FILE.tmp" << EOF
-        # HELP amd_gpu_utilization_percent AMD GPU utilization percentage
-        # TYPE amd_gpu_utilization_percent gauge
-        amd_gpu_utilization_percent{device="0"} $GPU_UTIL
+              # HELP amd_gpu_memory_utilization_percent AMD GPU memory utilization percentage
+              # TYPE amd_gpu_memory_utilization_percent gauge
+              amd_gpu_memory_utilization_percent{device="0"} $GPU_MEM
 
-        # HELP amd_gpu_temperature_celsius AMD GPU temperature in Celsius
-        # TYPE amd_gpu_temperature_celsius gauge
-        amd_gpu_temperature_celsius{device="0"} $GPU_TEMP
+              # HELP amd_gpu_power_draw_watts AMD GPU power draw in watts
+              # TYPE amd_gpu_power_draw_watts gauge
+              amd_gpu_power_draw_watts{device="0"} $GPU_POWER
+              EOF
 
-        # HELP amd_gpu_memory_utilization_percent AMD GPU memory utilization percentage
-        # TYPE amd_gpu_memory_utilization_percent gauge
-        amd_gpu_memory_utilization_percent{device="0"} $GPU_MEM
-
-        # HELP amd_gpu_power_draw_watts AMD GPU power draw in watts
-        # TYPE amd_gpu_power_draw_watts gauge
-        amd_gpu_power_draw_watts{device="0"} $GPU_POWER
-        EOF
-
-            mv "$METRICS_FILE.tmp" "$METRICS_FILE"
-          fi
-
-          sleep 5
-        done
-      '';
+                      mv "$METRICS_FILE.tmp" "$METRICS_FILE"
+                      sleep 5
+                    done
+            '';
+          };
+        in
+        lib.getExe script;
     };
   };
 }

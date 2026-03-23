@@ -230,52 +230,68 @@ in
 
                       # Pull image if not present, but don't fail if already present
                       # Use script to handle errors gracefully and avoid timeout issues
-                      ExecStartPre = pkgs.writeShellScript "vllm-pull-image" ''
-                        # Stop any existing container with the same name
-                        ${pkgs.docker}/bin/docker stop vllm-server 2>/dev/null || true
-                        ${pkgs.docker}/bin/docker rm vllm-server 2>/dev/null || true
+                      ExecStartPre =
+                        let
+                          script = pkgs.writeShellApplication {
+                            name = "vllm-pull-image";
+                            runtimeInputs = [ pkgs.docker ];
+                            text = ''
+                              # Stop any existing container with the same name
+                              docker stop vllm-server 2>/dev/null || true
+                              docker rm vllm-server 2>/dev/null || true
 
-                        # Check if image exists, if not pull it
-                        if ! ${pkgs.docker}/bin/docker image inspect ${containerImage} >/dev/null 2>&1; then
-                          echo "Pulling container image: ${containerImage}"
-                          ${pkgs.docker}/bin/docker pull ${containerImage} || {
-                            echo "Failed to pull image, will retry on next restart"
-                            exit 1
-                          }
-                        else
-                          echo "Image ${containerImage} already present"
-                        fi
-                      '';
+                              # Check if image exists, if not pull it
+                              if ! docker image inspect ${containerImage} >/dev/null 2>&1; then
+                                echo "Pulling container image: ${containerImage}"
+                                docker pull ${containerImage} || {
+                                  echo "Failed to pull image, will retry on next restart"
+                                  exit 1
+                                }
+                              else
+                                echo "Image ${containerImage} already present"
+                              fi
+                            '';
+                          };
+                        in
+                        lib.getExe script;
 
-                      ExecStart = pkgs.writeShellScript "run-vllm-container" ''
-                        exec ${pkgs.docker}/bin/docker run \
-                          --rm \
-                          --name vllm-server \
-                          --network host \
-                          --device /dev/kfd \
-                          --device /dev/dri \
-                          --group-add video \
-                          --group-add render \
-                          --ipc host \
-                          --cap-add SYS_PTRACE \
-                          --security-opt seccomp=unconfined \
-                          --memory=115g \
-                          --memory-swap=115g \
-                          --oom-kill-disable=false \
-                          -e HSA_ENABLE_SDMA=0 \
-                          -e HIP_VISIBLE_DEVICES=0 \
-                          -e VLLM_WORKER_MULTIPROC_METHOD=spawn \
-                          -e TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1 \
-                          -e PYTORCH_TUNABLEOP_ENABLED=1 \
-                          -e PYTORCH_HIP_ALLOC_CONF=expandable_segments:True \
-                          -e HSA_XNACK=1 \
-                          -e PYTORCH_ROCM_ARCH=gfx1151 \
-                          -e HSA_OVERRIDE_GFX_VERSION=11.5.1 \
-                          ${lib.optionalString (extraEnvFlags != "") extraEnvFlags} \
-                          -v /var/lib/vllm:/root/.cache/huggingface \
-                          ${containerImage} \
-                          ${vllmCmdStr}
-                      '';
+                      ExecStart =
+                        let
+                          script = pkgs.writeShellApplication {
+                            name = "run-vllm-container";
+                            runtimeInputs = [ pkgs.docker ];
+                            text = ''
+                              exec docker run \
+                                --rm \
+                                --name vllm-server \
+                                --network host \
+                                --device /dev/kfd \
+                                --device /dev/dri \
+                                --group-add video \
+                                --group-add render \
+                                --ipc host \
+                                --cap-add SYS_PTRACE \
+                                --security-opt seccomp=unconfined \
+                                --memory=115g \
+                                --memory-swap=115g \
+                                --oom-kill-disable=false \
+                                -e HSA_ENABLE_SDMA=0 \
+                                -e HIP_VISIBLE_DEVICES=0 \
+                                -e VLLM_WORKER_MULTIPROC_METHOD=spawn \
+                                -e TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1 \
+                                -e PYTORCH_TUNABLEOP_ENABLED=1 \
+                                -e PYTORCH_HIP_ALLOC_CONF=expandable_segments:True \
+                                -e HSA_XNACK=1 \
+                                -e PYTORCH_ROCM_ARCH=gfx1151 \
+                                -e HSA_OVERRIDE_GFX_VERSION=11.5.1 \
+                                ${lib.optionalString (extraEnvFlags != "") extraEnvFlags} \
+                                -v /var/lib/vllm:/root/.cache/huggingface \
+                                ${containerImage} \
+                                ${vllmCmdStr}
+                            '';
+                          };
+                        in
+                        lib.getExe script;
 
                       ExecStop = "${pkgs.docker}/bin/docker stop vllm-server";
 

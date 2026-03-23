@@ -80,6 +80,7 @@ in
           nixosModule =
             {
               pkgs,
+              lib,
               self,
               ...
             }:
@@ -114,8 +115,6 @@ in
               apiSocket = "/run/cloud-hypervisor-${guestMachine}.sock";
 
               chBin = "${pkgs.cloud-hypervisor}/bin/cloud-hypervisor";
-              ip = "${pkgs.iproute2}/bin/ip";
-              curl = "${pkgs.curl}/bin/curl";
             in
             {
               systemd.services."cloud-hypervisor-${guestMachine}" = {
@@ -133,31 +132,36 @@ in
                   Restart = "on-failure";
                   RestartSec = "10s";
 
-                  ExecStartPre = pkgs.writeScript "chv-pre-${guestMachine}" ''
-                    #!${pkgs.bash}/bin/bash
-                    set -euo pipefail
+                  ExecStartPre =
+                    let
+                      script = pkgs.writeShellApplication {
+                        name = "chv-pre-${guestMachine}";
+                        runtimeInputs = [ pkgs.iproute2 ];
+                        text = ''
+                          # Verify disk image exists.
+                          if [[ ! -f "${toString diskPath}" ]]; then
+                            echo "ERROR: Disk image not found: ${toString diskPath}"
+                            echo "Run the bootstrap script first."
+                            exit 1
+                          fi
 
-                    # Verify disk image exists.
-                    if [[ ! -f "${toString diskPath}" ]]; then
-                      echo "ERROR: Disk image not found: ${toString diskPath}"
-                      echo "Run the bootstrap script first."
-                      exit 1
-                    fi
+                          # Always delete+recreate the TAP. A stale TAP from a crashed run
+                          # may have wrong flags (missing multi_queue or vnet_hdr), causing
+                          # cloud-hypervisor's ioctl to fail when opening queue pairs.
+                          # This matches microvm.nix's tap-up pattern.
+                          if [ -e /sys/class/net/${tapInterface} ]; then
+                            ip link delete ${tapInterface}
+                          fi
+                          ip tuntap add dev ${tapInterface} mode tap ${if multiQueue then "multi_queue" else ""} vnet_hdr
 
-                    # Always delete+recreate the TAP. A stale TAP from a crashed run
-                    # may have wrong flags (missing multi_queue or vnet_hdr), causing
-                    # cloud-hypervisor's ioctl to fail when opening queue pairs.
-                    # This matches microvm.nix's tap-up pattern.
-                    if [ -e /sys/class/net/${tapInterface} ]; then
-                      ${ip} link delete ${tapInterface}
-                    fi
-                    ${ip} tuntap add dev ${tapInterface} mode tap ${if multiQueue then "multi_queue" else ""} vnet_hdr
-
-                    # Attach to the shared bridge. The bridge (br-chv) owns the
-                    # gateway IP 172.16.0.1/24 — individual TAPs get no IP.
-                    ${ip} link set ${tapInterface} master br-chv
-                    ${ip} link set ${tapInterface} up
-                  '';
+                          # Attach to the shared bridge. The bridge (br-chv) owns the
+                          # gateway IP 172.16.0.1/24 — individual TAPs get no IP.
+                          ip link set ${tapInterface} master br-chv
+                          ip link set ${tapInterface} up
+                        '';
+                      };
+                    in
+                    lib.getExe script;
 
                   ExecStart = lib.concatStringsSep " " [
                     chBin
@@ -175,28 +179,42 @@ in
                     "--watchdog"
                   ];
 
-                  ExecStop = pkgs.writeScript "chv-stop-${guestMachine}" ''
-                    #!${pkgs.bash}/bin/bash
-                    # Graceful shutdown via ACPI power button.
-                    ${curl} --unix-socket ${apiSocket} -s \
-                      -X PUT http://localhost/api/v1/vm.power-button || true
+                  ExecStop =
+                    let
+                      script = pkgs.writeShellApplication {
+                        name = "chv-stop-${guestMachine}";
+                        runtimeInputs = [ pkgs.curl ];
+                        text = ''
+                          # Graceful shutdown via ACPI power button.
+                          curl --unix-socket ${apiSocket} -s \
+                            -X PUT http://localhost/api/v1/vm.power-button || true
 
-                    # Wait for the process to exit (systemd handles the timeout).
-                    while ${curl} --unix-socket ${apiSocket} -s \
-                      http://localhost/api/v1/vm.info &>/dev/null 2>&1; do
-                      sleep 1
-                    done
-                  '';
+                          # Wait for the process to exit (systemd handles the timeout).
+                          while curl --unix-socket ${apiSocket} -s \
+                            http://localhost/api/v1/vm.info &>/dev/null 2>&1; do
+                            sleep 1
+                          done
+                        '';
+                      };
+                    in
+                    lib.getExe script;
 
-                  ExecStopPost = pkgs.writeScript "chv-post-${guestMachine}" ''
-                    #!${pkgs.bash}/bin/bash
-                    # Clean up TAP interface.
-                    if ${ip} link show ${tapInterface} &>/dev/null; then
-                      ${ip} link delete ${tapInterface}
-                    fi
-                    # Clean up API socket.
-                    rm -f ${apiSocket}
-                  '';
+                  ExecStopPost =
+                    let
+                      script = pkgs.writeShellApplication {
+                        name = "chv-post-${guestMachine}";
+                        runtimeInputs = [ pkgs.iproute2 ];
+                        text = ''
+                          # Clean up TAP interface.
+                          if ip link show ${tapInterface} &>/dev/null; then
+                            ip link delete ${tapInterface}
+                          fi
+                          # Clean up API socket.
+                          rm -f ${apiSocket}
+                        '';
+                      };
+                    in
+                    lib.getExe script;
                 };
               };
 

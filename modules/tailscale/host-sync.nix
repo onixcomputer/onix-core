@@ -24,37 +24,53 @@ in
 
         serviceConfig = {
           Type = "oneshot";
-          ExecStart = pkgs.writeShellScript "tailscale-host-sync" ''
-            # Exit if tailscale isn't ready
-            ${pkgs.tailscale}/bin/tailscale status --json &>/dev/null || exit 0
+          ExecStart =
+            let
+              script = pkgs.writeShellApplication {
+                name = "tailscale-host-sync";
+                runtimeInputs = [
+                  pkgs.tailscale
+                  pkgs.jq
+                  pkgs.gnused
+                  pkgs.coreutils
+                  pkgs.gnugrep
+                ];
+                text = ''
+                  # Exit if tailscale isn't ready
+                  tailscale status --json &>/dev/null || exit 0
 
-            # Get current peers
-            TEMP=$(mktemp)
-            trap 'rm -f $TEMP' EXIT
+                  # Get current peers
+                  TEMP=$(mktemp)
+                  trap 'rm -f "$TEMP"' EXIT
 
-            ${pkgs.tailscale}/bin/tailscale status --json | \
-              ${pkgs.jq}/bin/jq -r '.Peer[] | select(.DNSName and .DNSName != "") | .DNSName as $dns | select($dns | split(".")[0] != "" and ($dns | split(".")[0] != null)) | "\(.TailscaleIPs[0]) \($dns | split(".")[0])"' | \
-              grep -v " null$" | \
-              sort > "$TEMP"
+                  tailscale status --json | \
+                    jq -r '.Peer[] | select(.DNSName and .DNSName != "") | .DNSName as $dns | select($dns | split(".")[0] != "" and ($dns | split(".")[0] != null)) | "\(.TailscaleIPs[0]) \($dns | split(".")[0])"' | \
+                    grep -v " null$" | \
+                    sort > "$TEMP"
 
-            # Get existing tailscale entries from /etc/hosts
-            OLD_CONTENT=$(${pkgs.gnused}/bin/sed -n '/# TAILSCALE-ALIASES-START/,/# TAILSCALE-ALIASES-END/p' /etc/hosts 2>/dev/null | \
-              ${pkgs.gnused}/bin/sed '1d;$d' | sort)
-            NEW_CONTENT=$(cat "$TEMP")
+                  # Get existing tailscale entries from /etc/hosts
+                  OLD_CONTENT=$(sed -n '/# TAILSCALE-ALIASES-START/,/# TAILSCALE-ALIASES-END/p' /etc/hosts 2>/dev/null | \
+                    sed '1d;$d' | sort)
+                  NEW_CONTENT=$(cat "$TEMP")
 
-            # Only update if content changed
-            if [ "$OLD_CONTENT" != "$NEW_CONTENT" ]; then
-              ${pkgs.gnused}/bin/sed '/# TAILSCALE-ALIASES-START/,/# TAILSCALE-ALIASES-END/d' /etc/hosts > /etc/hosts.new
+                  # Only update if content changed
+                  if [ "$OLD_CONTENT" != "$NEW_CONTENT" ]; then
+                    sed '/# TAILSCALE-ALIASES-START/,/# TAILSCALE-ALIASES-END/d' /etc/hosts > /etc/hosts.new
 
-              if [ -s "$TEMP" ]; then
-                echo "# TAILSCALE-ALIASES-START" >> /etc/hosts.new
-                cat "$TEMP" >> /etc/hosts.new
-                echo "# TAILSCALE-ALIASES-END" >> /etc/hosts.new
-              fi
+                    if [ -s "$TEMP" ]; then
+                      {
+                        echo "# TAILSCALE-ALIASES-START"
+                        cat "$TEMP"
+                        echo "# TAILSCALE-ALIASES-END"
+                      } >> /etc/hosts.new
+                    fi
 
-              ${pkgs.coreutils}/bin/mv -f /etc/hosts.new /etc/hosts
-            fi
-          '';
+                    mv -f /etc/hosts.new /etc/hosts
+                  fi
+                '';
+              };
+            in
+            lib.getExe script;
         };
       };
 

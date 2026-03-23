@@ -25,8 +25,6 @@ let
   legacyTap = "tap0";
   legacyGuestIp = "172.16.0.2";
   legacyGuestMac = "52:54:00:12:34:56";
-
-  ip = "${pkgs.iproute2}/bin/ip";
 in
 {
   users.users.brittonr.extraGroups = [ "kvm" ];
@@ -71,38 +69,53 @@ in
       Type = "oneshot";
       RemainAfterExit = true;
 
-      ExecStart = pkgs.writeScript "setup-cloud-hypervisor-network" ''
-        #!${pkgs.bash}/bin/bash
-        set -e
+      ExecStart =
+        let
+          script = pkgs.writeShellApplication {
+            name = "setup-cloud-hypervisor-network";
+            runtimeInputs = [
+              pkgs.iproute2
+              pkgs.gnugrep
+            ];
+            text = ''
+              # Create the bridge if it doesn't exist.
+              if ! ip link show "${bridge}" &>/dev/null; then
+                ip link add name "${bridge}" type bridge
+              fi
+              ip link set "${bridge}" up
 
-        # Create the bridge if it doesn't exist.
-        if ! ${ip} link show "${bridge}" &>/dev/null; then
-          ${ip} link add name "${bridge}" type bridge
-        fi
-        ${ip} link set "${bridge}" up
+              # Assign the gateway IP to the bridge (shared by all VMs).
+              if ! ip addr show "${bridge}" | grep -q '${hostIp}/${toString netmask}'; then
+                ip addr add ${hostIp}/${toString netmask} dev "${bridge}"
+              fi
 
-        # Assign the gateway IP to the bridge (shared by all VMs).
-        if ! ${ip} addr show "${bridge}" | grep -q '${hostIp}/${toString netmask}'; then
-          ${ip} addr add ${hostIp}/${toString netmask} dev "${bridge}"
-        fi
+              # Legacy RedoxOS TAP — attach to the bridge.
+              if ! ip link show "${legacyTap}" &>/dev/null; then
+                ip tuntap add dev "${legacyTap}" mode tap user brittonr
+              fi
+              ip link set "${legacyTap}" master "${bridge}"
+              ip link set "${legacyTap}" up
+            '';
+          };
+        in
+        lib.getExe script;
 
-        # Legacy RedoxOS TAP — attach to the bridge.
-        if ! ${ip} link show "${legacyTap}" &>/dev/null; then
-          ${ip} tuntap add dev "${legacyTap}" mode tap user brittonr
-        fi
-        ${ip} link set "${legacyTap}" master "${bridge}"
-        ${ip} link set "${legacyTap}" up
-      '';
-
-      ExecStop = pkgs.writeScript "teardown-cloud-hypervisor-network" ''
-        #!${pkgs.bash}/bin/bash
-        if ${ip} link show "${legacyTap}" &>/dev/null; then
-          ${ip} link delete "${legacyTap}"
-        fi
-        if ${ip} link show "${bridge}" &>/dev/null; then
-          ${ip} link delete "${bridge}"
-        fi
-      '';
+      ExecStop =
+        let
+          script = pkgs.writeShellApplication {
+            name = "teardown-cloud-hypervisor-network";
+            runtimeInputs = [ pkgs.iproute2 ];
+            text = ''
+              if ip link show "${legacyTap}" &>/dev/null; then
+                ip link delete "${legacyTap}"
+              fi
+              if ip link show "${bridge}" &>/dev/null; then
+                ip link delete "${bridge}"
+              fi
+            '';
+          };
+        in
+        lib.getExe script;
     };
   };
 

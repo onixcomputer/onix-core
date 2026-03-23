@@ -1,4 +1,9 @@
-{ config, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   # Import each section, passing config as parameter
   bar = import ./noctalia-sections/bar.nix config;
@@ -14,18 +19,25 @@ let
 
   # Post-hook: replace starship palette section with template output,
   # then reload running instances via SIGHUP.
-  starshipPostHook = pkgs.writeShellScript "starship-palette-update" ''
-    STARSHIP="''${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml"
-    PALETTE="''${XDG_CACHE_HOME:-$HOME/.cache}/noctalia/starship-palette.toml"
-    [ -f "$STARSHIP" ] && [ -f "$PALETTE" ] || exit 0
-    # Strip the header line from the generated palette fragment
-    TMPCOLORS=$(${pkgs.coreutils}/bin/mktemp)
-    ${pkgs.gnused}/bin/sed '1d' "$PALETTE" > "$TMPCOLORS"
-    # Delete existing palette values, then insert new ones from file
-    ${pkgs.gnused}/bin/sed -i '/^\[palettes\.onix-dark\]/,/^\[/{/^\[palettes\.onix-dark\]/!{/^\[/!d}}' "$STARSHIP"
-    ${pkgs.gnused}/bin/sed -i "/^\[palettes\.onix-dark\]/r $TMPCOLORS" "$STARSHIP"
-    rm -f "$TMPCOLORS"
-  '';
+  starshipPostHook = pkgs.writeShellApplication {
+    name = "starship-palette-update";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.gnused
+    ];
+    text = ''
+      STARSHIP="''${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml"
+      PALETTE="''${XDG_CACHE_HOME:-$HOME/.cache}/noctalia/starship-palette.toml"
+      [ -f "$STARSHIP" ] && [ -f "$PALETTE" ] || exit 0
+      # Strip the header line from the generated palette fragment
+      TMPCOLORS=$(mktemp)
+      sed '1d' "$PALETTE" > "$TMPCOLORS"
+      # Delete existing palette values, then insert new ones from file
+      sed -i '/^\[palettes\.onix-dark\]/,/^\[/{/^\[palettes\.onix-dark\]/!{/^\[/!d}}' "$STARSHIP"
+      sed -i "/^\[palettes\.onix-dark\]/r $TMPCOLORS" "$STARSHIP"
+      rm -f "$TMPCOLORS"
+    '';
+  };
 in
 {
   programs.noctalia-shell = {
@@ -76,7 +88,7 @@ in
         starship = {
           input_path = "${templateDir}/starship-palette.toml";
           output_path = "~/.cache/noctalia/starship-palette.toml";
-          post_hook = "${starshipPostHook}";
+          post_hook = lib.getExe starshipPostHook;
         };
         swayosd = {
           input_path = "${templateDir}/swayosd.css";
