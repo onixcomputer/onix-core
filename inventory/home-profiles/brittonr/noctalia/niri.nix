@@ -357,20 +357,23 @@ in
       '';
 
       # ── Install wl-walls Noctalia plugin ──────────────────────────────
-      # Copy plugin files from the nix store into the mutable plugins dir
-      # so Noctalia discovers it at runtime. Replaces the old wl-harmonograph
-      # plugin if present.
+      # Copy QML files and manifest from the nix store into the mutable
+      # plugins dir so Noctalia discovers wl-walls at runtime.
+      # settings.json is managed declaratively via pluginSettings and
+      # made writable below — don't overwrite it here.
       installWlWallsPlugin = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
         plugin_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/noctalia/plugins"
-        mkdir -p "$plugin_dir"
+        mkdir -p "$plugin_dir/wl-walls"
 
         # Remove old wl-harmonograph plugin (symlink or directory)
         rm -rf "$plugin_dir/wl-harmonograph"
 
-        # Install wl-walls plugin (copy from store so Noctalia can write settings)
-        rm -rf "$plugin_dir/wl-walls"
-        cp -r ${wl-walls-noctalia-plugin}/share/noctalia/plugins/wl-walls "$plugin_dir/wl-walls"
-        chmod -R u+w "$plugin_dir/wl-walls"
+        # Install QML + manifest (not settings.json — that's HM-managed)
+        for f in Main.qml Settings.qml manifest.json; do
+          cp ${wl-walls-noctalia-plugin}/share/noctalia/plugins/wl-walls/"$f" \
+             "$plugin_dir/wl-walls/$f"
+          chmod u+w "$plugin_dir/wl-walls/$f"
+        done
       '';
 
       # ── Make noctalia config files writable ────────────────────────────
@@ -381,7 +384,7 @@ in
       # Convert both symlinks to real writable files after linkGeneration.
       makeNoctaliaConfigMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
         noctalia_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/noctalia"
-        for f in colors.json settings.json; do
+        for f in colors.json settings.json plugins/wl-walls/settings.json; do
           target="$noctalia_dir/$f"
           if [ -L "$target" ]; then
             content=$(cat "$target")

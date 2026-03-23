@@ -92,6 +92,24 @@ in
 
     # Merge all section settings
     settings = bar // general // notifications // wallpaper // launcher // session // system // extras;
+
+    # wl-walls as default wallpaper plugin — declarative so rebuilds
+    # don't reset runtime tweaks (shape, dither, etc.).
+    pluginSettings.wl-walls = {
+      autoStart = true;
+      shape = "random";
+      fps = "30";
+      speed = 1;
+      lineWidth = 2.0;
+      alpha = 0.85;
+      fade = 0.005;
+      ditherStrength = 0.0;
+      ditherLevels = 8;
+      ditherScale = 1.0;
+      useThemeColors = true;
+      bgColor = "#1d1f23";
+      fgColors = "#fb4934,#98971a,#fcb157,#83a598,#d3869b,#8ec07c,#e4d398";
+    };
   };
 
   # Install Onix color scheme where Noctalia discovers downloaded schemes
