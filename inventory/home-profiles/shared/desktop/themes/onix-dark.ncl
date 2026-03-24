@@ -77,9 +77,9 @@ mk_theme {
     prefer_dark_theme = true,
   },
 
-  # Wallpapers
+  # Wallpapers — wl-walls animated wallpaper via noctalia plugin
   wallpapers = {
-    main = "1-matte-black.jpg",
+    main = "wl-walls",
     collection = {},
   },
 }

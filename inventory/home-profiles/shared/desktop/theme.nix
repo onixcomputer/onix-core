@@ -185,14 +185,25 @@ in
 
       activation.setThemeWallpaper = lib.hm.dag.entryAfter [ "linkGeneration" ] (
         mkIf (config.theme.autoSetMatchingWallpaper && activeThemeData ? wallpapers) ''
-          WALLPAPER="$HOME/Pictures/Wallpapers/${activeThemeData.wallpapers.main}"
           STATE_FILE="''${XDG_CACHE_HOME:-$HOME/.cache}/wallpaper-state"
+          mkdir -p "$(dirname "$STATE_FILE")"
 
-          if [[ -e "$WALLPAPER" ]]; then
-            mkdir -p "$(dirname "$STATE_FILE")"
-            echo "$WALLPAPER" > "$STATE_FILE"
-            ${pkgs.systemd}/bin/systemctl --user restart apply-theme-wallpaper.service || true
-          fi
+          ${
+            if activeThemeData.wallpapers.main == "wl-walls" then
+              # wl-walls animated wallpaper — managed by noctalia plugin autoStart.
+              # Write sentinel so restore-wallpaper knows not to set a static image.
+              ''
+                echo "wl-walls" > "$STATE_FILE"
+              ''
+            else
+              ''
+                WALLPAPER="$HOME/Pictures/Wallpapers/${activeThemeData.wallpapers.main}"
+                if [[ -e "$WALLPAPER" ]]; then
+                  echo "$WALLPAPER" > "$STATE_FILE"
+                  ${pkgs.systemd}/bin/systemctl --user restart apply-theme-wallpaper.service || true
+                fi
+              ''
+          }
         ''
       );
 

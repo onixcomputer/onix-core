@@ -72,9 +72,9 @@ mk_theme {
     prefer_dark_theme = false,
   },
 
-  # Wallpapers
+  # Wallpapers — wl-walls animated wallpaper via noctalia plugin
   wallpapers = {
-    main = "1-kanagawa.jpg",
+    main = "wl-walls",
     collection = {},
   },
 }
