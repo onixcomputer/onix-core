@@ -46,7 +46,12 @@ let
               hostname = machine;
               user = "root";
               proxyCommand = "${iroh-ssh}/bin/iroh-ssh proxy ${nodeId}";
-              extraOptions.HostkeyAlias = "iroh-${machine}";
+              extraOptions = {
+                HostkeyAlias = "iroh-${machine}";
+                ControlMaster = "auto";
+                ControlPath = "~/.ssh/sockets/%r@%h:%p";
+                ControlPersist = "10m";
+              };
             };
           }
       ) irohMachines
