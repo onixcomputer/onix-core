@@ -165,7 +165,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "password-manager",
         "cross-compile",
         "udev-rules",
-        "cloud-hypervisor-host",
+        # "cloud-hypervisor-host",
         "taskwarrior",
         "initrd-ssh",
         "backup",
