@@ -375,14 +375,10 @@ in
 
               defaultServer = settings.defaultServer or null;
 
-              # Import custom goose package
-              goose-cli-latest = import ./goose-cli-latest.nix { inherit pkgs; };
-
               # Client packages based on type
               clientPackages =
                 (lib.optionals (clientType == "ollama") [
                   pkgs.ollama
-                  goose-cli-latest
                   pkgs.opencode
                 ])
                 ++ (lib.optionals (clientType == "vllm") [

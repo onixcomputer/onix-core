@@ -35,7 +35,6 @@
           }"
       '';
     })
-    goose-cli
     net-tools
     nmap
     pamtester
