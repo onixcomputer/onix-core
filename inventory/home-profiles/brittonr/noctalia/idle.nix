@@ -26,8 +26,8 @@ let
   # Launch screensaver in a fullscreen terminal window.
   # The window-rule in niri.nix matches app-id "screensaver" and
   # opens it fullscreen + floating.
-  # WezTerm overrides force pure black (#000000) background for OLED —
-  # unlit pixels draw zero power and avoid burn-in.
+  # Uses kitty with inline config overrides — wezterm removed --config
+  # CLI flag. Pure black (#000000) background for OLED power savings.
   screensaver-start = pkgs.writeShellApplication {
     name = "screensaver-start";
     runtimeInputs = [
@@ -37,13 +37,12 @@ let
     text = ''
       # Don't stack screensavers
       pgrep -f "pipes-rs" >/dev/null && exit 0
-      ${config.apps.terminal.command} start \
+      ${pkgs.kitty}/bin/kitty \
         --class screensaver \
-        --config 'colors = { background = "#000000" }' \
-        --config 'window_padding = { left = 0, right = 0, top = 0, bottom = 0 }' \
-        --config 'enable_tab_bar = false' \
-        --config 'window_decorations = "NONE"' \
-        -- pipes-rs -p 5 -r 0.002 &
+        -o background=#000000 \
+        -o window_padding_width=0 \
+        -o hide_window_decorations=yes \
+        -e pipes-rs -p 5 -r 0.002 &
     '';
   };
 

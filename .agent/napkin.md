@@ -39,6 +39,9 @@
 | 2026-03-16 | self | Nickel upstream uses edition 2024 (let chains) but workspace Cargo.tomls say edition.workspace = true | When vendoring, resolve workspace edition to "2024" in all three crate Cargo.tomls |
 | 2026-03-16 | self | Nickel `Error` and `PointedExportErrorData` don't implement `Display` — `format!("{e}")` fails | Use `{e:?}` (Debug) format for Nickel error types in WASM plugin panic messages |
 
+| 2026-03-25 | self | `qt.platformTheme.name = "gtk"` sets `QT_QPA_PLATFORMTHEME=gtk2`, loading GTK2's X11 backend (`libgdk-x11-2.0.so.0`) into quickshell. On suspend/resume, X11 connection goes stale → `gdk_x_io_error` → `exit()` → Qt render thread SIGSEGV during cleanup. 6 crashes/week. | Use `platformTheme.name = "adwaita"` — pure Qt, no GTK2/X11 dependency. Wayland-native apps must never load GTK2. |
+| 2026-03-25 | self | Wezterm removed `--config` CLI flag — `wezterm start --config 'key = value'` no longer works | Use kitty with `-o key=value` for inline config overrides, or write a dedicated wezterm lua config file referenced via `WEZTERM_CONFIG_FILE` env var |
+
 ## User Preferences
 - Prefers deleting dead code over commenting it out
 - When cleanup items overlap (e.g., opentofu lib + cloud/ + parts/checks.nix + parts/vm-checks.nix + cloud devShell all reference each other), chase all the references down in one pass

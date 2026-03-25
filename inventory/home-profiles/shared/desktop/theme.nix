@@ -249,7 +249,11 @@ in
 
     qt = {
       enable = true;
-      platformTheme.name = "gtk";
+      # "gtk" loads GTK2's X11 backend (libgdk-x11-2.0.so.0) which crashes
+      # quickshell/noctalia-shell on suspend/resume: the X11 connection goes
+      # stale, gdk_x_io_error calls exit(), and Qt render threads SIGSEGV
+      # during cleanup. "adwaita" is pure Qt — no X11, no GTK2.
+      platformTheme.name = "adwaita";
       style.name = if preferDark then "adwaita-dark" else "adwaita";
     };
   };
