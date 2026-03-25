@@ -161,8 +161,13 @@ let
                                   }
                               }
 
+                              // Bind all workspaces to the primary output so it stays
+                              // the main display regardless of hotplug order or focus.
                               ${builtins.concatStringsSep "\n                          " (
-                                map (name: "workspace \"${name}\"") config.workspaces.names
+                                map (name: ''
+                                  workspace "${name}" {
+                                      open-on-output "${mon.primary.name}"
+                                  }'') config.workspaces.names
                               )}
 
                               // Startup services and applications (from startup.ncl)
