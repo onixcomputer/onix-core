@@ -29,7 +29,7 @@ in
         });
       };
 
-      # FIXME: remove after nixpkgs updates past the electron 39.8.2 patch failure.
+      # FIXME(2026-03-26): remove after nixpkgs updates past the electron 39.8.2 patch failure.
       # The 39-angle-patchdir.patch context drifted; replace with sed.
       # The sed must run before postPatch's apply_all_patches loop reads config.json,
       # so we also drop the original patch from the patches list to avoid the patchPhase error.

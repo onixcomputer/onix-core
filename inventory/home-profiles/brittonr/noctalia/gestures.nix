@@ -52,8 +52,17 @@ let
         exit 0
       fi
 
-      # Wait for Wayland session to be ready
-      while [ -z "''${WAYLAND_DISPLAY:-}" ]; do sleep ${config.timing.process.short}; done
+      # Wait for Wayland session to be ready (bounded: 60 attempts ≈ 30s)
+      attempts=0
+      max_attempts=60
+      while [ -z "''${WAYLAND_DISPLAY:-}" ]; do
+        attempts=$((attempts + 1))
+        if [ "$attempts" -ge "$max_attempts" ]; then
+          echo "Timed out waiting for WAYLAND_DISPLAY after $max_attempts attempts"
+          exit 1
+        fi
+        sleep ${config.timing.process.short}
+      done
 
       echo "Starting lisgd on $TOUCHSCREEN"
 

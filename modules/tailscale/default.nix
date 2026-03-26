@@ -40,24 +40,26 @@ _: {
           let
             generatorName = "tailscale-${instanceName}";
 
-            enableHostAliases = settings.enableHostAliases or true;
+            # enableHostAliases has an mkOption default; the rest are freeform
+            # and need explicit defaults since they have no type declaration.
+            inherit (settings) enableHostAliases;
             enableSSH = settings.enableSSH or false;
             exitNode = settings.exitNode or false;
+            extraUpFlags = settings.extraUpFlags or [ ];
 
             tailscaleSettings = builtins.removeAttrs settings [
               "enableHostAliases"
               "enableSSH"
               "exitNode"
+              "extraUpFlags"
             ];
 
-            extraUpFlags =
-              (lib.optional enableSSH "--ssh")
-              ++ (lib.optional exitNode "--advertise-exit-node")
-              ++ (settings.extraUpFlags or [ ]);
+            extraUpFlagsFinal =
+              (lib.optional enableSSH "--ssh") ++ (lib.optional exitNode "--advertise-exit-node") ++ extraUpFlags;
 
             finalSettings = tailscaleSettings // {
               authKeyFile = lib.mkDefault config.clan.core.vars.generators."${generatorName}".files.auth_key.path;
-              inherit extraUpFlags;
+              extraUpFlags = extraUpFlagsFinal;
             };
           in
           {

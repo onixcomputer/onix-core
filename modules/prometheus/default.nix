@@ -130,12 +130,14 @@ in
               # Get the extended settings
               settings = extendSettings { };
 
-              # Extract clan-specific options
-              enableAutoDiscovery = settings.enableAutoDiscovery or true;
-              discoveryMethod = settings.discoveryMethod or "none";
-              additionalScrapeConfigs = settings.additionalScrapeConfigs or [ ];
-              staticTargets = settings.staticTargets or { };
-              dnsDiscovery = settings.dnsDiscovery or { };
+              # All options have mkOption defaults — no `or` fallbacks needed.
+              inherit (settings)
+                enableAutoDiscovery
+                discoveryMethod
+                additionalScrapeConfigs
+                staticTargets
+                dnsDiscovery
+                ;
 
               # Remove clan-specific options before passing to services.prometheus
               prometheusConfig = builtins.removeAttrs settings [

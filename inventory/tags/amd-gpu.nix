@@ -108,19 +108,18 @@
     };
   };
 
-  # Systemd service for GPU monitoring metrics
+  # Systemd service + timer for GPU monitoring metrics.
+  # Runs as a oneshot on a 5s timer instead of a long-lived loop —
+  # gives systemd control over lifecycle, restarts, and resource accounting.
   systemd.services.amd-gpu-exporter = {
     description = "AMD GPU Metrics Exporter for Prometheus";
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
-    wantedBy = [ "multi-user.target" ];
 
     serviceConfig = {
-      Type = "simple";
+      Type = "oneshot";
       User = "prometheus-amd-gpu";
       Group = "prometheus-amd-gpu";
-      Restart = "always";
-      RestartSec = "10s";
 
       # Security settings
       NoNewPrivileges = true;
@@ -145,7 +144,7 @@
             text = ''
                     METRICS_FILE="/tmp/amd_gpu_metrics.prom"
 
-                    while true; do
+                    collect_once() {
                       GPU_UTIL=$(rocm-smi --showuse --csv 2>/dev/null | tail -n +2 | cut -d',' -f2 | tr -d '%' || echo "0")
                       GPU_TEMP=$(rocm-smi --showtemp --csv 2>/dev/null | tail -n +2 | cut -d',' -f2 | tr -d 'c' || echo "0")
                       GPU_MEM=$(rocm-smi --showmemuse --csv 2>/dev/null | tail -n +2 | cut -d',' -f2 | tr -d '%' || echo "0")
@@ -170,12 +169,25 @@
               EOF
 
                       mv "$METRICS_FILE.tmp" "$METRICS_FILE"
-                      sleep 5
-                    done
+                    }
+
+                    # Run one collection so the metrics file exists immediately,
+                    # then let the systemd timer handle the 5s cadence.
+                    collect_once
             '';
           };
         in
         lib.getExe script;
+    };
+  };
+
+  systemd.timers.amd-gpu-exporter = {
+    description = "Collect AMD GPU metrics every 5 seconds";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "5s";
+      OnUnitActiveSec = "5s";
+      AccuracySec = "1s";
     };
   };
 }

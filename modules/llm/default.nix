@@ -125,31 +125,8 @@ in
                 model
                 ;
 
-              # Remove our wrapper options for service-specific config
-
-              # Base configuration for all services
-
-              # Final configuration merging base + user config
-
             in
             {
-              # Enable the specific LLM service
-              services = lib.mkMerge [
-                # (lib.mkIf (serviceType == "ollama") {
-                # ollama = finalConfig // {
-                #   acceleration = lib.mkIf enableGPU "rocm";
-                # };
-                # })
-
-                (lib.mkIf (serviceType == "vllm") {
-                  # Custom vLLM systemd service since nixpkgs doesn't have one
-                })
-
-                # Placeholder for other service types
-                (lib.mkIf (serviceType == "llamacpp") {
-                  # llamacpp configuration would go here
-                })
-              ];
 
               # Open firewall for the service
               networking.firewall.allowedTCPPorts = [ port ];

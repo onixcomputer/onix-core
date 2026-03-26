@@ -211,45 +211,49 @@ in
             let
               cfg = extendSettings { };
 
-              # Extract clan-specific options
-              inherit (cfg) domain email;
-              services = cfg.services or { };
-              additionalSubdomains = cfg.additionalSubdomains or [ ];
-              traefikDashboard = cfg.traefikDashboard or true;
-              sslRedirect = cfg.sslRedirect or true;
-              ddclientInterval = cfg.ddclientInterval or 300;
-              extraTraefikConfig = cfg.extraTraefikConfig or { };
-              extraDynamicConfig = cfg.extraDynamicConfig or { };
-              securityHeaders = cfg.securityHeaders or true;
-              dnsPropagationCheck = cfg.dnsPropagationCheck or false;
-              dnsResolvers =
-                cfg.dnsResolvers or [
-                  "1.1.1.1:53"
-                  "1.0.0.1:53"
-                ];
-              dnsPropagationDelay = cfg.dnsPropagationDelay or 120;
+              # All options have mkOption defaults — no `or` fallbacks needed.
+              # tailscaleAuthKeyFile is the sole exception: its default
+              # depends on config (vars path), which can't be expressed in mkOption.
+              inherit (cfg)
+                domain
+                email
+                services
+                additionalSubdomains
+                traefikDashboard
+                sslRedirect
+                ddclientInterval
+                extraTraefikConfig
+                extraDynamicConfig
+                securityHeaders
+                dnsPropagationCheck
+                dnsResolvers
+                dnsPropagationDelay
+                tailscaleExitNode
+                tailscaleSSH
+                tailscalePort
+                ;
               tailscaleAuthKeyFile =
-                cfg.tailscaleAuthKeyFile
-                  or config.clan.core.vars.generators.tailscale-traefik.files.tailscale_auth_key.path;
-              tailscaleExitNode = cfg.tailscaleExitNode or false;
-              tailscaleSSH = cfg.tailscaleSSH or false;
-              tailscalePort = cfg.tailscalePort or 41641;
+                if cfg.tailscaleAuthKeyFile != null then
+                  cfg.tailscaleAuthKeyFile
+                else
+                  config.clan.core.vars.generators.tailscale-traefik.files.tailscale_auth_key.path;
 
-              # Build list of all subdomains
+              # Resolve subdomain: use explicit override or fall back to service name.
+              resolveSubdomain = name: svc: if svc.subdomain != null then svc.subdomain else name;
 
-              # Separate public and private subdomains
-              publicSubdomains = lib.mapAttrsToList (
-                name: svc:
-                if svc.public or false then (if svc.subdomain != null then svc.subdomain else name) else null
-              ) services;
-              publicSubdomainsList = lib.filter (x: x != null) publicSubdomains;
+              # Partition services by public/private, resolve subdomains once.
+              publicSubdomainsList = lib.filter (x: x != null) (
+                lib.mapAttrsToList (
+                  name: svc: if svc.public or false then resolveSubdomain name svc else null
+                ) services
+              );
 
-              privateSubdomains = lib.mapAttrsToList (
-                name: svc:
-                if !(svc.public or false) then (if svc.subdomain != null then svc.subdomain else name) else null
-              ) services;
               privateSubdomainsList = lib.filter (x: x != null) (
-                privateSubdomains ++ additionalSubdomains ++ (lib.optional traefikDashboard "traefik")
+                (lib.mapAttrsToList (
+                  name: svc: if !(svc.public or false) then resolveSubdomain name svc else null
+                ) services)
+                ++ additionalSubdomains
+                ++ (lib.optional traefikDashboard "traefik")
               );
 
               # Script to get Tailscale IP
@@ -268,8 +272,7 @@ in
               serviceRouters = lib.mapAttrs' (
                 name: svc:
                 let
-                  inherit name;
-                  subdomain = if svc.subdomain != null then svc.subdomain else name;
+                  subdomain = resolveSubdomain name svc;
                 in
                 lib.nameValuePair subdomain (
                   {
@@ -289,8 +292,7 @@ in
               serviceBackends = lib.mapAttrs' (
                 name: svc:
                 let
-                  inherit name;
-                  subdomain = if svc.subdomain != null then svc.subdomain else name;
+                  subdomain = resolveSubdomain name svc;
                   # Service port detection mapping
                   # Maps service names to functions that extract their ports from NixOS config
                   portDetectors = {
@@ -388,8 +390,88 @@ in
                 config.clan.core.vars.generators.tailscale-traefik.files.cloudflare_token.path;
               traefikEnvFile = config.clan.core.vars.generators.tailscale-traefik.files.traefik_env.path;
 
+              # Shared ddclient script builder — the private and public services
+              # differ only in IP source and subdomain list. Single source of truth
+              # for the Cloudflare zone lookup + DNS record upsert + config generation.
+              mkDdclientScript =
+                {
+                  scriptName,
+                  ipSourceCmd, # shell expression that prints the IP
+                  useDirective, # ddclient "use=" line
+                  subdomainsList,
+                  runtimeDir,
+                }:
+                pkgs.writeShellApplication {
+                  name = scriptName;
+                  # SC2043: false positive — Nix interpolates a space-separated list
+                  excludeShellChecks = [ "SC2043" ];
+                  runtimeInputs = [
+                    pkgs.curl
+                    pkgs.jq
+                    pkgs.coreutils
+                    pkgs.ddclient
+                  ];
+                  text = ''
+                    CF_TOKEN=$(cat ${cloudflareTokenFile})
+                    ZONE_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${domain}" \
+                      -H "Authorization: Bearer $CF_TOKEN" \
+                      -H "Content-Type: application/json" | jq -r '.result[0].id')
+
+                    CURRENT_IP=$(${ipSourceCmd})
+                    for subdomain in ${lib.concatStringsSep " " subdomainsList}; do
+                      echo "Checking if $subdomain.${domain} exists..."
+
+                      RECORD_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=A&name=$subdomain.${domain}" \
+                        -H "Authorization: Bearer $CF_TOKEN" \
+                        -H "Content-Type: application/json" | jq -r '.result[0].id // empty')
+
+                      if [ -z "$RECORD_ID" ]; then
+                        echo "Creating DNS record for $subdomain.${domain} → $CURRENT_IP"
+                        curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
+                          -H "Authorization: Bearer $CF_TOKEN" \
+                          -H "Content-Type: application/json" \
+                          --data "{\"type\":\"A\",\"name\":\"$subdomain.${domain}\",\"content\":\"$CURRENT_IP\",\"ttl\":1,\"proxied\":false}" \
+                          | jq -r '.success'
+                      else
+                        echo "DNS record for $subdomain.${domain} already exists"
+                      fi
+                    done
+
+                    cat > /run/${runtimeDir}/ddclient.conf <<EOF
+                    ssl=yes
+                    protocol=cloudflare
+                    zone=${domain}
+                    login=token
+                    password=$(cat ${cloudflareTokenFile})
+                    ${useDirective}
+                    verbose=yes
+                    pid=/run/${runtimeDir}.pid
+                    cache=/var/lib/${runtimeDir}/ddclient.cache
+                    ${lib.concatMapStringsSep "," (s: "${s}.${domain}") subdomainsList}
+                    EOF
+
+                    chmod 600 /run/${runtimeDir}/ddclient.conf
+                    ddclient -daemon ${toString ddclientInterval} -file /run/${runtimeDir}/ddclient.conf
+                  '';
+                };
+
             in
             {
+              assertions = [
+                {
+                  assertion = domain != "";
+                  message = "tailscale-traefik: 'domain' must be non-empty";
+                }
+                {
+                  assertion = email != "";
+                  message = "tailscale-traefik: 'email' must be non-empty";
+                }
+                {
+                  assertion = dnsResolvers != [ ];
+                  message = "tailscale-traefik: 'dnsResolvers' must contain at least one resolver";
+                }
+              ];
+
               # All services configuration
               services = {
                 # Tailscale configuration
@@ -432,13 +514,15 @@ in
                             storage = "/var/lib/traefik/acme.json";
                             dnsChallenge = {
                               provider = "cloudflare";
-                              delayBeforeCheck = dnsPropagationDelay;
                               resolvers = dnsResolvers;
-                            }
-                            // (lib.optionalAttrs (!dnsPropagationCheck) {
-                              # Disable propagation checks if having issues
-                              disablePropagationCheck = true;
-                            });
+                              # Traefik v3 renamed these under propagation.*
+                              propagation = {
+                                delayBeforeChecks = dnsPropagationDelay;
+                              }
+                              // (lib.optionalAttrs (!dnsPropagationCheck) {
+                                disableChecks = true;
+                              });
+                            };
                           };
                         };
                       };
@@ -507,7 +591,6 @@ in
 
               # Service dependencies
               systemd.services = mkMerge [
-                # Dual ddclient services - always use this approach
                 (mkIf (privateSubdomainsList != [ ]) {
                   ddclient-private = {
                     description = "Dynamic DNS Client (Private/Tailscale domains)";
@@ -518,7 +601,7 @@ in
                     ];
                     wants = [ "network-online.target" ];
                     wantedBy = [ "multi-user.target" ];
-                    partOf = [ "traefik.service" ]; # Restart when traefik restarts
+                    partOf = [ "traefik.service" ];
 
                     serviceConfig =
                       let
@@ -537,66 +620,6 @@ in
                             done
                           '';
                         };
-                        ddclientPrivateStart = pkgs.writeShellApplication {
-                          name = "ddclient-private-start";
-                          # SC2043: false positive — Nix interpolates a space-separated list
-                          excludeShellChecks = [ "SC2043" ];
-                          runtimeInputs = [
-                            pkgs.curl
-                            pkgs.jq
-                            pkgs.coreutils
-                            pkgs.ddclient
-                          ];
-                          text = ''
-                            # Get Cloudflare zone ID
-                            CF_TOKEN=$(cat ${cloudflareTokenFile})
-                            ZONE_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${domain}" \
-                              -H "Authorization: Bearer $CF_TOKEN" \
-                              -H "Content-Type: application/json" | jq -r '.result[0].id')
-
-                            # Ensure DNS records exist for all private subdomains
-                            TS_IP=$(${lib.getExe getTailscaleIP})
-                            for subdomain in ${lib.concatStringsSep " " privateSubdomainsList}; do
-                              echo "Checking if $subdomain.${domain} exists..."
-
-                              # Check if record exists
-                              RECORD_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=A&name=$subdomain.${domain}" \
-                                -H "Authorization: Bearer $CF_TOKEN" \
-                                -H "Content-Type: application/json" | jq -r '.result[0].id // empty')
-
-                              if [ -z "$RECORD_ID" ]; then
-                                echo "Creating DNS record for $subdomain.${domain} → $TS_IP"
-                                curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
-                                  -H "Authorization: Bearer $CF_TOKEN" \
-                                  -H "Content-Type: application/json" \
-                                  --data "{\"type\":\"A\",\"name\":\"$subdomain.${domain}\",\"content\":\"$TS_IP\",\"ttl\":1,\"proxied\":false}" \
-                                  | jq -r '.success'
-                              else
-                                echo "DNS record for $subdomain.${domain} already exists"
-                              fi
-                            done
-
-                            # Create config file for private domains
-                            cat > /run/ddclient-private/ddclient.conf <<EOF
-                            # Private domains (Tailscale)
-                            ssl=yes
-                            protocol=cloudflare
-                            zone=${domain}
-                            login=token
-                            password=$(cat ${cloudflareTokenFile})
-                            use=cmd, cmd='${lib.getExe getTailscaleIP}'
-                            verbose=yes
-                            pid=/run/ddclient-private.pid
-                            cache=/var/lib/ddclient-private/ddclient.cache
-                            ${lib.concatMapStringsSep "," (s: "${s}.${domain}") privateSubdomainsList}
-                            EOF
-
-                            # Fix permissions
-                            chmod 600 /run/ddclient-private/ddclient.conf
-
-                            ddclient -daemon ${toString ddclientInterval} -file /run/ddclient-private/ddclient.conf
-                          '';
-                        };
                       in
                       {
                         Type = "forking";
@@ -604,7 +627,13 @@ in
                         RuntimeDirectory = "ddclient-private";
                         StateDirectory = "ddclient-private";
                         ExecStartPre = lib.getExe waitForTailscale;
-                        ExecStart = lib.getExe ddclientPrivateStart;
+                        ExecStart = lib.getExe (mkDdclientScript {
+                          scriptName = "ddclient-private-start";
+                          ipSourceCmd = lib.getExe getTailscaleIP;
+                          useDirective = "use=cmd, cmd='${lib.getExe getTailscaleIP}'";
+                          subdomainsList = privateSubdomainsList;
+                          runtimeDir = "ddclient-private";
+                        });
                       };
 
                     restartTriggers = [
@@ -614,7 +643,6 @@ in
                   };
                 })
 
-                # Public ddclient service - runs when there are public services
                 (mkIf (publicSubdomainsList != [ ]) {
                   ddclient-public = {
                     description = "Dynamic DNS Client (Public domains)";
@@ -624,80 +652,21 @@ in
                     ];
                     wants = [ "network-online.target" ];
                     wantedBy = [ "multi-user.target" ];
-                    partOf = [ "traefik.service" ]; # Restart when traefik restarts
+                    partOf = [ "traefik.service" ];
 
-                    serviceConfig =
-                      let
-                        ddclientPublicStart = pkgs.writeShellApplication {
-                          name = "ddclient-public-start";
-                          # SC2043: false positive — Nix interpolates a space-separated list
-                          excludeShellChecks = [ "SC2043" ];
-                          runtimeInputs = [
-                            pkgs.curl
-                            pkgs.jq
-                            pkgs.coreutils
-                            pkgs.ddclient
-                          ];
-                          text = ''
-                            # Get Cloudflare zone ID
-                            CF_TOKEN=$(cat ${cloudflareTokenFile})
-                            ZONE_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${domain}" \
-                              -H "Authorization: Bearer $CF_TOKEN" \
-                              -H "Content-Type: application/json" | jq -r '.result[0].id')
-
-                            # Get public IP
-                            PUBLIC_IP=$(curl -s https://ipinfo.io/ip)
-
-                            # Ensure DNS records exist for all public subdomains
-                            for subdomain in ${lib.concatStringsSep " " publicSubdomainsList}; do
-                              echo "Checking if $subdomain.${domain} exists..."
-
-                              # Check if record exists
-                              RECORD_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=A&name=$subdomain.${domain}" \
-                                -H "Authorization: Bearer $CF_TOKEN" \
-                                -H "Content-Type: application/json" | jq -r '.result[0].id // empty')
-
-                              if [ -z "$RECORD_ID" ]; then
-                                echo "Creating DNS record for $subdomain.${domain} → $PUBLIC_IP"
-                                curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
-                                  -H "Authorization: Bearer $CF_TOKEN" \
-                                  -H "Content-Type: application/json" \
-                                  --data "{\"type\":\"A\",\"name\":\"$subdomain.${domain}\",\"content\":\"$PUBLIC_IP\",\"ttl\":1,\"proxied\":false}" \
-                                  | jq -r '.success'
-                              else
-                                echo "DNS record for $subdomain.${domain} already exists"
-                              fi
-                            done
-
-                            # Create config file for public domains
-                            cat > /run/ddclient-public/ddclient.conf <<EOF
-                            # Public domains
-                            ssl=yes
-                            protocol=cloudflare
-                            zone=${domain}
-                            login=token
-                            password=$(cat ${cloudflareTokenFile})
-                            use=web, web=ipinfo.io/ip
-                            verbose=yes
-                            pid=/run/ddclient-public.pid
-                            cache=/var/lib/ddclient-public/ddclient.cache
-                            ${lib.concatMapStringsSep "," (s: "${s}.${domain}") publicSubdomainsList}
-                            EOF
-
-                            # Fix permissions
-                            chmod 600 /run/ddclient-public/ddclient.conf
-
-                            ddclient -daemon ${toString ddclientInterval} -file /run/ddclient-public/ddclient.conf
-                          '';
-                        };
-                      in
-                      {
-                        Type = "forking";
-                        PIDFile = "/run/ddclient-public.pid";
-                        RuntimeDirectory = "ddclient-public";
-                        StateDirectory = "ddclient-public";
-                        ExecStart = lib.getExe ddclientPublicStart;
-                      };
+                    serviceConfig = {
+                      Type = "forking";
+                      PIDFile = "/run/ddclient-public.pid";
+                      RuntimeDirectory = "ddclient-public";
+                      StateDirectory = "ddclient-public";
+                      ExecStart = lib.getExe (mkDdclientScript {
+                        scriptName = "ddclient-public-start";
+                        ipSourceCmd = "curl -s https://ipinfo.io/ip";
+                        useDirective = "use=web, web=ipinfo.io/ip";
+                        subdomainsList = publicSubdomainsList;
+                        runtimeDir = "ddclient-public";
+                      });
+                    };
 
                     restartTriggers = [
                       (builtins.toString publicSubdomainsList)
@@ -728,8 +697,7 @@ in
                       # Create a custom resolv.conf for Traefik with working DNS servers
                       mkdir -p /run/traefik
                       cat > /run/traefik/resolv.conf <<EOF
-                      nameserver ${builtins.head dnsResolvers}
-                      nameserver ${builtins.elemAt dnsResolvers 1}
+                      ${lib.concatMapStringsSep "\n" (r: "nameserver ${r}") dnsResolvers}
                       EOF
                     '';
                   };

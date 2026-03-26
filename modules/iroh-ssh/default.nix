@@ -39,7 +39,7 @@ _: {
           }:
           let
             iroh-ssh = pkgs.callPackage ../../pkgs/iroh-ssh { };
-            sshPort = settings.sshPort or 22;
+            inherit (settings) sshPort;
           in
           {
             # --- key generation via clan vars ---

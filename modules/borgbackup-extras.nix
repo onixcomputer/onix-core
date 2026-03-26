@@ -19,8 +19,17 @@
   services.borgbackup.jobs = {
     aspen1 = {
       preHook = lib.optionalString config.networking.networkmanager.enable ''
-        # wait until network is available and not metered
+        # Wait for unmetered network (bounded: 30 attempts = 30 minutes max).
+        # If network never becomes available/unmetered, skip this backup run —
+        # the next timer invocation will retry.
+        attempts=0
+        max_attempts=30
         while ! ${pkgs.networkmanager}/bin/nm-online --quiet || ${pkgs.networkmanager}/bin/nmcli --terse --fields GENERAL.METERED dev show 2>/dev/null | grep --quiet "yes"; do
+          attempts=$((attempts + 1))
+          if [ "$attempts" -ge "$max_attempts" ]; then
+            echo "Timed out waiting for unmetered network after $max_attempts minutes, skipping backup"
+            exit 0
+          fi
           sleep 60
         done
       '';

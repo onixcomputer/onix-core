@@ -76,18 +76,15 @@ in
               # Get the extended settings
               settings = extendSettings { };
 
-              # Extract clan-specific options
-              enablePrometheusIntegration = settings.enablePrometheusIntegration or true;
-              additionalDatasources = settings.additionalDatasources or [ ];
+              inherit (settings)
+                enablePrometheusIntegration
+                additionalDatasources
+                dashboards
+                notifiers
+                ;
 
               prometheusUrl =
-                if (settings.prometheusUrl or null) != null then
-                  settings.prometheusUrl
-                else
-                  "http://localhost:9090";
-
-              dashboards = settings.dashboards or [ ];
-              notifiers = settings.notifiers or [ ];
+                if settings.prometheusUrl != null then settings.prometheusUrl else "http://localhost:9090";
 
               # Remove clan-specific options before passing to services.grafana
               grafanaConfig = builtins.removeAttrs settings [

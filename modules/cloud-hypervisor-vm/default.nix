@@ -117,6 +117,25 @@ in
               chBin = "${pkgs.cloud-hypervisor}/bin/cloud-hypervisor";
             in
             {
+              assertions = [
+                {
+                  assertion = self.nixosConfigurations ? ${guestMachine};
+                  message = "cloud-hypervisor-vm: guestMachine '${guestMachine}' not found in nixosConfigurations";
+                }
+                {
+                  assertion = builtins.match "[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}" macAddress != null;
+                  message = "cloud-hypervisor-vm: macAddress '${macAddress}' is not a valid MAC address";
+                }
+                {
+                  assertion = cpus >= 1 && cpus <= 256;
+                  message = "cloud-hypervisor-vm: cpus must be between 1 and 256, got ${toString cpus}";
+                }
+                {
+                  assertion = memory >= 128;
+                  message = "cloud-hypervisor-vm: memory must be at least 128 MiB, got ${toString memory}";
+                }
+              ];
+
               systemd.services."cloud-hypervisor-${guestMachine}" = {
                 description = "Cloud Hypervisor VM: ${guestMachine}";
                 after = [
@@ -189,9 +208,13 @@ in
                           curl --unix-socket ${apiSocket} -s \
                             -X PUT http://localhost/api/v1/vm.power-button || true
 
-                          # Wait for the process to exit (systemd handles the timeout).
-                          while curl --unix-socket ${apiSocket} -s \
-                            http://localhost/api/v1/vm.info &>/dev/null 2>&1; do
+                          # Wait for the process to exit (bounded: 25s, leaves 5s
+                          # headroom before TimeoutStopSec=30 sends SIGKILL).
+                          for _i in $(seq 1 25); do
+                            if ! curl --unix-socket ${apiSocket} -s \
+                              http://localhost/api/v1/vm.info &>/dev/null 2>&1; then
+                              exit 0
+                            fi
                             sleep 1
                           done
                         '';

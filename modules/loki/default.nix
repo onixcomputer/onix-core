@@ -55,9 +55,7 @@ in
               # Get the extended settings
               settings = extendSettings { };
 
-              # Extract clan-specific options
-              enablePromtail = settings.enablePromtail or true;
-              promtailConfig = settings.promtailConfig or { };
+              inherit (settings) enablePromtail promtailConfig;
 
               # Remove clan-specific options before passing to services.loki
               lokiConfig = builtins.removeAttrs settings [
@@ -175,9 +173,7 @@ in
               # Get the extended settings
               settings = extendSettings { };
 
-              lokiUrl = settings.lokiUrl or "http://localhost:3100";
-
-              additionalScrapeConfigs = settings.additionalScrapeConfigs or [ ];
+              inherit (settings) lokiUrl additionalScrapeConfigs;
 
               # Remove clan-specific options before passing to services.promtail
               promtailConfig = builtins.removeAttrs settings [
