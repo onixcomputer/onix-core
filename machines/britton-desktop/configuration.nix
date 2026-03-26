@@ -66,6 +66,9 @@
       SUBSYSTEM=="usb", ATTR{idVendor}=="2207", MODE="0660", GROUP="wheel"
       # SDWire (Realtek card reader with mux control)
       SUBSYSTEM=="usb", ATTR{idVendor}=="0bda", ATTR{idProduct}=="0316", MODE="0660", GROUP="wheel"
+      # Elgato Stream Deck (OpenDeck)
+      SUBSYSTEM=="usb", ATTRS{idVendor}=="0fd9", MODE="0660", TAG+="uaccess"
+      KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0fd9", MODE="0660", TAG+="uaccess"
     '';
 
     printing.enable = true;
@@ -124,10 +127,16 @@
 
   programs.fuse.userAllowOther = true;
 
-  environment.systemPackages = with pkgs; [
-    bpftrace
-    imagemagick
-    nirius
-    displaylink
-  ];
+  environment.systemPackages =
+    let
+      opendeck = pkgs.callPackage ../../pkgs/opendeck { };
+    in
+    with pkgs;
+    [
+      bpftrace
+      imagemagick
+      nirius
+      displaylink
+      opendeck
+    ];
 }
