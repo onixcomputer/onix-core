@@ -109,7 +109,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "thunderbolt-link",
         "llamacpp-server",
       ],
-      deploy.targetHost = "root@iroh-aspen1",
+      deploy.targetHost = "root@aspen1",
     },
 
     aspen2 = {
@@ -133,7 +133,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "thunderbolt-link",
         "llamacpp-worker",
       ],
-      deploy.targetHost = "root@iroh-aspen2",
+      deploy.targetHost = "root@aspen2",
     },
 
     # ========== Desktop ==========
