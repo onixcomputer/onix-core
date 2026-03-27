@@ -224,6 +224,7 @@ in
 
     gtk = {
       enable = true;
+      gtk4.theme = null; # GTK4 apps use gtk4.extraConfig, not GTK3 theme packages
       theme =
         pkgData.gtk.theme or {
           name = "Adwaita-dark";

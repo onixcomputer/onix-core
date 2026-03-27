@@ -23,6 +23,7 @@ in
     userDirs = {
       enable = true;
       createDirectories = true;
+      setSessionVariables = true; # keep legacy behavior (was default before 26.05)
       inherit (data.userDirs)
         documents
         download
