@@ -10,6 +10,9 @@
 
     # CJK (Chinese, Japanese, Korean) support - good to have
     noto-fonts-cjk-sans
+
+    # Broad Unicode symbol coverage (Supplemental Arrows, Mathematical Operators, etc.)
+    symbola
   ];
 
   # User-level fontconfig

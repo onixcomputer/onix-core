@@ -18,7 +18,6 @@ let self_modules = [
   "buildbot",
   "calibre-server",
   "clankers",
-  "clonadic",
   "cloud-hypervisor-vm",
   "cloudflare-tunnel",
   "grafana",

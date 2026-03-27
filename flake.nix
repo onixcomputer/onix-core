@@ -74,10 +74,6 @@
       url = "github:WeraPea/pinenote-nixos";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    clonadic = {
-      url = "github:brittonr/clonadic";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";

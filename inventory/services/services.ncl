@@ -104,7 +104,6 @@ let prom_rules = import "prometheus-rules.ncl" in
           ingress = {
             "vault.robitzs.ch" = "http://localhost:8222",
             "auth.robitzs.ch" = "http://localhost:9081",
-            "clonadic.blr.dev" = "http://localhost:8080",
             "buildbot.blr.dev" = "http://localhost:80",
             "matrix.onix.computer" = "http://localhost:80",
             "onix.computer" = "http://localhost:80",
@@ -372,11 +371,6 @@ let prom_rules = import "prometheus-rules.ncl" in
           },
         },
       },
-    },
-
-    clonadic = {
-      module = { name = "clonadic", input = "self" },
-      roles.default.machines.aspen1.settings.model = "qwen3:4b",
     },
 
     # ========== Web Services ==========

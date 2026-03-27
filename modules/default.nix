@@ -17,7 +17,6 @@ let
     "upmpdcli" = import ./upmpdcli;
     "nix-gc" = import ./nix-gc;
     "ollama" = import ./ollama;
-    "clonadic" = import ./clonadic;
     "clankers" = import ./clankers;
     "cloud-hypervisor-vm" = import ./cloud-hypervisor-vm;
     "iroh-ssh" = import ./iroh-ssh;
