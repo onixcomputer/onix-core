@@ -92,6 +92,7 @@ let { Machines, .. } = import "contracts.ncl" in
     aspen1 = {
       name = "aspen1",
       system = "x86_64-linux",
+      addresses.lan = "10.10.10.1",
       tags = [
         "hm-server",
         "minimal-docs",
@@ -114,6 +115,7 @@ let { Machines, .. } = import "contracts.ncl" in
     aspen2 = {
       name = "aspen2",
       system = "x86_64-linux",
+      addresses.lan = "10.10.10.2",
       tags = [
         "hm-server",
         "minimal-docs",

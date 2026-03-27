@@ -94,7 +94,7 @@ fun a =>
 
     time = {
       disabled = false,
-      time_format = "%R",
+      time_format = "%T",
       style = "bg:color_bg1 fg:color_fg0",
       format = "[  $time ]($style)",
     },
