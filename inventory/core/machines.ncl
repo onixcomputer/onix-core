@@ -130,7 +130,6 @@ let { Machines, .. } = import "contracts.ncl" in
         "remote-builders",
         "backup",
         "thunderbolt-link",
-        "llamacpp-worker",
       ],
       deploy.targetHost = "root@aspen2",
     },

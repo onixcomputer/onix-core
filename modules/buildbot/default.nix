@@ -70,7 +70,7 @@ in
           outputsPath = mkOption {
             type = nullOr str;
             default = null;
-            description = "Path to write store paths of successful builds (for update-prefetch)";
+            description = "Path to write store paths of successful builds";
           };
           postBuildSteps = mkOption {
             type = listOf anything;

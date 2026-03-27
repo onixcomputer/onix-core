@@ -16,7 +16,6 @@
     ./common/berkeley-mono-font.nix
     ./common/shared-nix.nix
     ./common/shared-users.nix
-    ./common/update-prefetch.nix
     ./common/wasm-lib.nix
   ];
 

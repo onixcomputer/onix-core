@@ -2,7 +2,7 @@
 #
 # flake-update: runs 2x/week (Mon+Thu 04:00 UTC), updates flake.lock,
 # pushes a branch, opens a PR. buildbot evaluates the PR, merge-when-green
-# merges it, update-prefetch deploys it. Full automation loop.
+# merges it. Full automation loop.
 { inputs, ... }:
 let
   pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;

@@ -14,19 +14,9 @@
 
   time.timeZone = "America/New_York";
 
-  # Kernel configuration for vLLM with large model support
-  # AMD Strix Halo (gfx1151) unified memory configuration
-  # See: https://dev.webonomic.nl/setting-up-unified-memory-for-strix-halo-correctly-on-ubuntu-25-04-or-25-10
+  # CPU-oriented memory configuration — no TTM overrides, so the GPU gets
+  # only its default firmware VRAM carveout and the rest stays with the CPU.
   boot = {
-    # For 128GB system: allocate ~124GB to GPU (leave 4GB for system)
-    # Calculation: 124 * 1024 * 1024 * 1024 / 4096 = 32505856 pages
-    # Note: Use ttm module (not amdttm) for consumer Ryzen APUs
-    kernelParams = [
-      "ttm.pages_limit=32505856"
-      "ttm.page_pool_size=32505856"
-    ];
-
-    # Ensure latest kernel for full memory visibility (6.16.9+ required)
     kernelPackages = pkgs.linuxPackages_latest;
   };
 
