@@ -19,6 +19,7 @@ CLAUDE.md
 # Pi agent state
 .pi/
 .agent/
+.openspec
 openspec/
 
 # Generated pre-commit config
@@ -31,6 +32,9 @@ openspec/
 *.swp
 *.swo
 *~
+
+# Cache
+.cache/
 
 # OS files
 .DS_Store
