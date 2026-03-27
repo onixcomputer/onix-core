@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  self,
   ...
 }:
 {
@@ -127,16 +128,11 @@
 
   programs.fuse.userAllowOther = true;
 
-  environment.systemPackages =
-    let
-      opendeck = pkgs.callPackage ../../pkgs/opendeck { };
-    in
-    with pkgs;
-    [
-      bpftrace
-      imagemagick
-      nirius
-      displaylink
-      opendeck
-    ];
+  environment.systemPackages = with pkgs; [
+    bpftrace
+    imagemagick
+    nirius
+    displaylink
+    self.packages.${pkgs.stdenv.hostPlatform.system}.opendeck
+  ];
 }

@@ -35,8 +35,28 @@ in
     horizon = pkgs.callPackage ../pkgs/horizon { horizon-src = self.inputs.horizon; };
     llamacpp-rocm-rpc = pkgs.callPackage ../pkgs/llamacpp-rocm-rpc { };
   }
-  // lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") {
-    abp = pkgs.callPackage ../pkgs/abp { };
+  // lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") (
+    let
+      rustPkgs = import self.inputs.nixpkgs {
+        inherit (pkgs) system;
+        overlays = [ (import self.inputs.rust-overlay) ];
+      };
+      nightlyToolchain = rustPkgs.rust-bin.nightly.latest.default.override {
+        extensions = [ "rust-src" ];
+      };
+    in
+    {
+      abp = pkgs.callPackage ../pkgs/abp { };
+      sone = pkgs.callPackage ../pkgs/sone { };
+      opendeck = pkgs.callPackage ../pkgs/opendeck { };
+      clankers = pkgs.callPackage ../pkgs/clankers {
+        rustc = nightlyToolchain;
+        cargo = nightlyToolchain;
+      };
+    }
+  )
+  // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+    rbw-pinentry = pkgs.callPackage ../pkgs/rbw-pinentry { };
   }
   // (
     let

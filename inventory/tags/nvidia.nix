@@ -39,7 +39,7 @@
       nvidiaSettings = true;
       # Stable driver recommended for RTX 50 series (Blackwell)
       # open = true is REQUIRED - proprietary modules don't support Blackwell
-      package = config.boot.kernelPackages.nvidiaPackages.stable;
+      package = config.boot.kernelPackages.nvidiaPackages.vulkan_beta;
     };
   };
 

@@ -126,6 +126,12 @@ in
       config.max_fps = 240
       config.front_end = 'WebGpu'
       config.webgpu_power_preference = 'HighPerformance'
+      for _, gpu in ipairs(wezterm.gui.enumerate_gpus()) do
+        if gpu.backend == 'Vulkan' then
+          config.webgpu_preferred_adapter = gpu
+          break
+        end
+      end
 
       -- Wayland
       config.enable_wayland = true

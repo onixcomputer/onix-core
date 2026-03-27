@@ -27,5 +27,10 @@ let
     "syncthing" = import ./syncthing;
   };
 
+  # NOTE: borgbackup-extras and matrix-synapse-cf live under modules/ but are
+  # plain NixOS modules loaded via extraModules in inventory/services/, not
+  # clan perInstance service definitions.  They are intentionally absent from
+  # module_definitions above.
+
 in
 module_definitions

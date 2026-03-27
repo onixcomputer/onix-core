@@ -273,21 +273,7 @@ in
       ++ lib.optionals (self'.packages ? abp) [ self'.packages.abp ]
       ++ [
         self.inputs.drift.packages.${pkgs.stdenv.hostPlatform.system}.default
-        (
-          let
-            rustPkgs = import self.inputs.nixpkgs {
-              inherit (pkgs) system;
-              overlays = [ (import self.inputs.rust-overlay) ];
-            };
-            nightlyToolchain = rustPkgs.rust-bin.nightly.latest.default.override {
-              extensions = [ "rust-src" ];
-            };
-          in
-          pkgs.callPackage ../pkgs/clankers {
-            rustc = nightlyToolchain;
-            cargo = nightlyToolchain;
-          }
-        )
+        self'.packages.clankers
       ]
       ++ [
         pkgs.nickel
