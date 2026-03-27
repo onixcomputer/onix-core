@@ -54,50 +54,13 @@ let
       ];
 
       installPhase = ''
-                    mkdir -p $out/bin
+        mkdir -p $out/bin
+        cp $src/analyze-var-ownership-rich.py $out/bin/vars
+        chmod +x $out/bin/vars
 
-                    # Copy the ownership analysis scripts and create unified command
-                    cp $src/analyze-var-ownership-rich.py $out/bin/vars
-                    cp $src/analyze-var-ownership.py $out/bin/vars-simple-impl.py
-
-                    # Make them executable
-                    chmod +x $out/bin/vars
-
-                    # Create unified vars command that handles --basic flag
-                    cat > $out/bin/vars-raw << 'EOF'
-        #!/usr/bin/env python3
-        import sys
-        import subprocess
-        import os
-        from pathlib import Path
-
-        # Check for --basic flag
-        use_basic = '--basic' in sys.argv
-        if use_basic:
-            sys.argv.remove('--basic')
-
-        # Get the directory where this script is located
-        script_dir = Path(__file__).parent
-
-        if use_basic:
-            # Use simple implementation
-            simple_script = script_dir / "vars-simple-impl.py"
-            subprocess.run([sys.executable, str(simple_script)] + sys.argv[1:])
-        else:
-            # Use rich implementation (default)
-            rich_script = script_dir / "vars-rich-impl.py"
-            subprocess.run([sys.executable, str(rich_script)] + sys.argv[1:])
-        EOF
-
-                    # Replace the vars command with the wrapper
-                    mv $out/bin/vars $out/bin/vars-rich-impl.py
-                    mv $out/bin/vars-raw $out/bin/vars
-                    chmod +x $out/bin/vars
-
-                    # Wrap with Python environment
-                    wrapProgram $out/bin/vars \
-                      --prefix PATH : ${pkgs.python3}/bin \
-                      --prefix PYTHONPATH : ${pkgs.python3Packages.rich}/${pkgs.python3.sitePackages}
+        wrapProgram $out/bin/vars \
+          --prefix PATH : ${pkgs.python3}/bin \
+          --prefix PYTHONPATH : ${pkgs.python3Packages.rich}/${pkgs.python3.sitePackages}
       '';
     };
 
@@ -115,50 +78,13 @@ let
       ];
 
       installPhase = ''
-                    mkdir -p $out/bin
+        mkdir -p $out/bin
+        cp $src/analyze-machines-rich.py $out/bin/tags
+        chmod +x $out/bin/tags
 
-                    # Copy the machine analysis scripts and create unified command
-                    cp $src/analyze-machines-rich.py $out/bin/tags
-                    cp $src/analyze-machines.py $out/bin/tags-simple-impl.py
-
-                    # Make them executable
-                    chmod +x $out/bin/tags
-
-                    # Create unified tags command that handles --basic flag
-                    cat > $out/bin/tags-raw << 'EOF'
-        #!/usr/bin/env python3
-        import sys
-        import subprocess
-        import os
-        from pathlib import Path
-
-        # Check for --basic flag
-        use_basic = '--basic' in sys.argv
-        if use_basic:
-            sys.argv.remove('--basic')
-
-        # Get the directory where this script is located
-        script_dir = Path(__file__).parent
-
-        if use_basic:
-            # Use simple implementation
-            simple_script = script_dir / "tags-simple-impl.py"
-            subprocess.run([sys.executable, str(simple_script)] + sys.argv[1:])
-        else:
-            # Use rich implementation (default)
-            rich_script = script_dir / "tags-rich-impl.py"
-            subprocess.run([sys.executable, str(rich_script)] + sys.argv[1:])
-        EOF
-
-                    # Replace the tags command with the wrapper
-                    mv $out/bin/tags $out/bin/tags-rich-impl.py
-                    mv $out/bin/tags-raw $out/bin/tags
-                    chmod +x $out/bin/tags
-
-                    # Wrap with Python environment
-                    wrapProgram $out/bin/tags \
-                      --prefix PATH : ${pkgs.python3}/bin \
-                      --prefix PYTHONPATH : ${pkgs.python3Packages.rich}/${pkgs.python3.sitePackages}
+        wrapProgram $out/bin/tags \
+          --prefix PATH : ${pkgs.python3}/bin \
+          --prefix PYTHONPATH : ${pkgs.python3Packages.rich}/${pkgs.python3.sitePackages}
       '';
     };
 

@@ -8,7 +8,6 @@ let
 in
 {
   imports = [
-    inputs.grub2-themes.nixosModules.default
     inputs.nixos-hardware.nixosModules.gpd-pocket-4
   ];
 

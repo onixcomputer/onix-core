@@ -1,4 +1,4 @@
-{ inputs, pkgs, ... }:
+{ pkgs, ... }:
 let
   grubWallpaper = pkgs.fetchurl {
     name = "nixos-grub-wallpaper.jpg";
@@ -7,7 +7,6 @@ let
   };
 in
 {
-  imports = [ inputs.grub2-themes.nixosModules.default ];
 
   networking.hostName = "britton-fw";
   # timeZone handled by automatic-timezoned via laptop tag

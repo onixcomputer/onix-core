@@ -36,7 +36,6 @@ let { Machines, .. } = import "contracts.ncl" in
         "homepage-server",
         "static-test",
         "static-demo",
-        "traefik-blr",
         "tailnet-brittonr",
         "openpgp",
         "password-manager",
@@ -198,8 +197,10 @@ let { Machines, .. } = import "contracts.ncl" in
       name = "utm-vm",
       system = "aarch64-linux",
       tags = [
+        "hm-server",
         "minimal-docs",
         "ssd-optimization",
+        "dev",
       ],
       deploy.targetHost = "root@iroh-utm-vm",
     },

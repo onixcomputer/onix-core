@@ -16,7 +16,7 @@
   networking = {
     hostName = "utm-vm";
     firewall.enable = true;
-    # Override all tag's NetworkManager default — a headless VM has no GUI
+    # Override nixos tag's NetworkManager default — a headless VM has no GUI
     # for NM and networkd is simpler for DHCP-only setups.
     useNetworkd = lib.mkForce true;
     networkmanager.enable = lib.mkForce false;
@@ -51,65 +51,25 @@
     };
   };
 
-  # Nix settings — act as a remote builder
-  nix = {
-    settings = {
-      experimental-features = [
-        "nix-command"
-        "flakes"
-      ];
-      trusted-users = [
-        "root"
-        "brittonr"
-      ];
-      max-jobs = lib.mkDefault 4;
-      auto-optimise-store = true;
-    };
-    gc = {
-      automatic = true;
-      dates = "weekly";
-      options = lib.mkForce "--delete-older-than 14d";
-    };
-  };
-
-  # Users
-  users.users.brittonr = {
-    isNormalUser = true;
-    extraGroups = [
-      "wheel"
-      "docker"
-    ];
-    openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILYzh3yIsSTOYXkJMFHBKzkakoDfonm3/RED5rqMqhIO britton@framework"
+  # Act as a remote builder — advertise capabilities
+  nix.settings = {
+    max-jobs = lib.mkDefault 4;
+    system-features = [
+      "kvm"
+      "nixos-test"
+      "big-parallel"
     ];
   };
-  users.users.root.openssh.authorizedKeys.keys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILYzh3yIsSTOYXkJMFHBKzkakoDfonm3/RED5rqMqhIO britton@framework"
-  ];
-  # SSH server — primary access method
-  services.openssh = {
-    enable = true;
-    settings = {
-      PermitRootLogin = "prohibit-password";
-      PasswordAuthentication = false;
-    };
-  };
 
-  # Useful packages for a build host
   environment.systemPackages = with pkgs; [
     btop
     fd
-    git
     htop
-    jq
-    ripgrep
     tmux
     tree
-    vim
   ];
 
   # envfs FUSE causes "Freezing execution" under QEMU aarch64 VMs.
-  # Mic92 hit the same issue. Disable it.
   services.envfs.enable = lib.mkForce false;
 
   # zram swap — no physical swap partition needed in a VM

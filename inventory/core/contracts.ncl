@@ -55,7 +55,6 @@ let service_tags = [
   "static-test",
   "syncthing",
   "tailnet-brittonr",
-  "traefik-blr",
   "traefik-desktop",
 ]
 in
