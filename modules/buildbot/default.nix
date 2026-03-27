@@ -195,6 +195,25 @@ in
             {
               imports = [ inputs.buildbot-nix.nixosModules.buildbot-master ];
 
+              assertions = [
+                {
+                  assertion = cfg.domain != "";
+                  message = "buildbot: 'domain' must be non-empty";
+                }
+                {
+                  assertion = cfg.workerCores >= 1;
+                  message = "buildbot: 'workerCores' must be >= 1, got ${toString cfg.workerCores}";
+                }
+                {
+                  assertion = cfg.evalWorkerCount >= 1;
+                  message = "buildbot: 'evalWorkerCount' must be >= 1, got ${toString cfg.evalWorkerCount}";
+                }
+                {
+                  assertion = cfg.evalMaxMemorySize >= 256;
+                  message = "buildbot: 'evalMaxMemorySize' must be >= 256 MB, got ${toString cfg.evalMaxMemorySize}";
+                }
+              ];
+
               clan.core.vars.generators = {
                 # Worker password + workers JSON generated together (avoids cross-generator deps)
                 buildbot-worker = {

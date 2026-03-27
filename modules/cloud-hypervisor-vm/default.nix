@@ -126,9 +126,15 @@ in
                   assertion = builtins.match "[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}" macAddress != null;
                   message = "cloud-hypervisor-vm: macAddress '${macAddress}' is not a valid MAC address";
                 }
+                # Split: separate assertions for each bound so failure message
+                # identifies which limit was violated.
                 {
-                  assertion = cpus >= 1 && cpus <= 256;
-                  message = "cloud-hypervisor-vm: cpus must be between 1 and 256, got ${toString cpus}";
+                  assertion = cpus >= 1;
+                  message = "cloud-hypervisor-vm: cpus must be >= 1, got ${toString cpus}";
+                }
+                {
+                  assertion = cpus <= 256;
+                  message = "cloud-hypervisor-vm: cpus must be <= 256, got ${toString cpus}";
                 }
                 {
                   assertion = memory >= 128;
@@ -217,6 +223,9 @@ in
                             fi
                             sleep 1
                           done
+
+                          # VM didn't exit within 25s — let systemd SIGKILL via TimeoutStopSec.
+                          echo "WARN: VM did not shut down within 25s, systemd will SIGKILL"
                         '';
                       };
                     in

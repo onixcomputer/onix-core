@@ -3,10 +3,18 @@ let
   inherit (lib) mkOption mkIf;
   inherit (lib.types)
     str
+    enum
     listOf
     port
     bool
     ;
+
+  validAccelerationTypes = [
+    "rocm"
+    "cuda"
+    "vulkan"
+    "cpu"
+  ];
 in
 {
   _class = "clan.service";
@@ -45,7 +53,7 @@ in
           };
 
           acceleration = mkOption {
-            type = str;
+            type = enum validAccelerationTypes;
             default = "rocm";
             description = "Acceleration type: 'rocm', 'cuda', 'vulkan', or 'cpu'";
           };
@@ -78,6 +86,13 @@ in
                   pkgs.ollama-cpu;
             in
             {
+              assertions = [
+                {
+                  assertion = !enableGPU || acceleration != "cpu";
+                  message = "ollama: enableGPU is true but acceleration is 'cpu' — set enableGPU = false or pick a GPU backend";
+                }
+              ];
+
               services.ollama = {
                 enable = true;
                 inherit host port;
@@ -108,14 +123,21 @@ in
                     modelList = lib.concatStringsSep " " models;
                   in
                   ''
-                    # Wait for Ollama to be ready
+                    # Wait for Ollama to be ready (bounded: 30 attempts × 2s = 60s)
+                    ready=false
                     for i in $(seq 1 30); do
                       if ${pkgs.curl}/bin/curl -s "http://${host}:${toString port}/api/tags" >/dev/null 2>&1; then
+                        ready=true
                         break
                       fi
                       echo "Waiting for Ollama to be ready... ($i/30)"
                       sleep 2
                     done
+
+                    if [ "$ready" = "false" ]; then
+                      echo "ERROR: Ollama not ready after 60s"
+                      exit 1
+                    fi
 
                     # Pull each model
                     for model in ${modelList}; do

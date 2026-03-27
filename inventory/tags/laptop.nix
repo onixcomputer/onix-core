@@ -31,8 +31,13 @@ in
             uid = toString config.users.users.${name}.uid;
           in
           ''
-            ${pkgs.procps}/bin/pkill -HUP -u ${uid} -x dbus-broker-lau 2>/dev/null || true
-            sleep 0.5
+            # Reload user dbus-broker (same pattern as desktop.nix).
+            for _i in 1 2 3 4; do
+              if ${pkgs.procps}/bin/pkill -HUP -u ${uid} -x dbus-broker-lau 2>/dev/null; then
+                break
+              fi
+              sleep 0.5
+            done
           '';
       }
     ) config.home-manager.users)

@@ -42,6 +42,13 @@ _: {
             inherit (settings) sshPort;
           in
           {
+            assertions = [
+              {
+                assertion = config.services.openssh.enable or false;
+                message = "iroh-ssh: requires openssh to be enabled (services.openssh.enable = true) — iroh-ssh forwards incoming connections to local sshd on port ${toString sshPort}";
+              }
+            ];
+
             # --- key generation via clan vars ---
             #
             # Generates a persistent ed25519 keypair for iroh-ssh.

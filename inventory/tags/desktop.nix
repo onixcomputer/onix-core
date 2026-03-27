@@ -32,9 +32,15 @@
         ''
           # Reload user dbus-broker so it re-reads service files from new
           # /run/current-system/sw store path. SIGHUP triggers config reload
-          # in dbus-broker-launch.
-          ${pkgs.procps}/bin/pkill -HUP -u ${uid} -x dbus-broker-lau 2>/dev/null || true
-          sleep 0.5
+          # in dbus-broker-launch. Wait up to 2s for the process to exist
+          # and accept the signal — on a cold boot dbus-broker may not be
+          # running yet (harmless, HM activation still succeeds).
+          for _i in 1 2 3 4; do
+            if ${pkgs.procps}/bin/pkill -HUP -u ${uid} -x dbus-broker-lau 2>/dev/null; then
+              break
+            fi
+            sleep 0.5
+          done
         '';
     }
   ) config.home-manager.users;

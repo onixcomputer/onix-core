@@ -243,15 +243,11 @@ in
 
               # Partition services by public/private, resolve subdomains once.
               publicSubdomainsList = lib.filter (x: x != null) (
-                lib.mapAttrsToList (
-                  name: svc: if svc.public or false then resolveSubdomain name svc else null
-                ) services
+                lib.mapAttrsToList (name: svc: if svc.public then resolveSubdomain name svc else null) services
               );
 
               privateSubdomainsList = lib.filter (x: x != null) (
-                (lib.mapAttrsToList (
-                  name: svc: if !(svc.public or false) then resolveSubdomain name svc else null
-                ) services)
+                (lib.mapAttrsToList (name: svc: if !svc.public then resolveSubdomain name svc else null) services)
                 ++ additionalSubdomains
                 ++ (lib.optional traefikDashboard "traefik")
               );
@@ -284,7 +280,7 @@ in
                   // (lib.optionalAttrs (svc.middlewares != [ ]) {
                     inherit (svc) middlewares;
                   })
-                  // (svc.extraRouterConfig or { })
+                  // svc.extraRouterConfig
                 )
               ) services;
 
@@ -355,7 +351,7 @@ in
                       }
                     ];
                   }
-                  // (svc.extraServiceConfig or { })
+                  // svc.extraServiceConfig
                 )
               ) services;
 
@@ -610,14 +606,21 @@ in
                           runtimeInputs = [ pkgs.tailscale ];
                           text = ''
                             echo "Waiting for Tailscale to be ready..."
+                            ready=false
                             for i in $(seq 1 30); do
                               if ${lib.getExe getTailscaleIP} >/dev/null 2>&1; then
                                 echo "Tailscale IP available: $(${lib.getExe getTailscaleIP})"
+                                ready=true
                                 break
                               fi
                               echo "Attempt $i/30..."
                               sleep 2
                             done
+
+                            if [ "$ready" = "false" ]; then
+                              echo "ERROR: Tailscale not ready after 60s"
+                              exit 1
+                            fi
                           '';
                         };
                       in

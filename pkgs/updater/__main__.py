@@ -11,6 +11,7 @@ Usage:
 """
 
 import argparse
+import functools
 import importlib.util
 import json
 import subprocess
@@ -128,15 +129,10 @@ def get_nix_system() -> str:
     return "x86_64-linux"
 
 
-_cached_system: str | None = None
-
-
+@functools.lru_cache(maxsize=1)
 def current_system() -> str:
     """Get and cache the current Nix system."""
-    global _cached_system  # noqa: PLW0603
-    if _cached_system is None:
-        _cached_system = get_nix_system()
-    return _cached_system
+    return get_nix_system()
 
 
 def package_available(pkg_name: str, flake_root: Path) -> bool:
