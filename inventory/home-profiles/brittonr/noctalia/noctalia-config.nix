@@ -194,7 +194,16 @@ in
     };
   };
 
-  # Install Onix color scheme where Noctalia discovers downloaded schemes.
-  # Generated from onix-dark.ncl / onix-light.ncl — single source of truth.
-  xdg.configFile."noctalia/colorschemes/Onix/Onix.json".text = onixColorscheme;
+  xdg.configFile = {
+    # Install Onix color scheme where Noctalia discovers downloaded schemes.
+    # Generated from onix-dark.ncl / onix-light.ncl — single source of truth.
+    "noctalia/colorschemes/Onix/Onix.json".text = onixColorscheme;
+
+    # Force-overwrite noctalia configs — the activation script converts these
+    # from symlinks to real files (Noctalia writes at runtime), so a stale
+    # .hm-bak from the prior activation blocks the next deploy.
+    "noctalia/colors.json".force = true;
+    "noctalia/settings.json".force = true;
+    "noctalia/plugins/wl-walls/settings.json".force = true;
+  };
 }
