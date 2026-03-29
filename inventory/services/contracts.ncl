@@ -55,6 +55,9 @@ in
 let all_modules = std.array.flatten [self_modules, clan_core_modules] in
 
 {
+  # Exported for Nix flake checks (module-registry-sync).
+  selfModules = self_modules,
+
   ModuleName =
     std.contract.from_validator (match {
       value if std.is_string value && std.array.elem value all_modules => 'Ok,

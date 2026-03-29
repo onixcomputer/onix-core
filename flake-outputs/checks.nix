@@ -28,6 +28,7 @@ let
   vmTests = (import ./_vm-tests.nix) { inherit pkgs lib; };
   wasmChecks = (import ./_wasm-checks.nix) innerArgs;
   tagChecks = (import ./_tag-checks.nix) innerArgs;
+  moduleChecks = (import ./_module-checks.nix) innerArgs;
   builderChecks = (import ./_builder-checks.nix) innerArgs;
   colorChecks = (import ./_color-checks.nix) { inherit pkgs; };
 
@@ -41,6 +42,7 @@ in
     // (vmTests.checks or { })
     // (wasmChecks.checks or { })
     // (tagChecks.checks or { })
+    // (moduleChecks.checks or { })
     // builderChecks
     // colorChecks.checks
     // packageChecks
