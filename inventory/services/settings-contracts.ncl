@@ -45,17 +45,25 @@ in
 
 # --- Field spec builders ---
 #
-# Each returns { name, check, label } describing one expected field.
+# Each returns { name, check, label, required } describing one expected field.
 # `check` is a predicate: value → bool.
 # `label` is the human-readable type shown in error messages.
-let bool_field = fun n => { name = n, check = std.is_bool, label = "Bool" } in
-let str_field = fun n => { name = n, check = std.is_string, label = "String" } in
-let num_field = fun n => { name = n, check = std.is_number, label = "Number" } in
-let port_field = fun n => { name = n, check = is_port, label = "Port (1-65535)" } in
-let arr_field = fun n => { name = n, check = std.is_array, label = "Array" } in
-let rec_field = fun n => { name = n, check = std.is_record, label = "Record" } in
-let nullable_str = fun n => { name = n, check = nullable std.is_string, label = "String or null" } in
-let nullable_rec = fun n => { name = n, check = nullable std.is_record, label = "Record or null" } in
+# `required` (default false) — when true, the field must be present.
+let mk_field = fun req n chk lbl => { name = n, check = chk, label = lbl, required = req } in
+let bool_field = fun n => mk_field false n std.is_bool "Bool" in
+let str_field = fun n => mk_field false n std.is_string "String" in
+let num_field = fun n => mk_field false n std.is_number "Number" in
+let port_field = fun n => mk_field false n is_port "Port (1-65535)" in
+let arr_field = fun n => mk_field false n std.is_array "Array" in
+let rec_field = fun n => mk_field false n std.is_record "Record" in
+let nullable_str = fun n => mk_field false n (nullable std.is_string) "String or null" in
+let nullable_rec = fun n => mk_field false n (nullable std.is_record) "Record or null" in
+
+# Required variants — field must be present in settings.
+let req_str = fun n => mk_field true n std.is_string "String" in
+let req_port = fun n => mk_field true n is_port "Port (1-65535)" in
+let req_num = fun n => mk_field true n std.is_number "Number" in
+let req_rec = fun n => mk_field true n std.is_record "Record" in
 
 # --- Registry: (module:role) → field specs ---
 let registry = {
@@ -69,8 +77,8 @@ let registry = {
   ],
 
   "tailscale-traefik:server" = [
-    str_field "domain",
-    str_field "email",
+    req_str "domain",
+    req_str "email",
     rec_field "services",
     bool_field "tailscaleSSH",
     bool_field "tailscaleExitNode",
@@ -110,7 +118,7 @@ let registry = {
   ],
 
   "prometheus:exporter" = [
-    str_field "exporterType",
+    req_str "exporterType",
     port_field "port",
     # enabledCollectors — optional, Array when present
     arr_field "enabledCollectors",
@@ -213,7 +221,7 @@ let registry = {
   ],
 
   "buildbot:master" = [
-    str_field "domain",
+    req_str "domain",
     bool_field "useHTTPS",
     arr_field "buildSystems",
     arr_field "admins",
@@ -221,7 +229,7 @@ let registry = {
     num_field "evalMaxMemorySize",
     str_field "outputsPath",
     str_field "ntfyUrl",
-    str_field "workerName",
+    req_str "workerName",
     num_field "workerCores",
     rec_field "github",
     rec_field "effectsSecrets",
@@ -268,14 +276,14 @@ let registry = {
   # ── Virtualization ──
 
   "cloud-hypervisor-vm:host" = [
-    str_field "guestMachine",
+    req_str "guestMachine",
     num_field "cpus",
     num_field "memory",
-    str_field "diskPath",
+    req_str "diskPath",
     str_field "diskSize",
-    str_field "tapInterface",
-    str_field "macAddress",
-    str_field "guestIp",
+    req_str "tapInterface",
+    req_str "macAddress",
+    req_str "guestIp",
   ],
 
   # ── Agent Infrastructure ──
@@ -310,13 +318,15 @@ in
   validate_fields = fun key path settings =>
     if std.record.has_field key registry then
       registry."%{key}"
-      |> std.array.flat_map (fun { name, check, label } =>
+      |> std.array.flat_map (fun { name, check, label, required } =>
         if std.record.has_field name settings then
           let val = settings."%{name}" in
           if check val then
             []
           else
             ["%{path}.settings.%{name}: expected %{label}, got %{type_name val}"]
+        else if required then
+          ["%{path}.settings.%{name}: required field missing (expected %{label})"]
         else
           []
       )
