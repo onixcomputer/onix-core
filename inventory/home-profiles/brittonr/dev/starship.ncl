@@ -7,10 +7,10 @@ fun a =>
   {
     format = "[](color_orange)$username[](bg:color_cyan fg:color_orange)$directory[](fg:color_cyan bg:color_gray)$git_branch$git_status[](fg:color_gray bg:color_green)$c$rust$golang$nodejs$php$python[](fg:color_green bg:color_bg3)$docker_context[](fg:color_bg3 bg:color_bg1)$time[ ](fg:color_bg1)\n$line_break$character",
 
-    palette = "onix-dark",
+    palette = a.paletteName,
 
     palettes = {
-      onix-dark = {
+      "%{a.paletteName}" = {
         color_orange = a.grayscale_white,
         color_cyan = a.grayscale_light,
         color_gray = a.grayscale_medium,

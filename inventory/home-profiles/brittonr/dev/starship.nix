@@ -24,6 +24,7 @@ let
     bg_highlight = c.bg_highlight.hex;
     fg = c.fg.hex;
     docker_accent = c.misc.docker_accent.hex;
+    paletteName = config.theme.active;
     inherit (config.shellConfig.starship) truncationLength cmdDurationMinTime;
   };
 in
