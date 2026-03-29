@@ -55,6 +55,7 @@ let port_field = fun n => { name = n, check = is_port, label = "Port (1-65535)" 
 let arr_field = fun n => { name = n, check = std.is_array, label = "Array" } in
 let rec_field = fun n => { name = n, check = std.is_record, label = "Record" } in
 let nullable_str = fun n => { name = n, check = nullable std.is_string, label = "String or null" } in
+let nullable_rec = fun n => { name = n, check = nullable std.is_record, label = "Record or null" } in
 
 # --- Registry: (module:role) → field specs ---
 let registry = {
@@ -76,6 +77,15 @@ let registry = {
     bool_field "traefikDashboard",
     bool_field "securityHeaders",
     bool_field "dnsPropagationCheck",
+    bool_field "sslRedirect",
+    num_field "ddclientInterval",
+    arr_field "dnsResolvers",
+    num_field "dnsPropagationDelay",
+    arr_field "additionalSubdomains",
+    port_field "tailscalePort",
+    rec_field "extraTraefikConfig",
+    rec_field "extraDynamicConfig",
+    nullable_str "tailscaleAuthKeyFile",
   ],
 
   "cloudflare-tunnel:default" = [
@@ -94,7 +104,9 @@ let registry = {
     str_field "discoveryMethod",
     port_field "port",
     str_field "retentionTime",
-    # globalConfig, additionalScrapeConfigs, rules — NixOS pass-through
+    rec_field "globalConfig",
+    arr_field "additionalScrapeConfigs",
+    arr_field "rules",
   ],
 
   "prometheus:exporter" = [
@@ -106,13 +118,19 @@ let registry = {
 
   "grafana:server" = [
     bool_field "enablePrometheusIntegration",
-    # settings — deep NixOS pass-through (grafana.ini sections)
     rec_field "settings",
+    nullable_str "prometheusUrl",
+    arr_field "additionalDatasources",
+    arr_field "dashboards",
+    arr_field "notifiers",
   ],
 
   "loki:server" = [
     bool_field "enablePromtail",
-    # configuration, promtailConfig — deep NixOS pass-through
+    rec_field "configuration",
+    rec_field "promtailConfig",
+    str_field "lokiUrl",
+    arr_field "additionalScrapeConfigs",
   ],
 
   # ── LLM & AI ──
@@ -124,16 +142,23 @@ let registry = {
     bool_field "enableGPU",
     arr_field "models",
     nullable_str "model",
+    nullable_str "containerImage",
+    rec_field "extraEnv",
+    bool_field "autoStart",
   ],
 
   "llm:client" = [
     str_field "clientType",
     arr_field "extraPackages",
+    nullable_str "defaultServer",
   ],
 
   "ollama:default" = [
     str_field "host",
+    port_field "port",
     arr_field "models",
+    bool_field "enableGPU",
+    str_field "acceleration",
   ],
 
   "llamacpp-rpc:worker" = [
@@ -145,11 +170,13 @@ let registry = {
   "llamacpp-rpc:server" = [
     str_field "host",
     port_field "port",
-    rec_field "model",
+    nullable_rec "model",
     arr_field "rpcWorkers",
     num_field "gpuLayers",
     bool_field "flashAttention",
     num_field "contextSize",
+    bool_field "noMmap",
+    arr_field "extraArgs",
   ],
 
   "llm-agents:default" = [
@@ -237,6 +264,37 @@ let registry = {
   ],
 
   # borgbackup:client — no settings
+
+  # ── Virtualization ──
+
+  "cloud-hypervisor-vm:host" = [
+    str_field "guestMachine",
+    num_field "cpus",
+    num_field "memory",
+    str_field "diskPath",
+    str_field "diskSize",
+    str_field "tapInterface",
+    str_field "macAddress",
+    str_field "guestIp",
+  ],
+
+  # ── Agent Infrastructure ──
+
+  "clankers:router" = [
+    str_field "listenAddr",
+    port_field "listenPort",
+    bool_field "useOAuth",
+    arr_field "proxyKeys",
+    arr_field "extraArgs",
+  ],
+
+  "clankers:daemon" = [
+    str_field "model",
+    bool_field "allowAll",
+    num_field "heartbeat",
+    nullable_str "apiBase",
+    arr_field "extraArgs",
+  ],
 }
 in
 
