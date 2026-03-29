@@ -13,7 +13,7 @@
 #   3. Contracts check module names, tags, machine refs — typos fail immediately
 #   4. Commit .ncl
 #
-let { Services, ValidateRefs, .. } = import "contracts.ncl" in
+let { Services, ValidateRefs, ValidateSettings, .. } = import "contracts.ncl" in
 let prom_rules = import "prometheus-rules.ncl" in
 
 {
@@ -586,4 +586,4 @@ let prom_rules = import "prometheus-rules.ncl" in
       },
     },
   },
-} | Services | ValidateRefs
+} | Services | ValidateRefs | ValidateSettings
