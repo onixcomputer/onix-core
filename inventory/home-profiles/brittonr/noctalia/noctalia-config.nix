@@ -176,8 +176,21 @@ in
       ditherLevels = 8;
       ditherScale = 1.0;
       useThemeColors = true;
-      bgColor = "#1d1f23";
-      fgColors = "#fb4934,#98971a,#fcb157,#83a598,#d3869b,#8ec07c,#e4d398";
+      bgColor = config.theme.data.bg.hex;
+      fgColors = builtins.concatStringsSep "," (
+        map (c: c.hex) (
+          with config.theme.data;
+          [
+            red
+            green
+            yellow
+            blue
+            purple
+            cyan
+            orange
+          ]
+        )
+      );
     };
   };
 
