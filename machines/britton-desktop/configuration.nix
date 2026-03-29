@@ -32,7 +32,13 @@
     ];
   };
 
+  # AMD 9950X3D: microcode updates + P-State active mode.
+  # active mode lets firmware handle preferred-core ranking across the
+  # asymmetric CCDs (3D V-Cache vs high-clock).
+  hardware.cpu.amd.updateMicrocode = true;
+
   boot = {
+    kernelParams = [ "amd_pstate=active" ];
     kernel.sysctl."kernel.perf_event_paranoid" = -1;
     kernelPackages = pkgs.linuxPackages_6_18;
     # DisplayLink support for Wayland (evdi module)
