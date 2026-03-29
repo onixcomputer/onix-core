@@ -6,6 +6,7 @@
 }:
 let
   k = config.keymap;
+  activeTheme = config.theme.active;
 
   # Runtime theme overlay: on launch, create a merged config dir that
   # includes both the immutable store themes and any mutable themes
@@ -51,7 +52,7 @@ in
       ];
 
       settings = {
-        theme = "onix-dark";
+        theme = activeTheme;
         editor = {
           cursor-shape = {
             insert = "bar";
@@ -176,9 +177,9 @@ in
         };
       };
 
-      themes.onix-dark = config.helixTheme.dark;
+      themes.${activeTheme} = config.helixTheme.dark;
 
-      themes.onix-light = config.helixTheme.light;
+      themes.${builtins.replaceStrings [ "-dark" ] [ "-light" ] activeTheme} = config.helixTheme.light;
     }).wrapper
   ];
 

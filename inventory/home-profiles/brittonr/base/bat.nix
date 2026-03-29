@@ -9,8 +9,9 @@ let
   wasm = import "${inputs.self}/lib/wasm.nix" {
     plugins = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.wasm-plugins;
   };
+  activeTheme = config.theme.active;
   batThemeXml = wasm.evalNickelFileWith ../../shared/lib/mk-bat-theme.ncl {
-    name = "Onix Dark";
+    inherit (config.theme.data) name;
     colors = {
       bg = c.bg.hex;
       fg = c.fg.hex;
@@ -32,12 +33,12 @@ in
     config = {
       pager = "never";
       style = "numbers,changes,header";
-      theme = "onix-dark";
+      theme = activeTheme;
     };
     themes = {
-      onix-dark = {
-        src = pkgs.writeTextDir "onix-dark.tmTheme" batThemeXml;
-        file = "onix-dark.tmTheme";
+      ${activeTheme} = {
+        src = pkgs.writeTextDir "${activeTheme}.tmTheme" batThemeXml;
+        file = "${activeTheme}.tmTheme";
       };
     };
   };
