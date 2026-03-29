@@ -33,7 +33,7 @@ config: {
         }
         {
           id = "Workspace";
-          hideUnoccupied = false;
+          hideUnoccupied = true;
           labelMode = "index";
           characterCount = 2;
           colorizeIcons = false;

@@ -138,7 +138,6 @@ let
                               }
 
                               layout {
-                                  empty-workspace-above-first
                                   gaps ${toString config.layout.gaps}
                                   center-focused-column "never"
                                   focus-column-tile "spatial"
