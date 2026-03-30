@@ -124,23 +124,22 @@ in
                 package = routerPkg;
                 proxyAddr = "${settings.listenAddr}:${toString settings.listenPort}";
                 openFirewall = true;
-                inherit (settings) proxyKeys;
-                extraArgs =
-                  settings.extraArgs
-                  ++ lib.optionals useOAuth [
-                    "--auth-file"
-                    config.clan.core.vars.generators.${generatorName}.files.auth-json.path
-                  ];
+                inherit (settings) proxyKeys extraArgs;
               }
               // lib.optionalAttrs (!useOAuth) {
                 environmentFile = config.clan.core.vars.generators.${generatorName}.files.env-file.path;
+              };
+
+              # Point the router at the deployed auth.json via environment.
+              systemd.services.clanker-router.environment = mkIf useOAuth {
+                AUTH_FILE = config.clan.core.vars.generators.${generatorName}.files.auth-json.path;
               };
 
               # Exit code 1 = "no providers configured" — treat as clean exit
               # so switch-to-configuration doesn't report a failed unit.
               # The user runs `clanker-router auth login` / `auth set-key`
               # then `systemctl restart clanker-router`.
-              systemd.services.clanker-router.serviceConfig.SuccessExitStatus = "1";
+              systemd.services.clanker-router.serviceConfig.SuccessExitStatus = "1 2";
 
               # Make clanker-router CLI available for `auth login`.
               environment.systemPackages = [ routerPkg ];
