@@ -308,6 +308,7 @@ in
               exporterConfig = builtins.removeAttrs settings [
                 "exporterType"
                 "port"
+                "enabledCollectors"
               ];
 
               # Apply port if specified

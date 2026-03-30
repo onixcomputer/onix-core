@@ -1,19 +1,40 @@
-# Service settings validation contracts.
+# Service settings validation contracts — auto-derived from module schemas.
 #
-# Maps (module-name, role-name) pairs to field specs that validate
-# settings records at `ncl export` time. Catches typos and type
-# mismatches before they reach the slow NixOS evaluation.
+# Each module's schema.ncl defines field names, types, defaults, and
+# descriptions. This file imports every schema and generates the
+# validator registry via mk_validator from lib/schema-contracts.ncl.
 #
-# Open-record strategy: only listed fields are checked. Unlisted
-# fields pass through for NixOS modules to validate at build time.
-# This means a typo on a non-contracted field won't be caught here,
-# but the most common settings are covered.
-#
-# Maintenance: when a module adds or renames a setting that instances
-# in services.ncl actually use, update the matching registry entry.
-#
-# Registry key format: "module-name:role-name"
-# Each value is an array of { name, check, label } field specs.
+# Adding a field to a module's schema.ncl automatically makes it
+# validated here — no manual sync step.
+let sc = import "../../lib/schema-contracts.ncl" in
+
+# --- Module schema imports ---
+let schemas = {
+  "buildbot" = import "../../modules/buildbot/schema.ncl",
+  "calibre-server" = import "../../modules/calibre-server/schema.ncl",
+  "clankers" = import "../../modules/clankers/schema.ncl",
+  "cloud-hypervisor-vm" = import "../../modules/cloud-hypervisor-vm/schema.ncl",
+  "cloudflare-tunnel" = import "../../modules/cloudflare-tunnel/schema.ncl",
+  "grafana" = import "../../modules/grafana/schema.ncl",
+  "harmonia" = import "../../modules/harmonia/schema.ncl",
+  "home-manager-profiles" = import "../../modules/home-manager-profiles/schema.ncl",
+  "homepage-dashboard" = import "../../modules/homepage-dashboard/schema.ncl",
+  "iroh-ssh" = import "../../modules/iroh-ssh/schema.ncl",
+  "llamacpp-rpc" = import "../../modules/llamacpp-rpc/schema.ncl",
+  "llm-agents" = import "../../modules/llm-agents/schema.ncl",
+  "llm" = import "../../modules/llm/schema.ncl",
+  "loki" = import "../../modules/loki/schema.ncl",
+  "nix-gc" = import "../../modules/nix-gc/schema.ncl",
+  "ollama" = import "../../modules/ollama/schema.ncl",
+  "prometheus" = import "../../modules/prometheus/schema.ncl",
+  "static-server" = import "../../modules/static-server/schema.ncl",
+  "syncthing" = import "../../modules/syncthing/schema.ncl",
+  "tailscale-traefik" = import "../../modules/tailscale-traefik/schema.ncl",
+  "tailscale" = import "../../modules/tailscale/schema.ncl",
+  "upmpdcli" = import "../../modules/upmpdcli/schema.ncl",
+  "vaultwarden" = import "../../modules/vaultwarden/schema.ncl",
+}
+in
 
 # --- Type name helper (for error messages) ---
 let type_name = fun val =>
@@ -33,277 +54,21 @@ let type_name = fun val =>
     "Unknown"
 in
 
-# --- Common type predicates ---
-let is_port = fun val =>
-  std.is_number val && val >= 1 && val <= 65535
-in
-
-let nullable = fun inner_check =>
-  fun val =>
-    val == null || inner_check val
-in
-
-# --- Field spec builders ---
-#
-# Each returns { name, check, label, required } describing one expected field.
-# `check` is a predicate: value → bool.
-# `label` is the human-readable type shown in error messages.
-# `required` (default false) — when true, the field must be present.
-let mk_field = fun req n chk lbl => { name = n, check = chk, label = lbl, required = req } in
-let bool_field = fun n => mk_field false n std.is_bool "Bool" in
-let str_field = fun n => mk_field false n std.is_string "String" in
-let num_field = fun n => mk_field false n std.is_number "Number" in
-let port_field = fun n => mk_field false n is_port "Port (1-65535)" in
-let arr_field = fun n => mk_field false n std.is_array "Array" in
-let rec_field = fun n => mk_field false n std.is_record "Record" in
-let nullable_str = fun n => mk_field false n (nullable std.is_string) "String or null" in
-let nullable_rec = fun n => mk_field false n (nullable std.is_record) "Record or null" in
-
-# Required variants — field must be present in settings.
-let req_str = fun n => mk_field true n std.is_string "String" in
-let req_port = fun n => mk_field true n is_port "Port (1-65535)" in
-let req_num = fun n => mk_field true n std.is_number "Number" in
-let req_rec = fun n => mk_field true n std.is_record "Record" in
-
-# --- Registry: (module:role) → field specs ---
-let registry = {
-
-  # ── Networking ──
-
-  "tailscale:peer" = [
-    bool_field "enableSSH",
-    bool_field "exitNode",
-    bool_field "enableHostAliases",
-  ],
-
-  "tailscale-traefik:server" = [
-    req_str "domain",
-    req_str "email",
-    rec_field "services",
-    bool_field "tailscaleSSH",
-    bool_field "tailscaleExitNode",
-    bool_field "traefikDashboard",
-    bool_field "securityHeaders",
-    bool_field "dnsPropagationCheck",
-    bool_field "sslRedirect",
-    num_field "ddclientInterval",
-    arr_field "dnsResolvers",
-    num_field "dnsPropagationDelay",
-    arr_field "additionalSubdomains",
-    port_field "tailscalePort",
-    rec_field "extraTraefikConfig",
-    rec_field "extraDynamicConfig",
-    nullable_str "tailscaleAuthKeyFile",
-  ],
-
-  "cloudflare-tunnel:default" = [
-    str_field "tunnelName",
-    rec_field "ingress",
-  ],
-
-  "iroh-ssh:peer" = [
-    port_field "sshPort",
-  ],
-
-  # ── Monitoring ──
-
-  "prometheus:server" = [
-    bool_field "enableAutoDiscovery",
-    str_field "discoveryMethod",
-    port_field "port",
-    str_field "retentionTime",
-    rec_field "globalConfig",
-    arr_field "additionalScrapeConfigs",
-    arr_field "rules",
-  ],
-
-  "prometheus:exporter" = [
-    req_str "exporterType",
-    port_field "port",
-    # enabledCollectors — optional, Array when present
-    arr_field "enabledCollectors",
-  ],
-
-  "grafana:server" = [
-    bool_field "enablePrometheusIntegration",
-    rec_field "settings",
-    nullable_str "prometheusUrl",
-    arr_field "additionalDatasources",
-    arr_field "dashboards",
-    arr_field "notifiers",
-  ],
-
-  "loki:server" = [
-    bool_field "enablePromtail",
-    rec_field "configuration",
-    rec_field "promtailConfig",
-    str_field "lokiUrl",
-    arr_field "additionalScrapeConfigs",
-  ],
-
-  # ── LLM & AI ──
-
-  "llm:server" = [
-    str_field "serviceType",
-    port_field "port",
-    str_field "host",
-    bool_field "enableGPU",
-    arr_field "models",
-    nullable_str "model",
-    nullable_str "containerImage",
-    rec_field "extraEnv",
-    bool_field "autoStart",
-  ],
-
-  "llm:client" = [
-    str_field "clientType",
-    arr_field "extraPackages",
-    nullable_str "defaultServer",
-  ],
-
-  "ollama:default" = [
-    str_field "host",
-    port_field "port",
-    arr_field "models",
-    bool_field "enableGPU",
-    str_field "acceleration",
-  ],
-
-  "llamacpp-rpc:worker" = [
-    str_field "bindAddress",
-    port_field "port",
-    bool_field "enableCache",
-  ],
-
-  "llamacpp-rpc:server" = [
-    str_field "host",
-    port_field "port",
-    nullable_rec "model",
-    arr_field "rpcWorkers",
-    num_field "gpuLayers",
-    bool_field "flashAttention",
-    num_field "contextSize",
-    bool_field "noMmap",
-    arr_field "extraArgs",
-  ],
-
-  "llm-agents:default" = [
-    arr_field "packages",
-  ],
-
-  # ── Web Services ──
-
-  "homepage-dashboard:server" = [
-    port_field "listenPort",
-    str_field "allowedHosts",
-    # inner settings, widgets — NixOS pass-through
-    rec_field "settings",
-    arr_field "widgets",
-  ],
-
-  "static-server:server" = [
-    port_field "port",
-    str_field "directory",
-    bool_field "createTestPage",
-    str_field "testPageTitle",
-    str_field "serviceSuffix",
-    bool_field "isPublic",
-    str_field "domain",
-    str_field "subdomain",
-    str_field "testPageContent",
-  ],
-
-  # vaultwarden:server — instances have no settings, skip
-
-  "harmonia:server" = [
-    port_field "port",
-    num_field "priority",
-  ],
-
-  "buildbot:master" = [
-    req_str "domain",
-    bool_field "useHTTPS",
-    arr_field "buildSystems",
-    arr_field "admins",
-    num_field "evalWorkerCount",
-    num_field "evalMaxMemorySize",
-    str_field "outputsPath",
-    str_field "ntfyUrl",
-    req_str "workerName",
-    num_field "workerCores",
-    rec_field "github",
-    rec_field "effectsSecrets",
-  ],
-
-  "buildbot:worker" = [
-    num_field "workers",
-  ],
-
-  "calibre-server:server" = [
-    arr_field "libraries",
-    str_field "host",
-    port_field "port",
-    str_field "user",
-    str_field "group",
-  ],
-
-  # ── Infrastructure ──
-
-  "nix-gc:default" = [
-    num_field "retentionDays",
-    str_field "schedule",
-    bool_field "optimizeStore",
-    bool_field "autoOptimise",
-  ],
-
-  "syncthing:peer" = [
-    str_field "user",
-    str_field "dataDir",
-    bool_field "openFirewall",
-  ],
-
-  "home-manager-profiles:default" = [
-    str_field "username",
-    arr_field "profiles",
-  ],
-
-  "borgbackup:server" = [
-    str_field "directory",
-  ],
-
-  # borgbackup:client — no settings
-
-  # ── Virtualization ──
-
-  "cloud-hypervisor-vm:host" = [
-    req_str "guestMachine",
-    num_field "cpus",
-    num_field "memory",
-    req_str "diskPath",
-    str_field "diskSize",
-    req_str "tapInterface",
-    req_str "macAddress",
-    req_str "guestIp",
-  ],
-
-  # ── Agent Infrastructure ──
-
-  "clankers:router" = [
-    str_field "listenAddr",
-    port_field "listenPort",
-    bool_field "useOAuth",
-    arr_field "proxyKeys",
-    arr_field "extraArgs",
-  ],
-
-  "clankers:daemon" = [
-    str_field "model",
-    bool_field "allowAll",
-    num_field "heartbeat",
-    nullable_str "apiBase",
-    arr_field "extraArgs",
-  ],
-}
+# --- Build the registry from schemas ---
+let registry =
+  std.record.to_array schemas
+  |> std.array.flat_map (fun { field = mod_name, value = mod_schema } =>
+    std.record.to_array mod_schema
+    |> std.array.map (fun { field = role_name, value = role_schema } =>
+      {
+        field = "%{mod_name}:%{role_name}",
+        value = sc.mk_validator role_schema,
+      }
+    )
+  )
+  |> std.array.fold_right
+    (fun entry acc => std.record.insert entry.field entry.value acc)
+    {}
 in
 
 {

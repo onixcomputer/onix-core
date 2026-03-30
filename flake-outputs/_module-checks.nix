@@ -31,6 +31,11 @@ let
 
   inRegistryNoDisk = lib.subtractLists diskModules registeredModules;
   onDiskNoRegistry = lib.subtractLists registeredModules diskModules;
+
+  # Modules missing schema.ncl files
+  modulesWithoutSchema = builtins.filter (
+    name: !builtins.pathExists (self + "/modules/${name}/schema.ncl")
+  ) diskModules;
 in
 {
   checks = {
@@ -45,10 +50,18 @@ in
         echo "  ${lib.concatStringsSep " " onDiskNoRegistry}"
         echo ""
       ''}
-      ${lib.optionalString (inRegistryNoDisk != [ ] || onDiskNoRegistry != [ ]) ''
-        echo "Fix: update self_modules in inventory/services/contracts.ncl"
-        exit 1
+      ${lib.optionalString (modulesWithoutSchema != [ ]) ''
+        echo "Modules missing schema.ncl (needed for settings contract validation):"
+        echo "  ${lib.concatStringsSep " " modulesWithoutSchema}"
+        echo ""
       ''}
+      ${lib.optionalString
+        (inRegistryNoDisk != [ ] || onDiskNoRegistry != [ ] || modulesWithoutSchema != [ ])
+        ''
+          echo "Fix: update contracts.ncl and/or add schema.ncl to each module"
+          exit 1
+        ''
+      }
       touch $out
     '';
   };
