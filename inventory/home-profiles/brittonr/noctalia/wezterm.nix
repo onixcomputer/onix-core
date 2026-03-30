@@ -186,7 +186,16 @@ in
 
         -- Copy / paste
         { key = '${weztermKey ta.copy}', mods = '${weztermMods}', action = act.CopyTo 'Clipboard' },
-        { key = '${weztermKey ta.paste}', mods = '${weztermMods}', action = act.PasteFrom 'Clipboard' },
+        { key = '${weztermKey ta.paste}', mods = '${weztermMods}', action = wezterm.action_callback(function(window, pane)
+          local handle = io.popen('wl-paste --no-newline 2>/dev/null')
+          if handle then
+            local clipboard = handle:read('*a')
+            handle:close()
+            if clipboard and #clipboard > 0 then
+              pane:paste(clipboard)
+            end
+          end
+        end) },
 
         -- Tabs
         { key = '${weztermKey ta.newTab}', mods = '${weztermMods}', action = act.SpawnTab 'CurrentPaneDomain' },
