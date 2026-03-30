@@ -1,0 +1,22 @@
+{
+  server = {
+    mpdHost = { type = "string", default = "localhost", description = "MPD host address" },
+    mpdPort = { type = "port", default = 6600, description = "MPD port" },
+    mpdPassword = { type = "nullable_string", default = null, description = "MPD password" },
+    friendlyName = { type = "string", default = "upmpdcli @ %h", description = "UPnP friendly name" },
+    upnpPort = { type = "number", default = 0, description = "UPnP port (0 = auto)" },
+    upnpLogLevel = { type = "number", default = 2, description = "UPnP log verbosity" },
+    enableMediaServer = { type = "bool", default = true, description = "Enable media server for browsing" },
+    mediaServerPort = { type = "port", default = 9790, description = "Media server port" },
+    tidalEnable = { type = "bool", default = true, description = "Enable Tidal streaming" },
+    tidalQuality = { type = "enum", values = ["LOW", "HIGH", "LOSSLESS", "HI_RES_LOSSLESS"], default = "HI_RES_LOSSLESS", description = "Tidal streaming quality" },
+    tidalLoginMethod = { type = "enum", values = ["OAUTH", "PKCE"], default = "OAUTH", description = "Tidal authentication method" },
+    tidalAutostart = { type = "bool", default = true, description = "Auto-start Tidal service" },
+    qobuzEnable = { type = "bool", default = false, description = "Enable Qobuz streaming" },
+    subsonicEnable = { type = "bool", default = false, description = "Enable Subsonic streaming" },
+    cacheDir = { type = "string", default = "/var/cache/upmpdcli", description = "Cache directory path" },
+    openhomeEnable = { type = "bool", default = true, description = "Enable OpenHome support" },
+    ohproductRoom = { type = "string", default = "Living Room", description = "OpenHome product room name" },
+    extraConfig = { type = "string", default = "", description = "Extra configuration lines" },
+  },
+}

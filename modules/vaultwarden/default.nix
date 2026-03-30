@@ -1,16 +1,8 @@
+{ schema }:
 { lib, ... }:
 let
-  inherit (lib)
-    mkOption
-    mkDefault
-    mkIf
-    ;
-  inherit (lib.types)
-    str
-    nullOr
-    attrsOf
-    anything
-    ;
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
+  inherit (lib) mkDefault mkIf;
 in
 {
   _class = "clan.service";
@@ -22,40 +14,29 @@ in
   roles = {
     server = {
       description = "Vaultwarden password manager server";
-      interface = {
-        # Freeform module - any attribute becomes a Vaultwarden environment variable
-        freeformType = attrsOf anything;
-
-        options = {
-          # Optional secret management
-          adminTokenFile = mkOption {
-            type = nullOr str;
-            default = null;
-            description = "Path to file containing the admin token";
-          };
-        };
-      };
+      interface = mkSettings.mkInterface schema.server;
 
       perInstance =
         { instanceName, extendSettings, ... }:
         {
           nixosModule =
-            { config, pkgs, ... }:
+            {
+              config,
+              pkgs,
+              lib,
+              ...
+            }:
             let
-              localSettings = extendSettings {
-                adminTokenFile =
-                  mkDefault
-                    config.clan.core.vars.generators."vaultwarden-${instanceName}".files.admin_token.path;
-
-                # Minimal defaults
-                DOMAIN = mkDefault "https://vaultwarden.localhost";
-                ROCKET_PORT = mkDefault 8222;
-                WEBSOCKET_ENABLED = mkDefault true;
-                WEBSOCKET_PORT = mkDefault 3012;
-                SIGNUPS_ALLOWED = mkDefault false;
-                INVITATIONS_ALLOWED = mkDefault true;
-                SHOW_PASSWORD_HINT = mkDefault false;
-              };
+              ms = import ../../lib/mk-settings.nix { inherit lib; };
+              localSettings = extendSettings (
+                (ms.mkDefaults schema.server)
+                // {
+                  # Config-dependent default — generated secret path
+                  adminTokenFile =
+                    mkDefault
+                      config.clan.core.vars.generators."vaultwarden-${instanceName}".files.admin_token.path;
+                }
+              );
 
               # Extract known options from freeform settings
               inherit (localSettings) adminTokenFile;
@@ -66,13 +47,11 @@ in
               ];
             in
             {
-              # Main Vaultwarden service
               services.vaultwarden = {
                 enable = true;
                 config = environment;
               };
 
-              # Set admin token if provided
               systemd.services.vaultwarden = mkIf (adminTokenFile != null) {
                 serviceConfig = {
                   LoadCredential = [ "admin_token:${adminTokenFile}" ];
@@ -80,7 +59,6 @@ in
                 environment.ADMIN_TOKEN_FILE = "%d/admin_token";
               };
 
-              # Instance-specific admin token generator
               clan.core.vars.generators."vaultwarden-${instanceName}" = {
                 files.admin_token = { };
                 runtimeInputs = with pkgs; [
@@ -92,7 +70,6 @@ in
                 '';
               };
 
-              # Open firewall ports if configured
               networking.firewall.allowedTCPPorts =
                 lib.optional (environment ? ROCKET_PORT) environment.ROCKET_PORT
                 ++ lib.optional (environment ? WEBSOCKET_PORT) environment.WEBSOCKET_PORT;
@@ -100,5 +77,4 @@ in
         };
     };
   };
-
 }

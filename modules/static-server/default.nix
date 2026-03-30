@@ -1,7 +1,8 @@
+{ schema }:
 { lib, ... }:
 let
-  inherit (lib) mkDefault mkIf;
-  inherit (lib.types) attrsOf anything;
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
+  inherit (lib) mkIf;
 in
 {
   _class = "clan.service";
@@ -13,29 +14,21 @@ in
   roles = {
     server = {
       description = "Static file server that serves web content and assets";
-      interface = {
-        # Freeform module - any attribute becomes a static-server setting
-        freeformType = attrsOf anything;
-      };
+      interface = mkSettings.mkInterface schema.server;
 
       perInstance =
         { extendSettings, ... }:
         {
           nixosModule =
-            { config, pkgs, ... }:
+            {
+              config,
+              pkgs,
+              lib,
+              ...
+            }:
             let
-              cfg = extendSettings {
-                # Defaults
-                port = mkDefault 8888;
-                directory = mkDefault "/var/www/static";
-                createTestPage = mkDefault true;
-                testPageTitle = mkDefault "Static Server Test";
-                testPageContent = mkDefault "";
-                serviceSuffix = mkDefault ""; # Used to create unique service names
-                isPublic = mkDefault false; # Whether this service is publicly accessible
-                domain = mkDefault ""; # Domain name if available
-                subdomain = mkDefault ""; # Subdomain for this service
-              };
+              ms = import ../../lib/mk-settings.nix { inherit lib; };
+              cfg = extendSettings (ms.mkDefaults schema.server);
               serviceName =
                 if cfg.serviceSuffix != "" then "static-server-${cfg.serviceSuffix}" else "static-server";
             in
@@ -93,20 +86,6 @@ in
                               border-radius: 3px;
                               font-family: 'Courier New', monospace;
                           }
-                          .warning {
-                              background: #fff5f5;
-                              border-left: 4px solid #f56565;
-                              padding: 20px;
-                              border-radius: 8px;
-                              margin: 20px 0;
-                          }
-                          .debug-info {
-                              background: #f0f0f0;
-                              padding: 15px;
-                              border-radius: 8px;
-                              margin: 20px 0;
-                              font-family: monospace;
-                          }
                           .access-public {
                               color: #d73502;
                               font-weight: bold;
@@ -157,7 +136,6 @@ in
                   User = "nobody";
                   Group = "nogroup";
 
-                  # Security hardening
                   PrivateTmp = true;
                   ProtectHome = true;
                   ProtectSystem = "strict";
@@ -166,20 +144,16 @@ in
                 };
               };
 
-              # Ensure the directory exists with correct permissions
               systemd.tmpfiles.rules = [
                 "d ${cfg.directory} 0755 nobody nogroup -"
               ];
 
-              # Open firewall port if needed
               networking.firewall.allowedTCPPorts = [ cfg.port ];
-
             };
         };
     };
   };
 
-  # No perMachine configuration needed for static-server
   perMachine = _: {
     nixosModule = _: { };
   };

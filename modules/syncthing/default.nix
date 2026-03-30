@@ -1,7 +1,7 @@
+{ schema }:
 { lib, ... }:
 let
-  inherit (lib) mkDefault;
-  inherit (lib.types) attrsOf anything;
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
 in
 {
   _class = "clan.service";
@@ -13,25 +13,16 @@ in
   roles = {
     peer = {
       description = "Syncthing peer that syncs folders with other peers";
-      interface = {
-        freeformType = attrsOf anything;
-      };
+      interface = mkSettings.mkInterface schema.peer;
 
       perInstance =
         { extendSettings, ... }:
         {
           nixosModule =
-            _:
+            { lib, ... }:
             let
-              cfg = extendSettings {
-                user = mkDefault "brittonr";
-                group = mkDefault "users";
-                dataDir = mkDefault "/home/brittonr";
-                guiPort = mkDefault 8384;
-                listenPort = mkDefault 22000;
-                openFirewall = mkDefault true;
-                guiAddress = mkDefault "127.0.0.1:8384";
-              };
+              ms = import ../../lib/mk-settings.nix { inherit lib; };
+              cfg = extendSettings (ms.mkDefaults schema.peer);
             in
             {
               services.syncthing = {
@@ -51,9 +42,6 @@ in
                   21027 # discovery
                 ];
               };
-
-              # Syncthing Web UI — only on localhost by default
-              # Access remotely via SSH tunnel: ssh -L 8384:localhost:8384 machine
             };
         };
     };

@@ -1,4 +1,9 @@
-_: {
+{ schema }:
+{ lib, ... }:
+let
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
+in
+{
   _class = "clan.service";
 
   manifest = {
@@ -13,39 +18,7 @@ _: {
 
   roles.default = {
     description = "Machine with automatic Nix garbage collection enabled";
-    interface =
-      { lib, ... }:
-      {
-        freeformType = lib.types.attrsOf lib.types.anything;
-
-        options = {
-          retentionDays = lib.mkOption {
-            type = lib.types.int;
-            default = 30;
-            description = "Delete generations older than this many days";
-          };
-          schedule = lib.mkOption {
-            type = lib.types.str;
-            default = "weekly";
-            description = "When to run GC (systemd calendar format)";
-          };
-          optimizeStore = lib.mkOption {
-            type = lib.types.bool;
-            default = true;
-            description = "Enable automatic store optimization (hard-link deduplication)";
-          };
-          autoOptimise = lib.mkOption {
-            type = lib.types.bool;
-            default = true;
-            description = "Optimize during each build (slight overhead, continuous benefit)";
-          };
-          optimizeSchedule = lib.mkOption {
-            type = lib.types.listOf lib.types.str;
-            default = [ "04:00" ];
-            description = "When to run full store optimization";
-          };
-        };
-      };
+    interface = mkSettings.mkInterface schema.default;
 
     perInstance =
       { extendSettings, ... }:
@@ -53,13 +26,9 @@ _: {
         nixosModule =
           { lib, ... }:
           let
-            cfg = extendSettings {
-              retentionDays = lib.mkDefault 30;
-              schedule = lib.mkDefault "weekly";
-              optimizeStore = lib.mkDefault true;
-              autoOptimise = lib.mkDefault true;
-              optimizeSchedule = lib.mkDefault [ "04:00" ];
-            };
+            # Re-import with the NixOS module's lib for correct mkDefault wiring.
+            ms = import ../../lib/mk-settings.nix { inherit lib; };
+            cfg = extendSettings (ms.mkDefaults schema.default);
           in
           {
             nix = {

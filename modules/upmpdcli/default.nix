@@ -1,7 +1,7 @@
+{ schema }:
 { lib, ... }:
 let
-  inherit (lib) mkDefault;
-  inherit (lib.types) attrsOf anything;
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
 in
 {
   _class = "clan.service";
@@ -32,21 +32,20 @@ in
   roles = {
     server = {
       description = "UPnP Media Renderer frontend for MPD";
-      interface = {
-        # Freeform module - any attribute becomes a upmpdcli setting
-        freeformType = attrsOf anything;
-
-        options = {
-          # Empty options, using freeform for everything
-        };
-      };
+      interface = mkSettings.mkInterface schema.server;
 
       perInstance =
         { extendSettings, ... }:
         {
           nixosModule =
-            { pkgs, config, ... }:
+            {
+              pkgs,
+              config,
+              lib,
+              ...
+            }:
             let
+              inherit (lib) mkDefault;
               # Build dependencies
               libnpupnp = pkgs.callPackage ./libnpupnp.nix { };
               libupnpp = pkgs.callPackage ./libupnpp.nix { inherit libnpupnp; };
@@ -121,46 +120,8 @@ in
                 };
               };
 
-              localSettings = extendSettings {
-                # Basic settings
-
-                # MPD connection settings
-                mpdHost = mkDefault "localhost";
-                mpdPort = mkDefault 6600;
-                mpdPassword = mkDefault null;
-
-                # UPnP settings
-                friendlyName = mkDefault "upmpdcli @ %h";
-                upnpPort = mkDefault 0; # 0 = auto-select
-                upnpLogLevel = mkDefault 2;
-
-                # Media server settings
-                # Enable media server for browsing Tidal
-                enableMediaServer = mkDefault true;
-                mediaServerPort = mkDefault 9790;
-
-                # Tidal settings - Enable Tidal by default
-                tidalEnable = mkDefault true;
-                tidalQuality = mkDefault "HI_RES_LOSSLESS"; # LOW, HIGH, LOSSLESS, HI_RES_LOSSLESS
-                tidalLoginMethod = mkDefault "OAUTH"; # OAUTH or PKCE
-                tidalAutostart = mkDefault true; # Auto-start Tidal service
-
-                # Qobuz settings
-                qobuzEnable = mkDefault false;
-
-                # Subsonic settings
-                subsonicEnable = mkDefault false;
-
-                # Cache directory
-                cacheDir = mkDefault "/var/cache/upmpdcli";
-
-                # OpenHome settings for better control
-                openhomeEnable = mkDefault true;
-                ohproductRoom = mkDefault "Living Room";
-
-                # Extra configuration
-                extraConfig = mkDefault "";
-              };
+              ms = import ../../lib/mk-settings.nix { inherit lib; };
+              localSettings = extendSettings (ms.mkDefaults schema.server);
 
               configFile = pkgs.writeText "upmpdcli.conf" ''
                 # MPD connection

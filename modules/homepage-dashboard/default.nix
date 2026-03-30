@@ -1,7 +1,7 @@
+{ schema }:
 { lib, ... }:
 let
-  inherit (lib) mkDefault;
-  inherit (lib.types) attrsOf anything;
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
 in
 {
   _class = "clan.service";
@@ -13,42 +13,16 @@ in
   roles = {
     server = {
       description = "Homepage dashboard server that provides a customizable web portal";
-      interface = {
-        # Freeform module - any attribute becomes a homepage-dashboard setting
-        freeformType = attrsOf anything;
-      };
+      interface = mkSettings.mkInterface schema.server;
 
       perInstance =
         { extendSettings, ... }:
         {
           nixosModule =
-            _:
+            { lib, ... }:
             let
-
-              localSettings = extendSettings {
-                # Minimal defaults
-                enable = mkDefault true;
-                listenPort = mkDefault 8082;
-                openFirewall = mkDefault true;
-
-                # Default configuration structure
-                settings = mkDefault {
-                  title = "Dashboard";
-                  background = {
-                    image = "";
-                    blur = "sm";
-                    saturate = 50;
-                    brightness = 50;
-                    opacity = 50;
-                  };
-                };
-
-                services = mkDefault [ ];
-                widgets = mkDefault [ ];
-                bookmarks = mkDefault [ ];
-              };
-
-              mergedSettings = localSettings;
+              ms = import ../../lib/mk-settings.nix { inherit lib; };
+              mergedSettings = extendSettings (ms.mkDefaults schema.server);
             in
             {
               services.homepage-dashboard = mergedSettings;
@@ -57,7 +31,6 @@ in
     };
   };
 
-  # No perMachine configuration needed for homepage-dashboard
   perMachine = _: {
     nixosModule = _: { };
   };

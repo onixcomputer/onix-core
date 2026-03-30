@@ -1,4 +1,9 @@
-_: {
+{ schema }:
+{ lib, ... }:
+let
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
+in
+{
   _class = "clan.service";
 
   manifest = {
@@ -13,22 +18,10 @@ _: {
 
   roles.peer = {
     description = "Iroh SSH peer that runs the iroh-ssh server for incoming connections";
-    interface =
-      { lib, ... }:
-      {
-        freeformType = lib.types.attrsOf lib.types.anything;
-
-        options = {
-          sshPort = lib.mkOption {
-            type = lib.types.port;
-            default = 22;
-            description = "Local SSH port iroh-ssh forwards incoming connections to";
-          };
-        };
-      };
+    interface = mkSettings.mkInterface schema.peer;
 
     perInstance =
-      { settings, ... }:
+      { extendSettings, ... }:
       {
         nixosModule =
           {
@@ -38,22 +31,18 @@ _: {
             ...
           }:
           let
+            ms = import ../../lib/mk-settings.nix { inherit lib; };
+            cfg = extendSettings (ms.mkDefaults schema.peer);
             iroh-ssh = pkgs.callPackage ../../pkgs/iroh-ssh { };
-            inherit (settings) sshPort;
           in
           {
             assertions = [
               {
                 assertion = config.services.openssh.enable or false;
-                message = "iroh-ssh: requires openssh to be enabled (services.openssh.enable = true) — iroh-ssh forwards incoming connections to local sshd on port ${toString sshPort}";
+                message = "iroh-ssh: requires openssh to be enabled (services.openssh.enable = true) — iroh-ssh forwards incoming connections to local sshd on port ${toString cfg.sshPort}";
               }
             ];
 
-            # --- key generation via clan vars ---
-            #
-            # Generates a persistent ed25519 keypair for iroh-ssh.
-            # The public key (z32-encoded) and hex node ID are non-secret
-            # so they can be read from the repo to build SSH ProxyCommand config.
             clan.core.vars.generators."iroh-ssh" = {
               files = {
                 "irohssh_ed25519" = { };
@@ -99,7 +88,6 @@ _: {
               '';
             };
 
-            # --- systemd service ---
             systemd.services."iroh-ssh" = {
               description = "iroh-ssh server";
               wantedBy = [ "multi-user.target" ];
@@ -115,8 +103,6 @@ _: {
                 Group = "iroh-ssh";
                 StateDirectory = "iroh-ssh";
 
-                # Copy vars-managed keys into service HOME (runs as root
-                # via "+" prefix because secrets are 0400 root:root).
                 ExecStartPre =
                   let
                     script = pkgs.writeShellApplication {
@@ -135,12 +121,11 @@ _: {
                   in
                   "+${lib.getExe script}";
 
-                ExecStart = "${iroh-ssh}/bin/iroh-ssh server --persist --ssh-port ${toString sshPort}";
+                ExecStart = "${iroh-ssh}/bin/iroh-ssh server --persist --ssh-port ${toString cfg.sshPort}";
                 Environment = "HOME=/var/lib/iroh-ssh";
                 Restart = "on-failure";
                 RestartSec = "10s";
 
-                # Hardening
                 PrivateTmp = true;
                 ProtectSystem = "strict";
                 ProtectHome = true;
@@ -148,7 +133,6 @@ _: {
               };
             };
 
-            # System user for the iroh-ssh service
             users.users.iroh-ssh = {
               isSystemUser = true;
               group = "iroh-ssh";
@@ -156,7 +140,6 @@ _: {
             };
             users.groups.iroh-ssh = { };
 
-            # Install iroh-ssh CLI system-wide
             environment.systemPackages = [ iroh-ssh ];
           };
       };

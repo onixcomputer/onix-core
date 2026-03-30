@@ -1,7 +1,7 @@
+{ schema }:
 { lib, ... }:
 let
-  inherit (lib) mkDefault;
-  inherit (lib.types) attrsOf anything;
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
 in
 {
   _class = "clan.service";
@@ -13,22 +13,16 @@ in
   roles = {
     server = {
       description = "Harmonia binary cache server";
-      interface = {
-        freeformType = attrsOf anything;
-      };
+      interface = mkSettings.mkInterface schema.server;
 
       perInstance =
         { extendSettings, ... }:
         {
           nixosModule =
-            { config, ... }:
+            { config, lib, ... }:
             let
-              cfg = extendSettings {
-                port = mkDefault 5000;
-                workers = mkDefault 4;
-                maxConnectionRate = mkDefault 256;
-                priority = mkDefault 30;
-              };
+              ms = import ../../lib/mk-settings.nix { inherit lib; };
+              cfg = extendSettings (ms.mkDefaults schema.server);
             in
             {
               services.harmonia.cache = {

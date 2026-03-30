@@ -1,15 +1,8 @@
+{ schema }:
 { lib, ... }:
 let
-  inherit (lib)
-    mkOption
-    mkDefault
-    mkIf
-    ;
-  inherit (lib.types)
-    str
-    nullOr
-    attrsOf
-    ;
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
+  inherit (lib) mkDefault mkIf;
 in
 {
   _class = "clan.service";
@@ -21,24 +14,7 @@ in
   roles = {
     default = {
       description = "Cloudflare tunnel client that exposes local services to the internet";
-      interface = {
-        options = {
-          tunnelName = mkOption {
-            type = nullOr str;
-            default = null;
-            description = "Name for the Cloudflare tunnel (defaults to machine hostname)";
-          };
-
-          ingress = mkOption {
-            type = attrsOf str;
-            default = { };
-            description = ''
-              Ingress rules mapping hostnames to backend services.
-              Example: { "app.example.com" = "http://localhost:3000"; }
-            '';
-          };
-        };
-      };
+      interface = mkSettings.mkInterface schema.default;
 
       perInstance =
         {
@@ -50,9 +26,14 @@ in
           nixosModule =
             { config, pkgs, ... }:
             let
-              localSettings = extendSettings {
-                tunnelName = mkDefault config.networking.hostName;
-              };
+              ms = import ../../lib/mk-settings.nix { inherit lib; };
+              localSettings = extendSettings (
+                (ms.mkDefaults schema.default)
+                // {
+                  # Config-dependent default — falls back to machine hostname
+                  tunnelName = mkDefault config.networking.hostName;
+                }
+              );
 
               inherit (localSettings) tunnelName ingress;
 
