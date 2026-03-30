@@ -130,6 +130,12 @@ in
                 environmentFile = config.clan.core.vars.generators.${generatorName}.files.env-file.path;
               };
 
+              # Exit code 1 = "no providers configured" — treat as clean exit
+              # so switch-to-configuration doesn't report a failed unit.
+              # The user runs `clanker-router auth login` / `auth set-key`
+              # then `systemctl restart clanker-router`.
+              systemd.services.clanker-router.serviceConfig.SuccessExitStatus = "1";
+
               # Make clanker-router CLI available for `auth login`.
               environment.systemPackages = [ routerPkg ];
 

@@ -310,21 +310,20 @@ let prom_rules = import "prometheus-rules.ncl" in
       },
     },
 
-    # clankers — disabled until API keys are configured
-    # clankers = {
-    #   module = { name = "clankers", input = "self" },
-    #   roles = {
-    #     router.machines."britton-desktop".settings = {
-    #       listenAddr = "0.0.0.0",
-    #       listenPort = 4000,
-    #       useOAuth = true,
-    #     },
-    #     daemon.machines."britton-desktop".settings = {
-    #       apiBase = "http://127.0.0.1:4000",
-    #       allowAll = true,
-    #     },
-    #   },
-    # },
+    clankers = {
+      module = { name = "clankers", input = "self" },
+      roles = {
+        router.machines.aspen2.settings = {
+          listenAddr = "0.0.0.0",
+          listenPort = 4000,
+          useOAuth = true,
+        },
+        daemon.machines.aspen2.settings = {
+          apiBase = "http://127.0.0.1:4000",
+          allowAll = true,
+        },
+      },
+    },
 
     ollama = {
       module = { name = "ollama", input = "self" },
