@@ -53,13 +53,8 @@ in
       maxJobs = 16,
       supportedFeatures = ["nixos-test", "big-parallel", "kvm"],
     },
-    {
-      name = "aspen2",
-      speedFactor = 20,
-      systems = ["x86_64-linux"],
-      sshUser = "root",
-      maxJobs = 16,
-      supportedFeatures = ["nixos-test", "big-parallel", "kvm"],
-    },
+    # aspen2 removed — it and aspen1 were each other's remote builders,
+    # causing nix to dispatch the same derivations in both directions.
+    # aspen1 is the dedicated build server; aspen2 offloads to it.
   ],
 }
