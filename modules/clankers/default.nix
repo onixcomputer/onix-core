@@ -170,24 +170,14 @@ in
                     };
 
                     prompts = builtins.listToAttrs (
-                      builtins.concatMap (account: [
-                        {
-                          name = "${account}-access-token";
-                          value = {
-                            description = "OAuth access token for '${account}'";
-                            type = "line";
-                            persist = true;
-                          };
-                        }
-                        {
-                          name = "${account}-refresh-token";
-                          value = {
-                            description = "OAuth refresh token for '${account}'";
-                            type = "line";
-                            persist = true;
-                          };
-                        }
-                      ]) settings.oauthAccounts
+                      map (account: {
+                        name = "${account}-access-token";
+                        value = {
+                          description = "OAuth access token for '${account}'";
+                          type = "line";
+                          persist = true;
+                        };
+                      }) settings.oauthAccounts
                     );
 
                     runtimeInputs = [ pkgs.coreutils ];
@@ -196,14 +186,13 @@ in
                       let
                         accountJson = account: ''
                           access_${account}="$(tr -d '\n' < "$prompts/${account}-access-token")"
-                          refresh_${account}="$(tr -d '\n' < "$prompts/${account}-refresh-token")"
                         '';
                         # Build the JSON account entry for each account.
                         accountEntry = account: ''
                           "${account}": {
                                     "credential_type": "oauth",
                                     "access_token": "$access_${account}",
-                                    "refresh_token": "$refresh_${account}",
+                                    "refresh_token": "",
                                     "expires_at_ms": 0
                                   }'';
                         accountEntries = builtins.concatStringsSep "," (map accountEntry settings.oauthAccounts);
