@@ -14,9 +14,13 @@ let
   wasm = import "${inputs.self}/lib/wasm.nix" { inherit plugins; };
   data = wasm.evalNickelFile ./settings.ncl;
 
-  mkReadOnly =
-    value:
-    lib.mkOption {
+  # Keys that are pure computed data (colors, theme) stay readOnly.
+  # Keys that vary per-machine (monitors) use mkDefault so machines can override.
+  overridableKeys = [ "monitors" ];
+
+  mkOpt =
+    name: value:
+    let
       type =
         if builtins.isAttrs value then
           lib.types.attrs
@@ -30,10 +34,14 @@ let
           lib.types.bool
         else
           lib.types.anything;
-      readOnly = true;
+      overridable = builtins.elem name overridableKeys;
+    in
+    lib.mkOption {
+      inherit type;
+      readOnly = !overridable;
       default = value;
     };
 in
 {
-  options = builtins.mapAttrs (_: mkReadOnly) data;
+  options = builtins.mapAttrs mkOpt data;
 }

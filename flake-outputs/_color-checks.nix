@@ -2,13 +2,13 @@
 #
 # After the NCL color unification, all modules should use config.theme
 # instead of config.colors. This check catches forgotten references.
-{ pkgs, ... }:
+{ self, pkgs, ... }:
 {
   checks.no-stale-color-refs = pkgs.runCommand "no-stale-color-refs" { } ''
     stale=$(
       ${pkgs.ripgrep}/bin/rg -l \
         'config\.colors\b' \
-        ${../../inventory/home-profiles} \
+        ${self + "/inventory/home-profiles"} \
         --glob '*.nix' \
         --glob '!*color-scheme.nix' \
         || true

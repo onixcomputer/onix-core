@@ -30,7 +30,7 @@ let
   tagChecks = (import ./_tag-checks.nix) innerArgs;
   moduleChecks = (import ./_module-checks.nix) innerArgs;
   builderChecks = (import ./_builder-checks.nix) innerArgs;
-  colorChecks = (import ./_color-checks.nix) { inherit pkgs; };
+  colorChecks = (import ./_color-checks.nix) { inherit self pkgs; };
 
   packageChecks = lib.mapAttrs' (n: lib.nameValuePair "package-${n}") self'.packages;
   devShellChecks = lib.mapAttrs' (n: lib.nameValuePair "devShell-${n}") self'.devShells;
