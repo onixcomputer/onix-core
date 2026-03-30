@@ -278,6 +278,7 @@ in
       ++ [
         pkgs.nickel
         pkgs.nix-output-monitor
+        pkgs.sops
         (pkgs.writeShellApplication {
           name = "eval-warnings";
           runtimeInputs = [ self'.packages.nix-eval-warnings ];
