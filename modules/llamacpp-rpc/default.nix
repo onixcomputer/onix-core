@@ -17,6 +17,7 @@ in
 
   manifest = {
     name = "llamacpp-rpc";
+    readme = "Distributed LLM inference via llama.cpp RPC over high-speed interconnect";
     description = "Distributed LLM inference via llama.cpp RPC over high-speed interconnect";
     categories = [
       "AI/ML"
