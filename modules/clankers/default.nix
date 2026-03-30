@@ -124,7 +124,13 @@ in
                 package = routerPkg;
                 proxyAddr = "${settings.listenAddr}:${toString settings.listenPort}";
                 openFirewall = true;
-                inherit (settings) proxyKeys extraArgs;
+                inherit (settings) proxyKeys;
+                extraArgs =
+                  settings.extraArgs
+                  ++ lib.optionals useOAuth [
+                    "--auth-file"
+                    config.clan.core.vars.generators.${generatorName}.files.auth-json.path
+                  ];
               }
               // lib.optionalAttrs (!useOAuth) {
                 environmentFile = config.clan.core.vars.generators.${generatorName}.files.env-file.path;
@@ -139,50 +145,118 @@ in
               # Make clanker-router CLI available for `auth login`.
               environment.systemPackages = [ routerPkg ];
 
-              # Provider API keys — prompted once, SOPS-encrypted, deployed to target.
-              # Skipped when useOAuth = true (credentials managed via `clanker-router auth login`).
-              clan.core.vars.generators = mkIf (!useOAuth) {
-                ${generatorName} = {
-                  share = true;
-                  files.env-file = {
-                    secret = true;
-                    deploy = true;
+              clan.core.vars.generators.${generatorName} =
+                if useOAuth then
+                  {
+                    # OAuth: build auth.json from per-account tokens.
+                    # Run `clanker-router auth login --account <name>` locally,
+                    # then extract tokens from ~/.config/clanker-router/auth.json:
+                    #   jq -r '.providers.anthropic.accounts.<name>.access_token'
+                    #   jq -r '.providers.anthropic.accounts.<name>.refresh_token'
+                    share = true;
+                    files.auth-json = {
+                      secret = true;
+                      deploy = true;
+                    };
+
+                    prompts = builtins.listToAttrs (
+                      builtins.concatMap (account: [
+                        {
+                          name = "${account}-access-token";
+                          value = {
+                            description = "Anthropic OAuth access token for account '${account}'";
+                            type = "hidden";
+                            persist = true;
+                          };
+                        }
+                        {
+                          name = "${account}-refresh-token";
+                          value = {
+                            description = "Anthropic OAuth refresh token for account '${account}'";
+                            type = "hidden";
+                            persist = true;
+                          };
+                        }
+                      ]) settings.oauthAccounts
+                    );
+
+                    runtimeInputs = [ pkgs.coreutils ];
+
+                    script =
+                      let
+                        accountJson = account: ''
+                          access_${account}="$(tr -d '\n' < "$prompts/${account}-access-token")"
+                          refresh_${account}="$(tr -d '\n' < "$prompts/${account}-refresh-token")"
+                        '';
+                        # Build the JSON account entry for each account.
+                        accountEntry = account: ''
+                          "${account}": {
+                                    "credential_type": "oauth",
+                                    "access_token": "$access_${account}",
+                                    "refresh_token": "$refresh_${account}",
+                                    "expires_at_ms": 0
+                                  }'';
+                        accountEntries = builtins.concatStringsSep "," (map accountEntry settings.oauthAccounts);
+                      in
+                      ''
+                        ${builtins.concatStringsSep "\n" (map accountJson settings.oauthAccounts)}
+                        cat > "$out/auth-json" <<EOF
+                        {
+                          "version": 2,
+                          "providers": {
+                            "anthropic": {
+                              "active_account": "${settings.oauthActiveAccount}",
+                              "accounts": {
+                                ${accountEntries}
+                              }
+                            }
+                          }
+                        }
+                        EOF
+                      '';
+                  }
+                else
+                  {
+                    # API keys: prompted once, SOPS-encrypted, deployed as env file.
+                    share = true;
+                    files.env-file = {
+                      secret = true;
+                      deploy = true;
+                    };
+
+                    prompts = {
+                      anthropic-api-key = {
+                        description = "Anthropic API key (sk-ant-...)";
+                        type = "hidden";
+                        persist = true;
+                      };
+                      openai-api-key = {
+                        description = "OpenAI API key (sk-...) — leave empty to skip";
+                        type = "hidden";
+                        persist = true;
+                      };
+                      openrouter-api-key = {
+                        description = "OpenRouter API key (sk-or-...) — leave empty to skip";
+                        type = "hidden";
+                        persist = true;
+                      };
+                    };
+
+                    runtimeInputs = [ pkgs.coreutils ];
+
+                    script = ''
+                      : > "$out/env-file"
+                      for pair in \
+                        "ANTHROPIC_API_KEY:$prompts/anthropic-api-key" \
+                        "OPENAI_API_KEY:$prompts/openai-api-key" \
+                        "OPENROUTER_API_KEY:$prompts/openrouter-api-key"; do
+                        var="''${pair%%:*}"
+                        file="''${pair#*:}"
+                        val="$(tr -d '\n' < "$file")"
+                        [ -n "$val" ] && printf '%s=%s\n' "$var" "$val" >> "$out/env-file"
+                      done
+                    '';
                   };
-
-                  prompts = {
-                    anthropic-api-key = {
-                      description = "Anthropic API key (sk-ant-...)";
-                      type = "hidden";
-                      persist = true;
-                    };
-                    openai-api-key = {
-                      description = "OpenAI API key (sk-...) — leave empty to skip";
-                      type = "hidden";
-                      persist = true;
-                    };
-                    openrouter-api-key = {
-                      description = "OpenRouter API key (sk-or-...) — leave empty to skip";
-                      type = "hidden";
-                      persist = true;
-                    };
-                  };
-
-                  runtimeInputs = [ pkgs.coreutils ];
-
-                  script = ''
-                    : > "$out/env-file"
-                    for pair in \
-                      "ANTHROPIC_API_KEY:$prompts/anthropic-api-key" \
-                      "OPENAI_API_KEY:$prompts/openai-api-key" \
-                      "OPENROUTER_API_KEY:$prompts/openrouter-api-key"; do
-                      var="''${pair%%:*}"
-                      file="''${pair#*:}"
-                      val="$(tr -d '\n' < "$file")"
-                      [ -n "$val" ] && printf '%s=%s\n' "$var" "$val" >> "$out/env-file"
-                    done
-                  '';
-                };
-              };
             };
         };
     };
