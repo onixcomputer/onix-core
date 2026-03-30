@@ -130,16 +130,26 @@ in
                 environmentFile = config.clan.core.vars.generators.${generatorName}.files.env-file.path;
               };
 
-              # Point the router at the deployed auth.json via environment.
-              systemd.services.clanker-router.environment = mkIf useOAuth {
-                AUTH_FILE = config.clan.core.vars.generators.${generatorName}.files.auth-json.path;
-              };
-
+              # Point the router at the deployed auth.json.
+              # --auth-file is a global flag (before the subcommand), so we
+              # override ExecStart rather than using extraArgs (which append
+              # after `serve`).
               # Exit code 1 = "no providers configured" — treat as clean exit
               # so switch-to-configuration doesn't report a failed unit.
-              # The user runs `clanker-router auth login` / `auth set-key`
-              # then `systemctl restart clanker-router`.
-              systemd.services.clanker-router.serviceConfig.SuccessExitStatus = "1 2";
+              # --auth-file is a global flag (before the subcommand), so we
+              # override ExecStart rather than using extraArgs.
+              systemd.services.clanker-router.serviceConfig = mkMerge [
+                { SuccessExitStatus = "1 2"; }
+                (mkIf useOAuth {
+                  ExecStart = lib.mkForce (
+                    "${routerPkg}/bin/clanker-router"
+                    + " --auth-file ${config.clan.core.vars.generators.${generatorName}.files.auth-json.path}"
+                    + " serve --proxy-addr ${settings.listenAddr}:${toString settings.listenPort}"
+                    + lib.concatMapStrings (k: " --proxy-key ${k}") settings.proxyKeys
+                    + lib.concatMapStrings (a: " ${a}") settings.extraArgs
+                  );
+                })
+              ];
 
               # Make clanker-router CLI available for `auth login`.
               environment.systemPackages = [ routerPkg ];
@@ -155,17 +165,29 @@ in
                     files.auth-json = {
                       secret = true;
                       deploy = true;
+                      owner = "clanker-router";
+                      group = "clanker-router";
                     };
 
                     prompts = builtins.listToAttrs (
-                      map (account: {
-                        name = "${account}-access-token";
-                        value = {
-                          description = "Anthropic OAuth access token for account '${account}'";
-                          type = "line";
-                          persist = true;
-                        };
-                      }) settings.oauthAccounts
+                      builtins.concatMap (account: [
+                        {
+                          name = "${account}-access-token";
+                          value = {
+                            description = "OAuth access token for '${account}'";
+                            type = "line";
+                            persist = true;
+                          };
+                        }
+                        {
+                          name = "${account}-refresh-token";
+                          value = {
+                            description = "OAuth refresh token for '${account}'";
+                            type = "line";
+                            persist = true;
+                          };
+                        }
+                      ]) settings.oauthAccounts
                     );
 
                     runtimeInputs = [ pkgs.coreutils ];
@@ -174,12 +196,14 @@ in
                       let
                         accountJson = account: ''
                           access_${account}="$(tr -d '\n' < "$prompts/${account}-access-token")"
+                          refresh_${account}="$(tr -d '\n' < "$prompts/${account}-refresh-token")"
                         '';
                         # Build the JSON account entry for each account.
                         accountEntry = account: ''
                           "${account}": {
                                     "credential_type": "oauth",
                                     "access_token": "$access_${account}",
+                                    "refresh_token": "$refresh_${account}",
                                     "expires_at_ms": 0
                                   }'';
                         accountEntries = builtins.concatStringsSep "," (map accountEntry settings.oauthAccounts);
