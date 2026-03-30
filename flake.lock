@@ -189,11 +189,11 @@
         "unit2nix": "unit2nix"
       },
       "locked": {
-        "lastModified": 1774568330,
-        "narHash": "sha256-KEx48Y20UjLsrbvIGxtgQ53slTsHWwrbTQ/rYKCsWLQ=",
+        "lastModified": 1774841163,
+        "narHash": "sha256-86NXNr62xyGWRlq+Ji9fkvNK1bh32YXyJAbsnBZKBIs=",
         "owner": "brittonr",
         "repo": "clankers",
-        "rev": "b1da1d87d560b79d1023b4772713069383585ee7",
+        "rev": "dd4c53d8ca25bcb77fec5da5ba99fc678875ffe0",
         "type": "github"
       },
       "original": {
