@@ -152,7 +152,6 @@ in
                     # Run `clanker-router auth login --account <name>` locally,
                     # then extract tokens from ~/.config/clanker-router/auth.json:
                     #   jq -r '.providers.anthropic.accounts.<name>.access_token'
-                    #   jq -r '.providers.anthropic.accounts.<name>.refresh_token'
                     share = true;
                     files.auth-json = {
                       secret = true;
@@ -160,24 +159,14 @@ in
                     };
 
                     prompts = builtins.listToAttrs (
-                      builtins.concatMap (account: [
-                        {
-                          name = "${account}-access-token";
-                          value = {
-                            description = "Anthropic OAuth access token for account '${account}'";
-                            type = "hidden";
-                            persist = true;
-                          };
-                        }
-                        {
-                          name = "${account}-refresh-token";
-                          value = {
-                            description = "Anthropic OAuth refresh token for account '${account}'";
-                            type = "hidden";
-                            persist = true;
-                          };
-                        }
-                      ]) settings.oauthAccounts
+                      map (account: {
+                        name = "${account}-access-token";
+                        value = {
+                          description = "Anthropic OAuth access token for account '${account}'";
+                          type = "hidden";
+                          persist = true;
+                        };
+                      }) settings.oauthAccounts
                     );
 
                     runtimeInputs = [ pkgs.coreutils ];
@@ -186,14 +175,12 @@ in
                       let
                         accountJson = account: ''
                           access_${account}="$(tr -d '\n' < "$prompts/${account}-access-token")"
-                          refresh_${account}="$(tr -d '\n' < "$prompts/${account}-refresh-token")"
                         '';
                         # Build the JSON account entry for each account.
                         accountEntry = account: ''
                           "${account}": {
                                     "credential_type": "oauth",
                                     "access_token": "$access_${account}",
-                                    "refresh_token": "$refresh_${account}",
                                     "expires_at_ms": 0
                                   }'';
                         accountEntries = builtins.concatStringsSep "," (map accountEntry settings.oauthAccounts);
