@@ -162,7 +162,7 @@ in
                         name = "${account}-access-token";
                         value = {
                           description = "Anthropic OAuth access token for account '${account}'";
-                          type = "hidden";
+                          type = "line";
                           persist = true;
                         };
                       }) settings.oauthAccounts
