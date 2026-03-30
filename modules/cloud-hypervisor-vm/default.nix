@@ -5,14 +5,10 @@
 #
 # Guest machine configs live in machines/<name>/ with the cloud-hypervisor-guest tag.
 # This module runs on the HOST (e.g., britton-desktop).
+{ schema }:
 { lib, ... }:
 let
-  inherit (lib) mkOption;
-  inherit (lib.types)
-    str
-    int
-    path
-    ;
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
 in
 {
   _class = "clan.service";
@@ -24,56 +20,11 @@ in
   roles = {
     host = {
       description = "Host that runs cloud-hypervisor VMs";
-      interface = {
-        options = {
-          guestMachine = mkOption {
-            type = str;
-            description = "Name of the guest clan machine (must exist in nixosConfigurations)";
-          };
-
-          cpus = mkOption {
-            type = int;
-            default = 2;
-            description = "Number of vCPUs for the guest";
-          };
-
-          memory = mkOption {
-            type = int;
-            default = 2048;
-            description = "RAM in MiB for the guest";
-          };
-
-          diskPath = mkOption {
-            type = path;
-            description = "Path to the raw ext4 disk image on the host";
-          };
-
-          diskSize = mkOption {
-            type = str;
-            default = "40G";
-            description = "Disk image size (used by bootstrap script, not the service)";
-          };
-
-          tapInterface = mkOption {
-            type = str;
-            description = "TAP interface name for the guest (e.g., tap-chv-dev1)";
-          };
-
-          macAddress = mkOption {
-            type = str;
-            description = "MAC address for the guest's virtio-net device";
-          };
-
-          guestIp = mkOption {
-            type = str;
-            description = "Static IP for DHCP reservation (e.g., 172.16.0.2)";
-          };
-        };
-      };
+      interface = mkSettings.mkInterface schema.host;
 
       perInstance =
         {
-          settings,
+          extendSettings,
           ...
         }:
         {
@@ -85,6 +36,8 @@ in
               ...
             }:
             let
+              ms = import ../../lib/mk-settings.nix { inherit lib; };
+              settings = extendSettings (ms.mkDefaults schema.host);
               inherit (settings)
                 guestMachine
                 cpus

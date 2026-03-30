@@ -3,21 +3,13 @@
 # Two roles:
 #   worker — runs rpc-server exposing GPU to the cluster
 #   server — runs llama-server distributing layers across local + remote GPUs
+{ schema }:
 { lib, ... }:
 let
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
   inherit (lib)
-    mkOption
     mkIf
     concatStringsSep
-    ;
-  inherit (lib.types)
-    str
-    int
-    bool
-    port
-    listOf
-    nullOr
-    submodule
     ;
 in
 {
@@ -36,32 +28,16 @@ in
     # ── Worker role ──────────────────────────────────────────────
     worker = {
       description = "RPC worker node exposing GPU to the inference cluster";
-      interface = {
-        options = {
-          bindAddress = mkOption {
-            type = str;
-            default = "0.0.0.0";
-            description = "Address to bind the RPC server to";
-          };
-          port = mkOption {
-            type = port;
-            default = 50052;
-            description = "Port for the RPC server";
-          };
-          enableCache = mkOption {
-            type = bool;
-            default = true;
-            description = "Enable local tensor cache to avoid re-transfers on reconnect";
-          };
-        };
-      };
+      interface = mkSettings.mkInterface schema.worker;
 
       perInstance =
-        { settings, ... }:
+        { extendSettings, ... }:
         {
           nixosModule =
-            { pkgs, ... }:
+            { pkgs, lib, ... }:
             let
+              ms = import ../../lib/mk-settings.nix { inherit lib; };
+              settings = extendSettings (ms.mkDefaults schema.worker);
               inherit (settings) bindAddress port enableCache;
               pkg = pkgs.llamacpp-rocm-rpc;
             in
@@ -107,73 +83,45 @@ in
     # ── Server role ──────────────────────────────────────────────
     server = {
       description = "Main inference node running llama-server with RPC backends";
-      interface = {
-        options = {
-          host = mkOption {
-            type = str;
-            default = "0.0.0.0";
-            description = "Address to bind the API server to";
-          };
-          port = mkOption {
-            type = port;
-            default = 8081;
-            description = "Port for the OpenAI-compatible API";
-          };
-          model = mkOption {
-            type = nullOr (submodule {
-              options = {
-                repo = mkOption {
-                  type = str;
-                  description = "HuggingFace repository (e.g. unsloth/Qwen3.5-122B-A10B-GGUF)";
-                };
-                file = mkOption {
-                  type = str;
-                  description = "GGUF filename within the repository";
-                };
-              };
-            });
-            default = null;
-            description = "HuggingFace model to download. Null disables auto-download.";
-          };
-          rpcWorkers = mkOption {
-            type = listOf str;
-            default = [ ];
-            description = "List of RPC worker addresses (host:port)";
-          };
-          gpuLayers = mkOption {
-            type = int;
-            default = 999;
-            description = "Number of layers to offload to GPU (-ngl)";
-          };
-          flashAttention = mkOption {
-            type = bool;
-            default = true;
-            description = "Enable flash attention (-fa) for faster long-context inference";
-          };
-          contextSize = mkOption {
-            type = int;
-            default = 8192;
-            description = "Context window size (-c)";
-          };
-          noMmap = mkOption {
-            type = bool;
-            default = true;
-            description = "Disable mmap (required for stable RPC model distribution)";
-          };
-          extraArgs = mkOption {
-            type = listOf str;
-            default = [ ];
-            description = "Additional llama-server command-line arguments";
+      interface =
+        { lib, ... }:
+        let
+          ms = import ../../lib/mk-settings.nix { inherit lib; };
+          base = ms.mkInterface schema.server;
+        in
+        base
+        // {
+          options = base.options // {
+            # model uses NixOS submodule — override the schema-generated record type
+            model = lib.mkOption {
+              type = lib.types.nullOr (
+                lib.types.submodule {
+                  options = {
+                    repo = lib.mkOption {
+                      type = lib.types.str;
+                      description = "HuggingFace repository";
+                    };
+                    file = lib.mkOption {
+                      type = lib.types.str;
+                      description = "GGUF filename within the repository";
+                    };
+                  };
+                }
+              );
+              default = null;
+              description = "HuggingFace model to download. Null disables auto-download.";
+            };
           };
         };
-      };
 
       perInstance =
-        { settings, ... }:
+        { extendSettings, ... }:
         {
           nixosModule =
-            { pkgs, ... }:
+            { pkgs, lib, ... }:
             let
+              ms = import ../../lib/mk-settings.nix { inherit lib; };
+              settings = extendSettings (ms.mkDefaults schema.server);
               inherit (settings)
                 host
                 port

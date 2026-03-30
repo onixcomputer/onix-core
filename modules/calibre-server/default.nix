@@ -1,6 +1,7 @@
+{ schema }:
 { lib, ... }:
 let
-  inherit (lib.types) attrsOf anything;
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
 in
 {
   _class = "clan.service";
@@ -12,10 +13,7 @@ in
   roles = {
     server = {
       description = "Calibre content server";
-      interface = {
-        freeformType = attrsOf anything;
-        options = { };
-      };
+      interface = mkSettings.mkInterface schema.server;
 
       perInstance =
         { extendSettings, ... }:
@@ -23,13 +21,12 @@ in
           nixosModule =
             { lib, config, ... }:
             let
-              settings = extendSettings { };
-              libraries =
-                settings.libraries
-                  or (if settings ? libraryPath then [ settings.libraryPath ] else [ "/srv/calibre/library" ]);
+              ms = import ../../lib/mk-settings.nix { inherit lib; };
+              settings = extendSettings (ms.mkDefaults schema.server);
+              inherit (settings) libraries;
               filteredSettings = builtins.removeAttrs settings [
-                "libraryPath"
                 "libraries"
+                "libraryPath"
               ];
             in
             {
@@ -43,17 +40,11 @@ in
               ];
               services.udisks2.enable = true;
 
-              # Quote paths for tmpfiles — spaces in directory names break
-              # the space-delimited format without quotes.
               systemd.tmpfiles.rules = map (
                 libraryPath:
                 "d '${libraryPath}' 0755 ${config.services.calibre-server.user} ${config.services.calibre-server.group} -"
               ) libraries;
 
-              # The upstream NixOS calibre-server module joins library paths
-              # with spaces and doesn't quote them, so paths containing
-              # spaces get word-split.  Override ExecStart with properly
-              # escaped arguments.
               systemd.services.calibre-server.serviceConfig.ExecStart =
                 let
                   pkg = config.services.calibre-server.package;

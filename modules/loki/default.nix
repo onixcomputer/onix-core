@@ -1,13 +1,7 @@
+{ schema }:
 { lib, ... }:
 let
-  inherit (lib) mkOption;
-  inherit (lib.types)
-    bool
-    str
-    listOf
-    attrsOf
-    anything
-    ;
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
 in
 {
   _class = "clan.service";
@@ -21,26 +15,7 @@ in
     # Loki server role
     server = {
       description = "Loki log aggregation server that stores and queries logs";
-      interface = {
-        # Allow freeform configuration that maps directly to services.loki
-        freeformType = attrsOf anything;
-
-        options = {
-          # Minimal clan-specific options
-          enablePromtail = mkOption {
-            type = bool;
-            default = true;
-            description = "Whether to enable Promtail for log collection";
-          };
-
-          # Promtail configuration
-          promtailConfig = mkOption {
-            type = attrsOf anything;
-            default = { };
-            description = "Promtail configuration (passed to services.promtail.configuration)";
-          };
-        };
-      };
+      interface = mkSettings.mkInterface schema.server;
 
       perInstance =
         { extendSettings, ... }:
@@ -61,6 +36,8 @@ in
               lokiConfig = builtins.removeAttrs settings [
                 "enablePromtail"
                 "promtailConfig"
+                "lokiUrl"
+                "additionalScrapeConfigs"
               ];
 
               # Default Promtail configuration for systemd journal
@@ -139,26 +116,7 @@ in
     # Promtail client role for log collection
     promtail = {
       description = "Promtail log shipper that sends logs to Loki server";
-      interface = {
-        # Allow freeform configuration that maps directly to services.promtail
-        freeformType = attrsOf anything;
-
-        options = {
-          # Loki server URL
-          lokiUrl = mkOption {
-            type = str;
-            default = "http://localhost:3100";
-            description = "URL of the Loki server to send logs to";
-          };
-
-          # Additional scrape configs
-          additionalScrapeConfigs = mkOption {
-            type = listOf anything;
-            default = [ ];
-            description = "Additional Promtail scrape configurations";
-          };
-        };
-      };
+      interface = mkSettings.mkInterface schema.promtail;
 
       perInstance =
         { extendSettings, ... }:

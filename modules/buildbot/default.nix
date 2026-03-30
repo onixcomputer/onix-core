@@ -7,19 +7,10 @@
 # Co-locate master + worker on the same machine for the common case.
 # Harmonia on the same box means builds land in the binary cache with
 # zero copy overhead.
-{ inputs }:
+{ inputs, schema }:
 { lib, ... }:
 let
-  inherit (lib) mkOption mkDefault;
-  inherit (lib.types)
-    attrsOf
-    anything
-    str
-    bool
-    int
-    listOf
-    nullOr
-    ;
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
   inherit (inputs.buildbot-nix.lib) interpolate;
 in
 {
@@ -34,82 +25,7 @@ in
     master = {
       description = "Buildbot master server (CI coordinator, web UI, GitHub integration)";
 
-      interface = {
-        freeformType = attrsOf anything;
-
-        options = {
-          domain = mkOption {
-            type = str;
-            description = "Public domain for the Buildbot web UI";
-          };
-          useHTTPS = mkOption {
-            type = bool;
-            default = true;
-            description = "Whether to use HTTPS for the web UI";
-          };
-          buildSystems = mkOption {
-            type = listOf str;
-            default = [ "x86_64-linux" ];
-            description = "Systems to build";
-          };
-          admins = mkOption {
-            type = listOf str;
-            default = [ ];
-            description = "Users allowed to login and trigger builds";
-          };
-          evalWorkerCount = mkOption {
-            type = int;
-            default = 4;
-            description = "Number of eval workers";
-          };
-          evalMaxMemorySize = mkOption {
-            type = int;
-            default = 2048;
-            description = "Max memory per eval worker (MB)";
-          };
-          outputsPath = mkOption {
-            type = nullOr str;
-            default = null;
-            description = "Path to write store paths of successful builds";
-          };
-          postBuildSteps = mkOption {
-            type = listOf anything;
-            default = [ ];
-            description = "Additional post-build steps (appended after ntfy notification if enabled)";
-          };
-          ntfyUrl = mkOption {
-            type = nullOr str;
-            default = null;
-            description = "ntfy URL for build failure notifications (e.g., https://ntfy.sh/my-topic)";
-          };
-          github = mkOption {
-            type = attrsOf anything;
-            default = { };
-            description = "GitHub App and OAuth configuration (appId, oauthId, topic)";
-          };
-          workerName = mkOption {
-            type = str;
-            description = "Name of the co-located worker (used in workers JSON)";
-          };
-          workerCores = mkOption {
-            type = int;
-            default = 16;
-            description = "CPU cores for the co-located worker (used in workers JSON)";
-          };
-          effectsSecrets = mkOption {
-            type = attrsOf bool;
-            default = { };
-            description = ''
-              Map of repo identifiers to enable effects secrets for.
-              Keys are "github:owner/repo" strings. A clan vars generator
-              prompts for a GitHub PAT and produces the hercules-ci JSON format.
-            '';
-            example = {
-              "github:onixcomputer/onix-core" = true;
-            };
-          };
-        };
-      };
+      interface = mkSettings.mkInterface schema.master;
 
       perInstance =
         { extendSettings, ... }:
@@ -122,19 +38,8 @@ in
               ...
             }:
             let
-              cfg = extendSettings {
-                useHTTPS = mkDefault true;
-                buildSystems = mkDefault [ "x86_64-linux" ];
-                evalWorkerCount = mkDefault 4;
-                evalMaxMemorySize = mkDefault 2048;
-                admins = mkDefault [ ];
-                outputsPath = mkDefault null;
-                ntfyUrl = mkDefault null;
-                postBuildSteps = mkDefault [ ];
-                github = mkDefault { };
-                workerCores = mkDefault 16;
-                effectsSecrets = mkDefault { };
-              };
+              ms = import ../../lib/mk-settings.nix { inherit lib; };
+              cfg = extendSettings (ms.mkDefaults schema.master);
 
               # Attrs handled explicitly — don't pass through to services.buildbot-nix.master
               managedAttrs = [
@@ -328,17 +233,7 @@ in
     worker = {
       description = "Buildbot worker (executes builds on this machine)";
 
-      interface = {
-        freeformType = attrsOf anything;
-
-        options = {
-          workers = mkOption {
-            type = int;
-            default = 0;
-            description = "Number of worker processes (0 = number of CPU cores)";
-          };
-        };
-      };
+      interface = mkSettings.mkInterface schema.worker;
 
       perInstance =
         { extendSettings, ... }:
@@ -346,9 +241,8 @@ in
           nixosModule =
             { config, lib, ... }:
             let
-              cfg = extendSettings {
-                workers = mkDefault 0;
-              };
+              ms = import ../../lib/mk-settings.nix { inherit lib; };
+              cfg = extendSettings (ms.mkDefaults schema.worker);
               managedAttrs = [ "workers" ];
               passthroughSettings = builtins.removeAttrs cfg managedAttrs;
             in

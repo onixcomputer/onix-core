@@ -1,4 +1,9 @@
-_: {
+{ schema }:
+{ lib, ... }:
+let
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
+in
+{
   _class = "clan.service";
 
   manifest = {
@@ -13,34 +18,25 @@ _: {
 
   roles.default = {
     description = "Machine with LLM coding agent tools installed";
-    interface =
-      { lib, ... }:
-      {
-        freeformType = lib.types.attrsOf lib.types.anything;
-
-        options = {
-          packages = lib.mkOption {
-            type = lib.types.listOf lib.types.str;
-            default = [ "pi" ];
-            description = "Package names to install from llm-agents flake";
-          };
-        };
-      };
+    interface = mkSettings.mkInterface schema.default;
 
     perInstance =
-      { settings, ... }:
+      { extendSettings, ... }:
       {
         nixosModule =
           {
             pkgs,
             inputs,
+            lib,
             ...
           }:
           let
+            ms = import ../../lib/mk-settings.nix { inherit lib; };
+            cfg = extendSettings (ms.mkDefaults schema.default);
             agentPkgs = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
           in
           {
-            environment.systemPackages = map (name: agentPkgs.${name}) settings.packages;
+            environment.systemPackages = map (name: agentPkgs.${name}) cfg.packages;
           };
       };
   };

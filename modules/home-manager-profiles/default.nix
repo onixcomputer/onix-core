@@ -1,4 +1,21 @@
-_: {
+{ schema }:
+{ lib, ... }:
+let
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
+
+  # profilesBasePath is a Nix store path injected by inventory/core/default.nix.
+  # It can't live in the schema. Add it to the interface manually.
+  schemaInterface = mkSettings.mkInterface schema.default;
+  interface = schemaInterface // {
+    options = schemaInterface.options // {
+      profilesBasePath = lib.mkOption {
+        type = lib.types.path;
+        description = "Base path containing per-user profile directories";
+      };
+    };
+  };
+in
+{
   _class = "clan.service";
 
   manifest = {
@@ -10,28 +27,7 @@ _: {
 
   roles.default = {
     description = "Configure home-manager profiles for a user on target machines";
-
-    interface =
-      { lib, ... }:
-      {
-        options = {
-          username = lib.mkOption {
-            type = lib.types.str;
-            description = "Username to configure home-manager for";
-          };
-
-          profiles = lib.mkOption {
-            type = lib.types.listOf lib.types.str;
-            default = [ ];
-            description = "Home-manager profile directories to load from the user's profile path";
-          };
-
-          profilesBasePath = lib.mkOption {
-            type = lib.types.path;
-            description = "Base path containing per-user profile directories";
-          };
-        };
-      };
+    inherit interface;
 
     perInstance =
       { settings, ... }:

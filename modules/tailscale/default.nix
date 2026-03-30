@@ -1,4 +1,9 @@
-_: {
+{ schema }:
+{ lib, ... }:
+let
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
+in
+{
   _class = "clan.service";
 
   manifest = {
@@ -13,22 +18,10 @@ _: {
 
   roles.peer = {
     description = "Tailscale peer that connects to the mesh VPN network";
-    interface =
-      { lib, ... }:
-      {
-        freeformType = lib.types.attrsOf lib.types.anything;
-
-        options = {
-          enableHostAliases = lib.mkOption {
-            type = lib.types.bool;
-            default = true;
-            description = "Automatically sync Tailscale device names to /etc/hosts";
-          };
-        };
-      };
+    interface = mkSettings.mkInterface schema.peer;
 
     perInstance =
-      { instanceName, settings, ... }:
+      { instanceName, extendSettings, ... }:
       {
         nixosModule =
           {
@@ -38,16 +31,18 @@ _: {
             ...
           }:
           let
+            ms = import ../../lib/mk-settings.nix { inherit lib; };
+            cfg = extendSettings (ms.mkDefaults schema.peer);
             generatorName = "tailscale-${instanceName}";
 
-            # enableHostAliases has an mkOption default; the rest are freeform
-            # and need explicit defaults since they have no type declaration.
-            inherit (settings) enableHostAliases;
-            enableSSH = settings.enableSSH or false;
-            exitNode = settings.exitNode or false;
-            extraUpFlags = settings.extraUpFlags or [ ];
+            inherit (cfg)
+              enableHostAliases
+              enableSSH
+              exitNode
+              extraUpFlags
+              ;
 
-            tailscaleSettings = builtins.removeAttrs settings [
+            tailscaleSettings = builtins.removeAttrs cfg [
               "enableHostAliases"
               "enableSSH"
               "exitNode"
@@ -58,6 +53,7 @@ _: {
               (lib.optional enableSSH "--ssh") ++ (lib.optional exitNode "--advertise-exit-node") ++ extraUpFlags;
 
             finalSettings = tailscaleSettings // {
+              # Config-dependent default — generated secret path
               authKeyFile = lib.mkDefault config.clan.core.vars.generators."${generatorName}".files.auth_key.path;
               extraUpFlags = extraUpFlagsFinal;
             };
@@ -88,7 +84,6 @@ _: {
 
             services.tailscale-host-sync.enable = enableHostAliases;
 
-            # Don't block boot at all - start in background after network is online
             systemd.services.tailscaled-autoconnect = lib.mkIf (finalSettings.autoconnect or false) {
               wantedBy = lib.mkForce [ "multi-user.target" ];
               wants = [ "network-online.target" ];
@@ -107,14 +102,12 @@ _: {
               allowedUDPPorts = [ 41641 ];
             };
 
-            # NAT for exit nodes
             networking.nat = lib.mkIf exitNode {
               enable = true;
               externalInterface = lib.mkDefault (if config.networking.interfaces ? "eth0" then "eth0" else "");
               internalInterfaces = [ "tailscale0" ];
             };
 
-            # Install tailscale CLI
             environment.systemPackages = [ pkgs.tailscale ];
           };
       };

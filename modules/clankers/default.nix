@@ -13,20 +13,11 @@
 # (subwayrat), so unit2nix IFD can't build it in sandbox. The daemon
 # uses a local package build (pkgs/clankers/). The router is a
 # standalone repo and builds fine from upstream.
+{ schema }:
 { lib, ... }:
 let
-  inherit (lib)
-    mkOption
-    mkIf
-    mkMerge
-    ;
-  inherit (lib.types)
-    str
-    port
-    bool
-    nullOr
-    listOf
-    ;
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
+  inherit (lib) mkIf mkMerge;
 in
 {
   _class = "clan.service";
@@ -38,55 +29,23 @@ in
   roles = {
     daemon = {
       description = "Clankers daemon — persistent agent sessions over iroh QUIC";
-      interface = {
-        options = {
-          model = mkOption {
-            type = str;
-            default = "claude-sonnet-4-20250514";
-            description = "Default LLM model for agent sessions";
-          };
-
-          allowAll = mkOption {
-            type = bool;
-            default = false;
-            description = "Skip token/ACL checks (development mode)";
-          };
-
-          heartbeat = mkOption {
-            type = lib.types.int;
-            default = 30;
-            description = "Heartbeat interval in seconds (0 to disable)";
-          };
-
-          apiBase = mkOption {
-            type = nullOr str;
-            default = null;
-            description = ''
-              API base URL for the LLM proxy (e.g. http://127.0.0.1:4000).
-              Sets ANTHROPIC_BASE_URL so the daemon routes through
-              the clanker-router instead of hitting providers directly.
-            '';
-          };
-
-          extraArgs = mkOption {
-            type = listOf str;
-            default = [ ];
-            description = "Extra arguments passed to `clankers daemon start`";
-          };
-        };
-      };
+      interface = mkSettings.mkInterface schema.daemon;
 
       perInstance =
-        { settings, ... }:
+        { extendSettings, ... }:
         {
           nixosModule =
             {
               config,
               pkgs,
               inputs,
+              lib,
               ...
             }:
             let
+              ms = import ../../lib/mk-settings.nix { inherit lib; };
+              settings = extendSettings (ms.mkDefaults schema.daemon);
+
               # Local build — upstream unit2nix IFD can't resolve the
               # cross-repo subwayrat path deps in sandbox.
               rustPkgs = import inputs.nixpkgs {
@@ -137,56 +96,22 @@ in
 
     router = {
       description = "Clanker-router — multi-provider LLM proxy with failover and caching";
-      interface = {
-        options = {
-          listenAddr = mkOption {
-            type = str;
-            default = "0.0.0.0";
-            description = "Address to bind the HTTP proxy";
-          };
-
-          listenPort = mkOption {
-            type = port;
-            default = 4000;
-            description = "Port for the OpenAI-compatible HTTP proxy";
-          };
-
-          useOAuth = mkOption {
-            type = bool;
-            default = false;
-            description = ''
-              Use OAuth credentials instead of API keys.
-              Run `sudo -u clanker-router clanker-router auth login`
-              on the target machine to complete the OAuth flow.
-              When true, the API key vars generator is skipped.
-            '';
-          };
-
-          proxyKeys = mkOption {
-            type = listOf str;
-            default = [ ];
-            description = "API keys allowed to access the proxy. Empty = no auth.";
-          };
-
-          extraArgs = mkOption {
-            type = listOf str;
-            default = [ ];
-            description = "Extra arguments passed to `clanker-router serve`";
-          };
-        };
-      };
+      interface = mkSettings.mkInterface schema.router;
 
       perInstance =
-        { instanceName, settings, ... }:
+        { instanceName, extendSettings, ... }:
         {
           nixosModule =
             {
               config,
               pkgs,
               inputs,
+              lib,
               ...
             }:
             let
+              ms = import ../../lib/mk-settings.nix { inherit lib; };
+              settings = extendSettings (ms.mkDefaults schema.router);
               generatorName = "clanker-router-${instanceName}";
               inherit (settings) useOAuth;
               routerPkg = inputs.clankers.packages.${pkgs.stdenv.hostPlatform.system}.clanker-router;

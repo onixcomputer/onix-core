@@ -1,20 +1,7 @@
+{ schema }:
 { lib, ... }:
 let
-  inherit (lib) mkOption mkIf;
-  inherit (lib.types)
-    str
-    enum
-    listOf
-    port
-    bool
-    ;
-
-  validAccelerationTypes = [
-    "rocm"
-    "cuda"
-    "vulkan"
-    "cpu"
-  ];
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
 in
 {
   _class = "clan.service";
@@ -26,47 +13,18 @@ in
   roles = {
     default = {
       description = "Ollama server that serves LLM models locally";
-      interface = {
-        options = {
-          host = mkOption {
-            type = str;
-            default = "127.0.0.1";
-            description = "Host address to bind to";
-          };
-
-          port = mkOption {
-            type = port;
-            default = 11434;
-            description = "Port for the Ollama API";
-          };
-
-          models = mkOption {
-            type = listOf str;
-            default = [ ];
-            description = "List of models to pre-pull on activation";
-          };
-
-          enableGPU = mkOption {
-            type = bool;
-            default = true;
-            description = "Enable GPU acceleration (ROCm for AMD, CUDA for NVIDIA)";
-          };
-
-          acceleration = mkOption {
-            type = enum validAccelerationTypes;
-            default = "rocm";
-            description = "Acceleration type: 'rocm', 'cuda', 'vulkan', or 'cpu'";
-          };
-        };
-      };
+      interface = mkSettings.mkInterface schema.default;
 
       perInstance =
-        { settings, ... }:
+        { extendSettings, ... }:
         {
           nixosModule =
-            { pkgs, ... }:
+            { pkgs, lib, ... }:
             let
-              inherit (settings)
+              ms = import ../../lib/mk-settings.nix { inherit lib; };
+              cfg = extendSettings (ms.mkDefaults schema.default);
+
+              inherit (cfg)
                 host
                 port
                 models
@@ -99,8 +57,7 @@ in
                 package = ollamaPackage;
               };
 
-              # Pre-pull models on activation
-              systemd.services.ollama-model-pull = mkIf (models != [ ]) {
+              systemd.services.ollama-model-pull = lib.mkIf (models != [ ]) {
                 description = "Pull Ollama models";
                 after = [ "ollama.service" ];
                 requires = [ "ollama.service" ];
@@ -123,7 +80,6 @@ in
                     modelList = lib.concatStringsSep " " models;
                   in
                   ''
-                    # Wait for Ollama to be ready (bounded: 30 attempts × 2s = 60s)
                     ready=false
                     for i in $(seq 1 30); do
                       if ${pkgs.curl}/bin/curl -s "http://${host}:${toString port}/api/tags" >/dev/null 2>&1; then
@@ -139,7 +95,6 @@ in
                       exit 1
                     fi
 
-                    # Pull each model
                     for model in ${modelList}; do
                       echo "Checking model: $model"
                       if ! ${pkgs.ollama}/bin/ollama list 2>/dev/null | grep -q "^$model"; then

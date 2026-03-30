@@ -1,14 +1,7 @@
+{ schema }:
 { lib, ... }:
 let
-  inherit (lib) mkOption;
-  inherit (lib.types)
-    bool
-    str
-    nullOr
-    listOf
-    attrsOf
-    anything
-    ;
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
 in
 {
   _class = "clan.service";
@@ -22,46 +15,7 @@ in
     # Grafana server role
     server = {
       description = "Grafana visualization server for metrics and logs dashboards";
-      interface = {
-        # Allow freeform configuration that maps directly to services.grafana
-        freeformType = attrsOf anything;
-
-        options = {
-          # Clan-specific options
-          enablePrometheusIntegration = mkOption {
-            type = bool;
-            default = true;
-            description = "Whether to automatically configure Prometheus as a datasource";
-          };
-
-          prometheusUrl = mkOption {
-            type = nullOr str;
-            default = null;
-            description = "URL of the Prometheus server (defaults to http://localhost:9090)";
-          };
-
-          # Additional datasources beyond Prometheus
-          additionalDatasources = mkOption {
-            type = listOf anything;
-            default = [ ];
-            description = "Additional datasources to configure";
-          };
-
-          # Additional dashboards
-          dashboards = mkOption {
-            type = listOf anything;
-            default = [ ];
-            description = "Dashboard configurations";
-          };
-
-          # Notification channels
-          notifiers = mkOption {
-            type = listOf anything;
-            default = [ ];
-            description = "Notification channel configurations";
-          };
-        };
-      };
+      interface = mkSettings.mkInterface schema.server;
 
       perInstance =
         { extendSettings, ... }:

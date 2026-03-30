@@ -21,28 +21,31 @@ let
   schemaArgs = dir: { schema = loadSchema dir; };
 
   module_definitions = {
-    "buildbot" = import ./buildbot { inherit inputs; };
-    "tailscale" = import ./tailscale;
-    "tailscale-traefik" = import ./tailscale-traefik;
+    "buildbot" = import ./buildbot {
+      inherit inputs;
+      schema = loadSchema ./buildbot;
+    };
+    "tailscale" = import ./tailscale (schemaArgs ./tailscale);
+    "tailscale-traefik" = import ./tailscale-traefik (schemaArgs ./tailscale-traefik);
     "static-server" = import ./static-server (schemaArgs ./static-server);
-    "prometheus" = import ./prometheus;
-    "grafana" = import ./grafana;
-    "loki" = import ./loki;
+    "prometheus" = import ./prometheus (schemaArgs ./prometheus);
+    "grafana" = import ./grafana (schemaArgs ./grafana);
+    "loki" = import ./loki (schemaArgs ./loki);
     "vaultwarden" = import ./vaultwarden (schemaArgs ./vaultwarden);
     "homepage-dashboard" = import ./homepage-dashboard (schemaArgs ./homepage-dashboard);
     "cloudflare-tunnel" = import ./cloudflare-tunnel (schemaArgs ./cloudflare-tunnel);
-    "calibre-server" = import ./calibre-server;
-    "llm" = import ./llm;
+    "calibre-server" = import ./calibre-server (schemaArgs ./calibre-server);
+    "llm" = import ./llm (schemaArgs ./llm);
     "upmpdcli" = import ./upmpdcli (schemaArgs ./upmpdcli);
     "nix-gc" = import ./nix-gc (schemaArgs ./nix-gc);
-    "ollama" = import ./ollama;
-    "clankers" = import ./clankers;
-    "cloud-hypervisor-vm" = import ./cloud-hypervisor-vm;
+    "ollama" = import ./ollama (schemaArgs ./ollama);
+    "clankers" = import ./clankers (schemaArgs ./clankers);
+    "cloud-hypervisor-vm" = import ./cloud-hypervisor-vm (schemaArgs ./cloud-hypervisor-vm);
     "iroh-ssh" = import ./iroh-ssh (schemaArgs ./iroh-ssh);
-    "llm-agents" = import ./llm-agents;
-    "home-manager-profiles" = import ./home-manager-profiles;
+    "llm-agents" = import ./llm-agents (schemaArgs ./llm-agents);
+    "home-manager-profiles" = import ./home-manager-profiles (schemaArgs ./home-manager-profiles);
     "harmonia" = import ./harmonia (schemaArgs ./harmonia);
-    "llamacpp-rpc" = import ./llamacpp-rpc;
+    "llamacpp-rpc" = import ./llamacpp-rpc (schemaArgs ./llamacpp-rpc);
     "syncthing" = import ./syncthing (schemaArgs ./syncthing);
   };
 

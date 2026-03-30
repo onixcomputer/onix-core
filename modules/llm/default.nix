@@ -1,16 +1,7 @@
+{ schema }:
 { lib, ... }:
 let
-  inherit (lib) mkOption;
-  inherit (lib.types)
-    bool
-    str
-    nullOr
-    listOf
-    attrsOf
-    anything
-    enum
-    port
-    ;
+  mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
 in
 {
   _class = "clan.service";
@@ -26,89 +17,12 @@ in
   };
 
   roles = {
-    # LLM server role - runs inference servers
     server = {
       description = "LLM inference server that provides AI model endpoints";
-      interface = {
-        # Allow freeform configuration that maps directly to underlying services
-        freeformType = attrsOf anything;
-
-        options = {
-          # Service type selection
-          serviceType = mkOption {
-            type = enum [
-              "ollama"
-              "vllm"
-              "llamacpp"
-              "openai-compatible"
-            ];
-            default = "ollama";
-            description = "Type of LLM service to run";
-          };
-
-          # Basic server configuration
-          port = mkOption {
-            type = port;
-            default = 11434; # ollama default, vllm uses 8000
-            description = "Port for the LLM service";
-          };
-
-          host = mkOption {
-            type = str;
-            default = "0.0.0.0";
-            description = "Host address to bind to";
-          };
-
-          # Model configuration
-          models = mkOption {
-            type = listOf str;
-            default = [ ];
-            description = "List of models to download and serve (ollama) or model path (vllm)";
-          };
-
-          # Primary model for vLLM (first model in the list or separate option)
-          model = mkOption {
-            type = nullOr str;
-            default = null;
-            description = "Primary model to serve (used by vllm, falls back to first item in models list)";
-          };
-
-          # Resource limits
-          enableGPU = mkOption {
-            type = bool;
-            default = true;
-            description = "Enable GPU acceleration if available";
-          };
-
-          # vLLM-specific container image (for ROCm/AMD GPU support)
-          containerImage = mkOption {
-            type = nullOr str;
-            default = null;
-            description = ''
-              Custom container image for vLLM. If null, uses the default
-              gfx1151 (Strix Halo) ROCm image. For other AMD GPUs, specify
-              an appropriate ROCm vLLM image.
-            '';
-          };
-
-          # Extra environment variables for the container
-          extraEnv = mkOption {
-            type = attrsOf str;
-            default = { };
-            description = "Extra environment variables for the vLLM container";
-          };
-
-          # Auto-start control
-          autoStart = mkOption {
-            type = bool;
-            default = true;
-            description = "Whether to start the service automatically on boot. Set to false to require manual start.";
-          };
-        };
-      };
+      interface = mkSettings.mkInterface schema.server;
 
       perInstance =
-        { settings, ... }:
+        { extendSettings, ... }:
         {
           nixosModule =
             {
@@ -117,6 +31,8 @@ in
               ...
             }:
             let
+              ms = import ../../lib/mk-settings.nix { inherit lib; };
+              settings = extendSettings (ms.mkDefaults schema.server);
               inherit (settings)
                 serviceType
                 port
@@ -307,39 +223,10 @@ in
     # LLM client role - installs client tools and configuration
     client = {
       description = "LLM client that connects to and uses LLM inference servers";
-      interface = {
-        freeformType = attrsOf anything;
-
-        options = {
-          # Client configuration
-          defaultServer = mkOption {
-            type = nullOr str;
-            default = null;
-            description = "Default LLM server endpoint (e.g., http://server:11434)";
-          };
-
-          clientType = mkOption {
-            type = enum [
-              "ollama"
-              "vllm"
-              "openai"
-              "curl"
-            ];
-            default = "ollama";
-            description = "Type of client tools to install";
-          };
-
-          # Additional client packages
-          extraPackages = mkOption {
-            type = listOf str;
-            default = [ ];
-            description = "Additional packages to install for LLM clients";
-          };
-        };
-      };
+      interface = mkSettings.mkInterface schema.client;
 
       perInstance =
-        { settings, ... }:
+        { extendSettings, ... }:
         {
           nixosModule =
             {
@@ -348,9 +235,9 @@ in
               ...
             }:
             let
-              inherit (settings) clientType extraPackages;
-
-              defaultServer = settings.defaultServer or null;
+              ms = import ../../lib/mk-settings.nix { inherit lib; };
+              settings = extendSettings (ms.mkDefaults schema.client);
+              inherit (settings) clientType extraPackages defaultServer;
 
               # Client packages based on type
               clientPackages =
