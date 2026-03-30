@@ -33,6 +33,7 @@ in
   services | Array StartupEntry = [
     { name = "noctalia-shell", command = "noctalia-shell" },
     { name = "clipboard", command = "@wl-paste@", args = ["--watch", "@cliphist@", "store"] },
+    { name = "clip-persist", command = "@wl-clip-persist@", args = ["--clipboard", "regular"] },
     { name = "polkit", command = "@polkit-gnome@" },
     { name = "network-applet", command = "@nm-applet@" },
     { name = "bluetooth-applet", command = "@blueman-applet@" },

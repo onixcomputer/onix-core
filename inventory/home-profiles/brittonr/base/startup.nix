@@ -19,6 +19,7 @@ let
   subs = {
     "@wl-paste@" = "${pkgs.wl-clipboard}/bin/wl-paste";
     "@cliphist@" = "${pkgs.cliphist}/bin/cliphist";
+    "@wl-clip-persist@" = "${pkgs.wl-clip-persist}/bin/wl-clip-persist";
     "@polkit-gnome@" = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
     "@nm-applet@" = "${pkgs.networkmanagerapplet}/bin/nm-applet";
     "@blueman-applet@" = "${pkgs.blueman}/bin/blueman-applet";
