@@ -185,7 +185,7 @@ in
                     script =
                       let
                         accountJson = account: ''
-                          access_${account}="$(tr -d '\n' < "$prompts/${account}-access-token")"
+                          access_${account}="$(tr -dc '[:print:]' < "$prompts/${account}-access-token")"
                         '';
                         # Build the JSON account entry for each account.
                         accountEntry = account: ''
@@ -193,7 +193,7 @@ in
                                     "credential_type": "oauth",
                                     "access_token": "$access_${account}",
                                     "refresh_token": "",
-                                    "expires_at_ms": 0
+                                    "expires_at_ms": 4102444800000
                                   }'';
                         accountEntries = builtins.concatStringsSep "," (map accountEntry settings.oauthAccounts);
                       in
