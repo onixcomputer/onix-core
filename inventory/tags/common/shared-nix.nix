@@ -20,16 +20,51 @@ in
     (_final: _prev: {
       llamacpp-rocm-rpc = self.packages.${pkgs.stdenv.hostPlatform.system}.llamacpp-rocm-rpc or null;
     })
-    (_final: prev: {
-      nixVersions = prev.nixVersions // {
-        latest = inputs.nix-wasm.packages.${pkgs.stdenv.hostPlatform.system}.nix.overrideAttrs (_: {
-          # Skip functional tests — the stale-file-handle overlayfs test
-          # fails in sandbox. Tests are tracked upstream, not our concern.
-          doCheck = false;
-        });
-      };
+    (
+      _final: prev:
+      let
+        inherit (pkgs.stdenv.hostPlatform) system;
+        wasmNixPkgs = inputs.nix-wasm.packages.${system};
+        wasmNixComponents = {
+          inherit (wasmNixPkgs)
+            nix-cli
+            nix-cmd
+            nix-expr
+            nix-fetchers
+            nix-flake
+            nix-main
+            nix-store
+            ;
+        };
+      in
+      {
+        nixVersions = prev.nixVersions // {
+          latest = wasmNixPkgs.nix.overrideAttrs (_: {
+            # Skip functional tests — the stale-file-handle overlayfs test
+            # fails in sandbox. Tests are tracked upstream, not our concern.
+            doCheck = false;
+          });
+        };
 
-    })
+        # Rebuild nix-eval-jobs against the wasm-enabled Nix so buildbot
+        # workers can evaluate builtins.wasm calls (Nickel plugin, YAML, etc).
+        # Pin to v2.33.1 to match our Nix 2.33.3 — the nixpkgs default
+        # (v2.34.1) is built against Nix 2.34 and ABI-incompatible.
+        nix-eval-jobs =
+          (prev.nix-eval-jobs.override {
+            nixComponents = wasmNixComponents;
+          }).overrideAttrs
+            (_: {
+              version = "2.33.1";
+              src = prev.fetchFromGitHub {
+                owner = "nix-community";
+                repo = "nix-eval-jobs";
+                tag = "v2.33.1";
+                hash = "sha256-ONA7ztgyE2CC3T45NiGxQgCBQevAJ1+pEJlMQpREjBA=";
+              };
+            });
+      }
+    )
   ];
 
   nix = {
