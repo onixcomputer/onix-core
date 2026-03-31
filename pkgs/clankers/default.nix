@@ -31,21 +31,21 @@
   cargo,
 }:
 let
-  clankersRev = "5a767f656fdbffeee16becebbd6de35b757a1ac9";
-  subwayratRev = "d4f7db8d0b6d251f6860b9c216bdb1bc806fefde";
+  clankersRev = "f7c60b7bdca377bcb713f4ecbde421094a711575";
+  subwayratRev = "d80472d39f6683697f1bfb6b45388a6bd2e11dda";
 
   clankersSource = fetchFromGitHub {
     owner = "brittonr";
     repo = "clankers";
     rev = clankersRev;
-    hash = "sha256-L3Ba3IxtbPwZ9oowJ6LOGZq7u1psddnVPMGU8a1MdVg=";
+    hash = "sha256-S5n3mZzE+ZuF4j0WKOWipYLdZQ78BfXZJsX2GrlppDY=";
   };
 
   subwayratSource = fetchFromGitHub {
     owner = "brittonr";
     repo = "subwayrat";
     rev = subwayratRev;
-    hash = "sha256-OqX9V0CgoGkZCgfMXt3blJ9J9IJBQI5M6djReFQMLWE=";
+    hash = "sha256-S5hAFgaZwajOpm+NyfktrICVmxVYAdmEFKznPcif6gQ=";
   };
 in
 rustPlatform.buildRustPackage {
@@ -77,6 +77,11 @@ rustPlatform.buildRustPackage {
     # Disable openspec in clankers-agent default features
     substituteInPlace source/crates/clankers-agent/Cargo.toml \
       --replace-fail 'default = ["openspec"]' 'default = []'
+
+    # Disable kittentts (ort-sys downloads ONNX Runtime binaries at build
+    # time, which fails in the nix sandbox). TTS is optional.
+    substituteInPlace source/crates/clankers-tts/Cargo.toml \
+      --replace-fail 'default = ["kitten"]' 'default = []'
   '';
 
   cargoLock = {

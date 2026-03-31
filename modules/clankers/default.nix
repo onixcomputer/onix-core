@@ -68,6 +68,9 @@ in
               # Make the CLI available system-wide for `clankers rpc`, `clankers attach`, etc.
               environment.systemPackages = [ clankersPkg ];
 
+              # Let admin users connect to the daemon control socket.
+              users.users.brittonr.extraGroups = [ "clankers" ];
+
               services.clankers-daemon = {
                 enable = true;
                 package = clankersPkg;
@@ -89,6 +92,20 @@ in
                 (mkIf (settings.apiBase != null) {
                   environment.ANTHROPIC_BASE_URL = settings.apiBase;
                 })
+                # Put the control socket in /run/clankers/ (created by
+                # RuntimeDirectory) instead of private /tmp/ namespace.
+                # Relax sandboxing so iroh can bind its QUIC endpoint.
+                {
+                  environment.XDG_RUNTIME_DIR = "/run/clankers";
+                  serviceConfig = {
+                    PrivateTmp = lib.mkForce false;
+                    ProtectSystem = lib.mkForce "full";
+                    ProtectHome = lib.mkForce "read-only";
+                    # Socket needs group-write so clankers group members
+                    # can connect via `clankers daemon status/sessions/attach`.
+                    UMask = "0002";
+                  };
+                }
               ];
             };
         };
