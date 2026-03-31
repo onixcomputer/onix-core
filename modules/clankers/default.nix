@@ -89,8 +89,18 @@ in
                   wants = [ "clanker-router.service" ];
                 })
                 # Route through the proxy when apiBase is set.
+                # --api-base is a CLI flag, not an env var. Pass it via extraArgs
+                # on the ExecStart command line.
                 (mkIf (settings.apiBase != null) {
-                  environment.ANTHROPIC_BASE_URL = settings.apiBase;
+                  environment.ANTHROPIC_API_KEY = "sk-ant-proxy";
+                  serviceConfig.ExecStart = lib.mkForce (
+                    "${clankersPkg}/bin/clankers"
+                    + " --api-base ${settings.apiBase}"
+                    + " daemon start"
+                    + " --heartbeat ${toString settings.heartbeat}"
+                    + lib.optionalString settings.allowAll " --allow-all"
+                    + lib.concatMapStrings (a: " ${a}") settings.extraArgs
+                  );
                 })
                 # Put the control socket in /run/clankers/ (created by
                 # RuntimeDirectory) instead of private /tmp/ namespace.

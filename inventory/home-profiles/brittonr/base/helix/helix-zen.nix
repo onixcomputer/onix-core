@@ -51,7 +51,7 @@ let
       harper # Fast Rust-based grammar checker
 
       # Formatters
-      nodePackages.prettier # Markdown formatting with prose-wrap control
+      prettier # Markdown formatting with prose-wrap control
 
       # Preview
       glow # Terminal markdown renderer
@@ -193,7 +193,7 @@ let
           "ltex-ls-plus"
         ];
         formatter = {
-          command = "${pkgs.nodePackages.prettier}/bin/prettier";
+          command = "${pkgs.prettier}/bin/prettier";
           args = [
             "--parser"
             "markdown"

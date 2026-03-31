@@ -317,8 +317,8 @@ let prom_rules = import "prometheus-rules.ncl" in
           listenAddr = "0.0.0.0",
           listenPort = 4000,
           useOAuth = true,
-          oauthAccounts = ["claude2"],
-          oauthActiveAccount = "claude2",
+          oauthAccounts = ["claude1", "claude2", "claude3"],
+          oauthActiveAccount = "claude3",
         },
         daemon.machines.aspen2.settings = {
           apiBase = "http://127.0.0.1:4000",
