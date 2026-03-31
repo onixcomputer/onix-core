@@ -1,12 +1,13 @@
 # Direct USB4/Thunderbolt host-to-host networking between paired machines.
 # Uses thunderbolt_net kernel module over USB4 cable for ~40 Gbps link.
-# Assign static IPs on a /30 and trust the interface for unrestricted traffic.
+# Assign static IPs on a /28 and trust the interface for unrestricted traffic.
 { config, lib, ... }:
 let
-  # Static IP map — each machine gets one side of a point-to-point /30
+  # Static IP map — each machine gets a unique address on the thunderbolt /28
   tbAddresses = {
-    aspen1 = "10.10.10.1/30";
-    aspen2 = "10.10.10.2/30";
+    aspen1 = "10.10.10.1/28";
+    aspen2 = "10.10.10.2/28";
+    britton-desktop = "10.10.10.3/28";
   };
 
   hostname = config.networking.hostName;

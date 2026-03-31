@@ -163,6 +163,10 @@
         rust-overlay.follows = "rust-overlay";
       };
     };
+    musnix = {
+      url = "github:musnix/musnix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =

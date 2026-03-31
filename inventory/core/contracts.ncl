@@ -31,6 +31,7 @@ let tag_file_tags = [
   "password-manager",
   "perf-tuning",
   "pinenote",
+  "pro-audio",
   "printing",
   "remote-builders",
   "ssd-optimization",
