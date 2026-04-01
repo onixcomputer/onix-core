@@ -107,6 +107,11 @@ in
       warn-dirty = false;
       auto-optimise-store = true;
 
+      # Trigger GC mid-build when free space drops below 100 GiB;
+      # stop collecting once 128 GiB is free.
+      min-free = 107374182400;
+      max-free = 137438953472;
+
       # Caches: flake.nixConfig provides nix-community.cachix.org;
       # additional caches are appended here so all machines share them.
       substituters = (flake.nixConfig.extra-substituters or [ ]) ++ [
