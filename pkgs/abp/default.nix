@@ -31,7 +31,7 @@
 }:
 
 let
-  version = "0.1.6";
+  version = "0.1.10";
 in
 stdenv.mkDerivation {
   pname = "abp";
@@ -39,7 +39,7 @@ stdenv.mkDerivation {
 
   src = fetchurl {
     url = "https://github.com/theredsix/agent-browser-protocol/releases/download/v${version}/abp-${version}-linux-x64.tar.gz";
-    hash = "sha256-XflCqT9wlUN5Y7n1Lykim5sKGmH5/2jMIQnxnXfTI+Y=";
+    hash = "sha256-19dTWtu8Q/Kud4oFXdVNCuoDc5OZ4lPXT1kOU8OHook=";
   };
 
   sourceRoot = ".";
