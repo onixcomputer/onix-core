@@ -233,10 +233,10 @@ let
   # so that `builtins.wasm` is available for inventory evaluation.
   # doCheck = false mirrors shared-nix.nix — the overlayfs stale-file-handle
   # test fails in sandbox.
-  nix-wasm = inputs'.nix-wasm.nix.overrideAttrs (_: {
+  onixNix = inputs'.nix.nix.overrideAttrs (_: {
     doCheck = false;
   });
-  clan-cli = inputs'.clan-core.clan-cli.override { nix = nix-wasm; };
+  clan-cli = inputs'.clan-core.clan-cli.override { nix = onixNix; };
 
 in
 {

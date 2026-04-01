@@ -426,17 +426,17 @@
     "git-hooks-nix": {
       "inputs": {
         "flake-compat": [
-          "nix-wasm"
+          "nix"
         ],
         "gitignore": [
-          "nix-wasm"
+          "nix"
         ],
         "nixpkgs": [
-          "nix-wasm",
+          "nix",
           "nixpkgs"
         ],
         "nixpkgs-stable": [
-          "nix-wasm",
+          "nix",
           "nixpkgs"
         ]
       },
@@ -707,6 +707,33 @@
         "type": "github"
       }
     },
+    "nix": {
+      "inputs": {
+        "flake-compat": "flake-compat",
+        "flake-parts": [
+          "flake-parts"
+        ],
+        "git-hooks-nix": "git-hooks-nix",
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "nixpkgs-23-11": "nixpkgs-23-11",
+        "nixpkgs-regression": "nixpkgs-regression"
+      },
+      "locked": {
+        "lastModified": 1775076115,
+        "narHash": "sha256-Wt/9K14z5dPFAjpoPR1Axdly7WSplu0B+ZDTAreGZmY=",
+        "owner": "onixcomputer",
+        "repo": "nix",
+        "rev": "69f675ba2b4623a4bfb4c2a9cdd815ee5a095f79",
+        "type": "github"
+      },
+      "original": {
+        "owner": "onixcomputer",
+        "repo": "nix",
+        "type": "github"
+      }
+    },
     "nix-darwin": {
       "inputs": {
         "nixpkgs": [
@@ -759,34 +786,6 @@
       "original": {
         "type": "tarball",
         "url": "https://git.clan.lol/clan/nix-select/archive/main.tar.gz"
-      }
-    },
-    "nix-wasm": {
-      "inputs": {
-        "flake-compat": "flake-compat",
-        "flake-parts": [
-          "flake-parts"
-        ],
-        "git-hooks-nix": "git-hooks-nix",
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "nixpkgs-23-11": "nixpkgs-23-11",
-        "nixpkgs-regression": "nixpkgs-regression"
-      },
-      "locked": {
-        "lastModified": 1775067186,
-        "narHash": "sha256-rp8imj8uuabkZEILIitSpvxcT7NVDEJ7tBoZF+AFl9E=",
-        "owner": "brittonr",
-        "repo": "nix",
-        "rev": "3d3012d65989e0dc7c30f085a970d11c83262274",
-        "type": "github"
-      },
-      "original": {
-        "owner": "brittonr",
-        "ref": "onix",
-        "repo": "nix",
-        "type": "github"
       }
     },
     "nixdelta": {
@@ -937,6 +936,27 @@
         "type": "github"
       }
     },
+    "onix-wasm": {
+      "inputs": {
+        "nickel-wasm-vendor": "nickel-wasm-vendor",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1775074881,
+        "narHash": "sha256-PyeImEKZV/0HX62CX6oXSNDUg+yLTUnQgWh8Gnmq+Xw=",
+        "owner": "onixcomputer",
+        "repo": "onix-wasm",
+        "rev": "47906b799850d44056c471f91506d9d3330b7e9c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "onixcomputer",
+        "repo": "onix-wasm",
+        "type": "github"
+      }
+    },
     "pinenote-nixos": {
       "inputs": {
         "nixpkgs": [
@@ -994,16 +1014,16 @@
         "llm-agents": "llm-agents",
         "mics-skills": "mics-skills",
         "musnix": "musnix",
-        "nickel-wasm-vendor": "nickel-wasm-vendor",
         "niri": "niri",
         "nitrous": "nitrous",
+        "nix": "nix",
         "nix-index-database": "nix-index-database",
-        "nix-wasm": "nix-wasm",
         "nixdelta": "nixdelta",
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs",
         "noctalia": "noctalia",
         "noctalia-plugins": "noctalia-plugins",
+        "onix-wasm": "onix-wasm",
         "pinenote-nixos": "pinenote-nixos",
         "pre-commit-hooks-nix": "pre-commit-hooks-nix",
         "rust-overlay": "rust-overlay_2",

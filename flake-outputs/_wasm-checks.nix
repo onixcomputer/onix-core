@@ -14,7 +14,7 @@
 }:
 let
   # The wasm-enabled nix binary from the overlay
-  nixWasm = self.inputs.nix-wasm.packages.${system}.nix.overrideAttrs (_: {
+  nixWasm = self.inputs.nix.packages.${system}.nix.overrideAttrs (_: {
     doCheck = false;
   });
 

@@ -24,9 +24,9 @@ in
       _final: prev:
       let
         inherit (pkgs.stdenv.hostPlatform) system;
-        wasmNixPkgs = inputs.nix-wasm.packages.${system};
-        wasmNixComponents = {
-          inherit (wasmNixPkgs)
+        onixNixPkgs = inputs.nix.packages.${system};
+        onixNixComponents = {
+          inherit (onixNixPkgs)
             nix-cli
             nix-cmd
             nix-expr
@@ -39,7 +39,7 @@ in
       in
       {
         nixVersions = prev.nixVersions // {
-          latest = wasmNixPkgs.nix.overrideAttrs (_: {
+          latest = onixNixPkgs.nix.overrideAttrs (_: {
             # Skip functional tests — the stale-file-handle overlayfs test
             # fails in sandbox. Tests are tracked upstream, not our concern.
             doCheck = false;
@@ -52,7 +52,7 @@ in
         # (v2.34.1) is built against Nix 2.34 and ABI-incompatible.
         nix-eval-jobs =
           (prev.nix-eval-jobs.override {
-            nixComponents = wasmNixComponents;
+            nixComponents = onixNixComponents;
           }).overrideAttrs
             (_: {
               version = "2.33.1";

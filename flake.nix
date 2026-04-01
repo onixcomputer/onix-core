@@ -113,18 +113,15 @@
       };
     };
 
-    # Nix with builtins.wasm support + nix ps (cherry-picked NixOS/nix#15380
-    # and DeterminateSystems/nix-src#282 onto 2.33.3)
-    nix-wasm = {
-      url = "github:brittonr/nix/onix";
+    nix = {
+      url = "github:onixcomputer/nix";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-parts.follows = "flake-parts";
     };
 
-    # Patched nickel-lang crates for wasm32-unknown-unknown (SourceIO trait)
-    nickel-wasm-vendor = {
-      url = "github:brittonr/nickel-wasm/wasm-vendor";
-      flake = false;
+    onix-wasm = {
+      url = "github:onixcomputer/onix-wasm";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # Dev tooling inputs (previously in dev/flake.nix partition)

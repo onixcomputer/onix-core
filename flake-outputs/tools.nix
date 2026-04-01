@@ -14,10 +14,7 @@ let
 in
 {
   packages = {
-    wasm-plugins = pkgs.callPackage ../wasm-plugins {
-      inherit (pkgs.llvmPackages) lld;
-      inherit (self.inputs) nickel-wasm-vendor;
-    };
+    inherit (self.inputs.onix-wasm.packages.${pkgs.stdenv.hostPlatform.system}) wasm-plugins;
     ccusage = pkgs.callPackage ../pkgs/ccusage { };
     nix-eval-warnings = pkgs.callPackage ../pkgs/nix-eval-warnings { };
     iroh-ssh = pkgs.callPackage ../pkgs/iroh-ssh { };
