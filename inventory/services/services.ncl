@@ -323,6 +323,20 @@ let prom_rules = import "prometheus-rules.ncl" in
         daemon.machines.aspen2.settings = {
           apiBase = "http://127.0.0.1:4000",
           allowAll = true,
+          schedules = [
+            {
+              name = "system-health",
+              kind = "interval",
+              interval = 3600,
+              prompt = "Run a quick system health check: disk usage, memory, load average, and any failed systemd units. Report only if something needs attention.",
+            },
+            {
+              name = "git-digest",
+              kind = "cron",
+              cron = "0 9 1-5",
+              prompt = "Summarize git activity across all repos in ~/git/ since yesterday. List repos with new commits and any uncommitted changes.",
+            },
+          ],
         },
       },
     },

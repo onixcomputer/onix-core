@@ -5,6 +5,7 @@
     heartbeat = { type = "number", default = 30, description = "Heartbeat interval in seconds (0 to disable)" },
     apiBase = { type = "nullable_string", default = null, description = "API base URL for the LLM proxy" },
     extraArgs = { type = "array_string", default = [], description = "Extra arguments passed to clankers daemon start" },
+    schedules = { type = "array", default = [], description = "Declarative schedules seeded on daemon start. Each entry: {name, kind (interval|cron), interval (secs), cron (pattern), prompt, maxFires?}" },
   },
   router = {
     listenAddr = { type = "string", default = "0.0.0.0", description = "Address to bind the HTTP proxy" },

@@ -61,6 +61,94 @@ in
               };
 
               routerEnabled = config.services.clanker-router.enable or false;
+
+              # ── Declarative schedules ──────────────────────────────────
+              # Convert user-friendly schedule configs to clanker-scheduler
+              # JSON format (must match serde representation).
+              hasSchedules = settings.schedules != [ ];
+
+              parseCronField =
+                s:
+                if s == "*" then
+                  "Any"
+                else if lib.hasPrefix "*/" s then
+                  { Step = lib.toInt (lib.removePrefix "*/" s); }
+                else if lib.hasInfix "," s then
+                  { List = map lib.toInt (lib.splitString "," s); }
+                else if lib.hasInfix "-" s then
+                  let
+                    parts = lib.splitString "-" s;
+                  in
+                  {
+                    Range = [
+                      (lib.toInt (builtins.elemAt parts 0))
+                      (lib.toInt (builtins.elemAt parts 1))
+                    ];
+                  }
+                else
+                  { Exact = lib.toInt s; };
+
+              scheduleToJson =
+                s:
+                let
+                  cronFields = if s.kind == "cron" then lib.splitString " " s.cron else [ ];
+                in
+                {
+                  # Deterministic ID so the merge script can match by name.
+                  id = builtins.substring 0 36 (builtins.hashString "sha256" "nix-${s.name}");
+                  inherit (s) name;
+                  kind =
+                    if s.kind == "interval" then
+                      {
+                        Interval = {
+                          interval_secs = s.interval;
+                        };
+                      }
+                    else if s.kind == "cron" then
+                      {
+                        Cron = {
+                          pattern = {
+                            minute = parseCronField (builtins.elemAt cronFields 0);
+                            hour = parseCronField (builtins.elemAt cronFields 1);
+                            day_of_week = parseCronField (builtins.elemAt cronFields 2);
+                          };
+                        };
+                      }
+                    else
+                      throw "clankers schedule: unknown kind '${s.kind}' (use interval or cron)";
+                  status = "Active";
+                  payload = {
+                    inherit (s) prompt;
+                  }
+                  // (s.payload or { });
+                  created_at = "2026-01-01T00:00:00Z";
+                  last_fired = null;
+                  fire_count = 0;
+                  max_fires = s.maxFires or null;
+                };
+
+              seedFile = pkgs.writeText "clankers-schedules-seed.json" (
+                builtins.toJSON (map scheduleToJson settings.schedules)
+              );
+
+              # Merge script: preserve runtime schedules, replace/add Nix-declared ones.
+              mergeScript = pkgs.writeShellScript "clankers-merge-schedules" ''
+                set -euo pipefail
+                seed="${seedFile}"
+                live="/var/lib/clankers/.clankers/agent/schedules.json"
+                mkdir -p "$(dirname "$live")"
+
+                if [ -f "$live" ]; then
+                  # Remove schedules whose names match seed, then append seed.
+                  ${pkgs.jq}/bin/jq --slurpfile seed "$seed" '
+                    [.[] | select(.name as $n | ($seed[0] | map(.name) | index($n)) == null)]
+                    + $seed[0]
+                  ' "$live" > "$live.tmp" && mv "$live.tmp" "$live"
+                else
+                  cp "$seed" "$live"
+                fi
+                chown clankers:clankers "$live"
+              '';
             in
             {
               imports = [ inputs.clankers.nixosModules.clankers-daemon ];
@@ -101,6 +189,10 @@ in
                     + lib.optionalString settings.allowAll " --allow-all"
                     + lib.concatMapStrings (a: " ${a}") settings.extraArgs
                   );
+                })
+                # Seed Nix-declared schedules before the daemon starts.
+                (mkIf hasSchedules {
+                  serviceConfig.ExecStartPre = [ "+${mergeScript}" ];
                 })
                 # Put the control socket in /run/clankers/ (created by
                 # RuntimeDirectory) instead of private /tmp/ namespace.
