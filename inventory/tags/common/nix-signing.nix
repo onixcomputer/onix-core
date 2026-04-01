@@ -54,7 +54,11 @@ in
     # Trust substituters from flake config if present
     substituters = flake.nixConfig.extra-substituters or [ ];
 
-    # Harmonia binary cache on aspen1
-    extra-substituters = [ "http://aspen1:5000" ];
+    # Harmonia binary cache on aspen1 — skip on aspen1 itself to avoid
+    # a circular substituter loop (nix-daemon → harmonia → nix-daemon)
+    # that deadlocks curl threads during nix copy.
+    extra-substituters = lib.mkIf (config.networking.hostName != "aspen1") [
+      "http://aspen1:5000"
+    ];
   };
 }
