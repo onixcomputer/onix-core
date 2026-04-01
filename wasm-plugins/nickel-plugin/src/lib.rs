@@ -179,6 +179,15 @@ fn nickel_to_nix(value: &nickel_lang_core::eval::value::NickelValue) -> Value {
             let refs: Vec<(&str, Value)> = entries.iter().map(|(k, v)| (k.as_str(), *v)).collect();
             Value::make_attrset(&refs)
         }
+        ValueContentRef::ForeignId(id) => {
+            let id = *id;
+            if id > u32::MAX as u64 {
+                nix_wasm_rust::panic(&format!(
+                    "nickel_to_nix: ForeignId({id}) exceeds u32::MAX — not a valid Nix ValueId"
+                ));
+            }
+            Value::from_raw(id as u32)
+        }
         ValueContentRef::EnumVariant(ev) if ev.arg.is_none() => Value::make_string(ev.tag.label()),
         other => nix_wasm_rust::panic(&format!(
             "nickel_to_nix: unexpected value variant after full eval: {other:?}"
@@ -186,104 +195,56 @@ fn nickel_to_nix(value: &nickel_lang_core::eval::value::NickelValue) -> Value {
     }
 }
 
-/// Convert a Nix value to Nickel source text.
+/// Convert a Nix value to a Nickel value, recursively.
 ///
-/// Walks the Nix value tree via `get_type()` dispatch and produces a string
-/// that is valid Nickel syntax. Supports int, float, bool, string, null,
-/// list (→ array), and attrset (→ record). Panics on unsupported types
-/// (function, path).
-fn nix_to_nickel_source(value: &Value) -> String {
+/// Data types (string, int, float, bool, null) become native Nickel values.
+/// Attrsets and lists are recursed into so that data-only structures can be
+/// destructured on the Nickel side (backward compat with the old source-text
+/// approach). Functions and paths become ForeignId(value_id as u64) -- opaque
+/// handles that nickel_to_nix recovers on the way out.
+///
+/// get_type() is called on every value to classify it. For functions/paths
+/// this is the ONLY host ABI call -- no further inspection occurs.
+fn nix_to_nickel(nix_val: &Value) -> nickel_lang_core::eval::value::NickelValue {
+    use nickel_lang_core::eval::value::NickelValue;
+    use nickel_lang_core::identifier::LocIdent;
+    use nickel_lang_core::term::Number;
     use nix_wasm_rust::Type;
 
-    match value.get_type() {
-        Type::Null => "null".to_string(),
-        Type::Bool => {
-            if value.get_bool() {
-                "true".to_string()
-            } else {
-                "false".to_string()
-            }
-        }
-        Type::Int => format!("{}", value.get_int()),
+    match nix_val.get_type() {
+        Type::Null => NickelValue::null(),
+        Type::Bool => NickelValue::bool_value_posless(nix_val.get_bool()),
+        Type::Int => NickelValue::number_posless(nix_val.get_int()),
         Type::Float => {
-            let f = value.get_float();
-            // Nickel needs a decimal point for floats
-            if f.fract() == 0.0 {
-                format!("{f:.1}")
-            } else {
-                format!("{f}")
-            }
+            let n = Number::try_from(nix_val.get_float())
+                .unwrap_or_else(|_| nix_wasm_rust::panic("nix_to_nickel: non-finite float"));
+            NickelValue::number_posless(n)
         }
-        Type::String => {
-            let s = value.get_string();
-            // Use Nickel multiline string m%" ... "% to avoid escaping issues
-            format!("m%\"{s}\"%")
+        Type::String => NickelValue::string_posless(nix_val.get_string()),
+        Type::Attrs => {
+            let attrs = nix_val.get_attrset();
+            let field_values: Vec<(LocIdent, NickelValue)> = attrs
+                .iter()
+                .map(|(key, val)| (LocIdent::from(key.as_str()), nix_to_nickel(&val)))
+                .collect();
+            NickelValue::record_posless(
+                nickel_lang_core::term::record::RecordData::with_field_values(field_values),
+            )
         }
         Type::List => {
-            let items = value.get_list();
-            let inner: Vec<String> = items.iter().map(|v| nix_to_nickel_source(v)).collect();
-            format!("[{}]", inner.join(", "))
+            let items = nix_val.get_list();
+            let nickel_items: Vec<NickelValue> = items.iter().map(|v| nix_to_nickel(&v)).collect();
+            NickelValue::array_posless(nickel_items.into_iter().collect(), Vec::new())
         }
-        Type::Attrs => {
-            let attrs = value.get_attrset();
-            if attrs.is_empty() {
-                return "{}".to_string();
-            }
-            let fields: Vec<String> = attrs
-                .iter()
-                .map(|(k, v)| {
-                    let nickel_key = if needs_quoting(k) {
-                        format!("\"{k}\"")
-                    } else {
-                        k.clone()
-                    };
-                    format!("{nickel_key} = {}", nix_to_nickel_source(v))
-                })
-                .collect();
-            format!("{{ {} }}", fields.join(", "))
-        }
-        Type::Path => nix_wasm_rust::panic(
-            "nix_to_nickel_source: cannot convert Nix path to Nickel — \
-             use builtins.toString on the Nix side first",
-        ),
-        Type::Function => nix_wasm_rust::panic(
-            "nix_to_nickel_source: cannot convert Nix function to Nickel — \
-             only data values (int, float, bool, string, null, list, attrset) are supported",
-        ),
+        // Functions, paths: opaque handle. get_type() was the only call.
+        // nickel_to_nix recovers the original Nix value via Value::from_raw.
+        Type::Function | Type::Path => NickelValue::foreign_id_posless(nix_val.raw_id() as u64),
     }
 }
 
-/// Check whether a Nickel record field name needs quoting.
-fn needs_quoting(s: &str) -> bool {
-    if s.is_empty() {
-        return true;
-    }
-    // Nickel identifiers: start with letter or _, then letters/digits/_/-
-    let mut chars = s.chars();
-    let first = chars.next().unwrap();
-    if !first.is_ascii_alphabetic() && first != '_' {
-        return true;
-    }
-    for c in chars {
-        if !c.is_ascii_alphanumeric() && c != '_' && c != '-' {
-            return true;
-        }
-    }
-    // Nickel keywords
-    matches!(
-        s,
-        "if" | "then"
-            | "else"
-            | "let"
-            | "in"
-            | "fun"
-            | "import"
-            | "match"
-            | "null"
-            | "true"
-            | "false"
-            | "forall"
-    )
+/// Convert a Nix args attrset to a Nickel record value.
+fn nix_args_to_nickel_record(args: &Value) -> nickel_lang_core::eval::value::NickelValue {
+    nix_to_nickel(args)
 }
 
 /// Evaluate a Nickel source string, returning the result as a Nix value.
@@ -343,6 +304,82 @@ fn eval_nickel_file_source(source: &str, base_path: Value) -> Value {
     eval_with_cache(source, cache, pos_table)
 }
 
+/// Parse a Nickel source string, apply it to a pre-built args record, and
+/// evaluate. Used by evalNickelFileWith and evalNickelWith to avoid
+/// serializing args to source text.
+///
+/// If `base_path` is Some, file imports resolve relative to that path.
+/// If None, imports are not supported (string eval mode).
+fn eval_nickel_apply_source(
+    source: &str,
+    args: nickel_lang_core::eval::value::NickelValue,
+    base_path: Option<Value>,
+) -> Value {
+    use nickel_lang_core::eval::value::NickelValue;
+    use nickel_lang_core::term::{AppData, Term};
+    use std::io::Cursor;
+    use std::path::PathBuf;
+
+    let io: Arc<dyn SourceIO> = match base_path {
+        Some(bp) => Arc::new(WasmHostIO { base_path: bp }),
+        None => Arc::new(NoopSourceIO),
+    };
+    let (mut cache, mut pos_table) = get_prepared_cache(io);
+
+    // Add user source to cache
+    let main_id = cache
+        .sources
+        .add_source(
+            SourcePath::Path(PathBuf::from("<wasm>"), InputFormat::Nickel),
+            Cursor::new(source.as_bytes()),
+        )
+        .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("nickel I/O error: {e}")));
+
+    // Prepare user source (parse, transform, closurize stdlib)
+    cache
+        .prepare_eval_only(&mut pos_table, main_id)
+        .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("nickel prepare error: {e:?}")));
+
+    // Build VmContext
+    let mut vm_ctxt: nickel_lang_core::eval::VmContext<
+        CacheHub,
+        nickel_lang_core::eval::cache::CacheImpl,
+    > = nickel_lang_core::eval::VmContext::new_with_pos_table(
+        cache,
+        pos_table,
+        std::io::sink(),
+        nickel_lang_core::error::NullReporter {},
+    );
+
+    // Closurize main term
+    vm_ctxt
+        .import_resolver
+        .closurize(&mut vm_ctxt.cache, main_id)
+        .unwrap_or_else(|e| {
+            nix_wasm_rust::panic(&format!("nickel closurize error: {e:?}"));
+        });
+
+    // Get the parsed function
+    let parsed_fn = vm_ctxt
+        .import_resolver
+        .terms
+        .get_owned(main_id)
+        .unwrap_or_else(|| nix_wasm_rust::panic("nickel: prepared term not found in cache"));
+
+    // Build application: (<parsed_fn>) <args_record>
+    let app = NickelValue::term_posless(Term::App(AppData {
+        head: parsed_fn.into(),
+        arg: args,
+    }));
+
+    // Evaluate
+    let value = nickel_lang_core::eval::VirtualMachine::new(&mut vm_ctxt)
+        .eval_full_for_export_closure(app.into())
+        .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("nickel eval error: {e:?}")));
+
+    nickel_to_nix(&value)
+}
+
 /// Evaluate a Nickel file from a Nix path, returning the result as a Nix value.
 ///
 /// The argument must be a Nix path pointing to a `.ncl` file. The file is
@@ -365,9 +402,9 @@ pub extern "C" fn evalNickelFile(arg: Value) -> Value {
 ///   - `args`: a Nix attrset of arguments to pass to the function
 ///
 /// The `.ncl` file should be a function: `fun { key1, key2, .. } => ...`
-/// The args attrset is converted to Nickel source and applied as the argument.
-/// If the file is not a function, a warning is emitted and the file's value
-/// is returned with args ignored.
+/// Args are recursively converted to native Nickel values (records, arrays,
+/// strings, numbers, bools, null). Non-data Nix values (functions, paths,
+/// derivations) pass through as opaque ForeignId handles.
 #[no_mangle]
 pub extern "C" fn evalNickelFileWith(arg: Value) -> Value {
     let file_val = arg
@@ -381,13 +418,8 @@ pub extern "C" fn evalNickelFileWith(arg: Value) -> Value {
     let file_source = String::from_utf8(contents)
         .unwrap_or_else(|e| nix_wasm_rust::panic(&format!("nickel file is not valid UTF-8: {e}")));
 
-    let args_source = nix_to_nickel_source(&args_val);
-
-    // Wrap: apply the file's function to the args
-    // `(<file-contents>) <args>` — if the file is `fun {x, ..} => ...`, this applies it.
-    let wrapped = format!("({file_source}) {args_source}");
-
-    eval_nickel_file_source(&wrapped, file_val)
+    let args_record = nix_args_to_nickel_record(&args_val);
+    eval_nickel_apply_source(&file_source, args_record, Some(file_val))
 }
 
 /// Evaluate a Nickel source string with Nix arguments applied.
@@ -397,7 +429,7 @@ pub extern "C" fn evalNickelFileWith(arg: Value) -> Value {
 ///   - `args`: a Nix attrset of arguments to pass to the function
 ///
 /// The source should be a function: `fun { key1, key2, .. } => ...`
-/// The args attrset is converted to Nickel source and applied as the argument.
+/// Args are converted to a Nickel record programmatically.
 #[no_mangle]
 pub extern "C" fn evalNickelWith(arg: Value) -> Value {
     let source_val = arg
@@ -408,8 +440,6 @@ pub extern "C" fn evalNickelWith(arg: Value) -> Value {
         .unwrap_or_else(|| nix_wasm_rust::panic("evalNickelWith: missing 'args' attribute"));
 
     let user_source = source_val.get_string();
-    let args_source = nix_to_nickel_source(&args_val);
-
-    let wrapped = format!("({user_source}) {args_source}");
-    eval_nickel_source(&wrapped)
+    let args_record = nix_args_to_nickel_record(&args_val);
+    eval_nickel_apply_source(&user_source, args_record, None)
 }

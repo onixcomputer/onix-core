@@ -64,6 +64,12 @@ impl Value {
         Value(value)
     }
 
+    /// Return the raw ValueId. Used by nickel-plugin to store Nix value
+    /// handles as ForeignId(u64) in Nickel and recover them later.
+    pub fn raw_id(&self) -> ValueId {
+        self.0
+    }
+
     pub fn get_type(&self) -> Type {
         extern "C" {
             fn get_type(value: ValueId) -> Type;

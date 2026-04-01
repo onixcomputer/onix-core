@@ -369,5 +369,103 @@ in
         function = "evalNickel";
       } "3.14"
     '' "3.14";
+
+    # ---- ForeignId passthrough tests ----
+
+    # Function passthrough: pass a Nix function as arg, module returns it,
+    # Nix side calls it. Previously nix_to_nickel_source panicked on functions.
+    wasm-foreignId-function-passthrough =
+      let
+        ncl = pkgs.writeText "fn-passthrough.ncl" ''
+          fun { f, .. } => { result = f }
+        '';
+      in
+      mkWasmTest "foreignId-function-passthrough" ''
+        let
+          double = x: x * 2;
+          out = builtins.wasm {
+            path = ${plugins}/nickel_plugin.wasm;
+            function = "evalNickelFileWith";
+          } { file = ${ncl}; args = { f = double; }; };
+        in out.result 21
+      '' "42";
+
+    # Path passthrough: pass a Nix path as arg, module returns it.
+    # Previously nix_to_nickel_source panicked on paths.
+    wasm-foreignId-path-passthrough =
+      let
+        ncl = pkgs.writeText "path-passthrough.ncl" ''
+          fun { p, .. } => { result = p }
+        '';
+        testFile = pkgs.writeText "hello.txt" "hello";
+      in
+      mkWasmTest "foreignId-path-passthrough" ''
+        builtins.readFile (
+          builtins.wasm {
+            path = ${plugins}/nickel_plugin.wasm;
+            function = "evalNickelFileWith";
+          } { file = ${ncl}; args = { p = ${testFile}; }; }
+        ).result
+      '' ''"hello"'';
+
+    # Mixed args: strings, ints, and a function all round-trip correctly.
+    wasm-foreignId-mixed-args =
+      let
+        ncl = pkgs.writeText "mixed-args.ncl" ''
+          fun { name, count, f, .. } => { greeting = name, total = count, callback = f }
+        '';
+      in
+      mkWasmTest "foreignId-mixed-args" ''
+        let
+          inc = x: x + 1;
+          out = builtins.wasm {
+            path = ${plugins}/nickel_plugin.wasm;
+            function = "evalNickelFileWith";
+          } { file = ${ncl}; args = { name = "world"; count = 42; f = inc; }; };
+        in { inherit (out) greeting total; applied = out.callback 9; }
+      '' ''{ applied = 10; greeting = "world"; total = 42; }'';
+
+    # ForeignId in nested Nickel records: module wraps ForeignId value
+    # inside a nested record, verify recovery works at depth.
+    wasm-foreignId-nested-output =
+      let
+        ncl = pkgs.writeText "nested-output.ncl" ''
+          fun { f, .. } => { output = { inner = { deep = f } } }
+        '';
+      in
+      mkWasmTest "foreignId-nested-output" ''
+        let
+          add10 = x: x + 10;
+          out = builtins.wasm {
+            path = ${plugins}/nickel_plugin.wasm;
+            function = "evalNickelFileWith";
+          } { file = ${ncl}; args = { f = add10; }; };
+        in out.output.inner.deep 32
+      '' "42";
+
+    # Data-only args backward compat: verify results match exactly
+    wasm-foreignId-data-only-compat =
+      let
+        ncl = pkgs.writeText "data-compat.ncl" ''
+          fun { name, count, enabled, .. } => { output_name = name, doubled = count * 2, flag = enabled }
+        '';
+      in
+      mkWasmTest "foreignId-data-only-compat" ''
+        builtins.wasm {
+          path = ${plugins}/nickel_plugin.wasm;
+          function = "evalNickelFileWith";
+        } { file = ${ncl}; args = { name = "world"; count = 21; enabled = true; }; }
+      '' ''{ doubled = 42; flag = true; output_name = "world"; }'';
+
+    # evalNickelWith with ForeignId: source string + function arg
+    wasm-foreignId-evalNickelWith = mkWasmTest "foreignId-evalNickelWith" ''
+      let
+        add5 = x: x + 5;
+        out = builtins.wasm {
+          path = ${plugins}/nickel_plugin.wasm;
+          function = "evalNickelWith";
+        } { source = "fun { f, x, .. } => { result = f, val = x }"; args = { f = add5; x = 37; }; };
+      in { applied = out.result 0; inherit (out) val; }
+    '' "{ applied = 5; val = 37; }";
   };
 }
