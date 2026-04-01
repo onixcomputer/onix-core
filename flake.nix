@@ -95,6 +95,10 @@
       url = "github:noctalia-dev/noctalia-shell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    noctalia-plugins = {
+      url = "github:Mic92/noctalia-plugins";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nitrous = {
       url = "github:pinpox/nitrous";
       inputs.nixpkgs.follows = "nixpkgs";

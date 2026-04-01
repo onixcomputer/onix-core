@@ -894,6 +894,26 @@
         "type": "github"
       }
     },
+    "noctalia-plugins": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1775071309,
+        "narHash": "sha256-rPEi+o0XY2Q1D1QA+1koF8QTYYkZPRMQaUOYNZAPRTk=",
+        "owner": "Mic92",
+        "repo": "noctalia-plugins",
+        "rev": "0f1d2e0e11d972259f61ecfa5d5a2bf6be46060f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Mic92",
+        "repo": "noctalia-plugins",
+        "type": "github"
+      }
+    },
     "noctalia-qs": {
       "inputs": {
         "nixpkgs": [
@@ -983,6 +1003,7 @@
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs",
         "noctalia": "noctalia",
+        "noctalia-plugins": "noctalia-plugins",
         "pinenote-nixos": "pinenote-nixos",
         "pre-commit-hooks-nix": "pre-commit-hooks-nix",
         "rust-overlay": "rust-overlay_2",

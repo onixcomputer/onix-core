@@ -27,6 +27,7 @@
 
     # Noctalia-specific
     ./noctalia-config.nix
+    ./plugins.nix
     ./niri.nix
     ./screenshot.nix
     ./darkman.nix
