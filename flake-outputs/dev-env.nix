@@ -94,6 +94,7 @@ let
       # Web / data
       prettier = {
         enable = true;
+        package = pkgs.prettier;
         includes = [
           "*.cjs"
           "*.css"
