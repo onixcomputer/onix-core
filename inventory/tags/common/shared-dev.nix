@@ -7,8 +7,12 @@
   _class,
   lib,
   pkgs,
+  inputs,
   ...
 }:
+let
+  agentPkgs = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
+in
 {
   environment.systemPackages =
     with pkgs;
@@ -25,7 +29,7 @@
       tree
     ]
     ++ lib.optionals (_class == "nixos") [
-      claude-code-bin
+      agentPkgs.claude-code
       uutils-coreutils-noprefix
       kitty.terminfo
       wezterm.terminfo
@@ -34,6 +38,6 @@
       dua
     ]
     ++ lib.optionals (_class == "darwin") [
-      claude-code
+      agentPkgs.claude-code
     ];
 }
