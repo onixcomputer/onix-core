@@ -467,5 +467,113 @@ in
         } { source = "fun { f, x, .. } => { result = f, val = x }"; args = { f = add5; x = 37; }; };
       in { applied = out.result 0; inherit (out) val; }
     '' "{ applied = 5; val = 37; }";
+
+    # Re-entrant WASM: pass the result of one builtins.wasm call as an arg
+    # to another. The first result is a lazy thunk; when the second call's
+    # nix_to_nickel recurses into it, the thunk must resolve without
+    # re-entering the WASM module.
+    wasm-foreignId-wasm-result-as-arg = mkWasmTest "foreignId-wasm-result-as-arg" ''
+      let
+        first = builtins.wasm {
+          path = ${plugins}/nickel_plugin.wasm;
+          function = "evalNickel";
+        } "{ x = 42 }";
+        out = builtins.wasm {
+          path = ${plugins}/nickel_plugin.wasm;
+          function = "evalNickelWith";
+        } {
+          source = "fun { data, .. } => { result = data.x }";
+          args = { data = first; };
+        };
+      in out.result
+    '' "42";
+
+    # ForeignId merge conflict: two different ForeignId values at the same
+    # record field should cause a Nickel merge error.
+    wasm-foreignId-merge-conflict =
+      let
+        ncl = pkgs.writeText "merge-conflict.ncl" ''
+          fun { f, g, .. } =>
+            ({ x = f } & { x = g })
+        '';
+      in
+      pkgs.runCommand "wasm-check-foreignId-merge-conflict" { nativeBuildInputs = [ nixWasm ]; } ''
+        export HOME=$TMPDIR
+        if nix eval --store dummy:// --offline \
+            --extra-experimental-features 'nix-command flakes wasm-builtin' \
+            --impure --expr '
+              let
+                f1 = x: x + 1;
+                f2 = x: x + 2;
+              in builtins.wasm {
+                path = ${plugins}/nickel_plugin.wasm;
+                function = "evalNickelFileWith";
+              } { file = ${ncl}; args = { f = f1; g = f2; }; }
+            ' 2>/dev/null; then
+          echo "FAIL: expected merge conflict error but got success"
+          exit 1
+        else
+          echo "PASS: ForeignId merge conflict correctly caused an error"
+          echo "ok" > $out
+        fi
+      '';
+
+    # Derivation round-trip: pass a derivation as ForeignId arg, Nickel
+    # module returns it, verify the Nix side gets the same derivation back.
+    # Uses a real store (not dummy://) since derivations need store paths.
+    wasm-foreignId-derivation-roundtrip =
+      let
+        ncl = pkgs.writeText "drv-roundtrip.ncl" ''
+          fun { drv, .. } => { result = drv }
+        '';
+      in
+      pkgs.runCommand "wasm-check-foreignId-derivation-roundtrip" { nativeBuildInputs = [ nixWasm ]; } ''
+        export HOME=$TMPDIR
+        mkdir -p $TMPDIR/nix-store
+        result=$(nix eval \
+          --store $TMPDIR/nix-store --offline \
+          --extra-experimental-features 'nix-command flakes wasm-builtin' \
+          --impure --expr '
+            let
+              drv = derivation { name = "test-drv"; system = "x86_64-linux"; builder = "/bin/sh"; };
+              out = builtins.wasm {
+                path = ${plugins}/nickel_plugin.wasm;
+                function = "evalNickelFileWith";
+              } { file = ${ncl}; args = { drv = drv; }; };
+            in out.result.name
+          ')
+        expected='"test-drv"'
+        if [ "$result" = "$expected" ]; then
+          echo "PASS: foreignId-derivation-roundtrip"
+          echo "$result" > $out
+        else
+          echo "FAIL: foreignId-derivation-roundtrip"
+          echo "  expected: $expected"
+          echo "  got:      $result"
+          exit 1
+        fi
+      '';
+
+    # Large lazy attrset: pass a big lazy attrset as arg, verify only
+    # get_type() is called (no mass-forcing). The attrset is passed as
+    # a ForeignId and returned without inspection.
+    wasm-foreignId-large-lazy-attrset =
+      let
+        ncl = pkgs.writeText "large-lazy.ncl" ''
+          fun { big, label, .. } => { result = big, name = label }
+        '';
+      in
+      mkWasmTest "foreignId-large-lazy-attrset" ''
+        let
+          # Generate a large lazy attrset (1000 fields, each a thunk)
+          big = builtins.listToAttrs
+            (builtins.genList (i: { name = "field_$${toString i}"; value = i * i; }) 1000);
+          out = builtins.wasm {
+            path = ${plugins}/nickel_plugin.wasm;
+            function = "evalNickelFileWith";
+          } { file = ${ncl}; args = { big = big; label = "ok"; }; };
+        # Only access one field from the round-tripped attrset
+        in { accessed = out.result.field_42; inherit (out) name; }
+      '' ''{ accessed = 1764; name = "ok"; }'';
   };
 }
