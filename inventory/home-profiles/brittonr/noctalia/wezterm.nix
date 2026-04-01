@@ -122,16 +122,9 @@ in
       config.force_reverse_video_cursor = true
 
       -- Performance
-      config.animation_fps = 60
-      config.max_fps = 240
-      config.front_end = 'WebGpu'
-      config.webgpu_power_preference = 'HighPerformance'
-      for _, gpu in ipairs(wezterm.gui.enumerate_gpus()) do
-        if gpu.backend == 'Vulkan' then
-          config.webgpu_preferred_adapter = gpu
-          break
-        end
-      end
+      config.animation_fps = 10
+      config.max_fps = 60
+      config.front_end = 'OpenGL'
 
       -- Wayland
       config.enable_wayland = true

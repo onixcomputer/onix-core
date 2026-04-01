@@ -32,7 +32,7 @@ in
       interface = mkSettings.mkInterface schema.daemon;
 
       perInstance =
-        { extendSettings, ... }:
+        { instanceName, extendSettings, ... }:
         {
           nixosModule =
             {
@@ -45,6 +45,7 @@ in
             let
               ms = import ../../lib/mk-settings.nix { inherit lib; };
               settings = extendSettings (ms.mkDefaults schema.daemon);
+              daemonGeneratorName = "clankers-daemon-${instanceName}";
 
               # Local build — upstream unit2nix IFD can't resolve the
               # cross-repo subwayrat path deps in sandbox.
@@ -61,6 +62,7 @@ in
               };
 
               routerEnabled = config.services.clanker-router.enable or false;
+              emailEnabled = settings.emailAuth;
 
               # ── Declarative schedules ──────────────────────────────────
               # Convert user-friendly schedule configs to clanker-scheduler
@@ -194,6 +196,12 @@ in
                 (mkIf hasSchedules {
                   serviceConfig.ExecStartPre = [ "+${mergeScript}" ];
                 })
+                # Email plugin auth: inject Fastmail token + config as env vars.
+                (mkIf emailEnabled {
+                  serviceConfig.EnvironmentFile = [
+                    config.clan.core.vars.generators.${daemonGeneratorName}.files.email-env.path
+                  ];
+                })
                 # Put the control socket in /run/clankers/ (created by
                 # RuntimeDirectory) instead of private /tmp/ namespace.
                 # Relax sandboxing so iroh can bind its QUIC endpoint.
@@ -209,6 +217,47 @@ in
                   };
                 }
               ];
+              # ── Email auth vars generator ──────────────────────────────
+              clan.core.vars.generators.${daemonGeneratorName} = mkIf emailEnabled {
+                share = true;
+                files.email-env = {
+                  secret = true;
+                  deploy = true;
+                  owner = "clankers";
+                  group = "clankers";
+                };
+
+                prompts = {
+                  fastmail-api-token = {
+                    description = "Fastmail API token (Bearer token for JMAP)";
+                    type = "hidden";
+                    persist = true;
+                  };
+                  email-from = {
+                    description = "Default sender email address (e.g. bot@example.com)";
+                    type = "line";
+                    persist = true;
+                  };
+                  email-allowed-recipients = {
+                    description = "Comma-separated allowed recipients (emails or @domain patterns)";
+                    type = "line";
+                    persist = true;
+                  };
+                };
+
+                runtimeInputs = [ pkgs.coreutils ];
+
+                script = ''
+                  token="$(tr -d '\n' < "$prompts/fastmail-api-token")"
+                  from="$(tr -d '\n' < "$prompts/email-from")"
+                  recipients="$(tr -d '\n' < "$prompts/email-allowed-recipients")"
+                  {
+                    printf 'FASTMAIL_API_TOKEN=%s\n' "$token"
+                    printf 'CLANKERS_EMAIL_FROM=%s\n' "$from"
+                    printf 'CLANKERS_EMAIL_ALLOWED_RECIPIENTS=%s\n' "$recipients"
+                  } > "$out/email-env"
+                '';
+              };
             };
         };
     };

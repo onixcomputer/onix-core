@@ -323,6 +323,7 @@ let prom_rules = import "prometheus-rules.ncl" in
         daemon.machines.aspen2.settings = {
           apiBase = "http://127.0.0.1:4000",
           allowAll = true,
+          emailAuth = true,
           schedules = [
             {
               name = "system-health",
@@ -335,6 +336,13 @@ let prom_rules = import "prometheus-rules.ncl" in
               kind = "cron",
               cron = "0 9 1-5",
               prompt = "Summarize git activity across all repos in ~/git/ since yesterday. List repos with new commits and any uncommitted changes.",
+            },
+            {
+              name = "test-email",
+              kind = "interval",
+              interval = 120,
+              maxFires = 5,
+              prompt = "Send a short test email to b@robitzs.ch with subject 'Clankers test [N]' where N is the current timestamp. Body should just say which fire number this is (1 through 5) and the current date/time. Use the send_email tool.",
             },
           ],
         },

@@ -1,11 +1,14 @@
 {
   daemon = {
-    model = { type = "string", default = "claude-sonnet-4-20250514", description = "Default LLM model for agent sessions" },
+    model = { type = "string", default = "claude-opus-4-6", description = "Default LLM model for agent sessions" },
     allowAll = { type = "bool", default = false, description = "Skip token/ACL checks (development mode)" },
     heartbeat = { type = "number", default = 30, description = "Heartbeat interval in seconds (0 to disable)" },
     apiBase = { type = "nullable_string", default = null, description = "API base URL for the LLM proxy" },
     extraArgs = { type = "array_string", default = [], description = "Extra arguments passed to clankers daemon start" },
     schedules = { type = "array", default = [], description = "Declarative schedules seeded on daemon start. Each entry: {name, kind (interval|cron), interval (secs), cron (pattern), prompt, maxFires?}" },
+    emailAuth = { type = "bool", default = false, description = "Enable email plugin auth vars (Fastmail JMAP token, from address, allowed recipients)" },
+    emailFrom = { type = "string", default = "", description = "Default sender address for the clankers-email plugin" },
+    emailAllowedRecipients = { type = "string", default = "", description = "Comma-separated allowed recipient emails or @domain patterns" },
   },
   router = {
     listenAddr = { type = "string", default = "0.0.0.0", description = "Address to bind the HTTP proxy" },
