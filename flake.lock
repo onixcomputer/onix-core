@@ -189,11 +189,11 @@
         "unit2nix": "unit2nix"
       },
       "locked": {
-        "lastModified": 1775065311,
-        "narHash": "sha256-INIisGf3Y7OvWoARiurQaq+cFTd4QN+1T3mutHPCr7A=",
+        "lastModified": 1775160116,
+        "narHash": "sha256-maRWhMixEUoXb3LNj+q+/2VwvuogvKezTIQAHep5PC0=",
         "owner": "brittonr",
         "repo": "clankers",
-        "rev": "525673ac2356f798cb5c0ec3d90ea2523f541b55",
+        "rev": "18b4ac39e995e0c137376b8d6a7d963ba1145f55",
         "type": "github"
       },
       "original": {
@@ -1120,11 +1120,11 @@
     "subwayrat-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1774106012,
-        "narHash": "sha256-LrZ4u1I8xcU9CbfB7gvZMPmQUNwzVMdqwSj60cB2WHM=",
+        "lastModified": 1775081462,
+        "narHash": "sha256-ehuJpqhapP3pSusb2MPtP7r8dOo0+IZDgy9s7oItpE4=",
         "owner": "brittonr",
         "repo": "subwayrat",
-        "rev": "b824c860b60d800a7511a4fcbe9af98f1e50af79",
+        "rev": "e5fed38173f9a0d7b7b693dfc34d3464dec37f4d",
         "type": "github"
       },
       "original": {

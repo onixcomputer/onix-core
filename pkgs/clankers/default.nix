@@ -31,21 +31,29 @@
   cargo,
 }:
 let
-  clankersRev = "525673ac2356f798cb5c0ec3d90ea2523f541b55";
-  subwayratRev = "d80472d39f6683697f1bfb6b45388a6bd2e11dda";
+  clankersRev = "18b4ac39e995e0c137376b8d6a7d963ba1145f55";
+  subwayratRev = "620cb4f8d3e36ceab5f1c4912253b81656a5fe6e";
+  ratcoreRev = "16333a505696b324637f021b657c474600a9b838";
 
   clankersSource = fetchFromGitHub {
     owner = "brittonr";
     repo = "clankers";
     rev = clankersRev;
-    hash = "sha256-INIisGf3Y7OvWoARiurQaq+cFTd4QN+1T3mutHPCr7A=";
+    hash = "sha256-maRWhMixEUoXb3LNj+q+/2VwvuogvKezTIQAHep5PC0=";
   };
 
   subwayratSource = fetchFromGitHub {
     owner = "brittonr";
     repo = "subwayrat";
     rev = subwayratRev;
-    hash = "sha256-S5hAFgaZwajOpm+NyfktrICVmxVYAdmEFKznPcif6gQ=";
+    hash = "sha256-caiRLECNjkbZevq3LPBXBNk7uTW4iPzHj7ec1rBQeAs=";
+  };
+
+  ratcoreSource = fetchFromGitHub {
+    owner = "brittonr";
+    repo = "ratcore";
+    rev = ratcoreRev;
+    hash = "sha256-Y/sqqwvobII43d3WqdtHAuj0g42YMvCqH1nHpOeNqYM=";
   };
 in
 rustPlatform.buildRustPackage {
@@ -63,6 +71,9 @@ rustPlatform.buildRustPackage {
   postUnpack = ''
     cp -r ${subwayratSource} subwayrat
     chmod -R u+w subwayrat
+
+    cp -r ${ratcoreSource} ratcore
+    chmod -R u+w ratcore
 
     mkdir -p openspec/src
     cat > openspec/Cargo.toml <<'EOF'

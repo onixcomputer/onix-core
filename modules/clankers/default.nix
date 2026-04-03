@@ -185,6 +185,7 @@ in
                   environment.ANTHROPIC_API_KEY = "sk-ant-proxy";
                   serviceConfig.ExecStart = lib.mkForce (
                     "${clankersPkg}/bin/clankers"
+                    + " --model ${settings.model}"
                     + " --api-base ${settings.apiBase}"
                     + " daemon start"
                     + " --heartbeat ${toString settings.heartbeat}"
@@ -200,6 +201,21 @@ in
                 (mkIf emailEnabled {
                   serviceConfig.EnvironmentFile = [
                     config.clan.core.vars.generators.${daemonGeneratorName}.files.email-env.path
+                  ];
+                })
+                # Auto-create a session after daemon starts so schedules
+                # have somewhere to route.
+                (mkIf hasSchedules {
+                  serviceConfig.ExecStartPost = [
+                    "${pkgs.writeShellScript "clankers-auto-session" ''
+                      # Wait for the control socket to appear.
+                      for i in $(seq 1 30); do
+                        [ -S /run/clankers/control.sock ] && break
+                        sleep 0.5
+                      done
+                      export XDG_RUNTIME_DIR=/run/clankers
+                      exec ${clankersPkg}/bin/clankers daemon create
+                    ''}"
                   ];
                 })
                 # Put the control socket in /run/clankers/ (created by

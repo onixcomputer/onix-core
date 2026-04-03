@@ -11,6 +11,17 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
+    nix = {
+      url = "github:onixcomputer/nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-parts.follows = "flake-parts";
+    };
+
+    onix-wasm = {
+      url = "github:onixcomputer/onix-wasm";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     srvos = {
       url = "github:nix-community/srvos";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -111,17 +122,6 @@
         treefmt-nix.follows = "treefmt-nix";
         systems.follows = "systems";
       };
-    };
-
-    nix = {
-      url = "github:onixcomputer/nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-parts.follows = "flake-parts";
-    };
-
-    onix-wasm = {
-      url = "github:onixcomputer/onix-wasm";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # Dev tooling inputs (previously in dev/flake.nix partition)

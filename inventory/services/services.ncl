@@ -321,28 +321,17 @@ let prom_rules = import "prometheus-rules.ncl" in
           oauthActiveAccount = "claude3",
         },
         daemon.machines.aspen2.settings = {
+          model = "claude-opus-4-6",
           apiBase = "http://127.0.0.1:4000",
           allowAll = true,
           emailAuth = true,
           schedules = [
             {
-              name = "system-health",
-              kind = "interval",
-              interval = 3600,
-              prompt = "Run a quick system health check: disk usage, memory, load average, and any failed systemd units. Report only if something needs attention.",
-            },
-            {
-              name = "git-digest",
-              kind = "cron",
-              cron = "0 9 1-5",
-              prompt = "Summarize git activity across all repos in ~/git/ since yesterday. List repos with new commits and any uncommitted changes.",
-            },
-            {
               name = "test-email",
               kind = "interval",
               interval = 120,
-              maxFires = 5,
-              prompt = "Send a short test email to b@robitzs.ch with subject 'Clankers test [N]' where N is the current timestamp. Body should just say which fire number this is (1 through 5) and the current date/time. Use the send_email tool.",
+              maxFires = 3,
+              prompt = "Send a short test email to b@robitzs.ch with subject 'Clankers test' and body 'Test email sent at current time'. Use the send_email tool.",
             },
           ],
         },
