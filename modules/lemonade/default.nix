@@ -82,6 +82,9 @@ in
 
               pullScript = pkgs.writeShellApplication {
                 name = "lemonade-model-pull";
+                excludeShellChecks = [
+                  "SC2043" # "loop will only run once" — valid for single-model lists
+                ];
                 runtimeInputs = [
                   lemonadePkg
                   pkgs.curl
