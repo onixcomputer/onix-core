@@ -39,9 +39,9 @@ let
     "upmpdcli" = import ./upmpdcli (schemaArgs ./upmpdcli);
     "nix-gc" = import ./nix-gc (schemaArgs ./nix-gc);
     "ollama" = import ./ollama (schemaArgs ./ollama);
+    "lemonade" = import ./lemonade (schemaArgs ./lemonade);
     "clankers" = import ./clankers (schemaArgs ./clankers);
     "cloud-hypervisor-vm" = import ./cloud-hypervisor-vm (schemaArgs ./cloud-hypervisor-vm);
-    "iroh-ssh" = import ./iroh-ssh (schemaArgs ./iroh-ssh);
     "llm-agents" = import ./llm-agents (schemaArgs ./llm-agents);
     "home-manager-profiles" = import ./home-manager-profiles (schemaArgs ./home-manager-profiles);
     "harmonia" = import ./harmonia (schemaArgs ./harmonia);

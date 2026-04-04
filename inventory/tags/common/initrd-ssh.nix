@@ -1,6 +1,6 @@
 # Initrd SSH for remote debugging and disk unlock.
 #
-# Generates ed25519 host keys via clan vars (same pattern as iroh-ssh)
+# Generates ed25519 host keys via clan vars
 # and enables SSH on port 2222 in the initrd. Authorized keys are
 # inherited from the machine's root user config.
 #

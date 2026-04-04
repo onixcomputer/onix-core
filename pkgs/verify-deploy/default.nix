@@ -21,8 +21,7 @@ writeShellApplication {
       echo "Verify that a deployed machine is running the expected system closure."
       echo "Compares the locally-built store path against the target's /run/current-system."
       echo ""
-      echo "Uses iroh-ssh for connectivity (iroh-<machine>), falls back to"
-      echo "the deploy target hostname from machines.nix."
+      echo "Compares the locally-built store path against the target's /run/current-system."
       exit 1
     }
 
@@ -40,14 +39,11 @@ writeShellApplication {
     }
     echo "Expected: $expected"
 
-    # Determine SSH target: try iroh first, then direct hostname
-    ssh_target="iroh-$machine"
+    # Determine SSH target
+    ssh_target="root@$machine"
     if ! ssh -o ConnectTimeout=10 -o BatchMode=yes "$ssh_target" true 2>/dev/null; then
-      ssh_target="root@$machine"
-      if ! ssh -o ConnectTimeout=10 -o BatchMode=yes "$ssh_target" true 2>/dev/null; then
-        echo "ERROR: Cannot reach $machine via iroh-$machine or root@$machine"
-        exit 1
-      fi
+      echo "ERROR: Cannot reach $machine via root@$machine"
+      exit 1
     fi
     echo "Connected via: $ssh_target"
 

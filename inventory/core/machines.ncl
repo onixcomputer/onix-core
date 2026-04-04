@@ -48,7 +48,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "backup",
         "syncthing",
       ],
-      deploy.targetHost = "root@iroh-britton-fw",
+      deploy.targetHost = "root@britton-fw",
     },
 
     bonsai = {
@@ -83,7 +83,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "backup",
         "syncthing",
       ],
-      deploy.targetHost = "root@iroh-bonsai",
+      deploy.targetHost = "root@bonsai",
     },
 
     # ========== Servers ==========
@@ -107,7 +107,6 @@ let { Machines, .. } = import "contracts.ncl" in
         "initrd-ssh",
         "remote-builders",
         "thunderbolt-link",
-        "llamacpp-server",
       ],
       deploy.targetHost = "root@aspen1",
     },
@@ -190,7 +189,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "tailnet-brittonr",
         "dev",
       ],
-      deploy.targetHost = "root@iroh-pine",
+      deploy.targetHost = "root@pine",
       deploy.buildHost = "britton-desktop",
     },
 
@@ -205,7 +204,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "ssd-optimization",
         "dev",
       ],
-      deploy.targetHost = "root@iroh-utm-vm",
+      deploy.targetHost = "root@utm-vm",
     },
 
     # ========== Cloud Hypervisor VMs ==========

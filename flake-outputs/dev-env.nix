@@ -263,7 +263,6 @@ in
           ps.pytest-vcr
         ]))
         self'.packages.nix-eval-warnings
-        self'.packages.iroh-ssh
         self'.packages.dumbpipe
         self'.packages.sendme
         self'.packages.verify-deploy
@@ -370,7 +369,6 @@ in
         echo "  merge-when-green  - Auto-create PRs and merge when CI passes"
         echo "  buildbot-pr-check - Show buildbot CI failures for a PR"
         echo "  eval-warnings     - Extract Nix evaluation warnings"
-        echo "  iroh-ssh         - P2P SSH without public IPs or VPN"
         echo "  dumbpipe         - Cross-device unix pipe over iroh"
         echo "  sendme           - P2P file transfer with blake3 verification"
         echo "  verify-deploy    - Verify deployed machine matches expected build"

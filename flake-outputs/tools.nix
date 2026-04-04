@@ -17,7 +17,6 @@ in
     inherit (self.inputs.onix-wasm.packages.${pkgs.stdenv.hostPlatform.system}) wasm-plugins;
     ccusage = pkgs.callPackage ../pkgs/ccusage { };
     nix-eval-warnings = pkgs.callPackage ../pkgs/nix-eval-warnings { };
-    iroh-ssh = pkgs.callPackage ../pkgs/iroh-ssh { };
     claude-md = pkgs.python3.pkgs.callPackage ../pkgs/claude-md { };
     tuicr = pkgs.callPackage ../pkgs/tuicr { };
     updater = pkgs.callPackage ../pkgs/updater { };
@@ -31,6 +30,7 @@ in
     branchfs = pkgs.callPackage ../pkgs/branchfs { };
     horizon = pkgs.callPackage ../pkgs/horizon { horizon-src = self.inputs.horizon; };
     llamacpp-rocm-rpc = pkgs.callPackage ../pkgs/llamacpp-rocm-rpc { };
+    lemonade-server = pkgs.callPackage ../pkgs/lemonade { };
   }
   // lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") (
     let

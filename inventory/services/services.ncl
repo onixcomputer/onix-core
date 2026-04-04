@@ -112,15 +112,6 @@ let prom_rules = import "prometheus-rules.ncl" in
       },
     },
 
-    "iroh-ssh" = {
-      module = { name = "iroh-ssh", input = "self" },
-      roles.peer = {
-        tags."tailnet-brittonr" = {},
-        machines."utm-vm" = {},
-        settings.sshPort = 22,
-      },
-    },
-
     # ========== Monitoring ==========
 
     monitoring = {
@@ -338,11 +329,21 @@ let prom_rules = import "prometheus-rules.ncl" in
       },
     },
 
-    ollama = {
-      module = { name = "ollama", input = "self" },
+    "lemonade-aspen1" = {
+      module = { name = "lemonade", input = "self" },
+      roles.default.machines.aspen1.settings = {
+        backend = "rocm",
+        models = ["Qwen3.5-32B-Instruct-GGUF"],
+        contextSize = 8192,
+      },
+    },
+
+    "lemonade-aspen2" = {
+      module = { name = "lemonade", input = "self" },
       roles.default.machines.aspen2.settings = {
-        host = "0.0.0.0",
-        models = ["qwen3.5:122b"],
+        backend = "rocm",
+        models = ["Qwen3.5-32B-Instruct-GGUF"],
+        contextSize = 8192,
       },
     },
 
@@ -351,37 +352,6 @@ let prom_rules = import "prometheus-rules.ncl" in
       roles.default = {
         tags."llm-client" = {},
         settings.packages = ["pi", "openspec", "qwen-code"],
-      },
-    },
-
-    "llamacpp-cluster" = {
-      module = { name = "llamacpp-rpc", input = "self" },
-      roles = {
-        worker = {
-          tags."llamacpp-worker" = {},
-          settings = {
-            bindAddress = "0.0.0.0",
-            port = 50052,
-            enableCache = true,
-          },
-        },
-        server = {
-          tags."llamacpp-server" = {},
-          settings = {
-            host = "0.0.0.0",
-            port = 8081,
-            model = {
-              repo = "unsloth/gpt-oss-20b-GGUF",
-              file = "gpt-oss-20b-F16.gguf",
-            },
-            rpcWorkers = ["10.10.10.2:50052"],
-            gpuLayers = 999,
-            flashAttention = true,
-            contextSize = 8192,
-            noMmap = true,
-            extraArgs = [],
-          },
-        },
       },
     },
 

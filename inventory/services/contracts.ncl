@@ -26,7 +26,7 @@ let self_modules = [
   "harmonia",
   "home-manager-profiles",
   "homepage-dashboard",
-  "iroh-ssh",
+  "lemonade",
   "llamacpp-rpc",
   "llm",
   "llm-agents",

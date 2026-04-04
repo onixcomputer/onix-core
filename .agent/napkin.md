@@ -164,6 +164,16 @@
 - Router mDNS warning is cosmetic: `Failed to create an address lookup service` — the sandboxed systemd service can't do mDNS, but iroh relay works.
 - Daemon heartbeat warning: `iroh endpoint unavailable: Failed to create an address lookup service` — same mDNS issue. Heartbeat uses iroh for peer discovery; falls back gracefully.
 
+## Domain Notes (Lemonade LLM server)
+- Lemonade v10.0.1 builds from source with cmake+ninja in ~35s on the desktop. All deps available in nixpkgs except cpp-httplib (pkg-config name mismatch). Solved with FETCHCONTENT_SOURCE_DIR_HTTPLIB pointing to pre-fetched v0.26.0 source.
+- The cmake target for the daemon binary is `lemonade-router` (not `lemond` despite `set(EXECUTABLE_NAME "lemond")` in CMakeLists.txt). The build output name changed at some point.
+- Lemonade downloads pre-built llama-server binaries at first run (Ubuntu-linked, won't work on NixOS). Override via config.json `llamacpp.rocm_bin` pointing to llamacpp-rocm-rpc's `llama-server`.
+- Config file lives at `$LEMONADE_CACHE_DIR/config.json` (or `$HOME/.cache/lemonade/config.json`). Loaded via `ConfigFile::load()`, merged over `defaults.json`. Env vars also work: `LEMONADE_LLAMACPP_ROCM_BIN`, `LEMONADE_HOST`, `LEMONADE_PORT`, etc.
+- Resources (defaults.json, server_models.json, backend_versions.json) are resolved via `get_executable_dir()/resources` then fallback paths (`/usr/share/lemonade-server`, etc.). Symlink from `$out/bin/resources` to `$out/share/lemonade-server/resources` handles this.
+- nix cmake hook: installPhase CWD is unpredictable (source root or build dir). Using `find /build` to locate binaries is reliable.
+- OpenAI-compatible API at port 13305 by default. Also exposes Ollama-compatible and Anthropic-compatible API endpoints.
+- gfx1151 (Strix Halo) is explicitly supported in Lemonade's ROCm config table.
+
 ## Patterns That Work
 - Home-profile auto-import only covers `profilesBasePath/<username>/<profileName>/`. Files under `shared/` are NOT auto-imported — they must be explicitly imported by user profile files (e.g., via `import.nix`). Files under `shared/lib/` are pure utility libraries, never modules.
 - `_class` conditionals for darwin/nixos shared modules — set platform-specific attrs with `lib.optionalAttrs (_class == "nixos")` / `(_class == "darwin")`. Darwin lacks `isNormalUser`, needs `users.knownUsers`, uses `gid = 80` for admin instead of `extraGroups = ["wheel"]`, and has different GC schedule syntax (interval vs dates).

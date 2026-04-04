@@ -19,6 +19,7 @@ in
   nixpkgs.overlays = [
     (_final: _prev: {
       llamacpp-rocm-rpc = self.packages.${pkgs.stdenv.hostPlatform.system}.llamacpp-rocm-rpc or null;
+      lemonade-server = self.packages.${pkgs.stdenv.hostPlatform.system}.lemonade-server or null;
     })
     (
       _final: prev:
