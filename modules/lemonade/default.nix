@@ -45,6 +45,7 @@ in
                 port
                 backend
                 models
+                customModels
                 contextSize
                 maxLoadedModels
                 extraArgs
@@ -78,6 +79,41 @@ in
                     args = extraArgs;
                   };
                 }
+              );
+
+              # user_models.json — registers custom HuggingFace models so
+              # lemonade can pull and serve them. Keys are model names (without
+              # the "user." prefix that lemonade adds automatically).
+              userModelsJson = pkgs.writeText "lemonade-user-models.json" (
+                builtins.toJSON (
+                  builtins.mapAttrs (
+                    _: m:
+                    {
+                      inherit (m) checkpoint;
+                      recipe = m.recipe or "llamacpp";
+                    }
+                    // lib.optionalAttrs (m ? size) { inherit (m) size; }
+                    // lib.optionalAttrs (m ? mmproj) { inherit (m) mmproj; }
+                    // lib.optionalAttrs (m ? labels) { inherit (m) labels; }
+                  ) customModels
+                )
+              );
+
+              # recipe_options.json — per-model runtime settings (context size,
+              # backend). Uses "user.<name>" keys matching lemonade's prefix.
+              recipeOptionsJson = pkgs.writeText "lemonade-recipe-options.json" (
+                builtins.toJSON (
+                  builtins.mapAttrs (
+                    _name: _:
+                    {
+                      ctx_size = contextSize;
+                      llamacpp_backend = if backend == "system" then "vulkan" else backend;
+                    }
+                    // lib.optionalAttrs (extraArgs != "") {
+                      llamacpp_args = extraArgs;
+                    }
+                  ) (lib.mapAttrs' (name: value: lib.nameValuePair "user.${name}" value) customModels)
+                )
               );
 
               pullScript = pkgs.writeShellApplication {
@@ -133,6 +169,8 @@ in
                         text = ''
                           mkdir -p ${stateDir}
                           cp --no-preserve=mode ${configJson} ${stateDir}/config.json
+                          cp --no-preserve=mode ${userModelsJson} ${stateDir}/user_models.json
+                          cp --no-preserve=mode ${recipeOptionsJson} ${stateDir}/recipe_options.json
                         '';
                       };
                     in

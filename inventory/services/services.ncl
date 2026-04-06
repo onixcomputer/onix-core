@@ -333,7 +333,14 @@ let prom_rules = import "prometheus-rules.ncl" in
       module = { name = "lemonade", input = "self" },
       roles.default.machines.aspen1.settings = {
         backend = "rocm",
-        models = ["Qwen3.5-32B-Instruct-GGUF"],
+        customModels = {
+          "Qwopus-27B" = {
+            checkpoint = "Jackrong/Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-GGUF:Q4_K_M",
+            recipe = "llamacpp",
+            size = 16.5,
+          },
+        },
+        models = ["user.Qwopus-27B"],
         contextSize = 8192,
       },
     },
@@ -342,7 +349,14 @@ let prom_rules = import "prometheus-rules.ncl" in
       module = { name = "lemonade", input = "self" },
       roles.default.machines.aspen2.settings = {
         backend = "rocm",
-        models = ["Qwen3.5-32B-Instruct-GGUF"],
+        customModels = {
+          "Gemma-4-31B-IT" = {
+            checkpoint = "unsloth/gemma-4-31B-it-GGUF:Q4_K_M",
+            recipe = "llamacpp",
+            size = 19,
+          },
+        },
+        models = ["user.Gemma-4-31B-IT"],
         contextSize = 8192,
       },
     },
