@@ -3,6 +3,11 @@
   # Enable cross-compilation support
   nixpkgs.config.allowUnsupportedSystem = true;
 
+  # binfmt adds /run/binfmt to sandbox-paths, but nix.conf validation
+  # runs at build time — fails on remote build hosts that lack the path.
+  # Skip validation; the paths exist at runtime on the target machine.
+  nix.checkConfig = false;
+
   # Add cross-compilation toolchains
   environment.systemPackages = with pkgs; [
     # Cross-compilation tools

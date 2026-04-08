@@ -117,11 +117,12 @@ in
       # additional caches are appended here so all machines share them.
       substituters = (flake.nixConfig.extra-substituters or [ ]) ++ [
         "https://cache.dataaturservice.se/spectrum/"
-        "https://cache.snix.dev"
+        # Disabled: snix daemon doesn't support Nix protocol 1.35 yet (HTTP 500)
+        # "https://cache.snix.dev"
       ];
       trusted-public-keys = (flake.nixConfig.extra-trusted-public-keys or [ ]) ++ [
         "spectrum-os.org-2:foQk3r7t2VpRx92CaXb5ROyy/NBdRJQG2uX2XJMYZfU="
-        "cache.snix.dev-1:miTqzIzmCbX/DyK2tLNXDROk77CbbvcRdWA4y2F8pno="
+        # "cache.snix.dev-1:miTqzIzmCbX/DyK2tLNXDROk77CbbvcRdWA4y2F8pno="
       ];
     };
   };

@@ -56,6 +56,15 @@ in
               llamacppPkg = pkgs.llamacpp-rocm-rpc;
 
               stateDir = "/var/lib/lemonade";
+              localConnectHost =
+                if host == "0.0.0.0" then
+                  "127.0.0.1"
+                else if host == "::" then
+                  "::1"
+                else
+                  host;
+              localConnectUrlHost =
+                if lib.hasInfix ":" localConnectHost then "[${localConnectHost}]" else localConnectHost;
 
               # Config JSON written to the cache dir at service start.
               # Overrides defaults.json with NixOS-managed values.
@@ -128,7 +137,7 @@ in
                 text = ''
                   ready=false
                   for i in $(seq 1 30); do
-                    if curl -sf "http://${host}:${toString port}/live" >/dev/null 2>&1; then
+                    if curl -sf "http://${localConnectUrlHost}:${toString port}/live" >/dev/null 2>&1; then
                       ready=true
                       break
                     fi
@@ -143,7 +152,7 @@ in
 
                   for model in ${lib.concatStringsSep " " (map lib.escapeShellArg models)}; do
                     echo "Pulling model: $model"
-                    lemonade pull "$model" || {
+                    lemonade --host ${lib.escapeShellArg localConnectHost} --port ${toString port} pull "$model" || {
                       echo "WARNING: Failed to pull $model, will retry on next activation"
                     }
                   done
@@ -178,7 +187,6 @@ in
 
                   ExecStart = lib.concatStringsSep " " [
                     "${lemonadePkg}/bin/lemonade-router"
-                    stateDir
                     "--host"
                     host
                     "--port"

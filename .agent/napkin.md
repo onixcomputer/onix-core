@@ -174,6 +174,9 @@
 - OpenAI-compatible API at port 13305 by default. Also exposes Ollama-compatible and Anthropic-compatible API endpoints.
 - gfx1151 (Strix Halo) is explicitly supported in Lemonade's ROCm config table.
 
+| 2026-04-06 | self | Lemonade service passed `/var/lib/lemonade` as a positional arg to `lemonade-router`, causing `The following argument was not expected: /var/lib/lemonade` and a stuck deploy because `lemonade-model-pull` is a restart-on-failure oneshot waiting on the server | `lemonade-router` reads config from `LEMONADE_CACHE_DIR`/`config.json`; don't pass the state dir on `ExecStart`. Use only supported flags like `--host`/`--port`. |
+| 2026-04-06 | self | `lemonade pull` defaults to `127.0.0.1:8000`, so the activation-time model pull silently talks to the wrong endpoint when the server is configured on another port (here `13305`) or bound to `0.0.0.0` | In activation scripts, pass `lemonade --host <local-connect-host> --port <configured-port> ...` explicitly. For servers bound to `0.0.0.0`/`::`, connect via `127.0.0.1`/`::1`, not the wildcard address. |
+
 ## Patterns That Work
 - Home-profile auto-import only covers `profilesBasePath/<username>/<profileName>/`. Files under `shared/` are NOT auto-imported — they must be explicitly imported by user profile files (e.g., via `import.nix`). Files under `shared/lib/` are pure utility libraries, never modules.
 - `_class` conditionals for darwin/nixos shared modules — set platform-specific attrs with `lib.optionalAttrs (_class == "nixos")` / `(_class == "darwin")`. Darwin lacks `isNormalUser`, needs `users.knownUsers`, uses `gid = 80` for admin instead of `extraGroups = ["wheel"]`, and has different GC schedule syntax (interval vs dates).
