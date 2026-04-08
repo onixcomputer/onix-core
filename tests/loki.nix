@@ -1,4 +1,4 @@
-# VM test: Loki ingests logs from Promtail and responds to LogQL queries.
+# VM test: Loki ingests logs from Alloy and responds to LogQL queries.
 { pkgs, ... }:
 let
   lokiPort = 3100;
@@ -41,45 +41,37 @@ pkgs.testers.runNixOSTest {
       };
     };
 
-    services.promtail = {
-      enable = true;
-      configuration = {
-        server = {
-          http_listen_port = 9080;
-          grpc_listen_port = 0;
-        };
-        positions.filename = "/var/cache/promtail/positions.yaml";
-        clients = [
-          { url = "http://localhost:${toString lokiPort}/loki/api/v1/push"; }
-        ];
-        scrape_configs = [
-          {
-            job_name = "systemd-journal";
-            journal = {
-              max_age = "12h";
-              labels = {
-                job = "systemd-journal";
-                host = "machine";
-              };
-            };
-            relabel_configs = [
-              {
-                source_labels = [ "__journal__systemd_unit" ];
-                target_label = "unit";
-              }
-            ];
-          }
-        ];
-      };
-    };
+    # Grafana Alloy replaces promtail for log collection
+    services.alloy.enable = true;
 
-    systemd.tmpfiles.rules = [
-      "d '/var/cache/promtail' 0700 promtail promtail - -"
-    ];
+    environment.etc."alloy/config.alloy".text = ''
+      loki.write "default" {
+        endpoint {
+          url = "http://localhost:${toString lokiPort}/loki/api/v1/push"
+        }
+      }
+
+      loki.relabel "journal" {
+        forward_to = []
+        rule {
+          source_labels = ["__journal__systemd_unit"]
+          target_label  = "unit"
+        }
+      }
+
+      loki.source.journal "systemd" {
+        forward_to    = [loki.write.default.receiver]
+        relabel_rules = loki.relabel.journal.rules
+        max_age       = "12h"
+        labels        = {
+          job  = "systemd-journal",
+          host = "machine",
+        }
+      }
+    '';
 
     networking.firewall.allowedTCPPorts = [
       lokiPort
-      9080
     ];
 
     # Test helper script that queries Loki from inside the VM
@@ -143,8 +135,8 @@ pkgs.testers.runNixOSTest {
     # Loki takes a while to become ready — retry
     machine.wait_until_succeeds("curl -sf http://localhost:${toString lokiPort}/ready", 60)
 
-    # Promtail running
-    machine.wait_for_unit("promtail.service")
+    # Alloy running
+    machine.wait_for_unit("alloy.service")
 
     # Push a test log entry
     machine.succeed("loki-query push")
@@ -160,7 +152,7 @@ pkgs.testers.runNixOSTest {
     labels = json.loads(raw)
     assert "job" in labels["data"], f"Missing 'job' label, got: {labels['data']}"
 
-    # Promtail ships journal logs
+    # Alloy ships journal logs
     machine.succeed("logger -t loki-test 'journal test entry'")
     machine.wait_until_succeeds(
         "loki-query query '{job=\"systemd-journal\"}' | grep -q result", 30

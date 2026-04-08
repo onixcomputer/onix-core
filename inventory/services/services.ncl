@@ -211,7 +211,7 @@ let prom_rules = import "prometheus-rules.ncl" in
       roles.server = {
         tags.monitoring = {},
         settings = {
-          enablePromtail = true,
+          enableAlloy = true,
           configuration = {
             auth_enabled = false,
             server = {
@@ -257,19 +257,8 @@ let prom_rules = import "prometheus-rules.ncl" in
             },
             querier.max_concurrent = 20,
           },
-          promtailConfig.scrape_configs = [
-            {
-              job_name = "varlogs",
-              static_configs = [
-                {
-                  targets = ["localhost"],
-                  labels = {
-                    job = "varlogs",
-                    __path__ = "/var/log/*.log",
-                  },
-                },
-              ],
-            },
+          additionalFileScrapes = [
+            { name = "varlogs", path = "/var/log/*.log", labels = { job = "varlogs" } },
           ],
         },
       },

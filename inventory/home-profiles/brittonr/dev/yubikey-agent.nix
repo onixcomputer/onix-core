@@ -1,19 +1,16 @@
-_:
+{ lib, ... }:
 
 {
+  # yubikey-agent takes over SSH auth — disable the generic ssh-agent
+  services.ssh-agent.enable = lib.mkForce false;
+
   services.yubikey-agent = {
     enable = true;
-
-    # Use the default yubikey-agent package
-    # package = pkgs.yubikey-agent;
   };
 
-  # Additional SSH configuration to use yubikey-agent
-  # The HM service places the socket in $XDG_RUNTIME_DIR/yubikey-agent/
+  # Point SSH at the yubikey-agent socket
   programs.ssh = {
     extraConfig = ''
-      # Use YubiKey for SSH authentication (socket in XDG_RUNTIME_DIR)
-      # OpenSSH 10.x dropped %t — use environment variable expansion instead
       IdentityAgent ''${XDG_RUNTIME_DIR}/yubikey-agent/yubikey-agent.sock
     '';
   };

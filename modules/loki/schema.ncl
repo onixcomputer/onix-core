@@ -1,13 +1,14 @@
 {
   server = {
-    enablePromtail = { type = "bool", default = true, description = "Enable Promtail log collector" },
+    enableAlloy = { type = "bool", default = true, description = "Enable Grafana Alloy log collector alongside Loki" },
     configuration = { type = "record", default = {}, description = "Loki server configuration" },
-    promtailConfig = { type = "record", default = {}, description = "Promtail configuration" },
-    lokiUrl = { type = "string", default = "http://localhost:3100", description = "Loki push URL" },
-    additionalScrapeConfigs = { type = "array", default = [], description = "Extra Promtail scrape configs" },
+    lokiUrl = { type = "string", default = "http://localhost:3100", description = "Loki push URL used by the co-located Alloy instance" },
+    additionalFileScrapes = { type = "array", default = [], description = "File paths to scrape (list of {name, path, labels})" },
+    alloyExtraConfig = { type = "string", default = "", description = "Additional raw Alloy River config appended to the generated config" },
   },
-  promtail = {
-    lokiUrl = { type = "string", default = "http://localhost:3100", description = "Loki server URL" },
-    additionalScrapeConfigs = { type = "array", default = [], description = "Extra Promtail scrape configs" },
+  alloy = {
+    lokiUrl = { type = "string", default = "http://localhost:3100", description = "Loki server URL for log push endpoint" },
+    additionalFileScrapes = { type = "array", default = [], description = "File paths to scrape (list of {name, path, labels})" },
+    alloyExtraConfig = { type = "string", default = "", description = "Additional raw Alloy River config appended to the generated config" },
   },
 }

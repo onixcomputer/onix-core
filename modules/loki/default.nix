@@ -2,6 +2,66 @@
 { lib, ... }:
 let
   mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
+
+  # Generate an Alloy River config block for a single file scrape.
+  #   { name = "varlogs"; path = "/var/log/*.log"; labels = { job = "varlogs"; }; }
+  mkFileScrapeBlock = scrape: ''
+    local.file_match "${scrape.name}" {
+      path_targets = [{
+        __path__ = "${scrape.path}",
+        ${lib.concatStringsSep "\n    " (
+          lib.mapAttrsToList (k: v: ''${k} = "${v}",'') (scrape.labels or { })
+        )}
+      }]
+    }
+
+    loki.source.file "${scrape.name}" {
+      targets    = local.file_match.${scrape.name}.targets
+      forward_to = [loki.write.default.receiver]
+    }
+  '';
+
+  # Generate a complete Alloy config that scrapes the systemd journal +
+  # optional file paths and pushes everything to a Loki endpoint.
+  mkAlloyConfig =
+    {
+      lokiUrl,
+      hostname,
+      additionalFileScrapes ? [ ],
+      alloyExtraConfig ? "",
+    }:
+    ''
+      loki.write "default" {
+        endpoint {
+          url = "${lokiUrl}/loki/api/v1/push"
+        }
+      }
+
+      loki.relabel "journal" {
+        forward_to = []
+        rule {
+          source_labels = ["__journal__systemd_unit"]
+          target_label  = "unit"
+        }
+        rule {
+          source_labels = ["__journal__hostname"]
+          target_label  = "hostname"
+        }
+      }
+
+      loki.source.journal "systemd" {
+        forward_to    = [loki.write.default.receiver]
+        relabel_rules = loki.relabel.journal.rules
+        max_age       = "12h"
+        labels        = {
+          job  = "systemd-journal",
+          host = "${hostname}",
+        }
+      }
+
+      ${lib.concatMapStringsSep "\n" mkFileScrapeBlock additionalFileScrapes}
+      ${alloyExtraConfig}
+    '';
 in
 {
   _class = "clan.service";
@@ -10,9 +70,8 @@ in
     readme = "Loki log aggregation system for centralized log storage and querying";
   };
 
-  # Define available roles
   roles = {
-    # Loki server role
+    # ── Loki server (+ optional Alloy log collector) ────────────────────
     server = {
       description = "Loki log aggregation server that stores and queries logs";
       interface = mkSettings.mkInterface schema.server;
@@ -21,200 +80,83 @@ in
         { extendSettings, ... }:
         {
           nixosModule =
-            {
-              config,
-              lib,
-              ...
-            }:
+            { config, lib, ... }:
             let
-              # Get the extended settings
               settings = extendSettings { };
+              inherit (settings)
+                enableAlloy
+                lokiUrl
+                additionalFileScrapes
+                alloyExtraConfig
+                ;
 
-              inherit (settings) enablePromtail promtailConfig;
-
-              # Remove clan-specific options before passing to services.loki
+              # Strip clan-specific keys before passing to services.loki
               lokiConfig = builtins.removeAttrs settings [
-                "enablePromtail"
-                "promtailConfig"
+                "enableAlloy"
                 "lokiUrl"
-                "additionalScrapeConfigs"
+                "additionalFileScrapes"
+                "alloyExtraConfig"
               ];
-
-              # Default Promtail configuration for systemd journal
-              defaultPromtailConfig = {
-                server = {
-                  http_listen_port = 9080;
-                  grpc_listen_port = 0;
-                };
-
-                positions = {
-                  filename = "/var/cache/promtail/positions.yaml";
-                };
-
-                clients = [
-                  {
-                    url = "http://localhost:3100/loki/api/v1/push";
-                  }
-                ];
-
-                scrape_configs = [
-                  {
-                    job_name = "systemd-journal";
-                    journal = {
-                      max_age = "12h";
-                      labels = {
-                        job = "systemd-journal";
-                        host = config.networking.hostName;
-                      };
-                    };
-                    relabel_configs = [
-                      {
-                        source_labels = [ "__journal__systemd_unit" ];
-                        target_label = "unit";
-                      }
-                      {
-                        source_labels = [ "__journal__hostname" ];
-                        target_label = "hostname";
-                      }
-                    ];
-                  }
-                ];
-              };
-
             in
             {
-              # Enable Loki with the freeform configuration
               services.loki = lib.mkMerge [
-                {
-                  enable = true;
-                }
+                { enable = true; }
                 lokiConfig
               ];
 
-              # Enable Promtail if requested
-              services.promtail = lib.mkIf enablePromtail {
+              # Alloy replaces promtail for log collection
+              services.alloy = lib.mkIf enableAlloy {
                 enable = true;
-                configuration = lib.recursiveUpdate defaultPromtailConfig promtailConfig // {
-                  scrape_configs = defaultPromtailConfig.scrape_configs ++ (promtailConfig.scrape_configs or [ ]);
+              };
+
+              environment.etc."alloy/config.alloy" = lib.mkIf enableAlloy {
+                text = mkAlloyConfig {
+                  inherit lokiUrl additionalFileScrapes alloyExtraConfig;
+                  hostname = config.networking.hostName;
                 };
               };
 
-              # Open firewall for Loki and Promtail
-              networking.firewall.allowedTCPPorts = lib.mkMerge [
-                [ (config.services.loki.configuration.server.http_listen_port or 3100) ]
-                (lib.mkIf enablePromtail [ (promtailConfig.server.http_listen_port or 9080) ])
-              ];
-
-              # Ensure promtail cache directory exists
-              systemd.tmpfiles.rules = lib.mkIf enablePromtail [
-                "d '/var/cache/promtail' 0700 promtail promtail - -"
+              networking.firewall.allowedTCPPorts = [
+                (config.services.loki.configuration.server.http_listen_port or 3100)
               ];
             };
         };
     };
 
-    # Promtail client role for log collection
-    promtail = {
-      description = "Promtail log shipper that sends logs to Loki server";
-      interface = mkSettings.mkInterface schema.promtail;
+    # ── Alloy log shipper (sends logs to a remote Loki) ────────────────
+    alloy = {
+      description = "Grafana Alloy log shipper that sends logs to Loki server";
+      interface = mkSettings.mkInterface schema.alloy;
 
       perInstance =
         { extendSettings, ... }:
         {
           nixosModule =
-            {
-              config,
-              lib,
-              ...
-            }:
+            { config, ... }:
             let
-              # Get the extended settings
               settings = extendSettings { };
-
-              inherit (settings) lokiUrl additionalScrapeConfigs;
-
-              # Remove clan-specific options before passing to services.promtail
-              promtailConfig = builtins.removeAttrs settings [
-                "lokiUrl"
-                "additionalScrapeConfigs"
-              ];
-
-              # Default Promtail configuration
-              defaultConfig = {
-                server = {
-                  http_listen_port = 9080;
-                  grpc_listen_port = 0;
-                };
-
-                positions = {
-                  filename = "/var/cache/promtail/positions.yaml";
-                };
-
-                clients = [
-                  {
-                    url = "${lokiUrl}/loki/api/v1/push";
-                  }
-                ];
-
-                scrape_configs = [
-                  {
-                    job_name = "systemd-journal";
-                    journal = {
-                      max_age = "12h";
-                      labels = {
-                        job = "systemd-journal";
-                        host = config.networking.hostName;
-                      };
-                    };
-                    relabel_configs = [
-                      {
-                        source_labels = [ "__journal__systemd_unit" ];
-                        target_label = "unit";
-                      }
-                      {
-                        source_labels = [ "__journal__hostname" ];
-                        target_label = "hostname";
-                      }
-                    ];
-                  }
-                ]
-                ++ additionalScrapeConfigs;
-              };
-
+              inherit (settings) lokiUrl additionalFileScrapes alloyExtraConfig;
             in
             {
-              # Enable Promtail with the freeform configuration
-              services.promtail = lib.mkMerge [
-                {
-                  enable = true;
-                  configuration = lib.recursiveUpdate defaultConfig (promtailConfig.configuration or { });
-                }
-                (builtins.removeAttrs promtailConfig [ "configuration" ])
-              ];
+              services.alloy.enable = true;
 
-              # Open firewall for Promtail metrics
-              networking.firewall.allowedTCPPorts = [
-                (promtailConfig.configuration.server.http_listen_port or defaultConfig.server.http_listen_port)
-              ];
-
-              # Ensure promtail cache directory exists
-              systemd.tmpfiles.rules = [
-                "d '/var/cache/promtail' 0700 promtail promtail - -"
-              ];
+              environment.etc."alloy/config.alloy".text = mkAlloyConfig {
+                inherit lokiUrl additionalFileScrapes alloyExtraConfig;
+                hostname = config.networking.hostName;
+              };
             };
         };
     };
   };
 
-  # Common configuration for all machines in this service
+  # Packages available on every machine in this service
   perMachine = _: {
     nixosModule =
       { pkgs, ... }:
       {
-        # Ensure loki and promtail packages are available
         environment.systemPackages = with pkgs; [
           loki
-          promtail
+          grafana-alloy
         ];
       };
   };

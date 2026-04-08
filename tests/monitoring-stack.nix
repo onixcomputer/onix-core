@@ -1,8 +1,8 @@
-# VM test: full monitoring stack — Prometheus, Grafana, Loki, Promtail.
+# VM test: full monitoring stack — Prometheus, Grafana, Loki, Alloy.
 #
 # Multi-machine test mirroring the actual deployment topology:
 #   monitor: Prometheus + Grafana + Loki (like aspen1 with 'monitoring' tag)
-#   target:  node exporter + Promtail shipping to monitor (like any tagged machine)
+#   target:  node exporter + Alloy shipping logs to monitor (like any tagged machine)
 { pkgs, ... }:
 let
   grafanaPort = 3000;
@@ -150,46 +150,37 @@ pkgs.testers.runNixOSTest {
       ];
     };
 
-    # Promtail shipping to Loki on monitor
-    services.promtail = {
-      enable = true;
-      configuration = {
-        server = {
-          http_listen_port = 9080;
-          grpc_listen_port = 0;
-        };
-        positions.filename = "/var/cache/promtail/positions.yaml";
-        clients = [
-          { url = "http://monitor:${toString lokiPort}/loki/api/v1/push"; }
-        ];
-        scrape_configs = [
-          {
-            job_name = "systemd-journal";
-            journal = {
-              max_age = "12h";
-              labels = {
-                job = "systemd-journal";
-                host = "target";
-              };
-            };
-            relabel_configs = [
-              {
-                source_labels = [ "__journal__systemd_unit" ];
-                target_label = "unit";
-              }
-            ];
-          }
-        ];
-      };
-    };
+    # Alloy shipping logs to Loki on monitor
+    services.alloy.enable = true;
 
-    systemd.tmpfiles.rules = [
-      "d '/var/cache/promtail' 0700 promtail promtail - -"
-    ];
+    environment.etc."alloy/config.alloy".text = ''
+      loki.write "default" {
+        endpoint {
+          url = "http://monitor:${toString lokiPort}/loki/api/v1/push"
+        }
+      }
+
+      loki.relabel "journal" {
+        forward_to = []
+        rule {
+          source_labels = ["__journal__systemd_unit"]
+          target_label  = "unit"
+        }
+      }
+
+      loki.source.journal "systemd" {
+        forward_to    = [loki.write.default.receiver]
+        relabel_rules = loki.relabel.journal.rules
+        max_age       = "12h"
+        labels        = {
+          job  = "systemd-journal",
+          host = "target",
+        }
+      }
+    '';
 
     networking.firewall.allowedTCPPorts = [
       nodeExporterPort
-      9080
     ];
   };
 
@@ -259,8 +250,8 @@ pkgs.testers.runNixOSTest {
     monitor.wait_for_open_port(${toString lokiPort})
     monitor.wait_until_succeeds("curl -sf http://localhost:${toString lokiPort}/ready", 60)
 
-    # --- Promtail ---
-    target.wait_for_unit("promtail.service")
+    # --- Alloy ---
+    target.wait_for_unit("alloy.service")
 
     # Generate some log traffic on target, wait for it to ship
     target.succeed("logger -t vm-test 'integration test log entry'")
