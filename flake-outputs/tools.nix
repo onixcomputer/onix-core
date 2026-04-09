@@ -31,6 +31,11 @@ in
     horizon = pkgs.callPackage ../pkgs/horizon { horizon-src = self.inputs.horizon; };
     llamacpp-rocm-rpc = pkgs.callPackage ../pkgs/llamacpp-rocm-rpc { };
     lemonade-server = pkgs.callPackage ../pkgs/lemonade { };
+    clanker-router =
+      self.inputs.clankers.packages.${pkgs.stdenv.hostPlatform.system}.clanker-router.overrideAttrs
+        (old: {
+          patches = (old.patches or [ ]) ++ [ ../patches/clanker-router-local-providers.patch ];
+        });
   }
   // lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") (
     let

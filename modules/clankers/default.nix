@@ -60,6 +60,13 @@ in
                 rustc = nightlyToolchain;
                 cargo = nightlyToolchain;
               };
+              daemonExecStart =
+                "${clankersPkg}/bin/clankers"
+                + " --model ${settings.model}"
+                + " daemon start"
+                + " --heartbeat ${toString settings.heartbeat}"
+                + lib.optionalString settings.allowAll " --allow-all"
+                + lib.concatMapStrings (a: " ${a}") settings.extraArgs;
 
               routerEnabled = config.services.clanker-router.enable or false;
               emailEnabled = settings.emailAuth;
@@ -178,20 +185,15 @@ in
                   after = [ "clanker-router.service" ];
                   wants = [ "clanker-router.service" ];
                 })
-                # Route through the proxy when apiBase is set.
-                # --api-base is a CLI flag, not an env var. Pass it via extraArgs
-                # on the ExecStart command line.
+                # Route through the colocated proxy when apiBase is set.
+                # clankers' in-process discovery can treat any OpenAI-compatible
+                # endpoint as an Ollama-style local provider via OLLAMA_HOST,
+                # which lets the daemon see all models exposed by clanker-router
+                # (`/v1/models` includes Anthropic + the remote Lemonade models).
+                # Disable RPC auto-connect so startup doesn't race the router.
                 (mkIf (settings.apiBase != null) {
-                  environment.ANTHROPIC_API_KEY = "sk-ant-proxy";
-                  serviceConfig.ExecStart = lib.mkForce (
-                    "${clankersPkg}/bin/clankers"
-                    + " --model ${settings.model}"
-                    + " --api-base ${settings.apiBase}"
-                    + " daemon start"
-                    + " --heartbeat ${toString settings.heartbeat}"
-                    + lib.optionalString settings.allowAll " --allow-all"
-                    + lib.concatMapStrings (a: " ${a}") settings.extraArgs
-                  );
+                  environment.OLLAMA_HOST = settings.apiBase;
+                  environment.CLANKERS_NO_DAEMON = "1";
                 })
                 # Seed Nix-declared schedules before the daemon starts.
                 (mkIf hasSchedules {
@@ -224,6 +226,7 @@ in
                 {
                   environment.XDG_RUNTIME_DIR = "/run/clankers";
                   serviceConfig = {
+                    ExecStart = lib.mkForce daemonExecStart;
                     PrivateTmp = lib.mkForce false;
                     ProtectSystem = lib.mkForce "full";
                     ProtectHome = lib.mkForce "read-only";
@@ -298,7 +301,25 @@ in
               settings = extendSettings (ms.mkDefaults schema.router);
               generatorName = "clanker-router-${instanceName}";
               inherit (settings) useOAuth;
-              routerPkg = inputs.clankers.packages.${pkgs.stdenv.hostPlatform.system}.clanker-router;
+              routerPkg = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.clanker-router;
+              hasLocalProviders = settings.localProviders != [ ];
+              localProvidersJson = pkgs.writeText "clanker-router-local-providers.json" (
+                builtins.toJSON (
+                  map (provider: {
+                    inherit (provider) name models;
+                    api_base = provider.apiBase;
+                  }) settings.localProviders
+                )
+              );
+              execStart =
+                "${routerPkg}/bin/clanker-router"
+                + lib.optionalString useOAuth " --auth-file ${
+                   config.clan.core.vars.generators.${generatorName}.files.auth-json.path
+                 }"
+                + lib.optionalString hasLocalProviders " --local-provider-config ${localProvidersJson}"
+                + " serve --proxy-addr ${settings.listenAddr}:${toString settings.listenPort}"
+                + lib.concatMapStrings (k: " --proxy-key ${k}") settings.proxyKeys
+                + lib.concatMapStrings (a: " ${a}") settings.extraArgs;
             in
             {
               imports = [ inputs.clankers.nixosModules.clanker-router ];
@@ -324,14 +345,8 @@ in
               # override ExecStart rather than using extraArgs.
               systemd.services.clanker-router.serviceConfig = mkMerge [
                 { SuccessExitStatus = "1 2"; }
-                (mkIf useOAuth {
-                  ExecStart = lib.mkForce (
-                    "${routerPkg}/bin/clanker-router"
-                    + " --auth-file ${config.clan.core.vars.generators.${generatorName}.files.auth-json.path}"
-                    + " serve --proxy-addr ${settings.listenAddr}:${toString settings.listenPort}"
-                    + lib.concatMapStrings (k: " --proxy-key ${k}") settings.proxyKeys
-                    + lib.concatMapStrings (a: " ${a}") settings.extraArgs
-                  );
+                (mkIf (useOAuth || hasLocalProviders) {
+                  ExecStart = lib.mkForce execStart;
                 })
               ];
 

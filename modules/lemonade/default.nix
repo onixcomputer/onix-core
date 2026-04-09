@@ -205,6 +205,7 @@ in
                 environment = {
                   HOME = stateDir;
                   LEMONADE_CACHE_DIR = stateDir;
+                  LEMONADE_LLAMACPP_ROCM_BIN = "${llamacppPkg}/bin/llama-server";
 
                   # ROCm env for gfx1151
                   HSA_OVERRIDE_GFX_VERSION = "11.5.1";

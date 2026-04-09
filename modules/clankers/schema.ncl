@@ -18,5 +18,6 @@
     oauthActiveAccount = { type = "string", default = "default", description = "Active OAuth account name" },
     proxyKeys = { type = "array_string", default = [], description = "API keys allowed to access the proxy" },
     extraArgs = { type = "array_string", default = [], description = "Extra arguments passed to clanker-router serve" },
+    localProviders = { type = "array", default = [], description = "Extra OpenAI-compatible providers to register. Each entry: {name, apiBase, models = [\"model-id\", ...]}" },
   },
 }

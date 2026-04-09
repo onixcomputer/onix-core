@@ -1,0 +1,92 @@
+--- a/src/bin/clanker_router/main.rs
++++ b/src/bin/clanker_router/main.rs
+@@ -27,6 +27,7 @@
+ use clap::Parser;
+ use clap::Subcommand;
+ use clap::ValueEnum;
++use serde::Deserialize;
+ use tokio::sync::mpsc;
+ 
+ // ── CLI definition ──────────────────────────────────────────────────────
+@@ -54,6 +55,10 @@
+     #[arg(long)]
+     api_base: Option<String>,
+ 
++    /// JSON file describing extra OpenAI-compatible providers to register
++    #[arg(long)]
++    local_provider_config: Option<PathBuf>,
++
+     /// Auth store path
+     #[arg(long)]
+     auth_file: Option<PathBuf>,
+@@ -265,6 +270,38 @@
+     cli.auth_file.clone().unwrap_or_else(default_auth_path)
+ }
+ 
++#[derive(Debug, Deserialize)]
++struct LocalProviderConfig {
++    name: String,
++    api_base: String,
++    models: Vec<String>,
++}
++
++fn load_local_provider_configs(path: &std::path::Path) -> Result<Vec<LocalProviderConfig>, String> {
++    let raw = std::fs::read_to_string(path)
++        .map_err(|e| format!("failed to read {}: {e}", path.display()))?;
++    serde_json::from_str(&raw)
++        .map_err(|e| format!("failed to parse {}: {e}", path.display()))
++}
++
++fn local_models(provider_name: &str, model_ids: &[String]) -> Vec<clanker_router::Model> {
++    model_ids
++        .iter()
++        .map(|model_id| clanker_router::Model {
++            id: model_id.clone(),
++            name: model_id.clone(),
++            provider: provider_name.to_string(),
++            max_input_tokens: 128_000,
++            max_output_tokens: 16_384,
++            supports_thinking: false,
++            supports_images: false,
++            supports_tools: true,
++            input_cost_per_mtok: None,
++            output_cost_per_mtok: None,
++        })
++        .collect()
++}
++
+ // ── Provider construction ───────────────────────────────────────────────
+ 
+ fn build_providers(cli: &Cli, auth_store: &AuthStore) -> Vec<Arc<dyn Provider>> {
+@@ -448,6 +485,31 @@
+         providers.push(OpenAICompatProvider::new(OpenAICompatConfig::local(base, models)));
+     }
+ 
++    if let Some(ref path) = cli.local_provider_config {
++        match load_local_provider_configs(path) {
++            Ok(configs) => {
++                for config in configs {
++                    if config.models.is_empty() {
++                        tracing::warn!("skipping local provider '{}' with no models", config.name);
++                        continue;
++                    }
++
++                    providers.push(OpenAICompatProvider::new(OpenAICompatConfig {
++                        name: config.name.clone(),
++                        base_url: config.api_base,
++                        api_key: String::new(),
++                        extra_headers: vec![],
++                        models: local_models(&config.name, &config.models),
++                        timeout: std::time::Duration::from_secs(600),
++                    }));
++                }
++            }
++            Err(err) => {
++                tracing::warn!("failed to load local provider config: {err}");
++            }
++        }
++    }
++
+     providers
+ }
+ 

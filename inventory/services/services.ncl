@@ -299,6 +299,20 @@ let prom_rules = import "prometheus-rules.ncl" in
           useOAuth = true,
           oauthAccounts = ["claude1", "claude2", "claude3"],
           oauthActiveAccount = "claude3",
+          # Expose both the stable single-host Lemonade path and the larger
+          # distributed llama.cpp RPC path through clanker-router.
+          localProviders = [
+            {
+              name = "aspen1",
+              apiBase = "http://aspen1:13305/v1",
+              models = ["user.Qwopus-27B", "user.Qwopus-27B-v3"],
+            },
+            {
+              name = "aspen1-rpc",
+              apiBase = "http://aspen1:8081/v1",
+              models = ["Qwen3.5-27B.Q8_0.gguf"],
+            },
+          ],
         },
         daemon.machines.aspen2.settings = {
           model = "claude-opus-4-6",
@@ -321,6 +335,8 @@ let prom_rules = import "prometheus-rules.ncl" in
     "lemonade-aspen1" = {
       module = { name = "lemonade", input = "self" },
       roles.default.machines.aspen1.settings = {
+        # Keep the existing single-host Lemonade Qwopus path as a fallback while
+        # we add the larger distributed llama.cpp RPC deployment below.
         backend = "rocm",
         customModels = {
           "Qwopus-27B" = {
@@ -328,25 +344,41 @@ let prom_rules = import "prometheus-rules.ncl" in
             recipe = "llamacpp",
             size = 16.5,
           },
+          "Qwopus-27B-v3" = {
+            checkpoint = "Jackrong/Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-GGUF:Q4_K_M",
+            recipe = "llamacpp",
+            size = 16.5,
+          },
         },
-        models = ["user.Qwopus-27B"],
-        contextSize = 8192,
+        models = ["user.Qwopus-27B", "user.Qwopus-27B-v3"],
+        contextSize = 131072,
       },
     },
 
-    "lemonade-aspen2" = {
-      module = { name = "lemonade", input = "self" },
-      roles.default.machines.aspen2.settings = {
-        backend = "rocm",
-        customModels = {
-          "Gemma-4-31B-IT" = {
-            checkpoint = "unsloth/gemma-4-31B-it-GGUF:Q4_K_M",
-            recipe = "llamacpp",
-            size = 19,
-          },
+    # Gemma on Aspen 2 was intentionally removed earlier; Aspen 2 is now
+    # reserved as a llama.cpp RPC worker for larger distributed Qwopus loads.
+    "qwopus-rpc" = {
+      module = { name = "llamacpp-rpc", input = "self" },
+      roles = {
+        worker.machines.aspen2.settings = {
+          bindAddress = "0.0.0.0",
+          port = 50052,
+          enableCache = true,
         },
-        models = ["user.Gemma-4-31B-IT"],
-        contextSize = 8192,
+        server.machines.aspen1.settings = {
+          host = "0.0.0.0",
+          port = 8081,
+          model = {
+            repo = "Jackrong/Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-GGUF",
+            file = "Qwen3.5-27B.Q8_0.gguf",
+          },
+          rpcWorkers = ["10.10.10.2:50052"],
+          gpuLayers = 999,
+          flashAttention = true,
+          contextSize = 131072,
+          noMmap = true,
+          extraArgs = [],
+        },
       },
     },
 
