@@ -76,20 +76,18 @@ in
               name = "open-notebook-bootstrap";
               runtimeInputs = [ pkgs.python3 ];
               text = ''
-                                export OPEN_NOTEBOOK_API_URL=${lib.escapeShellArg apiUrl}
-                                export OPEN_NOTEBOOK_BOOTSTRAP_FILE=${lib.escapeShellArg bootstrapFile}
+                export OPEN_NOTEBOOK_API_URL=${lib.escapeShellArg apiUrl}
+                export OPEN_NOTEBOOK_BOOTSTRAP_FILE=${lib.escapeShellArg bootstrapFile}
 
-                                python <<'PY'
+                python <<'PY'
                 import json
-                import os
-                import sys
                 import time
-                import urllib.error
                 import urllib.parse
                 import urllib.request
+                from urllib.error import HTTPError, URLError
 
-                api_url = os.environ["OPEN_NOTEBOOK_API_URL"].rstrip("/")
-                bootstrap_path = os.environ["OPEN_NOTEBOOK_BOOTSTRAP_FILE"]
+                api_url = OPEN_NOTEBOOK_API_URL = ${builtins.toJSON apiUrl}
+                bootstrap_path = ${builtins.toJSON bootstrapFile}
 
                 with open(bootstrap_path, "r", encoding="utf-8") as fh:
                     config = json.load(fh)
@@ -108,18 +106,28 @@ in
                         return json.loads(raw.decode("utf-8")) if raw else None
 
 
-                for attempt in range(60):
-                    try:
-                        health = request("GET", "/health")
-                        if health.get("status") == "healthy":
-                            break
-                    except Exception:
-                        pass
-                    time.sleep(1)
-                else:
-                    raise SystemExit("Open Notebook API never became healthy")
+                def retry_request(method, path, payload=None, *, description, validate=None, attempts=60, delay=2):
+                    last_error = None
+                    for _ in range(attempts):
+                        try:
+                            result = request(method, path, payload)
+                            if validate is None or validate(result):
+                                return result
+                            last_error = RuntimeError(f"{description} returned an unexpected response: {result!r}")
+                        except (HTTPError, URLError, TimeoutError, RuntimeError, ValueError) as exc:
+                            last_error = exc
+                        time.sleep(delay)
+                    raise SystemExit(f"Timed out waiting for {description}: {last_error}")
 
-                all_credentials = request("GET", "/api/credentials")
+
+                health = retry_request(
+                    "GET",
+                    "/health",
+                    description="Open Notebook API health",
+                    validate=lambda result: result and result.get("status") == "healthy",
+                )
+
+                all_credentials = retry_request("GET", "/api/credentials", description="credential list")
 
                 for credential in config.get("credentials", []):
                     provider = credential["provider"]
@@ -140,7 +148,7 @@ in
                         "location": credential.get("location"),
                         "credentials_path": credential.get("credentialsPath"),
                     }
-                    payload = {k: v for k, v in payload.items() if v is not None}
+                    payload = {key: value for key, value in payload.items() if value is not None}
 
                     existing = next(
                         (
@@ -161,18 +169,20 @@ in
                             payload,
                         )
 
-                    test_result = request(
-                        "POST",
-                        "/api/credentials/" + urllib.parse.quote(current["id"], safe="") + "/test",
-                    )
-                    if not test_result.get("success", False):
-                        raise SystemExit(
-                            f"Credential {name!r} test failed: {test_result.get('message', 'unknown error')}"
-                        )
+                    credential_path = "/api/credentials/" + urllib.parse.quote(current["id"], safe="")
 
-                    discovered = request(
+                    retry_request(
                         "POST",
-                        "/api/credentials/" + urllib.parse.quote(current["id"], safe="") + "/discover",
+                        credential_path + "/test",
+                        description=f"credential test for {name!r}",
+                        validate=lambda result: result and result.get("success", False),
+                    )
+
+                    discovered = retry_request(
+                        "POST",
+                        credential_path + "/discover",
+                        description=f"model discovery for {name!r}",
+                        validate=lambda result: result is not None,
                     )
                     discovered_models = discovered.get("discovered", [])
 
@@ -198,21 +208,59 @@ in
                         ]
 
                     if models_to_register:
-                        request(
+                        retry_request(
                             "POST",
-                            "/api/credentials/" + urllib.parse.quote(current["id"], safe="") + "/register-models",
+                            credential_path + "/register-models",
                             {"models": models_to_register},
+                            description=f"model registration for {name!r}",
                         )
 
-                models = request("GET", "/api/models")
-                defaults = request("GET", "/api/models/defaults")
+                all_credentials = retry_request("GET", "/api/credentials", description="refreshed credential list")
+                credentials_by_id = {credential["id"]: credential for credential in all_credentials}
+                models = retry_request("GET", "/api/models", description="registered model list")
+                defaults = retry_request("GET", "/api/models/defaults", description="default model list")
                 updated_defaults = dict(defaults)
 
-                for slot, model_name in config.get("defaultModels", {}).items():
-                    match = next((model for model in models if model.get("name") == model_name), None)
-                    if match is None:
-                        raise SystemExit(f"Default model {model_name!r} for slot {slot!r} was not registered")
-                    updated_defaults[slot] = match["id"]
+
+                def resolve_default_model(slot, desired):
+                    if isinstance(desired, str):
+                        model_name = desired
+                        credential_name = None
+                        provider_name = None
+                    elif isinstance(desired, dict):
+                        model_name = desired["name"]
+                        credential_name = desired.get("credential")
+                        provider_name = desired.get("provider")
+                    else:
+                        raise SystemExit(
+                            f"Default model for slot {slot!r} must be a string or record, got {type(desired).__name__}"
+                        )
+
+                    matches = []
+                    for model in models:
+                        if model.get("name") != model_name:
+                            continue
+                        if provider_name is not None and model.get("provider") != provider_name:
+                            continue
+                        if credential_name is not None:
+                            credential = credentials_by_id.get(model.get("credential"))
+                            if credential is None or credential.get("name") != credential_name:
+                                continue
+                        matches.append(model)
+
+                    if not matches:
+                        raise SystemExit(
+                            f"Default model {desired!r} for slot {slot!r} was not registered"
+                        )
+                    if len(matches) > 1:
+                        raise SystemExit(
+                            f"Default model {desired!r} for slot {slot!r} is ambiguous; qualify it with credential or provider"
+                        )
+                    return matches[0]
+
+
+                for slot, desired in config.get("defaultModels", {}).items():
+                    updated_defaults[slot] = resolve_default_model(slot, desired)["id"]
 
                 if updated_defaults != defaults:
                     request("PUT", "/api/models/defaults", updated_defaults)
@@ -239,9 +287,9 @@ in
               };
               runtimeInputs = [ pkgs.openssl ];
               script = ''
-                                key="$(${pkgs.openssl}/bin/openssl rand -hex 32)"
-                                printf 'OPEN_NOTEBOOK_ENCRYPTION_KEY=%s\n' "$key" > "$out/env-file"
-                                cat > "$out/bootstrap-json" <<'EOF'
+                key="$(${pkgs.openssl}/bin/openssl rand -hex 32)"
+                printf 'OPEN_NOTEBOOK_ENCRYPTION_KEY=%s\n' "$key" > "$out/env-file"
+                cat > "$out/bootstrap-json" <<'EOF'
                 ${bootstrapJson}
                 EOF
               '';

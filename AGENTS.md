@@ -9,3 +9,8 @@
 
 ## Clan deploys
 - On this workstation, `clan machines update ...` can lose vars generator `finalScript` store paths to local auto-GC mid-run (`/nix/store/...-generator-...: No such file or directory`). If that happens, rerun the deploy with `NIX_CONFIG=$'min-free = 0\nmax-free = 0'` so the generator script survives long enough to execute.
+- Changing a vars generator's output does not automatically rewrite already-generated shared vars. If a deploy still sees stale generator content, run `clan vars generate <machine> --generator <name> --regenerate` first, then deploy again so the updated secret files are synchronized.
+
+## AI services
+- On `britton-desktop`, Docker `--gpus=all` currently fails for OCI containers with `failed to discover GPU vendor from CDI: no known GPU vendor found`. Use CPU images for Infinity/Speaches until the NVIDIA container runtime/CDI setup is fixed.
+- The Speaches container writes its Hugging Face cache as the in-container `ubuntu` user. Mount the cache directory with uid/gid `1000:1000` or model preloading fails with `PermissionError` under `/home/ubuntu/.cache/huggingface/hub`.

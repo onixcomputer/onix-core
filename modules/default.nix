@@ -30,6 +30,7 @@ let
     "static-server" = import ./static-server (schemaArgs ./static-server);
     "prometheus" = import ./prometheus (schemaArgs ./prometheus);
     "grafana" = import ./grafana (schemaArgs ./grafana);
+    "infinity" = import ./infinity (schemaArgs ./infinity);
     "loki" = import ./loki (schemaArgs ./loki);
     "vaultwarden" = import ./vaultwarden (schemaArgs ./vaultwarden);
     "homepage-dashboard" = import ./homepage-dashboard (schemaArgs ./homepage-dashboard);
@@ -40,6 +41,7 @@ let
     "nix-gc" = import ./nix-gc (schemaArgs ./nix-gc);
     "ollama" = import ./ollama (schemaArgs ./ollama);
     "open-notebook" = import ./open-notebook (schemaArgs ./open-notebook);
+    "speaches" = import ./speaches (schemaArgs ./speaches);
     "lemonade" = import ./lemonade (schemaArgs ./lemonade);
     "clankers" = import ./clankers (schemaArgs ./clankers);
     "cloud-hypervisor-vm" = import ./cloud-hypervisor-vm (schemaArgs ./cloud-hypervisor-vm);

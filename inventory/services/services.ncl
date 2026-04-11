@@ -266,6 +266,31 @@ let prom_rules = import "prometheus-rules.ncl" in
 
     # ========== LLM & AI ==========
 
+    "open-notebook-embeddings" = {
+      module = { name = "infinity", input = "self" },
+      roles.default.machines.britton-desktop.settings = {
+        device = "cpu",
+        engine = "torch",
+        modelId = "BAAI/bge-m3",
+        servedModelName = "bge-m3",
+      },
+    },
+
+    "open-notebook-speech" = {
+      module = { name = "speaches", input = "self" },
+      roles.default.machines.britton-desktop.settings = {
+        models = [
+          "Systran/faster-whisper-large-v3",
+          "speaches-ai/Kokoro-82M-v1.0-ONNX",
+        ],
+        modelAliases = {
+          "tts-1" = "speaches-ai/Kokoro-82M-v1.0-ONNX",
+          "tts-1-hd" = "speaches-ai/Kokoro-82M-v1.0-ONNX",
+          "whisper-1" = "Systran/faster-whisper-large-v3",
+        },
+      },
+    },
+
     "open-notebook" = {
       module = { name = "open-notebook", input = "self" },
       roles.server.machines.britton-desktop.settings = {
@@ -281,12 +306,34 @@ let prom_rules = import "prometheus-rules.ncl" in
               { name = "Qwen3.5-27B.Q8_0.gguf", modelType = "language" },
             ],
           },
+          {
+            name = "local-embeddings",
+            provider = "openai_compatible",
+            modalities = ["embedding"],
+            baseUrl = "http://127.0.0.1:7997",
+            models = [
+              { name = "bge-m3", modelType = "embedding" },
+            ],
+          },
+          {
+            name = "local-speech",
+            provider = "openai_compatible",
+            modalities = ["speech_to_text", "text_to_speech"],
+            baseUrl = "http://127.0.0.1:8001/v1",
+            models = [
+              { name = "Systran/faster-whisper-large-v3", modelType = "speech_to_text" },
+              { name = "speaches-ai/Kokoro-82M-v1.0-ONNX", modelType = "text_to_speech" },
+            ],
+          },
         ],
         defaultModels = {
-          default_chat_model = "user.Qwopus-27B-v3",
-          default_transformation_model = "user.Qwopus-27B-v3",
-          large_context_model = "user.Qwopus-27B-v3",
-          default_tools_model = "Qwen3.5-27B.Q8_0.gguf",
+          default_chat_model = { credential = "aspen-router", name = "user.Qwopus-27B-v3" },
+          default_embedding_model = { credential = "local-embeddings", name = "bge-m3" },
+          default_speech_to_text_model = { credential = "local-speech", name = "Systran/faster-whisper-large-v3" },
+          default_text_to_speech_model = { credential = "local-speech", name = "speaches-ai/Kokoro-82M-v1.0-ONNX" },
+          default_transformation_model = { credential = "aspen-router", name = "user.Qwopus-27B-v3" },
+          large_context_model = { credential = "aspen-router", name = "user.Qwopus-27B-v3" },
+          default_tools_model = { credential = "aspen-router", name = "Qwen3.5-27B.Q8_0.gguf" },
         },
       },
     },
