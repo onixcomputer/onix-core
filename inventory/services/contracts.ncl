@@ -33,6 +33,7 @@ let self_modules = [
   "loki",
   "nix-gc",
   "ollama",
+  "open-notebook",
   "prometheus",
   "static-server",
   "syncthing",

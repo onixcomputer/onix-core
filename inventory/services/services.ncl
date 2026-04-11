@@ -266,6 +266,31 @@ let prom_rules = import "prometheus-rules.ncl" in
 
     # ========== LLM & AI ==========
 
+    "open-notebook" = {
+      module = { name = "open-notebook", input = "self" },
+      roles.server.machines.britton-desktop.settings = {
+        credentials = [
+          {
+            name = "aspen-router",
+            provider = "openai_compatible",
+            modalities = ["language"],
+            baseUrl = "http://aspen2:4000/v1",
+            models = [
+              { name = "user.Qwopus-27B", modelType = "language" },
+              { name = "user.Qwopus-27B-v3", modelType = "language" },
+              { name = "Qwen3.5-27B.Q8_0.gguf", modelType = "language" },
+            ],
+          },
+        ],
+        defaultModels = {
+          default_chat_model = "user.Qwopus-27B-v3",
+          default_transformation_model = "user.Qwopus-27B-v3",
+          large_context_model = "user.Qwopus-27B-v3",
+          default_tools_model = "Qwen3.5-27B.Q8_0.gguf",
+        },
+      },
+    },
+
     llm = {
       module = { name = "llm", input = "self" },
       roles = {

@@ -51,6 +51,7 @@ in
       abp = pkgs.callPackage ../pkgs/abp { };
       sone = pkgs.callPackage ../pkgs/sone { };
       opendeck = pkgs.callPackage ../pkgs/opendeck { };
+      open-notebook = pkgs.callPackage ../pkgs/open-notebook { };
       clankers = pkgs.callPackage ../pkgs/clankers {
         rustc = nightlyToolchain;
         cargo = nightlyToolchain;

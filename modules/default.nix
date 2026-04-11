@@ -39,6 +39,7 @@ let
     "upmpdcli" = import ./upmpdcli (schemaArgs ./upmpdcli);
     "nix-gc" = import ./nix-gc (schemaArgs ./nix-gc);
     "ollama" = import ./ollama (schemaArgs ./ollama);
+    "open-notebook" = import ./open-notebook (schemaArgs ./open-notebook);
     "lemonade" = import ./lemonade (schemaArgs ./lemonade);
     "clankers" = import ./clankers (schemaArgs ./clankers);
     "cloud-hypervisor-vm" = import ./cloud-hypervisor-vm (schemaArgs ./cloud-hypervisor-vm);

@@ -79,7 +79,6 @@
     '';
 
     printing.enable = true;
-
   };
 
   security = {

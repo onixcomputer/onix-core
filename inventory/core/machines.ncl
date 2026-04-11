@@ -170,6 +170,7 @@ let { Machines, .. } = import "contracts.ncl" in
         # "cloud-hypervisor-host",
         "taskwarrior",
         "initrd-ssh",
+        "remote-builders",
         "backup",
         "syncthing",
         "thunderbolt-link",

@@ -26,6 +26,7 @@ let schemas = {
   "loki" = import "../../modules/loki/schema.ncl",
   "nix-gc" = import "../../modules/nix-gc/schema.ncl",
   "ollama" = import "../../modules/ollama/schema.ncl",
+  "open-notebook" = import "../../modules/open-notebook/schema.ncl",
   "prometheus" = import "../../modules/prometheus/schema.ncl",
   "static-server" = import "../../modules/static-server/schema.ncl",
   "syncthing" = import "../../modules/syncthing/schema.ncl",
