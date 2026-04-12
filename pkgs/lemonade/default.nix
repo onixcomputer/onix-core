@@ -23,13 +23,13 @@ let
 in
 pkgs.stdenv.mkDerivation rec {
   pname = "lemonade-server";
-  version = "10.0.1";
+  version = "10.2.0";
 
   src = pkgs.fetchFromGitHub {
     owner = "lemonade-sdk";
     repo = "lemonade";
     rev = "v${version}";
-    hash = "sha256-aswK7OXMWTFUNHrrktf1Vx3nvTkLWMEhAgWlil1Zu2c=";
+    hash = "sha256-r6b98zW+guE27HZe26MiQhlHIltfZyNPRN7HIdpKrYI=";
   };
 
   nativeBuildInputs = with pkgs; [
@@ -82,17 +82,18 @@ pkgs.stdenv.mkDerivation rec {
 
     mkdir -p $out/bin $out/share/lemonade-server
 
-    # Server daemon (lemonade-router), CLI, and legacy shim.
-    # Install the router as both lemonade-router and lemond for compat.
+    # Server daemon, CLI, and legacy shim.
+    # Upstream renamed the daemon binary across releases (`lemonade-router`
+    # vs `lemond`), so accept either and install both names for compat.
     # cmake hook may run installPhase from the build dir or source root.
     # Use find to locate the binaries reliably.
-    local router=$(find /build -name lemonade-router -type f -executable | head -1)
+    local router=$(find /build \( -name lemonade-router -o -name lemond \) -type f -executable | head -1)
     local cli=$(find /build -name lemonade -type f -executable -not -path '*/cli11/*' | head -1)
     local shim=$(find /build -name lemonade-server -type f -executable | head -1)
     local res=$(find /build -name resources -type d -path '*/build/resources' | head -1)
 
-    install -m755 "$router" $out/bin/
-    ln -s lemonade-router $out/bin/lemond
+    install -m755 "$router" $out/bin/lemond
+    ln -s lemond $out/bin/lemonade-router
     install -m755 "$cli" $out/bin/
     install -m755 "$shim" $out/bin/
 

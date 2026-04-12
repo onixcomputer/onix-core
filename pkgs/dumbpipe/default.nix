@@ -6,16 +6,16 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "dumbpipe";
-  version = "0.34.0";
+  version = "0.35.0";
 
   src = fetchFromGitHub {
     owner = "n0-computer";
     repo = "dumbpipe";
     rev = "v${version}";
-    hash = "sha256-9fhtPnmRmKpIhTh3lQgkcATWxXdVtCkCYyCv3K8RTp4=";
+    hash = "sha256-Oo97v2afVotFCDaJT0bJXLfcKVxBoRUH2nO6StsJc34=";
   };
 
-  cargoHash = "sha256-KSkkNGNp+gTHIxKnoqOsyKegYcNf2iRN2lOc/oJLTnU=";
+  cargoHash = "sha256-P6NFYqlyZiZ7hAz9W4nOPlGvwECv6/oG98ey7T0a2O8=";
 
   # Tests require network access (iroh relay connections)
   doCheck = false;

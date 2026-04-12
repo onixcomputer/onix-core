@@ -20,11 +20,11 @@
 
 stdenv.mkDerivation rec {
   pname = "opendeck";
-  version = "2.10.1";
+  version = "2.11.1";
 
   src = fetchurl {
     url = "https://github.com/nekename/OpenDeck/releases/download/v${version}/opendeck_${version}_amd64.deb";
-    hash = "sha256-wnIcbkxph70naI9ewy9NaAgXDNLsXejO+mW0VDksTPo=";
+    hash = "sha256-Bcb5l8NYk1rxoVE/8EOc1jjoJv+POM0d2bh9TApGsE8=";
   };
 
   nativeBuildInputs = [

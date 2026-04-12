@@ -14,3 +14,9 @@
 ## AI services
 - On `britton-desktop`, Docker `--gpus=all` currently fails for OCI containers with `failed to discover GPU vendor from CDI: no known GPU vendor found`. Use CPU images for Infinity/Speaches until the NVIDIA container runtime/CDI setup is fixed.
 - The Speaches container writes its Hugging Face cache as the in-container `ubuntu` user. Mount the cache directory with uid/gid `1000:1000` or model preloading fails with `PermissionError` under `/home/ubuntu/.cache/huggingface/hub`.
+
+## Flake evaluation
+- `nix flake show --all-systems` fails in this repo unless you pass `--option allow-import-from-derivation true`; the `wasm-plugins` checks evaluate nix-wasm plugin derivations during flake evaluation.
+
+## Packaging
+- `pkgs/lemonade/default.nix` must accept either `lemond` or `lemonade-router` as the daemon binary name. Upstream changed names across releases, so install both aliases for compatibility.

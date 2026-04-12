@@ -22,13 +22,13 @@
 }:
 
 let
-  version = "0.10.1";
+  version = "0.14.1";
 
   src = fetchFromGitHub {
     owner = "lullabyX";
     repo = "sone";
-    rev = "d7f1f1b38fa40973286db654b2b254399b2e73db";
-    hash = "sha256-xWtyTxqB7rDSbp74kxl1TCUilKh0jRVo31Rdqya02XA=";
+    rev = "v${version}";
+    hash = "sha256-8vdpEjo2UP3vh/PL8+lhLPDfuHeI9kI2/AQvVsWlR1w=";
   };
 
   gstDeps = with gst_all_1; [
@@ -57,7 +57,7 @@ let
   frontend = buildNpmPackage {
     pname = "sone-frontend";
     inherit version src;
-    npmDepsHash = "sha256-KcaNWrAjZk2CjeG8+LIzAxAX/a3EZJ0+qFlBWGNXQWo=";
+    npmDepsHash = "sha256-EOmoryKKWCttpOpIAOpdIz7yOA5hm/Hg1WFbcXWr5tc=";
     buildPhase = ''
       runHook preBuild
       npx tsc && npx vite build
