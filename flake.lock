@@ -207,11 +207,11 @@
         "unit2nix": "unit2nix"
       },
       "locked": {
-        "lastModified": 1775933929,
-        "narHash": "sha256-xtP6n8eIqROr+xeBMQSoflmTZRG/k57Si7kwlPUVncE=",
+        "lastModified": 1776183810,
+        "narHash": "sha256-VtQfFocz8aTqAuKbgulU10z6y6Xu6C2nRzuFOUVm4VI=",
         "owner": "brittonr",
         "repo": "clankers",
-        "rev": "ccbb9b171964788e7bf1a8c95d9f3a3b9ec041c4",
+        "rev": "79ba57bb1994c83e00c35a0672a3421411cfb451",
         "type": "github"
       },
       "original": {
@@ -691,11 +691,11 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1773456322,
-        "narHash": "sha256-hZlUgLTFQGMh7gPqXrdXcISgJWdbagFqi+tqX3Dqc4E=",
+        "lastModified": 1776090945,
+        "narHash": "sha256-OWi65XWJbOqTrW7wVe0kqAp1e1UmRE6VaJQBUbq7BFo=",
         "owner": "brittonr",
         "repo": "niri",
-        "rev": "a3827232519047fc3b2a05ca6d52b3313ecf2982",
+        "rev": "94475087eb33c4841341f26d90d680ff1e1527ce",
         "type": "github"
       },
       "original": {

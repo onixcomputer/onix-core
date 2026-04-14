@@ -331,21 +331,22 @@ in
                 openFirewall = true;
                 inherit (settings) proxyKeys extraArgs;
               }
+              // lib.optionalAttrs useOAuth {
+                authFile = config.clan.core.vars.generators.${generatorName}.files.auth-json.path;
+              }
               // lib.optionalAttrs (!useOAuth) {
                 environmentFile = config.clan.core.vars.generators.${generatorName}.files.env-file.path;
               };
 
-              # Point the router at the deployed auth.json.
-              # --auth-file is a global flag (before the subcommand), so we
-              # override ExecStart rather than using extraArgs (which append
-              # after `serve`).
               # Exit code 1 = "no providers configured" — treat as clean exit
               # so switch-to-configuration doesn't report a failed unit.
-              # --auth-file is a global flag (before the subcommand), so we
-              # override ExecStart rather than using extraArgs.
+              # --local-provider-config is a global flag (before `serve`), so
+              # we only override ExecStart when extra local providers are set.
+              # The override keeps --auth-file when OAuth-backed auth.json is
+              # also in use on the same instance.
               systemd.services.clanker-router.serviceConfig = mkMerge [
                 { SuccessExitStatus = "1 2"; }
-                (mkIf (useOAuth || hasLocalProviders) {
+                (mkIf hasLocalProviders {
                   ExecStart = lib.mkForce execStart;
                 })
               ];
@@ -356,7 +357,8 @@ in
               clan.core.vars.generators.${generatorName} =
                 if useOAuth then
                   {
-                    # OAuth: build auth.json from per-account tokens.
+                    # OAuth: build auth.json from Anthropic OAuth tokens,
+                    # plus optional API-key providers for hybrid routing.
                     # Run `clanker-router auth login --account <name>` locally,
                     # then extract tokens from ~/.config/clanker-router/auth.json:
                     #   jq -r '.providers.anthropic.accounts.<name>.access_token'
@@ -368,50 +370,86 @@ in
                       group = "clanker-router";
                     };
 
-                    prompts = builtins.listToAttrs (
-                      map (account: {
-                        name = "${account}-access-token";
-                        value = {
-                          description = "OAuth access token for '${account}'";
-                          type = "line";
+                    prompts =
+                      (builtins.listToAttrs (
+                        map (account: {
+                          name = "${account}-access-token";
+                          value = {
+                            description = "OAuth access token for '${account}'";
+                            type = "line";
+                            persist = true;
+                          };
+                        }) settings.oauthAccounts
+                      ))
+                      // {
+                        openai-api-key = {
+                          description = "OpenAI API key (sk-...) — leave empty to skip";
+                          type = "hidden";
                           persist = true;
                         };
-                      }) settings.oauthAccounts
-                    );
+                        openrouter-api-key = {
+                          description = "OpenRouter API key (sk-or-...) — leave empty to skip";
+                          type = "hidden";
+                          persist = true;
+                        };
+                      };
 
-                    runtimeInputs = [ pkgs.coreutils ];
+                    runtimeInputs = [ pkgs.python3Minimal ];
 
-                    script =
-                      let
-                        accountJson = account: ''
-                          access_${account}="$(tr -dc '[:print:]' < "$prompts/${account}-access-token")"
-                        '';
-                        # Build the JSON account entry for each account.
-                        accountEntry = account: ''
-                          "${account}": {
-                                    "credential_type": "oauth",
-                                    "access_token": "$access_${account}",
-                                    "refresh_token": "",
-                                    "expires_at_ms": 4102444800000
-                                  }'';
-                        accountEntries = builtins.concatStringsSep "," (map accountEntry settings.oauthAccounts);
-                      in
-                      ''
-                        ${builtins.concatStringsSep "\n" (map accountJson settings.oauthAccounts)}
-                        cat > "$out/auth-json" <<EOF
-                        {
-                          "version": 2,
-                          "providers": {
-                            "anthropic": {
-                              "active_account": "${settings.oauthActiveAccount}",
+                    script = ''
+                                            export PROMPTS_DIR="$prompts"
+                                            export OAUTH_ACCOUNTS='${builtins.toJSON settings.oauthAccounts}'
+                                            export OAUTH_ACTIVE_ACCOUNT='${settings.oauthActiveAccount}'
+                                            python <<'PY'
+                      import json
+                      import os
+                      from pathlib import Path
+
+                      prompts_dir = Path(os.environ["PROMPTS_DIR"])
+
+
+                      def read_prompt(name: str) -> str:
+                          return (prompts_dir / name).read_text(encoding="utf-8").strip()
+
+
+                      providers = {
+                          "anthropic": {
+                              "active_account": os.environ["OAUTH_ACTIVE_ACCOUNT"],
                               "accounts": {
-                                ${accountEntries}
-                              }
-                            }
+                                  account: {
+                                      "credential_type": "oauth",
+                                      "access_token": read_prompt(f"{account}-access-token"),
+                                      "refresh_token": "",
+                                      "expires_at_ms": 4102444800000,
+                                  }
+                                  for account in json.loads(os.environ["OAUTH_ACCOUNTS"])
+                              },
                           }
-                        }
-                        EOF
-                      '';
+                      }
+
+                      for provider, prompt_name in {
+                          "openai": "openai-api-key",
+                          "openrouter": "openrouter-api-key",
+                      }.items():
+                          api_key = read_prompt(prompt_name)
+                          if api_key:
+                              providers[provider] = {
+                                  "active_account": "default",
+                                  "accounts": {
+                                      "default": {
+                                          "credential_type": "api_key",
+                                          "api_key": api_key,
+                                      }
+                                  },
+                              }
+
+                      auth_path = Path(os.environ["out"]) / "auth-json"
+                      auth_path.write_text(
+                          json.dumps({"version": 2, "providers": providers}, indent=2) + "\n",
+                          encoding="utf-8",
+                      )
+                      PY
+                    '';
                   }
                 else
                   {

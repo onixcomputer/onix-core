@@ -20,3 +20,7 @@
 
 ## Packaging
 - `pkgs/lemonade/default.nix` must accept either `lemond` or `lemonade-router` as the daemon binary name. Upstream changed names across releases, so install both aliases for compatibility.
+
+## Niri
+- The `calling import-environment without specifying desired variables is deprecated` startup message comes from upstream `resources/niri-session` (`systemctl --user import-environment`). In this repo, greetd launches `/etc/profiles/per-user/brittonr/bin/niri-session`, so that warning is session-wrapper noise, not proof that `niri.service` crashed.
+- `niri: Page flip commit failed on device ... (Permission denied)` immediately before a boot boundary can be compositor shutdown fallout after DRM master is lost during reboot. Check for surrounding `systemd[1]: Stopping ...` lines before treating it as root cause.

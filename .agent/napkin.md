@@ -64,6 +64,10 @@
 - Prefers deleting dead code over commenting it out
 - When cleanup items overlap (e.g., opentofu lib + cloud/ + parts/checks.nix + parts/vm-checks.nix + cloud devShell all reference each other), chase all the references down in one pass
 
+## Patterns That Work
+- For niri startup warnings, trace the full launch path first: greetd -> `/etc/profiles/per-user/<user>/bin/niri-session` -> `systemctl --user start niri.service`. The `import-environment ... is deprecated` line comes from the wrapper script, while compositor crashes show up separately in `journalctl --user -u niri.service` or coredumps.
+- `niri: Page flip commit failed ... Permission denied (os error 13)` right before a boot boundary is shutdown fallout, not proof niri caused the reboot. Check for `systemd[1]: Stopping ...` lines first.
+
 ## Domain Notes (continued)
 - **Screenshot flakiness on niri**: Two causes. (1) `grim` uses `zwlr_screencopy` which synchronously blocks niri's compositor thread for ~45ms on NVIDIA 3840x2160@240Hz (~10 dropped frames = visible freeze). niri's built-in `screenshot-screen` action is faster (~27ms) since it skips the Wayland client round-trip. (2) `screenshot-region`'s `flock -n` held the lock for satty's entire lifetime, so re-triggering right after closing satty silently exited. Fixed by replacing flock with `pkill -x satty`.
 - britton-desktop: NVIDIA RTX (PCI 10DE:2C02) card2 DP-3 3840x2160@240Hz, AMD iGPU (1002:13C0) card1. NVIDIA driver 580.126.18 open kernel module.

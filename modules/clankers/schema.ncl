@@ -13,7 +13,7 @@
   router = {
     listenAddr = { type = "string", default = "0.0.0.0", description = "Address to bind the HTTP proxy" },
     listenPort = { type = "port", default = 4000, description = "Port for the OpenAI-compatible HTTP proxy" },
-    useOAuth = { type = "bool", default = false, description = "Use OAuth credentials instead of API keys" },
+    useOAuth = { type = "bool", default = false, description = "Use auth.json-based credentials (Anthropic OAuth plus optional OpenAI/OpenRouter API keys) instead of env-file API keys" },
     oauthAccounts = { type = "array_string", default = ["default"], description = "OAuth account names to prompt for (each gets access + refresh token)" },
     oauthActiveAccount = { type = "string", default = "default", description = "Active OAuth account name" },
     proxyKeys = { type = "array_string", default = [], description = "API keys allowed to access the proxy" },
