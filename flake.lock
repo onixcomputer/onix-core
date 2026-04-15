@@ -178,11 +178,11 @@
     "clanker-router-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1774990815,
-        "narHash": "sha256-KmEps5pEjtbTCzk7aPUYC5neTAKE0QxYksgxzTCPigI=",
+        "lastModified": 1776293811,
+        "narHash": "sha256-TVpc6mlm5LH6RvvjsizOFFzsT2/Ns+q/0A+AejMHRWY=",
         "owner": "brittonr",
         "repo": "clanker-router",
-        "rev": "7bc1038608bb0dafb0beac6198a5d33873949958",
+        "rev": "9886b4377a17e62c13038778b75d42a9b68c547b",
         "type": "github"
       },
       "original": {
@@ -207,11 +207,11 @@
         "unit2nix": "unit2nix"
       },
       "locked": {
-        "lastModified": 1776183810,
-        "narHash": "sha256-VtQfFocz8aTqAuKbgulU10z6y6Xu6C2nRzuFOUVm4VI=",
+        "lastModified": 1776293827,
+        "narHash": "sha256-aIptNb0aLRDyXQQSoJfjAlaDK/rIt+pI4Z4EImoxrvg=",
         "owner": "brittonr",
         "repo": "clankers",
-        "rev": "79ba57bb1994c83e00c35a0672a3421411cfb451",
+        "rev": "4a7b0dfaa4b3a0e38bfa2e48ab7cfca254449c94",
         "type": "github"
       },
       "original": {

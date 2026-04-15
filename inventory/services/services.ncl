@@ -369,8 +369,12 @@ let prom_rules = import "prometheus-rules.ncl" in
           listenAddr = "0.0.0.0",
           listenPort = 4000,
           useOAuth = true,
-          oauthAccounts = ["claude1", "claude2", "claude3"],
-          oauthActiveAccount = "claude3",
+          oauthRecords = [
+            { provider = "anthropic", account = "claude1" },
+            { provider = "anthropic", account = "claude2" },
+            { provider = "anthropic", account = "claude3", active = true },
+            { provider = "openai-codex", account = "default", active = true },
+          ],
           # Expose both the stable single-host Lemonade path and the larger
           # distributed llama.cpp RPC path through clanker-router.
           localProviders = [

@@ -1,6 +1,6 @@
 --- a/src/bin/clanker_router/main.rs
 +++ b/src/bin/clanker_router/main.rs
-@@ -27,6 +27,7 @@
+@@ -35,6 +35,7 @@
  use clap::Parser;
  use clap::Subcommand;
  use clap::ValueEnum;
@@ -8,20 +8,20 @@
  use tokio::sync::mpsc;
  
  // ── CLI definition ──────────────────────────────────────────────────────
-@@ -54,6 +55,10 @@
+@@ -74,6 +75,10 @@
      #[arg(long)]
-     api_base: Option<String>,
+     auth_runtime_file: Option<PathBuf>,
  
 +    /// JSON file describing extra OpenAI-compatible providers to register
 +    #[arg(long)]
 +    local_provider_config: Option<PathBuf>,
 +
-     /// Auth store path
-     #[arg(long)]
-     auth_file: Option<PathBuf>,
-@@ -265,6 +270,38 @@
-     cli.auth_file.clone().unwrap_or_else(default_auth_path)
- }
+     /// Enable verbose logging
+     #[arg(short, long)]
+     verbose: bool,
+@@ -328,6 +333,38 @@
+ 
+ // ── Provider construction ───────────────────────────────────────────────
  
 +#[derive(Debug, Deserialize)]
 +struct LocalProviderConfig {
@@ -55,10 +55,10 @@
 +        .collect()
 +}
 +
- // ── Provider construction ───────────────────────────────────────────────
+ async fn build_providers(cli: &Cli, auth_store: &AuthStore, auth_paths: &AuthStorePaths) -> Vec<Arc<dyn Provider>> {
+     let mut providers: Vec<Arc<dyn Provider>> = Vec::new();
  
- fn build_providers(cli: &Cli, auth_store: &AuthStore) -> Vec<Arc<dyn Provider>> {
-@@ -448,6 +485,31 @@
+@@ -537,6 +574,31 @@
          providers.push(OpenAICompatProvider::new(OpenAICompatConfig::local(base, models)));
      }
  

@@ -313,9 +313,9 @@ in
               );
               execStart =
                 "${routerPkg}/bin/clanker-router"
-                + lib.optionalString useOAuth " --auth-file ${
+                + lib.optionalString useOAuth " --auth-seed-file ${
                    config.clan.core.vars.generators.${generatorName}.files.auth-json.path
-                 }"
+                 } --auth-runtime-file /var/lib/clanker-router/auth-runtime.json"
                 + lib.optionalString hasLocalProviders " --local-provider-config ${localProvidersJson}"
                 + " serve --proxy-addr ${settings.listenAddr}:${toString settings.listenPort}"
                 + lib.concatMapStrings (k: " --proxy-key ${k}") settings.proxyKeys
@@ -332,7 +332,8 @@ in
                 inherit (settings) proxyKeys extraArgs;
               }
               // lib.optionalAttrs useOAuth {
-                authFile = config.clan.core.vars.generators.${generatorName}.files.auth-json.path;
+                authSeedFile = config.clan.core.vars.generators.${generatorName}.files.auth-json.path;
+                authRuntimeFile = "/var/lib/clanker-router/auth-runtime.json";
               }
               // lib.optionalAttrs (!useOAuth) {
                 environmentFile = config.clan.core.vars.generators.${generatorName}.files.env-file.path;
@@ -340,10 +341,9 @@ in
 
               # Exit code 1 = "no providers configured" — treat as clean exit
               # so switch-to-configuration doesn't report a failed unit.
-              # --local-provider-config is a global flag (before `serve`), so
-              # we only override ExecStart when extra local providers are set.
-              # The override keeps --auth-file when OAuth-backed auth.json is
-              # also in use on the same instance.
+              # --local-provider-config and the managed auth seed/runtime
+              # flags are global args (before `serve`), so we only override
+              # ExecStart when extra local providers are set.
               systemd.services.clanker-router.serviceConfig = mkMerge [
                 { SuccessExitStatus = "1 2"; }
                 (mkIf hasLocalProviders {
@@ -357,11 +357,11 @@ in
               clan.core.vars.generators.${generatorName} =
                 if useOAuth then
                   {
-                    # OAuth: build auth.json from Anthropic OAuth tokens,
-                    # plus optional API-key providers for hybrid routing.
-                    # Run `clanker-router auth login --account <name>` locally,
-                    # then extract tokens from ~/.config/clanker-router/auth.json:
-                    #   jq -r '.providers.anthropic.accounts.<name>.access_token'
+                    # OAuth: build auth.json from provider/account-scoped
+                    # export records, plus optional API-key providers for
+                    # hybrid routing. Export records come from:
+                    #   clankers auth export <provider> --account <name>
+                    #   clanker-router auth export <provider> --account <name>
                     share = true;
                     files.auth-json = {
                       secret = true;
@@ -372,14 +372,14 @@ in
 
                     prompts =
                       (builtins.listToAttrs (
-                        map (account: {
-                          name = "${account}-access-token";
+                        map (record: {
+                          name = "${record.provider}-${record.account}-record";
                           value = {
-                            description = "OAuth access token for '${account}'";
-                            type = "line";
+                            description = "OAuth record JSON for '${record.provider}/${record.account}'";
+                            type = "hidden";
                             persist = true;
                           };
-                        }) settings.oauthAccounts
+                        }) settings.oauthRecords
                       ))
                       // {
                         openai-api-key = {
@@ -398,8 +398,7 @@ in
 
                     script = ''
                                             export PROMPTS_DIR="$prompts"
-                                            export OAUTH_ACCOUNTS='${builtins.toJSON settings.oauthAccounts}'
-                                            export OAUTH_ACTIVE_ACCOUNT='${settings.oauthActiveAccount}'
+                                            export OAUTH_RECORDS='${builtins.toJSON settings.oauthRecords}'
                                             python <<'PY'
                       import json
                       import os
@@ -412,26 +411,37 @@ in
                           return (prompts_dir / name).read_text(encoding="utf-8").strip()
 
 
-                      providers = {
-                          "anthropic": {
-                              "active_account": os.environ["OAUTH_ACTIVE_ACCOUNT"],
-                              "accounts": {
-                                  account: {
-                                      "credential_type": "oauth",
-                                      "access_token": read_prompt(f"{account}-access-token"),
-                                      "refresh_token": "",
-                                      "expires_at_ms": 4102444800000,
-                                  }
-                                  for account in json.loads(os.environ["OAUTH_ACCOUNTS"])
-                              },
-                          }
-                      }
+                      def read_optional_prompt(name: str) -> str:
+                          value = read_prompt(name)
+                          return "" if value == "Welcome to SOPS! Edit this file as you please!" else value
+
+
+                      providers = {}
+                      for record_spec in json.loads(os.environ["OAUTH_RECORDS"]):
+                          prompt_name = f"{record_spec['provider']}-{record_spec['account']}-record"
+                          raw_record = read_optional_prompt(prompt_name)
+                          if not raw_record:
+                              continue
+                          record = json.loads(raw_record)
+                          provider = record.get("provider", record_spec["provider"])
+                          account = record.get("account", record_spec["account"])
+                          if provider != record_spec["provider"] or account != record_spec["account"]:
+                              raise SystemExit(
+                                  f"record {prompt_name} does not match expected provider/account {record_spec['provider']}/{record_spec['account']}"
+                              )
+                          provider_entry = providers.setdefault(provider, {
+                              "active_account": None,
+                              "accounts": {},
+                          })
+                          provider_entry["accounts"][account] = record["credential"]
+                          if record.get("active") or record_spec.get("active") or provider_entry["active_account"] is None:
+                              provider_entry["active_account"] = account
 
                       for provider, prompt_name in {
                           "openai": "openai-api-key",
                           "openrouter": "openrouter-api-key",
                       }.items():
-                          api_key = read_prompt(prompt_name)
+                          api_key = read_optional_prompt(prompt_name)
                           if api_key:
                               providers[provider] = {
                                   "active_account": "default",
