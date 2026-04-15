@@ -31,7 +31,7 @@
   cargo,
 }:
 let
-  clankersRev = "4a7b0dfaa4b3a0e38bfa2e48ab7cfca254449c94";
+  clankersRev = "c18f6104e7d6cd616355da4fec32f3454308ba2b";
   subwayratRev = "620cb4f8d3e36ceab5f1c4912253b81656a5fe6e";
   ratcoreRev = "16333a505696b324637f021b657c474600a9b838";
 
@@ -39,7 +39,7 @@ let
     owner = "brittonr";
     repo = "clankers";
     rev = clankersRev;
-    hash = "sha256-aIptNb0aLRDyXQQSoJfjAlaDK/rIt+pI4Z4EImoxrvg=";
+    hash = "sha256-3jaH6P38DIhy/F4sB1kBkk9mK6GZrLeChTc2ZKIcdH0=";
   };
 
   subwayratSource = fetchFromGitHub {

@@ -311,15 +311,6 @@ in
                   }) settings.localProviders
                 )
               );
-              execStart =
-                "${routerPkg}/bin/clanker-router"
-                + lib.optionalString useOAuth " --auth-seed-file ${
-                   config.clan.core.vars.generators.${generatorName}.files.auth-json.path
-                 } --auth-runtime-file /var/lib/clanker-router/auth-runtime.json"
-                + lib.optionalString hasLocalProviders " --local-provider-config ${localProvidersJson}"
-                + " serve --proxy-addr ${settings.listenAddr}:${toString settings.listenPort}"
-                + lib.concatMapStrings (k: " --proxy-key ${k}") settings.proxyKeys
-                + lib.concatMapStrings (a: " ${a}") settings.extraArgs;
             in
             {
               imports = [ inputs.clankers.nixosModules.clanker-router ];
@@ -331,6 +322,9 @@ in
                 openFirewall = true;
                 inherit (settings) proxyKeys extraArgs;
               }
+              // lib.optionalAttrs hasLocalProviders {
+                localProviderConfig = localProvidersJson;
+              }
               // lib.optionalAttrs useOAuth {
                 authSeedFile = config.clan.core.vars.generators.${generatorName}.files.auth-json.path;
                 authRuntimeFile = "/var/lib/clanker-router/auth-runtime.json";
@@ -341,15 +335,9 @@ in
 
               # Exit code 1 = "no providers configured" — treat as clean exit
               # so switch-to-configuration doesn't report a failed unit.
-              # --local-provider-config and the managed auth seed/runtime
-              # flags are global args (before `serve`), so we only override
-              # ExecStart when extra local providers are set.
-              systemd.services.clanker-router.serviceConfig = mkMerge [
-                { SuccessExitStatus = "1 2"; }
-                (mkIf hasLocalProviders {
-                  ExecStart = lib.mkForce execStart;
-                })
-              ];
+              systemd.services.clanker-router.serviceConfig = {
+                SuccessExitStatus = "1 2";
+              };
 
               # Make clanker-router CLI available for `auth login`.
               environment.systemPackages = [ routerPkg ];
