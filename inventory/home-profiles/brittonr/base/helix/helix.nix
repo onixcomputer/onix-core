@@ -7,6 +7,25 @@
 let
   k = config.keymap;
   activeTheme = config.theme.active;
+  hxOil = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.hx-oil;
+  openDirectoryBufferCmd = ''
+    :open %sh{path="%{file_path_absolute}"; if [ -n "$path" ]; then path=$(dirname "$path"); else path="%{current_working_directory}"; fi; ${hxOil}/bin/hx-oil render --from "$path"}
+  '';
+  applyDirectoryBufferCmd = [
+    ":write"
+    ":sh ${hxOil}/bin/hx-oil apply \"%{file_path_absolute}\""
+    ":reload"
+  ];
+  refreshDirectoryBufferCmd = [
+    ":sh ${hxOil}/bin/hx-oil refresh \"%{file_path_absolute}\""
+    ":reload"
+  ];
+  openDirectoryEntryCmd = ''
+    :open %sh{${hxOil}/bin/hx-oil open-at-line "%{file_path_absolute}" %{cursor_line}}
+  '';
+  openParentDirectoryCmd = ''
+    :open %sh{${hxOil}/bin/hx-oil parent "%{file_path_absolute}"}
+  '';
 
   # Runtime theme overlay: on launch, create a merged config dir that
   # includes both the immutable store themes and any mutable themes
@@ -49,6 +68,7 @@ in
         rustfmt
         rust-analyzer
         nls
+        hxOil
       ];
 
       settings = {
@@ -65,6 +85,11 @@ in
             ${k.leaderActions.filePicker} = "file_picker";
             ${k.leaderActions.save} = ":w";
             ${k.leaderActions.quit} = ":q";
+            ${k.leaderActions.directoryBuffer} = openDirectoryBufferCmd;
+            ${k.leaderActions.directoryApply} = applyDirectoryBufferCmd;
+            ${k.leaderActions.directoryRefresh} = refreshDirectoryBufferCmd;
+            ${k.leaderActions.directoryOpenEntry} = openDirectoryEntryCmd;
+            ${k.leaderActions.directoryParent} = openParentDirectoryCmd;
           };
         };
       };

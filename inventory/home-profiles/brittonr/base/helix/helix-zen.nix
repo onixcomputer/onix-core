@@ -10,6 +10,25 @@
 let
   k = config.keymap;
   ed = config.editor;
+  hxOil = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.hx-oil;
+  openDirectoryBufferCmd = ''
+    :open %sh{path="%{file_path_absolute}"; if [ -n "$path" ]; then path=$(dirname "$path"); else path="%{current_working_directory}"; fi; ${hxOil}/bin/hx-oil render --from "$path"}
+  '';
+  applyDirectoryBufferCmd = [
+    ":write"
+    ":sh ${hxOil}/bin/hx-oil apply \"%{file_path_absolute}\""
+    ":reload"
+  ];
+  refreshDirectoryBufferCmd = [
+    ":sh ${hxOil}/bin/hx-oil refresh \"%{file_path_absolute}\""
+    ":reload"
+  ];
+  openDirectoryEntryCmd = ''
+    :open %sh{${hxOil}/bin/hx-oil open-at-line "%{file_path_absolute}" %{cursor_line}}
+  '';
+  openParentDirectoryCmd = ''
+    :open %sh{${hxOil}/bin/hx-oil parent "%{file_path_absolute}"}
+  '';
 
   # Runtime theme overlay (same as hx, different cache dir)
   zenThemeOverlay = ''
@@ -55,6 +74,7 @@ let
 
       # Preview
       glow # Terminal markdown renderer
+      hxOil
     ];
 
     settings = {
@@ -147,6 +167,11 @@ let
           ${k.leaderActions.filePicker} = "file_picker";
           ${k.leaderActions.save} = ":w";
           ${k.leaderActions.quit} = ":q";
+          ${k.leaderActions.directoryBuffer} = openDirectoryBufferCmd;
+          ${k.leaderActions.directoryApply} = applyDirectoryBufferCmd;
+          ${k.leaderActions.directoryRefresh} = refreshDirectoryBufferCmd;
+          ${k.leaderActions.directoryOpenEntry} = openDirectoryEntryCmd;
+          ${k.leaderActions.directoryParent} = openParentDirectoryCmd;
 
           # Zen mode toggles under leader+t
           t = {
@@ -165,7 +190,7 @@ let
           ];
 
           "?" =
-            ":echo 'ZEN KEYS: space+p=preview | space+f=format | space+t+z=zen-center | space+t+s=soft-wrap | space+t+d=diagnostics | space+t+g=grammar | space+t+w=whitespace | Alt+hjkl=insert-nav'";
+            ":echo 'ZEN KEYS: space+o=dir-buffer | space+a=dir-apply | space+r=dir-refresh | space+e=dir-open | space+u=dir-parent | space+p=preview | space+f=format | space+t+z=zen-center | space+t+s=soft-wrap | space+t+d=diagnostics | space+t+g=grammar | space+t+w=whitespace | Alt+hjkl=insert-nav'";
         };
       };
 

@@ -1,0 +1,18 @@
+[package]
+name = "hx-oil"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "hx_oil"
+path = "src/lib.rs"
+
+[dependencies]
+anyhow = "1.0.100"
+clap = { version = "4.5.49", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+
+[dev-dependencies]
+filetime = "0.2.26"
+tempfile = "3.23.0"

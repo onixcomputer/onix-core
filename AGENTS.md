@@ -31,3 +31,6 @@
 ## Niri
 - The `calling import-environment without specifying desired variables is deprecated` startup message comes from upstream `resources/niri-session` (`systemctl --user import-environment`). In this repo, greetd launches `/etc/profiles/per-user/brittonr/bin/niri-session`, so that warning is session-wrapper noise, not proof that `niri.service` crashed.
 - `niri: Page flip commit failed on device ... (Permission denied)` immediately before a boot boundary can be compositor shutdown fallout after DRM master is lost during reboot. Check for surrounding `systemd[1]: Stopping ...` lines before treating it as root cause.
+
+## Wrapped tool wrappers
+- Helix wrapper packages from `inputs.wrappers.wrapperModules.helix.apply` keep command bindings in the generated `XDG_CONFIG_HOME` store config referenced by the wrapper script, not inside the final wrapper package root. For integration checks, inspect both the wrapper script (`bin/hx` / `bin/zen`) and the exported config store path.

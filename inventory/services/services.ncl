@@ -462,7 +462,7 @@ let prom_rules = import "prometheus-rules.ncl" in
       module = { name = "llm-agents", input = "self" },
       roles.default = {
         tags."llm-client" = {},
-        settings.packages = ["pi", "openspec", "qwen-code"],
+        settings.packages = ["pi", "openspec", "qwen-code", "hermes-agent"],
       },
     },
 

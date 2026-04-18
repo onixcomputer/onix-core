@@ -18,6 +18,7 @@ in
     ccusage = pkgs.callPackage ../pkgs/ccusage { };
     nix-eval-warnings = pkgs.callPackage ../pkgs/nix-eval-warnings { };
     claude-md = pkgs.python3.pkgs.callPackage ../pkgs/claude-md { };
+    hx-oil = pkgs.callPackage ../pkgs/hx-oil { };
     tuicr = pkgs.callPackage ../pkgs/tuicr { };
     updater = pkgs.callPackage ../pkgs/updater { };
     inherit buildbot-pr-check;

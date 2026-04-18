@@ -57,6 +57,11 @@ in
       bufferPicker | Key,
       format | Key,
       close | Key,
+      directoryBuffer | Key,
+      directoryApply | Key,
+      directoryRefresh | Key,
+      directoryOpenEntry | Key,
+      directoryParent | Key,
     }
     = {
       filePicker = "space",
@@ -66,6 +71,11 @@ in
       bufferPicker = "b",
       format = "f",
       close = "d",
+      directoryBuffer = "o",
+      directoryApply = "a",
+      directoryRefresh = "r",
+      directoryOpenEntry = "e",
+      directoryParent = "u",
     },
 
   # Goto prefix (g + key)

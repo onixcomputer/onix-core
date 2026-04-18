@@ -73,6 +73,7 @@
 ## Patterns That Work
 - For niri startup warnings, trace the full launch path first: greetd -> `/etc/profiles/per-user/<user>/bin/niri-session` -> `systemctl --user start niri.service`. The `import-environment ... is deprecated` line comes from the wrapper script, while compositor crashes show up separately in `journalctl --user -u niri.service` or coredumps.
 - `niri: Page flip commit failed ... Permission denied (os error 13)` right before a boot boundary is shutdown fallout, not proof niri caused the reboot. Check for `systemd[1]: Stopping ...` lines first.
+- For `inputs.wrappers.wrapperModules.helix.apply`, grep both wrapper script and the generated `XDG_CONFIG_HOME` store path from that script. The PATH wiring lives in `bin/hx`/`bin/zen`; command bindings live in the exported config store tree, not the wrapper package root.
 
 ## Domain Notes (continued)
 - **Screenshot flakiness on niri**: Two causes. (1) `grim` uses `zwlr_screencopy` which synchronously blocks niri's compositor thread for ~45ms on NVIDIA 3840x2160@240Hz (~10 dropped frames = visible freeze). niri's built-in `screenshot-screen` action is faster (~27ms) since it skips the Wayland client round-trip. (2) `screenshot-region`'s `flock -n` held the lock for satty's entire lifetime, so re-triggering right after closing satty silently exited. Fixed by replacing flock with `pkill -x satty`.
