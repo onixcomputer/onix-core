@@ -97,6 +97,19 @@ in
       assert_contains '${hxOilBin} refresh' "$hx_config_root"
       assert_contains '${hxOilBin} open-at-line' "$hx_config_root"
       assert_contains '${hxOilBin} parent' "$hx_config_root"
+      assert_contains '${hxOilBin} remember-alternate' "$hx_config_root"
+      assert_contains '${hxOilBin} mark-toggle' "$hx_config_root"
+      assert_contains '${hxOilBin} flag-delete' "$hx_config_root"
+      assert_contains '${hxOilBin} clear-marks' "$hx_config_root"
+      assert_contains '${hxOilBin} op copy' "$hx_config_root"
+      assert_contains '${hxOilBin} op move' "$hx_config_root"
+      assert_contains '${hxOilBin} op symlink' "$hx_config_root"
+      assert_contains '${hxOilBin} op relative-symlink' "$hx_config_root"
+      assert_contains '${hxOilBin} transform lower' "$hx_config_root"
+      assert_contains '${hxOilBin} transform upper' "$hx_config_root"
+      assert_contains '${hxOilBin} subdir insert' "$hx_config_root"
+      assert_contains '${hxOilBin} subdir collapse' "$hx_config_root"
+      assert_contains '${hxOilBin} subdir refresh' "$hx_config_root"
 
       assert_contains '${hxOilPath}' "$zen_script"
       assert_contains '${hxOilBin} render --from' "$zen_config_root"
@@ -104,9 +117,22 @@ in
       assert_contains '${hxOilBin} refresh' "$zen_config_root"
       assert_contains '${hxOilBin} open-at-line' "$zen_config_root"
       assert_contains '${hxOilBin} parent' "$zen_config_root"
+      assert_contains '${hxOilBin} remember-alternate' "$zen_config_root"
+      assert_contains '${hxOilBin} mark-toggle' "$zen_config_root"
+      assert_contains '${hxOilBin} flag-delete' "$zen_config_root"
+      assert_contains '${hxOilBin} clear-marks' "$zen_config_root"
+      assert_contains '${hxOilBin} op copy' "$zen_config_root"
+      assert_contains '${hxOilBin} op move' "$zen_config_root"
+      assert_contains '${hxOilBin} op symlink' "$zen_config_root"
+      assert_contains '${hxOilBin} op relative-symlink' "$zen_config_root"
+      assert_contains '${hxOilBin} transform lower' "$zen_config_root"
+      assert_contains '${hxOilBin} transform upper' "$zen_config_root"
+      assert_contains '${hxOilBin} subdir insert' "$zen_config_root"
+      assert_contains '${hxOilBin} subdir collapse' "$zen_config_root"
+      assert_contains '${hxOilBin} subdir refresh' "$zen_config_root"
 
       export XDG_STATE_HOME="$TMPDIR/state"
-      mkdir -p "$TMPDIR/root"
+      mkdir -p "$TMPDIR/root/target"
       touch "$TMPDIR/root/keep.txt"
       manifest="$(${hxOilBin} render --from "$TMPDIR/root")"
       case "$manifest" in
@@ -118,6 +144,21 @@ in
       esac
       [ -f "$manifest" ]
       grep -F '# hx-oil root: ' "$manifest" >/dev/null
+      grep -F '  keep.txt' "$manifest" >/dev/null
+
+      ${hxOilBin} mark-toggle "$manifest" 4 >/dev/null
+      grep -F '* keep.txt' "$manifest" >/dev/null
+      ${hxOilBin} clear-marks "$manifest" >/dev/null
+      grep -F '  keep.txt' "$manifest" >/dev/null
+      ${hxOilBin} flag-delete "$manifest" 4 >/dev/null
+      grep -F 'D keep.txt' "$manifest" >/dev/null
+      ${hxOilBin} flag-delete "$manifest" 4 >/dev/null
+      ${hxOilBin} mark-toggle "$manifest" 4 >/dev/null
+
+      target_manifest="$(${hxOilBin} render --from "$TMPDIR/root/target")"
+      ${hxOilBin} remember-alternate "$target_manifest" >/dev/null
+      ${hxOilBin} op copy "$manifest" | grep -F "TARGET $TMPDIR/root/target" >/dev/null
+      ${hxOilBin} transform upper "$manifest" | grep -F 'TRANSFORM FILE keep.txt -> KEEP.TXT' >/dev/null
 
       touch "$out"
     '';
