@@ -252,11 +252,6 @@ in
       packages = [
         clan-cli
         preCommitEval.package
-        self'.packages.acl
-        self'.packages.vars
-        self'.packages.tags
-        self'.packages.merge-when-green
-        self'.packages.buildbot-pr-check
         (pkgs.python3.withPackages (ps: [
           ps.pytest
           ps.vcrpy
@@ -267,10 +262,8 @@ in
         self'.packages.sendme
         self'.packages.verify-deploy
         self'.packages.claude-md
-        self'.packages.ccusage
       ]
       ++ lib.optionals (self'.packages ? tracey) [ self'.packages.tracey ]
-      ++ lib.optionals (self'.packages ? abp) [ self'.packages.abp ]
       ++ [
         self.inputs.drift.packages.${pkgs.stdenv.hostPlatform.system}.default
         self'.packages.clankers
@@ -338,65 +331,11 @@ in
       ];
 
       shellHook = ''
-        echo "Clan Infrastructure Development Shell"
-        echo "Available commands:"
-        echo "  clan             - Clan CLI for infrastructure management"
-        echo "  build            - Build a machine configuration (test locally)"
-        echo "  validate         - Run nix fmt and pre-commit checks"
-        echo "  nix-prefetch-sri - Get SRI hash for a URL"
-        echo ""
-        echo "Analysis commands:"
-        echo "  acl              - Analyze Clan secret ownership"
-        echo "  vars             - Analyze Clan vars ownership"
-        echo "  tags             - Analyze Clan machine tags"
-
-        echo ""
-        echo "AI agent tools:"
-        echo "  browser-cli    - Firefox browser automation"
-        echo "  context7-cli   - Library documentation from Context7"
-        echo "  db-cli         - Deutsche Bahn train connections"
-        echo "  gmaps-cli      - Google Maps search/directions"
-        echo "  kagi-search    - Web search with Kagi AI summaries"
-        echo "  pexpect-cli    - Interactive terminal automation"
-        echo "  screenshot-cli - Screenshots (grim/spectacle/macOS)"
-        echo "  weather-cli    - Weather forecasts (DWD data)"
-        echo ""
-        echo "Project tools:"
-        echo "  drift            - Terminal music player (Tidal/YouTube/Bandcamp)"
-        echo "  clankers         - Terminal coding agent"
-        echo ""
-        echo "Workflow tools:"
-        echo "  merge-when-green  - Auto-create PRs and merge when CI passes"
-        echo "  buildbot-pr-check - Show buildbot CI failures for a PR"
-        echo "  eval-warnings     - Extract Nix evaluation warnings"
-        echo "  dumbpipe         - Cross-device unix pipe over iroh"
-        echo "  sendme           - P2P file transfer with blake3 verification"
-        echo "  verify-deploy    - Verify deployed machine matches expected build"
-        echo "  claude-md        - Centralize CLAUDE.local.md across repos"
-        echo "  tracey           - Spec coverage tracking (impl/verify annotations)"
-        echo "  ccusage          - Claude Code token usage analysis"
-        echo "  abp              - Agent Browser Protocol server"
-        echo ""
-
         if [ -f .env ]; then
-          echo "Loading AWS credentials..."
           set -a
           source .env
           set +a
-
-          # Check if AWS credentials are actually set
-          if [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ]; then
-            echo "  AWS credentials loaded."
-            echo "  Cloud provisioning available."
-          else
-            echo "  .env file found but AWS credentials not set."
-            echo "  Cloud provisioning unavailable."
-          fi
-        else
-          echo "  No .env file found."
-          echo "  Cloud provisioning unavailable."
         fi
-        echo ""
 
         ${preCommitEval.installationScript}
       '';
@@ -408,10 +347,7 @@ in
         clan-cli
       ];
 
-      shellHook = ''
-        echo "Minimal Clan Shell"
-        echo "Available: clan"
-      '';
+      shellHook = "";
     };
 
     # Analysis shell for infrastructure inspection
@@ -422,10 +358,7 @@ in
         self'.packages.tags
       ];
 
-      shellHook = ''
-        echo "Analysis Shell"
-        echo "Available: acl, vars, tags"
-      '';
+      shellHook = "";
     };
 
     # CI shell with validation tools only
@@ -442,8 +375,6 @@ in
       ];
 
       shellHook = ''
-        echo "CI Shell"
-        echo "Available: validate, pre-commit"
         ${preCommitEval.installationScript}
       '';
     };

@@ -82,6 +82,7 @@ in
       xkb = {
         layout = "us";
         variant = "";
+        options = "caps:escape";
       };
     };
     blueman.enable = true;

@@ -41,6 +41,7 @@ in
 {
   keyboard | doc "Keyboard configuration" = {
     layout | doc "Keyboard layout" | String = "us",
+    options | doc "XKB options (comma separated)" | String = "caps:escape",
   },
   touchpad | doc "Touchpad configuration" = {
     naturalScroll | doc "Enable natural scroll direction" | Bool = true,

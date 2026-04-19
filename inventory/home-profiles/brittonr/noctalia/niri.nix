@@ -40,6 +40,7 @@ let
                                   keyboard {
                                       xkb {
                                           layout "${config.input.keyboard.layout}"
+                                          options "${config.input.keyboard.options}"
                                       }
                                   }
 

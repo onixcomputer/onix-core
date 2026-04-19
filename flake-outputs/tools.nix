@@ -15,7 +15,6 @@ in
 {
   packages = {
     inherit (self.inputs.onix-wasm.packages.${pkgs.stdenv.hostPlatform.system}) wasm-plugins;
-    ccusage = pkgs.callPackage ../pkgs/ccusage { };
     nix-eval-warnings = pkgs.callPackage ../pkgs/nix-eval-warnings { };
     claude-md = pkgs.python3.pkgs.callPackage ../pkgs/claude-md { };
     hx-oil = pkgs.callPackage ../pkgs/hx-oil { };
@@ -45,7 +44,6 @@ in
       };
     in
     {
-      abp = pkgs.callPackage ../pkgs/abp { };
       sone = pkgs.callPackage ../pkgs/sone { };
       opendeck = pkgs.callPackage ../pkgs/opendeck { };
       open-notebook = pkgs.callPackage ../pkgs/open-notebook { };

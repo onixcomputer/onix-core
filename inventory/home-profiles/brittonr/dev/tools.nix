@@ -1,9 +1,7 @@
 { pkgs, inputs, ... }:
 let
-  abp = pkgs.callPackage ../../../../pkgs/abp { };
   tuicr = pkgs.callPackage ../../../../pkgs/tuicr { };
   tracey = pkgs.callPackage ../../../../pkgs/tracey { };
-  ccusage = pkgs.callPackage ../../../../pkgs/ccusage { };
   dumbpipe = pkgs.callPackage ../../../../pkgs/dumbpipe { };
   sendme = pkgs.callPackage ../../../../pkgs/sendme { };
   nixdelta = inputs.nixdelta.packages.${pkgs.stdenv.hostPlatform.system}.default;
@@ -58,12 +56,8 @@ in
     # TUI tools
     tuicr
 
-    # Browser automation
-    abp
-
     # AI/dev tooling
     tracey
-    ccusage
 
     # Iroh P2P tools
     dumbpipe
