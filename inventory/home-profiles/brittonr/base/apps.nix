@@ -15,7 +15,7 @@ let
   data = wasm.evalNickelFile ./apps.ncl;
 
   subs = {
-    "@wezterm@" = "${pkgs.wezterm}/bin/wezterm";
+    "@kitty@" = "${pkgs.kitty}/bin/kitty";
   };
 
   resolvePlaceholder = s: subs.${s} or s;

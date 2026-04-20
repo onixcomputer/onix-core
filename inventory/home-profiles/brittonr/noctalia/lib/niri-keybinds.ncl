@@ -274,14 +274,14 @@ in
 
   # --- Application launchers ---
   applications | Array SpawnBinding = [
-    { key = "%{mod}+%{wm.terminal}", spawn = ["@terminal@", "start"] },
-    { key = "%{mod}+Shift+%{wm.terminal}", spawn = ["sh", "-c", "cd $(@xcwd@) && exec @terminal@ start"] },
-    { key = "%{mod}+%{wm.fileManager}", spawn = ["sh", "-c", "cd $(@xcwd@) && exec @terminal@ start -- @fileManager@"] },
+    { key = "%{mod}+%{wm.terminal}", spawn = ["@terminal@"] },
+    { key = "%{mod}+Shift+%{wm.terminal}", spawn = ["sh", "-c", "@terminal@ --directory $(@xcwd@)"] },
+    { key = "%{mod}+%{wm.fileManager}", spawn = ["sh", "-c", "@terminal@ --directory $(@xcwd@) @fileManager@"] },
     { key = "%{mod}+%{wm.browser}", spawn = ["@browser@"] },
-    { key = "%{mod}+%{wm.sysmon}", spawn = ["@terminal@", "start", "--", "@sysmon@"] },
+    { key = "%{mod}+%{wm.sysmon}", spawn = ["@terminal@", "@sysmon@"] },
     { key = "%{mod}+Period", spawn = ["bemoji", "-t"], comment = "Emoji picker" },
-    { key = "%{mod}+Control+W", spawn = ["@terminal@", "start", "--", "impala"], comment = "WiFi TUI" },
-    { key = "%{mod}+Control+B", spawn = ["@terminal@", "start", "--", "bluetui"], comment = "Bluetooth TUI" },
+    { key = "%{mod}+Control+W", spawn = ["@terminal@", "impala"], comment = "WiFi TUI" },
+    { key = "%{mod}+Control+B", spawn = ["@terminal@", "bluetui"], comment = "Bluetooth TUI" },
   ],
 
   # --- Noctalia IPC ---

@@ -44,51 +44,65 @@
     amdgpu.opencl.enable = true;
   };
 
-  # System packages for AMD GPU development and monitoring
-  environment.systemPackages = with pkgs; [
-    rocmPackages.rocm-smi
-    rocmPackages.rocminfo
-    clinfo # OpenCL device info
-    radeontop # AMD GPU monitoring
+  environment = {
+    sessionVariables.LD_LIBRARY_PATH = "${pkgs.rocmPackages.rocm-smi}/lib:${pkgs.libdrm}/lib";
 
-    # Additional monitoring tools for AI workloads
-    nvtopPackages.amd # AMD GPU monitoring (nvtop with AMD support)
-    btop # System resource monitoring with GPU support
+    # System packages for AMD GPU development and monitoring
+    systemPackages = with pkgs; [
+      rocmPackages.rocm-smi
+      rocmPackages.rocminfo
+      clinfo # OpenCL device info
+      radeontop # AMD GPU monitoring
 
-    # GPU stress testing and benchmarking
-    vulkan-tools # Vulkan utilities
-    # vkmark — broken in nixpkgs (Vulkan API incompatibility)
-  ];
+      # Additional monitoring tools for AI workloads
+      nvtopPackages.amd # AMD GPU monitoring (nvtop with AMD support)
+      btop # System resource monitoring with GPU support
 
-  # Environment variables for ROCm/OpenCL/Vulkan
-  environment.variables = {
-    # ROCm/HIP settings
-    ROC_ENABLE_PRE_VEGA = "1";
-    HIP_VISIBLE_DEVICES = "0";
+      # GPU stress testing and benchmarking
+      vulkan-tools # Vulkan utilities
+      # vkmark — broken in nixpkgs (Vulkan API incompatibility)
+    ];
 
-    # vLLM/ROCm optimization settings for Strix Halo (gfx1151)
-    HSA_ENABLE_SDMA = "0"; # Prevents artifacts, improves stability for AI workloads
-    HSA_OVERRIDE_GFX_VERSION = "11.5.1"; # Ensure gfx1151 is recognized
-    PYTORCH_ROCM_ARCH = "gfx1151"; # Target architecture for PyTorch/vLLM
+    # Environment variables for ROCm/OpenCL/Vulkan
+    variables = {
+      # ROCm/HIP settings
+      HIP_VISIBLE_DEVICES = "0";
 
-    # OpenCL settings
-    OCL_ICD_VENDORS = "${pkgs.rocmPackages.clr.icd}/etc/OpenCL/vendors/";
+      # vLLM/ROCm optimization settings for Strix Halo (gfx1151)
+      HSA_ENABLE_SDMA = "0"; # Prevents artifacts, improves stability for AI workloads
+      HSA_OVERRIDE_GFX_VERSION = "11.5.1"; # Ensure gfx1151 is recognized
+      PYTORCH_ROCM_ARCH = "gfx1151"; # Target architecture for PyTorch/vLLM
 
-    # Vulkan settings
-    VK_ICD_FILENAMES = "/run/opengl-driver/share/vulkan/icd.d/amd_icd64.json:/run/opengl-driver/share/vulkan/icd.d/radeon_icd.x86_64.json";
-    VK_LAYER_PATH = "${pkgs.vulkan-validation-layers}/share/vulkan/explicit_layer.d";
+      # OpenCL settings
+      OCL_ICD_VENDORS = "${pkgs.rocmPackages.clr.icd}/etc/OpenCL/vendors/";
 
-    # Allow both RADV and AMDVLK drivers
-    AMD_VULKAN_ICD = "RADV"; # Prefer RADV for better compatibility
-    VK_DRIVER_FILES = "/run/opengl-driver/share/vulkan/icd.d/radeon_icd.x86_64.json";
+      # Vulkan settings
+      VK_ICD_FILENAMES = "/run/opengl-driver/share/vulkan/icd.d/amd_icd64.json:/run/opengl-driver/share/vulkan/icd.d/radeon_icd.x86_64.json";
+      VK_LAYER_PATH = "${pkgs.vulkan-validation-layers}/share/vulkan/explicit_layer.d";
 
-    # Enable Vulkan debug layers in development
-    VK_INSTANCE_LAYERS = "VK_LAYER_KHRONOS_validation";
+      # Allow both RADV and AMDVLK drivers
+      AMD_VULKAN_ICD = "RADV"; # Prefer RADV for better compatibility
+      VK_DRIVER_FILES = "/run/opengl-driver/share/vulkan/icd.d/radeon_icd.x86_64.json";
+
+      # Enable Vulkan debug layers in development
+      VK_INSTANCE_LAYERS = "VK_LAYER_KHRONOS_validation";
+    };
   };
 
-  # Kernel modules for AMD GPU
-  boot.initrd.kernelModules = [ "amdgpu" ];
-  boot.kernelModules = [ "amdgpu" ];
+  boot = {
+    # Kernel modules for AMD GPU
+    initrd.kernelModules = [ "amdgpu" ];
+    kernelModules = [ "amdgpu" ];
+
+    # TTM pages_limit: allow up to 100GB of system RAM to be GPU-mapped.
+    # Default is ~50% (~64GB on 128GB systems).  LLM inference benefits from
+    # larger GTT-backed allocations on unified memory (no perf penalty vs VRAM).
+    # 100 GB = 26214400 pages (4 KiB each).  Leaves ~28GB for OS/CPU.
+    # Ref: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/rdna3-5.html
+    extraModprobeConfig = ''
+      options ttm pages_limit=26214400
+    '';
+  };
 
   # Users and groups for GPU access and monitoring
   users = {

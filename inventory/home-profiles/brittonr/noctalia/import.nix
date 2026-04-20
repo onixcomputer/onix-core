@@ -34,6 +34,5 @@
     ./gestures.nix
     ./sticky-windows.nix
     ./kitty.nix
-    ./wezterm.nix
   ];
 }

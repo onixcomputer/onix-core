@@ -1,6 +1,6 @@
 {
   daemon = {
-    model = { type = "string", default = "claude-opus-4-6", description = "Default LLM model for agent sessions" },
+    model = { type = "string", default = "user.Qwen3.6-35B-A3B", description = "Default LLM model for agent sessions" },
     allowAll = { type = "bool", default = false, description = "Skip token/ACL checks (development mode)" },
     heartbeat = { type = "number", default = 30, description = "Heartbeat interval in seconds (0 to disable)" },
     apiBase = { type = "nullable_string", default = null, description = "API base URL for the LLM proxy" },

@@ -122,7 +122,7 @@ in
 
     # User templates for apps without built-in Noctalia support.
     # Built-in templates handle: niri, kitty, btop, helix.
-    # User templates handle: fish, bat, delta, eza, starship, swayosd, wezterm.
+    # User templates handle: fish, bat, delta, eza, starship, swayosd.
     user-templates = {
       templates = {
         fish = {
@@ -151,10 +151,6 @@ in
           input_path = "${templateDir}/swayosd.css";
           output_path = "~/.config/swayosd/style.css";
           post_hook = "systemctl --user restart swayosd.service 2>/dev/null || true";
-        };
-        wezterm = {
-          input_path = "${templateDir}/wezterm-colors.lua";
-          output_path = "~/.config/wezterm/noctalia-colors.lua";
         };
       };
     };

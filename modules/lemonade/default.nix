@@ -48,9 +48,15 @@ in
                 customModels
                 contextSize
                 maxLoadedModels
+                globalTimeout
                 extraArgs
                 offline
+                healthCheckInterval
+                healthCheckThreshold
+                healthCheckGrace
                 ;
+
+              healthEnabled = healthCheckInterval > 0;
 
               lemonadePkg = pkgs.lemonade-server;
               llamacppPkg = pkgs.llamacpp-rocm-rpc;
@@ -74,6 +80,7 @@ in
                   inherit host port;
                   ctx_size = contextSize;
                   max_loaded_models = maxLoadedModels;
+                  global_timeout = globalTimeout;
                   inherit offline;
                   llamacpp = {
                     backend = if backend == "system" then "auto" else backend;
@@ -84,8 +91,8 @@ in
                     vulkan_bin = "builtin";
                     cpu_bin = "builtin";
                   }
-                  // lib.optionalAttrs (extraArgs != "") {
-                    args = extraArgs;
+                  // {
+                    args = "--metrics" + lib.optionalString (extraArgs != "") " ${extraArgs}";
                   };
                 }
               );
@@ -158,6 +165,79 @@ in
                   done
                 '';
               };
+              healthWrapper = pkgs.writeShellApplication {
+                name = "lemonade-health-wrapper";
+                runtimeInputs = [
+                  lemonadePkg
+                  pkgs.procps
+                ];
+                excludeShellChecks = [ "SC2086" ];
+                text = ''
+                  INTERVAL=${toString healthCheckInterval}
+                  THRESHOLD=${toString healthCheckThreshold}
+                  GRACE=${toString healthCheckGrace}
+
+                  # Start lemonade-router, forwarding all arguments
+                  lemonade-router "$@" &
+                  ROUTER_PID=$!
+
+                  cleanup() {
+                    kill -TERM "$ROUTER_PID" 2>/dev/null || true
+                    wait "$ROUTER_PID" 2>/dev/null || true
+                    exit 0
+                  }
+                  trap cleanup TERM INT
+
+                  # Count llama-server processes in the service cgroup
+                  count_backends() {
+                    local cgroup="/sys/fs/cgroup/system.slice/lemonade.service/cgroup.procs"
+                    if [ -f "$cgroup" ]; then
+                      local c=0
+                      while read -r pid; do
+                        if [ "$(cat "/proc/$pid/comm" 2>/dev/null)" = "llama-server" ]; then
+                          c=$((c + 1))
+                        fi
+                      done < "$cgroup"
+                      echo "$c"
+                    else
+                      pgrep -cx llama-server 2>/dev/null || echo 0
+                    fi
+                  }
+
+                  # Wait for grace period before starting health checks
+                  elapsed=0
+                  while [ "$elapsed" -lt "$GRACE" ] && kill -0 "$ROUTER_PID" 2>/dev/null; do
+                    sleep "$INTERVAL"
+                    elapsed=$((elapsed + INTERVAL))
+                  done
+
+                  BACKEND_SEEN=false
+                  MISS_COUNT=0
+
+                  while kill -0 "$ROUTER_PID" 2>/dev/null; do
+                    sleep "$INTERVAL"
+                    kill -0 "$ROUTER_PID" 2>/dev/null || break
+
+                    BACKEND_COUNT=$(count_backends)
+
+                    if [ "$BACKEND_COUNT" -gt 0 ]; then
+                      BACKEND_SEEN=true
+                      MISS_COUNT=0
+                    elif [ "$BACKEND_SEEN" = true ]; then
+                      MISS_COUNT=$((MISS_COUNT + 1))
+                      echo "WARNING: llama-server backend not found (miss $MISS_COUNT/$THRESHOLD)"
+                      if [ "$MISS_COUNT" -ge "$THRESHOLD" ]; then
+                        echo "ERROR: backend gone for $((MISS_COUNT * INTERVAL))s, restarting service"
+                        kill -TERM "$ROUTER_PID" 2>/dev/null || true
+                        wait "$ROUTER_PID" 2>/dev/null || true
+                        exit 1
+                      fi
+                    fi
+                  done
+
+                  wait "$ROUTER_PID" 2>/dev/null
+                '';
+              };
             in
             {
               # Install the lemonade package system-wide for CLI access
@@ -185,16 +265,28 @@ in
                     in
                     lib.getExe preScript;
 
-                  ExecStart = lib.concatStringsSep " " [
-                    "${lemonadePkg}/bin/lemonade-router"
-                    "--host"
-                    host
-                    "--port"
-                    (toString port)
-                  ];
+                  ExecStart =
+                    if healthEnabled then
+                      lib.concatStringsSep " " [
+                        (lib.getExe healthWrapper)
+                        "--host"
+                        host
+                        "--port"
+                        (toString port)
+                      ]
+                    else
+                      lib.concatStringsSep " " [
+                        "${lemonadePkg}/bin/lemonade-router"
+                        "--host"
+                        host
+                        "--port"
+                        (toString port)
+                      ];
 
                   Restart = "on-failure";
                   RestartSec = 10;
+                  KillMode = "control-group";
+                  TimeoutStopSec = 30;
 
                   # Root for GPU device access (kfd + dri)
                   User = "root";

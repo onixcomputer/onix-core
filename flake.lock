@@ -175,26 +175,9 @@
         "type": "github"
       }
     },
-    "clanker-router-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1776295477,
-        "narHash": "sha256-NrzEjyq3tizOMLwwiB9MhOWhPH8eEudwrwXZYsC34to=",
-        "owner": "brittonr",
-        "repo": "clanker-router",
-        "rev": "9788660687fbadb00c6348bc557e146ed951c734",
-        "type": "github"
-      },
-      "original": {
-        "owner": "brittonr",
-        "repo": "clanker-router",
-        "type": "github"
-      }
-    },
     "clankers": {
       "inputs": {
         "clanker-plugin-sdk-src": "clanker-plugin-sdk-src",
-        "clanker-router-src": "clanker-router-src",
         "flake-utils": "flake-utils",
         "nixpkgs": [
           "nixpkgs"
@@ -207,11 +190,11 @@
         "unit2nix": "unit2nix"
       },
       "locked": {
-        "lastModified": 1776295623,
-        "narHash": "sha256-3jaH6P38DIhy/F4sB1kBkk9mK6GZrLeChTc2ZKIcdH0=",
+        "lastModified": 1776571235,
+        "narHash": "sha256-IB8yCWTI1nhHh6WBYpHTl2f/e7x9yKW1OcAedLiGz2k=",
         "owner": "brittonr",
         "repo": "clankers",
-        "rev": "c18f6104e7d6cd616355da4fec32f3454308ba2b",
+        "rev": "2fc010486716831af1359193c32032e8cbe6c437",
         "type": "github"
       },
       "original": {

@@ -14,8 +14,8 @@
 
   time.timeZone = "America/New_York";
 
-  # CPU-oriented memory configuration — no TTM overrides, so the GPU gets
-  # only its default firmware VRAM carveout and the rest stays with the CPU.
+  # LLM-optimized: TTM pages_limit set in amd-gpu tag (100GB GTT-backed).
+  # Keep BIOS VRAM carve-out small (0.5GB); unified memory has no perf penalty.
   boot = {
     kernelPackages = pkgs.linuxPackages_latest;
   };

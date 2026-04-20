@@ -31,9 +31,9 @@ in
 
 {
   terminal | App = {
-    name = "wezterm",
-    command = "@wezterm@",
-    appId = "org.wezfurlong.wezterm",
+    name = "kitty",
+    command = "@kitty@",
+    appId = "kitty",
   },
 
   browser | App = {
