@@ -34,3 +34,7 @@
 
 ## Wrapped tool wrappers
 - Helix wrapper packages from `inputs.wrappers.wrapperModules.helix.apply` keep command bindings in the generated `XDG_CONFIG_HOME` store config referenced by the wrapper script, not inside the final wrapper package root. For integration checks, inspect both the wrapper script (`bin/hx` / `bin/zen`) and the exported config store path.
+
+## Rust workstation config
+- `britton-desktop` currently has a manual `~/.cargo/config.toml` outside this repo with `target-dir = "/home/brittonr/.cargo-target"`, `net.retry = 3`, and `term.quiet = false`. Any declarative Rust cache change should preserve or explicitly migrate that compatibility surface instead of assuming stock Cargo defaults.
+- `SCCACHE_IGNORE_SERVER_IO_ERROR=1` on stock `sccache` is not enough for dead-transport startup/connect failures like a broken `SCCACHE_SERVER_UDS`; `sccache rustc -vV` can still abort before local fallback. For Home Manager Cargo rollouts here, use an outer rustc-wrapper that can detect those transport failures and exec real `rustc` directly.

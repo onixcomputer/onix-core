@@ -65,7 +65,7 @@ let profile_tags = ["hm-laptop", "hm-server"] in
 let all_tags = std.array.flatten [tag_file_tags, service_tags, profile_tags] in
 
 # --- Home-manager profile registry ---
-let profile_names = ["base", "dev", "noctalia", "creative", "social", "media"] in
+let profile_names = ["base", "dev", "noctalia", "creative", "social", "media", "sccache"] in
 
 # Auto-computed tags valid for role targeting (clan-core generates these;
 # not manually assigned to machines).

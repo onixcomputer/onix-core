@@ -3,6 +3,8 @@
 ## Corrections
 | Date | Source | What Went Wrong | What To Do Instead |
 |------|--------|----------------|-------------------|
+| 2026-04-22 | self | sccache docs say `SCCACHE_IGNORE_SERVER_IO_ERROR=1` makes builds gracefully fail over, but stock `sccache` still aborts on server startup/connect failures like dead `SCCACHE_SERVER_UDS` before any local fallback happens | Treat `SCCACHE_IGNORE_SERVER_IO_ERROR` as insufficient for startup/connect fail-open. For Cargo `rustc-wrapper` rollouts, use a wrapper that can detect sccache transport failures and exec the real `rustc` directly |
+| 2026-04-22 | self | Assumed Cargo `[env]` would propagate `SCCACHE_IGNORE_SERVER_IO_ERROR=1` early enough for the initial `rustc-wrapper` probe (`sccache rustc -vV`) in the desktop sccache rollout | Cargo-managed env was too late for the wrapper bootstrap path here; fail-open may need a Nix-managed wrapper script that exports the env before execing `sccache`, not Cargo `[env]` alone |
 | 2026-04-08 | self | Home Manager's `services.yubikey-agent` Linux fish init emits bash-style `${XDG_RUNTIME_DIR:-/run/user/$UID}` into `config.fish`, which fish rejects at startup | Override `sshAuthSock.initialization.fish` locally with fish syntax (`if set -q XDG_RUNTIME_DIR ... else /run/user/(id -u) ...`) while keeping HM's SSH-forwarding guard |
 | 2026-04-08 | self | Assumed stock `clanker-router` could register multiple remote OpenAI-compatible endpoints alongside Anthropic with existing CLI flags | It only supports one custom `--api-base` endpoint. Patch `src/bin/clanker_router/main.rs` and drive it from `modules/clankers` via `router.localProviders = [{ name, apiBase, models = [ ... ] }]`. |
 | 2026-04-09 | self | Passed an unquoted alternation to `rg`, so the shell treated `|` as a pipe and the search failed | Quote regex patterns with `|` before passing them to shell-backed search tools |
@@ -79,6 +81,7 @@
 ## Domain Notes (continued)
 - **Screenshot flakiness on niri**: Two causes. (1) `grim` uses `zwlr_screencopy` which synchronously blocks niri's compositor thread for ~45ms on NVIDIA 3840x2160@240Hz (~10 dropped frames = visible freeze). niri's built-in `screenshot-screen` action is faster (~27ms) since it skips the Wayland client round-trip. (2) `screenshot-region`'s `flock -n` held the lock for satty's entire lifetime, so re-triggering right after closing satty silently exited. Fixed by replacing flock with `pkill -x satty`.
 - britton-desktop: NVIDIA RTX (PCI 10DE:2C02) card2 DP-3 3840x2160@240Hz, AMD iGPU (1002:13C0) card1. NVIDIA driver 580.126.18 open kernel module.
+- britton-desktop already has a manual `~/.cargo/config.toml` with `target-dir = "/home/brittonr/.cargo-target"`, `net.retry = 3`, and `term.quiet = false`; Rust cache changes must preserve or explicitly migrate that compatibility surface.
 - ~~lisgd-niri service crash-loops continuously on britton-desktop~~ — RESOLVED. Script checks for touchscreen via libinput, exits 0 if none found. `Restart = "on-failure"` won't restart on exit 0. `StartLimitBurst = 3` caps restarts if lisgd itself crashes on a machine with a touchscreen.
 
 ## Reference Repos
