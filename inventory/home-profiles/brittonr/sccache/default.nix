@@ -18,6 +18,7 @@ let
 
   inherit (profileData.cargo)
     ignoreServerIoError
+    linker
     netRetry
     targetDir
     termQuiet
@@ -112,6 +113,7 @@ let
       "rustc-wrapper" = lib.getExe cargoRustcWrapper;
       "target-dir" = targetDir;
     };
+    target.x86_64-unknown-linux-gnu.linker = linker;
     net.retry = netRetry;
     term.quiet = termQuiet;
   };
@@ -157,7 +159,10 @@ let
 in
 {
   home = {
-    packages = [ wrappedSccache ];
+    packages = [
+      wrappedSccache
+      pkgs.mold
+    ];
     file.".cargo/config.toml".source = cargoConfigFile;
     file.".local/bin/sccache".source = "${wrappedSccache}/bin/${wrappedSccacheBinaryName}";
     activation.backupCargoConfigBeforeTakeover = lib.hm.dag.entryBefore [

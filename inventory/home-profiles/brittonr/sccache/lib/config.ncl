@@ -25,12 +25,14 @@ in
       netRetry | Positive,
       termQuiet | Bool,
       ignoreServerIoError | NonEmpty,
+      linker | NonEmpty,
     }
     = {
       targetDir = "/home/brittonr/.cargo-target",
       netRetry = 3,
       termQuiet = false,
       ignoreServerIoError = "1",
+      linker = "mold",
     },
 
   sccache
