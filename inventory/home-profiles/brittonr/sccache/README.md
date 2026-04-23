@@ -15,8 +15,9 @@ wrapper calls a wrapped `sccache` binary on `PATH`. No manual
 - `sccache` uses only the local disk cache at `/home/brittonr/.cache/sccache`
 - `sccache` logs errors to `/home/brittonr/.cache/sccache/error.log`
 - Path normalization uses `/home/brittonr/git` and `/home/brittonr/git/worktrees`
-- Cargo defaults `target.x86_64-unknown-linux-gnu.linker = "mold"`
-- `mold` is installed in the managed user environment so Cargo can resolve it
+- Cargo defaults `target.x86_64-unknown-linux-gnu.linker = "cc"`
+- Cargo adds `-fuse-ld=mold` via target-specific rustflags so the compiler driver selects mold as the backend linker
+- `mold` is installed in the managed user environment so the compiler driver can resolve it
 - Cargo fail-open is handled by the managed rustc-wrapper, which falls back to
   direct `rustc` if `sccache` cannot start or connect to its daemon
 
@@ -37,7 +38,7 @@ Manual rollback path:
 `sccache` does not turn every Rust compile into a cache hit.
 
 - Incremental workspace builds still miss
-- Link-heavy crates still miss even with a faster linker; `mold` cuts link time, not cache misses
+- Link-heavy crates still miss even with a faster linker; using mold through `cc -fuse-ld=mold` cuts link time, not cache misses
 - Some `proc-macro` cases still miss
 
 Treat the stats flows below as health checks, not a promise that every build

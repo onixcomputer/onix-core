@@ -19,6 +19,7 @@ let
   inherit (profileData.cargo)
     ignoreServerIoError
     linker
+    linkerArgs
     netRetry
     targetDir
     termQuiet
@@ -113,7 +114,13 @@ let
       "rustc-wrapper" = lib.getExe cargoRustcWrapper;
       "target-dir" = targetDir;
     };
-    target.x86_64-unknown-linux-gnu.linker = linker;
+    target.x86_64-unknown-linux-gnu = {
+      inherit linker;
+      rustflags = builtins.concatMap (arg: [
+        "-C"
+        "link-arg=${arg}"
+      ]) linkerArgs;
+    };
     net.retry = netRetry;
     term.quiet = termQuiet;
   };

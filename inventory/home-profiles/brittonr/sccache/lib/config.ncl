@@ -26,13 +26,17 @@ in
       termQuiet | Bool,
       ignoreServerIoError | NonEmpty,
       linker | NonEmpty,
+      linkerArgs | Array NonEmpty,
     }
     = {
       targetDir = "/home/brittonr/.cargo-target",
       netRetry = 3,
       termQuiet = false,
       ignoreServerIoError = "1",
-      linker = "mold",
+      linker = "cc",
+      linkerArgs = [
+        "-fuse-ld=mold",
+      ],
     },
 
   sccache

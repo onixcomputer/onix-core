@@ -5,6 +5,7 @@
 # ---
 # This file was automatically generated!
 # CHANGING this configuration requires wiping and reinstalling the machine
+{ lib, ... }:
 {
 
   boot = {
@@ -13,8 +14,15 @@
         efiSupport = true;
         efiInstallAsRemovable = true;
         enable = true;
+        configurationLimit = 10;
       };
     };
+  };
+
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = lib.mkForce "--delete-older-than 14d";
   };
   disko.devices = {
     disk = {
