@@ -5,6 +5,7 @@ let
   dumbpipe = pkgs.callPackage ../../../../pkgs/dumbpipe { };
   sendme = pkgs.callPackage ../../../../pkgs/sendme { };
   nixdelta = inputs.nixdelta.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  kiEditor = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.ki-editor;
 in
 {
   home.packages = with pkgs; [
@@ -65,5 +66,6 @@ in
 
     # Flake inputs
     nixdelta
+    kiEditor
   ];
 }

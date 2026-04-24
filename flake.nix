@@ -164,6 +164,13 @@
         rust-overlay.follows = "rust-overlay";
       };
     };
+    ki-editor = {
+      url = "github:ki-editor/ki-editor";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        rust-overlay.follows = "rust-overlay";
+      };
+    };
     musnix = {
       url = "github:musnix/musnix";
       inputs.nixpkgs.follows = "nixpkgs";

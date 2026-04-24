@@ -25,6 +25,7 @@ in
     dumbpipe = pkgs.callPackage ../pkgs/dumbpipe { };
     sendme = pkgs.callPackage ../pkgs/sendme { };
     verify-deploy = pkgs.callPackage ../pkgs/verify-deploy { };
+    ki-editor = self.inputs.ki-editor.packages.${pkgs.stdenv.hostPlatform.system}.default;
   }
   // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
     branchfs = pkgs.callPackage ../pkgs/branchfs { };
