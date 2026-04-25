@@ -171,6 +171,13 @@
         rust-overlay.follows = "rust-overlay";
       };
     };
+    tigerstyle = {
+      url = "github:brittonr/tigerstyle-rs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        rust-overlay.follows = "rust-overlay";
+      };
+    };
     musnix = {
       url = "github:musnix/musnix";
       inputs.nixpkgs.follows = "nixpkgs";

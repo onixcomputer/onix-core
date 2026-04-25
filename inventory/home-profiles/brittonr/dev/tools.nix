@@ -6,6 +6,7 @@ let
   sendme = pkgs.callPackage ../../../../pkgs/sendme { };
   nixdelta = inputs.nixdelta.packages.${pkgs.stdenv.hostPlatform.system}.default;
   kiEditor = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.ki-editor;
+  tigerstylePkgs = inputs.tigerstyle.packages.${pkgs.stdenv.hostPlatform.system};
 in
 {
   home.packages = with pkgs; [
@@ -67,5 +68,7 @@ in
     # Flake inputs
     nixdelta
     kiEditor
+    tigerstylePkgs.cargo-tigerstyle
+    tigerstylePkgs.tigerstyle-standards
   ];
 }
