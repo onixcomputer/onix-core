@@ -87,9 +87,12 @@ in
                 [ -e "$iface" ] || continue
                 name=$(basename "$iface")
                 ip link set "$name" down
-                sleep 1
+                # Reset the fq qdisc — the driver's TX ring can wedge after a
+                # hop failure, leaving packets stuck in the backlog forever.
+                tc qdisc replace dev "$name" root fq
+                sleep 2
                 ip link set "$name" up
-                echo "Bounced $name"
+                echo "Bounced $name (qdisc reset)"
               done
               ;;
           esac
