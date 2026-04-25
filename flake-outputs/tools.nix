@@ -24,6 +24,7 @@ in
     merge-when-green = pkgs.callPackage ../pkgs/merge-when-green { inherit buildbot-pr-check; };
     dumbpipe = pkgs.callPackage ../pkgs/dumbpipe { };
     sendme = pkgs.callPackage ../pkgs/sendme { };
+    crw = pkgs.callPackage ../pkgs/crw { };
     verify-deploy = pkgs.callPackage ../pkgs/verify-deploy { };
     ki-editor = self.inputs.ki-editor.packages.${pkgs.stdenv.hostPlatform.system}.default;
   }

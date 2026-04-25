@@ -232,12 +232,15 @@ in
             {
               pkgs,
               lib,
+              inputs,
               ...
             }:
             let
               ms = import ../../lib/mk-settings.nix { inherit lib; };
               settings = extendSettings (ms.mkDefaults schema.client);
               inherit (settings) clientType extraPackages defaultServer;
+
+              crwPkg = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.crw;
 
               # Client packages based on type
               clientPackages =
@@ -253,7 +256,8 @@ in
                 ++ (lib.optionals (clientType == "curl") [
                   pkgs.curl
                   pkgs.jq
-                ]);
+                ])
+                ++ [ crwPkg ];
 
               # Additional user-specified packages
               allPackages = clientPackages ++ (map (pkg: pkgs.${pkg}) extraPackages);
