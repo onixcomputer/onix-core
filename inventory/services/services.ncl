@@ -378,7 +378,7 @@ let prom_rules = import "prometheus-rules.ncl" in
           localProviders = [
             {
               name = "aspen1",
-              apiBase = "http://aspen1:13305/v1",
+              apiBase = "http://aspen1.local:13305/v1",
               models = ["user.Qwopus-27B", "user.Qwopus-27B-v3"],
             },
             {

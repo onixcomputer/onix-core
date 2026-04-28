@@ -56,9 +56,10 @@ in
 
     # Harmonia binary cache on aspen1 — skip on aspen1 itself to avoid
     # a circular substituter loop (nix-daemon → harmonia → nix-daemon)
-    # that deadlocks curl threads during nix copy.
+    # that deadlocks curl threads during nix copy. Use .local here because
+    # bare aspen1 is not resolvable on all managed hosts.
     extra-substituters = lib.mkIf (config.networking.hostName != "aspen1") [
-      "http://aspen1:5000"
+      "http://aspen1.local:5000"
     ];
   };
 }

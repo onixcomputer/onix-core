@@ -108,7 +108,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "remote-builders",
         "thunderbolt-link",
       ],
-      deploy.targetHost = "root@aspen1",
+      deploy.targetHost = "root@aspen1.local",
     },
 
     aspen2 = {

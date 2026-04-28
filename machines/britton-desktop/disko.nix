@@ -6,6 +6,27 @@
     device = "nodev";
   };
   disko.devices = {
+    zpool = {
+      datapool = {
+        type = "zpool";
+        rootFsOptions = {
+          compression = "lz4";
+          atime = "off";
+          xattr = "sa";
+          acltype = "posixacl";
+        };
+        datasets = {
+          nix = {
+            type = "zfs_fs";
+            mountpoint = "/nix";
+          };
+          cargo-target = {
+            type = "zfs_fs";
+            mountpoint = "/home/brittonr/.cargo-target";
+          };
+        };
+      };
+    };
     disk = {
       main = {
         device = "/dev/disk/by-id/nvme-Samsung_SSD_9100_PRO_2TB_S7YCNJ0Y202518L";
@@ -51,12 +72,11 @@
         content = {
           type = "gpt";
           partitions = {
-            data = {
+            zfs = {
               size = "100%";
               content = {
-                type = "filesystem";
-                format = "ext4";
-                mountpoint = "/data";
+                type = "zfs";
+                pool = "datapool";
               };
             };
           };

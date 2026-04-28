@@ -12,6 +12,7 @@
 - For `clan ... --build-host <machine>`, the deploy copy runs on the build host (`nix copy --to ssh-ng://root@<target>`). The build host's root account needs its own working SSH identity for the target; forwarded agents can fail with `agent refused operation` on the second hop.
 
 ## Clan deploys
+- Bare `aspen1` is not reliably resolvable from managed hosts. Use `aspen1.local` for SSH deploy targets and runtime/cache URLs (`root@aspen1.local`, `http://aspen1.local:5000`, Lemonade API bases) unless a specific network path requires another name.
 - On this workstation, `clan machines update ...` can lose vars generator `finalScript` store paths to local auto-GC mid-run (`/nix/store/...-generator-...: No such file or directory`). If that happens, rerun the deploy with `NIX_CONFIG=$'min-free = 0\nmax-free = 0'` so the generator script survives long enough to execute.
 - Changing a vars generator's output does not automatically rewrite already-generated shared vars. If a deploy still sees stale generator content, run `clan vars generate <machine> --generator <name> --regenerate` first, then deploy again so the updated secret files are synchronized.
 - Removed vars-generator outputs can linger too. After switching a generator from one output file shape to another (for example `env-file` -> `auth-json`), manually delete orphaned `vars/shared/<generator>/...` files that the new generator no longer declares.

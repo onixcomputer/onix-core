@@ -140,4 +140,9 @@
     displaylink
     self.packages.${pkgs.stdenv.hostPlatform.system}.opendeck
   ];
+
+  # ZFS on the 4TB data drive
+  networking.hostId = "07e6df3e";
+  boot.supportedFilesystems = [ "zfs" ];
+  boot.zfs.extraPools = [ "datapool" ];
 }
