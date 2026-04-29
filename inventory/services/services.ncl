@@ -495,7 +495,10 @@ let prom_rules = import "prometheus-rules.ncl" in
         hermesHome = "/home/brittonr/.hermes",
         workingDirectory = "/home/brittonr/git/onix-core",
         homeserver = "https://matrix.onix.computer",
-        allowedUsers = ["@brittonr:onix.computer"],
+        allowedUsers = [
+          "@brittonr:onix.computer",
+          "@brittonr_:matrix.org",
+        ],
         requireMention = true,
         autoThread = true,
         reactions = true,
