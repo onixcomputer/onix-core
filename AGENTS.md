@@ -23,6 +23,7 @@
 - On `britton-desktop`, Docker `--gpus=all` currently fails for OCI containers with `failed to discover GPU vendor from CDI: no known GPU vendor found`. Use CPU images for Infinity/Speaches until the NVIDIA container runtime/CDI setup is fixed.
 - The Speaches container writes its Hugging Face cache as the in-container `ubuntu` user. Mount the cache directory with uid/gid `1000:1000` or model preloading fails with `PermissionError` under `/home/ubuntu/.cache/huggingface/hub`.
 - `modules/hermes-gateway` syncs clan-var Matrix secrets into `~/.hermes/.env` at service start. Do not set `TERMINAL_CWD` in the systemd environment; Hermes warns that env var is deprecated, so set `terminal.cwd` in `~/.hermes/config.yaml` instead.
+- The Hermes gateway unit carries `HERMES_GATEWAY_MATRIX_SETTINGS_HASH` for non-secret Matrix settings so allowlist/config changes restart the service and resync `.env`. Updating only the deployed secret `env-file` can leave a running gateway stale until the service restarts.
 - Hermes Matrix E2EE needs the module's overridden `hermes-agent` with `python-olm`/mautrix crypto deps. Because `olm` is marked insecure, `enableEncryption = true` intentionally requires explicit `acceptInsecureLibolm = true`.
 
 ## Flake evaluation
