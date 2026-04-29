@@ -59,6 +59,21 @@ in
               "MATRIX_REQUIRE_MENTION"
             ];
             managedEnvPattern = lib.concatStringsSep "|" managedEnvKeys;
+            matrixSettingsHash = builtins.hashString "sha256" (
+              builtins.toJSON {
+                inherit (settings)
+                  allowedUsers
+                  autoThread
+                  dmMentionThreads
+                  enableEncryption
+                  freeResponseRooms
+                  homeRoom
+                  homeserver
+                  reactions
+                  requireMention
+                  ;
+              }
+            );
 
             secretFileMode = "0600";
             stateDirMode = "0700";
@@ -188,6 +203,7 @@ in
                 HOME = settings.userHome;
                 HERMES_ACCEPT_HOOKS = "1";
                 HERMES_HOME = settings.hermesHome;
+                HERMES_GATEWAY_MATRIX_SETTINGS_HASH = matrixSettingsHash;
                 HERMES_REDACT_SECRETS = "true";
                 XDG_CACHE_HOME = "${settings.userHome}/.cache";
                 XDG_CONFIG_HOME = "${settings.userHome}/.config";
