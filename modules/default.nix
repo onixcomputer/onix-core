@@ -48,6 +48,7 @@ let
     "llm-agents" = import ./llm-agents (schemaArgs ./llm-agents);
     "home-manager-profiles" = import ./home-manager-profiles (schemaArgs ./home-manager-profiles);
     "harmonia" = import ./harmonia (schemaArgs ./harmonia);
+    "hermes-gateway" = import ./hermes-gateway (schemaArgs ./hermes-gateway);
     "llamacpp-rpc" = import ./llamacpp-rpc (schemaArgs ./llamacpp-rpc);
     "syncthing" = import ./syncthing (schemaArgs ./syncthing);
   };

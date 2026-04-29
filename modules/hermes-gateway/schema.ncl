@@ -1,0 +1,21 @@
+{
+  default = {
+    user = { type = "string", default = "brittonr", description = "Local user that runs the Hermes gateway" },
+    group = { type = "string", default = "users", description = "Primary group for Hermes gateway state files" },
+    hermesHome = { type = "string", default = "/home/brittonr/.hermes", description = "Hermes profile directory; Hermes reads config.yaml and .env from here" },
+    userHome = { type = "string", default = "/home/brittonr", description = "HOME for the gateway process" },
+    workingDirectory = { type = "string", default = "/home/brittonr", description = "TERMINAL_CWD and systemd WorkingDirectory for agent tool calls" },
+    homeserver = { type = "string", default = "https://matrix.onix.computer", description = "Matrix homeserver URL" },
+    allowedUsers = { type = "array_string", default = [], description = "Full Matrix user IDs allowed to use the bot" },
+    requireMention = { type = "bool", default = true, description = "Require @mention before responding in rooms" },
+    autoThread = { type = "bool", default = true, description = "Create Matrix threads for room replies" },
+    dmMentionThreads = { type = "bool", default = false, description = "Start DM threads when the bot is mentioned in a DM" },
+    reactions = { type = "bool", default = true, description = "Post processing lifecycle reactions" },
+    freeResponseRooms = { type = "array_string", default = [], description = "Room IDs where the bot may respond without a mention" },
+    homeRoom = { type = "nullable_string", default = null, description = "Room ID for proactive Hermes gateway messages" },
+    enableEncryption = { type = "bool", default = false, description = "Enable Matrix E2EE via mautrix crypto/python-olm" },
+    acceptInsecureLibolm = { type = "bool", default = false, description = "Explicitly allow nixpkgs' insecure/deprecated libolm package required by current Hermes E2EE" },
+    extraPackages = { type = "array_string", default = ["bash", "coreutils", "curl", "fd", "git", "jq", "jujutsu", "openssh", "ripgrep"], description = "Extra nixpkgs package names added to the gateway service PATH" },
+    extraEnv = { type = "record", default = {}, description = "Extra non-secret environment variables for the gateway service" },
+  },
+}

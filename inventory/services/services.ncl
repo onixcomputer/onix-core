@@ -486,6 +486,24 @@ let prom_rules = import "prometheus-rules.ncl" in
       },
     },
 
+    "hermes-matrix-gateway" = {
+      module = { name = "hermes-gateway", input = "self" },
+      roles.default.machines.britton-desktop.settings = {
+        user = "brittonr",
+        group = "users",
+        userHome = "/home/brittonr",
+        hermesHome = "/home/brittonr/.hermes",
+        workingDirectory = "/home/brittonr/git/onix-core",
+        homeserver = "https://matrix.onix.computer",
+        allowedUsers = ["@brittonr:onix.computer"],
+        requireMention = true,
+        autoThread = true,
+        reactions = true,
+        enableEncryption = true,
+        acceptInsecureLibolm = true,
+      },
+    },
+
     # ========== Web Services ==========
 
     "homepage-dashboard" = {

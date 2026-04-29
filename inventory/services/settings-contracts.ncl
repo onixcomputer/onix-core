@@ -17,6 +17,7 @@ let schemas = {
   "cloudflare-tunnel" = import "../../modules/cloudflare-tunnel/schema.ncl",
   "grafana" = import "../../modules/grafana/schema.ncl",
   "harmonia" = import "../../modules/harmonia/schema.ncl",
+  "hermes-gateway" = import "../../modules/hermes-gateway/schema.ncl",
   "home-manager-profiles" = import "../../modules/home-manager-profiles/schema.ncl",
   "homepage-dashboard" = import "../../modules/homepage-dashboard/schema.ncl",
   "infinity" = import "../../modules/infinity/schema.ncl",

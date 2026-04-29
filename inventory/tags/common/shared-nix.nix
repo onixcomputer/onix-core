@@ -28,11 +28,13 @@ in
         # sandbox. Lutris' multiArch FHS root pulls the i686 package directly,
         # so skip only that runtime-library check instead of rebuilding native
         # OpenLDAP consumers.
-        pkgsi686Linux = _prev.pkgsi686Linux.extend (_final32: prev32: {
-          openldap = prev32.openldap.overrideAttrs (_old: {
-            doCheck = false;
-          });
-        });
+        pkgsi686Linux = _prev.pkgsi686Linux.extend (
+          _final32: prev32: {
+            openldap = prev32.openldap.overrideAttrs (_old: {
+              doCheck = false;
+            });
+          }
+        );
       }
     )
     (

@@ -24,6 +24,7 @@ let self_modules = [
   "cloudflare-tunnel",
   "grafana",
   "harmonia",
+  "hermes-gateway",
   "home-manager-profiles",
   "homepage-dashboard",
   "infinity",
