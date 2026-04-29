@@ -1,4 +1,21 @@
 { pkgs, inputs, ... }:
+let
+  cutterPythonEnabledFlags = [
+    "-DCUTTER_ENABLE_PYTHON=ON"
+    "-DCUTTER_ENABLE_PYTHON_BINDINGS=ON"
+  ];
+  cutterPythonDisabledFlags = [
+    "-DCUTTER_ENABLE_PYTHON=OFF"
+    "-DCUTTER_ENABLE_PYTHON_BINDINGS=OFF"
+  ];
+  cutterWithoutPythonBindings = pkgs.cutter.overrideAttrs (old: {
+    # Cutter 2.4.1's generated Shiboken bindings reference stale enum names
+    # with current PySide. Keep the GUI available and skip the broken bindings.
+    cmakeFlags =
+      builtins.filter (flag: !(builtins.elem flag cutterPythonEnabledFlags)) (old.cmakeFlags or [ ])
+      ++ cutterPythonDisabledFlags;
+  });
+in
 {
   imports = [
     inputs.nix-index-database.nixosModules.nix-index
@@ -41,7 +58,7 @@
     # Reverse engineering & binary analysis
     radare2
     python3Packages.r2pipe
-    cutter
+    cutterWithoutPythonBindings
     ghidra
     iaito
     imhex

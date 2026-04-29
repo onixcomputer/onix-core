@@ -17,10 +17,24 @@ in
   # Override nixVersions.latest with our wasm-enabled build so srvos
   # (which sets nix.package = nixVersions.latest) picks it up automatically.
   nixpkgs.overlays = [
-    (_final: _prev: {
-      llamacpp-rocm-rpc = self.packages.${pkgs.stdenv.hostPlatform.system}.llamacpp-rocm-rpc or null;
-      lemonade-server = self.packages.${pkgs.stdenv.hostPlatform.system}.lemonade-server or null;
-    })
+    (
+      _final: _prev:
+      {
+        llamacpp-rocm-rpc = self.packages.${pkgs.stdenv.hostPlatform.system}.llamacpp-rocm-rpc or null;
+        lemonade-server = self.packages.${pkgs.stdenv.hostPlatform.system}.lemonade-server or null;
+      }
+      // lib.optionalAttrs (_prev ? pkgsi686Linux) {
+        # OpenLDAP's syncreplication integration test is flaky in the Nix
+        # sandbox. Lutris' multiArch FHS root pulls the i686 package directly,
+        # so skip only that runtime-library check instead of rebuilding native
+        # OpenLDAP consumers.
+        pkgsi686Linux = _prev.pkgsi686Linux.extend (_final32: prev32: {
+          openldap = prev32.openldap.overrideAttrs (_old: {
+            doCheck = false;
+          });
+        });
+      }
+    )
     (
       _final: prev:
       let
