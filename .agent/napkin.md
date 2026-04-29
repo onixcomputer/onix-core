@@ -1,5 +1,11 @@
 # Napkin
 
+## Review Checkpoints
+
+| Date | Subject | Question | Evidence Inspected | Decision Owner | Next Action |
+|------|---------|----------|--------------------|----------------|-------------|
+| 2026-04-29 | Hermes Matrix gateway clan service | Does commit `7669f94b` fully support the completion claim even though done-review saw only partial diff? | Full committed file set: `modules/hermes-gateway/default.nix`, `modules/hermes-gateway/schema.ncl`, `modules/default.nix`, `inventory/services/services.ncl`, `inventory/services/contracts.ncl`, `inventory/services/settings-contracts.ncl`, clan var commits `1e4c40f6` and `55753882`; validation transcript now shows clean `git status --short`, `nickel export inventory/services/services.ncl` success, explicit Nix eval of `ExecStart` and `wantedBy`, successful Nix build/deploy, and active `hermes-gateway-hermes-matrix-gateway.service`. | brittonr | Invite `@hermes:onix.computer` to Matrix DM/room and send a mention to verify end-to-end messaging behavior; inspect `journalctl -u hermes-gateway-hermes-matrix-gateway.service` if no response. |
+
 ## Corrections
 | Date | Source | What Went Wrong | What To Do Instead |
 |------|--------|----------------|-------------------|
