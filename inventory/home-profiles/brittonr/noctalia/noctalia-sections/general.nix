@@ -15,7 +15,7 @@ _config: {
     animationDisabled = false;
     compactLockScreen = false;
     lockScreenAnimations = false;
-    lockOnSuspend = true;
+    lockOnSuspend = false;
     showSessionButtonsOnLockScreen = true;
     showHibernateOnLockScreen = false;
     enableShadows = true;

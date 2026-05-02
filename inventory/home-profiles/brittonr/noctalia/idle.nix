@@ -1,14 +1,14 @@
-# Idle management with screensaver → lock → DPMS off chain.
+# Idle management with screensaver → dim → DPMS off → suspend chain.
 #
 # Uses swayidle (works with any Wayland compositor supporting
 # ext-idle-notify-v1, including niri). Shows a fullscreen terminal
-# screensaver as a grace period before locking.
+# screensaver before dimming/powering down monitors. Noctalia locking is
+# intentionally disabled.
 #
 # Timeline (using timeouts from shared/base/timeouts.nix):
 #   dim - 30s : screensaver launches (pipes-rs in fullscreen terminal)
 #   dim       : screen dims via brightnessctl
-#   lock      : noctalia lock screen activates, screensaver killed
-#   lock + 30s: DPMS off (screen power down)
+#   lock      : DPMS off (screen power down; historical timeout name)
 #   suspend   : system suspends
 {
   pkgs,
@@ -20,7 +20,7 @@ let
   screensaverTimeout = config.timeouts.dim - 30;
   dimTimeout = config.timeouts.dim;
   lockTimeout = config.timeouts.lock;
-  dpmsTimeout = lockTimeout + 30;
+  dpmsTimeout = lockTimeout;
   suspendTimeout = config.timeouts.suspend;
 
   # Launch screensaver in a fullscreen terminal window.
@@ -82,9 +82,8 @@ in
         "timeout ${toString dimTimeout} '${pkgs.brightnessctl}/bin/brightnessctl -s set 10%'"
         "resume '${pkgs.brightnessctl}/bin/brightnessctl -r'"
 
-        # Lock via noctalia
-        "timeout ${toString lockTimeout} 'noctalia-shell ipc call lockScreen lock'"
-        "resume '${lib.getExe screensaver-stop}'"
+        # Keep screensaver stopped once the long idle timeout is reached
+        "timeout ${toString lockTimeout} '${lib.getExe screensaver-stop}'"
 
         # DPMS off
         "timeout ${toString dpmsTimeout} 'niri msg action power-off-monitors'"
@@ -92,8 +91,6 @@ in
         # Suspend
         "timeout ${toString suspendTimeout} 'systemctl suspend'"
 
-        # Lock before sleep (lid close, manual suspend)
-        "before-sleep 'noctalia-shell ipc call lockScreen lock'"
       ];
       Restart = "on-failure";
       RestartSec = 5;

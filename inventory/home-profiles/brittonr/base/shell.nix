@@ -36,6 +36,9 @@
 
       # Clan shortcuts
       cu = "clan m update \\$hostname";
+
+      # Hermes shortcuts
+      hh = "hermes --yolo --tui";
     };
 
     # Shell utilities used by aliases
