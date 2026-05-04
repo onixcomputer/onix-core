@@ -20,6 +20,7 @@ let { Machines, .. } = import "contracts.ncl" in
       system = "x86_64-linux",
       tags = [
         "hm-laptop",
+        "boot-partition-gc",
         "ssd-optimization",
         "perf-tuning",
         "printing",
@@ -56,6 +57,7 @@ let { Machines, .. } = import "contracts.ncl" in
       system = "x86_64-linux",
       tags = [
         "hm-laptop",
+        "boot-partition-gc",
         "ssd-optimization",
         "perf-tuning",
         "printing",
@@ -94,6 +96,7 @@ let { Machines, .. } = import "contracts.ncl" in
       addresses.lan = "10.10.10.1",
       tags = [
         "hm-server",
+        "boot-partition-gc",
         "minimal-docs",
         "ssd-optimization",
         "perf-tuning",
@@ -117,6 +120,7 @@ let { Machines, .. } = import "contracts.ncl" in
       addresses.lan = "10.10.10.2",
       tags = [
         "hm-server",
+        "boot-partition-gc",
         "minimal-docs",
         "ssd-optimization",
         "perf-tuning",
@@ -142,6 +146,7 @@ let { Machines, .. } = import "contracts.ncl" in
       system = "x86_64-linux",
       addresses.lan = "britton-desktop",
       tags = [
+        "boot-partition-gc",
         "ssd-optimization",
         "perf-tuning",
         "printing",
