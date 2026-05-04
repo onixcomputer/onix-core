@@ -260,9 +260,9 @@ let { Machines, .. } = import "contracts.ncl" in
       name = "britton-air",
       system = "aarch64-darwin",
       machineClass = "darwin",
-      addresses.lan = "britton-air.local",
+      addresses.lan = "192.168.1.60",
       tags = [],
-      deploy.targetHost = "root@britton-air.local",
+      deploy.targetHost = "root@192.168.1.60",
     },
   },
 } | Machines

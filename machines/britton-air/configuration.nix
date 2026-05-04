@@ -82,6 +82,13 @@
 
   # Linux builder VM for aarch64-linux builds on Apple Silicon
   # Uses Apple Virtualization.framework via nix-darwin
+  nix.settings.trusted-users = [
+    "root"
+    "brittonr"
+    "@admin"
+    "@wheel"
+  ];
+
   nix.linux-builder = {
     enable = true;
     ephemeral = true; # Wipe VM state on restart for clean build environment

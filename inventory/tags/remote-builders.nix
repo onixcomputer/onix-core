@@ -118,6 +118,7 @@ in
         IdentityAgent none
         IdentityFile ${builderKeyPath}
         IdentitiesOnly yes
+        StrictHostKeyChecking accept-new
     '';
     knownHosts = knownHostEntries;
   };
