@@ -41,6 +41,7 @@ let self_modules = [
   "syncthing",
   "tailscale",
   "tailscale-traefik",
+  "thunderbird",
   "upmpdcli",
   "vaultwarden",
 ]

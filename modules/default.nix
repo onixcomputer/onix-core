@@ -50,6 +50,7 @@ let
     "hermes-gateway" = import ./hermes-gateway (schemaArgs ./hermes-gateway);
     "llamacpp-rpc" = import ./llamacpp-rpc (schemaArgs ./llamacpp-rpc);
     "syncthing" = import ./syncthing (schemaArgs ./syncthing);
+    "thunderbird" = import ./thunderbird (schemaArgs ./thunderbird);
   };
 
   # NOTE: borgbackup-extras and matrix-synapse-cf live under modules/ but are

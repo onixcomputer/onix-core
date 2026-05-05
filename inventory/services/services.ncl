@@ -439,6 +439,20 @@ let prom_rules = import "prometheus-rules.ncl" in
       },
     },
 
+    "thunderbird-desktop" = {
+      module = { name = "thunderbird", input = "self" },
+      roles.default.machines.britton-desktop.settings = {
+        user = "brittonr",
+        group = "users",
+        userHome = "/home/brittonr",
+        profileName = "onix",
+        fullName = "Britton Richardson",
+        fastmailLabel = "Fastmail",
+        gmailLabel = "Gmail",
+        gmailAuthMethod = "oauth2",
+      },
+    },
+
     "hermes-matrix-gateway" = {
       module = { name = "hermes-gateway", input = "self" },
       roles.default.machines.britton-desktop.settings = {
