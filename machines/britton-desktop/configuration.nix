@@ -131,7 +131,10 @@
     };
   };
 
-  programs.fuse.userAllowOther = true;
+  programs = {
+    fuse.userAllowOther = true;
+    thunderbird.enable = true;
+  };
 
   environment.systemPackages = with pkgs; [
     bpftrace
