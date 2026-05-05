@@ -83,6 +83,8 @@ in
                 gmail_password = str(data.get("gmailAppPassword", "")).strip()
                 if gmail_password == placeholder:
                     gmail_password = ""
+                if gmail_auth_method == "password" and not gmail_password:
+                    raise SystemExit("Thunderbird Gmail app password is unset while gmailAuthMethod = 'password'")
 
                 tb_dir = user_home / ".thunderbird"
                 profile_dir = tb_dir / f"{profile_name}.default"
@@ -252,6 +254,7 @@ in
                 fastmail_app_password="$(tr -d '\n' < "$prompts/fastmail-app-password")"
                 gmail_email="$(tr -d '\n' < "$prompts/gmail-email")"
                 gmail_app_password="$(tr -d '\n' < "$prompts/gmail-app-password")"
+                gmail_auth_method=${lib.escapeShellArg settings.gmailAuthMethod}
 
                 placeholder='Welcome to SOPS! Edit this file as you please!'
                 if [ -z "$fastmail_email" ] || [ "$fastmail_email" = "$placeholder" ]; then
@@ -264,6 +267,10 @@ in
                 fi
                 if [ -z "$gmail_email" ] || [ "$gmail_email" = "$placeholder" ]; then
                   echo "Gmail email is unset" >&2
+                  exit 1
+                fi
+                if [ "$gmail_auth_method" = "password" ] && { [ -z "$gmail_app_password" ] || [ "$gmail_app_password" = "$placeholder" ]; }; then
+                  echo "Gmail app password is unset while gmailAuthMethod = password" >&2
                   exit 1
                 fi
 
