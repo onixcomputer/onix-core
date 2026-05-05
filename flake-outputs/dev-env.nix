@@ -266,7 +266,6 @@ in
       ++ lib.optionals (self'.packages ? tracey) [ self'.packages.tracey ]
       ++ [
         self.inputs.drift.packages.${pkgs.stdenv.hostPlatform.system}.default
-        self'.packages.clankers
       ]
       ++ [
         pkgs.nickel

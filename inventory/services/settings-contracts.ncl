@@ -12,7 +12,6 @@ let sc = import "../../lib/schema-contracts.ncl" in
 let schemas = {
   "buildbot" = import "../../modules/buildbot/schema.ncl",
   "calibre-server" = import "../../modules/calibre-server/schema.ncl",
-  "clankers" = import "../../modules/clankers/schema.ncl",
   "cloud-hypervisor-vm" = import "../../modules/cloud-hypervisor-vm/schema.ncl",
   "cloudflare-tunnel" = import "../../modules/cloudflare-tunnel/schema.ncl",
   "grafana" = import "../../modules/grafana/schema.ncl",

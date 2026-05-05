@@ -33,28 +33,12 @@ in
     horizon = pkgs.callPackage ../pkgs/horizon { horizon-src = self.inputs.horizon; };
     llamacpp-rocm-rpc = pkgs.callPackage ../pkgs/llamacpp-rocm-rpc { };
     lemonade-server = pkgs.callPackage ../pkgs/lemonade { };
-    inherit (self.inputs.clankers.packages.${pkgs.stdenv.hostPlatform.system}) clanker-router;
   }
-  // lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") (
-    let
-      rustPkgs = import self.inputs.nixpkgs {
-        inherit (pkgs) system;
-        overlays = [ (import self.inputs.rust-overlay) ];
-      };
-      nightlyToolchain = rustPkgs.rust-bin.nightly.latest.default.override {
-        extensions = [ "rust-src" ];
-      };
-    in
-    {
-      sone = pkgs.callPackage ../pkgs/sone { };
-      opendeck = pkgs.callPackage ../pkgs/opendeck { };
-      open-notebook = pkgs.callPackage ../pkgs/open-notebook { };
-      clankers = pkgs.callPackage ../pkgs/clankers {
-        rustc = nightlyToolchain;
-        cargo = nightlyToolchain;
-      };
-    }
-  )
+  // lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") {
+    sone = pkgs.callPackage ../pkgs/sone { };
+    opendeck = pkgs.callPackage ../pkgs/opendeck { };
+    open-notebook = pkgs.callPackage ../pkgs/open-notebook { };
+  }
   // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
     rbw-pinentry = pkgs.callPackage ../pkgs/rbw-pinentry { };
   }

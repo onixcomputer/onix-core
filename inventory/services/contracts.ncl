@@ -19,7 +19,6 @@ let machine_names = std.record.fields machines_data.machines in
 let self_modules = [
   "buildbot",
   "calibre-server",
-  "clankers",
   "cloud-hypervisor-vm",
   "cloudflare-tunnel",
   "grafana",

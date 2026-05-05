@@ -362,53 +362,6 @@ let prom_rules = import "prometheus-rules.ncl" in
       },
     },
 
-    clankers = {
-      module = { name = "clankers", input = "self" },
-      roles = {
-        router.machines.aspen2.settings = {
-          listenAddr = "0.0.0.0",
-          listenPort = 4000,
-          useOAuth = true,
-          oauthRecords = [
-            { provider = "anthropic", account = "claude1" },
-            { provider = "anthropic", account = "claude2" },
-            { provider = "anthropic", account = "claude3", active = true },
-            { provider = "openai-codex", account = "default", active = true },
-          ],
-          localProviders = [
-            {
-              name = "aspen1",
-              apiBase = "http://aspen1.local:13305/v1",
-              models = ["user.Qwopus-27B", "user.Qwopus-27B-v3"],
-            },
-            {
-              name = "aspen2-local",
-              apiBase = "http://127.0.0.1:13305/v1",
-              models = ["user.Qwen3.6-35B-A3B"],
-            },
-          ],
-        },
-        daemon.machines.aspen2.settings = {
-          apiBase = "http://127.0.0.1:4000",
-          allowAll = true,
-          emailAuth = true,
-          schedules = [
-            {
-              name = "test-email",
-              kind = "interval",
-              interval = 120,
-              maxFires = 3,
-              prompt = "Send a short test email to b@robitzs.ch with subject 'Clankers test' and body 'Test email sent at current time'. Use the send_email tool.",
-            },
-          ],
-        },
-        daemon.machines.britton-desktop.settings = {
-          apiBase = "http://aspen2:4000",
-          allowAll = true,
-        },
-      },
-    },
-
     "lemonade-aspen1" = {
       module = { name = "lemonade", input = "self" },
       roles.default.machines.aspen1.settings = {

@@ -43,7 +43,6 @@ let
     "open-notebook" = import ./open-notebook (schemaArgs ./open-notebook);
     "speaches" = import ./speaches (schemaArgs ./speaches);
     "lemonade" = import ./lemonade (schemaArgs ./lemonade);
-    "clankers" = import ./clankers (schemaArgs ./clankers);
     "cloud-hypervisor-vm" = import ./cloud-hypervisor-vm (schemaArgs ./cloud-hypervisor-vm);
     "llm-agents" = import ./llm-agents (schemaArgs ./llm-agents);
     "home-manager-profiles" = import ./home-manager-profiles (schemaArgs ./home-manager-profiles);

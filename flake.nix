@@ -157,13 +157,6 @@
         rust-overlay.follows = "rust-overlay";
       };
     };
-    clankers = {
-      url = "github:brittonr/clankers";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        rust-overlay.follows = "rust-overlay";
-      };
-    };
     ki-editor = {
       url = "github:ki-editor/ki-editor";
       inputs = {

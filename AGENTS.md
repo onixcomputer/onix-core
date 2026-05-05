@@ -1,16 +1,5 @@
 # Agent Notes
 
-## Clankers
-- `self.packages.<system>.clanker-router` now tracks the upstream clankers flake package directly. Multiple remote OpenAI-compatible backends are supported upstream through `--local-provider-config`, so `modules/clankers` should use that instead of carrying a local patch.
-- `modules/clankers` router settings accept `localProviders = [{ name, apiBase, models = [ ... ] }]`. The module writes `clanker-router-local-providers.json` and passes it via `--local-provider-config`.
-- The daemon must talk to the router proxy through `OLLAMA_HOST`/the module's `apiBase` env wiring, not clankers' `--api-base` flag. `--api-base` only gives clankers the Anthropic-compatible surface, so it never discovers the remote Lemonade models from `/v1/models`.
-- If pi shows a Lemonade-backed model selected but no visible reply appears, check the target machine's `journalctl -u lemonade`. A common failure is `request (...) exceeds the available context size`, which means the chat history is longer than the configured `contextSize` even though model lookup succeeded.
-- For the new provider-scoped router OAuth seeding, `clankers auth export` / `clanker-router auth export` JSON records are the right input. Do not go back to Anthropic-only access-token prompts.
-- `clan vars generate ... --regenerate` on hidden prompt-backed vars wants a TTY; in non-interactive sessions it can die with `termios.error: (25, 'Inappropriate ioctl for device')`. Use `clan vars set <machine> <service/var> < file` to update prompt secrets non-interactively, then rewrite derived `auth-json` explicitly if needed.
-- `~/.codex/auth.json` can drift into a bad state where `codex login status` still reports logged in but the refresh token fails with `refresh_token_reused`; re-probe before pasting a Codex record into clan vars.
-- ChatGPT-backed Codex service auth currently works with a fixed routed model set (`gpt-5.2`, `gpt-5.3-codex`, `gpt-5.3-codex-spark`, `gpt-5.4`, `gpt-5.4-mini`). Older probe targets like `gpt-5.1-codex-mini`, `gpt-5.2-codex`, or `codex-mini-latest` fail for ChatGPT accounts, and the backend probe must use `stream=true`.
-- For `clan ... --build-host <machine>`, the deploy copy runs on the build host (`nix copy --to ssh-ng://root@<target>`). The build host's root account needs its own working SSH identity for the target; forwarded agents can fail with `agent refused operation` on the second hop.
-
 ## Clan deploys
 - Bare `aspen1` is not reliably resolvable from managed hosts. Use `aspen1.local` for SSH deploy targets and runtime/cache URLs (`root@aspen1.local`, `http://aspen1.local:5000`, Lemonade API bases) unless a specific network path requires another name.
 - On this workstation, `clan machines update ...` can lose vars generator `finalScript` store paths to local auto-GC mid-run (`/nix/store/...-generator-...: No such file or directory`). If that happens, rerun the deploy with `NIX_CONFIG=$'min-free = 0\nmax-free = 0'` so the generator script survives long enough to execute.
