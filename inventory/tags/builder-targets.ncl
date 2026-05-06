@@ -40,7 +40,10 @@ in
     {
       name = "britton-air",
       speedFactor = 12,
-      systems = ["aarch64-darwin", "aarch64-linux"],
+      # britton-air is the Darwin host. Its nested `linux-builder` VM can
+      # build aarch64-linux when a build is launched on britton-air, but this
+      # top-level SSH endpoint must not advertise Linux directly.
+      systems = ["aarch64-darwin"],
       sshUser = "brittonr",
       maxJobs = 16,
       supportedFeatures = ["big-parallel"],
