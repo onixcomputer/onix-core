@@ -678,11 +678,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1777931035,
-        "narHash": "sha256-iUNZKBteJacg86XvPKpuM+ItxuyzusdJUqiPOA4ixF8=",
+        "lastModified": 1777942590,
+        "narHash": "sha256-Igq0u6lweXuEorlXiRkxWPCGozF3Mfftp/LvdwN7oJs=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "002e65187fd5eddf421a4c8d5f2e0603391fd802",
+        "rev": "e6e4b22e6d9b37187937a0854c28334de404f3bb",
         "type": "github"
       },
       "original": {
@@ -1212,11 +1212,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1777338324,
-        "narHash": "sha256-bc+ZZCmOTNq86/svGnw0tVpH7vJaLYvGLLKFYP08Q8E=",
+        "lastModified": 1777944972,
+        "narHash": "sha256-VfGRo1qTBKOe3s2gOv8LSoA6Fk19PvBlwQ1ECN0Evn8=",
         "owner": "Mic92",
         "repo": "sops-nix",
-        "rev": "8eaee5c45428b28b8c47a83e4c09dccec5f279b5",
+        "rev": "c591bf665727040c6cc5cb409079acb22dcce33c",
         "type": "github"
       },
       "original": {
@@ -1348,11 +1348,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1777940563,
-        "narHash": "sha256-nRTgk7NBrYXp4T/XGNKeJI8ANizIzH9Ih2vTw6LdsHU=",
+        "lastModified": 1777944246,
+        "narHash": "sha256-ltV4r0BxlSfJlUKNbqg4TI1ol8d3x3NEFPq2UYIO1PA=",
         "owner": "brittonr",
         "repo": "tigerstyle-rs",
-        "rev": "abbfd047bec556cb4975352bc4a154c47eb2ddd5",
+        "rev": "fe8fcb5748d830e0ae7a57cb42df5b8ee48276df",
         "type": "github"
       },
       "original": {
