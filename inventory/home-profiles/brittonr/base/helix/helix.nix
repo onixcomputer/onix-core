@@ -8,6 +8,7 @@ let
   k = config.keymap;
   activeTheme = config.theme.active;
   hxOil = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.hx-oil;
+  nixfmt-rs = inputs.nixfmt-rs.packages.${pkgs.stdenv.hostPlatform.system}.default;
   rememberAlternateShell = ''
     current="%{file_path_absolute}"; case "$current" in *.hxoil) ${hxOil}/bin/hx-oil remember-alternate "$current" >/dev/null ;; esac;
   '';
@@ -172,7 +173,7 @@ in
         {
           name = "nix";
           auto-format = true;
-          formatter.command = "${pkgs.nixfmt}/bin/nixfmt";
+          formatter.command = "${nixfmt-rs}/bin/nixfmt";
           language-servers = [ "nil" ];
         }
         {

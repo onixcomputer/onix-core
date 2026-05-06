@@ -26,7 +26,7 @@ let
 
       nixfmt = {
         enable = true;
-        package = pkgs.nixfmt;
+        package = inputs'.nixfmt-rs.default;
         priority = 3;
       };
 
