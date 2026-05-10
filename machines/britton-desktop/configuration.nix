@@ -17,12 +17,22 @@
   time.hardwareClockInLocalTime = true; # Prevent time sync issues with Windows
 
   nix.settings = {
-    # Enable experimental features for uid-range support
+    # Enable experimental features for uid-range support and Nix build cgroups.
     experimental-features = [
       "auto-allocate-uids"
       "cgroups"
     ];
     auto-allocate-uids = true;
+
+    # Desktop-safe local Nix budget for the Ryzen 9 9950X3D:
+    # 4 concurrent derivations × 4 build cores = 16 build threads, leaving
+    # half of the 32 hardware threads schedulable for the compositor, browser,
+    # editor, shells, and background services. Increase only for intentional
+    # batch/off-hours builds or remote-builder-only workflows.
+    max-jobs = 4;
+    cores = 4;
+    use-cgroups = true;
+
     # System features for NixOS container tests
     system-features = [
       "uid-range"
@@ -128,6 +138,15 @@
       suspend.enable = false;
       hibernate.enable = false;
       hybrid-sleep.enable = false;
+    };
+
+    # Keep daemon-managed builds below interactive desktop work. Nix builds are
+    # also capped by nix.settings max-jobs/cores above; these cgroup weights and
+    # memory pressure guard protect the compositor/session when builds are busy.
+    services.nix-daemon.serviceConfig = {
+      CPUWeight = 25;
+      IOWeight = 25;
+      MemoryHigh = "140G";
     };
   };
 
