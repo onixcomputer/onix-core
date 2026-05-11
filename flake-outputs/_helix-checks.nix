@@ -92,6 +92,10 @@ in
       zen_config_root="$(config_root_from_script "$zen_script")"
 
       assert_contains '${hxOilPath}' "$hx_script"
+      assert_contains '${pkgs.libxml2}/bin' "$hx_script"
+      assert_contains 'name = "xml"' "$hx_config_root"
+      assert_contains 'command = "${pkgs.libxml2}/bin/xmllint"' "$hx_config_root"
+      assert_contains '"--format"' "$hx_config_root"
       assert_contains '${hxOilBin} render --from' "$hx_config_root"
       assert_contains '${hxOilBin} apply' "$hx_config_root"
       assert_contains '${hxOilBin} refresh' "$hx_config_root"

@@ -126,6 +126,7 @@ in
         rustfmt
         rust-analyzer
         nls
+        libxml2
         hxOil
       ];
 
@@ -196,6 +197,15 @@ in
           formatter.command = "${pkgs.ruff}/bin/ruff";
           formatter.args = [
             "format"
+            "-"
+          ];
+        }
+        {
+          name = "xml";
+          auto-format = true;
+          formatter.command = "${pkgs.libxml2}/bin/xmllint";
+          formatter.args = [
+            "--format"
             "-"
           ];
         }
