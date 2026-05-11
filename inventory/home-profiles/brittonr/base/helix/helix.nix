@@ -126,6 +126,13 @@ in
         rustfmt
         rust-analyzer
         nls
+        taplo
+        yaml-language-server
+        vscode-langservers-extracted
+        bash-language-server
+        shfmt
+        prettier
+        ltex-ls
         libxml2
         lemminx
         hxOil
@@ -200,6 +207,57 @@ in
             "format"
             "-"
           ];
+        }
+        {
+          name = "toml";
+          auto-format = true;
+          formatter.command = "${pkgs.taplo}/bin/taplo";
+          formatter.args = [
+            "fmt"
+            "-"
+          ];
+          language-servers = [ "taplo" ];
+        }
+        {
+          name = "yaml";
+          auto-format = false;
+          formatter.command = "${pkgs.prettier}/bin/prettier";
+          formatter.args = [
+            "--parser"
+            "yaml"
+          ];
+          language-servers = [ "yaml-language-server" ];
+        }
+        {
+          name = "json";
+          auto-format = false;
+          formatter.command = "${pkgs.prettier}/bin/prettier";
+          formatter.args = [
+            "--parser"
+            "json"
+          ];
+          language-servers = [ "vscode-json-language-server" ];
+        }
+        {
+          name = "bash";
+          auto-format = true;
+          formatter.command = "${pkgs.shfmt}/bin/shfmt";
+          formatter.args = [
+            "-i"
+            "2"
+            "-ci"
+          ];
+          language-servers = [ "bash-language-server" ];
+        }
+        {
+          name = "asciidoc";
+          scope = "source.asciidoc";
+          file-types = [
+            "adoc"
+            "asciidoc"
+          ];
+          auto-format = false;
+          language-servers = [ "ltex-ls" ];
         }
         {
           name = "xml";
@@ -277,6 +335,28 @@ in
         };
         jedi-language-server = {
           command = "${pkgs.python3Packages.jedi-language-server}/bin/jedi-language-server";
+        };
+        taplo = {
+          command = "${pkgs.taplo}/bin/taplo";
+          args = [
+            "lsp"
+            "stdio"
+          ];
+        };
+        yaml-language-server = {
+          command = "${pkgs.yaml-language-server}/bin/yaml-language-server";
+          args = [ "--stdio" ];
+        };
+        vscode-json-language-server = {
+          command = "${pkgs.vscode-langservers-extracted}/bin/vscode-json-language-server";
+          args = [ "--stdio" ];
+        };
+        bash-language-server = {
+          command = "${pkgs.bash-language-server}/bin/bash-language-server";
+          args = [ "start" ];
+        };
+        ltex-ls = {
+          command = "${pkgs.ltex-ls}/bin/ltex-ls";
         };
         lemminx = {
           command = "${pkgs.lemminx}/bin/lemminx";
