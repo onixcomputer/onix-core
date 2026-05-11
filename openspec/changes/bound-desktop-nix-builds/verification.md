@@ -37,15 +37,33 @@ Result:
 /nix/store/p9s93rlrq7xicbn3slhk5sflizx8c2r8-nixos-system-britton-desktop-26.05.20260507.68a8af9
 ```
 
-## Runtime deployment blocker
+## Runtime sanity check
 
-The runtime cgroup-placement check is not captured yet because this Hermes session does not have passwordless sudo (`sudo: a password is required`), so it cannot apply the new system profile or restart `nix-daemon.service`. Current live daemon settings still show the old unbounded runtime state:
+The bounded daemon policy is now active at runtime. During a representative local Nix/Rust build, `nix-daemon.service` reported the configured CPU/IO/memory controls and active build users remained below the daemon service cgroup:
 
 ```text
+ActiveState=active
 ControlGroup=/system.slice/nix-daemon.service
-CPUWeight=[not set]
-IOWeight=[not set]
-MemoryHigh=infinity
+CPUWeight=25
+IOWeight=25
+MemoryHigh=150323855360
+IOSchedulingClass=3
+IOSchedulingPriority=7
+CPUSchedulingPolicy=3
 ```
 
-After deployment, rerun a representative daemon-managed Nix build and verify `systemctl show nix-daemon.service -p CPUWeight -p IOWeight -p MemoryHigh -p ControlGroup` plus `systemd-cgls /system.slice/nix-daemon.service` while the build is active.
+`systemd-cgls --no-pager /system.slice/nix-daemon.service` showed multiple active `nix-build-uid-*` cgroups containing Rust/Cargo build processes under `/system.slice/nix-daemon.service`, for example:
+
+```text
+CGroup /system.slice/nix-daemon.service:
+├─nix-build-uid-872939520
+│ ├─420111 bash -e /nix/store/...-source-stdenv.sh...
+│ ├─421394 /nix/store/...-cargo-1.97.0-nightly-.../bin/cargo ...
+│ └─504307 rustc --crate-name h2 --edition=2021 ...
+├─nix-build-uid-872480768
+│ ├─420013 bash -e /nix/store/...-source-stdenv.sh...
+│ ├─461667 /nix/store/...-cargo-1.97.0-nightly-.../bin/cargo ...
+│ └─505123 rustc --crate-name hickory_resolver --edition=2021 ...
+```
+
+This satisfies the runtime placement check: active builder processes are children of the constrained daemon cgroup while the service has the lower CPU/IO weights and memory-pressure guard resolved above.
