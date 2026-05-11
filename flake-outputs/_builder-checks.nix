@@ -1,9 +1,10 @@
-# Verify that no machine includes itself in its nix.buildMachines list.
+# Verify remote builder list invariants.
 #
-# remote-builders.nix derives the builder list from the inventory and
-# filters out self using the machine name. This check evaluates every
-# machine with the "remote-builders" tag and confirms none list
-# themselves as a builder (which would cause infinite dispatch loops).
+# remote-builders.nix derives the builder list from the inventory and filters
+# out self using the machine name. This check evaluates every machine with the
+# "remote-builders" tag and confirms none list themselves as a builder (which
+# would cause infinite dispatch loops). It also guards known non-routable
+# builder targets such as britton-air.
 {
   self,
   pkgs,
@@ -16,12 +17,12 @@ let
 
   allMachines = (wasm.evalNickelFile ../inventory/core/machines.ncl).machines;
 
-  # Machines with the remote-builders tag
+  # Machines with the remote-builders tag.
   builderMachines = lib.filterAttrs (
     _: m: builtins.elem "remote-builders" (m.tags or [ ])
   ) allMachines;
 
-  # For each machine, get its buildMachines hostNames
+  # For each machine, get its evaluated nix.buildMachines entries.
   builderListsJSON = pkgs.writeText "builder-lists.json" (
     builtins.toJSON (
       lib.mapAttrs (
@@ -29,11 +30,15 @@ let
         let
           cfg = self.nixosConfigurations.${name}.config;
           builders = cfg.nix.buildMachines;
+          machine = allMachines.${name};
         in
         {
           hostname = cfg.networking.hostName;
+          lan = machine.addresses.lan or null;
           builderHosts = map (m: m.hostName) builders;
-          builderCount = builtins.length builders;
+          builders = map (m: {
+            inherit (m) hostName systems supportedFeatures;
+          }) builders;
         }
       ) builderMachines
     )
@@ -50,18 +55,36 @@ in
     errors = []
     for name, info in machines.items():
         hostname = info["hostname"]
-        count = info["builderCount"]
+        lan = info.get("lan")
         hosts = info["builderHosts"]
-        print(f"{name} ({hostname}): {count} builders -> {hosts}")
-        if count == 0:
-            errors.append(f"{name}: has remote-builders tag but 0 buildMachines (self-filter may be broken)")
+        print(f"{name} ({hostname}): {len(hosts)} builders -> {hosts}")
+
+        self_hosts = {name, hostname}
+        if lan:
+            self_hosts.add(lan)
+        overlap = sorted(self_hosts.intersection(hosts))
+        if overlap:
+            errors.append(f"{name}: includes itself as remote builder via {overlap}")
+
+        if "192.168.1.60" in hosts:
+            errors.append(
+                f"{name}: includes britton-air 192.168.1.60 despite empty allowedConsumers"
+            )
+
+        for builder in info["builders"]:
+            if builder["hostName"] == "192.168.1.60":
+                systems = builder.get("systems", [])
+                if "aarch64-linux" in systems:
+                    errors.append(
+                        f"{name}: advertises nested aarch64-linux through britton-air Darwin endpoint"
+                    )
 
     if errors:
         for e in errors:
             print(f"ERROR: {e}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"OK: {len(machines)} machines verified, all exclude themselves")
+    print(f"OK: {len(machines)} machines verified, builder reachability guards passed")
     PYEOF
         touch $out
   '';

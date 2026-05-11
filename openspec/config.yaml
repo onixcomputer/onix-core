@@ -1,0 +1,14 @@
+project:
+  name: onix-core
+  description: NixOS/nix-darwin clan inventory, machine modules, and local infrastructure
+  language: nix
+  schema: spec-driven
+
+domains:
+  - remote-builders
+  - thunderbolt-link
+
+context: |
+  This repo manages NixOS, nix-darwin, Clan, Nickel inventory, remote builders,
+  and Thunderbolt host-to-host networking for the user's machines. Prefer
+  declarative Nix/Nickel changes with evaluation checks and live deploy evidence.

@@ -75,25 +75,65 @@ in
       path = [
         pkgs.iproute2
         pkgs.coreutils
+        pkgs.gnugrep
         pkgs.systemd
       ];
       script = ''
+        cooldown_seconds=300
+        last_recovery=0
+        property_failures=0
+
+        recover_thunderbolt_link() {
+          reason="$1"
+          now=$(date +%s)
+          elapsed=$((now - last_recovery))
+
+          if [ "$last_recovery" -ne 0 ] && [ "$elapsed" -lt "$cooldown_seconds" ]; then
+            echo "Thunderbolt failure detected ($reason), recovery suppressed by cooldown ($elapsed/$cooldown_seconds seconds)"
+            return
+          fi
+
+          last_recovery="$now"
+          property_failures=0
+          echo "Thunderbolt failure detected ($reason), bouncing interfaces in 3s..."
+          sleep 3
+
+          for iface in /sys/class/net/thunderbolt*; do
+            [ -e "$iface" ] || continue
+            name=$(basename "$iface")
+            ip link set "$name" down
+            # Reset the fq qdisc — the driver's TX ring can wedge after a
+            # link-controller failure, leaving packets stuck in the backlog.
+            tc qdisc replace dev "$name" root fq
+            sleep 2
+            ip link set "$name" up
+            echo "Bounced $name (qdisc reset)"
+          done
+
+          if ip -br addr show dev br-tbt 2>/dev/null | grep -q '${address}'; then
+            echo "Thunderbolt bridge br-tbt healthy with ${address} after recovery"
+          else
+            echo "WARNING: Thunderbolt bridge br-tbt missing ${address} after recovery"
+            ip -br addr show dev br-tbt 2>/dev/null || true
+          fi
+        }
+
         journalctl -k -f -o cat | while IFS= read -r line; do
           case "$line" in
+            *"failed to send properties changed notification"*)
+              property_failures=$((property_failures + 1))
+              if [ "$property_failures" -ge 3 ]; then
+                recover_thunderbolt_link "repeated properties-changed notification failures"
+              fi
+              ;;
             *"hop deactivation failed"*)
-              echo "Thunderbolt hop failure detected, bouncing interfaces in 3s..."
-              sleep 3
-              for iface in /sys/class/net/thunderbolt*; do
-                [ -e "$iface" ] || continue
-                name=$(basename "$iface")
-                ip link set "$name" down
-                # Reset the fq qdisc — the driver's TX ring can wedge after a
-                # hop failure, leaving packets stuck in the backlog forever.
-                tc qdisc replace dev "$name" root fq
-                sleep 2
-                ip link set "$name" up
-                echo "Bounced $name (qdisc reset)"
-              done
+              recover_thunderbolt_link "hop deactivation failed"
+              ;;
+            *"retimer disconnected"*)
+              recover_thunderbolt_link "retimer disconnected"
+              ;;
+            *"host disconnected"*)
+              recover_thunderbolt_link "host disconnected"
               ;;
           esac
         done

@@ -27,6 +27,11 @@ in
 
 let BuilderTarget = {
   name | ValidMachineName,
+  # Optional allow-list of consuming machine hostnames that may use this
+  # builder. Omit for globally reachable builders; set [] for builder targets
+  # that are only valid from their own local Nix context and must not be
+  # advertised to remote clients.
+  allowedConsumers | Array ValidMachineName | optional,
   speedFactor | PositiveNum,
   systems | Array String,
   sshUser | String,
@@ -43,6 +48,10 @@ in
       # britton-air is the Darwin host. Its nested `linux-builder` VM can
       # build aarch64-linux when a build is launched on britton-air, but this
       # top-level SSH endpoint must not advertise Linux directly.
+      # It is also not currently reachable from the NixOS clients that consume
+      # remote-builders, so keep it out of generated remote builder lists until
+      # a routable endpoint is declared and validated.
+      allowedConsumers = [],
       systems = ["aarch64-darwin"],
       sshUser = "brittonr",
       maxJobs = 16,

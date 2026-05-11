@@ -37,8 +37,14 @@ let
     }) builderData.targets
   );
 
+  consumerMayUseTarget =
+    target: !(target ? allowedConsumers) || builtins.elem hostname target.allowedConsumers;
+
   builderMachines = lib.filterAttrs (
-    name: _: builtins.elem name builderTargetNames && name != hostname
+    name: _:
+    builtins.elem name builderTargetNames
+    && name != hostname
+    && consumerMayUseTarget builderTargetsByName.${name}
   ) allMachines;
 
   # Build the nix.buildMachines list from Nickel target metadata + machine addresses.
