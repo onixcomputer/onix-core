@@ -1,7 +1,7 @@
 ## Phase 1: Cargo policy
 
 - [x] [serial] Write the OpenSpec package for bounded direct Cargo builds and Rust cache storage policy.
-- [ ] [serial] Add a managed Cargo default jobs limit for `britton-desktop` while preserving the existing rustc-wrapper, target-dir, retry, quiet, and mold settings.
+- [x] [serial] Add a managed Cargo default jobs limit for `britton-desktop` while preserving the existing rustc-wrapper, target-dir, retry, quiet, and mold settings. ✅ verified generated Cargo config includes `jobs = 20`, managed rustc-wrapper, `/home/brittonr/.cargo-target`, `net.retry = 3`, `term.quiet = false`, and mold rustflags.
 - [ ] [parallel] Document the hardware rationale and override/resource-scoped workflow for intentionally heavy direct Cargo builds.
 - [ ] [parallel] Document or configure the current sccache cache budget and shared target-dir usage inspection workflow.
 

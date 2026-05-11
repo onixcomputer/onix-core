@@ -22,6 +22,7 @@ in
   cargo
     | {
       targetDir | NonEmpty,
+      jobs | Positive,
       netRetry | Positive,
       termQuiet | Bool,
       ignoreServerIoError | NonEmpty,
@@ -30,6 +31,10 @@ in
     }
     = {
       targetDir = "/home/brittonr/.cargo-target",
+      # Keep direct Cargo below full workstation saturation. 20 jobs leaves
+      # headroom on britton-desktop's 32 hardware threads for the compositor,
+      # editor, language servers, and background services.
+      jobs = 20,
       netRetry = 3,
       termQuiet = false,
       ignoreServerIoError = "1",

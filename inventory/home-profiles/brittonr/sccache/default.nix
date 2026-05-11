@@ -18,6 +18,7 @@ let
 
   inherit (profileData.cargo)
     ignoreServerIoError
+    jobs
     linker
     linkerArgs
     netRetry
@@ -111,6 +112,7 @@ let
 
   cargoConfig = {
     build = {
+      inherit jobs;
       "rustc-wrapper" = lib.getExe cargoRustcWrapper;
       "target-dir" = targetDir;
     };
