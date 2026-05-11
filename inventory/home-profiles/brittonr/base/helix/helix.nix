@@ -127,6 +127,7 @@ in
         rust-analyzer
         nls
         libxml2
+        lemminx
         hxOil
       ];
 
@@ -208,6 +209,7 @@ in
             "--format"
             "-"
           ];
+          language-servers = [ "lemminx" ];
         }
         {
           name = "markdown";
@@ -275,6 +277,9 @@ in
         };
         jedi-language-server = {
           command = "${pkgs.python3Packages.jedi-language-server}/bin/jedi-language-server";
+        };
+        lemminx = {
+          command = "${pkgs.lemminx}/bin/lemminx";
         };
         marksman = {
           command = "${pkgs.marksman}/bin/marksman";
