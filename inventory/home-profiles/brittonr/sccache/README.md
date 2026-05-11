@@ -10,9 +10,11 @@ wrapper calls a wrapped `sccache` binary on `PATH`. No manual
 ## Managed defaults
 
 - Cargo target dir stays on `/home/brittonr/.cargo-target`
+- Cargo defaults to `build.jobs = 20` on `britton-desktop`. This leaves 12 of the workstation's 32 hardware threads for the compositor, editor, language servers, and background services while still giving direct Rust builds substantial parallelism.
 - Cargo keeps `net.retry = 3`
 - Cargo keeps `term.quiet = false`
 - `sccache` uses only the local disk cache at `/home/brittonr/.cache/sccache`
+- `sccache` caps the local disk cache at 32 GiB
 - `sccache` logs errors to `/home/brittonr/.cache/sccache/error.log`
 - Path normalization uses `/home/brittonr/git` and `/home/brittonr/git/worktrees`
 - Cargo defaults `target.x86_64-unknown-linux-gnu.linker = "cc"`
@@ -32,6 +34,53 @@ Manual rollback path:
 1. Remove the `sccache` profile from `hm-desktop`
 2. Re-activate Home Manager
 3. Copy `~/.cargo/config.toml.pre-sccache` back to `~/.cargo/config.toml`
+
+## Heavy local builds
+
+Default direct Cargo builds are intentionally bounded by `build.jobs = 20`.
+For intentionally heavy/off-hours local builds, run the build in an explicit
+systemd scope instead of removing the managed default:
+
+```bash
+systemd-run --user --scope \
+  -p CPUWeight=50 \
+  -p IOWeight=50 \
+  -p Nice=10 \
+  -E CARGO_BUILD_JOBS=32 \
+  cargo build --release
+```
+
+That workflow keeps the managed `~/.cargo/config.toml`, rustc-wrapper,
+sccache, shared target dir, and mold flags intact while making the higher job
+count visible and resource-scoped. Use a lower `CARGO_BUILD_JOBS` value if the
+session becomes interactive again; prefer remote-builder-only Nix workflows for
+large Nix builds.
+
+## Storage inspection and cleanup policy
+
+The current desktop policy is a 32 GiB local sccache budget plus the shared
+Cargo target directory at `/home/brittonr/.cargo-target`. The shared target dir
+is observable but not quota-enforced in this change; dataset/quota migration is
+deferred to a future storage change if growth becomes a problem.
+
+Inspect usage with:
+
+```bash
+sccache --show-stats
+sccache --show-stats | grep -E 'Cache size|Max cache size'
+du -sh /home/brittonr/.cache/sccache /home/brittonr/.cargo-target
+```
+
+Clean only when necessary:
+
+```bash
+sccache --zero-stats      # reset counters only; does not reclaim disk
+sccache --stop-server     # flush/stop daemon before manual cache maintenance
+cargo clean               # run per-project when a workspace target dir is stale
+```
+
+Do not delete `/home/brittonr/.cargo-target` casually; it is intentionally
+shared across checkouts and worktrees to preserve incremental build reuse.
 
 ## Rust cache caveats
 
