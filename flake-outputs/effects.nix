@@ -6,7 +6,7 @@
 { inputs, ... }:
 let
   pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
-  hci-effects = inputs.buildbot-nix.inputs.hercules-ci-effects.lib.withPkgs pkgs;
+  hci-effects = inputs.hercules-ci-effects.lib.withPkgs pkgs;
 in
 {
   herculesCI = _args: {
