@@ -85,7 +85,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "backup",
         "syncthing",
       ],
-      deploy.targetHost = "root@100.117.237.102",
+      deploy.targetHost = "root@100.126.162.16",
     },
 
     # ========== Servers ==========

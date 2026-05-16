@@ -53,5 +53,17 @@ in
       hostname = "britton-air.local",
       user = "brittonr",
     },
+    "britton-desktop" = {
+      hostname = "britton-desktop",
+      user = "brittonr",
+    },
+    "bonsai" = {
+      hostname = "100.126.162.16",
+      user = "brittonr",
+    },
+    "britton-gpd" = {
+      hostname = "100.126.162.16",
+      user = "brittonr",
+    },
   },
 }
