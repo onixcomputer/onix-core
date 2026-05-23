@@ -109,6 +109,8 @@ in
         SUBSYSTEM=="usb", ATTR{idVendor}=="1f3a", ATTR{idProduct}=="efe8", MODE="0666", GROUP="plugdev", TAG+="uaccess"
         # Glasgow Digital Interface Explorer
         SUBSYSTEM=="usb", ATTRS{idVendor}=="20b7", ATTRS{idProduct}=="9db1", MODE="0666", GROUP="plugdev", TAG+="uaccess"
+        # FTDI USB serial adapter
+        SUBSYSTEM=="usb", ATTR{idVendor}=="0403", ATTR{idProduct}=="6015", MODE="0660", GROUP="dialout", TAG+="uaccess"
       '';
     };
   };

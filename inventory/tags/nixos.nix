@@ -1,4 +1,5 @@
 {
+  lib,
   pkgs,
   inputs,
   self,
@@ -50,7 +51,7 @@
   };
 
   # RAM-based /tmp (faster, reduces SSD wear, auto-cleanup on reboot)
-  boot.tmp.useTmpfs = true;
+  boot.tmp.useTmpfs = lib.mkDefault true;
 
   boot.kernel.sysctl = {
     # BBR congestion control — better throughput on lossy/high-latency links

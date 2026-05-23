@@ -156,6 +156,7 @@
     bpftrace
     imagemagick
     nirius
+    prismlauncher
     displaylink
     self.packages.${pkgs.stdenv.hostPlatform.system}.opendeck
   ];
@@ -164,4 +165,11 @@
   networking.hostId = "07e6df3e";
   boot.supportedFilesystems = [ "zfs" ];
   boot.zfs.extraPools = [ "datapool" ];
+
+  # Put /tmp on the 4TB datapool instead of RAM-backed tmpfs, while keeping
+  # classic scratch-directory semantics across boots.
+  boot.tmp = {
+    useTmpfs = false;
+    cleanOnBoot = true;
+  };
 }

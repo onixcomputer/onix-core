@@ -24,6 +24,21 @@
             type = "zfs_fs";
             mountpoint = "/home/brittonr/.cargo-target";
           };
+          tmp = {
+            type = "zfs_fs";
+            mountpoint = "/tmp";
+            options = {
+              mountpoint = "legacy";
+              compression = "off";
+              sync = "disabled";
+              quota = "250G";
+            };
+            mountOptions = [
+              "defaults"
+              "noatime"
+              "mode=1777"
+            ];
+          };
         };
       };
     };

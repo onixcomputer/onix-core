@@ -7,6 +7,7 @@ let
   nixdelta = inputs.nixdelta.packages.${pkgs.stdenv.hostPlatform.system}.default;
   kiEditor = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.ki-editor;
   tigerstylePkgs = inputs.tigerstyle.packages.${pkgs.stdenv.hostPlatform.system};
+  tigerstyleStandards = tigerstylePkgs.tigerstyle-standards or tigerstylePkgs.slotcar-standards;
 in
 {
   home.packages = with pkgs; [
@@ -69,6 +70,6 @@ in
     nixdelta
     kiEditor
     tigerstylePkgs.cargo-tigerstyle
-    tigerstylePkgs.tigerstyle-standards
+    tigerstyleStandards
   ];
 }
