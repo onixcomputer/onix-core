@@ -139,6 +139,28 @@
         "type": "github"
       }
     },
+    "cairn": {
+      "inputs": {
+        "nixpkgs": [
+          "tigerstyle",
+          "nixpkgs"
+        ],
+        "slotcar": "slotcar"
+      },
+      "locked": {
+        "lastModified": 1779500840,
+        "narHash": "sha256-tnsP7kS55Druw+k+/ZD+4hd5f0JsLgW8komD6LSCWJ4=",
+        "owner": "onixresearch",
+        "repo": "cairn",
+        "rev": "3c470b9478072fed00234000d5abee07c20eda1c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "onixresearch",
+        "repo": "cairn",
+        "type": "github"
+      }
+    },
     "clan-core": {
       "inputs": {
         "data-mesher": "data-mesher",
@@ -195,6 +217,21 @@
       }
     },
     "crane_2": {
+      "locked": {
+        "lastModified": 1773857772,
+        "narHash": "sha256-5xsK26KRHf0WytBtsBnQYC/lTWDhQuT57HJ7SzuqZcM=",
+        "owner": "ipetkov",
+        "repo": "crane",
+        "rev": "b556d7bbae5ff86e378451511873dfd07e4504cd",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ipetkov",
+        "repo": "crane",
+        "type": "github"
+      }
+    },
+    "crane_3": {
       "locked": {
         "lastModified": 1773857772,
         "narHash": "sha256-5xsK26KRHf0WytBtsBnQYC/lTWDhQuT57HJ7SzuqZcM=",
@@ -281,6 +318,23 @@
       }
     },
     "dylint-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1774225669,
+        "narHash": "sha256-3OkN9IX1ommW6JZlgOOalz8Zx8tQGNgjaM7LVMYFZVg=",
+        "owner": "trailofbits",
+        "repo": "dylint",
+        "rev": "0e0a71eefe6f01563d11acc6e1d7af1d505934a9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "trailofbits",
+        "repo": "dylint",
+        "rev": "0e0a71eefe6f01563d11acc6e1d7af1d505934a9",
+        "type": "github"
+      }
+    },
+    "dylint-src_2": {
       "flake": false,
       "locked": {
         "lastModified": 1774225669,
@@ -451,6 +505,24 @@
     "flake-utils_4": {
       "inputs": {
         "systems": "systems_6"
+      },
+      "locked": {
+        "lastModified": 1731533236,
+        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "flake-utils_5": {
+      "inputs": {
+        "systems": "systems_7"
       },
       "locked": {
         "lastModified": 1731533236,
@@ -960,6 +1032,22 @@
         "type": "github"
       }
     },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1773840656,
+        "narHash": "sha256-9tpvMGFteZnd3gRQZFlRCohVpqooygFuy9yjuyRL2C0=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "9cf7092bdd603554bd8b63c216e8943cf9b12512",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "noctalia": {
       "inputs": {
         "nixpkgs": [
@@ -1185,6 +1273,51 @@
         "type": "github"
       }
     },
+    "rust-overlay_3": {
+      "inputs": {
+        "nixpkgs": [
+          "tigerstyle",
+          "cairn",
+          "slotcar",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1774235565,
+        "narHash": "sha256-D8OOwvq3zDDCtIhMcNueb9tGSZaZUanKpWDleRgQ80U=",
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "rev": "dc00324a2438762582b49954373112b8eab29cab",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "slotcar": {
+      "inputs": {
+        "crane": "crane_2",
+        "dylint-src": "dylint-src",
+        "flake-utils": "flake-utils_3",
+        "nixpkgs": "nixpkgs_2",
+        "rust-overlay": "rust-overlay_3"
+      },
+      "locked": {
+        "lastModified": 1778903772,
+        "narHash": "sha256-8F7g650MFMXm5zyOBadWg0pOHxXccDgwbOVUZYLwwkQ=",
+        "owner": "onixresearch",
+        "repo": "slotcar",
+        "rev": "b18a547801dfebaa5ee3e748e3ebefed1a66cb17",
+        "type": "github"
+      },
+      "original": {
+        "owner": "onixresearch",
+        "repo": "slotcar",
+        "type": "github"
+      }
+    },
     "sops-nix": {
       "inputs": {
         "nixpkgs": [
@@ -1315,11 +1448,27 @@
         "type": "github"
       }
     },
+    "systems_7": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    },
     "tigerstyle": {
       "inputs": {
-        "crane": "crane_2",
-        "dylint-src": "dylint-src",
-        "flake-utils": "flake-utils_3",
+        "cairn": "cairn",
+        "crane": "crane_3",
+        "dylint-src": "dylint-src_2",
+        "flake-utils": "flake-utils_4",
         "nixpkgs": [
           "nixpkgs"
         ],
@@ -1328,17 +1477,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1778903772,
-        "narHash": "sha256-8F7g650MFMXm5zyOBadWg0pOHxXccDgwbOVUZYLwwkQ=",
-        "ref": "refs/heads/main",
-        "rev": "b18a547801dfebaa5ee3e748e3ebefed1a66cb17",
-        "revCount": 191,
-        "type": "git",
-        "url": "ssh://git@github.com/OnixResearch/slotcar.git"
+        "lastModified": 1779513827,
+        "narHash": "sha256-Bf64ul0hh6VBmX9omw9GrOcIxy9NDLUjEOvPolraOxI=",
+        "owner": "onixresearch",
+        "repo": "octet",
+        "rev": "9b6a2065ef9e8e363d81299cf59d74f885926215",
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "ssh://git@github.com/OnixResearch/slotcar.git"
+        "owner": "onixresearch",
+        "repo": "octet",
+        "type": "github"
       }
     },
     "treefmt-nix": {
@@ -1407,7 +1556,7 @@
     },
     "upmpdcli": {
       "inputs": {
-        "flake-utils": "flake-utils_4",
+        "flake-utils": "flake-utils_5",
         "nixpkgs": [
           "nixpkgs"
         ]

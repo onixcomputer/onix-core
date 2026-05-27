@@ -115,6 +115,8 @@ let
   helixZenWrapper = inputs.wrappers.wrapperModules.helix.apply {
     inherit pkgs;
 
+    package = pkgs.lib.mkForce pkgs.steelix;
+
     preHook = zenThemeOverlay;
 
     # Provide the binary as 'zen' to differentiate from regular helix

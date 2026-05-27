@@ -175,7 +175,7 @@
       };
     };
     tigerstyle = {
-      url = "git+ssh://git@github.com/OnixResearch/slotcar.git";
+      url = "github:onixresearch/octet";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         rust-overlay.follows = "rust-overlay";

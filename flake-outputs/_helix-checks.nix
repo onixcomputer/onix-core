@@ -41,15 +41,19 @@ let
   evalInputs = self.inputs // {
     inherit self;
   };
+  helixPkgs = import pkgs.path {
+    inherit system;
+    config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ "replace" ];
+  };
 
   hxModule = import ../inventory/home-profiles/brittonr/base/helix/helix.nix {
     inputs = evalInputs;
-    inherit pkgs;
+    pkgs = helixPkgs;
     config = fakeConfig;
   };
   zenModule = import ../inventory/home-profiles/brittonr/base/helix/helix-zen.nix {
     inputs = evalInputs;
-    inherit pkgs;
+    pkgs = helixPkgs;
     config = fakeConfig;
   };
 
@@ -91,37 +95,43 @@ in
       hx_config_root="$(config_root_from_script "$hx_script")"
       zen_config_root="$(config_root_from_script "$zen_script")"
 
+      assert_contains '${helixPkgs.steelix}/bin' "$hx_script"
+      assert_contains '${helixPkgs.steel}/bin' "$hx_script"
+      assert_contains '${helixPkgs.steel-language-server}/bin' "$hx_script"
       assert_contains '${hxOilPath}' "$hx_script"
-      assert_contains '${pkgs.libxml2}/bin' "$hx_script"
-      assert_contains '${pkgs.lemminx}/bin' "$hx_script"
-      assert_contains '${pkgs.taplo}/bin' "$hx_script"
-      assert_contains '${pkgs.yaml-language-server}/bin' "$hx_script"
-      assert_contains '${pkgs.vscode-langservers-extracted}/bin' "$hx_script"
-      assert_contains '${pkgs.bash-language-server}/bin' "$hx_script"
-      assert_contains '${pkgs.shfmt}/bin' "$hx_script"
-      assert_contains '${pkgs.prettier}/bin' "$hx_script"
-      assert_contains '${pkgs.ltex-ls}/bin' "$hx_script"
+      assert_contains '${helixPkgs.libxml2}/bin' "$hx_script"
+      assert_contains '${helixPkgs.lemminx}/bin' "$hx_script"
+      assert_contains '${helixPkgs.taplo}/bin' "$hx_script"
+      assert_contains '${helixPkgs.yaml-language-server}/bin' "$hx_script"
+      assert_contains '${helixPkgs.vscode-langservers-extracted}/bin' "$hx_script"
+      assert_contains '${helixPkgs.bash-language-server}/bin' "$hx_script"
+      assert_contains '${helixPkgs.shfmt}/bin' "$hx_script"
+      assert_contains '${helixPkgs.prettier}/bin' "$hx_script"
+      assert_contains '${helixPkgs.ltex-ls}/bin' "$hx_script"
       assert_contains 'name = "toml"' "$hx_config_root"
       assert_contains 'language-servers = ["taplo"]' "$hx_config_root"
-      assert_contains 'command = "${pkgs.taplo}/bin/taplo"' "$hx_config_root"
+      assert_contains 'command = "${helixPkgs.taplo}/bin/taplo"' "$hx_config_root"
       assert_contains 'name = "yaml"' "$hx_config_root"
       assert_contains 'language-servers = ["yaml-language-server"]' "$hx_config_root"
-      assert_contains 'command = "${pkgs.yaml-language-server}/bin/yaml-language-server"' "$hx_config_root"
+      assert_contains 'command = "${helixPkgs.yaml-language-server}/bin/yaml-language-server"' "$hx_config_root"
       assert_contains 'name = "json"' "$hx_config_root"
       assert_contains 'language-servers = ["vscode-json-language-server"]' "$hx_config_root"
-      assert_contains 'command = "${pkgs.vscode-langservers-extracted}/bin/vscode-json-language-server"' "$hx_config_root"
+      assert_contains 'command = "${helixPkgs.vscode-langservers-extracted}/bin/vscode-json-language-server"' "$hx_config_root"
       assert_contains 'name = "bash"' "$hx_config_root"
       assert_contains 'language-servers = ["bash-language-server"]' "$hx_config_root"
-      assert_contains 'command = "${pkgs.bash-language-server}/bin/bash-language-server"' "$hx_config_root"
-      assert_contains 'command = "${pkgs.shfmt}/bin/shfmt"' "$hx_config_root"
+      assert_contains 'command = "${helixPkgs.bash-language-server}/bin/bash-language-server"' "$hx_config_root"
+      assert_contains 'command = "${helixPkgs.shfmt}/bin/shfmt"' "$hx_config_root"
       assert_contains 'name = "asciidoc"' "$hx_config_root"
       assert_contains 'language-servers = ["ltex-ls"]' "$hx_config_root"
-      assert_contains 'command = "${pkgs.ltex-ls}/bin/ltex-ls"' "$hx_config_root"
+      assert_contains 'command = "${helixPkgs.ltex-ls}/bin/ltex-ls"' "$hx_config_root"
       assert_contains 'name = "xml"' "$hx_config_root"
       assert_contains 'language-servers = ["lemminx"]' "$hx_config_root"
-      assert_contains 'command = "${pkgs.libxml2}/bin/xmllint"' "$hx_config_root"
-      assert_contains 'command = "${pkgs.lemminx}/bin/lemminx"' "$hx_config_root"
+      assert_contains 'command = "${helixPkgs.libxml2}/bin/xmllint"' "$hx_config_root"
+      assert_contains 'command = "${helixPkgs.lemminx}/bin/lemminx"' "$hx_config_root"
       assert_contains '"--format"' "$hx_config_root"
+      assert_contains 'name = "scheme"' "$hx_config_root"
+      assert_contains 'language-servers = ["steel-language-server"]' "$hx_config_root"
+      assert_contains 'command = "${helixPkgs.steel-language-server}/bin/steel-language-server"' "$hx_config_root"
       assert_contains '${hxOilBin} render --from' "$hx_config_root"
       assert_contains '${hxOilBin} apply' "$hx_config_root"
       assert_contains '${hxOilBin} refresh' "$hx_config_root"
@@ -141,6 +151,7 @@ in
       assert_contains '${hxOilBin} subdir collapse' "$hx_config_root"
       assert_contains '${hxOilBin} subdir refresh' "$hx_config_root"
 
+      assert_contains '${helixPkgs.steelix}/bin' "$zen_script"
       assert_contains '${hxOilPath}' "$zen_script"
       assert_contains '${hxOilBin} render --from' "$zen_config_root"
       assert_contains '${hxOilBin} apply' "$zen_config_root"

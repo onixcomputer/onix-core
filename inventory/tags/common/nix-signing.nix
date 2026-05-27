@@ -17,6 +17,9 @@ let
 
   varsDir = "${self}/vars/per-machine";
   machines = lib.attrNames (builtins.readDir varsDir);
+  aspen1BinaryCacheHost = "100.100.103.95";
+  harmoniaPort = 5000;
+  aspen1BinaryCacheUrl = "http://${aspen1BinaryCacheHost}:${builtins.toString harmoniaPort}";
 
   # Read public signing keys from all machines that have generated one
   allMachineSigningKeys = lib.flatten (
@@ -56,10 +59,10 @@ in
 
     # Harmonia binary cache on aspen1 — skip on aspen1 itself to avoid
     # a circular substituter loop (nix-daemon → harmonia → nix-daemon)
-    # that deadlocks curl threads during nix copy. Use .local here because
-    # bare aspen1 is not resolvable on all managed hosts.
+    # that deadlocks curl threads during nix copy. Use the Tailscale IP here
+    # so nix-daemon does not depend on mDNS resolution for substituter access.
     extra-substituters = lib.mkIf (config.networking.hostName != "aspen1") [
-      "http://aspen1.local:5000"
+      aspen1BinaryCacheUrl
     ];
   };
 }

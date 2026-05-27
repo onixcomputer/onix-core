@@ -117,9 +117,13 @@ in
     (inputs.wrappers.wrapperModules.helix.apply {
       inherit pkgs;
 
+      package = pkgs.lib.mkForce pkgs.steelix;
+
       preHook = helixThemeOverlay;
 
       extraPackages = with pkgs; [
+        steel
+        steel-language-server
         cargo
         rustc
         clippy
@@ -284,6 +288,11 @@ in
           auto-format = true;
           language-servers = [ "nls" ];
         }
+        {
+          name = "scheme";
+          auto-format = false;
+          language-servers = [ "steel-language-server" ];
+        }
       ];
 
       languages.language-server = {
@@ -370,6 +379,9 @@ in
         };
         nls = {
           command = "${pkgs.nls}/bin/nls";
+        };
+        steel-language-server = {
+          command = "${pkgs.steel-language-server}/bin/steel-language-server";
         };
       };
 
