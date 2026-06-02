@@ -144,6 +144,7 @@ in
 
   environment.systemPackages = with pkgs; [
     signal-desktop
+    steel # Scheme runtime for Steel-powered editor/plugin workflows
     modemmanager
     libqmi
     libmbim
