@@ -23,6 +23,9 @@ let
   inherit (profileData.kache)
     cacheBudgetGiB
     cacheDir
+    daemonLogFilter
+    daemonRestartDelay
+    daemonService
     localOnly
     ;
 
@@ -161,6 +164,28 @@ in
     activation.backupCargoConfigBeforeTakeover = lib.hm.dag.entryBefore [
       "checkLinkTargets"
     ] backupCargoConfigScript;
+  };
+
+  systemd.user.services.kache = lib.mkIf daemonService {
+    Unit = {
+      Description = "kache build cache daemon";
+      After = [ "default.target" ];
+    };
+
+    Service = {
+      Type = "simple";
+      ExecStart = "${lib.getExe kachePackage} daemon run";
+      Restart = "on-failure";
+      RestartSec = daemonRestartDelay;
+      Environment = [
+        "KACHE_CACHE_DIR=${cacheDir}"
+        "KACHE_CONFIG=${kacheConfigFile}"
+        "KACHE_LOCAL_ONLY=${if localOnly then "1" else "0"}"
+        "KACHE_LOG=${daemonLogFilter}"
+      ];
+    };
+
+    Install.WantedBy = [ "default.target" ];
   };
 
   xdg.configFile."kache/config.toml".source = kacheConfigFile;

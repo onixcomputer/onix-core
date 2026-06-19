@@ -47,10 +47,16 @@ in
       cacheDir | NonEmpty,
       cacheBudgetGiB | Positive,
       localOnly | Bool,
+      daemonService | Bool,
+      daemonRestartDelay | NonEmpty,
+      daemonLogFilter | NonEmpty,
     }
     = {
       cacheDir = "/home/brittonr/.cache/kache",
       cacheBudgetGiB = 32,
       localOnly = true,
+      daemonService = true,
+      daemonRestartDelay = "5s",
+      daemonLogFilter = "kache=info",
     },
 }
