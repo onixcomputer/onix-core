@@ -25,6 +25,7 @@ in
     dumbpipe = pkgs.callPackage ../pkgs/dumbpipe { };
     sendme = pkgs.callPackage ../pkgs/sendme { };
     crw = pkgs.callPackage ../pkgs/crw { };
+    kache = pkgs.callPackage ../pkgs/kache { };
     verify-deploy = pkgs.callPackage ../pkgs/verify-deploy { };
     ki-editor = self.inputs.ki-editor.packages.${pkgs.stdenv.hostPlatform.system}.default;
   }
