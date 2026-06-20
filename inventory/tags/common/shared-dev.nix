@@ -12,6 +12,7 @@
 }:
 let
   agentPkgs = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
+  nixfmt-rs = inputs.nixfmt-rs.packages.${pkgs.stdenv.hostPlatform.system}.default;
 in
 {
   environment.systemPackages =
@@ -25,6 +26,7 @@ in
       jujutsu
       nixpkgs-review
       nix-output-monitor
+      nixfmt-rs
       ripgrep
       tree
     ]

@@ -36,7 +36,9 @@
             mountOptions = [
               "defaults"
               "noatime"
-              "mode=1777"
+              # /tmp is scratch space; a mount failure should not make the
+              # machine drop to emergency mode during boot.
+              "nofail"
             ];
           };
         };
