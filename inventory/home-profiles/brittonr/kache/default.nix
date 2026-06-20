@@ -23,6 +23,7 @@ let
   inherit (profileData.kache)
     cacheBudgetGiB
     cacheDir
+    daemonIdleTimeoutSecs
     daemonLogFilter
     daemonRestartDelay
     daemonService
@@ -43,6 +44,7 @@ let
       local_store = cacheDir;
       local_max_size = localCacheSize;
       local_only = localOnly;
+      daemon_idle_timeout_secs = daemonIdleTimeoutSecs;
     };
   };
 
@@ -180,6 +182,7 @@ in
       Environment = [
         "KACHE_CACHE_DIR=${cacheDir}"
         "KACHE_CONFIG=${kacheConfigFile}"
+        "KACHE_DAEMON_IDLE_TIMEOUT=${toString daemonIdleTimeoutSecs}"
         "KACHE_LOCAL_ONLY=${if localOnly then "1" else "0"}"
         "KACHE_LOG=${daemonLogFilter}"
       ];

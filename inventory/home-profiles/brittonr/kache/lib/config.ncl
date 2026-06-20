@@ -18,6 +18,14 @@ let Positive =
   )
 in
 
+let NonNegative =
+  std.contract.from_validator (match {
+    value if std.is_number value && value >= 0 => 'Ok,
+    _ => 'Error { message = "must be a non-negative number" },
+  }
+  )
+in
+
 {
   cargo
     | {
@@ -48,6 +56,7 @@ in
       cacheBudgetGiB | Positive,
       localOnly | Bool,
       daemonService | Bool,
+      daemonIdleTimeoutSecs | NonNegative,
       daemonRestartDelay | NonEmpty,
       daemonLogFilter | NonEmpty,
     }
@@ -56,6 +65,8 @@ in
       cacheBudgetGiB = 32,
       localOnly = true,
       daemonService = true,
+      # 0 disables upstream's idle-exit watchdog so systemd remains the daemon owner.
+      daemonIdleTimeoutSecs = 0,
       daemonRestartDelay = "5s",
       daemonLogFilter = "kache=info",
     },

@@ -18,6 +18,7 @@ Manager starts the upstream-shaped `kache.service` user daemon. No manual
 - kache caps the local disk cache at 32 GiB
 - kache runs with `KACHE_LOCAL_ONLY=1`; S3 and planner config stay disabled
 - kache's daemon runs as the declarative Home Manager user service `kache.service`
+- kache's daemon idle timeout is disabled so systemd remains the lifecycle owner
 - The wrapper derives `KACHE_KEY_SALT` from the active `rustc`, `cc`, and
   `mold` store paths, then appends any user-supplied `KACHE_KEY_SALT`
 - Cargo defaults `target.x86_64-unknown-linux-gnu.linker = "cc"`
