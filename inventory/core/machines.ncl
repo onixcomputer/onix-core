@@ -139,6 +139,29 @@ let { Machines, .. } = import "contracts.ncl" in
       deploy.targetHost = "root@aspen2",
     },
 
+    aspen3 = {
+      name = "aspen3",
+      system = "x86_64-linux",
+      addresses.lan = "192.168.1.43",
+      tags = [
+        "hm-server",
+        "boot-partition-gc",
+        "minimal-docs",
+        "ssd-optimization",
+        "perf-tuning",
+        "docker",
+        "tailnet-brittonr",
+        "dev",
+        "prometheus",
+        "monitoring",
+        "homepage-server",
+        "amd-gpu",
+        "initrd-ssh",
+        "remote-builders",
+      ],
+      deploy.targetHost = "root@192.168.1.43",
+    },
+
     # ========== Desktop ==========
 
     britton-desktop = {
