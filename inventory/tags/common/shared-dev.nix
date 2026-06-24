@@ -24,7 +24,8 @@ in
       gh
       git
       jujutsu
-      nixpkgs-review
+      # nixpkgs-review depends on nix-eval-jobs, which currently fails to
+      # compile against Onix's Nix C++ API. Re-enable after that package is fixed.
       nix-output-monitor
       nixfmt-rs
       ripgrep

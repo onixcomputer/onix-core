@@ -1,6 +1,7 @@
 { pkgs, config, ... }:
 let
   gef-src = pkgs.fetchFromGitHub {
+    name = "gef-source";
     owner = "hugsy";
     repo = "gef";
     rev = "0c95800c3ad3d99bacc153fb5ce13b4285d3d0f8";
@@ -8,6 +9,7 @@ let
   };
 
   gef-extras = pkgs.fetchFromGitHub {
+    name = "gef-extras-source";
     owner = "hugsy";
     repo = "gef-extras";
     rev = "954ed58c045885233e017b785ec5300960e1fbfe";
