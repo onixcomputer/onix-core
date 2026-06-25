@@ -28,6 +28,7 @@ in
     kache = pkgs.callPackage ../pkgs/kache { };
     verify-deploy = pkgs.callPackage ../pkgs/verify-deploy { };
     ki-editor = self.inputs.ki-editor.packages.${pkgs.stdenv.hostPlatform.system}.default;
+    mercury-cli = self.inputs.mercury-cli.packages.${pkgs.stdenv.hostPlatform.system}.mercury-cli;
   }
   // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
     branchfs = pkgs.callPackage ../pkgs/branchfs { };

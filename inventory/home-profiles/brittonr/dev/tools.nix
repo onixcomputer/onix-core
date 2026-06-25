@@ -6,6 +6,7 @@ let
   sendme = pkgs.callPackage ../../../../pkgs/sendme { };
   nixdelta = inputs.nixdelta.packages.${pkgs.stdenv.hostPlatform.system}.default;
   kiEditor = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.ki-editor;
+  mercuryCli = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.mercury-cli;
   tigerstylePkgs = inputs.tigerstyle.packages.${pkgs.stdenv.hostPlatform.system};
   tigerstyleStandards = tigerstylePkgs.tigerstyle-standards or tigerstylePkgs.slotcar-standards;
 in
@@ -69,6 +70,7 @@ in
     # Flake inputs
     nixdelta
     kiEditor
+    mercuryCli
     tigerstylePkgs.cargo-tigerstyle
     tigerstyleStandards
   ];

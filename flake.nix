@@ -120,6 +120,10 @@
       url = "github:pinpox/nitrous";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    mercury-cli = {
+      url = "github:MercuryTechnologies/mercury-cli";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
       inputs = {
