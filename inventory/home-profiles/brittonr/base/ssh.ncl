@@ -1,6 +1,6 @@
-# SSH matchBlocks — source of truth for SSH host config.
+# SSH settings — source of truth for SSH host config.
 #
-# Consumed by: ssh.nix (home-manager programs.ssh.matchBlocks)
+# Consumed by: ssh.nix (home-manager programs.ssh.settings)
 # Validated at `ncl export` time — bad hostnames, missing identity
 # files, and typos fail immediately.
 #
@@ -21,6 +21,7 @@ let MatchBlock = {
   user | NonEmpty | optional,
   identityFile | NonEmpty | optional,
   identitiesOnly | Bool | optional,
+  hostKeyAlias | NonEmpty | optional,
   addKeysToAgent | NonEmpty | optional,
   compression | Bool | optional,
   forwardAgent | Bool | optional,
@@ -60,6 +61,11 @@ in
     "bonsai" = {
       hostname = "100.126.162.16",
       user = "brittonr",
+    },
+    "aspen3" = {
+      hostname = "192.168.1.229",
+      user = "root",
+      hostKeyAlias = "aspen3.clan",
     },
     "britton-gpd" = {
       hostname = "100.126.162.16",

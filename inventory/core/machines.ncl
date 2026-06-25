@@ -174,7 +174,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "syncthing",
         "amd-gpu",
       ],
-      deploy.targetHost = "root@192.168.1.229",
+      deploy.targetHost = "root@aspen3",
     },
 
     # ========== Desktop ==========

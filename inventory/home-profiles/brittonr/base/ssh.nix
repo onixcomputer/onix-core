@@ -5,6 +5,7 @@
 # programs.ssh options.
 {
   inputs,
+  lib,
   pkgs,
   ...
 }:
@@ -14,17 +15,23 @@ let
   };
   data = wasm.evalNickelFile ./ssh.ncl;
 
-  # Build matchBlocks from NCL data.
-  # The wildcard block gets defaults; each named host gets
-  # the shared identityFile + identitiesOnly unless it has its own.
-  gitHosts = builtins.mapAttrs (
+  mkDefaultSettings = defaults: {
+    AddKeysToAgent = defaults.addKeysToAgent;
+    Compression = defaults.compression;
+    ForwardAgent = defaults.forwardAgent;
+  };
+
+  mkHostSettings =
     _name: block:
-    block
-    // {
-      identityFile = block.identityFile or data.identityFile;
-      identitiesOnly = block.identitiesOnly or true;
-    }
-  ) data.hosts;
+    lib.filterAttrs (_: value: value != null) {
+      HostName = block.hostname or null;
+      User = block.user or null;
+      IdentityFile = block.identityFile or data.identityFile;
+      IdentitiesOnly = block.identitiesOnly or true;
+      HostKeyAlias = block.hostKeyAlias or null;
+    };
+
+  hostSettings = builtins.mapAttrs mkHostSettings data.hosts;
 in
 {
   services.ssh-agent.enable = true;
@@ -37,9 +44,9 @@ in
       AddressFamily inet
     '';
 
-    matchBlocks = {
-      "*" = data.defaults;
+    settings = {
+      "*" = mkDefaultSettings data.defaults;
     }
-    // gitHosts;
+    // hostSettings;
   };
 }
