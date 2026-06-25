@@ -1,4 +1,5 @@
 {
+  config,
   pkgs,
   lib,
   ...
@@ -45,7 +46,13 @@
   };
 
   environment = {
-    sessionVariables.LD_LIBRARY_PATH = "${pkgs.rocmPackages.rocm-smi}/lib:${pkgs.libdrm}/lib";
+    sessionVariables.LD_LIBRARY_PATH = lib.mkForce (
+      [
+        "${pkgs.rocmPackages.rocm-smi}/lib"
+        "${pkgs.libdrm}/lib"
+      ]
+      ++ lib.optionals config.hardware.sane.enable [ "/etc/sane-libs" ]
+    );
 
     # System packages for AMD GPU development and monitoring
     systemPackages = with pkgs; [

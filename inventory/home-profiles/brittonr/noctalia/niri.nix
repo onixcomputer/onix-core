@@ -382,14 +382,13 @@ in
       '';
 
       # ── Make noctalia config files writable ────────────────────────────
-      # The Noctalia HM module writes colors.json and settings.json as
-      # nix-store symlinks.  Noctalia needs to write both at runtime:
-      # colors.json for live palette updates, settings.json for persisting
-      # UI changes (color scheme selection, dark mode toggle, etc.).
-      # Convert both symlinks to real writable files after linkGeneration.
+      # The Noctalia HM module writes config.toml and palette files as
+      # nix-store symlinks. Noctalia mutates these files at runtime for live
+      # palette updates and UI settings, so convert managed symlinks to real
+      # writable files after linkGeneration.
       makeNoctaliaConfigMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
         noctalia_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/noctalia"
-        for f in colors.json settings.json plugins/wl-walls/settings.json; do
+        for f in config.toml palettes/Onix.json; do
           target="$noctalia_dir/$f"
           if [ -L "$target" ]; then
             content=$(cat "$target")
@@ -508,8 +507,8 @@ in
       };
     };
     configFile = {
-      "noctalia/colors.json".force = true;
-      "noctalia/settings.json".force = true;
+      "noctalia/config.toml".force = true;
+      "noctalia/palettes/Onix.json".force = true;
     };
   };
 

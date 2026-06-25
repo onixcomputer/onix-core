@@ -41,6 +41,10 @@ let
     (inputs.wrappers.wrapperModules.firefox.apply {
       inherit pkgs;
 
+      # Firefox Release ignores sideloaded addon policy; ESR supports the
+      # managed extensions used below without pulling insecure LibreWolf.
+      browser = pkgs.firefox-esr-unwrapped;
+
       extensions = [
         tridactyl
         ublock-origin

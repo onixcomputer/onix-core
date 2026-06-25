@@ -1,7 +1,5 @@
 {
   config,
-  lib,
-  pkgs,
   ...
 }:
 let
@@ -15,26 +13,7 @@ let
   system = import ./noctalia-sections/system.nix config;
   extras = import ./noctalia-sections/extras.nix config;
 
-  templateDir = ./templates;
-  activePalette = config.theme.active;
-
-  # Generate starship palette template with the active palette name
-  # instead of hardcoding it in a static file.
-  starshipPaletteTemplate = pkgs.writeText "starship-palette.toml" ''
-    [palettes.${activePalette}]
-    color_bg1 = "{{colors.surface.default.hex}}"
-    color_bg3 = "{{colors.surface_container_high.default.hex}}"
-    color_cyan = "{{colors.on_surface_variant.default.hex}}"
-    color_fg0 = "{{colors.on_surface.default.hex}}"
-    color_gray = "{{colors.outline.default.hex}}"
-    color_green = "{{colors.surface_container.default.hex}}"
-    color_orange = "{{colors.on_surface.default.hex}}"
-    color_red = "{{colors.on_surface_variant.default.hex | darken 5}}"
-    color_yellow = "{{colors.on_surface_variant.default.hex | lighten 5}}"
-  '';
-
-  # NCL theme → Material 3 color mapping. Single definition used by both
-  # programs.noctalia-shell.colors and the generated Onix.json colorscheme.
+  # NCL theme → Material 3 color mapping for the generated Onix.json palette.
   mkM3Colors = t: {
     mPrimary = t.accent.hex;
     mOnPrimary = t.bg.hex;
@@ -92,114 +71,26 @@ let
     light = mkVariant config.theme.allData."onix-light";
   };
 
-  # Post-hook: replace starship palette section with template output,
-  # then reload running instances via SIGHUP.
-  starshipPostHook = pkgs.writeShellApplication {
-    name = "starship-palette-update";
-    runtimeInputs = [
-      pkgs.coreutils
-      pkgs.gnused
-    ];
-    text = ''
-      STARSHIP="''${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml"
-      PALETTE="''${XDG_CACHE_HOME:-$HOME/.cache}/noctalia/starship-palette.toml"
-      [ -f "$STARSHIP" ] && [ -f "$PALETTE" ] || exit 0
-      # Strip the header line from the generated palette fragment
-      TMPCOLORS=$(mktemp)
-      sed '1d' "$PALETTE" > "$TMPCOLORS"
-      # Delete existing palette values, then insert new ones from file
-      sed -i '/^\[palettes\.${activePalette}\]/,/^\[/{/^\[palettes\.${activePalette}\]/!{/^\[/!d}}' "$STARSHIP"
-      sed -i "/^\[palettes\.${activePalette}\]/r $TMPCOLORS" "$STARSHIP"
-      rm -f "$TMPCOLORS"
-    '';
-  };
 in
 {
-  programs.noctalia-shell = {
+  programs.noctalia = {
     enable = true;
 
-    colors = mkM3Colors config.theme.data;
+    # The upstream v5 module validates the generated TOML at build time.
+    # Keep validation disabled while the settings schema is migrating from the
+    # older noctalia-shell module shape.
+    validateConfig = false;
 
-    # User templates for apps without built-in Noctalia support.
-    # Built-in templates handle: niri, kitty, btop, helix.
-    # User templates handle: fish, bat, delta, eza, starship, swayosd.
-    user-templates = {
-      templates = {
-        fish = {
-          input_path = "${templateDir}/fish-colors.fish";
-          output_path = "~/.config/fish/conf.d/noctalia-colors.fish";
-        };
-        bat = {
-          input_path = "${templateDir}/bat.tmTheme";
-          output_path = "~/.config/bat/themes/noctalia.tmTheme";
-          post_hook = "bat cache --build 2>/dev/null || true";
-        };
-        delta = {
-          input_path = "${templateDir}/delta.gitconfig";
-          output_path = "~/.config/git/noctalia-delta-colors";
-        };
-        eza = {
-          input_path = "${templateDir}/eza-theme.yml";
-          output_path = "~/.config/eza/theme.yml";
-        };
-        starship = {
-          input_path = "${starshipPaletteTemplate}";
-          output_path = "~/.cache/noctalia/starship-palette.toml";
-          post_hook = lib.getExe starshipPostHook;
-        };
-        swayosd = {
-          input_path = "${templateDir}/swayosd.css";
-          output_path = "~/.config/swayosd/style.css";
-          post_hook = "systemctl --user restart swayosd.service 2>/dev/null || true";
-        };
-      };
-    };
+    customPalettes.Onix = builtins.fromJSON onixColorscheme;
 
-    # Merge all section settings
+    # Merge all section settings.
     settings = bar // general // notifications // wallpaper // launcher // session // system // extras;
-
-    # wl-walls as default wallpaper plugin — declarative so rebuilds
-    # don't reset runtime tweaks (shape, dither, etc.).
-    pluginSettings.wl-walls = {
-      autoStart = true;
-      shape = "random";
-      fps = "30";
-      speed = 1;
-      lineWidth = 2.0;
-      alpha = 0.85;
-      fade = 0.005;
-      ditherStrength = 0.0;
-      ditherLevels = 8;
-      ditherScale = 1.0;
-      useThemeColors = true;
-      bgColor = config.theme.data.bg.hex;
-      fgColors = builtins.concatStringsSep "," (
-        map (c: c.hex) (
-          with config.theme.data;
-          [
-            red
-            green
-            yellow
-            blue
-            purple
-            cyan
-            orange
-          ]
-        )
-      );
-    };
   };
 
   xdg.configFile = {
-    # Install Onix color scheme where Noctalia discovers downloaded schemes.
-    # Generated from onix-dark.ncl / onix-light.ncl — single source of truth.
-    "noctalia/colorschemes/Onix/Onix.json".text = onixColorscheme;
-
-    # Force-overwrite noctalia configs — the activation script converts these
-    # from symlinks to real files (Noctalia writes at runtime), so a stale
-    # .hm-bak from the prior activation blocks the next deploy.
-    "noctalia/colors.json".force = true;
-    "noctalia/settings.json".force = true;
-    "noctalia/plugins/wl-walls/settings.json".force = true;
+    # Force-overwrite Noctalia configs — runtime writes can turn managed
+    # symlinks into regular files, leaving .hm-bak files that block deploys.
+    "noctalia/config.toml".force = true;
+    "noctalia/palettes/Onix.json".force = true;
   };
 }

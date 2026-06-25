@@ -17,8 +17,6 @@ in
     hostId = zfsHostId;
   };
 
-  time.timeZone = "America/New_York";
-
   boot = {
     kernelPackages = pkgs.linuxPackages;
     supportedFilesystems = [ "zfs" ];

@@ -28,10 +28,10 @@ in
 
 {
   # System services spawned at compositor startup.
-  # Noctalia replaces waybar, swayosd, swww, and mako — so noctalia-shell
+  # Noctalia replaces waybar, swayosd, swww, and mako — so noctalia
   # is the first thing launched. wl-walls lifecycle is plugin-managed.
   services | Array StartupEntry = [
-    { name = "noctalia-shell", command = "noctalia-shell" },
+    { name = "noctalia", command = "noctalia" },
     { name = "clipboard", command = "@wl-paste@", args = ["--watch", "@cliphist@", "store"] },
     { name = "clip-persist", command = "@wl-clip-persist@", args = ["--clipboard", "regular"] },
     { name = "polkit", command = "@polkit-gnome@" },

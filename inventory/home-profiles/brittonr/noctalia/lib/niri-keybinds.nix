@@ -19,7 +19,7 @@ let
     "@fileManager@" = config.apps.fileManager.command;
     "@sysmon@" = config.apps.sysmon.command;
     "@xcwd@" = "${pkgs.xcwd}/bin/xcwd";
-    "@noctalia-shell@" = "noctalia-shell";
+    "@noctalia-shell@" = "noctalia";
   };
 
   resolve =
