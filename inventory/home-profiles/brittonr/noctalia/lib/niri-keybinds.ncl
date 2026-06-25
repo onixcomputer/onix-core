@@ -313,6 +313,11 @@ in
     { key = "XF86AudioPrev", spawn = ["playerctl", "previous"] },
     { key = "XF86MonBrightnessUp", spawn = msg "brightness-up" },
     { key = "XF86MonBrightnessDown", spawn = msg "brightness-down" },
+    {
+      key = "XF86Launch3",
+      spawn = msg_with_arg "panel-toggle" "control-center",
+      comment = "ASUS ROG/Armoury hardware button",
+    },
     { key = "%{mod}+TouchpadScrollUp", spawn = msg "volume-up" },
     { key = "%{mod}+TouchpadScrollDown", spawn = msg "volume-down" },
   ],
