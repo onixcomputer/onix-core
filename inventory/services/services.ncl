@@ -332,6 +332,24 @@ let prom_rules = import "prometheus-rules.ncl" in
       },
     },
 
+    "lemonade-aspen3" = {
+      module = { name = "lemonade", input = "self" },
+      roles.default.machines.aspen3.settings = {
+        backend = "rocm",
+        customModels = {
+          "Qwen3.6-35B-A3B" = {
+            checkpoint = "unsloth/Qwen3.6-35B-A3B-GGUF:Q8_0",
+            recipe = "llamacpp",
+            size = 35,
+          },
+        },
+        models = ["user.Qwen3.6-35B-A3B", "Whisper-Large-v3-Turbo"],
+        contextSize = 131072,
+        globalTimeout = 0,
+        extraArgs = "--no-mmap -fa on --cache-type-k q8_0 --cache-type-v q8_0 -b 8192 -ub 4096 -np 1",
+      },
+    },
+
     # Distributed Qwopus-27B Q8_0 via llama.cpp RPC — disabled to free
     # aspen2's GPU for models served by lemonade above.
     # "qwopus-rpc" = {
