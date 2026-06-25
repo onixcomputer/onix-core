@@ -33,8 +33,12 @@ in
 # Actually, Nickel's std.string.uppercase works on the whole string
 let up = std.string.uppercase in
 
-let ipc = fun target action =>
-  ["@noctalia-shell@", "ipc", "call", target, action]
+let msg = fun command =>
+  ["@noctalia-shell@", "msg", command]
+in
+
+let msg_with_arg = fun command arg =>
+  ["@noctalia-shell@", "msg", command, arg]
 in
 
 let resize_pct = "%{std.to_string settings.layout.resizePercent}%%" in
@@ -286,31 +290,31 @@ in
 
   # --- Noctalia IPC ---
   noctalia | Array SpawnBinding = [
-    { key = "%{mod}+%{wm.launcher}", spawn = ipc "launcher" "toggle" },
-    { key = "%{mod}+%{wm.clipboard}", spawn = ipc "launcher" "clipboard" },
-    { key = "%{mod}+N", spawn = ipc "controlCenter" "toggle" },
-    { key = "%{mod}+G", spawn = ipc "sessionMenu" "toggle" },
-    { key = "%{mod}+%{wm.themeToggle}", spawn = ipc "darkMode" "toggle" },
-    { key = "%{mod}+Comma", spawn = ipc "notifications" "dismissAll" },
-    { key = "%{mod}+Shift+Comma", spawn = ipc "notifications" "clear" },
-    { key = "%{mod}+Shift+Escape", spawn = ipc "lockScreen" "lock", comment = "Lock screen" },
-    { key = "%{mod}+Shift+W", spawn = ipc "wallpaper" "toggle" },
+    { key = "%{mod}+%{wm.launcher}", spawn = msg_with_arg "panel-toggle" "launcher" },
+    { key = "%{mod}+%{wm.clipboard}", spawn = msg_with_arg "panel-toggle" "clipboard" },
+    { key = "%{mod}+N", spawn = msg_with_arg "panel-toggle" "control-center" },
+    { key = "%{mod}+G", spawn = msg_with_arg "panel-toggle" "session" },
+    { key = "%{mod}+%{wm.themeToggle}", spawn = msg "theme-mode-toggle" },
+    { key = "%{mod}+Comma", spawn = msg "notification-clear-active" },
+    { key = "%{mod}+Shift+Comma", spawn = msg "notification-clear-history" },
+    { key = "%{mod}+Shift+Escape", spawn = msg_with_arg "session" "lock", comment = "Lock screen" },
+    { key = "%{mod}+Shift+W", spawn = msg_with_arg "panel-toggle" "wallpaper" },
   ],
 
   # --- Media / hardware keys ---
   media | Array SpawnBinding = [
-    { key = "XF86AudioRaiseVolume", spawn = ipc "volume" "increase" },
-    { key = "XF86AudioLowerVolume", spawn = ipc "volume" "decrease" },
-    { key = "XF86AudioMute", spawn = ipc "volume" "muteOutput" },
-    { key = "XF86AudioMicMute", spawn = ipc "volume" "muteInput" },
+    { key = "XF86AudioRaiseVolume", spawn = msg "volume-up" },
+    { key = "XF86AudioLowerVolume", spawn = msg "volume-down" },
+    { key = "XF86AudioMute", spawn = msg "volume-mute" },
+    { key = "XF86AudioMicMute", spawn = msg "mic-mute" },
     { key = "XF86AudioNext", spawn = ["playerctl", "next"] },
     { key = "XF86AudioPause", spawn = ["playerctl", "play-pause"] },
     { key = "XF86AudioPlay", spawn = ["playerctl", "play-pause"] },
     { key = "XF86AudioPrev", spawn = ["playerctl", "previous"] },
-    { key = "XF86MonBrightnessUp", spawn = ipc "brightness" "increase" },
-    { key = "XF86MonBrightnessDown", spawn = ipc "brightness" "decrease" },
-    { key = "%{mod}+TouchpadScrollUp", spawn = ipc "volume" "increase" },
-    { key = "%{mod}+TouchpadScrollDown", spawn = ipc "volume" "decrease" },
+    { key = "XF86MonBrightnessUp", spawn = msg "brightness-up" },
+    { key = "XF86MonBrightnessDown", spawn = msg "brightness-down" },
+    { key = "%{mod}+TouchpadScrollUp", spawn = msg "volume-up" },
+    { key = "%{mod}+TouchpadScrollDown", spawn = msg "volume-down" },
   ],
 
   # --- Screenshots & recording ---
