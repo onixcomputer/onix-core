@@ -142,7 +142,7 @@ let { Machines, .. } = import "contracts.ncl" in
     aspen3 = {
       name = "aspen3",
       system = "x86_64-linux",
-      addresses.lan = "192.168.1.43",
+      addresses.lan = "192.168.1.229",
       tags = [
         "hm-laptop",
         "boot-partition-gc",
@@ -174,7 +174,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "syncthing",
         "amd-gpu",
       ],
-      deploy.targetHost = "root@192.168.1.43",
+      deploy.targetHost = "root@192.168.1.229",
     },
 
     # ========== Desktop ==========
