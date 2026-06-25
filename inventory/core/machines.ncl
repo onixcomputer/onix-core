@@ -162,7 +162,6 @@ let { Machines, .. } = import "contracts.ncl" in
         "homepage-server",
         "static-test",
         "static-demo",
-        "tailnet-brittonr",
         "openpgp",
         "password-manager",
         "typst",
