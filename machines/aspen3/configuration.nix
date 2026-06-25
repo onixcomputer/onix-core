@@ -6,6 +6,7 @@
 let
   zfsHostId = "81f6943b";
   amdNpuKernelModule = "amdxdna";
+  touchScreenI2cDevice = "i2c-ELAN9008:00";
   hardwareAccessMode = "0666";
   renderGroup = "render";
 in
@@ -61,6 +62,10 @@ in
     SUBSYSTEM=="drm", KERNEL=="card[0-9]*", GROUP="${renderGroup}", MODE="${hardwareAccessMode}"
     SUBSYSTEM=="drm", KERNEL=="renderD[0-9]*", GROUP="${renderGroup}", MODE="${hardwareAccessMode}"
     SUBSYSTEM=="accel", KERNEL=="accel[0-9]*", GROUP="${renderGroup}", MODE="${hardwareAccessMode}"
+
+    # Keep the internal ELAN9008 touchscreen armed as a suspend wake source so
+    # firmware-level tap-to-wake works when supported.
+    ACTION=="add|change", SUBSYSTEM=="i2c", KERNEL=="${touchScreenI2cDevice}", TEST=="power/wakeup", ATTR{power/wakeup}="enabled"
   '';
 
   users.users.brittonr.extraGroups = [ renderGroup ];
