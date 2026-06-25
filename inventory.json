@@ -5,7 +5,7 @@
     },
     "aspen3": {
       "deploy": {
-        "targetHost": "root@192.168.1.43"
+        "targetHost": "root@192.168.1.229"
       }
     }
   }
