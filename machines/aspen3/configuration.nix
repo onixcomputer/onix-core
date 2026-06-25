@@ -1,5 +1,6 @@
 {
   inputs,
+  lib,
   pkgs,
   ...
 }:
@@ -9,6 +10,24 @@ let
   touchScreenI2cDevice = "i2c-ELAN9008:00";
   hardwareAccessMode = "0666";
   renderGroup = "render";
+  mpvVolumeMaxPercent = 120;
+  bluetoothAudioCodecs = [
+    "ldac"
+    "aac"
+    "sbc_xq"
+    "sbc"
+  ];
+  bluetoothAudioRoles = [
+    "a2dp_sink"
+    "a2dp_source"
+    "bap_sink"
+    "bap_source"
+    "hsp_hs"
+    "hsp_ag"
+    "hfp_hf"
+    "hfp_ag"
+  ];
+  ldacQualityMode = "hq";
 in
 {
   imports = [
@@ -54,6 +73,29 @@ in
     # Override the greeter tag's Hyprland default with the Niri session used by
     # the other interactive Niri hosts.
     greetd.settings.default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd /etc/profiles/per-user/brittonr/bin/niri-session";
+
+    pipewire.wireplumber.extraConfig = {
+      "10-bluez-audio-quality" = {
+        "monitor.bluez.properties" = {
+          "bluez5.roles" = bluetoothAudioRoles;
+          "bluez5.codecs" = bluetoothAudioCodecs;
+          "bluez5.enable-sbc-xq" = true;
+          "bluez5.hfphsp-backend" = "native";
+        };
+      };
+      "11-bluez-ldac-quality" = {
+        "monitor.bluez.rules" = [
+          {
+            matches = [
+              {
+                "device.name" = "~bluez_card.*";
+              }
+            ];
+            actions.update-props."bluez5.a2dp.ldac.quality" = ldacQualityMode;
+          }
+        ];
+      };
+    };
   };
 
   # udev rules for ROCm/vLLM and XDNA NPU access, matching the Strix Halo builder hosts.
@@ -70,7 +112,19 @@ in
 
   users.users.brittonr.extraGroups = [ renderGroup ];
 
+  home-manager.users.brittonr = {
+    home.packages = with pkgs; [
+      easyeffects
+      helvum
+      pwvucontrol
+      qpwgraph
+    ];
+
+    programs.mpv.config."volume-max" = lib.mkForce mpvVolumeMaxPercent;
+  };
+
   environment.systemPackages = with pkgs; [
+    alsa-utils
     opentofu
   ];
 }
