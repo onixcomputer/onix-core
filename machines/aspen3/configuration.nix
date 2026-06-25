@@ -5,6 +5,9 @@
 }:
 let
   zfsHostId = "81f6943b";
+  amdNpuKernelModule = "amdxdna";
+  hardwareAccessMode = "0666";
+  renderGroup = "render";
 in
 {
   imports = [
@@ -20,6 +23,8 @@ in
   boot = {
     kernelPackages = pkgs.linuxPackages;
     supportedFilesystems = [ "zfs" ];
+    # Expose the Strix Halo Ryzen AI/XDNA NPU as /dev/accel/accel*.
+    kernelModules = [ amdNpuKernelModule ];
   };
 
   services = {
@@ -50,12 +55,15 @@ in
     greetd.settings.default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd /etc/profiles/per-user/brittonr/bin/niri-session";
   };
 
-  # udev rules for ROCm/vLLM access, matching the Strix Halo builder hosts.
+  # udev rules for ROCm/vLLM and XDNA NPU access, matching the Strix Halo builder hosts.
   services.udev.extraRules = ''
-    SUBSYSTEM=="kfd", GROUP="render", MODE="0666"
-    SUBSYSTEM=="drm", KERNEL=="card[0-9]*", GROUP="render", MODE="0666"
-    SUBSYSTEM=="drm", KERNEL=="renderD[0-9]*", GROUP="render", MODE="0666"
+    SUBSYSTEM=="kfd", GROUP="${renderGroup}", MODE="${hardwareAccessMode}"
+    SUBSYSTEM=="drm", KERNEL=="card[0-9]*", GROUP="${renderGroup}", MODE="${hardwareAccessMode}"
+    SUBSYSTEM=="drm", KERNEL=="renderD[0-9]*", GROUP="${renderGroup}", MODE="${hardwareAccessMode}"
+    SUBSYSTEM=="accel", KERNEL=="accel[0-9]*", GROUP="${renderGroup}", MODE="${hardwareAccessMode}"
   '';
+
+  users.users.brittonr.extraGroups = [ renderGroup ];
 
   environment.systemPackages = with pkgs; [
     opentofu
