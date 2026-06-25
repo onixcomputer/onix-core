@@ -22,9 +22,15 @@ in
     supportedFilesystems = [ "zfs" ];
   };
 
-  # The ASUS Flow module enables GPU switching by default for GV302X. This
-  # GZ302EAC target has the integrated Radeon 8060S, so no mux daemon is needed.
-  services.supergfxd.enable = false;
+  services = {
+    # The ASUS Flow module enables GPU switching by default for GV302X. This
+    # GZ302EAC target has the integrated Radeon 8060S, so no mux daemon is needed.
+    supergfxd.enable = false;
+
+    # Override the greeter tag's Hyprland default with the Niri session used by
+    # the other interactive Niri hosts.
+    greetd.settings.default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd /etc/profiles/per-user/brittonr/bin/niri-session";
+  };
 
   # udev rules for ROCm/vLLM access, matching the Strix Halo builder hosts.
   services.udev.extraRules = ''
