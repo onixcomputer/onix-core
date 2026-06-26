@@ -29,6 +29,7 @@ let self_modules = [
   "infinity",
   "lemonade",
   "llamacpp-rpc",
+  "llamacpp-server",
   "llm",
   "llm-agents",
   "loki",

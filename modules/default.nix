@@ -49,6 +49,7 @@ let
     "harmonia" = import ./harmonia (schemaArgs ./harmonia);
     "hermes-gateway" = import ./hermes-gateway (schemaArgs ./hermes-gateway);
     "llamacpp-rpc" = import ./llamacpp-rpc (schemaArgs ./llamacpp-rpc);
+    "llamacpp-server" = import ./llamacpp-server (schemaArgs ./llamacpp-server);
     "syncthing" = import ./syncthing (schemaArgs ./syncthing);
     "thunderbird" = import ./thunderbird (schemaArgs ./thunderbird);
   };

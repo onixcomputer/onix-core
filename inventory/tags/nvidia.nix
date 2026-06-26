@@ -4,6 +4,14 @@
   ...
 }:
 {
+  # RTX 50-series Blackwell target. Disable CUDA forward-compat because the
+  # pinned CUDA 12.9 compat redistributable has no linux-x86_64 source and the
+  # desktop uses a new enough NVIDIA driver for native CUDA 12.9 builds.
+  nixpkgs.config = {
+    cudaCapabilities = [ "12.0" ];
+    cudaForwardCompat = false;
+  };
+
   services = {
     xserver = {
       enable = true;

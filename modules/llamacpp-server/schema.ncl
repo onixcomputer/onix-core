@@ -1,0 +1,23 @@
+{
+  server = {
+    host = { type = "string", default = "0.0.0.0", description = "Address llama-server binds to" },
+    port = { type = "port", default = 13305, description = "OpenAI-compatible llama-server API port" },
+    backend = { type = "enum", values = ["cuda", "rocm", "vulkan", "cpu"], default = "cuda", description = "llama.cpp acceleration backend" },
+    modelRepo = { type = "string", description = "Hugging Face repository containing the GGUF model" },
+    modelFile = { type = "string", description = "GGUF filename to download from modelRepo" },
+    modelRevision = { type = "string", default = "main", description = "Hugging Face revision or branch for the model file" },
+    modelAlias = { type = "nullable_string", default = null, description = "Optional model alias exposed by llama-server" },
+    gpuLayers = { type = "number", default = 999, description = "Number of layers to offload to the GPU" },
+    contextSize = { type = "number", default = 8192, description = "Context window size" },
+    batchSize = { type = "number", default = 0, description = "Optional llama.cpp batch size passed with -b (0 disables the flag)" },
+    ubatchSize = { type = "number", default = 0, description = "Optional llama.cpp physical batch size passed with -ub (0 disables the flag)" },
+    parallelSlots = { type = "number", default = 0, description = "Optional llama.cpp parallel slot count passed with -np (0 disables the flag)" },
+    cacheTypeK = { type = "nullable_string", default = null, description = "Optional K-cache quantization type" },
+    cacheTypeV = { type = "nullable_string", default = null, description = "Optional V-cache quantization type" },
+    flashAttention = { type = "bool", default = true, description = "Enable llama.cpp flash attention" },
+    noMmap = { type = "bool", default = true, description = "Disable mmap model loading" },
+    enableMetrics = { type = "bool", default = true, description = "Expose llama-server metrics" },
+    autoStart = { type = "bool", default = true, description = "Start the service on boot" },
+    extraArgs = { type = "array_string", default = [], description = "Additional llama-server arguments" },
+  },
+}

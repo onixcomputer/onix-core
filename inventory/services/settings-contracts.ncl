@@ -22,6 +22,7 @@ let schemas = {
   "infinity" = import "../../modules/infinity/schema.ncl",
   "lemonade" = import "../../modules/lemonade/schema.ncl",
   "llamacpp-rpc" = import "../../modules/llamacpp-rpc/schema.ncl",
+  "llamacpp-server" = import "../../modules/llamacpp-server/schema.ncl",
   "llm-agents" = import "../../modules/llm-agents/schema.ncl",
   "llm" = import "../../modules/llm/schema.ncl",
   "loki" = import "../../modules/loki/schema.ncl",

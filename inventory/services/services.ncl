@@ -355,6 +355,23 @@ let prom_rules = import "prometheus-rules.ncl" in
       },
     },
 
+    "vibethinker-britton-desktop" = {
+      module = { name = "llamacpp-server", input = "self" },
+      roles.server.machines.britton-desktop.settings = {
+        backend = "cuda",
+        modelRepo = "prithivMLmods/VibeThinker-3B-GGUF",
+        modelFile = "VibeThinker-3B.Q8_0.gguf",
+        modelAlias = "VibeThinker-3B",
+        contextSize = 131072,
+        gpuLayers = 999,
+        batchSize = 8192,
+        ubatchSize = 4096,
+        parallelSlots = 1,
+        cacheTypeK = "q8_0",
+        cacheTypeV = "q8_0",
+      },
+    },
+
     # Distributed Qwopus-27B Q8_0 via llama.cpp RPC — disabled to free
     # aspen2's GPU for models served by lemonade above.
     # "qwopus-rpc" = {
