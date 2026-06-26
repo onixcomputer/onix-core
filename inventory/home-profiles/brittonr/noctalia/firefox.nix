@@ -41,9 +41,9 @@ let
     (inputs.wrappers.wrapperModules.firefox.apply {
       inherit pkgs;
 
-      # Firefox Release ignores sideloaded addon policy; ESR supports the
-      # managed extensions used below without pulling insecure LibreWolf.
-      browser = pkgs.firefox-esr-unwrapped;
+      # LibreWolf keeps the command, desktop entry, and Wayland app-id aligned
+      # with the profile's browser defaults while allowing managed extensions.
+      browser = pkgs.librewolf-unwrapped;
 
       extensions = [
         tridactyl
