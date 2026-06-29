@@ -34,12 +34,14 @@ let tag_file_tags = [
   "pinenote",
   "pro-audio",
   "printing",
+  "rdma-cluster",
   "remote-builders",
   "ssd-optimization",
   "taskwarrior",
   "thunderbolt-link",
   "typst",
   "udev-rules",
+  "vllm-cluster-network",
   "xdg-portal",
 ]
 in
