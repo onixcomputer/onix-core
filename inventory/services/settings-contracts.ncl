@@ -30,6 +30,7 @@ let schemas = {
   "ollama" = import "../../modules/ollama/schema.ncl",
   "open-notebook" = import "../../modules/open-notebook/schema.ncl",
   "prometheus" = import "../../modules/prometheus/schema.ncl",
+  "sglang-diffusion" = import "../../modules/sglang-diffusion/schema.ncl",
   "speaches" = import "../../modules/speaches/schema.ncl",
   "static-server" = import "../../modules/static-server/schema.ncl",
   "syncthing" = import "../../modules/syncthing/schema.ncl",

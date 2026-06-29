@@ -10,6 +10,8 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    # Narrow nixpkgs pin for packages not yet available in the root lock.
+    nixpkgs-herdr.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     nix = {
       url = "github:onixcomputer/nix";
@@ -35,6 +37,12 @@
     sops-nix = {
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    fast-nix-gc = {
+      url = "github:Mic92/fast-nix-gc";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.treefmt-nix.follows = "treefmt-nix";
     };
 
     systems.url = "github:nix-systems/default";

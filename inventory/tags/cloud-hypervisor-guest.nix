@@ -82,4 +82,10 @@
     dates = lib.mkForce "daily";
     options = lib.mkForce "--delete-older-than 7d";
   };
+
+  services.fast-nix-gc = {
+    automatic = true;
+    dates = lib.mkForce "daily";
+    deleteOlderThan = lib.mkForce "7d";
+  };
 }

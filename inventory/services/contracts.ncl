@@ -37,6 +37,7 @@ let self_modules = [
   "ollama",
   "open-notebook",
   "prometheus",
+  "sglang-diffusion",
   "speaches",
   "static-server",
   "syncthing",

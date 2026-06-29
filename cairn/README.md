@@ -1,6 +1,8 @@
 # onix-core Cairn lifecycle
 
-This directory contains native Cairn lifecycle artifacts for planned `onix-core` changes.
+This directory contains native Cairn lifecycle artifacts for planned `onix-core` changes. Do not create or update OpenSpec artifacts for normal change work.
+
+Use `/home/brittonr/git/cairn` as the local Cairn source checkout for the canonical project `https://github.com/OnixResearch/cairn`, authenticated with SSH remote `git@github.com:OnixResearch/cairn.git`.
 
 - `specs/`: accepted specifications
 - `changes/`: active change packages

@@ -15,6 +15,30 @@
 #
 let { Services, ValidateRefs, ValidateSettings, .. } = import "contracts.ncl" in
 let prom_rules = import "prometheus-rules.ncl" in
+let ornith_9b_q8 = {
+  checkpoint = "deepreinforce-ai/Ornith-1.0-9B-GGUF:Q8_0",
+  recipe = "llamacpp",
+  size = 9.53,
+}
+in
+let ornith_35b_q4 = {
+  checkpoint = "deepreinforce-ai/Ornith-1.0-35B-GGUF:Q4_K_M",
+  recipe = "llamacpp",
+  size = 21.17,
+}
+in
+let ornith_35b_q8 = {
+  checkpoint = "deepreinforce-ai/Ornith-1.0-35B-GGUF:Q8_0",
+  recipe = "llamacpp",
+  size = 36.9,
+}
+in
+let ornith_9b_q8_model = "user.Ornith-1.0-9B-Q8_0" in
+let ornith_35b_q4_model = "user.Ornith-1.0-35B-Q4_K_M" in
+let ornith_35b_q8_model = "user.Ornith-1.0-35B-Q8_0" in
+let krea2_sglang_port = 30000 in
+let krea2_sglang_gpu_count = 1 in
+let krea2_sglang_lowest_prefetch = "0.0" in
 
 {
   instances = {
@@ -290,25 +314,32 @@ let prom_rules = import "prometheus-rules.ncl" in
       },
     },
 
+    "krea2-britton-desktop" = {
+      module = { name = "sglang-diffusion", input = "self" },
+      roles.default.machines.britton-desktop.settings = {
+        port = krea2_sglang_port,
+        modelPath = "krea/Krea-2-Turbo",
+        numGpus = krea2_sglang_gpu_count,
+        gpuPassthrough = "nixos-nvidia",
+        conflictingUnits = ["llamacpp-server-vibethinker-britton-desktop.service"],
+        extraArgs = [
+          "--dit-layerwise-offload",
+          "--dit-offload-prefetch-size",
+          krea2_sglang_lowest_prefetch,
+          "--text-encoder-cpu-offload",
+          "--vae-cpu-offload",
+        ],
+      },
+    },
+
     "lemonade-aspen1" = {
       module = { name = "lemonade", input = "self" },
       roles.default.machines.aspen1.settings = {
-        # Keep the existing single-host Lemonade Qwopus path as a fallback while
-        # we add the larger distributed llama.cpp RPC deployment below.
         backend = "rocm",
         customModels = {
-          "Qwopus-27B" = {
-            checkpoint = "Jackrong/Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-GGUF:Q4_K_M",
-            recipe = "llamacpp",
-            size = 16.5,
-          },
-          "Qwopus-27B-v3" = {
-            checkpoint = "Jackrong/Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-GGUF:Q4_K_M",
-            recipe = "llamacpp",
-            size = 16.5,
-          },
+          "Ornith-1.0-9B-Q8_0" = ornith_9b_q8,
         },
-        models = ["user.Qwopus-27B", "user.Qwopus-27B-v3", "kokoro-v1"],
+        models = ["kokoro-v1", ornith_9b_q8_model],
         contextSize = 131072,
         extraArgs = "--no-mmap -fa on --cache-type-k q8_0 --cache-type-v q8_0 -b 4096",
       },
@@ -319,13 +350,15 @@ let prom_rules = import "prometheus-rules.ncl" in
       roles.default.machines.aspen2.settings = {
         backend = "rocm",
         customModels = {
+          "Ornith-1.0-9B-Q8_0" = ornith_9b_q8,
+          "Ornith-1.0-35B-Q4_K_M" = ornith_35b_q4,
           "Qwen3.6-35B-A3B" = {
             checkpoint = "unsloth/Qwen3.6-35B-A3B-GGUF:Q8_0",
             recipe = "llamacpp",
             size = 35,
           },
         },
-        models = ["user.Qwen3.6-35B-A3B", "Whisper-Large-v3-Turbo"],
+        models = ["user.Qwen3.6-35B-A3B", "Whisper-Large-v3-Turbo", ornith_9b_q8_model, ornith_35b_q4_model],
         contextSize = 131072,
         globalTimeout = 0,
         extraArgs = "--no-mmap -fa on --cache-type-k q8_0 --cache-type-v q8_0 -b 8192 -ub 4096 -np 1",
@@ -337,6 +370,8 @@ let prom_rules = import "prometheus-rules.ncl" in
       roles.default.machines.aspen3.settings = {
         backend = "rocm",
         customModels = {
+          "Ornith-1.0-9B-Q8_0" = ornith_9b_q8,
+          "Ornith-1.0-35B-Q8_0" = ornith_35b_q8,
           "Qwen3.6-35B-A3B" = {
             checkpoint = "unsloth/Qwen3.6-35B-A3B-GGUF:Q8_0",
             recipe = "llamacpp",
@@ -348,7 +383,7 @@ let prom_rules = import "prometheus-rules.ncl" in
             size = 3,
           },
         },
-        models = ["user.Qwen3.6-35B-A3B", "user.VibeThinker-3B", "Whisper-Large-v3-Turbo"],
+        models = ["user.Qwen3.6-35B-A3B", "user.VibeThinker-3B", "Whisper-Large-v3-Turbo", ornith_9b_q8_model, ornith_35b_q8_model],
         contextSize = 131072,
         globalTimeout = 0,
         extraArgs = "--no-mmap -fa on --cache-type-k q8_0 --cache-type-v q8_0 -b 8192 -ub 4096 -np 1",
@@ -371,33 +406,6 @@ let prom_rules = import "prometheus-rules.ncl" in
         cacheTypeV = "q8_0",
       },
     },
-
-    # Distributed Qwopus-27B Q8_0 via llama.cpp RPC — disabled to free
-    # aspen2's GPU for models served by lemonade above.
-    # "qwopus-rpc" = {
-    #   module = { name = "llamacpp-rpc", input = "self" },
-    #   roles = {
-    #     worker.machines.aspen2.settings = {
-    #       bindAddress = "0.0.0.0",
-    #       port = 50052,
-    #       enableCache = true,
-    #     },
-    #     server.machines.aspen1.settings = {
-    #       host = "0.0.0.0",
-    #       port = 8081,
-    #       model = {
-    #         repo = "Jackrong/Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-GGUF",
-    #         file = "Qwen3.5-27B.Q8_0.gguf",
-    #       },
-    #       rpcWorkers = ["10.10.10.2:50052"],
-    #       gpuLayers = 999,
-    #       flashAttention = true,
-    #       contextSize = 131072,
-    #       noMmap = true,
-    #       extraArgs = [],
-    #     },
-    #   },
-    # },
 
     "llm-agents" = {
       module = { name = "llm-agents", input = "self" },

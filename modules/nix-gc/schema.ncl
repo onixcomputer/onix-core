@@ -15,6 +15,36 @@
       default = "weekly",
       description = "When to run GC (systemd calendar format)",
     },
+    useFastGc = {
+      type = "bool",
+      default = true,
+      description = "Use Mic92 fast-nix-gc services instead of stock nix.gc/nix.optimise timers",
+    },
+    ensureFree = {
+      type = "nullable_string",
+      default = null,
+      description = "Free space target for fast-nix-gc, e.g. 50G or 20%",
+    },
+    keepRecent = {
+      type = "nullable_string",
+      default = null,
+      description = "Keep paths registered within this recent window, e.g. 1d",
+    },
+    noVacuum = {
+      type = "bool",
+      default = false,
+      description = "Skip fast-nix-gc SQLite VACUUM after deletion",
+    },
+    gcRootsDirs = {
+      type = "array_string",
+      default = [],
+      description = "Extra directories to scan for GC roots",
+    },
+    extraArgs = {
+      type = "array_string",
+      default = [],
+      description = "Additional arguments passed to fast-nix-gc",
+    },
     optimizeStore = {
       type = "bool",
       default = true,

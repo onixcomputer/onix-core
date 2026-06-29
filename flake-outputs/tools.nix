@@ -40,6 +40,7 @@ in
     sone = pkgs.callPackage ../pkgs/sone { };
     opendeck = pkgs.callPackage ../pkgs/opendeck { };
     open-notebook = pkgs.callPackage ../pkgs/open-notebook { };
+    ttsim = pkgs.callPackage ../pkgs/ttsim { };
   }
   // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
     rbw-pinentry = pkgs.callPackage ../pkgs/rbw-pinentry { };

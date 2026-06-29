@@ -2,9 +2,13 @@
 let
   # This tag shares the global package set with desktop Home Manager and service
   # modules. Match exact derivation names so evaluation fails again when nixpkgs
-  # changes insecure dependency versions.
+  # changes insecure dependency versions. Package-level marks without versions
+  # use nixpkgs' exact insecure identifier.
   allowedInsecurePackageNames = [
     "electron-39.8.10"
+    "librewolf"
+    "librewolf-151.0.2-1"
+    "librewolf-unwrapped-151.0.2-1"
     "libsoup-2.74.3"
     "olm-3.2.16"
   ];

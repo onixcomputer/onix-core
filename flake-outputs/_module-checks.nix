@@ -20,6 +20,7 @@ let
   wasm = import ../lib/wasm.nix { inherit plugins; };
 
   moduleLists = wasm.evalNickelFile ../inventory/services/module-lists.ncl;
+  sglangDiffusionValidation = wasm.evalNickelFile ../inventory/services/fixtures/sglang-diffusion-validation.ncl;
 
   # Modules registered in contracts.ncl (clan perInstance services only)
   registeredModules = lib.sort lib.lessThan moduleLists.selfModules;
@@ -36,6 +37,18 @@ let
   modulesWithoutSchema = builtins.filter (
     name: !builtins.pathExists (self + "/modules/${name}/schema.ncl")
   ) diskModules;
+
+  sglangPositiveErrors = sglangDiffusionValidation.positive;
+  sglangNegativeErrors = sglangDiffusionValidation.negative;
+  expectedSglangNegativeFields = [
+    "port"
+    "numGpus"
+    "gpuPassthrough"
+    "environmentFiles"
+  ];
+  missingSglangNegativeFields = builtins.filter (
+    field: !(lib.any (error: lib.hasInfix field error) sglangNegativeErrors)
+  ) expectedSglangNegativeFields;
 in
 {
   checks = {
@@ -62,6 +75,22 @@ in
           exit 1
         ''
       }
+      touch $out
+    '';
+
+    sglang-diffusion-settings = pkgs.runCommand "sglang-diffusion-settings" { } ''
+      ${lib.optionalString (sglangPositiveErrors != [ ]) ''
+        echo "Valid sglang-diffusion settings produced unexpected errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" sglangPositiveErrors)}
+        exit 1
+      ''}
+      ${lib.optionalString (missingSglangNegativeFields != [ ]) ''
+        echo "Invalid sglang-diffusion settings did not report expected fields:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" missingSglangNegativeFields)}
+        echo "Actual errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" sglangNegativeErrors)}
+        exit 1
+      ''}
       touch $out
     '';
   };

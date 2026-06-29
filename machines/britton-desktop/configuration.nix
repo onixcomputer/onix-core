@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  inputs,
   self,
   ...
 }:
@@ -159,6 +160,8 @@
     prismlauncher
     displaylink
     self.packages.${pkgs.stdenv.hostPlatform.system}.opendeck
+    self.packages.${pkgs.stdenv.hostPlatform.system}.ttsim
+    inputs.nixpkgs-herdr.legacyPackages.${pkgs.stdenv.hostPlatform.system}.herdr
   ];
 
   # ZFS on the 4TB data drive

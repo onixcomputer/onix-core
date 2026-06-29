@@ -1,5 +1,10 @@
 # Agent Notes
 
+## Cairn lifecycle
+- Use native Cairn lifecycle artifacts under `cairn/` for planning and change tracking in this repo. Do not create or update OpenSpec artifacts unless the user explicitly asks for migration/compatibility work.
+- Use `/home/brittonr/git/cairn` as the local Cairn source checkout. It should authenticate to the canonical project `https://github.com/OnixResearch/cairn` via the SSH remote `git@github.com:OnixResearch/cairn.git`.
+- Validate with `nix run path:/home/brittonr/git/cairn#cairn -- validate --root /home/brittonr/git/onix-core --policy /home/brittonr/git/cairn/cairn-policy/generated/cairn-policy.json`.
+
 ## Clan deploys
 - Bare `aspen1` is not reliably resolvable from managed hosts. Use `aspen1.local` for SSH deploy targets and runtime URLs (`root@aspen1.local`, Lemonade API bases) unless a specific network path requires another name. Harmonia's extra substituter is one such exception: use `http://100.100.103.95:5000` so nix-daemon does not depend on mDNS.
 - On this workstation, `clan machines update ...` can lose vars generator `finalScript` store paths to local auto-GC mid-run (`/nix/store/...-generator-...: No such file or directory`). If that happens, rerun the deploy with `NIX_CONFIG=$'min-free = 0\nmax-free = 0'` so the generator script survives long enough to execute.

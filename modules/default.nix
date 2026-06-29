@@ -38,10 +38,11 @@ let
     "calibre-server" = import ./calibre-server (schemaArgs ./calibre-server);
     "llm" = import ./llm (schemaArgs ./llm);
     "upmpdcli" = import ./upmpdcli (schemaArgs ./upmpdcli);
-    "nix-gc" = import ./nix-gc (schemaArgs ./nix-gc);
+    "nix-gc" = import ./nix-gc ({ inherit inputs; } // schemaArgs ./nix-gc);
     "ollama" = import ./ollama (schemaArgs ./ollama);
     "open-notebook" = import ./open-notebook (schemaArgs ./open-notebook);
     "speaches" = import ./speaches (schemaArgs ./speaches);
+    "sglang-diffusion" = import ./sglang-diffusion (schemaArgs ./sglang-diffusion);
     "lemonade" = import ./lemonade (schemaArgs ./lemonade);
     "cloud-hypervisor-vm" = import ./cloud-hypervisor-vm (schemaArgs ./cloud-hypervisor-vm);
     "llm-agents" = import ./llm-agents (schemaArgs ./llm-agents);

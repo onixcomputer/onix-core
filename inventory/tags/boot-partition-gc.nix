@@ -10,4 +10,10 @@
     dates = lib.mkDefault "weekly";
     options = lib.mkForce "--delete-older-than 14d";
   };
+
+  services.fast-nix-gc = {
+    automatic = lib.mkDefault true;
+    dates = lib.mkDefault "weekly";
+    deleteOlderThan = lib.mkForce "14d";
+  };
 }

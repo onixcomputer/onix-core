@@ -1,6 +1,6 @@
 # Cairn quickstart
 
-This repo uses native Cairn lifecycle artifacts under `cairn/` and validates with the local Cairn source policy bundle.
+This repo uses native Cairn lifecycle artifacts under `cairn/`; do not create or update OpenSpec artifacts for normal change work. Validate with the local Cairn source policy bundle from `/home/brittonr/git/cairn`, which should authenticate to the canonical project `https://github.com/OnixResearch/cairn` via SSH remote `git@github.com:OnixResearch/cairn.git`.
 
 ```bash
 CAIRN_SOURCE=/home/brittonr/git/cairn
