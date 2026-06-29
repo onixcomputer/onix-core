@@ -1,6 +1,6 @@
 # Unified keymap — source of truth for all keybindings.
 #
-# Consumed by: niri, wezterm, kitty, helix, tridactyl, zellij, shell-keybinds.
+# Consumed by: niri, wezterm, kitty, helix, tridactyl, zellij, shell-keybinds, herdr.
 # Validated at `ncl export` time — typos fail immediately instead of
 # silently breaking one of the five consumers.
 #
@@ -156,6 +156,28 @@ in
 
   # Characters for link hint overlays (tridactyl etc.)
   hintChars | Key = "neiohtsrad",
+
+  # Herdr terminal multiplexer keys.
+  herdr
+    | {
+      prefixKey | Key,
+      jjWorkspace
+        | {
+          new | Key,
+          newTab | Key,
+          remove | Key,
+        },
+    }
+    = {
+      # Bare Alt is not valid in Herdr 0.7.0, so combine shared secondary
+      # modifier `Alt` with this non-modifier key for the terminal prefix.
+      prefixKey = "space",
+      jjWorkspace = {
+        new = "a",
+        newTab = "shift+a",
+        remove = "d",
+      },
+    },
 
   # Terminal emulator action keys (used with terminal modifier)
   terminalActions

@@ -18,9 +18,9 @@ Herdr is available in current nixpkgs, but the root nixpkgs pin does not expose 
 
 ### 3. Generate Herdr config from Nickel
 
-**Choice:** Add a `brittonr/herdr` Home Manager profile for `britton-desktop`. Its `config.toml` is rendered from `inventory/home-profiles/brittonr/herdr/lib/config.ncl` with `pkgs.formats.toml`.
+**Choice:** Add a `brittonr/herdr` Home Manager profile for `britton-desktop`. Its `config.toml` is rendered from `inventory/home-profiles/brittonr/herdr/lib/config.ncl` with `pkgs.formats.toml`, and Herdr-specific chords are derived from the shared `inventory/home-profiles/brittonr/base/keymap.ncl` source.
 
-**Rationale:** Herdr's documented config file is `~/.config/herdr/config.toml`, so a wrapper is unnecessary for ordinary config. Nickel remains the source of truth and validates the small managed surface before Nix renders TOML.
+**Rationale:** Herdr's documented config file is `~/.config/herdr/config.toml`, so a wrapper is unnecessary for ordinary config. Nickel remains the source of truth and validates the small managed surface before Nix renders TOML. Reusing the shared keymap keeps Herdr aligned with the same modifier and action-key conventions consumed by Niri, terminal emulators, Helix, and shell bindings.
 
 ### 4. Use the closest valid Alt-based Herdr prefix
 

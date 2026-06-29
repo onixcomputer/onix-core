@@ -7,7 +7,7 @@
 ## Phase 2: Configure Herdr key handling
 
 - [x] [serial] Add a desktop-scoped Home Manager Herdr profile backed by typed Nickel data. r[onix.britton-desktop.herdr.config]
-- [x] [serial] Render Herdr `config.toml` with `keys.prefix = "alt+space"`, `onboarding = false`, and Nix-appropriate update checks disabled. r[onix.britton-desktop.herdr.config]
+- [x] [serial] Render Herdr `config.toml` with `keys.prefix = "alt+space"` derived from the shared keymap, `onboarding = false`, and Nix-appropriate update checks disabled. r[onix.britton-desktop.herdr.config]
 - [x] [serial] Add Herdr plugin-action keybindings for the jj workspace plugin without running network plugin installs during activation. r[onix.britton-desktop.herdr.jj-plugin]
 - [x] [serial] Remove Niri Alt bindings so Herdr owns Alt-prefixed terminal chords. r[onix.britton-desktop.herdr.niri-alt]
 

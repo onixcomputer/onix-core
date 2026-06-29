@@ -46,6 +46,7 @@ r[onix.britton-desktop.herdr.config.toml]
 - GIVEN the `brittonr/herdr` Home Manager profile is assigned to `britton-desktop`
 - WHEN the profile evaluates its Nickel config data
 - THEN Home Manager renders `herdr/config.toml`
+- AND the Herdr profile derives its prefix and plugin action chords from `inventory/home-profiles/brittonr/base/keymap.ncl`
 - AND the rendered config sets `onboarding = false`
 - AND the rendered config disables Herdr background version and manifest checks
 - AND the rendered config sets `keys.prefix = "alt+space"`
