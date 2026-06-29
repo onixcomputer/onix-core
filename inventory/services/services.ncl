@@ -75,6 +75,7 @@ let krea2_sglang_lowest_prefetch = "0.0" in
         enable = true,
         cacheDir = "/var/cache/kache-nix",
         exposeSandboxPath = true,
+        zfsDataset = "datapool/kache-nix",
         keySalt = "changebot-crane-pilot-v1",
       },
     },

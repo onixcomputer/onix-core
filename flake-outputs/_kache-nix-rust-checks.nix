@@ -8,6 +8,7 @@
 }:
 let
   expectedCacheDir = "/var/cache/kache-nix";
+  expectedCacheDevice = "datapool/kache-nix";
   forbiddenUserCacheDir = "/home/brittonr/.cache/kache";
   pilotKeySalt = "changebot-crane-pilot-v1";
   missingCacheDiagnostic = "cache directory is not writable";
@@ -73,6 +74,7 @@ let
   };
 
   desktopConfig = self.nixosConfigurations.britton-desktop.config;
+  cacheFilesystem = desktopConfig.fileSystems.${expectedCacheDir} or null;
   sandboxPathsRaw = desktopConfig.nix.settings.extra-sandbox-paths or [ ];
   sandboxPaths = if builtins.isList sandboxPathsRaw then sandboxPathsRaw else [ sandboxPathsRaw ];
   tmpfilesRules = desktopConfig.systemd.tmpfiles.rules or [ ];
@@ -150,6 +152,25 @@ in
         echo "negative: user cache path ${forbiddenUserCacheDir} must not be exposed to Nix builders" >&2
         exit 1
       ''}
+      ${lib.optionalString (cacheFilesystem == null) ''
+        echo "positive: ${expectedCacheDir} must be a declared filesystem on the 4TB datapool" >&2
+        exit 1
+      ''}
+      ${lib.optionalString
+        (cacheFilesystem != null && ((cacheFilesystem.device or "") != expectedCacheDevice))
+        ''
+          echo "positive: ${expectedCacheDir} must be backed by ${expectedCacheDevice}" >&2
+          echo "actual device: ${cacheFilesystem.device or "<missing>"}" >&2
+          exit 1
+        ''
+      }
+      ${lib.optionalString
+        (cacheFilesystem != null && !(lib.elem "nofail" (cacheFilesystem.options or [ ])))
+        ''
+          echo "negative: ${expectedCacheDir} must use nofail so a missing cache dataset cannot block boot" >&2
+          exit 1
+        ''
+      }
       ${lib.optionalString (!(lib.any (rule: lib.hasInfix expectedCacheDir rule) tmpfilesRules)) ''
         echo "positive: ${expectedCacheDir} tmpfiles rule is missing" >&2
         exit 1

@@ -18,7 +18,7 @@ import /home/brittonr/git/onix-core/examples/kache-nix-rust/changebot-crane-pilo
 }
 ```
 
-The enabled example sets `RUSTC_WRAPPER` to the Nix-owned kache wrapper and `KACHE_NIX_CACHE_DIR` to `/var/cache/kache-nix`. On `britton-desktop`, the `kache-nix-rust-britton-desktop` service instance creates that machine-owned directory and exposes only that path through `nix.settings.extra-sandbox-paths`.
+The enabled example sets `RUSTC_WRAPPER` to the Nix-owned kache wrapper and `KACHE_NIX_CACHE_DIR` to `/var/cache/kache-nix`. On `britton-desktop`, that path is a dedicated `datapool/kache-nix` ZFS dataset on the 4TB NVMe; the `kache-nix-rust-britton-desktop` service instance creates the machine-owned directory and exposes only that path through `nix.settings.extra-sandbox-paths`.
 
 ## Validation evidence
 

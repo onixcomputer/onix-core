@@ -24,6 +24,16 @@
             type = "zfs_fs";
             mountpoint = "/home/brittonr/.cargo-target";
           };
+          kache-nix = {
+            type = "zfs_fs";
+            mountpoint = "/var/cache/kache-nix";
+            mountOptions = [
+              "defaults"
+              # The activation script creates this optional cache dataset on
+              # already-installed hosts; a missing cache dataset must not block boot.
+              "nofail"
+            ];
+          };
           tmp = {
             type = "zfs_fs";
             mountpoint = "/tmp";

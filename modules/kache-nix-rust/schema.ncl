@@ -16,6 +16,11 @@
       default = true,
       description = "Expose cacheDir through nix.settings.extra-sandbox-paths when the pilot is enabled",
     },
+    zfsDataset = {
+      type = "nullable_string",
+      default = null,
+      description = "Optional ZFS dataset to create and mount at cacheDir during activation",
+    },
     keySalt = {
       type = "string",
       default = "",

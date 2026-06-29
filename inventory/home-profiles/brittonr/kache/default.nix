@@ -93,6 +93,24 @@ let
         printf '%s' unset
       }
 
+      is_cargo_workspace_wrapper_chain() {
+        workspace_wrapper="''${RUSTC_WORKSPACE_WRAPPER:-}"
+
+        if [ -z "$workspace_wrapper" ]; then
+          return 1
+        fi
+
+        [ "$(resolve_path "$real_rustc")" = "$(resolve_path "$workspace_wrapper")" ]
+      }
+
+      # Cargo chains build.rustc-wrapper before RUSTC_WORKSPACE_WRAPPER as:
+      #   rustc-wrapper workspace-wrapper rustc ...
+      # kache 0.6.0 only enters wrapper mode for rustc-shaped argv, so pass
+      # workspace-wrapper chains through before invoking kache.
+      if is_cargo_workspace_wrapper_chain; then
+        exec "$real_rustc" "$@"
+      fi
+
       toolchain_salt="rustc=$(resolve_path "$real_rustc");cc=$(resolve_command cc);mold=$(resolve_command mold)"
       user_salt="''${KACHE_KEY_SALT:-}"
 

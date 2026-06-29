@@ -26,6 +26,9 @@ Manager starts the upstream-shaped `kache.service` user daemon. No manual
   driver selects mold as the backend linker
 - `mold` is installed in the managed user environment and is also available to
   the wrapper process
+- Cargo tools that set `RUSTC_WORKSPACE_WRAPPER` (for example cargo-octet's
+  Dylint driver) bypass kache automatically and execute the workspace wrapper
+  directly; kache 0.6.0 only recognizes rustc-shaped argv in wrapper mode
 
 ## First activation and rollback
 
@@ -76,4 +79,6 @@ KACHE_DISABLED=1 cargo build
 ```
 
 This leaves the managed wrapper in place but makes kache pass through to
-`rustc`.
+`rustc`. Tools that install their own Cargo workspace wrapper should not need
+this setting; the managed wrapper passes those chains through before invoking
+kache.
