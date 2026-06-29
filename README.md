@@ -8,4 +8,5 @@
 - [MercuryTechnologies/mercury-cli](https://github.com/MercuryTechnologies/mercury-cli) — upstream flake used for the Mercury terminal banking CLI.
 - [Mic92/fast-nix-gc](https://github.com/Mic92/fast-nix-gc) — upstream fast Nix store garbage collector and optimiser used by store maintenance.
 - [NathanFlurry/herdr-plugin-jj-workspace](https://github.com/NathanFlurry/herdr-plugin-jj-workspace) — Herdr plugin used for Jujutsu workspace actions.
+- `../changebot` — sibling Remora Rust workspace used as the kache Nix-build pilot example.
 

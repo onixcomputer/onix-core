@@ -69,6 +69,16 @@ let krea2_sglang_lowest_prefetch = "0.0" in
       },
     },
 
+    "kache-nix-rust-britton-desktop" = {
+      module = { name = "kache-nix-rust", input = "self" },
+      roles.default.machines.britton-desktop.settings = {
+        enable = true,
+        cacheDir = "/var/cache/kache-nix",
+        exposeSandboxPath = true,
+        keySalt = "changebot-crane-pilot-v1",
+      },
+    },
+
     # ========== Networking ==========
 
     "br-tailnet" = {

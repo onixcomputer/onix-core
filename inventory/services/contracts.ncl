@@ -27,6 +27,7 @@ let self_modules = [
   "home-manager-profiles",
   "homepage-dashboard",
   "infinity",
+  "kache-nix-rust",
   "lemonade",
   "llamacpp-rpc",
   "llamacpp-server",

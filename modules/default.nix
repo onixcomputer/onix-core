@@ -39,6 +39,7 @@ let
     "llm" = import ./llm (schemaArgs ./llm);
     "upmpdcli" = import ./upmpdcli (schemaArgs ./upmpdcli);
     "nix-gc" = import ./nix-gc ({ inherit inputs; } // schemaArgs ./nix-gc);
+    "kache-nix-rust" = import ./kache-nix-rust (schemaArgs ./kache-nix-rust);
     "ollama" = import ./ollama (schemaArgs ./ollama);
     "open-notebook" = import ./open-notebook (schemaArgs ./open-notebook);
     "speaches" = import ./speaches (schemaArgs ./speaches);
