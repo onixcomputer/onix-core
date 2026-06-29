@@ -6,6 +6,25 @@
   self,
   ...
 }:
+let
+  bluetoothAudioCodecs = [
+    "ldac"
+    "aac"
+    "sbc_xq"
+    "sbc"
+  ];
+  bluetoothAudioRoles = [
+    "a2dp_sink"
+    "a2dp_source"
+    "bap_sink"
+    "bap_source"
+    "hsp_hs"
+    "hsp_ag"
+    "hfp_hf"
+    "hfp_ag"
+  ];
+  ldacQualityMode = "hq";
+in
 {
   networking = {
     hostName = "britton-desktop";
@@ -48,10 +67,21 @@
   # asymmetric CCDs (3D V-Cache vs high-clock).
   hardware.cpu.amd.updateMicrocode = true;
 
+  hardware.bluetooth.settings.General = {
+    Experimental = true;
+    FastConnectable = true;
+  };
+
   boot = {
     kernelParams = [ "amd_pstate=active" ];
     kernel.sysctl."kernel.perf_event_paranoid" = -1;
     kernelPackages = pkgs.linuxPackages_6_18;
+    kernelPatches = [
+      {
+        name = "btusb-foxconn-mt7925-e13a";
+        patch = ../../patches/linux-btusb-foxconn-mt7925-e13a.patch;
+      }
+    ];
     # DisplayLink support for Wayland (evdi module)
     extraModulePackages = [ config.boot.kernelPackages.evdi ];
     kernelModules = [ "evdi" ];
@@ -88,6 +118,30 @@
       SUBSYSTEM=="usb", ATTRS{idVendor}=="0fd9", MODE="0660", TAG+="uaccess"
       KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0fd9", MODE="0660", TAG+="uaccess"
     '';
+
+    pipewire.wireplumber.extraConfig = {
+      "10-bluez-airpods" = {
+        "monitor.bluez.properties" = {
+          "bluez5.codecs" = bluetoothAudioCodecs;
+          "bluez5.dummy-avrcp-player" = true;
+          "bluez5.enable-sbc-xq" = true;
+          "bluez5.hfphsp-backend" = "native";
+          "bluez5.roles" = bluetoothAudioRoles;
+        };
+      };
+      "11-bluez-ldac-quality" = {
+        "monitor.bluez.rules" = [
+          {
+            matches = [
+              {
+                "device.name" = "~bluez_card.*";
+              }
+            ];
+            actions.update-props."bluez5.a2dp.ldac.quality" = ldacQualityMode;
+          }
+        ];
+      };
+    };
 
     printing.enable = true;
   };
@@ -152,6 +206,10 @@
   };
 
   programs.fuse.userAllowOther = true;
+
+  home-manager.users.brittonr.home.packages = with pkgs; [
+    librepods
+  ];
 
   environment.systemPackages = with pkgs; [
     bpftrace

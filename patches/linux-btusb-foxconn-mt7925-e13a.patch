@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Onix Research <dev@onix.computer>
+Date: Mon, 29 Jun 2026 12:30:00 -0400
+Subject: [PATCH] Bluetooth: btusb: add Foxconn MT7925 0489:e13a
+
+Linux master classifies Foxconn/Hon Hai USB product 0489:e13a as an
+additional MediaTek MT7925 Bluetooth device. The ASUS ProArt
+X870E-CREATOR WIFI in britton-desktop exposes that product ID for its
+Bluetooth controller; without this ID, btusb binds generically and the
+controller fails HCI reset during setup.
+---
+ drivers/bluetooth/btusb.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/bluetooth/btusb.c b/drivers/bluetooth/btusb.c
+--- a/drivers/bluetooth/btusb.c
++++ b/drivers/bluetooth/btusb.c
+@@ -734,6 +734,8 @@ static const struct usb_device_id quirks_table[] = {
+ 						     BTUSB_WIDEBAND_SPEECH },
+ 	{ USB_DEVICE(0x0489, 0xe139), .driver_info = BTUSB_MEDIATEK |
+ 						     BTUSB_WIDEBAND_SPEECH },
++	{ USB_DEVICE(0x0489, 0xe13a), .driver_info = BTUSB_MEDIATEK |
++						     BTUSB_WIDEBAND_SPEECH },
+ 	{ USB_DEVICE(0x0489, 0xe14e), .driver_info = BTUSB_MEDIATEK |
+ 						     BTUSB_WIDEBAND_SPEECH },
+ 	{ USB_DEVICE(0x0489, 0xe14f), .driver_info = BTUSB_MEDIATEK |
+-- 
+2.50.0
