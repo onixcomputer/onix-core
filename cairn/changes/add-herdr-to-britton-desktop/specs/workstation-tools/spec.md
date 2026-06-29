@@ -8,15 +8,15 @@ Define how `britton-desktop` receives Herdr as a declarative workstation tool.
 
 ### Requirement: Herdr source package
 
-r[onix.britton-desktop.herdr.source] The system MUST source Herdr from a pinned nixpkgs package set.
+r[onix.britton-desktop.herdr.source] The system MUST source Herdr from the pinned `llm-agents` package set.
 
-#### Scenario: Nixpkgs package is used
+#### Scenario: llm-agents package is used
 
-r[onix.britton-desktop.herdr.source.nixpkgs]
-- GIVEN a narrow `nixpkgs-herdr` input points at a revision that exposes `herdr`
+r[onix.britton-desktop.herdr.source.llm_agents]
+- GIVEN the existing `llm-agents` input points at a revision that exposes `packages.${system}.herdr`
 - WHEN `britton-desktop` declares the Herdr package
-- THEN it uses `inputs.nixpkgs-herdr.legacyPackages.${pkgs.stdenv.hostPlatform.system}.herdr`
-- AND no separate upstream `herdr` flake input or lock node is required
+- THEN it uses `inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr`
+- AND no separate upstream `herdr` flake input or `nixpkgs-herdr` lock node is required
 
 ### Requirement: britton-desktop installation
 
@@ -117,6 +117,6 @@ r[onix.britton-desktop.herdr.verification] The change MUST keep focused `britton
 #### Scenario: System derivation evaluates
 
 r[onix.britton-desktop.herdr.verification.system_eval]
-- GIVEN the narrow nixpkgs Herdr package entry is present
+- GIVEN the `llm-agents` Herdr package entry is present
 - WHEN `britton-desktop` system derivation evaluation runs
 - THEN evaluation succeeds and returns a system derivation path

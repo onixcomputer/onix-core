@@ -1,14 +1,14 @@
 ## Context
 
-Herdr is available in current nixpkgs, but the root nixpkgs pin does not expose `pkgs.herdr`. A root nixpkgs bump makes unrelated `pnpm-10.29.2` insecurity handling block `britton-desktop` system evaluation, so this change uses a narrow `nixpkgs-herdr` input for Herdr only. The `britton-desktop` module already installs a few machine-specific tools directly from `environment.systemPackages`, including packages exposed by this repo's flake outputs.
+Herdr is available from `numtide/llm-agents.nix` under `packages/herdr/package.nix`. The repo already pins `llm-agents` for terminal AI agent packages, so this change uses that existing package set instead of carrying a narrow `nixpkgs-herdr` input for Herdr only. The `britton-desktop` module already installs a few machine-specific tools directly from `environment.systemPackages`, including packages exposed by this repo's flake outputs.
 
 ## Decisions
 
-### 1. Use nixpkgs Herdr
+### 1. Use llm-agents.nix Herdr
 
-**Choice:** Use `inputs.nixpkgs-herdr.legacyPackages.${pkgs.stdenv.hostPlatform.system}.herdr` from a narrow nixpkgs input pinned to a revision where that package exists.
+**Choice:** Use `inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr` from the existing `numtide/llm-agents.nix` input.
 
-**Rationale:** `nix-shell -p herdr` confirms Herdr is packaged in nixpkgs. A narrow nixpkgs input keeps the source as nixpkgs, avoids a separate Herdr flake input or local package derivation, and avoids the unrelated fallout from advancing the root nixpkgs pin.
+**Rationale:** The `llm-agents` input already contains the Herdr package definition under `packages/herdr/package.nix`, including the source build and Zig cache handling needed by upstream Herdr. Reusing that input avoids a separate Herdr flake input, a local package derivation, or a temporary extra nixpkgs pin.
 
 ### 2. Install directly in `britton-desktop`
 
@@ -36,7 +36,7 @@ Herdr is available in current nixpkgs, but the root nixpkgs pin does not expose 
 
 ## Risks / Trade-offs
 
-- The installed Herdr version follows the narrow `nixpkgs-herdr` pin until root nixpkgs catches up.
-- Two nixpkgs pins are temporarily present, but only the Herdr package is sourced from the narrow pin.
+- The installed Herdr version follows the pinned `llm-agents` input.
+- Herdr shares the existing `llm-agents` source used for other terminal AI tools instead of adding a package-only nixpkgs pin.
 - Bare `Alt` remains unsupported by the packaged Herdr config parser; if upstream adds modifier-only prefixes later, this profile can switch from `alt+space` to `alt`.
 - jj workspace plugin keybindings require the plugin to be installed in Herdr state; this change avoids automatic network/build activation side effects.

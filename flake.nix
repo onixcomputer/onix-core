@@ -10,8 +10,6 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    # Narrow nixpkgs pin for packages not yet available in the root lock.
-    nixpkgs-herdr.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     nix = {
       url = "github:onixcomputer/nix";

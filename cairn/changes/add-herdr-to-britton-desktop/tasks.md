@@ -1,7 +1,7 @@
 ## Phase 1: Add Herdr declaratively
 
-- [x] [serial] Add a narrow `nixpkgs-herdr` input pinned to a nixpkgs revision that exposes `herdr`. r[onix.britton-desktop.herdr.source]
-- [x] [serial] Use the nixpkgs `herdr` package from the narrow pinned package set. r[onix.britton-desktop.herdr.source]
+- [x] [serial] Use the existing `llm-agents` input that exposes `packages.${system}.herdr`. r[onix.britton-desktop.herdr.source]
+- [x] [serial] Remove the narrow `nixpkgs-herdr` input now that `llm-agents` provides Herdr. r[onix.britton-desktop.herdr.source]
 - [x] [serial] Add Herdr to `britton-desktop` system packages without removing existing package entries. r[onix.britton-desktop.herdr.install]
 
 ## Phase 2: Configure Herdr key handling
