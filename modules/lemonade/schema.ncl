@@ -1,3 +1,4 @@
+let default_rpc_port = 50052 in
 {
   default = {
     host = { type = "string", default = "0.0.0.0", description = "Address to bind for connections" },
@@ -9,6 +10,14 @@
     customModels = { type = "record", default = {}, description = "Custom HuggingFace models to register (name -> {checkpoint, recipe?, size?})" },
     globalTimeout = { type = "number", default = 300, description = "Global timeout in seconds for HTTP, inference, and readiness checks (0 = infinite)" },
     extraArgs = { type = "string", default = "", description = "Extra arguments passed to llama.cpp backend" },
+    clusterRpcClient = { type = "bool", default = false, description = "Append llama.cpp --rpc worker endpoints to Lemonade backend args" },
+    clusterRpcWorker = { type = "bool", default = false, description = "Run llama-rpc-server so another Lemonade head can use this host" },
+    clusterRpcPort = { type = "port", default = default_rpc_port, description = "TCP port for llama.cpp RPC workers" },
+    clusterRpcBindHost = { type = "nullable_string", default = null, description = "Explicit bind address for the RPC worker; defaults to selected cluster-network local address" },
+    clusterRpcWorkers = { type = "array_string", default = [], description = "Explicit llama.cpp RPC worker endpoints as host:port; defaults to selected cluster-network worker addresses" },
+    clusterRpcCache = { type = "bool", default = true, description = "Enable the llama-rpc-server local tensor cache" },
+    clusterRpcDevice = { type = "nullable_string", default = null, description = "Optional comma-separated llama-rpc-server device list" },
+    clusterRpcExtraArgs = { type = "string", default = "", description = "Extra arguments appended to llama-rpc-server" },
     offline = { type = "bool", default = false, description = "Disable model downloads (serve only pre-cached models)" },
     healthCheckInterval = { type = "number", default = 10, description = "Seconds between backend health checks (0 = disable health monitoring)" },
     healthCheckThreshold = { type = "number", default = 3, description = "Consecutive missed checks before restarting (grace = interval * threshold)" },

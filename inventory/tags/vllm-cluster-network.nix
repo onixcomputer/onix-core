@@ -57,6 +57,11 @@ let
       thunderboltBackend
     else
       null;
+  selectedAddress =
+    clusterNode:
+    if selectedBackend == rdmaBackend then clusterNode.rdmaAddress else clusterNode.thunderboltAddress;
+  workerNodes = lib.filterAttrs (name: _: name != headHost) clusterNodes;
+  workerAddresses = lib.mapAttrsToList (_: selectedAddress) workerNodes;
   selectedNetwork =
     if node == null || selectedBackend == null then
       null
@@ -77,6 +82,20 @@ let
         headAddress = headNode.thunderboltAddress;
         transport = thunderboltTransport;
         ncclIbDisable = thunderboltNcclIbDisable;
+      };
+  clusterNetwork =
+    if selectedNetwork == null then
+      null
+    else
+      selectedNetwork
+      // {
+        host = hostname;
+        inherit (node) role;
+        inherit
+          headHost
+          rayPort
+          workerAddresses
+          ;
       };
 
   envText = ''
@@ -126,6 +145,12 @@ let
   };
 in
 {
+  options.onix.vllmClusterNetwork = lib.mkOption {
+    type = lib.types.attrsOf lib.types.anything;
+    default = { };
+    description = "Selected fast-link cluster network metadata for vLLM, Lemonade, and related inference services.";
+  };
+
   config = lib.mkMerge [
     {
       assertions = [
@@ -147,6 +172,8 @@ in
     }
 
     (lib.mkIf (selectedNetwork != null) {
+      onix.vllmClusterNetwork = clusterNetwork;
+
       environment = {
         etc.${envRelativePath}.text = envText;
         systemPackages = [ vllmClusterEnv ];

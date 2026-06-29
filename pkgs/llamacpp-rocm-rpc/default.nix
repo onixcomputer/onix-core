@@ -17,11 +17,13 @@ base.overrideAttrs (old: {
   pname = "llamacpp-rocm-rpc";
 
   buildInputs = (old.buildInputs or [ ]) ++ [
+    pkgs.rdma-core
     pkgs.rocmPackages.rocwmma
   ];
 
   cmakeFlags = (old.cmakeFlags or [ ]) ++ [
     (lib.cmakeBool "GGML_HIP_ROCWMMA_FATTN" true)
+    (lib.cmakeBool "GGML_RPC_RDMA" true)
   ];
 
   # rocwmma headers must be on the HIP compiler include path.

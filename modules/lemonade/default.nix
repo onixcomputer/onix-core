@@ -32,6 +32,7 @@ in
         {
           nixosModule =
             {
+              config,
               pkgs,
               lib,
               ...
@@ -50,6 +51,14 @@ in
                 maxLoadedModels
                 globalTimeout
                 extraArgs
+                clusterRpcClient
+                clusterRpcWorker
+                clusterRpcPort
+                clusterRpcBindHost
+                clusterRpcWorkers
+                clusterRpcCache
+                clusterRpcDevice
+                clusterRpcExtraArgs
                 offline
                 healthCheckInterval
                 healthCheckThreshold
@@ -72,6 +81,40 @@ in
               localConnectUrlHost =
                 if lib.hasInfix ":" localConnectHost then "[${localConnectHost}]" else localConnectHost;
 
+              clusterNetwork = config.onix.vllmClusterNetwork or { };
+              clusterLocalAddress = clusterNetwork.localAddress or null;
+              clusterWorkerAddresses = clusterNetwork.workerAddresses or [ ];
+              derivedRpcWorkers = map (address: "${address}:${toString clusterRpcPort}") clusterWorkerAddresses;
+              rpcWorkerEndpoints = if clusterRpcWorkers != [ ] then clusterRpcWorkers else derivedRpcWorkers;
+              rpcEndpoints = lib.concatStringsSep "," rpcWorkerEndpoints;
+              hasManualRpcArg = lib.hasInfix "--rpc" extraArgs;
+              clusterRpcBindAddress =
+                if clusterRpcBindHost != null then clusterRpcBindHost else clusterLocalAddress;
+              safeClusterRpcBindAddress =
+                if clusterRpcBindAddress != null then clusterRpcBindAddress else "127.0.0.1";
+              clusterRpcClientArgs = lib.optionalString clusterRpcClient "--rpc ${rpcEndpoints}";
+              effectiveExtraArgs = lib.concatStringsSep " " (
+                lib.filter (value: value != "") [
+                  extraArgs
+                  clusterRpcClientArgs
+                ]
+              );
+              rpcWorkerArgs = [
+                "${llamacppPkg}/bin/llama-rpc-server"
+                "-H"
+                safeClusterRpcBindAddress
+                "-p"
+                (toString clusterRpcPort)
+              ]
+              ++ lib.optionals clusterRpcCache [ "--cache" ]
+              ++ lib.optionals (clusterRpcDevice != null && clusterRpcDevice != "") [
+                "--device"
+                clusterRpcDevice
+              ];
+              rpcWorkerCommand =
+                lib.escapeShellArgs rpcWorkerArgs
+                + lib.optionalString (clusterRpcExtraArgs != "") " ${clusterRpcExtraArgs}";
+
               # Config JSON written to the cache dir at service start.
               # Overrides defaults.json with NixOS-managed values.
               configJson = pkgs.writeText "lemonade-config.json" (
@@ -92,7 +135,7 @@ in
                     cpu_bin = "builtin";
                   }
                   // {
-                    args = "--metrics" + lib.optionalString (extraArgs != "") " ${extraArgs}";
+                    args = "--metrics" + lib.optionalString (effectiveExtraArgs != "") " ${effectiveExtraArgs}";
                   };
                 }
               );
@@ -125,8 +168,8 @@ in
                       ctx_size = contextSize;
                       llamacpp_backend = if backend == "system" then "vulkan" else backend;
                     }
-                    // lib.optionalAttrs (extraArgs != "") {
-                      llamacpp_args = extraArgs;
+                    // lib.optionalAttrs (effectiveExtraArgs != "") {
+                      llamacpp_args = effectiveExtraArgs;
                     }
                   ) (lib.mapAttrs' (name: value: lib.nameValuePair "user.${name}" value) customModels)
                 )
@@ -165,6 +208,14 @@ in
                   done
                 '';
               };
+              rpcWorker = pkgs.writeShellApplication {
+                name = "lemonade-rpc-worker";
+                excludeShellChecks = [ "SC2086" ];
+                text = ''
+                  exec ${rpcWorkerCommand}
+                '';
+              };
+
               healthWrapper = pkgs.writeShellApplication {
                 name = "lemonade-health-wrapper";
                 runtimeInputs = [
@@ -240,94 +291,136 @@ in
               };
             in
             {
+              assertions = [
+                {
+                  assertion = !clusterRpcClient || rpcWorkerEndpoints != [ ];
+                  message = "Lemonade clusterRpcClient requires clusterRpcWorkers or vllm-cluster-network worker addresses.";
+                }
+                {
+                  assertion = !clusterRpcClient || !hasManualRpcArg;
+                  message = "Lemonade clusterRpcClient manages --rpc automatically; remove manual --rpc from extraArgs.";
+                }
+                {
+                  assertion = !clusterRpcWorker || clusterRpcBindAddress != null;
+                  message = "Lemonade clusterRpcWorker requires clusterRpcBindHost or vllm-cluster-network local address.";
+                }
+              ];
+
               # Install the lemonade package system-wide for CLI access
               environment.systemPackages = [ lemonadePkg ];
 
-              systemd.services.lemonade = {
-                description = "Lemonade LLM Server";
-                after = [ "network-online.target" ];
-                wants = [ "network-online.target" ];
-                wantedBy = [ "multi-user.target" ];
+              systemd.services = {
+                lemonade = {
+                  description = "Lemonade LLM Server";
+                  after = [ "network-online.target" ];
+                  wants = [ "network-online.target" ];
+                  wantedBy = [ "multi-user.target" ];
 
-                serviceConfig = {
-                  # Write our managed config.json before starting
-                  ExecStartPre =
-                    let
-                      preScript = pkgs.writeShellApplication {
-                        name = "lemonade-pre";
-                        text = ''
-                          mkdir -p ${stateDir}
-                          cp --no-preserve=mode ${configJson} ${stateDir}/config.json
-                          cp --no-preserve=mode ${userModelsJson} ${stateDir}/user_models.json
-                          cp --no-preserve=mode ${recipeOptionsJson} ${stateDir}/recipe_options.json
-                        '';
-                      };
-                    in
-                    lib.getExe preScript;
+                  serviceConfig = {
+                    # Write our managed config.json before starting
+                    ExecStartPre =
+                      let
+                        preScript = pkgs.writeShellApplication {
+                          name = "lemonade-pre";
+                          text = ''
+                            mkdir -p ${stateDir}
+                            cp --no-preserve=mode ${configJson} ${stateDir}/config.json
+                            cp --no-preserve=mode ${userModelsJson} ${stateDir}/user_models.json
+                            cp --no-preserve=mode ${recipeOptionsJson} ${stateDir}/recipe_options.json
+                          '';
+                        };
+                      in
+                      lib.getExe preScript;
 
-                  ExecStart =
-                    if healthEnabled then
-                      lib.concatStringsSep " " [
-                        (lib.getExe healthWrapper)
-                        "--host"
-                        host
-                        "--port"
-                        (toString port)
-                      ]
-                    else
-                      lib.concatStringsSep " " [
-                        "${lemonadePkg}/bin/lemonade-router"
-                        "--host"
-                        host
-                        "--port"
-                        (toString port)
-                      ];
+                    ExecStart =
+                      if healthEnabled then
+                        lib.concatStringsSep " " [
+                          (lib.getExe healthWrapper)
+                          "--host"
+                          host
+                          "--port"
+                          (toString port)
+                        ]
+                      else
+                        lib.concatStringsSep " " [
+                          "${lemonadePkg}/bin/lemonade-router"
+                          "--host"
+                          host
+                          "--port"
+                          (toString port)
+                        ];
 
-                  Restart = "on-failure";
-                  RestartSec = 10;
-                  KillMode = "control-group";
-                  TimeoutStopSec = 30;
+                    Restart = "on-failure";
+                    RestartSec = 10;
+                    KillMode = "control-group";
+                    TimeoutStopSec = 30;
 
-                  # Root for GPU device access (kfd + dri)
-                  User = "root";
-                  Group = "root";
-                  StateDirectory = "lemonade";
+                    # Root for GPU device access (kfd + dri)
+                    User = "root";
+                    Group = "root";
+                    StateDirectory = "lemonade";
+                  };
+
+                  environment = {
+                    HOME = stateDir;
+                    LEMONADE_CACHE_DIR = stateDir;
+                    LEMONADE_LLAMACPP_ROCM_BIN = "${llamacppPkg}/bin/llama-server";
+
+                    # ROCm env for gfx1151
+                    HSA_OVERRIDE_GFX_VERSION = "11.5.1";
+                    HSA_ENABLE_SDMA = "0";
+                    PYTORCH_ROCM_ARCH = "gfx1151";
+                  };
                 };
 
-                environment = {
-                  HOME = stateDir;
-                  LEMONADE_CACHE_DIR = stateDir;
-                  LEMONADE_LLAMACPP_ROCM_BIN = "${llamacppPkg}/bin/llama-server";
+                lemonade-rpc-worker = lib.mkIf clusterRpcWorker {
+                  description = "Lemonade llama.cpp RPC Worker";
+                  after = [ "network-online.target" ];
+                  wants = [ "network-online.target" ];
+                  wantedBy = [ "multi-user.target" ];
 
-                  # ROCm env for gfx1151
-                  HSA_OVERRIDE_GFX_VERSION = "11.5.1";
-                  HSA_ENABLE_SDMA = "0";
-                  PYTORCH_ROCM_ARCH = "gfx1151";
+                  serviceConfig = {
+                    ExecStart = lib.getExe rpcWorker;
+                    Restart = "on-failure";
+                    RestartSec = 10;
+                    User = "root";
+                    Group = "root";
+                    StateDirectory = "lemonade-rpc";
+                    WorkingDirectory = "/var/lib/lemonade-rpc";
+                  };
+
+                  environment = {
+                    HOME = "/var/lib/lemonade-rpc";
+                    LLAMA_CACHE = "/var/lib/lemonade-rpc/cache";
+                    HSA_OVERRIDE_GFX_VERSION = "11.5.1";
+                    HSA_ENABLE_SDMA = "0";
+                    PYTORCH_ROCM_ARCH = "gfx1151";
+                  };
+                };
+
+                # Model pull service — runs after the server is up
+                lemonade-model-pull = lib.mkIf (models != [ ]) {
+                  description = "Pull Lemonade models";
+                  after = [ "lemonade.service" ];
+                  requires = [ "lemonade.service" ];
+                  wantedBy = [ "multi-user.target" ];
+
+                  serviceConfig = {
+                    Type = "oneshot";
+                    RemainAfterExit = true;
+                    Restart = "on-failure";
+                    RestartSec = "30s";
+                    ExecStart = lib.getExe pullScript;
+                  };
+
+                  environment = {
+                    HOME = stateDir;
+                    LEMONADE_CACHE_DIR = stateDir;
+                  };
                 };
               };
 
-              # Model pull service — runs after the server is up
-              systemd.services.lemonade-model-pull = lib.mkIf (models != [ ]) {
-                description = "Pull Lemonade models";
-                after = [ "lemonade.service" ];
-                requires = [ "lemonade.service" ];
-                wantedBy = [ "multi-user.target" ];
-
-                serviceConfig = {
-                  Type = "oneshot";
-                  RemainAfterExit = true;
-                  Restart = "on-failure";
-                  RestartSec = "30s";
-                  ExecStart = lib.getExe pullScript;
-                };
-
-                environment = {
-                  HOME = stateDir;
-                  LEMONADE_CACHE_DIR = stateDir;
-                };
-              };
-
-              networking.firewall.allowedTCPPorts = [ port ];
+              networking.firewall.allowedTCPPorts = [ port ] ++ lib.optionals clusterRpcWorker [ clusterRpcPort ];
             };
         };
     };
