@@ -73,7 +73,11 @@ in
 
                   users.${settings.username} = {
                     imports = profileImports;
-                    home.stateVersion = lib.mkDefault config.system.stateVersion;
+                    home.stateVersion =
+                      if settings.homeStateVersion == null then
+                        lib.mkDefault config.system.stateVersion
+                      else
+                        settings.homeStateVersion;
                   };
                 };
               }

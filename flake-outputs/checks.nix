@@ -32,6 +32,7 @@ let
   builderChecks = (import ./_builder-checks.nix) innerArgs;
   colorChecks = (import ./_color-checks.nix) { inherit self pkgs; };
   helixChecks = (import ./_helix-checks.nix) innerArgs;
+  homeManagerChecks = (import ./_home-manager-checks.nix) innerArgs;
 
   packageChecks = lib.mapAttrs' (n: lib.nameValuePair "package-${n}") self'.packages;
   devShellChecks = lib.mapAttrs' (n: lib.nameValuePair "devShell-${n}") self'.devShells;
@@ -47,6 +48,7 @@ in
     // builderChecks
     // colorChecks.checks
     // (helixChecks.checks or { })
+    // (homeManagerChecks.checks or { })
     // packageChecks
     // devShellChecks;
 }

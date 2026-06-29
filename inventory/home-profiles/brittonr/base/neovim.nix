@@ -4,5 +4,7 @@
     viAlias = true;
     vimAlias = true;
     defaultEditor = false;
+    withRuby = false;
+    withPython3 = false;
   };
 }

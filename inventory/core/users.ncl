@@ -74,6 +74,7 @@ let { ValidateUserRefs, .. } = import "user-contracts.ncl" in
         settings = {
           username = "brittonr",
           profiles = ["base", "dev", "noctalia", "creative", "social", "media", "kache", "herdr"],
+          homeStateVersion = "26.05",
         },
       },
     },
