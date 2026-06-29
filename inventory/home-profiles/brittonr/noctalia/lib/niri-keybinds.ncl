@@ -20,7 +20,6 @@ let keymap = import "../../base/keymap.ncl" in
 let settings = import "../../base/settings.ncl" in
 
 let mod = keymap.modifiers.wm in
-let alt = keymap.modifiers.secondary in
 let nav = keymap.nav in
 let wm = keymap.wm in
 
@@ -179,7 +178,6 @@ in
     { key = "%{mod}+%{wm.close}", action = "close-window" },
     { key = "%{mod}+%{wm.toggleTabs}", action = "toggle-column-tabbed-display" },
     { key = "%{mod}+%{wm.fullscreen}", action = "fullscreen-window" },
-    { key = "%{alt}+F", action = "toggle-window-floating" },
     { key = "%{mod}+%{wm.maxColumn}", action = "maximize-column" },
     { key = "%{mod}+Shift+%{wm.maxColumn}", action = "fit-workspace-columns" },
     { key = "%{mod}+%{wm.presetWidth}", action = "switch-preset-column-width" },
@@ -196,8 +194,9 @@ in
     { key = "%{mod}+Control+%{wm.maxColumn}", raw = "fit-workspace-columns grid=true" },
   ],
 
-  # --- Focus (vim + arrow + alt variants) ---
-  # Vim and alt use workspace-crossing up/down; arrows use simpler window-only
+  # --- Focus (vim + arrow variants) ---
+  # Vim keys use workspace-crossing up/down; arrows use simpler window-only.
+  # Alt chords are left unbound for Herdr's terminal prefix.
   focusNav | Array ActionBinding =
     vim_binds
       mod
@@ -211,14 +210,6 @@ in
       { key = "%{mod}+Right", action = "focus-column-right" },
       { key = "%{mod}+Up", action = "focus-window-up" },
       { key = "%{mod}+Down", action = "focus-window-down" },
-    ]
-    @ vim_binds
-      alt
-      "focus-column-left"
-      "focus-column-right"
-      "focus-window-or-workspace-up"
-      "focus-window-or-workspace-down"
-    @ [
       { key = "%{mod}+WheelScrollUp", action = "focus-workspace-up" },
       { key = "%{mod}+WheelScrollDown", action = "focus-workspace-down" },
     ],
