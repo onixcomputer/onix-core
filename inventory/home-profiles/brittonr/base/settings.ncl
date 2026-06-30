@@ -43,6 +43,59 @@ let HexAlpha =
   )
 in
 
+let MouseButton =
+  std.contract.from_validator (match {
+    "left" => 'Ok,
+    "middle" => 'Ok,
+    "right" => 'Ok,
+    "shift+left" => 'Ok,
+    "shift+middle" => 'Ok,
+    "shift+right" => 'Ok,
+    "ctrl+shift+left" => 'Ok,
+    "ctrl+shift+middle" => 'Ok,
+    "ctrl+shift+right" => 'Ok,
+    "ctrl+alt+left" => 'Ok,
+    "ctrl+alt+right" => 'Ok,
+    "ctrl+shift+alt+left" => 'Ok,
+    "ctrl+shift+alt+right" => 'Ok,
+    _ => 'Error { message = "must be a supported kitty mouse button chord" },
+  }
+  )
+in
+
+let MouseEvent =
+  std.contract.from_validator (match {
+    "press" => 'Ok,
+    "release" => 'Ok,
+    "doublepress" => 'Ok,
+    "triplepress" => 'Ok,
+    "click" => 'Ok,
+    "doubleclick" => 'Ok,
+    _ => 'Error { message = "must be one of: press, release, doublepress, triplepress, click, doubleclick" },
+  }
+  )
+in
+
+let MouseModes =
+  std.contract.from_validator (match {
+    "grabbed" => 'Ok,
+    "ungrabbed" => 'Ok,
+    "grabbed,ungrabbed" => 'Ok,
+    "ungrabbed,grabbed" => 'Ok,
+    _ => 'Error { message = "must be grabbed, ungrabbed, or both" },
+  }
+  )
+in
+
+let TerminalMouseMap = {
+  button | MouseButton,
+  event | MouseEvent,
+  modes | MouseModes,
+  action | NonEmpty,
+  enabled | Bool,
+}
+in
+
 {
   location | { lat | Number, lng | Number } = {
     lat = 52.3,
@@ -226,16 +279,24 @@ in
       minimumContrast | Positive,
       inactiveTextAlpha | UnitInterval,
       textComposition | { gamma | Positive, scale | Positive },
+      scroll
+        | {
+          touchMultiplier | Positive,
+          pixelScroll | Bool,
+          momentum | UnitInterval,
+        },
       scrollbar
         | {
           width | Positive,
           hoverWidth | Positive,
           radius | Number,
           gap | Number,
+          hitboxExpansion | Positive,
           minHandleHeight | Positive,
           handleOpacity | UnitInterval,
           trackOpacity | UnitInterval,
         },
+      mouseMaps | Array TerminalMouseMap,
     }
     = {
       cursorBlinkInterval = "0.5",
@@ -253,15 +314,30 @@ in
         gamma = 1.0,
         scale = 1.75,
       },
+      scroll = {
+        touchMultiplier = 1.15,
+        pixelScroll = true,
+        momentum = 0.96,
+      },
       scrollbar = {
-        width = 1,
-        hoverWidth = 2,
+        width = 2,
+        hoverWidth = 4,
         radius = 0.5,
         gap = 0.1,
-        minHandleHeight = 2,
+        hitboxExpansion = 1.0,
+        minHandleHeight = 4,
         handleOpacity = 0.6,
         trackOpacity = 0.1,
       },
+      mouseMaps = [
+        {
+          button = "right",
+          event = "press",
+          modes = "ungrabbed",
+          action = "mouse_select_command_output",
+          enabled = true,
+        },
+      ],
     },
 
   font = {

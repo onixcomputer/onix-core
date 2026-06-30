@@ -4,6 +4,10 @@ let
   k = config.keymap;
   tm = lib.toLower k.modifiers.terminal; # "ctrl+shift"
   ta = k.terminalActions;
+  enabledMouseMaps = lib.filter (mouseMap: mouseMap.enabled) config.terminal.mouseMaps;
+  renderMouseMap =
+    mouseMap: "mouse_map ${mouseMap.button} ${mouseMap.event} ${mouseMap.modes} ${mouseMap.action}";
+  mouseMapConfig = lib.concatMapStringsSep "\n" renderMouseMap enabledMouseMaps;
 in
 {
   programs.kitty = {
@@ -83,8 +87,11 @@ in
       input_delay = config.terminal.inputDelay;
       sync_to_monitor = true;
 
-      # Scrollback
+      # Scrollback and high-precision touch scrolling
       scrollback_lines = config.terminal.scrollbackLines;
+      touch_scroll_multiplier = toString config.terminal.scroll.touchMultiplier;
+      pixel_scroll = config.terminal.scroll.pixelScroll;
+      momentum_scroll = toString config.terminal.scroll.momentum;
 
       # Scrollbar - visible for touchscreen use
       scrollbar = "always";
@@ -92,6 +99,7 @@ in
       scrollbar_hover_width = config.terminal.scrollbar.hoverWidth;
       scrollbar_radius = toString config.terminal.scrollbar.radius;
       scrollbar_gap = toString config.terminal.scrollbar.gap;
+      scrollbar_hitbox_expansion = toString config.terminal.scrollbar.hitboxExpansion;
       scrollbar_handle_opacity = toString config.terminal.scrollbar.handleOpacity;
       scrollbar_track_opacity = toString config.terminal.scrollbar.trackOpacity;
       scrollbar_interactive = true;
@@ -217,6 +225,9 @@ in
 
       # Clipboard integration
       clipboard_control write-clipboard write-primary read-clipboard read-primary
+
+      # Touch/stylus-friendly terminal mouse actions
+      ${mouseMapConfig}
     '';
   };
 }
