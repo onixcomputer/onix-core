@@ -9,3 +9,8 @@
 - [x] [serial] Validate Nickel gesture/input data exports. r[onix.aspen3.touch.verification]
 - [x] [serial] Evaluate or build the focused `aspen3` system path so Niri config validation runs. r[onix.aspen3.touch.verification]
 - [x] [serial] Run Cairn validation and gates for this change. r[onix.aspen3.touch.verification]
+
+## Phase 3: Live troubleshooting
+
+- [x] [serial] Fix touchscreen discovery to match libinput's whitespace-delimited `touch` capability on aspen3. r[onix.aspen3.touch.lisgd]
+- [x] [serial] Retrigger stale udev input metadata so ELAN9008 event nodes are tagged as touchscreen/tablet. r[onix.aspen3.touch.verification]

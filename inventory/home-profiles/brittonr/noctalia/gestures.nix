@@ -65,13 +65,13 @@ let
     ];
     text = ''
       # Find actual touchscreen devices (not touchpads) by checking
-      # for "touch" in the Capabilities line from libinput.
+      # for a whitespace-delimited "touch" capability from libinput.
       # Check before waiting for Wayland — no point waiting on machines without a touchscreen.
       TOUCHSCREEN=$(libinput list-devices 2>/dev/null | \
         awk '
           /^Device:/ { dev="" }
           /^Kernel:/ { dev=$2 }
-          /^Capabilities:.*\btouch\b/ { if (dev) { print dev; exit } }
+          /^Capabilities:/ && $0 ~ /(^|[[:space:]])touch([[:space:]]|$)/ { if (dev) { print dev; exit } }
         ') || true
 
       if [ -z "$TOUCHSCREEN" ]; then
