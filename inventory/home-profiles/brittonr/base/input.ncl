@@ -55,6 +55,18 @@ let Positive =
   )
 in
 
+let calibration_matrix_length = 6 in
+let CalibrationMatrix =
+  std.contract.from_validator (match {
+    value if std.is_array value && std.array.length value == 0 => 'Ok,
+    value if std.is_array value
+      && std.array.length value == calibration_matrix_length
+      && std.array.all std.is_number value => 'Ok,
+    _ => 'Error { message = "must be empty or a six-number libinput calibration matrix" },
+  }
+  )
+in
+
 {
   keyboard | doc "Keyboard configuration" = {
     layout | doc "Keyboard layout" | String = "us",
@@ -75,5 +87,12 @@ in
   mouse | doc "Mouse configuration" = {
     focusFollows | doc "Focus follows mouse" | Bool = true,
     warpToFocus | doc "Warp mouse to focused window" | Bool = true,
+  },
+  tablet | doc "Tablet and stylus configuration" = {
+    mapToBuiltinOutput | doc "Map absolute stylus coordinates to the built-in display" | Bool = true,
+    mapToFocusedOutput | doc "Map stylus coordinates to the focused output" | Bool = false,
+    mapToFocusedWindow | doc "Map stylus coordinates to the focused window" | Bool = false,
+    leftHanded | doc "Enable left-handed stylus/tablet orientation" | Bool = false,
+    calibrationMatrix | doc "Optional libinput tablet calibration matrix" | CalibrationMatrix = [],
   },
 }

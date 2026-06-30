@@ -115,9 +115,15 @@ in
   home-manager.users.brittonr = {
     home.packages = with pkgs; [
       easyeffects
+      evtest
       helvum
+      libinput
+      libwacom
       pwvucontrol
       qpwgraph
+      rnote
+      wev
+      xournalpp
     ];
 
     programs.mpv.config."volume-max" = lib.mkForce mpvVolumeMaxPercent;

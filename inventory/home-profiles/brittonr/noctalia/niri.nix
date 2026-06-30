@@ -77,7 +77,22 @@ let
 
                                   // Tablet/stylus settings (if applicable)
                                   tablet {
-                                      map-to-output "${mon.builtin.name}"
+                                      ${
+                                        if config.input.tablet.mapToBuiltinOutput then ''map-to-output "${mon.builtin.name}"'' else ""
+                                      }
+                                      ${
+                                        if config.input.tablet.mapToFocusedOutput then "map-to-focused-output" else ""
+                                      }
+                                      ${
+                                        if config.input.tablet.mapToFocusedWindow then "map-to-focused-window" else ""
+                                      }
+                                      ${if config.input.tablet.leftHanded then "left-handed" else ""}
+                                      ${
+                                        if config.input.tablet.calibrationMatrix != [ ] then
+                                          "calibration-matrix ${builtins.concatStringsSep " " (map toString config.input.tablet.calibrationMatrix)}"
+                                        else
+                                          ""
+                                      }
                                   }
 
                                   ${
