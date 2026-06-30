@@ -61,11 +61,16 @@ let
                                       drag-lock
                                       click-method "${config.input.touchpad.clickMethod}"
                                       scroll-method "${config.input.touchpad.scrollMethod}"
+                                      scroll-factor ${toString config.input.touchpad.scrollFactor}
+                                      tap-button-map "${config.input.touchpad.tapButtonMap}"
                                       accel-speed ${toString config.input.touchpad.accelSpeed}
                                       accel-profile "${config.input.touchpad.accelProfile}"
+                                      ${
+                                        if config.input.touchpad.middleEmulation then "middle-emulation" else ""
+                                      }
                                   }
 
-                                  // Touchscreen settings for GPD Pocket 4
+                                  // Touchscreen settings for tablet/convertible hosts such as aspen3
                                   touch {
                                       map-to-output "${mon.builtin.name}"
                                   }
@@ -90,6 +95,13 @@ let
                                       trigger-width ${toString config.gestures.dndEdgeScroll.triggerWidth}
                                       delay-ms ${toString config.gestures.dndEdgeScroll.delayMs}
                                       max-speed ${toString config.gestures.dndEdgeScroll.maxSpeed}
+                                  }
+
+                                  // Switch workspaces when dragging near the top or bottom edge in overview
+                                  dnd-edge-workspace-switch {
+                                      trigger-height ${toString config.gestures.dndEdgeWorkspaceSwitch.triggerHeight}
+                                      delay-ms ${toString config.gestures.dndEdgeWorkspaceSwitch.delayMs}
+                                      max-speed ${toString config.gestures.dndEdgeWorkspaceSwitch.maxSpeed}
                                   }
 
                                   // Enable hot corner to toggle overview (top-left)

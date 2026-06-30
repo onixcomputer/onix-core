@@ -38,6 +38,23 @@ let ScrollMethod =
   )
 in
 
+let TapButtonMap =
+  std.contract.from_validator (match {
+    "left-right-middle" => 'Ok,
+    "left-middle-right" => 'Ok,
+    _ => 'Error { message = "must be one of: left-right-middle, left-middle-right" },
+  }
+  )
+in
+
+let Positive =
+  std.contract.from_validator (match {
+    value if std.is_number value && value > 0 => 'Ok,
+    _ => 'Error { message = "must be a positive number" },
+  }
+  )
+in
+
 {
   keyboard | doc "Keyboard configuration" = {
     layout | doc "Keyboard layout" | String = "us",
@@ -51,6 +68,9 @@ in
     accelProfile | doc "Acceleration profile" | AccelProfile = "adaptive",
     clickMethod | doc "Click method" | ClickMethod = "clickfinger",
     scrollMethod | doc "Scroll method" | ScrollMethod = "two-finger",
+    scrollFactor | doc "Touchpad scroll multiplier" | Positive = 0.85,
+    tapButtonMap | doc "Touchpad tap button order" | TapButtonMap = "left-right-middle",
+    middleEmulation | doc "Enable left+right middle-click emulation" | Bool = true,
   },
   mouse | doc "Mouse configuration" = {
     focusFollows | doc "Focus follows mouse" | Bool = true,

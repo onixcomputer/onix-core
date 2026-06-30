@@ -7,6 +7,27 @@
 }:
 let
   niriPackage = inputs.niri.packages.${pkgs.stdenv.hostPlatform.system}.niri;
+  expectedGestureHandlerArgs = 2;
+
+  renderLisgdCommand =
+    binding: "${lib.getExe gestureHandler} ${binding.action} ${lib.escapeShellArg binding.label}";
+
+  renderLisgdSpec =
+    binding:
+    builtins.concatStringsSep "," [
+      (toString binding.fingers)
+      binding.direction
+      binding.edge
+      binding.distance
+      binding.actMode
+      (renderLisgdCommand binding)
+    ];
+
+  renderLisgdArg = binding: "-g ${lib.escapeShellArg (renderLisgdSpec binding)}";
+
+  lisgdGestureArgs = builtins.concatStringsSep " \\\n        " (
+    map renderLisgdArg config.gestures.lisgd.bindings
+  );
 
   # Handler script that executes niri action + shows notification
   gestureHandler = pkgs.writeShellApplication {
@@ -16,6 +37,12 @@ let
       pkgs.libnotify
     ];
     text = ''
+      expected_args=${toString expectedGestureHandlerArgs}
+      if [ "$#" -ne "$expected_args" ]; then
+        echo "Usage: gesture-handler ACTION LABEL" >&2
+        exit 1
+      fi
+
       ACTION="$1"
       LABEL="$2"
 
@@ -28,7 +55,7 @@ let
     '';
   };
 
-  # lisgd wrapper configured for GPD Pocket 4
+  # lisgd wrapper configured for touchscreen-capable Niri machines, including aspen3
   lisgdNiri = pkgs.writeShellApplication {
     name = "lisgd-niri";
     runtimeInputs = [
@@ -52,9 +79,9 @@ let
         exit 0
       fi
 
-      # Wait for Wayland session to be ready (bounded: 60 attempts ≈ 30s)
+      # Wait for the compositor session environment imported by niri-session.
       attempts=0
-      max_attempts=60
+      max_attempts=${toString config.gestures.lisgd.sessionWaitAttempts}
       while [ -z "''${WAYLAND_DISPLAY:-}" ]; do
         attempts=$((attempts + 1))
         if [ "$attempts" -ge "$max_attempts" ]; then
@@ -78,12 +105,7 @@ let
         -d "$TOUCHSCREEN" \
         -o ${toString config.gestures.lisgd.outputIndex} \
         -t ${toString config.gestures.lisgd.timeout} \
-        -g "1,DU,B,M,R,${lib.getExe gestureHandler} toggle-overview 'Overview'" \
-        -g "2,LR,*,M,R,${lib.getExe gestureHandler} focus-workspace-up '← Prev WS'" \
-        -g "2,RL,*,M,R,${lib.getExe gestureHandler} focus-workspace-down '→ Next WS'" \
-        -g "2,DU,*,M,R,${lib.getExe gestureHandler} focus-column-left '↑ Prev Win'" \
-        -g "2,UD,*,M,R,${lib.getExe gestureHandler} focus-column-right '↓ Next Win'" \
-        -g "3,DU,*,*,R,${lib.getExe gestureHandler} toggle-overview 'Overview'"
+        ${lisgdGestureArgs}
     '';
   };
 in
@@ -101,8 +123,8 @@ in
       After = [ "graphical-session.target" ];
       PartOf = [ "graphical-session.target" ];
       # Stop restarting if lisgd crashes repeatedly (wrong device, perms, etc.)
-      StartLimitBurst = 3;
-      StartLimitIntervalSec = 30;
+      StartLimitBurst = config.gestures.lisgd.startLimitBurst;
+      StartLimitIntervalSec = config.gestures.lisgd.startLimitIntervalSec;
     };
     Service = {
       Type = "simple";
