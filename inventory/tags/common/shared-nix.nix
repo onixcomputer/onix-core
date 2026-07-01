@@ -65,21 +65,10 @@ in
 
         # Rebuild nix-eval-jobs against the wasm-enabled Nix so buildbot
         # workers can evaluate builtins.wasm calls (Nickel plugin, YAML, etc).
-        # Pin to v2.33.1 to match our Nix 2.33.3 — the nixpkgs default
-        # (v2.34.1) is built against Nix 2.34 and ABI-incompatible.
-        nix-eval-jobs =
-          (prev.nix-eval-jobs.override {
-            nixComponents = onixNixComponents;
-          }).overrideAttrs
-            (_: {
-              version = "2.33.1";
-              src = prev.fetchFromGitHub {
-                owner = "nix-community";
-                repo = "nix-eval-jobs";
-                tag = "v2.33.1";
-                hash = "sha256-ONA7ztgyE2CC3T45NiGxQgCBQevAJ1+pEJlMQpREjBA=";
-              };
-            });
+        # Keep nixpkgs' current source/version so it tracks Nix C++ API changes.
+        nix-eval-jobs = prev.nix-eval-jobs.override {
+          nixComponents = onixNixComponents;
+        };
       }
     )
   ];

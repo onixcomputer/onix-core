@@ -87,7 +87,8 @@ in
       ];
 
       services.udev = {
-        packages = [ pkgs.rdma-core ];
+        # Keep RDMA device permissions explicit instead of importing rdma-core's
+        # upstream udev rules, which include an SRP rule with /bin/systemctl.
         extraRules = ''
           SUBSYSTEM=="infiniband", GROUP="${rdmaGroup}", MODE="${rdmaDeviceMode}"
           SUBSYSTEM=="infiniband_mad", GROUP="${rdmaGroup}", MODE="${rdmaDeviceMode}"
