@@ -10,6 +10,9 @@ let
   touchScreenI2cDevice = "i2c-ELAN9008:00";
   hardwareAccessMode = "0666";
   renderGroup = "render";
+  c0sdGroup = "c0sd";
+  sdhciPciDriverPath = "/sys/bus/pci/drivers/sdhci-pci";
+  sdhciDriverControlMode = "0660";
   mpvVolumeMaxPercent = 120;
   bluetoothAudioCodecs = [
     "ldac"
@@ -110,7 +113,18 @@ in
     ACTION=="add|change", SUBSYSTEM=="i2c", KERNEL=="${touchScreenI2cDevice}", TEST=="power/wakeup", ATTR{power/wakeup}="enabled"
   '';
 
+  users.groups.${c0sdGroup}.members = [ "brittonr" ];
   users.users.brittonr.extraGroups = [ renderGroup ];
+
+  systemd.services.c0sd-sysfs-perms = {
+    description = "Allow c0sd group to soft-cycle SD host controller";
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig.Type = "oneshot";
+    script = ''
+      ${pkgs.coreutils}/bin/chgrp ${c0sdGroup} ${sdhciPciDriverPath}/bind ${sdhciPciDriverPath}/unbind
+      ${pkgs.coreutils}/bin/chmod ${sdhciDriverControlMode} ${sdhciPciDriverPath}/bind ${sdhciPciDriverPath}/unbind
+    '';
+  };
 
   home-manager.users.brittonr = {
     home.packages = with pkgs; [
