@@ -39,34 +39,6 @@ let ornith_35b_q8_model = "user.Ornith-1.0-35B-Q8_0" in
 let krea2_sglang_port = 30000 in
 let krea2_sglang_gpu_count = 1 in
 let krea2_sglang_lowest_prefetch = "0.0" in
-let krea2_turbo_smoke_steps = 8 in
-let krea2_turbo_guidance_scale = 0.0 in
-let krea2_turbo_flow_shift = 1.15 in
-let krea2_turbo_smoke_pixels = 512 in
-let krea2_turbo_sdcpp_args = "--diffusion-fa --offload-to-cpu --vae-tiling" in
-# Declared for run-krea2-on-aspen3; intentionally not registered in
-# lemonade-aspen3 customModels/models until the direct Aspen3 smoke passes.
-let krea2_turbo_sd_cpp = {
-  checkpoints = {
-    main = "vantagewithai/Krea-2-Turbo-GGUF:krea2_turbo-Q4_K_M.gguf",
-    text_encoder = "Comfy-Org/Krea-2:text_encoders/qwen3vl_4b_fp8_scaled.safetensors",
-    vae = "Comfy-Org/Krea-2:vae/qwen_image_vae.safetensors",
-  },
-  recipe = "sd-cpp",
-  labels = ["image"],
-  imageDefaults = {
-    steps = krea2_turbo_smoke_steps,
-    cfg_scale = krea2_turbo_guidance_scale,
-    width = krea2_turbo_smoke_pixels,
-    height = krea2_turbo_smoke_pixels,
-    sampling_method = "euler",
-    flow_shift = krea2_turbo_flow_shift,
-  },
-  recipeOptions = {
-    sdcpp_args = krea2_turbo_sdcpp_args,
-  },
-}
-in
 
 {
   instances = {
@@ -410,8 +382,6 @@ in
       module = { name = "lemonade", input = "self" },
       roles.default.machines.aspen3.settings = {
         backend = "rocm",
-        sdCppBackend = "rocm",
-        sdCppUseNixBackend = true,
         customModels = {
           "Ornith-1.0-9B-Q8_0" = ornith_9b_q8,
           "Ornith-1.0-35B-Q8_0" = ornith_35b_q8,

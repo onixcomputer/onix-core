@@ -51,10 +51,6 @@ in
                 maxLoadedModels
                 globalTimeout
                 extraArgs
-                sdCppBackend
-                sdCppUseNixBackend
-                sdCppRocmBin
-                sdCppExtraArgs
                 clusterRpcClient
                 clusterRpcWorker
                 clusterRpcPort
@@ -71,19 +67,8 @@ in
 
               healthEnabled = healthCheckInterval > 0;
 
-              lemonadeRender = import ./render.nix { inherit lib; };
-              customModelAssetErrors = lemonadeRender.customModelAssetErrors customModels;
-
               lemonadePkg = pkgs.lemonade-server;
               llamacppPkg = pkgs.llamacpp-rocm-rpc;
-              sdCppPkg = pkgs.stable-diffusion-cpp-rocm;
-              effectiveSdCppRocmBin =
-                if sdCppRocmBin != "" then
-                  sdCppRocmBin
-                else if sdCppUseNixBackend then
-                  "${sdCppPkg}/bin/sd-server"
-                else
-                  "builtin";
 
               stateDir = "/var/lib/lemonade";
               localConnectHost =
@@ -152,17 +137,6 @@ in
                   // {
                     args = "--metrics" + lib.optionalString (effectiveExtraArgs != "") " ${effectiveExtraArgs}";
                   };
-                  sdcpp = {
-                    backend = sdCppBackend;
-                    # Krea2 support can require a newer Nix-owned sd-server than
-                    # Lemonade's downloadable backend bundle.
-                    rocm_bin = effectiveSdCppRocmBin;
-                    vulkan_bin = "builtin";
-                    cpu_bin = "builtin";
-                  }
-                  // lib.optionalAttrs (sdCppExtraArgs != "") {
-                    args = sdCppExtraArgs;
-                  };
                 }
               );
 
@@ -170,21 +144,34 @@ in
               # lemonade can pull and serve them. Keys are model names (without
               # the "user." prefix that lemonade adds automatically).
               userModelsJson = pkgs.writeText "lemonade-user-models.json" (
-                builtins.toJSON (lemonadeRender.renderUserModels customModels)
+                builtins.toJSON (
+                  builtins.mapAttrs (
+                    _: m:
+                    {
+                      inherit (m) checkpoint;
+                      recipe = m.recipe or "llamacpp";
+                    }
+                    // lib.optionalAttrs (m ? size) { inherit (m) size; }
+                    // lib.optionalAttrs (m ? mmproj) { inherit (m) mmproj; }
+                    // lib.optionalAttrs (m ? labels) { inherit (m) labels; }
+                  ) customModels
+                )
               );
 
               # recipe_options.json — per-model runtime settings (context size,
               # backend). Uses "user.<name>" keys matching lemonade's prefix.
               recipeOptionsJson = pkgs.writeText "lemonade-recipe-options.json" (
                 builtins.toJSON (
-                  lemonadeRender.renderRecipeOptions {
-                    inherit
-                      backend
-                      contextSize
-                      customModels
-                      effectiveExtraArgs
-                      ;
-                  }
+                  builtins.mapAttrs (
+                    _name: _:
+                    {
+                      ctx_size = contextSize;
+                      llamacpp_backend = if backend == "system" then "vulkan" else backend;
+                    }
+                    // lib.optionalAttrs (effectiveExtraArgs != "") {
+                      llamacpp_args = effectiveExtraArgs;
+                    }
+                  ) (lib.mapAttrs' (name: value: lib.nameValuePair "user.${name}" value) customModels)
                 )
               );
 
@@ -252,21 +239,19 @@ in
                   }
                   trap cleanup TERM INT
 
-                  # Count backend processes in the service cgroup.
+                  # Count llama-server processes in the service cgroup
                   count_backends() {
                     local cgroup="/sys/fs/cgroup/system.slice/lemonade.service/cgroup.procs"
                     if [ -f "$cgroup" ]; then
                       local c=0
                       while read -r pid; do
-                        case "$(cat "/proc/$pid/comm" 2>/dev/null)" in
-                          llama-server|sd-server)
-                            c=$((c + 1))
-                            ;;
-                        esac
+                        if [ "$(cat "/proc/$pid/comm" 2>/dev/null)" = "llama-server" ]; then
+                          c=$((c + 1))
+                        fi
                       done < "$cgroup"
                       echo "$c"
                     else
-                      pgrep -cx 'llama-server|sd-server' 2>/dev/null || echo 0
+                      pgrep -cx llama-server 2>/dev/null || echo 0
                     fi
                   }
 
@@ -291,9 +276,9 @@ in
                       MISS_COUNT=0
                     elif [ "$BACKEND_SEEN" = true ]; then
                       MISS_COUNT=$((MISS_COUNT + 1))
-                      echo "WARNING: Lemonade backend process not found (miss $MISS_COUNT/$THRESHOLD)"
+                      echo "WARNING: llama-server backend not found (miss $MISS_COUNT/$THRESHOLD)"
                       if [ "$MISS_COUNT" -ge "$THRESHOLD" ]; then
-                        echo "ERROR: backend process gone for $((MISS_COUNT * INTERVAL))s, restarting service"
+                        echo "ERROR: backend gone for $((MISS_COUNT * INTERVAL))s, restarting service"
                         kill -TERM "$ROUTER_PID" 2>/dev/null || true
                         wait "$ROUTER_PID" 2>/dev/null || true
                         exit 1
@@ -319,14 +304,10 @@ in
                   assertion = !clusterRpcWorker || clusterRpcBindAddress != null;
                   message = "Lemonade clusterRpcWorker requires clusterRpcBindHost or vllm-cluster-network local address.";
                 }
-                {
-                  assertion = customModelAssetErrors == [ ];
-                  message = "Lemonade custom model assets are incomplete: ${lib.concatStringsSep "; " customModelAssetErrors}";
-                }
               ];
 
-              # Install the lemonade package system-wide for CLI access.
-              environment.systemPackages = [ lemonadePkg ] ++ lib.optionals sdCppUseNixBackend [ sdCppPkg ];
+              # Install the lemonade package system-wide for CLI access
+              environment.systemPackages = [ lemonadePkg ];
 
               systemd.services = {
                 lemonade = {
