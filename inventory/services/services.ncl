@@ -353,6 +353,7 @@ let krea2_sglang_lowest_prefetch = "0.0" in
         },
         models = ["kokoro-v1", ornith_9b_q8_model, ornith_35b_q4_model],
         contextSize = 131072,
+        globalTimeout = 0,
         clusterRpcClient = true,
         extraArgs = "--no-mmap -fa on --cache-type-k q8_0 --cache-type-v q8_0 -b 4096",
       },
