@@ -73,6 +73,14 @@ in
     # Bridge the tablet accelerometer through iio-sensor-proxy into Niri.
     iio-niri.enable = true;
 
+    # r[onix.aspen3.power.lid]
+    # Keep AC-powered remote inference and model pulls reachable. Battery lid
+    # close retains logind's default suspend behavior for normal mobile use.
+    logind.settings.Login = {
+      HandleLidSwitchDocked = "ignore";
+      HandleLidSwitchExternalPower = "ignore";
+    };
+
     # Override the greeter tag's Hyprland default with the Niri session used by
     # the other interactive Niri hosts.
     greetd.settings.default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd /etc/profiles/per-user/brittonr/bin/niri-session";
@@ -127,6 +135,11 @@ in
   };
 
   home-manager.users.brittonr = {
+    # r[onix.aspen3.power.idle]
+    # aspen3 doubles as a local LLM host; keep the session from auto-suspending
+    # while still allowing screen dimming and DPMS power-off.
+    onix.idle.suspend.enable = false;
+
     home.packages = with pkgs; [
       easyeffects
       evtest
