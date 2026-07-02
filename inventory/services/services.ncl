@@ -386,7 +386,7 @@ let krea2_sglang_lowest_prefetch = "0.0" in
         backend = "rocm",
         customModels = {
           "Ornith-1.0-9B-Q8_0" = ornith_9b_q8,
-          "Ornith-1.0-35B-Q8_0" = ornith_35b_q8,
+          "Ornith-1.0-35B-Q4_K_M" = ornith_35b_q4,
           "Qwen3.6-35B-A3B" = {
             checkpoint = "unsloth/Qwen3.6-35B-A3B-GGUF:Q8_0",
             recipe = "llamacpp",
@@ -398,7 +398,8 @@ let krea2_sglang_lowest_prefetch = "0.0" in
             size = 3,
           },
         },
-        models = ["user.Qwen3.6-35B-A3B", "user.VibeThinker-3B", "Whisper-Large-v3-Turbo", ornith_9b_q8_model, ornith_35b_q8_model],
+        # r[onix.aspen3.ornith.model]
+        models = ["user.Qwen3.6-35B-A3B", "user.VibeThinker-3B", "Whisper-Large-v3-Turbo", ornith_9b_q8_model, ornith_35b_q4_model],
         contextSize = 131072,
         globalTimeout = 0,
         extraArgs = "--no-mmap -fa on --cache-type-k q8_0 --cache-type-v q8_0 -b 8192 -ub 4096 -np 1",
