@@ -33,6 +33,7 @@ in
   // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
     branchfs = pkgs.callPackage ../pkgs/branchfs { };
     horizon = pkgs.callPackage ../pkgs/horizon { horizon-src = self.inputs.horizon; };
+    iroh-ssh = pkgs.callPackage ../pkgs/iroh-ssh { };
     llamacpp-rocm-rpc = pkgs.callPackage ../pkgs/llamacpp-rocm-rpc { };
     lemonade-server = pkgs.callPackage ../pkgs/lemonade { };
   }

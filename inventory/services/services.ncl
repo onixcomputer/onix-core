@@ -113,7 +113,6 @@ let krea2_sglang_lowest_prefetch = "0.0" in
             },
             demo = {
               port = 8889,
-              subdomain = "demo",
               public = false,
             },
             wiki = {
@@ -129,6 +128,21 @@ let krea2_sglang_lowest_prefetch = "0.0" in
           dnsPropagationCheck = false,
         },
       },
+    },
+
+    "iroh-ssh-aspen3" = {
+      module = { name = "iroh-ssh", input = "self" },
+      roles.peer.machines.aspen3 = {},
+    },
+
+    "iroh-ssh-britton-desktop" = {
+      module = { name = "iroh-ssh", input = "self" },
+      roles.peer.machines.britton-desktop = {},
+    },
+
+    "iroh-ssh-bonsai" = {
+      module = { name = "iroh-ssh", input = "self" },
+      roles.peer.machines.bonsai = {},
     },
 
     "cloudflare-brittonr" = {

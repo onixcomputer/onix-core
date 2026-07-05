@@ -27,6 +27,7 @@ let
     };
     "tailscale" = import ./tailscale (schemaArgs ./tailscale);
     "tailscale-traefik" = import ./tailscale-traefik (schemaArgs ./tailscale-traefik);
+    "iroh-ssh" = import ./iroh-ssh (schemaArgs ./iroh-ssh);
     "static-server" = import ./static-server (schemaArgs ./static-server);
     "prometheus" = import ./prometheus (schemaArgs ./prometheus);
     "grafana" = import ./grafana (schemaArgs ./grafana);

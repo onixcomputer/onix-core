@@ -174,16 +174,67 @@ in
   };
 
   systemd = {
-    # DisplayLink Manager service
-    services.dlm = {
-      description = "DisplayLink Manager Service";
-      after = [ "display-manager.service" ];
-      wantedBy = [ "multi-user.target" ];
-      serviceConfig = {
-        ExecStart = "${pkgs.displaylink}/bin/DisplayLinkManager";
-        Restart = "always";
-        RestartSec = 5;
-        LogsDirectory = "displaylink";
+    services = {
+      # DisplayLink Manager service
+      dlm = {
+        description = "DisplayLink Manager Service";
+        after = [ "display-manager.service" ];
+        wantedBy = [ "multi-user.target" ];
+        serviceConfig = {
+          ExecStart = "${pkgs.displaylink}/bin/DisplayLinkManager";
+          Restart = "always";
+          RestartSec = 5;
+          LogsDirectory = "displaylink";
+        };
+      };
+
+      # Supra-Router-51M — ultra-lightweight prompt routing model
+      llamacpp-server-supra-router = {
+        description = "llama.cpp inference server — Supra-Router-51M";
+        after = [ "network-online.target" ];
+        wants = [ "network-online.target" ];
+        wantedBy = [ "multi-user.target" ];
+        preStart = ''
+          mkdir -p /var/lib/llamacpp-server-supra-router/models
+          if [ ! -f /var/lib/llamacpp-server-supra-router/models/supra-router-51m.gguf ]; then
+            if [ -f /home/brittonr/models/supra-router-51m.gguf ]; then
+              cp /home/brittonr/models/supra-router-51m.gguf /var/lib/llamacpp-server-supra-router/models/
+              chmod 644 /var/lib/llamacpp-server-supra-router/models/supra-router-51m.gguf
+            fi
+          fi
+        '';
+        serviceConfig = {
+          ExecStart = ''
+            ${pkgs.llama-cpp}/bin/llama-server \
+              --host 0.0.0.0 --port 13306 \
+              --model /var/lib/llamacpp-server-supra-router/models/supra-router-51m.gguf \
+              --alias Supra-Router-51M \
+              --ctx-size 5120 \
+              --gpu-layers 999 \
+              --flash-attn on \
+              --no-mmap \
+              --metrics \
+              --batch-size 2048 \
+              --ubatch-size 1024 \
+              --parallel 1 \
+              --temp 0.0
+          '';
+          Restart = "on-failure";
+          RestartSec = 10;
+          StateDirectory = "llamacpp-server-supra-router";
+          StateDirectoryMode = "0755";
+          User = "root";
+          Group = "root";
+        };
+      };
+
+      # Keep daemon-managed builds below interactive desktop work. Nix builds are
+      # also capped by nix.settings max-jobs/cores above; these cgroup weights and
+      # memory pressure guard protect the compositor/session when builds are busy.
+      nix-daemon.serviceConfig = {
+        CPUWeight = 25;
+        IOWeight = 25;
+        MemoryHigh = "140G";
       };
     };
 
@@ -193,15 +244,6 @@ in
       suspend.enable = false;
       hibernate.enable = false;
       hybrid-sleep.enable = false;
-    };
-
-    # Keep daemon-managed builds below interactive desktop work. Nix builds are
-    # also capped by nix.settings max-jobs/cores above; these cgroup weights and
-    # memory pressure guard protect the compositor/session when builds are busy.
-    services.nix-daemon.serviceConfig = {
-      CPUWeight = 25;
-      IOWeight = 25;
-      MemoryHigh = "140G";
     };
   };
 
@@ -217,6 +259,7 @@ in
     nirius
     prismlauncher
     displaylink
+    llama-cpp
     self.packages.${pkgs.stdenv.hostPlatform.system}.opendeck
     self.packages.${pkgs.stdenv.hostPlatform.system}.ttsim
     inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr

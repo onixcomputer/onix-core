@@ -20,6 +20,7 @@ let schemas = {
   "home-manager-profiles" = import "../../modules/home-manager-profiles/schema.ncl",
   "homepage-dashboard" = import "../../modules/homepage-dashboard/schema.ncl",
   "infinity" = import "../../modules/infinity/schema.ncl",
+  "iroh-ssh" = import "../../modules/iroh-ssh/schema.ncl",
   "kache-nix-rust" = import "../../modules/kache-nix-rust/schema.ncl",
   "lemonade" = import "../../modules/lemonade/schema.ncl",
   "llamacpp-rpc" = import "../../modules/llamacpp-rpc/schema.ncl",
