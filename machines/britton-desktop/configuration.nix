@@ -205,7 +205,7 @@ in
         '';
         serviceConfig = {
           ExecStart = ''
-            ${(pkgs.llama-cpp.override { cudaSupport = true; })}/bin/llama-server \
+            (pkgs.llamacpp-rocm-rpc)/bin/llama-server \
               --host 0.0.0.0 --port 13306 \
               --model /var/lib/llamacpp-server-supra-router/models/supra-router-51m.gguf \
               --alias Supra-Router-51M \
