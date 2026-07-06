@@ -24,6 +24,28 @@ let
     "hfp_ag"
   ];
   ldacQualityMode = "hq";
+
+  # CUDA llama-cpp build — copied from the llamacpp-server module pattern to
+  # avoid the broken cuda_compat package.
+  disabledCudaCompatRunpathHook =
+    pkgs.runCommand "auto-add-cuda-compat-runpath-hook-disabled"
+      {
+        passthru.enableHook = false;
+      }
+      ''
+        mkdir -p $out/nix-support
+        touch $out/nix-support/setup-hook
+      '';
+  cudaPackagesWithoutCompat = pkgs.cudaPackages.overrideScope (
+    _final: _prev: {
+      cuda_compat = null;
+      autoAddCudaCompatRunpath = disabledCudaCompatRunpathHook;
+    }
+  );
+  llamaCudaPkg = pkgs.llama-cpp.override {
+    cudaSupport = true;
+    cudaPackages = cudaPackagesWithoutCompat;
+  };
 in
 {
   networking = {
@@ -205,7 +227,7 @@ in
         '';
         serviceConfig = {
           ExecStart = ''
-            ${self.packages.${pkgs.stdenv.hostPlatform.system}.llamacpp-rocm-rpc}/bin/llama-server \
+            ${llamaCudaPkg}/bin/llama-server \
               --host 0.0.0.0 --port 13306 \
               --model /var/lib/llamacpp-server-supra-router/models/supra-router-51m.gguf \
               --alias Supra-Router-51M \
@@ -259,7 +281,7 @@ in
     nirius
     prismlauncher
     displaylink
-    self.packages.${pkgs.stdenv.hostPlatform.system}.llamacpp-rocm-rpc
+    llamaCudaPkg
     self.packages.${pkgs.stdenv.hostPlatform.system}.opendeck
     self.packages.${pkgs.stdenv.hostPlatform.system}.ttsim
     inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr
