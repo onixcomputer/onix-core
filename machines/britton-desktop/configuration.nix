@@ -205,7 +205,7 @@ in
         '';
         serviceConfig = {
           ExecStart = ''
-            (pkgs.llamacpp-rocm-rpc)/bin/llama-server \
+            ${self.packages.${pkgs.stdenv.hostPlatform.system}.llamacpp-rocm-rpc}/bin/llama-server \
               --host 0.0.0.0 --port 13306 \
               --model /var/lib/llamacpp-server-supra-router/models/supra-router-51m.gguf \
               --alias Supra-Router-51M \
@@ -259,7 +259,7 @@ in
     nirius
     prismlauncher
     displaylink
-    llamacpp-rocm-rpc
+    self.packages.${pkgs.stdenv.hostPlatform.system}.llamacpp-rocm-rpc
     self.packages.${pkgs.stdenv.hostPlatform.system}.opendeck
     self.packages.${pkgs.stdenv.hostPlatform.system}.ttsim
     inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr
