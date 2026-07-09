@@ -27,6 +27,12 @@ let
   wl-walls-noctalia-plugin =
     inputs.wl-walls.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-plugin;
 
+  # greetd launches the Niri session on tty1 for these hosts. The user
+  # systemd manager does not reliably keep VT/session variables from the
+  # login shell, so pass the VT explicitly to the compositor service.
+  niriSessionSeat = "seat0";
+  niriSessionVtnr = "1";
+
   # ── Niri config content ────────────────────────────────────────────────
   # Generated at build time, copied to ~/.config/niri/config.kdl by the
   # activation script so it's mutable at runtime. Noctalia's template
@@ -479,6 +485,10 @@ in
       Service = {
         Slice = "session.slice";
         Type = "notify";
+        Environment = [
+          "XDG_SEAT=${niriSessionSeat}"
+          "XDG_VTNR=${niriSessionVtnr}"
+        ];
         ExecStart = "${wrappedNiri}/bin/niri --session";
       };
     };
