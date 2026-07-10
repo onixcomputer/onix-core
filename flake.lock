@@ -1282,6 +1282,7 @@
         "tenstorrent-nix": "tenstorrent-nix",
         "tigerstyle": "tigerstyle",
         "treefmt-nix": "treefmt-nix",
+        "tt-kmd": "tt-kmd",
         "upmpdcli": "upmpdcli",
         "wl-walls": "wl-walls",
         "wrappers": "wrappers"
@@ -1590,6 +1591,32 @@
       "original": {
         "owner": "numtide",
         "repo": "treefmt-nix",
+        "type": "github"
+      }
+    },
+    "tt-kmd": {
+      "inputs": {
+        "flake-parts": [
+          "flake-parts"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "systems": [
+          "systems"
+        ]
+      },
+      "locked": {
+        "lastModified": 1783640847,
+        "narHash": "sha256-qDw15NB+gb+A7fj3QgEJAAjqpvpqDraSCpYOdPRamFI=",
+        "owner": "tenstorrent",
+        "repo": "tt-kmd",
+        "rev": "d3b9ec9e5087b4993cdbc9a71b9ba757e94371a1",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tenstorrent",
+        "repo": "tt-kmd",
         "type": "github"
       }
     },

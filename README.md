@@ -9,6 +9,10 @@
 - [MercuryTechnologies/mercury-cli](https://github.com/MercuryTechnologies/mercury-cli) — upstream flake used for the Mercury terminal banking CLI.
 - [Mic92/fast-nix-gc](https://github.com/Mic92/fast-nix-gc) — upstream fast Nix store garbage collector and optimiser used by store maintenance.
 - [NathanFlurry/herdr-plugin-jj-workspace](https://github.com/NathanFlurry/herdr-plugin-jj-workspace) — Herdr plugin used for Jujutsu workspace actions.
-- [RossComputerGuy/tenstorrent.nix](https://github.com/RossComputerGuy/tenstorrent.nix) — upstream flake used for Tenstorrent Blackhole packages and kernel module support.
+- [RossComputerGuy/tenstorrent.nix](https://github.com/RossComputerGuy/tenstorrent.nix) — upstream flake used for Tenstorrent Blackhole packages and tooling.
+- [Tenstorrent software install docs](https://docs.tenstorrent.com/getting-started/README.html) — official driver, firmware, hugepages, and verification workflow mirrored by the `tenstorrent` host tag.
+- [tenstorrent/tt-kmd](https://github.com/tenstorrent/tt-kmd) — official Tenstorrent kernel-mode driver flake used for NixOS KMD integration.
+- [tenstorrent/tt-system-tools](https://github.com/tenstorrent/tt-system-tools) — upstream hugepages setup behavior adapted declaratively for NixOS.
+- [tenstorrent/tt-system-firmware](https://github.com/tenstorrent/tt-system-firmware) — firmware bundle source packaged for manual `tt-flash` use.
 - `../changebot` — sibling Remora Rust workspace used as the kache Nix-build pilot example.
 
