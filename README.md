@@ -11,6 +11,7 @@
 - [NathanFlurry/herdr-plugin-jj-workspace](https://github.com/NathanFlurry/herdr-plugin-jj-workspace) — Herdr plugin used for Jujutsu workspace actions.
 - [RossComputerGuy/tenstorrent.nix](https://github.com/RossComputerGuy/tenstorrent.nix) — upstream flake used for Tenstorrent Blackhole packages and tooling.
 - [Tenstorrent software install docs](https://docs.tenstorrent.com/getting-started/README.html) — official driver, firmware, hugepages, and verification workflow mirrored by the `tenstorrent` host tag.
+- [Tenstorrent software stack overview](https://docs.tenstorrent.com/software/index.html) — entry-point map for TT-Forge, TT-NN, TT-Lang, TT-MLIR, TT-Metalium, and cloud-native support mirrored in host docs.
 - [tenstorrent/tt-kmd](https://github.com/tenstorrent/tt-kmd) — official Tenstorrent kernel-mode driver flake used for NixOS KMD integration.
 - [tenstorrent/tt-system-tools](https://github.com/tenstorrent/tt-system-tools) — upstream hugepages setup behavior adapted declaratively for NixOS.
 - [tenstorrent/tt-system-firmware](https://github.com/tenstorrent/tt-system-firmware) — firmware bundle source packaged for manual `tt-flash` use.

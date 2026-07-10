@@ -50,6 +50,44 @@ let
     '';
   };
 
+  softwareOverviewUrl = "https://docs.tenstorrent.com/software/index.html";
+  tenstorrentSoftwareEntryPoints = [
+    {
+      name = "TT-Forge";
+      url = "https://docs.tenstorrent.com/forge/index.html";
+      useCase = "compile models from PyTorch, JAX, or ONNX; recommended first stop for most model work";
+    }
+    {
+      name = "TT-NN";
+      url = "https://docs.tenstorrent.com/tt-metal/latest/ttnn/";
+      useCase = "build networks in Python from pre-optimized neural-network operations";
+    }
+    {
+      name = "TT-Lang";
+      url = "https://docs.tenstorrent.com/tt-lang/";
+      useCase = "author custom fused operations in a Python DSL";
+    }
+    {
+      name = "TT-MLIR";
+      url = "https://docs.tenstorrent.com/tt-mlir/";
+      useCase = "work on compiler internals or custom lowering backends";
+    }
+    {
+      name = "TT-Metalium";
+      url = "https://docs.tenstorrent.com/tt-metal/latest/tt-metalium/";
+      useCase = "write kernels directly for Tensix cores when low-level control is required";
+    }
+    {
+      name = "Cloud-Native Support";
+      url = "https://docs.tenstorrent.com/cloud-native-support/";
+      useCase = "install, configure, and operate Tenstorrent accelerators on Kubernetes";
+    }
+  ];
+  mkSoftwareEntry = entry: "- [${entry.name}](${entry.url}) — ${entry.useCase}.";
+  tenstorrentSoftwareEntryPointMarkdown =
+    lib.concatMapStringsSep "\n" mkSoftwareEntry
+      tenstorrentSoftwareEntryPoints;
+
   tenstorrentToolPackageNames = [
     "burnin"
     "flash"
@@ -243,6 +281,15 @@ in
 
       If BIOS settings are reset, Tenstorrent documents that PCIe AER Reporting
       Mechanism should be set to `OS First` for TT-SMI compatibility.
+
+      ## Software stack entry points
+
+      This NixOS tag handles the system bringup layer: KMD, device rules,
+      hugepages, firmware bundle packaging, and bringup/diagnostic tools. After
+      hardware verification, choose the application/compiler layer from
+      Tenstorrent's software overview: ${softwareOverviewUrl}
+
+      ${tenstorrentSoftwareEntryPointMarkdown}
     '';
 
     systemPackages = selectTenstorrentTools tenstorrentPackages ++ [
