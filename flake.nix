@@ -139,6 +139,14 @@
         systems.follows = "systems";
       };
     };
+    tenstorrent-nix = {
+      url = "github:RossComputerGuy/tenstorrent.nix";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        systems.follows = "systems";
+      };
+    };
 
     # Dev tooling inputs (previously in dev/flake.nix partition)
     treefmt-nix = {

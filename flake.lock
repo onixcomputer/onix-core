@@ -1279,6 +1279,7 @@
         "sops-nix": "sops-nix",
         "srvos": "srvos",
         "systems": "systems_3",
+        "tenstorrent-nix": "tenstorrent-nix",
         "tigerstyle": "tigerstyle",
         "treefmt-nix": "treefmt-nix",
         "upmpdcli": "upmpdcli",
@@ -1516,6 +1517,32 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "tenstorrent-nix": {
+      "inputs": {
+        "flake-parts": [
+          "flake-parts"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "systems": [
+          "systems"
+        ]
+      },
+      "locked": {
+        "lastModified": 1755149377,
+        "narHash": "sha256-LU2ZDuquF+n4XdcodxtMuOOlcugg90DWf2OXXWJHW98=",
+        "owner": "RossComputerGuy",
+        "repo": "tenstorrent.nix",
+        "rev": "c101b96e65ff324b99847def21eaa5444099ebc6",
+        "type": "github"
+      },
+      "original": {
+        "owner": "RossComputerGuy",
+        "repo": "tenstorrent.nix",
         "type": "github"
       }
     },

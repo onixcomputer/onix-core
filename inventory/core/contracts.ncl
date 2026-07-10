@@ -38,6 +38,7 @@ let tag_file_tags = [
   "remote-builders",
   "ssd-optimization",
   "taskwarrior",
+  "tenstorrent",
   "thunderbolt-link",
   "typst",
   "udev-rules",

@@ -201,6 +201,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "pro-audio",
         "xdg-portal",
         "nvidia",
+        "tenstorrent",
         "creative",
         "media",
         "prometheus",
