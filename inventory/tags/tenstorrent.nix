@@ -51,6 +51,15 @@ let
   };
 
   softwareOverviewUrl = "https://docs.tenstorrent.com/software/index.html";
+  ttInferenceServerUrl = "https://github.com/tenstorrent/tt-inference-server";
+  ttInferenceServerPrerequisitesUrl = "https://github.com/tenstorrent/tt-inference-server/blob/main/docs/prerequisites.md";
+  ttInferenceServerWorkflowsUrl = "https://github.com/tenstorrent/tt-inference-server/blob/main/docs/workflows_user_guide.md";
+  ttInferenceServerHardwareModelsUrl = "https://github.com/tenstorrent/tt-inference-server/blob/main/docs/model_support/models_by_hardware.md";
+  ttInferenceServerDefaultPort = 8000;
+  ttInferenceServerContainerUid = 1000;
+  ttInferenceServerMinimumPython = "3.8";
+  ttInferenceServerSmokeTestMode = "smoke-test";
+
   tenstorrentSoftwareEntryPoints = [
     {
       name = "TT-Forge";
@@ -88,6 +97,33 @@ let
     lib.concatMapStringsSep "\n" mkSoftwareEntry
       tenstorrentSoftwareEntryPoints;
 
+  blackholeInferenceHardwareTargets = [
+    {
+      name = "BH LoudBox";
+      url = "${ttInferenceServerHardwareModelsUrl}#bh-loudbox";
+    }
+    {
+      name = "BH 4xP150";
+      url = "${ttInferenceServerHardwareModelsUrl}#bh-4xp150";
+    }
+    {
+      name = "BH QuietBox 2";
+      url = "${ttInferenceServerHardwareModelsUrl}#bh-quietbox-2";
+    }
+    {
+      name = "p100";
+      url = "${ttInferenceServerHardwareModelsUrl}#p100";
+    }
+    {
+      name = "p150";
+      url = "${ttInferenceServerHardwareModelsUrl}#p150";
+    }
+  ];
+  mkInferenceHardwareTarget = target: "- [${target.name}](${target.url})";
+  blackholeInferenceHardwareMarkdown =
+    lib.concatMapStringsSep "\n" mkInferenceHardwareTarget
+      blackholeInferenceHardwareTargets;
+
   tenstorrentToolPackageNames = [
     "burnin"
     "flash"
@@ -99,6 +135,11 @@ let
   ];
 
   selectTenstorrentTools = packages: lib.attrVals tenstorrentToolPackageNames packages;
+  ttInferenceServerWorkflowPackages = [
+    pkgs.git
+    pkgs.python3
+    pkgs.uv
+  ];
 
   tenstorrentHugepagesSetup = pkgs.writeShellApplication {
     name = "tenstorrent-hugepages-setup";
@@ -211,6 +252,11 @@ in
 {
   nixpkgs.overlays = [ inputs.tt-kmd.overlays.default ];
 
+  warnings = lib.optional (!config.virtualisation.docker.enable) ''
+    The tenstorrent tag prepares TT-Inference-Server docs and workflow tools, but Docker is disabled.
+    Add the docker tag or enable virtualisation.docker.enable before using tt-inference-server --docker-server workflows.
+  '';
+
   boot = {
     extraModulePackages = [ tenstorrentKernelModule ];
     kernelModules = [ tenstorrentKernelModuleName ];
@@ -290,11 +336,53 @@ in
       Tenstorrent's software overview: ${softwareOverviewUrl}
 
       ${tenstorrentSoftwareEntryPointMarkdown}
+
+      ## Serving models with TT-Inference-Server
+
+      `tt-inference-server` is Tenstorrent's fastest path for deploying and
+      testing model serving on Tenstorrent hardware: ${ttInferenceServerUrl}
+
+      This NixOS tag prepares the host prerequisites that repository expects:
+      KMD, udev rules, hugepages, firmware tooling, `tt-smi`, Docker on
+      `britton-desktop`, and Python workflow tools. It intentionally does not
+      vendor model-specific Docker images or mutable model weights into the Nix
+      store.
+
+      Prerequisite reference: ${ttInferenceServerPrerequisitesUrl}
+      Workflow reference: ${ttInferenceServerWorkflowsUrl}
+      Model support by hardware: ${ttInferenceServerHardwareModelsUrl}
+
+      Blackhole model-support indexes to check before choosing `--model`:
+
+      ${blackholeInferenceHardwareMarkdown}
+
+      First-run operator workflow:
+
+      ```sh
+      cd ~/git
+      git clone ${ttInferenceServerUrl}.git
+      cd tt-inference-server
+      # Put secrets in .env, not Nix: HF_TOKEN=... and JWT_SECRET=...
+      python3 run.py --model MODEL --workflow server --docker-server --print-docker-cmd
+      python3 run.py --model MODEL --workflow server --docker-server
+      ```
+
+      Notes:
+
+      - `run.py` requires Python ${ttInferenceServerMinimumPython}+ and Docker; Podman support is documented as experimental upstream.
+      - `--tt-device` can be omitted so `run.py` auto-detects hardware via `tt-smi`; set it explicitly only after checking the hardware/model support table.
+      - Direct Docker runs must pass `--device /dev/tenstorrent` and mount `${hugepagesMountPoint}` into the container.
+      - The default service port is `${toString ttInferenceServerDefaultPort}`.
+      - Default release images run as UID `${toString ttInferenceServerContainerUid}`; host cache directories must be writable by that UID when using `--host-volume`.
+      - For quick benchmark/eval validation, use `--limit-samples-mode ${ttInferenceServerSmokeTestMode}`.
     '';
 
-    systemPackages = selectTenstorrentTools tenstorrentPackages ++ [
-      pkgs.pciutils
-      tenstorrentSystemFirmware
-    ];
+    systemPackages =
+      selectTenstorrentTools tenstorrentPackages
+      ++ ttInferenceServerWorkflowPackages
+      ++ [
+        pkgs.pciutils
+        tenstorrentSystemFirmware
+      ];
   };
 }
