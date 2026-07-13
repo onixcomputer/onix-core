@@ -33,9 +33,16 @@ let ornith_35b_q8 = {
   size = 36.9,
 }
 in
+let ornith_35b_bf16 = {
+  checkpoint = "deepreinforce-ai/Ornith-1.0-35B-GGUF:BF16",
+  recipe = "llamacpp",
+  size = 69.38,
+}
+in
 let ornith_9b_q8_model = "user.Ornith-1.0-9B-Q8_0" in
 let ornith_35b_q4_model = "user.Ornith-1.0-35B-Q4_K_M" in
 let ornith_35b_q8_model = "user.Ornith-1.0-35B-Q8_0" in
+let ornith_35b_bf16_model = "user.Ornith-1.0-35B-BF16" in
 let krea2_sglang_port = 30000 in
 let krea2_sglang_gpu_count = 1 in
 let krea2_sglang_lowest_prefetch = "0.0" in
@@ -364,8 +371,9 @@ let krea2_sglang_lowest_prefetch = "0.0" in
         customModels = {
           "Ornith-1.0-9B-Q8_0" = ornith_9b_q8,
           "Ornith-1.0-35B-Q4_K_M" = ornith_35b_q4,
+          "Ornith-1.0-35B-BF16" = ornith_35b_bf16,
         },
-        models = ["kokoro-v1", ornith_9b_q8_model, ornith_35b_q4_model],
+        models = ["kokoro-v1", ornith_9b_q8_model, ornith_35b_q4_model, ornith_35b_bf16_model],
         contextSize = 131072,
         globalTimeout = 0,
         clusterRpcClient = true,

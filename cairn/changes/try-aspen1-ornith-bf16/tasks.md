@@ -1,7 +1,7 @@
 ## Phase 1: Inventory
 
-- [ ] [serial] Register the official Ornith 1.0 35B BF16 GGUF in the Aspen1 Lemonade custom model map. r[onix.aspen1.ornith.bf16]
-- [ ] [serial] Add BF16 to Aspen1's pull list while retaining Q4_K_M and excluding Q8_0. r[onix.aspen1.ornith.bf16.inventory]
+- [x] [serial] Register the official Ornith 1.0 35B BF16 GGUF in the Aspen1 Lemonade custom model map. r[onix.aspen1.ornith.bf16]
+- [x] [serial] Add BF16 to Aspen1's pull list while retaining Q4_K_M and excluding Q8_0. r[onix.aspen1.ornith.bf16.inventory]
 
 ## Phase 2: Validation and deployment
 
