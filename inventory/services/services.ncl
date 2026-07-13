@@ -445,6 +445,24 @@ let krea2_sglang_lowest_prefetch = "0.0" in
       },
     },
 
+    "mesh-llm-private-inference" = {
+      module = { name = "mesh-llm", input = "self" },
+      roles.default.machines = {
+        aspen1.settings = {
+          mode = "seed",
+          endpointUrl = "http://127.0.0.1:13305/v1",
+          meshBindAddress = "100.100.103.95",
+          backendUnit = "lemonade.service",
+        },
+        britton-desktop.settings = {
+          mode = "joiner",
+          endpointUrl = "http://127.0.0.1:13305/v1",
+          meshBindAddress = "100.110.43.11",
+          backendUnit = "llamacpp-server-vibethinker-britton-desktop.service",
+        },
+      },
+    },
+
     "llm-agents" = {
       module = { name = "llm-agents", input = "self" },
       roles.default = {

@@ -46,6 +46,7 @@ let
     "speaches" = import ./speaches (schemaArgs ./speaches);
     "sglang-diffusion" = import ./sglang-diffusion (schemaArgs ./sglang-diffusion);
     "lemonade" = import ./lemonade (schemaArgs ./lemonade);
+    "mesh-llm" = import ./mesh-llm (schemaArgs ./mesh-llm);
     "cloud-hypervisor-vm" = import ./cloud-hypervisor-vm (schemaArgs ./cloud-hypervisor-vm);
     "llm-agents" = import ./llm-agents (schemaArgs ./llm-agents);
     "home-manager-profiles" = import ./home-manager-profiles (schemaArgs ./home-manager-profiles);

@@ -36,6 +36,7 @@ in
     iroh-ssh = pkgs.callPackage ../pkgs/iroh-ssh { };
     llamacpp-rocm-rpc = pkgs.callPackage ../pkgs/llamacpp-rocm-rpc { };
     lemonade-server = pkgs.callPackage ../pkgs/lemonade { };
+    mesh-llm = pkgs.callPackage ../pkgs/mesh-llm { };
   }
   // lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") {
     sone = pkgs.callPackage ../pkgs/sone { };

@@ -35,6 +35,7 @@ let self_modules = [
   "llm",
   "llm-agents",
   "loki",
+  "mesh-llm",
   "nix-gc",
   "ollama",
   "open-notebook",

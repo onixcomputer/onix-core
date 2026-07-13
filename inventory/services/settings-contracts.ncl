@@ -28,6 +28,7 @@ let schemas = {
   "llm-agents" = import "../../modules/llm-agents/schema.ncl",
   "llm" = import "../../modules/llm/schema.ncl",
   "loki" = import "../../modules/loki/schema.ncl",
+  "mesh-llm" = import "../../modules/mesh-llm/schema.ncl",
   "nix-gc" = import "../../modules/nix-gc/schema.ncl",
   "ollama" = import "../../modules/ollama/schema.ncl",
   "open-notebook" = import "../../modules/open-notebook/schema.ncl",
