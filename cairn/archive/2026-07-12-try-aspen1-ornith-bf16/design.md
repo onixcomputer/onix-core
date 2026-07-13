@@ -29,3 +29,14 @@ The official 35B Q8 GGUF is not a valid substitute: prior CPU and ROCm probes pr
 - BF16 adds about 48.2 GB over Q4 weights and may leave less headroom for long-context KV state and concurrent host services.
 - Loading BF16 can temporarily interrupt requests because Lemonade permits one loaded model.
 - Aspen2's RPC route was unavailable during preflight; a fresh distributed load may fall back locally or fail and require separate network diagnosis.
+
+## Validation Evidence
+
+- The Nickel service export and Cairn validation/gates passed before deployment.
+- A clean detached worktree at `b310ac34` evaluated and built the Aspen1 system closure, excluding unrelated dirty-worktree changes.
+- Aspen1 activated `/nix/store/j79rdbj7jq0yf2mgh20cd48chwix42ja-nixos-system-aspen1-26.11.20260629.7a1a647`.
+- Lemonade downloaded and validated the 64.6 GiB `ornith-1.0-35b-bf16.gguf` artifact.
+- BF16 returned content `4` with HTTP 200 for the non-thinking `2+2` probe on llama.cpp `b9859`; a second probe succeeded after exercising the fallback.
+- Q4_K_M independently returned content `4` with HTTP 200 after BF16 had loaded.
+- With BF16 loaded, Aspen1 reported 76 GiB used and 48 GiB available memory, 2.6 GiB swap used, an active Lemonade service, and no kernel OOM or Lemonade fatal/error records during the trial window.
+- Final Nickel export and Cairn repository validation passed. The repository-wide traceability coverage rail remains globally failing because its current profile discovers zero evidence files for 173 accepted requirements; that pre-existing repository coverage gap is not treated as BF16 runtime evidence.
