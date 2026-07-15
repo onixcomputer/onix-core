@@ -555,7 +555,9 @@ in
         ${llamaP150ModelSupportUrl}.
 
       The Llama service remains conditionally stopped until an authorized gated-model
-      credential is generated. Enter the token only through Clan's hidden prompt:
+      credential is generated. Its start condition performs a metadata-only access
+      probe and skips container launch when Hugging Face has not approved the account.
+      Enter the token only through Clan's hidden prompt:
 
       ```sh
       clan vars generate britton-desktop --generator ${llamaCredentialGeneratorName}

@@ -59,6 +59,7 @@ in
             containerCacheDir = "/home/container_app_user/cache_root";
             containerLogsDir = "/home/container_app_user/logs";
             hugepagesMount = "/dev/hugepages-1G";
+            huggingFaceAccessProbeUrl = "https://huggingface.co/${model}/resolve/main/.gitattributes";
 
             minimumNumericId = 0;
             stateDirectoryMode = "0755";
@@ -67,6 +68,8 @@ in
             restartDelay = "30s";
             startLimitInterval = "10min";
             startLimitBurst = 3;
+            accessProbeTimeoutSeconds = 30;
+            temporarySecretMode = "0600";
             stockSopsPlaceholder = "Welcome to SOPS! Edit this file as you please!";
             huggingFaceTokenPrefix = "hf_";
             loopbackHost = "127.0.0.1";
@@ -86,6 +89,7 @@ in
               name = "${containerName}-credential-check";
               runtimeInputs = [
                 pkgs.coreutils
+                pkgs.curl
                 pkgs.gnugrep
               ];
               text = ''
@@ -113,6 +117,27 @@ in
                 fi
                 if [[ ! -d "$hugepages_mount" ]]; then
                   echo "${containerName}: hugepages mount is unavailable: $hugepages_mount" >&2
+                  exit 1
+                fi
+
+                token_line="$(head --lines=1 "$env_file")"
+                token="''${token_line#HF_TOKEN=}"
+                header_file="$(mktemp)"
+                trap 'rm -f "$header_file"' EXIT
+                chmod ${temporarySecretMode} "$header_file"
+                printf 'Authorization: Bearer %s\n' "$token" > "$header_file"
+                unset token token_line
+
+                if ! curl \
+                  --fail \
+                  --head \
+                  --max-time ${toString accessProbeTimeoutSeconds} \
+                  --silent \
+                  --show-error \
+                  --header "@$header_file" \
+                  ${lib.escapeShellArg huggingFaceAccessProbeUrl} \
+                  > /dev/null; then
+                  echo "${containerName}: Hugging Face has not authorized access to ${model}" >&2
                   exit 1
                 fi
               '';

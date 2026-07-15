@@ -149,6 +149,9 @@ let
     && (llamaGenerators.${llamaGeneratorName}.files."env-file".secret or false)
     && (llamaGenerators.${llamaGeneratorName}.files."env-file".deploy or false)
     && (llamaGenerators.${llamaGeneratorName}.files."env-file".mode or null) == "0400";
+  llamaExecCondition = brittonDesktopServices.${llamaServiceName}.serviceConfig.ExecCondition or null;
+  hasGatedLlamaStartup =
+    llamaExecCondition != null && lib.hasInfix "credential-check" llamaExecCondition;
   hasToolsReference = lib.hasInfix ttMetaliumToolsUrl tenstorrentHostGuide;
 
   # Positive and negative coverage for
@@ -217,6 +220,10 @@ let
     ''}
     ${lib.optionalString (!hasSecretLlamaCredential) ''
       echo "${llamaGeneratorName} must deploy HF_TOKEN through a root-only Clan secret file"
+      exit 1
+    ''}
+    ${lib.optionalString (!hasGatedLlamaStartup) ''
+      echo "${llamaServiceName} must preflight gated-model access before launching Docker"
       exit 1
     ''}
     ${lib.optionalString (missingValidatedWorkerBudgets != [ ]) ''
