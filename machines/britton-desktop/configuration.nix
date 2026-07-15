@@ -25,27 +25,24 @@ let
   ];
   ldacQualityMode = "hq";
 
-  # CUDA llama-cpp build — copied from the llamacpp-server module pattern to
-  # avoid the broken cuda_compat package.
-  disabledCudaCompatRunpathHook =
-    pkgs.runCommand "auto-add-cuda-compat-runpath-hook-disabled"
-      {
-        passthru.enableHook = false;
-      }
-      ''
-        mkdir -p $out/nix-support
-        touch $out/nix-support/setup-hook
-      '';
-  cudaPackagesWithoutCompat = pkgs.cudaPackages.overrideScope (
-    _final: _prev: {
-      cuda_compat = null;
-      autoAddCudaCompatRunpath = disabledCudaCompatRunpathHook;
-    }
-  );
-  llamaCudaPkg = pkgs.llama-cpp.override {
-    cudaSupport = true;
-    cudaPackages = cudaPackagesWithoutCompat;
-  };
+  hostSystem = pkgs.stdenv.hostPlatform.system;
+  llamaMetaliumPkg = inputs.tenstorrent-nix.packages.${hostSystem}.llama-cpp-metalium;
+  supraStateDirectory = "llamacpp-server-supra-router";
+  supraStateDir = "/var/lib/${supraStateDirectory}";
+  supraModelsDir = "${supraStateDir}/models";
+  supraModelPath = "${supraModelsDir}/supra-router-51m.gguf";
+  supraCacheDir = "${supraStateDir}/cache";
+  supraLogsDir = "${supraStateDir}/tt-metal-logs";
+  supraPhysicalDeviceId = 1;
+  supraInspectorPort = 50052;
+  supraApiPort = 13306;
+  supraContextSize = 5120;
+  supraGpuLayerCount = 999;
+  supraBatchSize = 512;
+  supraParallelSlots = 1;
+  supraRestartDelaySeconds = 10;
+  supraStateDirectoryMode = "0755";
+  supraModelFileMode = "0644";
 in
 {
   networking = {
@@ -210,41 +207,56 @@ in
         };
       };
 
-      # Supra-Router-51M — ultra-lightweight prompt routing model
+      # r[impl onix.tenstorrent.concurrent_models.supra]
+      # Supra-Router-51M — isolated to the second physical P150 card.
       llamacpp-server-supra-router = {
-        description = "llama.cpp inference server — Supra-Router-51M";
+        description = "Metalium inference server — Supra-Router-51M";
         after = [ "network-online.target" ];
         wants = [ "network-online.target" ];
         wantedBy = [ "multi-user.target" ];
         preStart = ''
-          mkdir -p /var/lib/llamacpp-server-supra-router/models
-          if [ ! -f /var/lib/llamacpp-server-supra-router/models/supra-router-51m.gguf ]; then
-            if [ -f /home/brittonr/models/supra-router-51m.gguf ]; then
-              cp /home/brittonr/models/supra-router-51m.gguf /var/lib/llamacpp-server-supra-router/models/
-              chmod 644 /var/lib/llamacpp-server-supra-router/models/supra-router-51m.gguf
-            fi
+          mkdir -p ${supraModelsDir} ${supraCacheDir} ${supraLogsDir}
+          if [ ! -f ${supraModelPath} ] && [ -f /home/brittonr/models/supra-router-51m.gguf ]; then
+            cp /home/brittonr/models/supra-router-51m.gguf ${supraModelsDir}/
+            chmod ${supraModelFileMode} ${supraModelPath}
           fi
         '';
+        environment = {
+          HOME = supraStateDir;
+          GGML_METALIUM_DEVICE_ID = "0";
+          GGML_METALIUM_TRACE = "0";
+          TT_METAL_CACHE = supraCacheDir;
+          TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS = "127.0.0.1:${toString supraInspectorPort}";
+          TT_METAL_LOGS_PATH = supraLogsDir;
+          TT_VISIBLE_DEVICES = toString supraPhysicalDeviceId;
+        };
         serviceConfig = {
           ExecStart = ''
-            ${llamaCudaPkg}/bin/llama-server \
-              --host 0.0.0.0 --port 13306 \
-              --model /var/lib/llamacpp-server-supra-router/models/supra-router-51m.gguf \
+            ${llamaMetaliumPkg}/bin/llama-server \
+              --host 0.0.0.0 --port ${toString supraApiPort} \
+              --model ${supraModelPath} \
               --alias Supra-Router-51M \
-              --ctx-size 5120 \
-              --gpu-layers 999 \
-              --flash-attn on \
+              --ctx-size ${toString supraContextSize} \
+              --gpu-layers ${toString supraGpuLayerCount} \
+              --flash-attn off \
+              --no-kv-offload \
               --no-mmap \
               --metrics \
-              --batch-size 2048 \
-              --ubatch-size 1024 \
-              --parallel 1 \
+              --batch-size ${toString supraBatchSize} \
+              --ubatch-size ${toString supraBatchSize} \
+              --parallel ${toString supraParallelSlots} \
+              --fit off \
               --temp 0.0
           '';
           Restart = "on-failure";
-          RestartSec = 10;
-          StateDirectory = "llamacpp-server-supra-router";
-          StateDirectoryMode = "0755";
+          RestartSec = supraRestartDelaySeconds;
+          StateDirectory = supraStateDirectory;
+          StateDirectoryMode = supraStateDirectoryMode;
+          WorkingDirectory = supraStateDir;
+          UnsetEnvironment = [
+            "GGML_METALIUM_MESH_SHAPE"
+            "TT_MESH_GRAPH_DESC_PATH"
+          ];
           User = "root";
           Group = "root";
         };
@@ -281,7 +293,7 @@ in
     nirius
     prismlauncher
     displaylink
-    llamaCudaPkg
+    llamaMetaliumPkg
     self.packages.${pkgs.stdenv.hostPlatform.system}.opendeck
     self.packages.${pkgs.stdenv.hostPlatform.system}.ttsim
     inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr

@@ -429,6 +429,7 @@ let krea2_sglang_lowest_prefetch = "0.0" in
     },
 
     # r[impl onix.vibethinker.metalium_serving]
+    # r[impl onix.tenstorrent.concurrent_models.vibethinker]
     "vibethinker-britton-desktop" = {
       module = { name = "llamacpp-server", input = "self" },
       roles.server.machines.britton-desktop.settings = {
@@ -439,6 +440,7 @@ let krea2_sglang_lowest_prefetch = "0.0" in
         contextSize = 131072,
         gpuLayers = 999,
         metaliumDeviceId = 0,
+        metaliumInspectorPort = 50051,
         batchSize = 512,
         ubatchSize = 512,
         parallelSlots = 1,

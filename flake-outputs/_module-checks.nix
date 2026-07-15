@@ -20,6 +20,7 @@ let
   wasm = import ../lib/wasm.nix { inherit plugins; };
 
   moduleLists = wasm.evalNickelFile ../inventory/services/module-lists.ncl;
+  llamacppServerValidation = wasm.evalNickelFile ../inventory/services/fixtures/llamacpp-server-validation.ncl;
   sglangDiffusionValidation = wasm.evalNickelFile ../inventory/services/fixtures/sglang-diffusion-validation.ncl;
 
   # Modules registered in contracts.ncl (clan perInstance services only)
@@ -37,6 +38,18 @@ let
   modulesWithoutSchema = builtins.filter (
     name: !builtins.pathExists (self + "/modules/${name}/schema.ncl")
   ) diskModules;
+
+  llamacppPositiveErrors = llamacppServerValidation.positive;
+  llamacppNegativeErrors = llamacppServerValidation.negative;
+  expectedLlamacppNegativeFields = [
+    "backend"
+    "metaliumDeviceId"
+    "metaliumInspectorPort"
+    "flashAttention"
+  ];
+  missingLlamacppNegativeFields = builtins.filter (
+    field: !(lib.any (error: lib.hasInfix field error) llamacppNegativeErrors)
+  ) expectedLlamacppNegativeFields;
 
   sglangPositiveErrors = sglangDiffusionValidation.positive;
   sglangNegativeErrors = sglangDiffusionValidation.negative;
@@ -75,6 +88,24 @@ in
           exit 1
         ''
       }
+      touch $out
+    '';
+
+    # Positive and negative settings coverage for
+    # r[verify onix.tenstorrent.model_process_isolation.devices].
+    llamacpp-server-settings = pkgs.runCommand "llamacpp-server-settings" { } ''
+      ${lib.optionalString (llamacppPositiveErrors != [ ]) ''
+        echo "Valid llamacpp-server settings produced unexpected errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" llamacppPositiveErrors)}
+        exit 1
+      ''}
+      ${lib.optionalString (missingLlamacppNegativeFields != [ ]) ''
+        echo "Invalid llamacpp-server settings did not report expected fields:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" missingLlamacppNegativeFields)}
+        echo "Actual errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" llamacppNegativeErrors)}
+        exit 1
+      ''}
       touch $out
     '';
 

@@ -44,6 +44,7 @@ in
               modelAlias
               gpuLayers
               metaliumDeviceId
+              metaliumInspectorPort
               contextSize
               batchSize
               ubatchSize
@@ -64,6 +65,8 @@ in
             modelsDir = "${stateDir}/models";
             modelPath = "${modelsDir}/${modelFile}";
             modelUrl = "https://huggingface.co/${modelRepo}/resolve/${modelRevision}/${modelFile}";
+            metaliumCacheDir = "${stateDir}/cache";
+            metaliumLogsDir = "${stateDir}/tt-metal-logs";
 
             stateDirectoryMode = "0755";
             modelFileMode = "0644";
@@ -156,7 +159,11 @@ in
               "--flash-attn"
               "on"
             ]
-            ++ optionalArgs metaliumBackendEnabled [ "--no-kv-offload" ]
+            ++ optionalArgs metaliumBackendEnabled [
+              "--flash-attn"
+              "off"
+              "--no-kv-offload"
+            ]
             ++ optionalArgs noMmap [ "--no-mmap" ]
             ++ optionalArgs enableMetrics [ "--metrics" ]
             ++ optionalNumberArg "--batch-size" batchSize
@@ -255,6 +262,10 @@ in
             systemd = {
               tmpfiles.rules = [
                 "d ${modelsDir} ${stateDirectoryMode} root root -"
+              ]
+              ++ lib.optionals metaliumBackendEnabled [
+                "d ${metaliumCacheDir} ${stateDirectoryMode} root root -"
+                "d ${metaliumLogsDir} ${stateDirectoryMode} root root -"
               ];
 
               services = {
@@ -298,16 +309,27 @@ in
                     StateDirectoryMode = stateDirectoryMode;
                   }
                   // lib.optionalAttrs metaliumBackendEnabled {
-                    UnsetEnvironment = [ "GGML_METALIUM_MESH_SHAPE" ];
+                    UnsetEnvironment = [
+                      "GGML_METALIUM_MESH_SHAPE"
+                      "TT_MESH_GRAPH_DESC_PATH"
+                    ];
                   };
 
                   # r[impl onix.llamacpp_server.metalium_safety]
+                  # r[impl onix.tenstorrent.model_process_isolation.devices]
+                  # r[impl onix.tenstorrent.model_process_isolation.state]
                   environment = {
                     HOME = stateDir;
                   }
                   // lib.optionalAttrs metaliumBackendEnabled {
-                    GGML_METALIUM_DEVICE_ID = toString metaliumDeviceId;
+                    # TT_VISIBLE_DEVICES filters by physical PCIe device before
+                    # TT-Metal remaps the isolated process to logical device 0.
+                    GGML_METALIUM_DEVICE_ID = "0";
                     GGML_METALIUM_TRACE = "0";
+                    TT_METAL_CACHE = metaliumCacheDir;
+                    TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS = "127.0.0.1:${toString metaliumInspectorPort}";
+                    TT_METAL_LOGS_PATH = metaliumLogsDir;
+                    TT_VISIBLE_DEVICES = toString metaliumDeviceId;
                   };
                 };
               };

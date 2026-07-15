@@ -5,6 +5,7 @@ let default_gpu_layers = 999 in
 let default_batch_size = 512 in
 let default_parallel_slots = 1 in
 let default_metalium_device_id = 0 in
+let default_metalium_inspector_port = 50051 in
 {
   positive =
     sc.validate_fields
@@ -20,6 +21,7 @@ let default_metalium_device_id = 0 in
         modelAlias = "VibeThinker-3B",
         gpuLayers = default_gpu_layers,
         metaliumDeviceId = default_metalium_device_id,
+        metaliumInspectorPort = default_metalium_inspector_port,
         contextSize = default_context_size,
         batchSize = default_batch_size,
         ubatchSize = default_batch_size,
@@ -39,6 +41,7 @@ let default_metalium_device_id = 0 in
       {
         backend = "unsupported-backend",
         metaliumDeviceId = "device-zero",
+        metaliumInspectorPort = 70000,
         flashAttention = "disabled",
       },
 }
