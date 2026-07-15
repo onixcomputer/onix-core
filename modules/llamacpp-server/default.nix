@@ -25,6 +25,7 @@ in
       {
         nixosModule =
           {
+            inputs,
             pkgs,
             lib,
             ...
@@ -42,6 +43,7 @@ in
               modelRevision
               modelAlias
               gpuLayers
+              metaliumDeviceId
               contextSize
               batchSize
               ubatchSize
@@ -72,6 +74,11 @@ in
             curlRetryCount = 5;
             curlRetryDelaySeconds = 10;
             disabledNumericOption = 0;
+            metaliumBackendName = "metalium";
+            metaliumBackendEnabled = backend == metaliumBackendName;
+            hostSystem = pkgs.stdenv.hostPlatform.system;
+            tenstorrentPackages = inputs.tenstorrent-nix.packages.${hostSystem};
+            metaliumPackage = tenstorrentPackages.llama-cpp-metalium;
             cudaGpuLayerCount = gpuLayers;
             cpuGpuLayerCount = 0;
             effectiveGpuLayers = if backend == "cpu" then cpuGpuLayerCount else cudaGpuLayerCount;
@@ -97,9 +104,12 @@ in
               }
             );
 
+            # r[impl onix.llamacpp_server.metalium_backend]
             mkLlamacppPackage =
               selectedBackend:
-              if selectedBackend == "rocm" then
+              if selectedBackend == metaliumBackendName then
+                metaliumPackage
+              else if selectedBackend == "rocm" then
                 pkgs.llamacpp-rocm-rpc
               else
                 pkgs.llama-cpp.override {
@@ -146,6 +156,7 @@ in
               "--flash-attn"
               "on"
             ]
+            ++ optionalArgs metaliumBackendEnabled [ "--no-kv-offload" ]
             ++ optionalArgs noMmap [ "--no-mmap" ]
             ++ optionalArgs enableMetrics [ "--metrics" ]
             ++ optionalNumberArg "--batch-size" batchSize
@@ -212,6 +223,19 @@ in
                 assertion = gpuLayers >= disabledNumericOption;
                 message = "llamacpp-server ${instanceName}: gpuLayers must not be negative";
               }
+              # Positive and negative boundaries for r[verify onix.llamacpp_server.metalium_safety].
+              {
+                assertion = builtins.isInt metaliumDeviceId && metaliumDeviceId >= disabledNumericOption;
+                message = "llamacpp-server ${instanceName}: metaliumDeviceId must be a non-negative integer";
+              }
+              {
+                assertion = !metaliumBackendEnabled || !flashAttention;
+                message = "llamacpp-server ${instanceName}: Metalium requires flashAttention = false with CPU KV cache";
+              }
+              {
+                assertion = !metaliumBackendEnabled || (cacheTypeK == null && cacheTypeV == null);
+                message = "llamacpp-server ${instanceName}: Metalium requires default F16 CPU KV cache types";
+              }
               {
                 assertion = batchSize >= disabledNumericOption;
                 message = "llamacpp-server ${instanceName}: batchSize must not be negative";
@@ -272,10 +296,18 @@ in
                     Group = "root";
                     StateDirectory = stateDirectory;
                     StateDirectoryMode = stateDirectoryMode;
+                  }
+                  // lib.optionalAttrs metaliumBackendEnabled {
+                    UnsetEnvironment = [ "GGML_METALIUM_MESH_SHAPE" ];
                   };
 
+                  # r[impl onix.llamacpp_server.metalium_safety]
                   environment = {
                     HOME = stateDir;
+                  }
+                  // lib.optionalAttrs metaliumBackendEnabled {
+                    GGML_METALIUM_DEVICE_ID = toString metaliumDeviceId;
+                    GGML_METALIUM_TRACE = "0";
                   };
                 };
               };

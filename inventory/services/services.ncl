@@ -428,20 +428,24 @@ let krea2_sglang_lowest_prefetch = "0.0" in
       },
     },
 
+    # r[impl onix.vibethinker.metalium_serving]
     "vibethinker-britton-desktop" = {
       module = { name = "llamacpp-server", input = "self" },
       roles.server.machines.britton-desktop.settings = {
-        backend = "cuda",
+        backend = "metalium",
         modelRepo = "prithivMLmods/VibeThinker-3B-GGUF",
         modelFile = "VibeThinker-3B.Q8_0.gguf",
         modelAlias = "VibeThinker-3B",
         contextSize = 131072,
         gpuLayers = 999,
-        batchSize = 8192,
-        ubatchSize = 4096,
+        metaliumDeviceId = 0,
+        batchSize = 512,
+        ubatchSize = 512,
         parallelSlots = 1,
-        cacheTypeK = "q8_0",
-        cacheTypeV = "q8_0",
+        cacheTypeK = null,
+        cacheTypeV = null,
+        flashAttention = false,
+        extraArgs = ["--fit", "off"],
       },
     },
 
