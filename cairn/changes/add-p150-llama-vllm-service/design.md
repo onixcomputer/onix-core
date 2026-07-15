@@ -6,7 +6,9 @@ Tenstorrent's getting-started guide recommends `meta-llama/Llama-3.1-8B-Instruct
 
 A five-run CPU trial for the 51M Supra GGUF used four generation/batch workers and preserved the existing output BLAKE3 `c2473faeda8e011b1eec2797d5bf2e047b4e9cf19ec4171709bf824ae2f84014`. It measured 1,031.37 isolated and 778.22 concurrent decode tokens/s. During the synchronized VibeThinker load, VibeThinker retained 19.25 decode tokens/s. This validates CPU Supra as the resource-reallocation mechanism rather than a model removal.
 
-The host has Docker 29.6.1, both `/dev/tenstorrent/{0,1}` nodes, and 506 GiB free on the root/docker filesystem. No local Hugging Face token is currently available, so gated model download and final runtime proof remain explicitly blocked until that secret is supplied.
+The host has Docker 29.6.1, both `/dev/tenstorrent/{0,1}` nodes, and 487 GiB free after pulling the 14.8 GB image. A supplied Hugging Face token is now encrypted through Clan and deployed as a root-only environment file, but the repository returned HTTP 403 because the token's account is not on the model's authorized list. The Llama unit now performs a metadata-only access preflight and remains cleanly skipped with zero restarts until the account is approved.
+
+The initial local activation connection was killed while the transaction restarted core SSH/network services, after it had stopped both existing inference units but before it restarted them. VibeThinker and Supra were manually restored after an 81-second interruption; a subsequent idempotent activation preserved both start timestamps and zero restart counters. Corrected chat-endpoint probes then reproduced both accepted output BLAKE3 values while the Llama unit remained gated.
 
 ## Success Contract
 
@@ -22,7 +24,7 @@ Completion evidence requires:
 
 A configured-but-failing container, a time-sharing arrangement that stops VibeThinker, moving VibeThinker off card 0, using mutable image tags, leaking the token, serving base rather than instruct weights, or claiming `p150x2` support are false completion.
 
-Allowed final outcomes are validated, blocked on the missing gated-model credential, exhausted after a bounded image/runtime failure, or user-decision-required if Tenstorrent's pinned image cannot isolate physical card 1.
+Allowed final outcomes are validated, blocked on missing gated-model account authorization, exhausted after a bounded image/runtime failure, or user-decision-required if Tenstorrent's pinned image cannot isolate physical card 1.
 
 ## Portfolio Budget
 
@@ -37,7 +39,7 @@ Use the user-provided Tenstorrent guide and support matrix, the model-specific P
 | Undocumented mesh | Treat two independent P150s as `p150x2` while Vibe uses one | vLLM can aggregate remaining capacity | Support matrix defines p150, p150x4, and p150x8, not this topology | blocked |
 | Time sharing | Stop VibeThinker whenever Llama starts | Preserves configuration but not simultaneous availability | Violates the user's supplement-only constraint | falsified |
 | CPU Llama | Keep both current card assignments and run 8B on CPU | Adds the endpoint without resource movement | Avoids the supported P150/vLLM path and cannot establish target performance | blocked |
-| Free card 1 | CPU Supra plus vLLM Llama on physical card 1 | All three endpoints remain concurrently available | CPU route validated; image/device runtime awaits gated token | active |
+| Free card 1 | CPU Supra plus vLLM Llama on physical card 1 | All three endpoints remain concurrently available | CPU route and device isolation are deployed; Hugging Face returned 403 before model download | blocked |
 
 ## Decisions
 
@@ -68,7 +70,7 @@ Use the user-provided Tenstorrent guide and support matrix, the model-specific P
 ## Risks / Trade-offs
 
 - Single-P150 Llama-3.1-8B support is Experimental; successful startup and output do not elevate it to Complete support.
-- The official guide requires gated Hugging Face access. Without a supplied token, final download and runtime validation are blocked rather than simulated.
+- The official guide requires gated Hugging Face access. A syntactically valid token is insufficient until its account accepts the model terms and appears on the authorized list; HTTP 403 blocks final download and runtime validation rather than being simulated.
 - The image is several GiB and model initialization is documented at roughly ten minutes; deployment must use bounded startup/restart behavior.
 - Direct device-node selection must be adversarially verified because `--device /dev/tenstorrent` alone exposes both cards; the service must expose only device 1 and ensure the container maps it as the p150 target.
 - CPU Supra and VibeThinker share host cores, but the measured synchronized result already includes that contention and substantially exceeds the prior router rate.
