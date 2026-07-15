@@ -190,6 +190,10 @@ in
 
   systemd = {
     services = {
+      # The supplementary Llama rollout must not interrupt the existing card-0
+      # service even when its reproducible package path changes during activation.
+      llamacpp-server-vibethinker-britton-desktop.restartIfChanged = false;
+
       # DisplayLink Manager service
       dlm = {
         description = "DisplayLink Manager Service";

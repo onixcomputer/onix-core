@@ -88,6 +88,8 @@ let
     vibeThinkerTraceEnvironmentValue == metaliumTraceDisabledEnvironmentValue;
   vibeThinkerWarmupCommand = brittonDesktopServices.${vibeThinkerServiceName}.postStart or null;
   keepsVibeThinkerWarmupDisabled = vibeThinkerWarmupCommand == null || vibeThinkerWarmupCommand == "";
+  keepsVibeThinkerRunningAcrossSwitch =
+    !(brittonDesktopServices.${vibeThinkerServiceName}.restartIfChanged or true);
   serviceExecStart = serviceName: brittonDesktopServices.${serviceName}.serviceConfig.ExecStart;
   hasValidatedMetaliumWorkerBudget =
     serviceName:
@@ -199,6 +201,10 @@ let
     ''}
     ${lib.optionalString (!keepsVibeThinkerWarmupDisabled) ''
       echo "${vibeThinkerServiceName} must not run trace warmup while trace replay is disabled"
+      exit 1
+    ''}
+    ${lib.optionalString (!keepsVibeThinkerRunningAcrossSwitch) ''
+      echo "${vibeThinkerServiceName} must not be interrupted by the supplementary Llama activation"
       exit 1
     ''}
     ${lib.optionalString (!keepsSupraOnCpu) ''

@@ -569,6 +569,11 @@ in
       model-weight, and compilation caches are large. Initial download and TT graph
       compilation can take substantially longer than an ordinary service restart.
 
+      During this supplementary rollout, NixOS switch-time restarts are disabled
+      for VibeThinker so activating the new service cannot interrupt card 0. Package
+      or unit changes for that service therefore require a separately scheduled
+      manual restart.
+
       To roll back the supplement without affecting VibeThinker or Supra, stop
       `${llamaContainerServiceName}.service` and set the service instance's
       `autoStart` setting to false before the next deployment. Do not restore Supra
