@@ -11,4 +11,4 @@
 ## Phase 3: Verification
 
 - [x] [serial] Add focused positive/negative Nix checks and operator guidance for the validated boundary, or record that all candidates were falsified. r[onix.tenstorrent.model_performance.concurrent_serving]
-- [ ] [serial] Run the complete host build, deploy, repeat isolated/concurrent benchmarks, audit journals and restarts, then sync and archive with checked evidence or an exact bounded blocker. r[onix.tenstorrent.model_performance.concurrent_serving]
+- [x] [serial] Run the complete host build, deploy, repeat isolated/concurrent benchmarks, audit journals and restarts, then sync and archive with checked evidence or an exact bounded blocker. r[onix.tenstorrent.model_performance.concurrent_serving]
