@@ -1,7 +1,7 @@
 ## Phase 1: Reproducible evidence
 
-- [ ] [serial] Add a functional-core Rust benchmark harness with positive and negative self-tests for fixed-input isolated and synchronized concurrent measurements. r[onix.tenstorrent.model_performance.concurrent_serving]
-- [ ] [serial] Record five-run isolated and concurrent baselines plus non-mutating CPU, PCIe, service-thread, and runtime evidence. r[onix.tenstorrent.model_performance.concurrent_serving]
+- [x] [serial] Add a functional-core Rust benchmark harness with positive and negative self-tests for fixed-input isolated and synchronized concurrent measurements. r[onix.tenstorrent.model_performance.concurrent_serving]
+- [x] [serial] Record five-run isolated and concurrent baselines plus non-mutating CPU, PCIe, service-thread, and runtime evidence. r[onix.tenstorrent.model_performance.concurrent_serving]
 
 ## Phase 2: Bounded candidate search
 

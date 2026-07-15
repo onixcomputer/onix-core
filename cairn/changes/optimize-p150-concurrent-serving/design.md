@@ -2,7 +2,17 @@
 
 `britton-desktop` runs VibeThinker-3B on physical P150 card 0 and Supra-Router-51M on physical P150 card 1. Device visibility, cache, logs, and Inspector state are already isolated. Supra trace replay is prewarmed and produces 156.44 median isolated decode tokens/s; VibeThinker remains on its faster non-trace path. A simultaneous probe completed correctly but reduced Supra to 59.95 tokens/s and VibeThinker to 19.30 tokens/s.
 
-The host is a single-socket Ryzen 9 9950X3D with 16 physical cores, SMT, and two eight-core L3/CCD domains: logical CPUs 0-7 and 16-23 share L3 domain 0; CPUs 8-15 and 24-31 share L3 domain 1. Both P150s report node-local CPUs 0-31. Card 0 negotiates PCIe Gen5 x8 and card 1 Gen5 x4. Both deployed llama-server processes currently span CPUs 0-31 and own 89 runtime threads, so process-wide CPU placement and llama.cpp worker budgets are plausible but unproven causes.
+The host is a single-socket Ryzen 9 9950X3D with 16 physical cores, SMT, and two eight-core L3/CCD domains: logical CPUs 0-7 and 16-23 share L3 domain 0; CPUs 8-15 and 24-31 share L3 domain 1. Both P150s report node-local CPUs 0-31. Card 0 negotiates PCIe Gen5 x8 and card 1 Gen5 x4. Both deployed llama-server processes currently span CPUs 0-31, use 16 generation/batch threads plus 31 HTTP threads, and own 89 runtime threads. The pinned llama.cpp guidance in `docs/development/token_generation_performance_tips.md` warns that excess generation threads can severely oversaturate a CPU even with accelerator offload, so explicit worker budgets are the first discriminating trial.
+
+## Baseline Evidence
+
+The checked Rust harness rejected pre-existing traffic, synchronized each concurrent pair with a barrier, validated response token counts/schema, and reconciled service token counters. Five rounds produced:
+
+- VibeThinker: 19.235 isolated versus 11.856 concurrent decode tokens/s, retaining 61.64% and losing 38.36%.
+- Supra: 128.815 isolated versus 17.908 concurrent decode tokens/s, retaining 13.90% and losing 86.10%.
+- Geometric mean concurrent retention: 29.27%.
+- All VibeThinker responses shared BLAKE3 `47467d125fd1ce97124465e883a4f11c617a1d4bbc27c7efa5273957787e9d45`; all Supra responses shared BLAKE3 `c2473faeda8e011b1eec2797d5bf2e047b4e9cf19ec4171709bf824ae2f84014`.
+- Traffic accounting observed exactly 640 VibeThinker and 550 Supra predicted tokens, with no pre-existing or residual request.
 
 ## Success Contract
 
@@ -26,7 +36,7 @@ Use at most two evidence rounds and three deployed candidate configurations. Eac
 
 | Family | Mechanism | Claim | State | Smallest discriminating check |
 |---|---|---|---|---|
-| Worker budgets | Explicit llama.cpp generation and batch thread counts reduce host oversubscription | Fewer runnable CPU workers preserve both cards' dispatch cadence | active | Compare repeated 8-thread and 16-thread candidate medians |
+| Worker budgets | Reduce each service from the automatic 16 generation/batch threads while preserving graph/model settings | Fewer runnable CPU workers preserve both cards' dispatch cadence | active | Compare an explicit eight-thread candidate with the automatic baseline |
 | CCD placement | Put each service on a disjoint physical-core/L3 domain | Cache and scheduler isolation remove cross-service host jitter | active | Apply disjoint `CPUAffinity` sets with unchanged model arguments |
 | PCIe/power | Simultaneous cards contend for link, fabric, or board power | CPU changes cannot recover the loss if device telemetry/link pressure dominates | active | Capture non-mutating topology and telemetry around a synchronized run |
 | Runtime serialization | Metalium or UMD serializes host work across otherwise isolated processes | Throughput loss persists with disjoint CPU resources and low CPU utilization | active | Correlate service CPU time, Inspector timing, and the affinity trial |
