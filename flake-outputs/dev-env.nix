@@ -191,6 +191,31 @@ let
 
   treefmtWrapper = treefmtEval.config.build.wrapper;
 
+  # --- Pi project configuration ---
+  piManagedDirectories = [
+    "prompts"
+    "skills"
+  ];
+
+  mkPiLinkCommand =
+    directory:
+    let
+      source = self.inputs.brittonpi + "/${directory}";
+    in
+    assert lib.assertMsg (builtins.pathExists source) "brittonpi is missing ${directory}/";
+    ''
+      pi_source=${lib.escapeShellArg (toString source)}
+      pi_target="$PWD/.pi/${directory}"
+
+      if [ -e "$pi_target" ] && [ ! -L "$pi_target" ]; then
+        printf 'warning: leaving existing Pi configuration unchanged: %s\n' "$pi_target" >&2
+      else
+        ln -sfnT "$pi_source" "$pi_target"
+      fi
+    '';
+
+  piLinkCommands = lib.concatMapStringsSep "\n" mkPiLinkCommand piManagedDirectories;
+
   # --- pre-commit ---
   # Use pre-commit-hooks-nix's module system directly (no flake-parts wrapper)
   preCommitSrc = inputs'.pre-commit-hooks-nix;
@@ -335,6 +360,10 @@ in
           source .env
           set +a
         fi
+
+        mkdir -p "$PWD/.pi"
+        ${piLinkCommands}
+        unset pi_source pi_target
 
         ${preCommitEval.installationScript}
       '';

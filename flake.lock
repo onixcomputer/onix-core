@@ -82,6 +82,22 @@
         "type": "github"
       }
     },
+    "brittonpi": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1784129843,
+        "narHash": "sha256-4cGBMs5TlAflzacmZ9GmjL/8nnXEiOmYcMz2/JIx/4k=",
+        "ref": "refs/heads/main",
+        "rev": "4cda58b49f3cdb788b70ca46bf7a7c0942c8f87a",
+        "revCount": 1,
+        "type": "git",
+        "url": "ssh://git@github.com/brittonr/pi.git"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/brittonr/pi.git"
+      }
+    },
     "buildbot-nix": {
       "inputs": {
         "nixpkgs": [
@@ -1247,6 +1263,7 @@
     "root": {
       "inputs": {
         "adios-flake": "adios-flake",
+        "brittonpi": "brittonpi",
         "buildbot-nix": "buildbot-nix",
         "clan-core": "clan-core",
         "disko": "disko",

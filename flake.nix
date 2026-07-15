@@ -157,6 +157,10 @@
     };
 
     # Dev tooling inputs (previously in dev/flake.nix partition)
+    brittonpi = {
+      url = "git+ssh://git@github.com/brittonr/pi.git";
+      flake = false;
+    };
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
