@@ -493,6 +493,20 @@ in
       - Firmware flashing remains outside this performance profile and is never an
         automated response to a benchmark regression.
 
+      ### Concurrent CPU worker budget
+
+      r[impl onix.tenstorrent.model_performance.concurrent_serving]
+
+      Both Metalium servers explicitly use eight generation and batch workers.
+      The automatic 16-worker baseline oversubscribed the 16 physical host cores
+      under synchronized load: five-run medians fell to 11.86 tokens/s for
+      VibeThinker and 17.91 tokens/s for Supra. The conservative repeated
+      eight-worker trial reached 18.51 and 97.18 tokens/s respectively, improving
+      concurrent throughput by 56.10% and 442.68% while isolated throughput stayed
+      within the 5% acceptance tolerance. A separate disjoint-CCD trial regressed
+      normalized concurrent retention by 3.69%, so neither service is CPU-pinned.
+      Rebenchmark both services together before changing these worker counts.
+
       ## Software stack entry points
 
       This NixOS tag handles the system bringup layer: KMD, device rules,

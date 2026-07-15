@@ -47,6 +47,8 @@ in
               metaliumInspectorPort
               metaliumTrace
               contextSize
+              generationThreads
+              batchThreads
               batchSize
               ubatchSize
               parallelSlots
@@ -168,6 +170,8 @@ in
             ]
             ++ optionalArgs noMmap [ "--no-mmap" ]
             ++ optionalArgs enableMetrics [ "--metrics" ]
+            ++ optionalNumberArg "--threads" generationThreads
+            ++ optionalNumberArg "--threads-batch" batchThreads
             ++ optionalNumberArg "--batch-size" batchSize
             ++ optionalNumberArg "--ubatch-size" ubatchSize
             ++ optionalNumberArg "--parallel" parallelSlots
@@ -248,6 +252,14 @@ in
               {
                 assertion = !metaliumBackendEnabled || (cacheTypeK == null && cacheTypeV == null);
                 message = "llamacpp-server ${instanceName}: Metalium requires default F16 CPU KV cache types";
+              }
+              {
+                assertion = generationThreads >= disabledNumericOption;
+                message = "llamacpp-server ${instanceName}: generationThreads must not be negative";
+              }
+              {
+                assertion = batchThreads >= disabledNumericOption;
+                message = "llamacpp-server ${instanceName}: batchThreads must not be negative";
               }
               {
                 assertion = batchSize >= disabledNumericOption;

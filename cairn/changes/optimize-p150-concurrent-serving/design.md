@@ -14,6 +14,20 @@ The checked Rust harness rejected pre-existing traffic, synchronized each concur
 - All VibeThinker responses shared BLAKE3 `47467d125fd1ce97124465e883a4f11c617a1d4bbc27c7efa5273957787e9d45`; all Supra responses shared BLAKE3 `c2473faeda8e011b1eec2797d5bf2e047b4e9cf19ec4171709bf824ae2f84014`.
 - Traffic accounting observed exactly 640 VibeThinker and 550 Supra predicted tokens, with no pre-existing or residual request.
 
+## Candidate Results
+
+### Eight generation and batch workers per service: validated
+
+The first candidate changed only each server's generation and batch worker count from 16 to 8. The first five-round trial measured 22.755 isolated and 21.222 concurrent tokens/s for VibeThinker plus 168.631 isolated and 119.784 concurrent tokens/s for Supra. Relative to baseline, concurrent rates improved 79.00% and 568.90%, while normalized retention improved 178.06%.
+
+A second five-round trial provided the conservative result: VibeThinker measured 18.673 isolated and 18.508 concurrent tokens/s; Supra measured 129.653 isolated and 97.182 concurrent tokens/s. Isolated VibeThinker remained within tolerance at -2.92%, isolated Supra improved 0.65%, concurrent VibeThinker improved 56.10%, concurrent Supra improved 442.68%, and normalized retention improved 194.45%. Every response retained its baseline BLAKE3 and traffic accounting was exact in both trials.
+
+### Disjoint CCD placement: rejected
+
+With the eight-worker candidate retained, a runtime-only trial constrained VibeThinker to the 96 MiB L3 CCD and Supra to the 32 MiB L3 CCD. Compared with the immediately preceding thread-only trial, concurrent rates improved 8.89% and 9.34%, but isolated rates improved more (10.39% and 16.26%), so normalized concurrent retention regressed 3.69%. The candidate failed the declared objective and all runtime `AllowedCPUs` overrides were removed; both units again inherit CPUs 0-31.
+
+Board telemetry continued to report PCIe Gen5 x8/x4, 1350 MHz AI clocks, 63-64°C ASIC temperatures, and no corrected or uncorrected GDDR errors. This does not prove PCIe/power independence, but the worker-count recovery falsifies PCIe, power, or cross-process runtime serialization as the primary cause of the measured collapse.
+
 ## Success Contract
 
 The exact goal is to improve simultaneous model serving while preserving isolated throughput, deterministic output, device/state isolation, and service availability.
@@ -36,10 +50,10 @@ Use at most two evidence rounds and three deployed candidate configurations. Eac
 
 | Family | Mechanism | Claim | State | Smallest discriminating check |
 |---|---|---|---|---|
-| Worker budgets | Reduce each service from the automatic 16 generation/batch threads while preserving graph/model settings | Fewer runnable CPU workers preserve both cards' dispatch cadence | active | Compare an explicit eight-thread candidate with the automatic baseline |
-| CCD placement | Put each service on a disjoint physical-core/L3 domain | Cache and scheduler isolation remove cross-service host jitter | active | Apply disjoint `CPUAffinity` sets with unchanged model arguments |
-| PCIe/power | Simultaneous cards contend for link, fabric, or board power | CPU changes cannot recover the loss if device telemetry/link pressure dominates | active | Capture non-mutating topology and telemetry around a synchronized run |
-| Runtime serialization | Metalium or UMD serializes host work across otherwise isolated processes | Throughput loss persists with disjoint CPU resources and low CPU utilization | active | Correlate service CPU time, Inspector timing, and the affinity trial |
+| Worker budgets | Reduce each service from the automatic 16 generation/batch threads while preserving graph/model settings | Fewer runnable CPU workers preserve both cards' dispatch cadence | validated | Two five-round trials satisfy the acceptance rule |
+| CCD placement | Put each service on a disjoint physical-core/L3 domain | Cache and scheduler isolation remove cross-service host jitter | falsified | Normalized retention regressed 3.69%; runtime override removed |
+| PCIe/power | Simultaneous cards contend for link, fabric, or board power | CPU changes cannot recover the loss if device telemetry/link pressure dominates | audit | Stable clocks/temperature and worker recovery reject it as the primary cause |
+| Runtime serialization | Metalium or UMD serializes host work across otherwise isolated processes | Throughput loss persists after reducing runnable CPU workers | falsified | Concurrent rates recovered 56.10% and 442.68% in the conservative repeat |
 | Backend/model migration | Replace llama.cpp or lower model quality | A different stack could avoid the bottleneck | blocked | Excluded unless pinned support and output parity exist |
 | Firmware mutation | Upgrade board firmware to enable multi-ERISC | New firmware might change fabric behavior | blocked | Manual operator decision only; not an automated performance trial |
 

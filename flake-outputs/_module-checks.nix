@@ -46,6 +46,8 @@ let
     "metaliumDeviceId"
     "metaliumInspectorPort"
     "metaliumTrace"
+    "generationThreads"
+    "batchThreads"
     "flashAttention"
   ];
   missingLlamacppNegativeFields = builtins.filter (

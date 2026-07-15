@@ -2,6 +2,7 @@ let sc = import "../settings-contracts.ncl" in
 let default_port = 13305 in
 let default_context_size = 8192 in
 let default_gpu_layers = 999 in
+let default_worker_threads = 8 in
 let default_batch_size = 512 in
 let default_parallel_slots = 1 in
 let default_metalium_device_id = 0 in
@@ -24,6 +25,8 @@ let default_metalium_inspector_port = 50051 in
         metaliumInspectorPort = default_metalium_inspector_port,
         metaliumTrace = true,
         contextSize = default_context_size,
+        generationThreads = default_worker_threads,
+        batchThreads = default_worker_threads,
         batchSize = default_batch_size,
         ubatchSize = default_batch_size,
         parallelSlots = default_parallel_slots,
@@ -44,6 +47,8 @@ let default_metalium_inspector_port = 50051 in
         metaliumDeviceId = "device-zero",
         metaliumInspectorPort = 70000,
         metaliumTrace = "enabled",
+        generationThreads = "eight",
+        batchThreads = "eight",
         flashAttention = "disabled",
       },
 }

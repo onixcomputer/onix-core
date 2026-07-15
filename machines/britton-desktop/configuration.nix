@@ -41,6 +41,7 @@ let
   metaliumTraceDisabledEnvironmentValue = "0";
   supraContextSize = 5120;
   supraGpuLayerCount = 999;
+  supraWorkerThreads = 8;
   supraBatchSize = 512;
   supraParallelSlots = 1;
   supraRestartDelaySeconds = 10;
@@ -347,6 +348,8 @@ in
               --no-kv-offload \
               --no-mmap \
               --metrics \
+              --threads ${toString supraWorkerThreads} \
+              --threads-batch ${toString supraWorkerThreads} \
               --batch-size ${toString supraBatchSize} \
               --ubatch-size ${toString supraBatchSize} \
               --parallel ${toString supraParallelSlots} \

@@ -12,6 +12,8 @@
     metaliumInspectorPort = { type = "port", default = 50051, description = "Loopback TT-Metal inspector RPC port reserved for this service" },
     metaliumTrace = { type = "bool", default = false, description = "Opt into experimental Metalium command-trace capture and replay" },
     contextSize = { type = "number", default = 8192, description = "Context window size" },
+    generationThreads = { type = "number", default = 0, description = "Optional llama.cpp generation worker count passed with --threads (0 uses the backend default)" },
+    batchThreads = { type = "number", default = 0, description = "Optional llama.cpp prompt/batch worker count passed with --threads-batch (0 uses the generation worker count)" },
     batchSize = { type = "number", default = 0, description = "Optional llama.cpp batch size passed with -b (0 disables the flag)" },
     ubatchSize = { type = "number", default = 0, description = "Optional llama.cpp physical batch size passed with -ub (0 disables the flag)" },
     parallelSlots = { type = "number", default = 0, description = "Optional llama.cpp parallel slot count passed with -np (0 disables the flag)" },

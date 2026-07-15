@@ -33,6 +33,9 @@ let
   metaliumTraceEnvironmentVariable = "GGML_METALIUM_TRACE";
   metaliumTraceEnabledEnvironmentValue = "1";
   metaliumTraceDisabledEnvironmentValue = "0";
+  validatedMetaliumWorkerThreads = 8;
+  generationThreadsArgument = "--threads ${toString validatedMetaliumWorkerThreads}";
+  batchThreadsArgument = "--threads-batch ${toString validatedMetaliumWorkerThreads}";
   ttMetaliumToolsUrl = "https://docs.tenstorrent.com/tt-metal/latest/tt-metalium/tools/index.html";
   brittonDesktopTags = machinesDef.${brittonDesktopName}.tags;
   brittonDesktopFacter = builtins.fromJSON (
@@ -71,12 +74,28 @@ let
   hasBoundedSupraTraceWarmup =
     supraWarmupCommand != null && lib.hasInfix "supra-router-trace-warmup" supraWarmupCommand;
   keepsVibeThinkerWarmupDisabled = vibeThinkerWarmupCommand == null || vibeThinkerWarmupCommand == "";
+  serviceExecStart = serviceName: brittonDesktopServices.${serviceName}.serviceConfig.ExecStart;
+  hasValidatedWorkerBudget =
+    serviceName:
+    let
+      execStart = serviceExecStart serviceName;
+    in
+    lib.hasInfix generationThreadsArgument execStart && lib.hasInfix batchThreadsArgument execStart;
+  missingValidatedWorkerBudgets = builtins.filter (
+    serviceName: !(hasValidatedWorkerBudget serviceName)
+  ) requiredMetaliumServices;
+  serviceCpuAffinity =
+    serviceName: brittonDesktopServices.${serviceName}.serviceConfig.CPUAffinity or null;
+  servicesWithRejectedCpuAffinity = builtins.filter (
+    serviceName: serviceCpuAffinity serviceName != null
+  ) requiredMetaliumServices;
   hasToolsReference = lib.hasInfix ttMetaliumToolsUrl tenstorrentHostGuide;
 
   # Positive and negative coverage for
   # r[verify onix.britton_desktop.accelerators.inventory],
-  # r[verify onix.britton_desktop.accelerators.services], and
-  # r[verify onix.tenstorrent.model_performance.trace_replay].
+  # r[verify onix.britton_desktop.accelerators.services],
+  # r[verify onix.tenstorrent.model_performance.trace_replay], and
+  # r[verify onix.tenstorrent.model_performance.concurrent_serving].
   brittonDesktopAcceleratorInventory = pkgs.runCommand "britton-desktop-accelerator-inventory" { } ''
     ${lib.optionalString (!hasRequiredAccelerator) ''
       echo "${brittonDesktopName} must retain the ${requiredAcceleratorTag} tag"
@@ -124,6 +143,14 @@ let
     ''}
     ${lib.optionalString (!keepsVibeThinkerWarmupDisabled) ''
       echo "${vibeThinkerServiceName} must not run trace warmup while trace replay is disabled"
+      exit 1
+    ''}
+    ${lib.optionalString (missingValidatedWorkerBudgets != [ ]) ''
+      echo "Metalium services are missing the validated ${toString validatedMetaliumWorkerThreads}-thread worker budget: ${lib.concatStringsSep " " missingValidatedWorkerBudgets}"
+      exit 1
+    ''}
+    ${lib.optionalString (servicesWithRejectedCpuAffinity != [ ]) ''
+      echo "Metalium services must not retain the rejected CCD affinity trial: ${lib.concatStringsSep " " servicesWithRejectedCpuAffinity}"
       exit 1
     ''}
     ${lib.optionalString (!hasToolsReference) ''
