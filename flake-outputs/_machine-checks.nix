@@ -32,6 +32,7 @@ let
   ];
   metaliumTraceEnvironmentVariable = "GGML_METALIUM_TRACE";
   metaliumTraceEnabledEnvironmentValue = "1";
+  metaliumTraceDisabledEnvironmentValue = "0";
   ttMetaliumToolsUrl = "https://docs.tenstorrent.com/tt-metal/latest/tt-metalium/tools/index.html";
   brittonDesktopTags = machinesDef.${brittonDesktopName}.tags;
   brittonDesktopFacter = builtins.fromJSON (
@@ -63,8 +64,8 @@ let
   supraTraceEnvironmentValue = serviceEnvironmentValue supraRouterServiceName metaliumTraceEnvironmentVariable;
   vibeThinkerTraceEnvironmentValue = serviceEnvironmentValue vibeThinkerServiceName metaliumTraceEnvironmentVariable;
   hasExpectedSupraTraceRollout = supraTraceEnvironmentValue == metaliumTraceEnabledEnvironmentValue;
-  hasExpectedVibeThinkerTraceRollout =
-    vibeThinkerTraceEnvironmentValue == metaliumTraceEnabledEnvironmentValue;
+  keepsRegressedVibeThinkerTraceDisabled =
+    vibeThinkerTraceEnvironmentValue == metaliumTraceDisabledEnvironmentValue;
   hasToolsReference = lib.hasInfix ttMetaliumToolsUrl tenstorrentHostGuide;
 
   # Positive and negative coverage for
@@ -108,8 +109,8 @@ let
       echo "${supraRouterServiceName} must retain the validated Metalium trace rollout"
       exit 1
     ''}
-    ${lib.optionalString (!hasExpectedVibeThinkerTraceRollout) ''
-      echo "${vibeThinkerServiceName} must enable the post-Supra Metalium trace rollout"
+    ${lib.optionalString (!keepsRegressedVibeThinkerTraceDisabled) ''
+      echo "${vibeThinkerServiceName} must keep trace replay disabled after its measured regression"
       exit 1
     ''}
     ${lib.optionalString (!hasToolsReference) ''
