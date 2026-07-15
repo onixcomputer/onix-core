@@ -32,7 +32,6 @@ let
   ];
   metaliumTraceEnvironmentVariable = "GGML_METALIUM_TRACE";
   metaliumTraceEnabledEnvironmentValue = "1";
-  metaliumTraceDisabledEnvironmentValue = "0";
   ttMetaliumToolsUrl = "https://docs.tenstorrent.com/tt-metal/latest/tt-metalium/tools/index.html";
   brittonDesktopTags = machinesDef.${brittonDesktopName}.tags;
   brittonDesktopFacter = builtins.fromJSON (
@@ -63,9 +62,9 @@ let
     brittonDesktopServices.${serviceName}.environment.${variableName} or null;
   supraTraceEnvironmentValue = serviceEnvironmentValue supraRouterServiceName metaliumTraceEnvironmentVariable;
   vibeThinkerTraceEnvironmentValue = serviceEnvironmentValue vibeThinkerServiceName metaliumTraceEnvironmentVariable;
-  hasExpectedSupraTraceTrial = supraTraceEnvironmentValue == metaliumTraceEnabledEnvironmentValue;
-  keepsVibeThinkerTraceDisabled =
-    vibeThinkerTraceEnvironmentValue == metaliumTraceDisabledEnvironmentValue;
+  hasExpectedSupraTraceRollout = supraTraceEnvironmentValue == metaliumTraceEnabledEnvironmentValue;
+  hasExpectedVibeThinkerTraceRollout =
+    vibeThinkerTraceEnvironmentValue == metaliumTraceEnabledEnvironmentValue;
   hasToolsReference = lib.hasInfix ttMetaliumToolsUrl tenstorrentHostGuide;
 
   # Positive and negative coverage for
@@ -105,12 +104,12 @@ let
       echo "${brittonDesktopName} is missing required Metalium services: ${lib.concatStringsSep " " missingMetaliumServices}"
       exit 1
     ''}
-    ${lib.optionalString (!hasExpectedSupraTraceTrial) ''
-      echo "${supraRouterServiceName} must explicitly enable the bounded Metalium trace trial"
+    ${lib.optionalString (!hasExpectedSupraTraceRollout) ''
+      echo "${supraRouterServiceName} must retain the validated Metalium trace rollout"
       exit 1
     ''}
-    ${lib.optionalString (!keepsVibeThinkerTraceDisabled) ''
-      echo "${vibeThinkerServiceName} must remain the negative trace-control service during the Supra trial"
+    ${lib.optionalString (!hasExpectedVibeThinkerTraceRollout) ''
+      echo "${vibeThinkerServiceName} must enable the post-Supra Metalium trace rollout"
       exit 1
     ''}
     ${lib.optionalString (!hasToolsReference) ''
