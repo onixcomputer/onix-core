@@ -66,6 +66,11 @@ let
   hasExpectedSupraTraceRollout = supraTraceEnvironmentValue == metaliumTraceEnabledEnvironmentValue;
   keepsRegressedVibeThinkerTraceDisabled =
     vibeThinkerTraceEnvironmentValue == metaliumTraceDisabledEnvironmentValue;
+  supraWarmupCommand = brittonDesktopServices.${supraRouterServiceName}.postStart or null;
+  vibeThinkerWarmupCommand = brittonDesktopServices.${vibeThinkerServiceName}.postStart or null;
+  hasBoundedSupraTraceWarmup =
+    supraWarmupCommand != null && lib.hasInfix "supra-router-trace-warmup" supraWarmupCommand;
+  keepsVibeThinkerWarmupDisabled = vibeThinkerWarmupCommand == null || vibeThinkerWarmupCommand == "";
   hasToolsReference = lib.hasInfix ttMetaliumToolsUrl tenstorrentHostGuide;
 
   # Positive and negative coverage for
@@ -111,6 +116,14 @@ let
     ''}
     ${lib.optionalString (!keepsRegressedVibeThinkerTraceDisabled) ''
       echo "${vibeThinkerServiceName} must keep trace replay disabled after its measured regression"
+      exit 1
+    ''}
+    ${lib.optionalString (!hasBoundedSupraTraceWarmup) ''
+      echo "${supraRouterServiceName} must prewarm its validated trace shape after every start"
+      exit 1
+    ''}
+    ${lib.optionalString (!keepsVibeThinkerWarmupDisabled) ''
+      echo "${vibeThinkerServiceName} must not run trace warmup while trace replay is disabled"
       exit 1
     ''}
     ${lib.optionalString (!hasToolsReference) ''

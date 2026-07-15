@@ -46,6 +46,99 @@ let
   supraRestartDelaySeconds = 10;
   supraStateDirectoryMode = "0755";
   supraModelFileMode = "0644";
+  supraWarmupHost = "127.0.0.1";
+  supraWarmupHealthUrl = "http://${supraWarmupHost}:${toString supraApiPort}/health";
+  supraWarmupCompletionUrl = "http://${supraWarmupHost}:${toString supraApiPort}/completion";
+  supraWarmupPredictTokens = 64;
+  supraWarmupTemperature = 0.0;
+  supraWarmupSeed = 42;
+  supraWarmupRequestCount = 2;
+  supraWarmupFirstAttempt = 1;
+  supraWarmupReadyAttempts = 30;
+  supraWarmupRetryDelaySeconds = 1;
+  supraWarmupRequestTimeoutSeconds = 120;
+  supraWarmupExpectedFragments = [
+    "| Complexity:"
+    "| Route:"
+  ];
+  supraWarmupRequest = pkgs.writeText "supra-router-trace-warmup-request.json" (
+    builtins.toJSON {
+      prompt = "Task: Classify a deterministic local inference health check and select the appropriate model route.\nAnalysis:";
+      n_predict = supraWarmupPredictTokens;
+      temperature = supraWarmupTemperature;
+      seed = supraWarmupSeed;
+      cache_prompt = false;
+      stream = false;
+    }
+  );
+  supraWarmup = pkgs.writeShellApplication {
+    name = "supra-router-trace-warmup";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.curl
+      pkgs.gnugrep
+    ];
+    text = ''
+      set -euo pipefail
+
+      health_url=${lib.escapeShellArg supraWarmupHealthUrl}
+      completion_url=${lib.escapeShellArg supraWarmupCompletionUrl}
+      request_path=${lib.escapeShellArg supraWarmupRequest}
+      request_count=${toString supraWarmupRequestCount}
+      first_attempt=${toString supraWarmupFirstAttempt}
+      max_ready_attempts=${toString supraWarmupReadyAttempts}
+      retry_delay_seconds=${toString supraWarmupRetryDelaySeconds}
+      request_timeout_seconds=${toString supraWarmupRequestTimeoutSeconds}
+
+      ready=false
+      attempt="$first_attempt"
+      while (( attempt <= max_ready_attempts )); do
+        if curl --fail --silent --output /dev/null "$health_url"; then
+          ready=true
+          break
+        fi
+        sleep "$retry_delay_seconds"
+        attempt=$(( attempt + 1 ))
+      done
+
+      if [[ "$ready" != true ]]; then
+        echo "Supra trace warmup skipped: readiness deadline expired" >&2
+        exit 0
+      fi
+
+      response_path="$(mktemp)"
+      trap 'rm -f "$response_path"' EXIT
+
+      request_index="$first_attempt"
+      while (( request_index <= request_count )); do
+        if ! curl \
+          --fail \
+          --silent \
+          --show-error \
+          --max-time "$request_timeout_seconds" \
+          --header 'Content-Type: application/json' \
+          --data-binary "@$request_path" \
+          --output "$response_path" \
+          "$completion_url"; then
+          echo "Supra trace warmup skipped: completion request failed" >&2
+          exit 0
+        fi
+
+        for expected_fragment in ${
+          lib.concatMapStringsSep " " lib.escapeShellArg supraWarmupExpectedFragments
+        }; do
+          if ! grep --fixed-strings --quiet "$expected_fragment" "$response_path"; then
+            echo "Supra trace warmup skipped: response schema check failed" >&2
+            exit 0
+          fi
+        done
+
+        request_index=$(( request_index + 1 ))
+      done
+
+      echo "Supra trace warmup completed $request_count capture passes"
+    '';
+  };
 in
 {
   networking = {
@@ -224,6 +317,10 @@ in
             chmod ${supraModelFileMode} ${supraModelPath}
           fi
         '';
+        # r[impl onix.tenstorrent.model_performance.trace_replay]
+        # This bounded post-start hook runs on every service restart. Failures are
+        # reported but return success so an optimization cannot restart-loop the API.
+        postStart = lib.getExe supraWarmup;
         environment = {
           HOME = supraStateDir;
           GGML_METALIUM_DEVICE_ID = "0";

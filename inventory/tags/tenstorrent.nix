@@ -474,6 +474,24 @@ in
       in a focused reproduction: they instrument kernels, can alter timing or
       binary size, and are not healthy-service defaults.
 
+      ### Current llama.cpp performance profile
+
+      r[impl onix.tenstorrent.model_performance.trace_replay]
+
+      Metalium command-trace replay is model-specific on this host. Keep the
+      checked deployment boundary instead of enabling it globally:
+
+      - Supra-Router-51M on physical card 1 enables trace replay. Its fixed-input
+        median warm decode improved from 88.32 to 136.15 tokens/s (54.15%), with
+        stable alternating-prompt output and no service restart. A bounded
+        post-start hook waits for readiness and runs the eager/capture passes.
+      - VibeThinker-3B on physical card 0 keeps trace replay disabled. The same
+        trial reduced median warm decode from 22.06 to 18.13 tokens/s (17.81%).
+      - Trace warmup only prepares the tested graph shape. New prompt/token shapes
+        can still pay eager and capture costs before their third matching pass.
+      - Firmware flashing remains outside this performance profile and is never an
+        automated response to a benchmark regression.
+
       ## Software stack entry points
 
       This NixOS tag handles the system bringup layer: KMD, device rules,

@@ -8,6 +8,12 @@ A fixed-input baseline on 2026-07-15 established these warm results:
 - Supra direct completion: 55 generated tokens, about 89 decode tokens/s and 0.64 seconds end to end after compilation.
 - Cold prompt shapes are materially slower before JIT/program reuse.
 
+The controlled rollout produced model-specific results:
+
+- Supra retained byte-identical routing output while median warm decode increased from 88.32 to 136.15 tokens/s, a 54.15% gain. Alternating code and poetry prompts produced stable prompt-specific outputs, falsifying the stale-input replay concern for the tested shapes.
+- VibeThinker retained byte-identical output but median warm decode fell from 22.06 to 18.13 tokens/s, a 17.81% regression. Its trace opt-in was rolled back declaratively.
+- Both services remained isolated and reported zero restarts or new warning-level journal entries during the trials.
+
 The pinned fork contains `GGML_METALIUM_TRACE`: pass 1 executes eagerly, pass 2 captures, and pass 3 onward replays the device command trace. The source labels this path unstable and has no focused trace test in the pinned checkout, so configuration plausibility is not acceptance evidence.
 
 Alternative mechanisms remain bounded:
@@ -33,7 +39,7 @@ Alternative mechanisms remain bounded:
 
 ### Decision: Prewarm only validated graph shapes
 
-**Choice:** After trace replay passes the bounded benchmark, use a service-specific oneshot warmup that waits for readiness and exercises enough identical requests to complete eager execution and capture before normal dependent traffic.
+**Choice:** After trace replay passes the bounded benchmark, use a bounded service `postStart` warmup that waits for readiness and exercises enough identical requests to complete eager execution and capture before systemd treats the service start as complete.
 
 **Rationale:** Trace replay does not accelerate the first two matching graph passes. Controlled prewarming moves compilation/capture cost out of user-visible requests while keeping the server process as the owner of device state.
 
