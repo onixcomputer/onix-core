@@ -10,7 +10,7 @@ A fixed-input baseline on 2026-07-15 established these warm results:
 
 The controlled rollout produced model-specific results:
 
-- Supra retained byte-identical routing output while median warm decode increased from 88.32 to 136.15 tokens/s, a 54.15% gain. Alternating code and poetry prompts produced stable prompt-specific outputs, falsifying the stale-input replay concern for the tested shapes.
+- Supra retained byte-identical routing output while the isolated trace trial increased median warm decode from 88.32 to 136.15 tokens/s, a 54.15% gain. After bounded post-start warmup, the final five-run median reached 156.44 tokens/s, a 77.14% improvement over baseline; the prewarmed representative request completed in 0.36 seconds. Alternating code and poetry prompts produced stable prompt-specific outputs, falsifying the stale-input replay concern for the tested shapes.
 - VibeThinker retained byte-identical output but median warm decode fell from 22.06 to 18.13 tokens/s, a 17.81% regression. Its trace opt-in was rolled back declaratively.
 - Both services remained isolated and reported zero restarts or new warning-level journal entries during the trials.
 

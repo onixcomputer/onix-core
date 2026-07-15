@@ -8,5 +8,5 @@
 
 ## Phase 2: Production warmup and closeout
 
-- [ ] [serial] Add service-specific readiness and trace-capture warmup for every validated trace-enabled model, including timeout/failure coverage that cannot block the known-good server indefinitely. r[onix.tenstorrent.model_performance.trace_replay]
-- [ ] [serial] Run focused Nix checks, Cairn validation/gates, runtime health checks, and final before/after benchmarks; sync and archive only with checked evidence or an exact bounded blocker. r[onix.tenstorrent.model_performance.trace_replay]
+- [x] [serial] Add service-specific readiness and trace-capture warmup for every validated trace-enabled model, including timeout/failure coverage that cannot block the known-good server indefinitely. r[onix.tenstorrent.model_performance.trace_replay]
+- [x] [serial] Run focused Nix checks, Cairn validation/gates, runtime health checks, and final before/after benchmarks; sync and archive only with checked evidence or an exact bounded blocker. r[onix.tenstorrent.model_performance.trace_replay]

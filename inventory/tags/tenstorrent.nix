@@ -481,10 +481,11 @@ in
       Metalium command-trace replay is model-specific on this host. Keep the
       checked deployment boundary instead of enabling it globally:
 
-      - Supra-Router-51M on physical card 1 enables trace replay. Its fixed-input
-        median warm decode improved from 88.32 to 136.15 tokens/s (54.15%), with
-        stable alternating-prompt output and no service restart. A bounded
-        post-start hook waits for readiness and runs the eager/capture passes.
+      - Supra-Router-51M on physical card 1 enables trace replay. Its isolated
+        trial improved median warm decode from 88.32 to 136.15 tokens/s (54.15%).
+        After the bounded post-start hook ran the eager/capture passes, the final
+        five-run median reached 156.44 tokens/s (77.14% over baseline), with
+        stable alternating-prompt output and no service restart.
       - VibeThinker-3B on physical card 0 keeps trace replay disabled. The same
         trial reduced median warm decode from 22.06 to 18.13 tokens/s (17.81%).
       - Trace warmup only prepares the tested graph shape. New prompt/token shapes
