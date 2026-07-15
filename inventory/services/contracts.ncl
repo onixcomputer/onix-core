@@ -47,6 +47,7 @@ let self_modules = [
   "tailscale",
   "tailscale-traefik",
   "thunderbird",
+  "tt-inference-server",
   "upmpdcli",
   "vaultwarden",
 ]

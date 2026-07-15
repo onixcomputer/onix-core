@@ -5,8 +5,8 @@
 
 ## Phase 2: Declarative services
 
-- [ ] [serial] Add a typed `tt-inference-server` module with a digest-pinned image, secret environment file, physical-device isolation, persistent cache, and positive/negative settings checks. r[onix.tenstorrent.vllm.p150_llama]
-- [ ] [serial] Move Supra declaratively to CPU, add the Llama-3.1-8B-Instruct service on card 1, and preserve VibeThinker unchanged on card 0. r[onix.tenstorrent.concurrent_models.supra] r[onix.tenstorrent.vllm.p150_llama]
+- [x] [serial] Add a typed `tt-inference-server` module with a digest-pinned image, secret environment file, physical-device isolation, persistent cache, and positive/negative settings checks. r[onix.tenstorrent.vllm.p150_llama]
+- [x] [serial] Move Supra declaratively to CPU, add the Llama-3.1-8B-Instruct service on card 1, and preserve VibeThinker unchanged on card 0. r[onix.tenstorrent.concurrent_models.supra] r[onix.tenstorrent.vllm.p150_llama]
 
 ## Phase 3: Verification
 

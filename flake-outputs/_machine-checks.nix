@@ -26,16 +26,32 @@ let
   removedNvidiaServiceName = "docker-sglang-diffusion-krea2-britton-desktop";
   vibeThinkerServiceName = "llamacpp-server-vibethinker-britton-desktop";
   supraRouterServiceName = "llamacpp-server-supra-router";
-  requiredMetaliumServices = [
+  llamaContainerName = "tt-inference-server-llama-3-1-8b-instruct-p150";
+  llamaServiceName = "docker-${llamaContainerName}";
+  llamaGeneratorName = llamaContainerName;
+  requiredEndpointServices = [
     vibeThinkerServiceName
     supraRouterServiceName
+    llamaServiceName
   ];
+  requiredMetaliumServices = [ vibeThinkerServiceName ];
   metaliumTraceEnvironmentVariable = "GGML_METALIUM_TRACE";
-  metaliumTraceEnabledEnvironmentValue = "1";
   metaliumTraceDisabledEnvironmentValue = "0";
   validatedMetaliumWorkerThreads = 8;
-  generationThreadsArgument = "--threads ${toString validatedMetaliumWorkerThreads}";
-  batchThreadsArgument = "--threads-batch ${toString validatedMetaliumWorkerThreads}";
+  metaliumGenerationThreadsArgument = "--threads ${toString validatedMetaliumWorkerThreads}";
+  metaliumBatchThreadsArgument = "--threads-batch ${toString validatedMetaliumWorkerThreads}";
+  validatedSupraCpuThreads = 4;
+  supraCpuGenerationThreadsArgument = "--threads ${toString validatedSupraCpuThreads}";
+  supraCpuBatchThreadsArgument = "--threads-batch ${toString validatedSupraCpuThreads}";
+  cpuOnlyGpuLayersArgument = "--gpu-layers 0";
+  metaliumPackageNameFragment = "llama-cpp-metalium";
+  llamaModel = "meta-llama/Llama-3.1-8B-Instruct";
+  llamaDevice = "p150";
+  llamaPhysicalDeviceId = 1;
+  llamaDevicePath = "/dev/tenstorrent/${toString llamaPhysicalDeviceId}";
+  llamaApiPort = 8000;
+  llamaLoopbackHost = "127.0.0.1";
+  llamaImage = "ghcr.io/tenstorrent/tt-inference-server/vllm-tt-metal-src-release-ubuntu-22.04-amd64:0.18.0-c49bb76-6b4a3a7@sha256:6aee48978be401c0a86cb1761c4d64af818df8380bc7b27c1018d704518545ff";
   ttMetaliumToolsUrl = "https://docs.tenstorrent.com/tt-metal/latest/tt-metalium/tools/index.html";
   brittonDesktopTags = machinesDef.${brittonDesktopName}.tags;
   brittonDesktopFacter = builtins.fromJSON (
@@ -58,44 +74,88 @@ let
   hasRequiredGraphicsDriver = lib.elem requiredGraphicsDriver brittonDesktopGraphicsDrivers;
   hasForbiddenInitrdModule = lib.elem forbiddenInitrdModule brittonDesktopConfig.boot.initrd.kernelModules;
   hasRemovedNvidiaService = builtins.hasAttr removedNvidiaServiceName brittonDesktopServices;
+  missingEndpointServices = builtins.filter (
+    serviceName: !(builtins.hasAttr serviceName brittonDesktopServices)
+  ) requiredEndpointServices;
   missingMetaliumServices = builtins.filter (
     serviceName: !(builtins.hasAttr serviceName brittonDesktopServices)
   ) requiredMetaliumServices;
   serviceEnvironmentValue =
     serviceName: variableName:
     brittonDesktopServices.${serviceName}.environment.${variableName} or null;
-  supraTraceEnvironmentValue = serviceEnvironmentValue supraRouterServiceName metaliumTraceEnvironmentVariable;
   vibeThinkerTraceEnvironmentValue = serviceEnvironmentValue vibeThinkerServiceName metaliumTraceEnvironmentVariable;
-  hasExpectedSupraTraceRollout = supraTraceEnvironmentValue == metaliumTraceEnabledEnvironmentValue;
   keepsRegressedVibeThinkerTraceDisabled =
     vibeThinkerTraceEnvironmentValue == metaliumTraceDisabledEnvironmentValue;
-  supraWarmupCommand = brittonDesktopServices.${supraRouterServiceName}.postStart or null;
   vibeThinkerWarmupCommand = brittonDesktopServices.${vibeThinkerServiceName}.postStart or null;
-  hasBoundedSupraTraceWarmup =
-    supraWarmupCommand != null && lib.hasInfix "supra-router-trace-warmup" supraWarmupCommand;
   keepsVibeThinkerWarmupDisabled = vibeThinkerWarmupCommand == null || vibeThinkerWarmupCommand == "";
   serviceExecStart = serviceName: brittonDesktopServices.${serviceName}.serviceConfig.ExecStart;
-  hasValidatedWorkerBudget =
+  hasValidatedMetaliumWorkerBudget =
     serviceName:
     let
       execStart = serviceExecStart serviceName;
     in
-    lib.hasInfix generationThreadsArgument execStart && lib.hasInfix batchThreadsArgument execStart;
+    lib.hasInfix metaliumGenerationThreadsArgument execStart
+    && lib.hasInfix metaliumBatchThreadsArgument execStart;
   missingValidatedWorkerBudgets = builtins.filter (
-    serviceName: !(hasValidatedWorkerBudget serviceName)
+    serviceName: !(hasValidatedMetaliumWorkerBudget serviceName)
   ) requiredMetaliumServices;
   serviceCpuAffinity =
     serviceName: brittonDesktopServices.${serviceName}.serviceConfig.CPUAffinity or null;
   servicesWithRejectedCpuAffinity = builtins.filter (
     serviceName: serviceCpuAffinity serviceName != null
   ) requiredMetaliumServices;
+
+  supraExecStart = serviceExecStart supraRouterServiceName;
+  supraMetaliumEnvironmentVariables = [
+    "GGML_METALIUM_DEVICE_ID"
+    "GGML_METALIUM_TRACE"
+    "TT_METAL_CACHE"
+    "TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS"
+    "TT_METAL_LOGS_PATH"
+    "TT_VISIBLE_DEVICES"
+  ];
+  keepsSupraOnCpu =
+    lib.hasInfix cpuOnlyGpuLayersArgument supraExecStart
+    && lib.hasInfix supraCpuGenerationThreadsArgument supraExecStart
+    && lib.hasInfix supraCpuBatchThreadsArgument supraExecStart
+    && !(lib.hasInfix metaliumPackageNameFragment supraExecStart)
+    && lib.all (
+      variableName: serviceEnvironmentValue supraRouterServiceName variableName == null
+    ) supraMetaliumEnvironmentVariables;
+
+  brittonDesktopContainers = brittonDesktopConfig.virtualisation.oci-containers.containers;
+  llamaContainer = brittonDesktopContainers.${llamaContainerName} or { };
+  llamaCommand = llamaContainer.cmd or [ ];
+  llamaExtraOptions = llamaContainer.extraOptions or [ ];
+  hasIsolatedLlamaContainer =
+    builtins.hasAttr llamaContainerName brittonDesktopContainers
+    && (llamaContainer.image or null) == llamaImage
+    &&
+      (llamaContainer.ports or [ ]) == [
+        "${llamaLoopbackHost}:${toString llamaApiPort}:${toString llamaApiPort}"
+      ]
+    && lib.elem "--model" llamaCommand
+    && lib.elem llamaModel llamaCommand
+    && lib.elem "--tt-device" llamaCommand
+    && lib.elem llamaDevice llamaCommand
+    && lib.elem "--device=${llamaDevicePath}:${llamaDevicePath}" llamaExtraOptions
+    && (llamaContainer.environment.TT_VISIBLE_DEVICES or null) == toString llamaPhysicalDeviceId
+    && builtins.length (llamaContainer.environmentFiles or [ ]) == 1;
+  llamaGenerators = brittonDesktopConfig.clan.core.vars.generators;
+  hasSecretLlamaCredential =
+    builtins.hasAttr llamaGeneratorName llamaGenerators
+    && (llamaGenerators.${llamaGeneratorName}.files."env-file".secret or false)
+    && (llamaGenerators.${llamaGeneratorName}.files."env-file".deploy or false)
+    && (llamaGenerators.${llamaGeneratorName}.files."env-file".mode or null) == "0400";
   hasToolsReference = lib.hasInfix ttMetaliumToolsUrl tenstorrentHostGuide;
 
   # Positive and negative coverage for
   # r[verify onix.britton_desktop.accelerators.inventory],
   # r[verify onix.britton_desktop.accelerators.services],
-  # r[verify onix.tenstorrent.model_performance.trace_replay], and
-  # r[verify onix.tenstorrent.model_performance.concurrent_serving].
+  # r[verify onix.tenstorrent.model_performance.trace_replay],
+  # r[verify onix.tenstorrent.model_performance.concurrent_serving],
+  # r[verify onix.tenstorrent.vllm.p150_llama], and
+  # r[verify onix.tenstorrent.vllm.secrets].
   brittonDesktopAcceleratorInventory = pkgs.runCommand "britton-desktop-accelerator-inventory" { } ''
     ${lib.optionalString (!hasRequiredAccelerator) ''
       echo "${brittonDesktopName} must retain the ${requiredAcceleratorTag} tag"
@@ -125,24 +185,32 @@ let
       echo "${brittonDesktopName} must not generate the NVIDIA-only ${removedNvidiaServiceName} service"
       exit 1
     ''}
-    ${lib.optionalString (missingMetaliumServices != [ ]) ''
-      echo "${brittonDesktopName} is missing required Metalium services: ${lib.concatStringsSep " " missingMetaliumServices}"
+    ${lib.optionalString (missingEndpointServices != [ ]) ''
+      echo "${brittonDesktopName} is missing required model endpoint services: ${lib.concatStringsSep " " missingEndpointServices}"
       exit 1
     ''}
-    ${lib.optionalString (!hasExpectedSupraTraceRollout) ''
-      echo "${supraRouterServiceName} must retain the validated Metalium trace rollout"
+    ${lib.optionalString (missingMetaliumServices != [ ]) ''
+      echo "${brittonDesktopName} is missing required Metalium services: ${lib.concatStringsSep " " missingMetaliumServices}"
       exit 1
     ''}
     ${lib.optionalString (!keepsRegressedVibeThinkerTraceDisabled) ''
       echo "${vibeThinkerServiceName} must keep trace replay disabled after its measured regression"
       exit 1
     ''}
-    ${lib.optionalString (!hasBoundedSupraTraceWarmup) ''
-      echo "${supraRouterServiceName} must prewarm its validated trace shape after every start"
-      exit 1
-    ''}
     ${lib.optionalString (!keepsVibeThinkerWarmupDisabled) ''
       echo "${vibeThinkerServiceName} must not run trace warmup while trace replay is disabled"
+      exit 1
+    ''}
+    ${lib.optionalString (!keepsSupraOnCpu) ''
+      echo "${supraRouterServiceName} must retain the validated CPU-only four-thread runtime"
+      exit 1
+    ''}
+    ${lib.optionalString (!hasIsolatedLlamaContainer) ''
+      echo "${llamaContainerName} must retain its digest, loopback API, p150 profile, and exclusive ${llamaDevicePath} mapping"
+      exit 1
+    ''}
+    ${lib.optionalString (!hasSecretLlamaCredential) ''
+      echo "${llamaGeneratorName} must deploy HF_TOKEN through a root-only Clan secret file"
       exit 1
     ''}
     ${lib.optionalString (missingValidatedWorkerBudgets != [ ]) ''

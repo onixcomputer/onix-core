@@ -432,6 +432,25 @@ let ornith_35b_bf16_model = "user.Ornith-1.0-35B-BF16" in
       },
     },
 
+    # r[impl onix.tenstorrent.vllm.p150_llama]
+    "llama-3-1-8b-instruct-p150" = {
+      module = { name = "tt-inference-server", input = "self" },
+      roles.default.machines.britton-desktop.settings = {
+        stateDir = "/var/lib/tt-inference-server-llama-3-1-8b-instruct",
+        image = "ghcr.io/tenstorrent/tt-inference-server/vllm-tt-metal-src-release-ubuntu-22.04-amd64:0.18.0-c49bb76-6b4a3a7@sha256:6aee48978be401c0a86cb1761c4d64af818df8380bc7b27c1018d704518545ff",
+        model = "meta-llama/Llama-3.1-8B-Instruct",
+        device = "p150",
+        physicalDeviceId = 1,
+        host = "127.0.0.1",
+        port = 8000,
+        cacheUid = 1000,
+        cacheGid = 1000,
+        enableTraceCapture = true,
+        autoStart = true,
+        extraArgs = [],
+      },
+    },
+
     "mesh-llm-private-inference" = {
       module = { name = "mesh-llm", input = "self" },
       roles.default.machines = {

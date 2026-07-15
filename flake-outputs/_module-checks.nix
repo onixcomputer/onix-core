@@ -22,6 +22,7 @@ let
   moduleLists = wasm.evalNickelFile ../inventory/services/module-lists.ncl;
   llamacppServerValidation = wasm.evalNickelFile ../inventory/services/fixtures/llamacpp-server-validation.ncl;
   sglangDiffusionValidation = wasm.evalNickelFile ../inventory/services/fixtures/sglang-diffusion-validation.ncl;
+  ttInferenceServerValidation = wasm.evalNickelFile ../inventory/services/fixtures/tt-inference-server-validation.ncl;
 
   # Modules registered in contracts.ncl (clan perInstance services only)
   registeredModules = lib.sort lib.lessThan moduleLists.selfModules;
@@ -65,6 +66,25 @@ let
   missingSglangNegativeFields = builtins.filter (
     field: !(lib.any (error: lib.hasInfix field error) sglangNegativeErrors)
   ) expectedSglangNegativeFields;
+
+  ttInferenceServerPositiveErrors = ttInferenceServerValidation.positive;
+  ttInferenceServerNegativeErrors = ttInferenceServerValidation.negative;
+  expectedTtInferenceServerNegativeFields = [
+    "image"
+    "model"
+    "device"
+    "physicalDeviceId"
+    "host"
+    "port"
+    "cacheUid"
+    "cacheGid"
+    "enableTraceCapture"
+    "autoStart"
+    "extraArgs"
+  ];
+  missingTtInferenceServerNegativeFields = builtins.filter (
+    field: !(lib.any (error: lib.hasInfix field error) ttInferenceServerNegativeErrors)
+  ) expectedTtInferenceServerNegativeFields;
 in
 {
   checks = {
@@ -124,6 +144,25 @@ in
         printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" missingSglangNegativeFields)}
         echo "Actual errors:"
         printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" sglangNegativeErrors)}
+        exit 1
+      ''}
+      touch $out
+    '';
+
+    # Positive and negative settings coverage for
+    # r[verify onix.tenstorrent.vllm.p150_llama] and
+    # r[verify onix.tenstorrent.vllm.secrets].
+    tt-inference-server-settings = pkgs.runCommand "tt-inference-server-settings" { } ''
+      ${lib.optionalString (ttInferenceServerPositiveErrors != [ ]) ''
+        echo "Valid tt-inference-server settings produced unexpected errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" ttInferenceServerPositiveErrors)}
+        exit 1
+      ''}
+      ${lib.optionalString (missingTtInferenceServerNegativeFields != [ ]) ''
+        echo "Invalid tt-inference-server settings did not report expected fields:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" missingTtInferenceServerNegativeFields)}
+        echo "Actual errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" ttInferenceServerNegativeErrors)}
         exit 1
       ''}
       touch $out

@@ -56,6 +56,7 @@ let
     "llamacpp-server" = import ./llamacpp-server (schemaArgs ./llamacpp-server);
     "syncthing" = import ./syncthing (schemaArgs ./syncthing);
     "thunderbird" = import ./thunderbird (schemaArgs ./thunderbird);
+    "tt-inference-server" = import ./tt-inference-server (schemaArgs ./tt-inference-server);
   };
 
   # NOTE: borgbackup-extras and matrix-synapse-cf live under modules/ but are

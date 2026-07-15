@@ -40,6 +40,7 @@ let schemas = {
   "tailscale-traefik" = import "../../modules/tailscale-traefik/schema.ncl",
   "tailscale" = import "../../modules/tailscale/schema.ncl",
   "thunderbird" = import "../../modules/thunderbird/schema.ncl",
+  "tt-inference-server" = import "../../modules/tt-inference-server/schema.ncl",
   "upmpdcli" = import "../../modules/upmpdcli/schema.ncl",
   "vaultwarden" = import "../../modules/vaultwarden/schema.ncl",
 }

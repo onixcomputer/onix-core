@@ -481,11 +481,12 @@ in
       Metalium command-trace replay is model-specific on this host. Keep the
       checked deployment boundary instead of enabling it globally:
 
-      - Supra-Router-51M on physical card 1 enables trace replay. Its isolated
-        trial improved median warm decode from 88.32 to 136.15 tokens/s (54.15%).
-        After the bounded post-start hook ran the eager/capture passes, the final
-        five-run median reached 156.44 tokens/s (77.14% over baseline), with
-        stable alternating-prompt output and no service restart.
+      - Supra-Router-51M historically enabled trace replay on physical card 1.
+        Its isolated trial improved median warm decode from 88.32 to 136.15
+        tokens/s (54.15%), and the bounded eager/capture passes reached 156.44
+        tokens/s (77.14% over baseline). The active deployment now runs this 51M
+        router on four CPU threads because it measured 1,031 tokens/s in isolation,
+        preserves deterministic output, and releases card 1 for a larger model.
       - VibeThinker-3B on physical card 0 keeps trace replay disabled. The same
         trial reduced median warm decode from 22.06 to 18.13 tokens/s (17.81%).
       - Trace warmup only prepares the tested graph shape. New prompt/token shapes
@@ -497,15 +498,16 @@ in
 
       r[impl onix.tenstorrent.model_performance.concurrent_serving]
 
-      Both Metalium servers explicitly use eight generation and batch workers.
-      The automatic 16-worker baseline oversubscribed the 16 physical host cores
-      under synchronized load: five-run medians fell to 11.86 tokens/s for
-      VibeThinker and 17.91 tokens/s for Supra. The conservative repeated
-      eight-worker trial reached 18.51 and 97.18 tokens/s respectively, improving
-      concurrent throughput by 56.10% and 442.68% while isolated throughput stayed
-      within the 5% acceptance tolerance. A separate disjoint-CCD trial regressed
-      normalized concurrent retention by 3.69%, so neither service is CPU-pinned.
-      Rebenchmark both services together before changing these worker counts.
+      VibeThinker explicitly uses eight generation and batch workers on physical
+      card 0. In the historical two-Metalium deployment, the automatic 16-worker
+      baseline oversubscribed the 16 physical host cores under synchronized load:
+      five-run medians fell to 11.86 tokens/s for VibeThinker and 17.91 tokens/s
+      for Supra. The conservative repeated eight-worker trial reached 18.51 and
+      97.18 tokens/s respectively. A later supplement trial moved Supra to four
+      CPU threads, preserved its output hash, measured 778 tokens/s under concurrent
+      VibeThinker load, and kept VibeThinker near 19.25 tokens/s. A disjoint-CCD
+      trial regressed normalized retention, so these services remain unpinned.
+      Rebenchmark all active endpoints before changing either worker budget.
 
       ## Software stack entry points
 

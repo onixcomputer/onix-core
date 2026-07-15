@@ -1548,14 +1548,17 @@
         ],
         "systems": [
           "systems"
+        ],
+        "treefmt-nix": [
+          "treefmt-nix"
         ]
       },
       "locked": {
-        "lastModified": 1755149377,
-        "narHash": "sha256-LU2ZDuquF+n4XdcodxtMuOOlcugg90DWf2OXXWJHW98=",
+        "lastModified": 1783921960,
+        "narHash": "sha256-YsBUgN+oq6A7hNFujFSGzh5htmPnU6I7LIu+hwwt5AQ=",
         "owner": "RossComputerGuy",
         "repo": "tenstorrent.nix",
-        "rev": "c101b96e65ff324b99847def21eaa5444099ebc6",
+        "rev": "3c4dcbb9f8de30ae0d43177c8bc25f12170ddd94",
         "type": "github"
       },
       "original": {
