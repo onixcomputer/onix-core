@@ -141,7 +141,7 @@ let
     && lib.elem "--tt-device" llamaCommand
     && lib.elem llamaDevice llamaCommand
     && lib.elem "--device=${llamaDevicePath}:${llamaDevicePath}" llamaExtraOptions
-    && (llamaContainer.environment.TT_VISIBLE_DEVICES or null) == toString llamaPhysicalDeviceId
+    && !(builtins.hasAttr "TT_VISIBLE_DEVICES" (llamaContainer.environment or { }))
     && builtins.length (llamaContainer.environmentFiles or [ ]) == 1;
   llamaGenerators = brittonDesktopConfig.clan.core.vars.generators;
   hasSecretLlamaCredential =

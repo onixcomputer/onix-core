@@ -231,7 +231,6 @@ in
                 environment = {
                   CACHE_ROOT = containerCacheDir;
                   TT_METAL_LOGS_PATH = containerLogsDir;
-                  TT_VISIBLE_DEVICES = toString physicalDeviceId;
                 };
                 cmd = serverArgs;
                 ports = [ "${host}:${toString port}:${toString port}" ];
