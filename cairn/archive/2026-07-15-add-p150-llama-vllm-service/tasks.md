@@ -10,5 +10,5 @@
 
 ## Phase 3: Verification
 
-- [ ] [serial] Run focused checks and the complete host build; deploy the non-secret configuration and populate the Hugging Face clan secret only from an authorized credential. r[onix.tenstorrent.vllm.p150_llama]
-- [ ] [serial] Validate all three endpoints concurrently, audit device ownership/journals/restarts, document the supported boundary, then sync and archive with evidence or the exact gated-token blocker. r[onix.tenstorrent.concurrent_models.supra] r[onix.tenstorrent.vllm.p150_llama]
+- [x] [serial] Run focused checks and the complete host build; deploy the non-secret configuration and populate the Hugging Face clan secret only from an authorized credential. r[onix.tenstorrent.vllm.p150_llama]
+- [x] [serial] Validate all three endpoints concurrently, audit device ownership/journals/restarts, document the supported boundary, then sync and archive with evidence or the exact gated-token blocker. r[onix.tenstorrent.concurrent_models.supra] r[onix.tenstorrent.vllm.p150_llama]

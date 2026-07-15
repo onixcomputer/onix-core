@@ -35,16 +35,17 @@ r[onix.tenstorrent.model_process_isolation.state] Each independent Metalium mode
 - THEN neither process waits for the other process's `CHIP_IN_USE` lock
 - AND neither process shares a kernel compilation cache
 
-### Requirement: Supra-Router-51M runs on physical card 1
+### Requirement: Supra-Router-51M preserves P150 capacity
 
-r[onix.tenstorrent.concurrent_models.supra] The `llamacpp-server-supra-router` service MUST use the pinned Metalium package on physical card 1, MUST keep KV cache on the CPU, MUST disable flash attention and mesh aggregation, and MUST preserve its port 13306, model alias, deterministic sampling, and GGUF model path.
+r[onix.tenstorrent.concurrent_models.supra] The `llamacpp-server-supra-router` service MUST preserve port 13306, its model alias, deterministic sampling, routing output behavior, and GGUF model path, MUST use the CPU backend when its checked throughput equals or exceeds the former tuned Metalium deployment, and MUST NOT claim or reserve a Tenstorrent physical device needed by a supported larger model service.
 
-#### Scenario: Supra returns a routing decision while VibeThinker is active
+#### Scenario: Supra returns a routing decision while both P150s serve larger models
 
-- GIVEN both model services are healthy
-- WHEN a structurally framed routing prompt is submitted to Supra on port 13306 while VibeThinker handles a request on port 13305
-- THEN Supra returns the expected pipe-separated routing schema
-- AND both requests complete successfully
+- GIVEN VibeThinker owns physical card 0 and Llama-3.1-8B-Instruct owns physical card 1
+- WHEN a structurally framed routing prompt is submitted to CPU Supra on port 13306 while VibeThinker handles a request
+- THEN Supra returns the expected pipe-separated routing schema and fixed-input output
+- AND Supra throughput does not materially regress from its former tuned Metalium deployment
+- AND Supra does not acquire a Tenstorrent device lock, cache, or Inspector endpoint
 
 ### Requirement: VibeThinker remains on physical card 0
 
