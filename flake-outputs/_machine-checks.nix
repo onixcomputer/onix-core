@@ -152,6 +152,8 @@ let
   llamaExecCondition = brittonDesktopServices.${llamaServiceName}.serviceConfig.ExecCondition or null;
   hasGatedLlamaStartup =
     llamaExecCondition != null && lib.hasInfix "credential-check" llamaExecCondition;
+  llamaPreStart = brittonDesktopServices.${llamaServiceName}.preStart or "";
+  repairsIncompleteLlamaWeights = lib.hasInfix "model-cache-repair" llamaPreStart;
   hasToolsReference = lib.hasInfix ttMetaliumToolsUrl tenstorrentHostGuide;
 
   # Positive and negative coverage for
@@ -224,6 +226,10 @@ let
     ''}
     ${lib.optionalString (!hasGatedLlamaStartup) ''
       echo "${llamaServiceName} must preflight gated-model access before launching Docker"
+      exit 1
+    ''}
+    ${lib.optionalString (!repairsIncompleteLlamaWeights) ''
+      echo "${llamaServiceName} must discard incomplete model caches before startup"
       exit 1
     ''}
     ${lib.optionalString (missingValidatedWorkerBudgets != [ ]) ''

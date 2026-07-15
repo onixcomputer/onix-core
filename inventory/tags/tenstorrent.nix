@@ -570,6 +570,9 @@ in
       at least 360 GB of free root-disk capacity before first startup because image,
       model-weight, and compilation caches are large. Initial download and TT graph
       compilation can take substantially longer than an ordinary service restart.
+      Before launch, the unit removes only a model-weight directory whose
+      `config.json` is absent or lacks `model_type`, preventing a failed gated
+      download from being mistaken for a complete offline cache.
 
       During this supplementary rollout, NixOS switch-time restarts are disabled
       for VibeThinker so activating the new service cannot interrupt card 0. Package

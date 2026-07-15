@@ -55,6 +55,10 @@ in
             envFile = config.clan.core.vars.generators.${generatorName}.files."env-file".path;
             cacheDir = "${stateDir}/cache-root";
             logsDir = "${stateDir}/logs";
+            modelCacheName = builtins.baseNameOf model;
+            modelWeightsDir = "${cacheDir}/weights/${modelCacheName}";
+            modelWeightsLink = "${cacheDir}/model_file_symlinks_map/${modelCacheName}";
+            modelConfigPath = "${modelWeightsDir}/config.json";
             devicePath = "/dev/tenstorrent/${toString physicalDeviceId}";
             containerCacheDir = "/home/container_app_user/cache_root";
             containerLogsDir = "/home/container_app_user/logs";
@@ -84,6 +88,29 @@ in
             ]
             ++ lib.optionals (!enableTraceCapture) [ "--disable-trace-capture" ]
             ++ extraArgs;
+
+            modelCacheRepair = pkgs.writeShellApplication {
+              name = "${containerName}-model-cache-repair";
+              runtimeInputs = [
+                pkgs.coreutils
+                pkgs.gnugrep
+              ];
+              text = ''
+                set -euo pipefail
+
+                weights_dir=${lib.escapeShellArg modelWeightsDir}
+                weights_link=${lib.escapeShellArg modelWeightsLink}
+                config_path=${lib.escapeShellArg modelConfigPath}
+
+                if [[ -d "$weights_dir" ]] \
+                  && { [[ ! -s "$config_path" ]] \
+                    || ! grep --quiet '"model_type"' "$config_path"; }; then
+                  echo "${containerName}: removing an incomplete model-weight cache" >&2
+                  rm -rf "$weights_dir"
+                  rm -f "$weights_link"
+                fi
+              '';
+            };
 
             credentialCheck = pkgs.writeShellApplication {
               name = "${containerName}-credential-check";
@@ -252,6 +279,7 @@ in
                 "network-online.target"
               ];
               wants = [ "network-online.target" ];
+              preStart = lib.getExe modelCacheRepair;
               unitConfig = {
                 ConditionPathExists = [
                   envFile
