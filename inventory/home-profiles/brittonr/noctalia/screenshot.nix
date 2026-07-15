@@ -38,9 +38,8 @@ let
 
   # Full screen screenshot (no annotation)
   # Uses niri's built-in screenshot to avoid wlr-screencopy compositor stall.
-  # niri renders directly into its own buffer (~27ms vs ~45ms for grim's
-  # Wayland client round-trip). At 3840x2160@240Hz on NVIDIA, this cuts
-  # dropped frames from ~10 to ~6.
+  # niri renders directly into its own buffer and avoids grim's additional
+  # Wayland client round-trip, reducing dropped frames at high refresh rates.
   screenshot-screen = pkgs.writeShellApplication {
     name = "screenshot-screen";
     text = ''

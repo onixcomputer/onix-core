@@ -43,10 +43,6 @@ let ornith_9b_q8_model = "user.Ornith-1.0-9B-Q8_0" in
 let ornith_35b_q4_model = "user.Ornith-1.0-35B-Q4_K_M" in
 let ornith_35b_q8_model = "user.Ornith-1.0-35B-Q8_0" in
 let ornith_35b_bf16_model = "user.Ornith-1.0-35B-BF16" in
-let krea2_sglang_port = 30000 in
-let krea2_sglang_gpu_count = 1 in
-let krea2_sglang_lowest_prefetch = "0.0" in
-
 {
   instances = {
 
@@ -343,24 +339,6 @@ let krea2_sglang_lowest_prefetch = "0.0" in
             extraPackages = ["curl", "jq"],
           },
         },
-      },
-    },
-
-    "krea2-britton-desktop" = {
-      module = { name = "sglang-diffusion", input = "self" },
-      roles.default.machines.britton-desktop.settings = {
-        port = krea2_sglang_port,
-        modelPath = "krea/Krea-2-Turbo",
-        numGpus = krea2_sglang_gpu_count,
-        gpuPassthrough = "nixos-nvidia",
-        conflictingUnits = ["llamacpp-server-vibethinker-britton-desktop.service"],
-        extraArgs = [
-          "--dit-layerwise-offload",
-          "--dit-offload-prefetch-size",
-          krea2_sglang_lowest_prefetch,
-          "--text-encoder-cpu-offload",
-          "--vae-cpu-offload",
-        ],
       },
     },
 

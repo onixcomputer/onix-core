@@ -131,10 +131,9 @@ let
                                   }
                               }
 
-                              // Force AMD iGPU as render device for outputs without their own
-                              // render node (DisplayLink/evdi). NVIDIA's GBM allocator doesn't
-                              // export linear dmabufs in formats evdi accepts. AMD's amdgpu does.
-                              // NVIDIA outputs (DP-3) still use their own renderD129.
+                              // Force the installed AMD iGPU as the render device for
+                              // DisplayLink/evdi outputs without their own render node.
+                              // AMD's amdgpu exports the linear dmabufs evdi requires.
                               debug {
                                   render-drm-device "/dev/dri/renderD128"
                               }

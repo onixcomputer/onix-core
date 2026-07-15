@@ -135,6 +135,7 @@ let
   };
 
   softwareOverviewUrl = "https://docs.tenstorrent.com/software/index.html";
+  ttMetaliumToolsUrl = "https://docs.tenstorrent.com/tt-metal/latest/tt-metalium/tools/index.html";
   ttInferenceServerUrl = "https://github.com/tenstorrent/tt-inference-server";
   ttInferenceServerPrerequisitesUrl = "https://github.com/tenstorrent/tt-inference-server/blob/main/docs/prerequisites.md";
   ttInferenceServerWorkflowsUrl = "https://github.com/tenstorrent/tt-inference-server/blob/main/docs/workflows_user_guide.md";
@@ -446,6 +447,32 @@ in
       `tt-smi -s` with the selected runtime's requirements. A Nix rebuild never
       flashes firmware; use the explicit reviewed `tt-flash` command above if an
       update is required.
+
+      ## Debugging and profiling
+
+      Start with the production evidence that this host keeps enabled:
+
+      ```sh
+      tt-smi -s
+      journalctl -u llamacpp-server-vibethinker-britton-desktop.service
+      journalctl -u llamacpp-server-supra-router.service
+      find /var/lib/llamacpp-server-*/tt-metal-logs/generated/inspector -type f
+      ```
+
+      Inspector is enabled by default in TT-Metal and serializes host-runtime
+      evidence under `generated/inspector`. Each Metalium service uses a private
+      `TT_METAL_LOGS_PATH` and a non-colliding loopback Inspector RPC address, so
+      inspect the failing service's state directory rather than the source tree.
+
+      Official TT-Metalium debugging tools: ${ttMetaliumToolsUrl}
+
+      Upstream only fully supports these tools on source builds. The packaged
+      runtime does not install the complete `tools/tt-triage.py` workflow. For
+      deeper analysis, use a TT-Metal source checkout matching the pinned runtime,
+      keep Inspector enabled, and run `tt-triage` with Python 3.10 or newer.
+      Enable Watcher, Device Print, debug checkpoints, NOC dumps, or profilers only
+      in a focused reproduction: they instrument kernels, can alter timing or
+      binary size, and are not healthy-service defaults.
 
       ## Software stack entry points
 

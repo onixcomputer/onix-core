@@ -15,6 +15,89 @@ let
   wasm = import ../lib/wasm.nix { inherit plugins; };
   machinesDef = (wasm.evalNickelFile ../inventory/core/machines.ncl).machines;
 
+  brittonDesktopName = "britton-desktop";
+  requiredAcceleratorTag = "tenstorrent";
+  forbiddenAcceleratorTag = "nvidia";
+  tenstorrentVendorId = "1e52";
+  nvidiaVendorId = "10de";
+  expectedTenstorrentDeviceCount = 2;
+  requiredGraphicsDriver = "amdgpu";
+  forbiddenInitrdModule = "nvidia";
+  removedNvidiaServiceName = "docker-sglang-diffusion-krea2-britton-desktop";
+  requiredMetaliumServices = [
+    "llamacpp-server-vibethinker-britton-desktop"
+    "llamacpp-server-supra-router"
+  ];
+  ttMetaliumToolsUrl = "https://docs.tenstorrent.com/tt-metal/latest/tt-metalium/tools/index.html";
+  brittonDesktopTags = machinesDef.${brittonDesktopName}.tags;
+  brittonDesktopFacter = builtins.fromJSON (
+    builtins.readFile ../machines/britton-desktop/facter.json
+  );
+  brittonDesktopPciDevices = brittonDesktopFacter.hardware.pci;
+  brittonDesktopGraphicsDrivers = map (
+    device: device.driver_module
+  ) brittonDesktopFacter.hardware.graphics_card;
+  countPciVendor =
+    vendorId:
+    builtins.length (builtins.filter (device: device.vendor.hex == vendorId) brittonDesktopPciDevices);
+  tenstorrentDeviceCount = countPciVendor tenstorrentVendorId;
+  nvidiaDeviceCount = countPciVendor nvidiaVendorId;
+  brittonDesktopConfig = self.nixosConfigurations.${brittonDesktopName}.config;
+  brittonDesktopServices = brittonDesktopConfig.systemd.services;
+  tenstorrentHostGuide = brittonDesktopConfig.environment.etc."tenstorrent/README.md".text;
+  hasRequiredAccelerator = lib.elem requiredAcceleratorTag brittonDesktopTags;
+  hasForbiddenAccelerator = lib.elem forbiddenAcceleratorTag brittonDesktopTags;
+  hasRequiredGraphicsDriver = lib.elem requiredGraphicsDriver brittonDesktopGraphicsDrivers;
+  hasForbiddenInitrdModule = lib.elem forbiddenInitrdModule brittonDesktopConfig.boot.initrd.kernelModules;
+  hasRemovedNvidiaService = builtins.hasAttr removedNvidiaServiceName brittonDesktopServices;
+  missingMetaliumServices = builtins.filter (
+    serviceName: !(builtins.hasAttr serviceName brittonDesktopServices)
+  ) requiredMetaliumServices;
+  hasToolsReference = lib.hasInfix ttMetaliumToolsUrl tenstorrentHostGuide;
+
+  # Positive and negative coverage for
+  # r[verify onix.britton_desktop.accelerators.inventory] and
+  # r[verify onix.britton_desktop.accelerators.services].
+  brittonDesktopAcceleratorInventory = pkgs.runCommand "britton-desktop-accelerator-inventory" { } ''
+    ${lib.optionalString (!hasRequiredAccelerator) ''
+      echo "${brittonDesktopName} must retain the ${requiredAcceleratorTag} tag"
+      exit 1
+    ''}
+    ${lib.optionalString hasForbiddenAccelerator ''
+      echo "${brittonDesktopName} must not carry the absent ${forbiddenAcceleratorTag} tag"
+      exit 1
+    ''}
+    ${lib.optionalString (tenstorrentDeviceCount != expectedTenstorrentDeviceCount) ''
+      echo "${brittonDesktopName} facter report must contain ${toString expectedTenstorrentDeviceCount} Tenstorrent PCI devices"
+      exit 1
+    ''}
+    ${lib.optionalString (nvidiaDeviceCount != 0) ''
+      echo "${brittonDesktopName} facter report must not contain NVIDIA PCI devices"
+      exit 1
+    ''}
+    ${lib.optionalString (!hasRequiredGraphicsDriver) ''
+      echo "${brittonDesktopName} facter report must retain the ${requiredGraphicsDriver} graphics driver"
+      exit 1
+    ''}
+    ${lib.optionalString hasForbiddenInitrdModule ''
+      echo "${brittonDesktopName} initrd must not require the absent ${forbiddenInitrdModule} module"
+      exit 1
+    ''}
+    ${lib.optionalString hasRemovedNvidiaService ''
+      echo "${brittonDesktopName} must not generate the NVIDIA-only ${removedNvidiaServiceName} service"
+      exit 1
+    ''}
+    ${lib.optionalString (missingMetaliumServices != [ ]) ''
+      echo "${brittonDesktopName} is missing required Metalium services: ${lib.concatStringsSep " " missingMetaliumServices}"
+      exit 1
+    ''}
+    ${lib.optionalString (!hasToolsReference) ''
+      echo "${brittonDesktopName} Tenstorrent guide must reference ${ttMetaliumToolsUrl}"
+      exit 1
+    ''}
+    touch "$out"
+  '';
+
   # Group machine names by their `system` field from machines.ncl
   machinesPerSystem = builtins.groupBy (name: machinesDef.${name}.system) (lib.attrNames machinesDef);
 
@@ -35,5 +118,13 @@ let
   );
 in
 {
-  checks = nixosMachines // darwinMachines;
+  checks =
+    nixosMachines
+    // darwinMachines
+    //
+      lib.optionalAttrs
+        (pkgs.stdenv.hostPlatform.isLinux && system == machinesDef.${brittonDesktopName}.system)
+        {
+          britton-desktop-accelerator-inventory = brittonDesktopAcceleratorInventory;
+        };
 }
