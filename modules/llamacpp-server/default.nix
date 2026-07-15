@@ -45,6 +45,7 @@ in
               gpuLayers
               metaliumDeviceId
               metaliumInspectorPort
+              metaliumTrace
               contextSize
               batchSize
               ubatchSize
@@ -79,6 +80,7 @@ in
             disabledNumericOption = 0;
             metaliumBackendName = "metalium";
             metaliumBackendEnabled = backend == metaliumBackendName;
+            metaliumTraceEnvironmentValue = if metaliumTrace then "1" else "0";
             hostSystem = pkgs.stdenv.hostPlatform.system;
             tenstorrentPackages = inputs.tenstorrent-nix.packages.${hostSystem};
             metaliumPackage = tenstorrentPackages.llama-cpp-metalium;
@@ -236,6 +238,10 @@ in
                 message = "llamacpp-server ${instanceName}: metaliumDeviceId must be a non-negative integer";
               }
               {
+                assertion = !metaliumTrace || metaliumBackendEnabled;
+                message = "llamacpp-server ${instanceName}: metaliumTrace requires backend = metalium";
+              }
+              {
                 assertion = !metaliumBackendEnabled || !flashAttention;
                 message = "llamacpp-server ${instanceName}: Metalium requires flashAttention = false with CPU KV cache";
               }
@@ -325,7 +331,8 @@ in
                     # TT_VISIBLE_DEVICES filters by physical PCIe device before
                     # TT-Metal remaps the isolated process to logical device 0.
                     GGML_METALIUM_DEVICE_ID = "0";
-                    GGML_METALIUM_TRACE = "0";
+                    # r[impl onix.tenstorrent.model_performance.trace_replay]
+                    GGML_METALIUM_TRACE = metaliumTraceEnvironmentValue;
                     TT_METAL_CACHE = metaliumCacheDir;
                     TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS = "127.0.0.1:${toString metaliumInspectorPort}";
                     TT_METAL_LOGS_PATH = metaliumLogsDir;

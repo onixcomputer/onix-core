@@ -36,6 +36,9 @@ let
   supraPhysicalDeviceId = 1;
   supraInspectorPort = 50052;
   supraApiPort = 13306;
+  supraMetaliumTrace = true;
+  metaliumTraceEnabledEnvironmentValue = "1";
+  metaliumTraceDisabledEnvironmentValue = "0";
   supraContextSize = 5120;
   supraGpuLayerCount = 999;
   supraBatchSize = 512;
@@ -224,7 +227,12 @@ in
         environment = {
           HOME = supraStateDir;
           GGML_METALIUM_DEVICE_ID = "0";
-          GGML_METALIUM_TRACE = "0";
+          # r[impl onix.tenstorrent.model_performance.trace_replay]
+          GGML_METALIUM_TRACE =
+            if supraMetaliumTrace then
+              metaliumTraceEnabledEnvironmentValue
+            else
+              metaliumTraceDisabledEnvironmentValue;
           TT_METAL_CACHE = supraCacheDir;
           TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS = "127.0.0.1:${toString supraInspectorPort}";
           TT_METAL_LOGS_PATH = supraLogsDir;

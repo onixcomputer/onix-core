@@ -10,6 +10,7 @@
     gpuLayers = { type = "number", default = 999, description = "Number of layers to offload to the GPU" },
     metaliumDeviceId = { type = "number", default = 0, description = "Physical Tenstorrent device isolated with TT_VISIBLE_DEVICES for the Metalium backend" },
     metaliumInspectorPort = { type = "port", default = 50051, description = "Loopback TT-Metal inspector RPC port reserved for this service" },
+    metaliumTrace = { type = "bool", default = false, description = "Opt into experimental Metalium command-trace capture and replay" },
     contextSize = { type = "number", default = 8192, description = "Context window size" },
     batchSize = { type = "number", default = 0, description = "Optional llama.cpp batch size passed with -b (0 disables the flag)" },
     ubatchSize = { type = "number", default = 0, description = "Optional llama.cpp physical batch size passed with -ub (0 disables the flag)" },

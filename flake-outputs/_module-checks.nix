@@ -45,6 +45,7 @@ let
     "backend"
     "metaliumDeviceId"
     "metaliumInspectorPort"
+    "metaliumTrace"
     "flashAttention"
   ];
   missingLlamacppNegativeFields = builtins.filter (
@@ -92,7 +93,8 @@ in
     '';
 
     # Positive and negative settings coverage for
-    # r[verify onix.tenstorrent.model_process_isolation.devices].
+    # r[verify onix.tenstorrent.model_process_isolation.devices] and
+    # r[verify onix.tenstorrent.model_performance.trace_replay].
     llamacpp-server-settings = pkgs.runCommand "llamacpp-server-settings" { } ''
       ${lib.optionalString (llamacppPositiveErrors != [ ]) ''
         echo "Valid llamacpp-server settings produced unexpected errors:"

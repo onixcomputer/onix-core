@@ -24,10 +24,15 @@ let
   requiredGraphicsDriver = "amdgpu";
   forbiddenInitrdModule = "nvidia";
   removedNvidiaServiceName = "docker-sglang-diffusion-krea2-britton-desktop";
+  vibeThinkerServiceName = "llamacpp-server-vibethinker-britton-desktop";
+  supraRouterServiceName = "llamacpp-server-supra-router";
   requiredMetaliumServices = [
-    "llamacpp-server-vibethinker-britton-desktop"
-    "llamacpp-server-supra-router"
+    vibeThinkerServiceName
+    supraRouterServiceName
   ];
+  metaliumTraceEnvironmentVariable = "GGML_METALIUM_TRACE";
+  metaliumTraceEnabledEnvironmentValue = "1";
+  metaliumTraceDisabledEnvironmentValue = "0";
   ttMetaliumToolsUrl = "https://docs.tenstorrent.com/tt-metal/latest/tt-metalium/tools/index.html";
   brittonDesktopTags = machinesDef.${brittonDesktopName}.tags;
   brittonDesktopFacter = builtins.fromJSON (
@@ -53,11 +58,20 @@ let
   missingMetaliumServices = builtins.filter (
     serviceName: !(builtins.hasAttr serviceName brittonDesktopServices)
   ) requiredMetaliumServices;
+  serviceEnvironmentValue =
+    serviceName: variableName:
+    brittonDesktopServices.${serviceName}.environment.${variableName} or null;
+  supraTraceEnvironmentValue = serviceEnvironmentValue supraRouterServiceName metaliumTraceEnvironmentVariable;
+  vibeThinkerTraceEnvironmentValue = serviceEnvironmentValue vibeThinkerServiceName metaliumTraceEnvironmentVariable;
+  hasExpectedSupraTraceTrial = supraTraceEnvironmentValue == metaliumTraceEnabledEnvironmentValue;
+  keepsVibeThinkerTraceDisabled =
+    vibeThinkerTraceEnvironmentValue == metaliumTraceDisabledEnvironmentValue;
   hasToolsReference = lib.hasInfix ttMetaliumToolsUrl tenstorrentHostGuide;
 
   # Positive and negative coverage for
-  # r[verify onix.britton_desktop.accelerators.inventory] and
-  # r[verify onix.britton_desktop.accelerators.services].
+  # r[verify onix.britton_desktop.accelerators.inventory],
+  # r[verify onix.britton_desktop.accelerators.services], and
+  # r[verify onix.tenstorrent.model_performance.trace_replay].
   brittonDesktopAcceleratorInventory = pkgs.runCommand "britton-desktop-accelerator-inventory" { } ''
     ${lib.optionalString (!hasRequiredAccelerator) ''
       echo "${brittonDesktopName} must retain the ${requiredAcceleratorTag} tag"
@@ -89,6 +103,14 @@ let
     ''}
     ${lib.optionalString (missingMetaliumServices != [ ]) ''
       echo "${brittonDesktopName} is missing required Metalium services: ${lib.concatStringsSep " " missingMetaliumServices}"
+      exit 1
+    ''}
+    ${lib.optionalString (!hasExpectedSupraTraceTrial) ''
+      echo "${supraRouterServiceName} must explicitly enable the bounded Metalium trace trial"
+      exit 1
+    ''}
+    ${lib.optionalString (!keepsVibeThinkerTraceDisabled) ''
+      echo "${vibeThinkerServiceName} must remain the negative trace-control service during the Supra trial"
       exit 1
     ''}
     ${lib.optionalString (!hasToolsReference) ''

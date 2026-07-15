@@ -22,6 +22,7 @@ let default_metalium_inspector_port = 50051 in
         gpuLayers = default_gpu_layers,
         metaliumDeviceId = default_metalium_device_id,
         metaliumInspectorPort = default_metalium_inspector_port,
+        metaliumTrace = true,
         contextSize = default_context_size,
         batchSize = default_batch_size,
         ubatchSize = default_batch_size,
@@ -42,6 +43,7 @@ let default_metalium_inspector_port = 50051 in
         backend = "unsupported-backend",
         metaliumDeviceId = "device-zero",
         metaliumInspectorPort = 70000,
+        metaliumTrace = "enabled",
         flashAttention = "disabled",
       },
 }
