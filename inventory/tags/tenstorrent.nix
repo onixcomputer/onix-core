@@ -13,7 +13,91 @@
 }:
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
-  tenstorrentPackages = inputs.tenstorrent-nix.packages.${hostSystem};
+  tenstorrentPackagesBase = inputs.tenstorrent-nix.packages.${hostSystem};
+  ttFlashPyYamlPinnedRequirement = "pyyaml == 6.0.1";
+  ttFlashPyYamlNixRequirement = "pyyaml >= 6.0.1";
+  ttFlashTabulatePinnedRequirement = "tabulate == 0.9.0";
+  ttFlashTabulateNixRequirement = "tabulate >= 0.9.0";
+  tenstorrentPackageRenames = {
+    burnin = "tt-burnin";
+    flash = "tt-flash";
+    smi = "tt-smi";
+    system-tools = "tt-system-tools";
+    topology = "tt-topology";
+  };
+  selectTenstorrentPackageName =
+    fallbackName: preferredName:
+    if builtins.hasAttr preferredName tenstorrentPackagesBase then preferredName else fallbackName;
+  mkTenstorrentPackageAlias =
+    fallbackName: preferredName:
+    let
+      packageName = selectTenstorrentPackageName fallbackName preferredName;
+    in
+    assert lib.assertMsg (builtins.hasAttr packageName tenstorrentPackagesBase)
+      "tenstorrent.nix package '${fallbackName}' was not found as '${preferredName}' or '${fallbackName}'";
+    tenstorrentPackagesBase.${packageName};
+  tenstorrentPackageAliases = lib.mapAttrs mkTenstorrentPackageAlias tenstorrentPackageRenames;
+  # Several Tenstorrent Python CLIs still depend on modules removed from the
+  # default Python 3.14 package set.
+  tenstorrentPythonPackages =
+    (import inputs.nixpkgs {
+      system = hostSystem;
+      overlays = [ inputs.tenstorrent-nix.overlays.default ];
+    }).python313Packages;
+  tenstorrentBurnin = tenstorrentPackageAliases.burnin.override {
+    python3Packages = tenstorrentPythonPackages;
+  };
+  tenstorrentTopology =
+    (tenstorrentPackageAliases.topology.override {
+      python3Packages = tenstorrentPythonPackages;
+    }).overrideAttrs
+      (oldAttrs: {
+        postPatch = (oldAttrs.postPatch or "") + ''
+          substituteInPlace tt_topology/tt_topology.py \
+            --replace-fail "import pkg_resources" "from importlib.metadata import version as distribution_version" \
+            --replace-fail 'pkg_resources.get_distribution("tt_topology").version' 'distribution_version("tt-topology")'
+        '';
+      });
+  tenstorrentFlash = tenstorrentPythonPackages.tt-flash.overrideAttrs (oldAttrs: {
+    # Older tenstorrent.nix revisions carried a context-sensitive patch in this
+    # area. Prefer Nix-controlled runtime versions, but skip the substitution
+    # when newer upstream metadata has already relaxed the pins.
+    patches = [ ];
+    postPatch = (oldAttrs.postPatch or "") + ''
+      if grep -Fq ${lib.escapeShellArg ttFlashPyYamlPinnedRequirement} pyproject.toml; then
+        substituteInPlace pyproject.toml \
+          --replace-fail "${ttFlashPyYamlPinnedRequirement}" "${ttFlashPyYamlNixRequirement}"
+      fi
+      if grep -Fq ${lib.escapeShellArg ttFlashTabulatePinnedRequirement} pyproject.toml; then
+        substituteInPlace pyproject.toml \
+          --replace-fail "${ttFlashTabulatePinnedRequirement}" "${ttFlashTabulateNixRequirement}"
+      fi
+    '';
+  });
+  tenstorrentPackages =
+    tenstorrentPackagesBase
+    // tenstorrentPackageAliases
+    // {
+      burnin = tenstorrentBurnin;
+      flash = tenstorrentFlash;
+      topology = tenstorrentTopology;
+    };
+  # r[impl onix.tenstorrent.native_runtime.packages]
+  tenstorrentMetal = mkTenstorrentPackageAlias "tt-metal" "tt-metal";
+  tenstorrentLlamaCppMetalium = mkTenstorrentPackageAlias "llama-cpp-metalium" "llama-cpp-metalium";
+  # r[impl onix.tenstorrent.native_runtime.p150x2_mesh]
+  tenstorrentMetaliumRoot = "${tenstorrentMetal}/libexec/tt-metalium";
+  p150x2MeshDescriptorFilename = "p150_x2_mesh_graph_descriptor.textproto";
+  p150x2MeshDescriptorPath = "${tenstorrentMetaliumRoot}/tt_metal/fabric/mesh_graph_descriptors/${p150x2MeshDescriptorFilename}";
+  missingMeshDescriptorPath = "${tenstorrentMetaliumRoot}/tt_metal/fabric/mesh_graph_descriptors/missing_mesh_graph_descriptor.textproto";
+  # Positive and negative layout cases for r[verify onix.tenstorrent.native_runtime.p150x2_mesh].
+  tenstorrentNativeRuntimeLayoutCheck = pkgs.runCommand "tenstorrent-native-runtime-layout" { } ''
+    test -d ${lib.escapeShellArg tenstorrentMetaliumRoot}
+    test -f ${lib.escapeShellArg p150x2MeshDescriptorPath}
+    test -x ${lib.escapeShellArg "${tenstorrentLlamaCppMetalium}/bin/llama-server"}
+    test ! -e ${lib.escapeShellArg missingMeshDescriptorPath}
+    touch "$out"
+  '';
   tenstorrentKernelModule = config.boot.kernelPackages.tt-kmd;
 
   tenstorrentKernelModuleName = "tenstorrent";
@@ -298,7 +382,17 @@ in
     };
   };
 
+  system.extraDependencies = [ tenstorrentNativeRuntimeLayoutCheck ];
+
   environment = {
+    variables = {
+      TT_METAL_HOME = tenstorrentMetaliumRoot;
+      TT_METAL_RUNTIME_ROOT = tenstorrentMetaliumRoot;
+      TT_MESH_GRAPH_DESC_PATH = p150x2MeshDescriptorPath;
+    };
+
+    # r[impl onix.tenstorrent.native_runtime.firmware_boundary]
+    # r[impl onix.tenstorrent.native_runtime.identity]
     etc."tenstorrent/README.md".text = ''
       # Tenstorrent host integration
 
@@ -309,6 +403,9 @@ in
       - Hugepages: `tenstorrent-hugepages.service` allocates 1GiB pages by NUMA node.
       - Hugepages mount: `${hugepagesMountPoint}` is hugetlbfs with 1GiB pages.
       - Firmware bundle: `${tenstorrentSystemFirmware}/share/tenstorrent/firmware/${firmwareBundleName}`.
+      - Native runtime: `${tenstorrentMetal}` with TT-NN and TT-Metalium.
+      - Native LLM runtime: `${tenstorrentLlamaCppMetalium}`.
+      - Linked-card topology: `${p150x2MeshDescriptorPath}` for the two p150a cards.
 
       Verification after rebuild and reboot:
 
@@ -316,6 +413,8 @@ in
       lspci -d ${tenstorrentVendorId}:
       tt-smi -ls
       systemctl status tenstorrent-hugepages.service 'dev-hugepages\x2d1G.mount'
+      test -f "$TT_MESH_GRAPH_DESC_PATH"
+      command -v llama-server
       ```
 
       Firmware flashing remains a manual operation. To flash the packaged bundle, review
@@ -327,6 +426,26 @@ in
 
       If BIOS settings are reset, Tenstorrent documents that PCIe AER Reporting
       Mechanism should be set to `OS First` for TT-SMI compatibility.
+
+      ## Native P150x2 runtime
+
+      This host is a P150x2/DeskBox-style topology: two separate p150a cards joined
+      by two QSFP-DD cables. The selected upstream descriptor declares a 1x2
+      Blackhole mesh with four relaxed channels. Metalium receives that descriptor
+      through `TT_MESH_GRAPH_DESC_PATH`; `TT_METAL_HOME` and
+      `TT_METAL_RUNTIME_ROOT` point at the same Nix-owned SDK root.
+
+      `p300` is not an alias for this topology. It names one dual-die P300 board.
+      TT-Inference-Server does not currently publish a P150x2 model-catalog target,
+      even though TT-Metal and its vLLM worker understand the `(1, 2)` P150x2 mesh.
+      Use the native Metalium/TT-NN or llama.cpp Metalium path first; any P150x2
+      TT-Inference-Server integration requires a separately reviewed runtime model
+      specification.
+
+      Before executing native workloads, compare the firmware reported by
+      `tt-smi -s` with the selected runtime's requirements. A Nix rebuild never
+      flashes firmware; use the explicit reviewed `tt-flash` command above if an
+      update is required.
 
       ## Software stack entry points
 
@@ -382,6 +501,8 @@ in
       ++ ttInferenceServerWorkflowPackages
       ++ [
         pkgs.pciutils
+        tenstorrentLlamaCppMetalium
+        tenstorrentMetal
         tenstorrentSystemFirmware
       ];
   };
