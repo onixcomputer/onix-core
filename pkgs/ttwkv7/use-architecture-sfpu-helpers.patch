@@ -1,0 +1,24 @@
+diff --git a/kernels/wkv7_chunked_compute.cpp b/kernels/wkv7_chunked_compute.cpp
+index 98eea01..d847a21 100644
+--- a/kernels/wkv7_chunked_compute.cpp
++++ b/kernels/wkv7_chunked_compute.cpp
+@@ -39,7 +39,5 @@
+ inline void wkv7_gen_const(int which, int cl) {
+-    math::set_dst_write_addr<DstTileShape::Tile32x32, UnpackDestination::SrcRegs>(0);
+-    math::set_addr_mod_base();
+-    TTI_STALLWAIT(p_stall::STALL_SFPU, p_stall::MATH);
++    _llk_math_eltwise_sfpu_start_(0);
+     for (int k = 0; k < 32; k++) {
+         const int col_base = ((k >> 3) & 1) * 16 + (k & 1);
+         const int row_base = (k >> 4) * 16 + ((k >> 1) & 3) * 4;
+@@ -58,9 +56,7 @@
+         }
+         dst_reg[k] = val;
+     }
+-    math::clear_dst_reg_addr();
+-    TTI_STALLWAIT(p_stall::STALL_CFG, p_stall::WAIT_SFPU);
+-    TTI_SETC16(2, 0);
++    _llk_math_eltwise_sfpu_done_();
+ }
+ }
+ #endif

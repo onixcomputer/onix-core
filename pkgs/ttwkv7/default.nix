@@ -24,6 +24,10 @@ let
   invalidModeExitStatus = 2;
   usageDiagnostic = "usage:";
   meshGraphDescriptorVariable = "TT_MESH_GRAPH_DESC_PATH";
+  chunkedKernelSource = "${packageKernelDirectory}/wkv7_chunked_compute.cpp";
+  architectureSfpuStart = "_llk_math_eltwise_sfpu_start_(0);";
+  architectureSfpuDone = "_llk_math_eltwise_sfpu_done_();";
+  wormholeOnlyAddrModCall = "math::set_addr_mod_base();";
   requiredKernelSources = [
     "wkv7_chunked_compute.cpp"
     "wkv7_decodeL_compute.cpp"
@@ -44,7 +48,10 @@ stdenv.mkDerivation {
     hash = upstreamSourceHash;
   };
 
-  patches = [ ./use-installed-metalium.patch ];
+  patches = [
+    ./use-installed-metalium.patch
+    ./use-architecture-sfpu-helpers.patch
+  ];
 
   strictDeps = true;
   nativeBuildInputs = [
@@ -82,6 +89,15 @@ stdenv.mkDerivation {
     for kernel_source in ${lib.escapeShellArgs requiredKernelSources}; do
       test -f "${packageKernelDirectory}/$kernel_source"
     done
+
+    # Positive and negative architecture portability coverage for
+    # r[verify onix.tenstorrent.native_runtime.ttwkv7.architecture_sfpu].
+    grep -F ${lib.escapeShellArg architectureSfpuStart} ${chunkedKernelSource}
+    grep -F ${lib.escapeShellArg architectureSfpuDone} ${chunkedKernelSource}
+    if grep -F ${lib.escapeShellArg wormholeOnlyAddrModCall} ${chunkedKernelSource}; then
+      echo "ttWKV7 kernel must not call the Wormhole-only address-modifier primitive directly" >&2
+      exit 1
+    fi
 
     # Positive and negative wrapper topology coverage for
     # r[verify onix.tenstorrent.native_runtime.ttwkv7.single_device_topology].
