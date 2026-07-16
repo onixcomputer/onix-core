@@ -1,0 +1,24 @@
+{
+  stdenvNoCC,
+  source,
+}:
+stdenvNoCC.mkDerivation {
+  pname = "ttwkv7-kernels";
+  inherit (source) version;
+
+  src = source.upstream;
+  patches = [ ./use-architecture-sfpu-helpers.patch ];
+
+  postPatch = ''
+    cp ${./constant-tile-probe-compute.cpp} kernels/ttwkv7_constant_tile_compute.cpp
+    cp ${./constant-tile-probe-writer.cpp} kernels/ttwkv7_constant_tile_writer.cpp
+  '';
+
+  dontBuild = true;
+  installPhase = ''
+    runHook preInstall
+    mkdir -p "$out/share/ttwkv7"
+    cp -R kernels "$out/share/ttwkv7/kernels"
+    runHook postInstall
+  '';
+}
