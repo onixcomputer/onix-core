@@ -7,6 +7,7 @@ readonly package_path="/nix/store/ibrza5pk4sazc4w6yrjrikczghw4w54y-ttwkv7-unstab
 readonly probe_path="$package_path/bin/wkv7-constant-probe"
 readonly probe_runtime_path="$package_path/libexec/ttwkv7/wkv7-constant-probe-runtime"
 readonly expected_probe_exec_line="exec \"$probe_runtime_path\" \"\$@\""
+# shellcheck disable=SC2016 # This search pattern intentionally contains literal shell syntax.
 readonly unsafe_probe_exec_prefix='exec "$out/'
 readonly kernel_path="/nix/store/8m898sjjhcvva2l8375r1wi5alp6cmj3-ttwkv7-kernels-unstable-2026-06-22/share/ttwkv7/kernels"
 readonly owner_control_path="/nix/store/6m9zwmdfc1vyrxw2znbl39s78bz73ycp-ttwkv7-owner-control/bin/ttwkv7-owner-control"
