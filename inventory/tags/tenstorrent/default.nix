@@ -407,14 +407,13 @@ in
       1.00e+00/9.87e-01. P150 numerical compatibility is therefore disproved for
       the tested package and shape; no broader Blackhole support is claimed.
 
-      A separately reviewed exact-mask diagnostic then compiled its chunked, decode,
-      and probe math kernels offline for both Blackhole and Wormhole. Its one authorized
-      P150 invocation confirmed one-chip auto-discovery, but default Metalium diagnostics
-      attempted to create `generated/watcher` beneath the wrapper's read-only package
-      working directory before probe-kernel JIT or mask comparison. The process failed
-      closed and was not retried. No constant-mask result exists, so the Blackhole SFPU
-      finalizer and lane-mapping hypotheses remain unmeasured. Another physical attempt
-      requires a reviewed writable `TT_METAL_LOGS_PATH` boundary and separate authorization.
+      A later exact-mask diagnostic compiled its chunked, decode, and probe math kernels
+      offline for both Blackhole and Wormhole, then used an explicit writable runtime
+      boundary. Its sole successful P150 process measured all seven reviewed patterns at
+      lengths 1 and 32: all fourteen tiles matched their independent host predicates exactly.
+      This validates the constant generators for that package and selected card only; it does
+      not reclassify the deterministic full-WKV mismatch, decode correctness, performance, or
+      general P150 compatibility.
 
       Keep edit and review iterations device-free. Build both focused gates, capture
       the composed output path, and verify that its kernel link resolves to a separate
@@ -426,31 +425,35 @@ in
       probe_package=$(nix build .#ttwkv7 --no-link --print-out-paths)
       probe_kernel_root=$(readlink -f "$probe_package/share/ttwkv7/kernels")
       test -x "$probe_package/bin/wkv7-constant-probe"
+      test -x "$probe_package/bin/wkv7-diagnose"
       case "$probe_kernel_root" in
         /nix/store/*-ttwkv7-kernels-*/share/ttwkv7/kernels) ;;
         *) exit 1 ;;
       esac
       ```
 
-      A future separately reviewed and authorized probe must invoke that captured
-      `$probe_package/bin/wkv7-constant-probe` path directly. Before service isolation
-      or device access, assign a unique reviewed run directory and non-colliding
-      loopback port, then exercise the same fail-closed preflight:
+      The next discriminator compares the pinned chunked and decodeL implementations at
+      deterministic `G=1,L=1` inside one process. Before service isolation or device access,
+      assign a unique reviewed run directory and non-colliding loopback port, then exercise
+      the package-owned fail-closed preflight:
 
       ```sh
-      runtime_root=/var/tmp/ttwkv7-probe-REVIEWED_RUN_ID
+      runtime_root=/var/tmp/ttwkv7-diagnostic-REVIEWED_RUN_ID
+      export TT_VISIBLE_DEVICES=1
       export TT_METAL_CACHE="$runtime_root/cache"
       export TT_METAL_LOGS_PATH="$runtime_root/logs"
       export TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS=127.0.0.1:REVIEWED_PORT
-      "$probe_package/bin/wkv7-constant-probe" validate-runtime
+      "$probe_package/bin/wkv7-diagnose" validate-runtime
 
-      # Only after separate authorization and owner-service isolation:
-      "$probe_package/bin/wkv7-constant-probe" probe
+      # Only after a fresh one-shot is committed, separately authorized, and the owner is isolated:
+      "$probe_package/bin/wkv7-diagnose" diagnose
       ```
 
-      These build and preflight commands grant no hardware authorization. Never retry
-      a failed probe, never substitute a mutable profile command for the reviewed store
-      path, and retain the resolved kernel path with the run evidence.
+      The wrapper fixes the immutable target vector to `test all 1 1`; callers cannot select
+      a different kernel, shape, tolerance, or suffix. These build and preflight commands grant
+      no hardware authorization. Never retry a terminal process, never substitute a mutable
+      profile command for the reviewed store path, and retain the resolved kernel path with the
+      run evidence.
 
       Device execution is manual. Select one physical card, stop the service that
       owns it, run one bounded test process, review TT-Metal logs, and restore only

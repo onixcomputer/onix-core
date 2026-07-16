@@ -102,13 +102,15 @@ let
     lib.concatMapStringsSep "\n" mkTtwkv7KernelLayoutCheck
       ttwkv7KernelSourceNames;
   # Positive and negative layout cases for
-  # r[verify onix.tenstorrent.native_runtime.p150x2_mesh] and
-  # r[verify onix.tenstorrent.native_runtime.ttwkv7.host].
+  # r[verify onix.tenstorrent.native_runtime.p150x2_mesh],
+  # r[verify onix.tenstorrent.native_runtime.ttwkv7.host], and
+  # r[verify onix.tenstorrent.native_runtime.ttwkv7.cross_kernel_diagnostic].
   nativeRuntimeLayoutCheck = pkgs.runCommand "tenstorrent-native-runtime-layout" { } ''
     test -d ${lib.escapeShellArg metaliumRoot}
     test -f ${lib.escapeShellArg meshDescriptorPath}
     test -x ${lib.escapeShellArg "${llamaCppMetalium}/bin/llama-server"}
     test -x ${lib.escapeShellArg "${ttwkv7}/bin/wkv7"}
+    test -x ${lib.escapeShellArg "${ttwkv7}/bin/wkv7-diagnose"}
     ${ttwkv7KernelLayoutChecks}
     test ! -e ${lib.escapeShellArg missingMeshDescriptorPath}
     test ! -e ${lib.escapeShellArg missingTtwkv7KernelPath}
