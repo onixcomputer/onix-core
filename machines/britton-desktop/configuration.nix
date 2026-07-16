@@ -46,6 +46,7 @@ let
   ttMetaliumRuntimeRoot = "${ttMetalPackage}/libexec/tt-metalium";
   ttP150x2MeshDescriptor = "${ttMetaliumRuntimeRoot}/tt_metal/fabric/mesh_graph_descriptors/p150_x2_mesh_graph_descriptor.textproto";
   vibeThinkerServiceName = "llamacpp-server-vibethinker-britton-desktop";
+  p150LlamaServiceName = "docker-tt-inference-server-llama-3-1-8b-instruct-p150";
   vibeThinkerStateDirectory = vibeThinkerServiceName;
   vibeThinkerModelPath = "/var/lib/${vibeThinkerStateDirectory}/models/VibeThinker-3B.Q8_0.gguf";
   ttBenchmarkServiceName = "tt-vibethinker-benchmark";
@@ -57,7 +58,8 @@ let
   ttBenchmarkLogsDirectory = ttBenchmarkServiceName;
   ttBenchmarkLogsDir = "/var/log/${ttBenchmarkLogsDirectory}";
   ttBenchmarkLatestSummary = "${ttBenchmarkStateDir}/latest-summary.json";
-  ttBenchmarkRestoreMarker = "/run/${ttBenchmarkServiceName}-restore-vibethinker";
+  ttBenchmarkVibeRestoreMarker = "/run/${ttBenchmarkServiceName}-restore-vibethinker";
+  ttBenchmarkLlamaRestoreMarker = "/run/${ttBenchmarkServiceName}-restore-p150-llama";
   ttBenchmarkSuccessMarker = "/run/${ttBenchmarkServiceName}-last-run-succeeded";
   ttBenchmarkInspectorPort = 50061;
   ttBenchmarkStateDirectoryMode = "0755";
@@ -70,24 +72,45 @@ let
     ];
     text = ''
       restore_vibethinker() {
-        if test -f ${lib.escapeShellArg ttBenchmarkRestoreMarker}; then
+        if test -f ${lib.escapeShellArg ttBenchmarkVibeRestoreMarker}; then
           echo "Restoring ${vibeThinkerServiceName}.service"
           systemctl start ${lib.escapeShellArg "${vibeThinkerServiceName}.service"}
-          rm -f ${lib.escapeShellArg ttBenchmarkRestoreMarker}
+          rm -f ${lib.escapeShellArg ttBenchmarkVibeRestoreMarker}
         fi
       }
 
-      trap restore_vibethinker EXIT HUP INT TERM
+      restore_p150_llama() {
+        if test -f ${lib.escapeShellArg ttBenchmarkLlamaRestoreMarker}; then
+          echo "Restoring ${p150LlamaServiceName}.service"
+          systemctl start ${lib.escapeShellArg "${p150LlamaServiceName}.service"}
+          rm -f ${lib.escapeShellArg ttBenchmarkLlamaRestoreMarker}
+        fi
+      }
+
+      restore_displaced_services() {
+        restore_p150_llama
+        restore_vibethinker
+      }
+
+      trap restore_displaced_services EXIT HUP INT TERM
       rm -f ${lib.escapeShellArg ttBenchmarkSuccessMarker}
 
-      if test -f ${lib.escapeShellArg ttBenchmarkRestoreMarker}; then
+      if test -f ${lib.escapeShellArg ttBenchmarkLlamaRestoreMarker}; then
+        echo "Recovering P150 Llama from an interrupted earlier benchmark"
+        restore_p150_llama
+      fi
+      if test -f ${lib.escapeShellArg ttBenchmarkVibeRestoreMarker}; then
         echo "Recovering VibeThinker from an interrupted earlier benchmark"
         restore_vibethinker
       fi
 
       if systemctl is-active --quiet ${lib.escapeShellArg "${vibeThinkerServiceName}.service"}; then
-        touch ${lib.escapeShellArg ttBenchmarkRestoreMarker}
+        touch ${lib.escapeShellArg ttBenchmarkVibeRestoreMarker}
         systemctl stop ${lib.escapeShellArg "${vibeThinkerServiceName}.service"}
+      fi
+      if systemctl is-active --quiet ${lib.escapeShellArg "${p150LlamaServiceName}.service"}; then
+        touch ${lib.escapeShellArg ttBenchmarkLlamaRestoreMarker}
+        systemctl stop ${lib.escapeShellArg "${p150LlamaServiceName}.service"}
       fi
 
       ${lib.getExe ttBenchmarkCore} \

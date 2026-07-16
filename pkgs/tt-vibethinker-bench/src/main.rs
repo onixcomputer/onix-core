@@ -3,8 +3,8 @@ use std::ffi::OsStr;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use std::process::{Command, ExitCode};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::process::{Command, ExitCode, ExitStatus, Stdio};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tt_vibethinker_bench::{
     BenchmarkSummary, Config, SUMMARY_SCHEMA_VERSION, benchmark_arguments, benchmark_cases,
     extract_json_array, parse_case_output, selector_environment,
@@ -15,6 +15,8 @@ const SUMMARY_FILE: &str = "summary.json";
 const RAW_STDOUT_SUFFIX: &str = "stdout.log";
 const RAW_STDERR_SUFFIX: &str = "stderr.log";
 const CLEAN_JSON_SUFFIX: &str = "json";
+const CASE_TIMEOUT: Duration = Duration::from_secs(300);
+const CASE_POLL_INTERVAL: Duration = Duration::from_secs(1);
 
 fn main() -> ExitCode {
     match run() {
@@ -48,26 +50,31 @@ fn run() -> Result<PathBuf, Box<dyn Error>> {
         fs::create_dir_all(&case_cache)?;
         fs::create_dir_all(&case_logs)?;
 
-        let output = execute_case(&config, &case, &case_directory, &case_cache, &case_logs)?;
         let stdout_path = case_directory.join(format!("{}.{}", case.slug, RAW_STDOUT_SUFFIX));
         let stderr_path = case_directory.join(format!("{}.{}", case.slug, RAW_STDERR_SUFFIX));
-        fs::write(&stdout_path, &output.stdout)?;
-        fs::write(&stderr_path, &output.stderr)?;
-        if !output.status.success() {
+        let status = execute_case(
+            &config,
+            &case,
+            &case_directory,
+            &case_cache,
+            &case_logs,
+            &stdout_path,
+            &stderr_path,
+        )?;
+        if !status.success() {
             return Err(io::Error::other(format!(
-                "{} failed with {}; inspect {} and {}",
+                "{} failed with {status}; inspect {} and {}",
                 case.slug,
-                output.status,
                 stdout_path.display(),
                 stderr_path.display()
             ))
             .into());
         }
 
-        let raw_stdout = String::from_utf8(output.stdout).map_err(|error| {
+        let raw_stdout = fs::read_to_string(&stdout_path).map_err(|error| {
             io::Error::new(
                 io::ErrorKind::InvalidData,
-                format!("{} stdout was not UTF-8: {error}", case.slug),
+                format!("{} stdout could not be read as UTF-8: {error}", case.slug),
             )
         })?;
         let clean_json = extract_json_array(&raw_stdout).map_err(invalid_data)?;
@@ -114,7 +121,9 @@ fn execute_case(
     case_directory: &Path,
     case_cache: &Path,
     case_logs: &Path,
-) -> Result<std::process::Output, Box<dyn Error>> {
+    stdout_path: &Path,
+    stderr_path: &Path,
+) -> Result<ExitStatus, Box<dyn Error>> {
     let model = path_text(&config.model, "model")?;
     let descriptor = path_text(&config.mesh_descriptor, "mesh descriptor")?;
     let mut command = Command::new(&config.llama_bench);
@@ -127,7 +136,9 @@ fn execute_case(
         .env(
             "TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS",
             format!("127.0.0.1:{}", config.inspector_port),
-        );
+        )
+        .stdout(Stdio::from(fs::File::create(stdout_path)?))
+        .stderr(Stdio::from(fs::File::create(stderr_path)?));
 
     for (name, value) in selector_environment(case, descriptor) {
         match value {
@@ -140,14 +151,35 @@ fn execute_case(
         }
     }
 
-    command.output().map_err(|error| {
+    let mut child = command.spawn().map_err(|error| {
         io::Error::other(format!(
             "failed to execute {} for {}: {error}",
             config.llama_bench.display(),
             case.slug
         ))
-        .into()
-    })
+    })?;
+    let started = Instant::now();
+    loop {
+        if let Some(status) = child.try_wait()? {
+            return Ok(status);
+        }
+        if started.elapsed() >= CASE_TIMEOUT {
+            child.kill()?;
+            let _status = child.wait()?;
+            return Err(io::Error::new(
+                io::ErrorKind::TimedOut,
+                format!(
+                    "{} exceeded its {} second timeout; inspect {} and {}",
+                    case.slug,
+                    CASE_TIMEOUT.as_secs(),
+                    stdout_path.display(),
+                    stderr_path.display()
+                ),
+            )
+            .into());
+        }
+        std::thread::sleep(CASE_POLL_INTERVAL);
+    }
 }
 
 fn path_text<'a>(path: &'a Path, description: &str) -> Result<&'a str, Box<dyn Error>> {

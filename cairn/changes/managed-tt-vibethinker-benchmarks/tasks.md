@@ -5,7 +5,7 @@
 
 ## Phase 2: Nix integration
 
-- [x] [serial] Package the benchmark core and add a root-operated `britton-desktop` oneshot whose trap restores only a previously active VibeThinker service. r[onix.tenstorrent.model_performance.managed_benchmark]
+- [x] [serial] Package the bounded benchmark core and add a root-operated `britton-desktop` oneshot whose trap restores only the previously active managed P150 services. r[onix.tenstorrent.model_performance.managed_benchmark]
 - [x] [serial] Add positive and negative machine checks for command wiring, service restoration, mesh orientation, and source-tree artifact isolation. r[onix.tenstorrent.model_performance.managed_benchmark]
 - [x] [serial] Document the operator command and result location without changing production VibeThinker mesh policy. r[onix.tenstorrent.model_performance.managed_benchmark]
 

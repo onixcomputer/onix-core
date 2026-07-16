@@ -303,8 +303,10 @@ let
     ''}
     ${lib.optionalString (ttBenchmarkExecStart != null) ''
       test -x ${lib.escapeShellArg ttBenchmarkExecStart}
-      grep -F -- "trap restore_vibethinker EXIT HUP INT TERM" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
+      grep -F -- "trap restore_displaced_services EXIT HUP INT TERM" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
       grep -F -- "systemctl is-active --quiet" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
+      grep -F -- "${vibeThinkerServiceName}.service" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
+      grep -F -- "${llamaServiceName}.service" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
       grep -F -- "last-run-succeeded" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
       grep -F -- "--cache-root ${ttBenchmarkCacheDir}" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
       grep -F -- "--logs-root ${ttBenchmarkLogsDir}" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null

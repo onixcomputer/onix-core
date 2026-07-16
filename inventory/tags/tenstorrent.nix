@@ -491,10 +491,12 @@ in
       sudo tt-vibethinker-bench
       ```
 
-      The manually invoked oneshot records whether VibeThinker was active, stops
-      it before acquiring either P150, and restores that prior active state on
-      success, benchmark failure, or ordinary termination. Results, TT-Metal
-      cache entries, and Inspector logs stay outside the source tree. The latest
+      The manually invoked oneshot records whether VibeThinker and the card-1
+      P150 Llama service were active, stops each owner before acquiring either
+      P150, and restores only those prior active states on success, benchmark
+      failure, or ordinary termination. Each benchmark case is bounded to five
+      minutes. Results, TT-Metal cache entries, and Inspector logs stay outside
+      the source tree. The latest
       validated result is `/var/lib/tt-vibethinker-benchmark/latest-summary.json`;
       per-run evidence remains below the same state directory.
 

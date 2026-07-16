@@ -5,7 +5,7 @@ Repeating the VibeThinker Metalium comparison currently requires an operator to 
 ## What Changes
 
 - Add a tested Rust benchmark core that runs the fixed device-0, device-1, and physical P150x2 `1x2` matrix and emits validated JSON summaries.
-- Add a `britton-desktop` systemd oneshot and operator command that preserve the VibeThinker service's prior active state across successful and failed benchmark runs.
+- Add a `britton-desktop` systemd oneshot and operator command that preserve the prior active states of VibeThinker and the card-1 P150 Llama service across successful, failed, and timed-out benchmark runs.
 - Keep mutable TT-Metal caches, logs, Inspector output, and benchmark results in service-managed directories outside the source repository.
 - Preserve the existing single-card production VibeThinker service and its accepted latency configuration.
 

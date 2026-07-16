@@ -1,6 +1,6 @@
 ## Context
 
-`britton-desktop` serves VibeThinker-3B Q8_0 continuously on physical P150 device 0. Direct `llama-bench` comparisons require exclusive device ownership, so an operator currently stops the root-owned service, runs three nearly identical commands, and remembers to restart it. The latest physical `1x2` run opened both cards successfully and reached about 8.06 decode tokens/s, but the accepted single-device serving path remains about 20 tokens/s. Mesh execution is therefore useful diagnostic evidence, not a justified production replacement.
+`britton-desktop` serves VibeThinker-3B Q8_0 continuously on physical P150 device 0, while the digest-pinned P150 Llama container owns physical device 1 when its gated model is available. Direct `llama-bench` comparisons require exclusive ownership of both devices, so an operator otherwise has to stop both root-owned services, run three nearly identical commands, and remember which services to restart. The latest physical `1x2` run opened both cards successfully and reached about 8.06 decode tokens/s, but the accepted single-device serving path remains about 20 tokens/s. Mesh execution is therefore useful diagnostic evidence, not a justified production replacement.
 
 The Metalium fork parses `GGML_METALIUM_MESH_SHAPE=2x1` into the reported physical `1x2` shape. Each run must use 64 prompt tokens, 32 generated tokens, three repetitions, batch and physical batch size 512, 16 benchmark threads, F16 host KV cache, mmap disabled, flash attention disabled, and trace replay disabled.
 
@@ -14,9 +14,9 @@ The Metalium fork parses `GGML_METALIUM_MESH_SHAPE=2x1` into the reported physic
 
 ### Decision: Pair a pure Rust result core with a thin systemd shell
 
-**Choice:** Implement matrix construction, result extraction, topology validation, and summary generation in a tested Rust package. Use a small Nix-generated shell only to record whether VibeThinker was active, stop it, invoke the Rust binary, and restore the prior active state through an exit/signal trap.
+**Choice:** Implement matrix construction, bounded case execution, result extraction, topology validation, and summary generation in a tested Rust package. Use a small Nix-generated shell only to record whether VibeThinker and P150 Llama were active, stop each active device owner, invoke the Rust binary, and restore only the prior active services through an exit/signal trap.
 
-**Rationale:** The benchmark data path is deterministic and unit-testable without devices. Service orchestration remains explicit and auditable, while the trap covers ordinary success, command failure, interruption, and termination paths.
+**Rationale:** The benchmark data path is deterministic and unit-testable without devices. Service orchestration remains explicit and auditable, while the trap covers ordinary success, command failure, timeout, interruption, and termination paths. Per-case timeouts prevent an unexpected device owner from turning the diagnostic into an indefinite lock wait.
 
 ### Decision: Isolate every mutable artifact
 
@@ -32,6 +32,6 @@ The Metalium fork parses `GGML_METALIUM_MESH_SHAPE=2x1` into the reported physic
 
 ## Risks / Trade-offs
 
-- Starting the benchmark intentionally interrupts VibeThinker for the duration of the matrix; the command is manual and root-gated.
+- Starting the benchmark intentionally interrupts VibeThinker and any active card-1 P150 Llama service for the duration of the matrix; the command is manual and root-gated.
 - SIGKILL or host power loss cannot execute a process trap. VibeThinker remains boot-enabled and can be started normally after such an external failure.
 - Device 1 and mesh measurements remain topology diagnostics; they do not imply useful llama.cpp model sharding or production scaling.
