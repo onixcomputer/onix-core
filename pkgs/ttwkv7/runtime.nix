@@ -110,7 +110,9 @@ stdenvNoCC.mkDerivation {
     production_probe_wrapper="$out/bin/${probeCommand}"
     production_probe_target="$out/libexec/ttwkv7/wkv7-constant-probe-runtime"
     test -x "$production_probe_target"
-    grep -F "exec \"$production_probe_target\" \"\$@\"" "$production_probe_wrapper"
+    grep -F \
+      "exec \"$production_probe_target\" ${lib.escapeShellArg probeDeviceMode} \"\$@\"" \
+      "$production_probe_wrapper"
     if grep -F 'exec "$out/' "$production_probe_wrapper"; then
       echo "ttWKV7 production probe wrapper must not expand out at runtime" >&2
       exit 1
@@ -190,9 +192,23 @@ stdenvNoCC.mkDerivation {
       TT_METAL_LOGS_PATH="$runtime_logs" \
       TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="$runtime_inspector" \
       ${stdenvNoCC.shell} "$fake_probe_wrapper" ${lib.escapeShellArg probeDeviceMode} \
+      >"$runtime_state_root/fake-probe-mode.log"
+    test "$(cat "$runtime_state_root/fake-probe-mode.log")" = \
+      ${lib.escapeShellArg probeDeviceMode}
+
+    TT_METAL_CACHE="$runtime_cache" \
+      TT_METAL_LOGS_PATH="$runtime_logs" \
+      TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="$runtime_inspector" \
+      ${stdenvNoCC.shell} "$fake_probe_wrapper" ${lib.escapeShellArg probeDeviceMode} \
         ${lib.escapeShellArg probeForwardedArgument} \
-      >"$runtime_state_root/fake-probe.log"
-    test "$(cat "$runtime_state_root/fake-probe.log")" = ${lib.escapeShellArg probeForwardedArgument}
+      >"$runtime_state_root/fake-probe-forwarded.log"
+    fake_probe_forwarded_expected="$(
+      printf '%s\n%s' \
+        ${lib.escapeShellArg probeDeviceMode} \
+        ${lib.escapeShellArg probeForwardedArgument}
+    )"
+    test "$(cat "$runtime_state_root/fake-probe-forwarded.log")" = \
+      "$fake_probe_forwarded_expected"
 
     expect_wrapper_failure() {
       failure_name="$1"

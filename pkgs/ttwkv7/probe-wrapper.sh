@@ -78,7 +78,7 @@ probe)
   shift
   validate_runtime_state
   prepare_runtime_state
-  exec "@probeExecutable@" "$@"
+  exec "@probeExecutable@" probe "$@"
   ;;
 *)
   exec "@probeExecutable@" "$@"
