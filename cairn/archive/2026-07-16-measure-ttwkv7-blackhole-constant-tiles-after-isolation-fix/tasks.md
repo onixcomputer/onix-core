@@ -7,10 +7,10 @@
 
 ## Phase 2: Authorized physical boundary
 
-- [ ] [serial] Start the committed orchestration exactly once, arm rollback before isolation, and consume at most one probe invocation. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.timed_restore]
-- [ ] [serial] Restore owner health, disarm or classify the rollback timer, and retain process, service, endpoint, and board evidence. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.timed_restore]
+- [x] [serial] Start the committed orchestration exactly once and retain zero invocation when the shell rejects its non-executable mode before rollback or isolation. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.timed_restore]
+- [x] [serial] Confirm no rollback or service mutation occurred and retain launch, service, endpoint, and two-snapshot board evidence. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.timed_restore]
 
 ## Phase 3: Measured boundary
 
-- [ ] [serial] Classify the fourteen exact masks or the first terminal blocker without retry or broad compatibility claims. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.timed_restore]
-- [ ] [serial] Sync the accepted requirement, archive the exhausted change, and commit retained repository evidence. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.timed_restore]
+- [x] [serial] Classify the orchestration-blocked-before-runbook terminal outcome without retry or broad compatibility claims. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.timed_restore]
+- [x] [serial] Sync the accepted requirement, archive the exhausted change, and commit retained repository evidence. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.timed_restore]

@@ -11,6 +11,12 @@ r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.timed_restore
 - THEN no Tenstorrent device is created by those checks
 - AND the physical invocation count remains zero
 
+#### Scenario: Runbook launchability precedes orchestration
+- GIVEN a committed one-shot runbook and zero invocation count
+- WHEN the reviewed launch boundary is validated
+- THEN executable mode is proven before the orchestration command is started
+- AND an exec failure terminates the change without an alternate launch command or retry
+
 #### Scenario: Rollback must arm before isolation
 - GIVEN the owner service is active and healthy
 - WHEN the authorized physical phase begins

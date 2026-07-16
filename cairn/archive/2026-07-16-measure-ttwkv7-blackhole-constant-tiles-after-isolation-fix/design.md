@@ -8,7 +8,7 @@ The prior measurement retained invocation count zero because isolation failed be
 
 Success requires fourteen lines with `mismatches=0 PASS`—seven generated patterns at lengths 1 and 32—plus `constant-tile device probe: PASS` from one process invocation. Passing preflight, initialization, JIT, a subset, approximate values, service recovery, or process status alone is not success.
 
-Allowed terminal outcomes are `validated`, `mask-mismatch`, `initialization-blocked`, `timed-out`, or `isolation-blocked`. Every terminal outcome exhausts this change's physical budget only if invocation count reached one; no outcome authorizes a retry.
+Allowed terminal outcomes are `validated`, `mask-mismatch`, `initialization-blocked`, `timed-out`, `isolation-blocked`, or `orchestration-blocked`. Every terminal outcome ends this change; no outcome authorizes an alternate launch command or retry, even when invocation count remains zero.
 
 ## Authorization Boundary
 
@@ -57,6 +57,14 @@ The exact package and dual-architecture checks passed. Cairn validation plus pro
 
 A strict fingerprint-pinned root SSH rehearsal created, proved active, stopped, and removed a disposable root-systemd timer without changing the owner service. The unique evidence root was then prepared with mode 0700, exact metadata, one ED25519 known-host key matching `SHA256:0vd1vzTWrAONyquNKjwnsGY7a5bY2NJlvFamtxy/akY`, writable cache/log paths, an unused Inspector port, passing owner-control and root-SSH preflights, and a passing package `validate-runtime` result. The owner remained active and healthy with HTTP 200; invocation count, service-stop attempts, and rollback-arm attempts all remained zero.
 
+## Measured Outcome
+
+The committed orchestration command was started once as pueue task 54, but the shell returned status 126 before loading the runbook: `Permission denied`. The committed file mode was `0644`; Bash syntax and ShellCheck validated source text but the offline review failed to assert executable mode. Invoking the same file through `bash`, changing mode and rerunning, or using another launch command would be an unauthorized alternate attempt under this change, so none was performed.
+
+The runbook never executed. Invocation count, service-stop attempts, and rollback-arm attempts remain zero; no rollback timer was created; and neither `probe.log` nor `probe-status.txt` exists. The owner remained active/running with `Result=success`, `NRestarts=0`, its container remained up, and the health endpoint returned HTTP 200. Two terminal tt-smi snapshots show both boards with `dram_status: true`, zero uncorrectable GDDR errors, zero thermal trips, and advancing heartbeats.
+
+This is the exact `orchestration-blocked-before-runbook` terminal outcome. It measures no constant tile and neither proves nor disproves SFPU finalization, lane mapping, WKV arithmetic, decode behavior, performance, or broad P150 support. Evidence is retained at `/var/tmp/ttwkv7-constant-probe-20260716T171944Z`. A later physical attempt requires a new executable runbook, a new reviewed Cairn change, and separate explicit authorization.
+
 ## Search Budget
 
-Primary authority is the pinned package, active NixOS closure, systemd, retained evidence, and raw probe output. Offline review is bounded to package, architecture, shell, lifecycle, metadata, and no-device checks. Physical search is bounded to one process invocation, one selected device, and one 180-second timeout. Validated or any exact blocker terminates the search.
+Primary authority is the pinned package, active NixOS closure, systemd, retained evidence, and raw probe output. Offline review was bounded to package, architecture, shell, lifecycle, metadata, and no-device checks. The orchestration launch budget was exhausted by one failed exec; the physical process budget remained unused with invocation count zero. The no-alternate-command rule terminates this change at the exact blocker.
