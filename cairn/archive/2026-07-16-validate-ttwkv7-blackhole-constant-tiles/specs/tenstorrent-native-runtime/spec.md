@@ -27,7 +27,7 @@ r[onix.tenstorrent.native_runtime.ttwkv7.architecture_sfpu] The packaged ttWKV7 
 ## ADDED Requirements
 
 ### Requirement: ttWKV7 exact constant-tile probe
-r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_probe] The packaged ttWKV7 diagnostics MUST provide a bounded single-device probe that compares every generated chunked constant tile exactly against a pure CPU oracle without running the WKV recurrence.
+r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_probe] The packaged ttWKV7 diagnostics MUST provide a bounded single-device probe that, after successful runtime initialization, compares every generated chunked constant tile exactly against a pure CPU oracle without running the WKV recurrence, and MUST fail nonzero without claiming a mask result when runtime initialization prevents that comparison.
 
 #### Scenario: Pure oracle accepts reviewed boundary cases
 - GIVEN each of the seven chunked constant patterns and reviewed lengths 1 and 32
@@ -41,12 +41,18 @@ r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_probe] The packaged ttWKV
 - THEN it rejects the request deterministically
 - AND the shell returns a nonzero status without creating a Tenstorrent device
 
-#### Scenario: P150 diagnostic is bounded
-- GIVEN device 1 is isolated from its owning service and selected as the only visible device
-- WHEN the operator invokes the packaged constant-tile probe once
+#### Scenario: P150 diagnostic reaches mask comparison
+- GIVEN device 1 is isolated from its owning service, selected as the only visible device, and Metalium runtime diagnostics have writable storage
+- WHEN the operator invokes the packaged constant-tile probe once and runtime initialization succeeds
 - THEN one device open emits all seven patterns for lengths 1 and 32
 - AND every BF16 element is compared exactly with a first-mismatch and total-mismatch diagnostic
 - AND no WKV recurrence or automatic retry executes
+
+#### Scenario: Runtime initialization blocker fails closed
+- GIVEN device 1 is isolated and the packaged probe cannot initialize a required Metalium runtime evidence path
+- WHEN the operator invokes the probe once
+- THEN the process returns nonzero without reporting any mask as passing
+- AND the one-run budget is treated as exhausted rather than retried automatically
 
 #### Scenario: Probe result does not overstate support
 - GIVEN all reviewed constant tiles pass or any tile fails

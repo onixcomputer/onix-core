@@ -13,9 +13,9 @@
 
 - [x] [serial] Run package checks, probe self-tests, and offline Blackhole and Wormhole JIT compilation for the affected kernels. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_probe]
 - [x] [serial] Build the accelerator inventory and complete britton-desktop closure, then commit the exact reviewed revision. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_probe]
-- [ ] [serial] Deploy the reviewed commit from an isolated clean source tree without changing SSH/SOPS rotation material. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_probe]
+- [x] [serial] Deploy the reviewed commit from an isolated clean source tree without changing SSH/SOPS rotation material. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_probe]
 
 ## Phase 4: One bounded hardware probe
 
-- [ ] [serial] Stop the device-1 owner, invoke the constant-tile probe exactly once, restore the owner through a trap, and collect service and board-health evidence without retry. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_probe]
-- [ ] [serial] Record the exact measured boundary, sync accepted requirements, and archive the completed or bounded-blocked change. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_probe]
+- [x] [serial] Stop the device-1 owner, invoke the constant-tile probe exactly once, restore the owner through a trap, and collect service and board-health evidence without retry. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_probe]
+- [x] [serial] Record the exact measured boundary, sync accepted requirements, and archive the completed or bounded-blocked change. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_probe]

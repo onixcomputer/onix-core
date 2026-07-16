@@ -50,6 +50,18 @@ A source-level epilogue mismatch does not prove causality. The probe must reject
 - The two lengths increase diagnostic coverage within one device open but do not cover every partial length.
 - The pre-existing SSH/SOPS host-key rotation may make normal Clan activation fail; deployment must not modify trust or secret material.
 
+## Validation Evidence
+
+The exact package passed its no-device oracle self-test and package install checks. Replayed math-TRISC compilation produced objects for `wkv7_chunked_compute.cpp`, `wkv7_decodeL_compute.cpp`, and `ttwkv7_constant_tile_compute.cpp` under both the pinned Blackhole and Wormhole compiler/include/define sets. The accelerator inventory and full `britton-desktop` closure also built before commit `3af9ffd2f69bfb1ba6a5ffc7a7f277cb5a823529` was activated as `/nix/store/mwndchzmrkqb2sh27qa9dj76axwwraqj-nixos-system-britton-desktop-26.11.20260629.7a1a647` with package `/nix/store/bnc9yk3wmsqdl98lsx7vamdzvdqsml9f-ttwkv7-unstable-2026-06-22`.
+
+## Measured Outcome
+
+Exactly one device-1 invocation ran and returned status 1. `TT_VISIBLE_DEVICES=1` mapped physical PCIe device 1 to logical device 0; the runtime ignored the inherited linked-card descriptor through the package wrapper and auto-discovered a one-chip mesh. Before any probe kernel JIT artifact or mask result was produced, default Metalium diagnostics attempted to create `generated/watcher` beneath the wrapper's read-only package working directory. Device initialization then failed closed with `filesystem error: cannot create directories: Read-only file system`. Inspector reported the same read-only working-directory boundary and a pre-existing loopback RPC-port collision. The JIT summary remained `0/8` and no constant tile was compared.
+
+This exhausts the one-run authorization at an infrastructure boundary. It neither proves nor disproves the Blackhole finalizer hypothesis, destination-lane mapping, constant masks, WKV arithmetic, decode correctness, performance, or general P150 support. A future attempt requires a separately reviewed change that provides a writable `TT_METAL_LOGS_PATH` or equivalent runtime working path, followed by separate hardware authorization; this change must not be retried.
+
+Evidence is retained at `/var/tmp/ttwkv7-constant-probe-20260716T133450Z`. The restoration trap restarted `docker-tt-inference-server-llama-3-1-8b-instruct-p150.service`; it recovered with `ActiveState=active`, `Result=success`, `NRestarts=0`, and HTTP 200 health. Both boards retained healthy DRAM, zero uncorrected GDDR errors, zero thermal trips, and advancing heartbeats across the two post-run snapshots.
+
 ## Search Budget
 
-Primary authority is limited to the pinned ttWKV7 and Metalium sources. Advisory review is limited to the already-used VibeThinker pass and is non-authoritative. Validation uses focused package/machine checks, offline JIT compilation, and exactly one physical device-1 probe invocation with no retry. The search stops at an exact mask result or bounded infrastructure blocker.
+Primary authority is limited to the pinned ttWKV7 and Metalium sources. Advisory review is limited to the already-used VibeThinker pass and is non-authoritative. Validation uses focused package/machine checks, offline JIT compilation, and exactly one physical device-1 probe invocation with no retry. The budget terminated at the exact read-only diagnostics-path blocker; no additional physical execution is authorized.

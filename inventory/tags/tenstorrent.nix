@@ -509,6 +509,15 @@ in
       1.00e+00/9.87e-01. P150 numerical compatibility is therefore disproved for
       the tested package and shape; no broader Blackhole support is claimed.
 
+      A separately reviewed exact-mask diagnostic then compiled its chunked, decode,
+      and probe math kernels offline for both Blackhole and Wormhole. Its one authorized
+      P150 invocation confirmed one-chip auto-discovery, but default Metalium diagnostics
+      attempted to create `generated/watcher` beneath the wrapper's read-only package
+      working directory before probe-kernel JIT or mask comparison. The process failed
+      closed and was not retried. No constant-mask result exists, so the Blackhole SFPU
+      finalizer and lane-mapping hypotheses remain unmeasured. Another physical attempt
+      requires a reviewed writable `TT_METAL_LOGS_PATH` boundary and separate authorization.
+
       Device execution is manual. Select one physical card, stop the service that
       owns it, run one bounded test process, review TT-Metal logs, and restore only
       the service you stopped. `TT_VISIBLE_DEVICES` maps that selected physical card
