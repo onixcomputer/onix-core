@@ -51,6 +51,16 @@ The package and dual-architecture checks passed, as did Cairn validation and pro
 
 A disposable strict root-SSH timer rehearsal armed, proved active, stopped, and removed a fresh timer without service mutation. Evidence root `/var/tmp/ttwkv7-constant-probe-20260716T175053Z` was created with mode 0700 and exact metadata. Its host key matches the pinned fingerprint, Inspector port 43129 is unused, owner-control and strict root SSH pass, package `validate-runtime` passes, the owner is active with HTTP 200, and invocation, service-stop, and rollback-arm counts remain zero.
 
+## Measured Outcome
+
+The directly executable committed runbook started once. It armed and proved the independent rollback timer, isolated the owner, proved the container inactive and exact device ownership absent, then changed invocation count from zero to one immediately before the sole probe process.
+
+That process returned status 127 before device initialization. The packaged wrapper's line 81 is `exec $out/libexec/ttwkv7/wkv7-constant-probe-runtime "$@"`; inherited `out=/home/brittonr/git/onix-core/outputs/out` therefore resolved to a nonexistent executable. The runtime binary never started, no Tenstorrent device was opened by ttWKV7, and no mask comparison line exists. This exposes a production-wrapper check gap: package tests exercised a fake absolute probe target but did not reject the composed wrapper's unexpanded runtime `$out` reference.
+
+The EXIT trap restored the owner with status 0, endpoint health recovered to HTTP 200, and rollback disarm returned 0. The timer and service units are now not found/inactive. The owner is active/running with `Result=success` and `NRestarts=0`; both boards retain healthy DRAM, zero uncorrectable GDDR errors, zero thermal trips, and advancing heartbeats.
+
+This is the exact `runtime-wrapper-blocked-before-device-open` terminal result. Invocation count is one, so no wrapper repair, direct runtime-binary fallback, alternate command, or retry is authorized. All fourteen masks remain unmeasured. Evidence is retained at `/var/tmp/ttwkv7-constant-probe-20260716T175053Z`.
+
 ## Search Budget
 
-Offline work is bounded to lifecycle, package, architecture, launchability, timer, metadata, and no-device runtime checks. Physical search is one process on device 1 under one 180-second timeout. Any exact terminal boundary ends the change.
+Offline work was bounded to lifecycle, package, architecture, launchability, timer, metadata, and no-device runtime checks. The one-process physical budget was consumed by status 127 before device open. The no-retry boundary terminates this change at the production wrapper defect.

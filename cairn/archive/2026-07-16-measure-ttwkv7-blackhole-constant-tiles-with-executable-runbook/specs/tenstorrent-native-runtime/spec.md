@@ -17,6 +17,12 @@ r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.executable_ru
 - THEN no owner isolation or probe invocation occurs
 - AND the change terminates without interpreter fallback, chmod repair, or retry
 
+#### Scenario: Production wrapper target is immutable and executable
+- GIVEN the composed package's device probe wrapper
+- WHEN offline launchability validation inspects its exec target
+- THEN the target is an existing absolute immutable executable
+- AND validation rejects an unexpanded runtime `$out` reference or a fake-only target check
+
 #### Scenario: Rollback precedes owner isolation
 - GIVEN the owner is active and healthy and all launchability checks pass
 - WHEN the authorized physical phase begins
