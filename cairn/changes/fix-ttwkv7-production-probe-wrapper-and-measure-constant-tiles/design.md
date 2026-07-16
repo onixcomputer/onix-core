@@ -46,6 +46,12 @@ The baseline exact package passed its existing install checks while its producti
 
 Package install checks, Bash syntax, ShellCheck, tree formatting, `git diff --check`, Blackhole/Wormhole architecture check `/nix/store/gd9vxrlmf8i2lqpz9x13czypijcmhbj0-ttwkv7-architecture-check`, and complete host closure `/nix/store/f5q38n9yla7w8s63kgr19ri6ln8p93qq-nixos-system-britton-desktop-26.11.20260629.7a1a647` pass. The active system remains the prior reviewed closure; exact-store probe execution does not require activation. A focused secondary review returned no concrete defect, and manual audit confirmed the C++ self-test returns before `MeshDevice::create_unit_mesh`.
 
+## Physical Preflight Evidence
+
+The executable runbook is committed with filesystem mode `0755` and Git mode `100755`; direct negative execution reaches its argument guard. Its static boundary contains one invocation-count transition and one direct `probe` process under the reviewed timeout, with rollback arming before owner isolation and no retry path.
+
+A fresh root-systemd timer rehearsal armed, proved active, stopped, and disappeared without service mutation. Evidence root `/var/tmp/ttwkv7-constant-probe-20260716T182116Z` is mode 0700 and binds repaired package `/nix/store/ibrza5pk4sazc4w6yrjrikczghw4w54y-ttwkv7-unstable-2026-06-22`, unchanged kernel output, active closure, owner-control helper, device 1, Inspector `127.0.0.1:43130`, strict loopback SSH fingerprint, and explicit authorization. The actual production target and hostile-environment self-tests pass, runtime-state preflight passes, the port is unused, the owner is active with HTTP 200, and invocation, service-stop, and rollback-arm counts are zero.
+
 ## Risks / Trade-offs
 
 - A no-device self-test could accidentally become device-owning upstream. The pinned source is inspected and package behavior remains bound to the fixed revision; physical authorization is not inferred from package tests.
