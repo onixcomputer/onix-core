@@ -18,7 +18,24 @@ let
     "wkv7_decodeL_compute.cpp"
     "ttwkv7_constant_tile_compute.cpp"
   ];
+  # r[verify onix.tenstorrent.native_runtime.ttwkv7.reader_gather_alignment]
   dataMovementKernelSpecs = [
+    {
+      source = "wkv7_reader.cpp";
+      processorName = "brisc";
+      firmwareSource = "${metaliumRoot}/tt_metal/hw/firmware/src/tt-1xx/brisck.cc";
+      processorIndex = 0;
+      nocIndex = 0;
+      processorDefinition = "COMPILE_FOR_BRISC";
+    }
+    {
+      source = "wkv7_decodeL_reader.cpp";
+      processorName = "brisc";
+      firmwareSource = "${metaliumRoot}/tt_metal/hw/firmware/src/tt-1xx/brisck.cc";
+      processorIndex = 0;
+      nocIndex = 0;
+      processorDefinition = "COMPILE_FOR_BRISC";
+    }
     {
       source = "ttwkv7_data_movement_capture_source_reader.cpp";
       processorName = "brisc";

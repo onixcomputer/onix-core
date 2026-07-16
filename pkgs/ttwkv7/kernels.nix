@@ -7,7 +7,10 @@ stdenvNoCC.mkDerivation {
   inherit (source) version;
 
   src = source.upstream;
-  patches = [ ./use-architecture-sfpu-helpers.patch ];
+  patches = [
+    ./use-architecture-sfpu-helpers.patch
+    ./use-architecture-dram-read-alignment.patch
+  ];
 
   postPatch = ''
     cp ${./constant-tile-probe-compute.cpp} kernels/ttwkv7_constant_tile_compute.cpp
@@ -15,6 +18,7 @@ stdenvNoCC.mkDerivation {
     cp ${./data-movement-capture-writer.cpp} kernels/ttwkv7_data_movement_capture_writer.cpp
     cp ${./data-movement-capture-source-reader.cpp} kernels/ttwkv7_data_movement_capture_source_reader.cpp
     cp ${./data-movement-source-reader.cpp} kernels/ttwkv7_data_movement_source_reader.cpp
+    cp ${./aligned-dram-face-read.h} kernels/ttwkv7_aligned_dram_face_read.h
   '';
 
   dontBuild = true;

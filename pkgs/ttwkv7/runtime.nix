@@ -79,6 +79,17 @@ let
   invalidLowInspectorPort = 0;
   invalidHighInspectorPort = 65536;
   expectedDataMovementCreateKernelCount = 6;
+  expectedReaderHelperCallCount = 4;
+  expectedReaderCbCadenceSiteCount = 2;
+  alignedReaderHelperSource = "ttwkv7_aligned_dram_face_read.h";
+  alignedReaderHelperInclude = "#include \"${alignedReaderHelperSource}\"";
+  alignedReaderHelperCall = "ttwkv7::read_dram_face_row(";
+  alignedReaderBlackholeBranch = "#ifdef ARCH_BLACKHOLE";
+  alignedReaderNocCall = "noc_async_read(";
+  alignedReaderCbReserveCall = "cb_reserve_back(c_natstage";
+  alignedReaderCbPushCall = "cb_push_back(c_natstage";
+  invalidDirectReaderGather = "noc_async_read(source, destination, kFaceRowBytes);";
+  invalidReaderCadence = "cb_push_back(c_natstage, 1);";
   constantGeneratorSources = [
     "wkv7_chunked_compute.cpp"
     "wkv7_decodeL_compute.cpp"
@@ -95,6 +106,11 @@ let
     "ttwkv7_data_movement_capture_writer.cpp"
     "ttwkv7_data_movement_capture_source_reader.cpp"
     "ttwkv7_data_movement_source_reader.cpp"
+    alignedReaderHelperSource
+  ];
+  productionReaderSources = [
+    "wkv7_reader.cpp"
+    "wkv7_decodeL_reader.cpp"
   ];
 in
 stdenvNoCC.mkDerivation {
@@ -495,6 +511,47 @@ stdenvNoCC.mkDerivation {
     for kernel_source in ${lib.escapeShellArgs requiredKernelSources}; do
       test -f "${packageKernelDirectory}/$kernel_source"
     done
+
+    # r[verify onix.tenstorrent.native_runtime.ttwkv7.reader_gather_alignment]
+    aligned_reader_helper="${packageKernelDirectory}/${alignedReaderHelperSource}"
+    grep -F ${lib.escapeShellArg alignedReaderBlackholeBranch} "$aligned_reader_helper"
+    test "$(grep -Fc ${lib.escapeShellArg alignedReaderNocCall} "$aligned_reader_helper")" -eq 2
+    grep -F ${lib.escapeShellArg "alignas(ttwkv7::kDramReadAlignmentBytes)"} \
+      "${packageKernelDirectory}/wkv7_reader.cpp"
+    grep -F ${lib.escapeShellArg "alignas(ttwkv7::kDramReadAlignmentBytes)"} \
+      "${packageKernelDirectory}/wkv7_decodeL_reader.cpp"
+    check_aligned_reader_source() {
+      local reader_source="$1"
+      test "$(grep -Fc ${lib.escapeShellArg alignedReaderHelperInclude} "$reader_source")" -eq 1 || return 1
+      test "$(grep -Fc ${lib.escapeShellArg alignedReaderHelperCall} "$reader_source")" -eq \
+        ${toString expectedReaderHelperCallCount} || return 1
+      test "$(grep -Fc ${lib.escapeShellArg alignedReaderCbReserveCall} "$reader_source")" -eq \
+        ${toString expectedReaderCbCadenceSiteCount} || return 1
+      test "$(grep -Fc ${lib.escapeShellArg alignedReaderCbPushCall} "$reader_source")" -eq \
+        ${toString expectedReaderCbCadenceSiteCount} || return 1
+      if grep -F ${lib.escapeShellArg alignedReaderNocCall} "$reader_source"; then
+        return 1
+      fi
+    }
+    for reader_name in ${lib.escapeShellArgs productionReaderSources}; do
+      check_aligned_reader_source "${packageKernelDirectory}/$reader_name"
+    done
+    invalid_reader="$data_movement_state_root/invalid-direct-reader.cpp"
+    cp "${packageKernelDirectory}/wkv7_reader.cpp" "$invalid_reader"
+    chmod u+w "$invalid_reader"
+    printf '%s\n' ${lib.escapeShellArg invalidDirectReaderGather} >>"$invalid_reader"
+    if check_aligned_reader_source "$invalid_reader"; then
+      echo "ttWKV7 aligned-reader source checker accepted a direct DRAM gather" >&2
+      exit 1
+    fi
+    invalid_cadence_reader="$data_movement_state_root/invalid-reader-cadence.cpp"
+    cp "${packageKernelDirectory}/wkv7_decodeL_reader.cpp" "$invalid_cadence_reader"
+    chmod u+w "$invalid_cadence_reader"
+    printf '%s\n' ${lib.escapeShellArg invalidReaderCadence} >>"$invalid_cadence_reader"
+    if check_aligned_reader_source "$invalid_cadence_reader"; then
+      echo "ttWKV7 aligned-reader source checker accepted CB cadence drift" >&2
+      exit 1
+    fi
 
     # Positive and negative architecture portability coverage for
     # r[verify onix.tenstorrent.native_runtime.ttwkv7.architecture_sfpu].

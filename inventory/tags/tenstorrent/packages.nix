@@ -97,6 +97,7 @@ let
     "ttwkv7_data_movement_capture_writer.cpp"
     "ttwkv7_data_movement_capture_source_reader.cpp"
     "ttwkv7_data_movement_source_reader.cpp"
+    "ttwkv7_aligned_dram_face_read.h"
   ];
   missingTtwkv7KernelPath = "${ttwkv7KernelRoot}/missing-wkv7-kernel.cpp";
   mkTtwkv7KernelLayoutCheck =
@@ -108,7 +109,8 @@ let
   # r[verify onix.tenstorrent.native_runtime.p150x2_mesh],
   # r[verify onix.tenstorrent.native_runtime.ttwkv7.host],
   # r[verify onix.tenstorrent.native_runtime.ttwkv7.cross_kernel_diagnostic], and
-  # r[verify onix.tenstorrent.native_runtime.ttwkv7.reader_diagnostic_loop].
+  # r[verify onix.tenstorrent.native_runtime.ttwkv7.reader_diagnostic_loop], and
+  # r[verify onix.tenstorrent.native_runtime.ttwkv7.reader_gather_alignment].
   nativeRuntimeLayoutCheck = pkgs.runCommand "tenstorrent-native-runtime-layout" { } ''
     test -d ${lib.escapeShellArg metaliumRoot}
     test -f ${lib.escapeShellArg meshDescriptorPath}

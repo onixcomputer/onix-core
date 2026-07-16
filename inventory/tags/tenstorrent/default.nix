@@ -477,11 +477,18 @@ in
       "$probe_package/bin/wkv7-data-movement" validate-runtime
       ```
 
-      A future separately authorized process must first record a tagged CB21 loopback, all six
-      complete input uploads, and the complete padded flat-state upload. It then records decode-L1,
-      chunked `L=32/Lreal=1`, chunked `L=32/Lreal=32`, and both writer paths. Raw bf16 buffers,
-      positional runtime vectors, and mismatch histograms are written below `TT_METAL_LOGS_PATH` so
-      one process can be analyzed offline without retry.
+      The sole successor process completed all controls and artifacts. CB21 loopback, all six
+      complete input uploads, complete padded state upload, and both writer paths passed exactly.
+      Decode-L1 and chunked `L=32/Lreal=1` each mismatched 71,680 elements; chunked
+      `L=32/Lreal=32` mismatched 262,144. All three included the same 65,536 state mismatches.
+      Pinned Blackhole requires 64-byte DRAM reads while Wormhole requires 32 bytes, and the shared
+      reader face-row gathers advanced in 32-byte residues matching the odd-row/half-layout evidence.
+
+      The packaged readers now stage Blackhole face rows through one aligned 64-byte L1 scratch
+      block and locally copy the selected 32 bytes; Wormhole retains its direct asynchronous
+      32-byte reads. Compile-time plans, negative source checks, and BRISC compilation validate both
+      production readers for both pinned architectures without hardware. Physical confirmation still
+      requires a fresh change and authorization.
 
       These build, self-test, and preflight commands grant no hardware authorization. Never retry
       a terminal process, never substitute a mutable profile command for the reviewed store path,
