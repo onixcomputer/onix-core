@@ -9,7 +9,7 @@
 ## Phase 2: Fresh authorized measurement
 
 - [x] [serial] Commit a fresh executable runbook bound to the repaired store path, unique runtime state, independent rollback, and zero counters. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.probe_mode_repair]
-- [ ] [serial] Pass production-dispatch, owner, root SSH, timer, launchability, exact-path, port, runtime-state, and zero-mutation preflights. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.probe_mode_repair]
+- [x] [serial] Pass production-dispatch, owner, root SSH, timer, launchability, exact-path, port, runtime-state, and zero-mutation preflights. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.probe_mode_repair]
 - [ ] [serial] Launch the committed runbook exactly once and consume the sole authorized process result without retry. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.probe_mode_repair]
 - [ ] [serial] Restore owner health and classify fourteen exact masks or the first terminal blocker with retained evidence. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.probe_mode_repair]
 - [ ] [serial] Sync requirements, archive the exhausted change, validate, and commit retained evidence. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.probe_mode_repair]

@@ -48,6 +48,12 @@ Package checks, Bash syntax, ShellCheck, tree formatting, `git diff --check`, de
 
 A secondary review endpoint initially failed, then returned five proposed defects. Manual discriminating checks falsified each: literal `probe` remains when the suffix is empty; the default branch is irrelevant to `probe)` dispatch; the fake target's quoted `printf` preserves argv order; the actual pinned self-test is independent of fake output; and complete-output equality rejects reordering. The deterministic package checks, not model approval, remain authoritative.
 
+## Physical Preflight Evidence
+
+The fresh runbook is committed with filesystem mode `0755` and Git mode `100755`; direct negative execution reaches its argument guard. Static review finds one count transition and one direct outer-wrapper `probe` process. The runbook requires the actual production line containing the immutable target plus literal mode before owner or device action.
+
+A disposable root-systemd timer rehearsal armed, proved active, stopped, and disappeared without service mutation. Evidence root `/var/tmp/ttwkv7-constant-probe-20260716T185657Z` is mode 0700 and binds repaired package `/nix/store/3f485zv9vz38rd8048bwc7qkshg2m5cl-ttwkv7-unstable-2026-06-22`, unchanged kernels, active closure, owner-control helper, device 1, Inspector `127.0.0.1:43131`, strict loopback SSH fingerprint, and explicit authorization. Production dispatch and hostile-environment self-tests pass, runtime-state preflight passes, the port is unused, the owner is active with HTTP 200, and invocation, service-stop, and rollback-arm counts are zero.
+
 ## Risks / Trade-offs
 
 - Fake-target execution proves argument semantics but not hardware behavior; actual production path inspection and the pinned self-test independently cover composition without device access.
