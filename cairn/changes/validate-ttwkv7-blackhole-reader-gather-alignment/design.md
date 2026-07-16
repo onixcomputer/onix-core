@@ -22,6 +22,8 @@ A missing record, nonzero mismatch/status, infrastructure failure, stale package
 
 The corrected package oracle, package check, dual-architecture reader/peer compilation, Bash syntax, ShellCheck, treefmt, runbook positive/negative self-test, Cairn validation/gates, and host closure `/nix/store/fl7rgvj9sarvi9p35r6pqzilldrh0q5s-nixos-system-britton-desktop-26.11.20260629.7a1a647` pass without device access. The source checker binds the new package, kernel closure, authorization sentence, port, run root, atomic attempt lock, exact command count, record cardinality, and ordering.
 
+Run root `/var/tmp/ttwkv7-aligned-reader-validation-20260716T232813Z` is mode 0700 with isolated writable roots, strict fingerprint `SHA256:0vd1vzTWrAONyquNKjwnsGY7a5bY2NJlvFamtxy/akY`, free port 43137, absent authorization/attempt lock, and all counters zero. The committed runbook fails at the exact authorization check without changing zero state; the owner remains healthy.
+
 ## One-Shot Contract
 
 The reviewed runbook inherits the validated atomic attempt lock, exact wrapper/source checks, strict trust, root-systemd rollback, owner isolation proof, timeout, thirteen-record completeness validator, and EXIT restoration. It changes only the immutable implementation paths, run identity, port, and authorization scope.
