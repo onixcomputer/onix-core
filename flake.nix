@@ -233,6 +233,7 @@
         ./flake-outputs/checks.nix # machine builds, vars, packages, devShells
         ./flake-outputs/dev-env.nix # formatter, pre-commit, devShells, MCP
         ./flake-outputs/tools.nix # CLI tools (acl, vars, tags, merge-when-green, etc.)
+        ./flake-outputs/ttwkv7.nix # Unfree standalone TT-Metalium operator package
       ];
       flake =
         (import ./flake-outputs/clan.nix {

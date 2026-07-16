@@ -59,6 +59,10 @@ let
   llamaLoopbackHost = "127.0.0.1";
   llamaImage = "ghcr.io/tenstorrent/tt-inference-server/vllm-tt-metal-src-release-ubuntu-22.04-amd64:0.18.0-c49bb76-6b4a3a7@sha256:6aee48978be401c0a86cb1761c4d64af818df8380bc7b27c1018d704518545ff";
   ttMetaliumToolsUrl = "https://docs.tenstorrent.com/tt-metal/latest/tt-metalium/tools/index.html";
+  ttWkv7PackageNameFragment = "ttwkv7";
+  ttWkv7CommandName = "wkv7";
+  ttWkv7UpstreamTarget = "Wormhole";
+  ttWkv7ManagedTarget = "Blackhole P150";
   brittonDesktopTags = machinesDef.${brittonDesktopName}.tags;
   brittonDesktopFacter = builtins.fromJSON (
     builtins.readFile ../machines/britton-desktop/facter.json
@@ -183,7 +187,16 @@ let
     llamaExecCondition != null && lib.hasInfix "credential-check" llamaExecCondition;
   llamaPreStart = brittonDesktopServices.${llamaServiceName}.preStart or "";
   repairsIncompleteLlamaWeights = lib.hasInfix "model-cache-repair" llamaPreStart;
+  ttWkv7CommandPackage = lib.findFirst (
+    package: lib.hasInfix ttWkv7PackageNameFragment (toString package)
+  ) null brittonDesktopConfig.environment.systemPackages;
+  hasTtWkv7CommandPackage = ttWkv7CommandPackage != null;
   hasToolsReference = lib.hasInfix ttMetaliumToolsUrl tenstorrentHostGuide;
+  documentsTtWkv7Boundary =
+    lib.hasInfix "${ttWkv7CommandName} test" tenstorrentHostGuide
+    && lib.hasInfix ttWkv7UpstreamTarget tenstorrentHostGuide
+    && lib.hasInfix ttWkv7ManagedTarget tenstorrentHostGuide
+    && lib.hasInfix "classifies this package as unfree" tenstorrentHostGuide;
   documentsManagedTtBenchmark =
     lib.hasInfix "sudo ${ttBenchmarkCommandName}" tenstorrentHostGuide
     && lib.hasInfix "${ttBenchmarkStateDir}/latest-summary.json" tenstorrentHostGuide;
@@ -194,6 +207,8 @@ let
   # r[verify onix.tenstorrent.model_performance.trace_replay],
   # r[verify onix.tenstorrent.model_performance.concurrent_serving],
   # r[verify onix.tenstorrent.model_performance.managed_benchmark],
+  # r[verify onix.tenstorrent.native_runtime.ttwkv7.host],
+  # r[verify onix.tenstorrent.native_runtime.ttwkv7.compatibility_boundary],
   # r[verify onix.tenstorrent.vllm.p150_llama], and
   # r[verify onix.tenstorrent.vllm.secrets].
   brittonDesktopAcceleratorInventory = pkgs.runCommand "britton-desktop-accelerator-inventory" { } ''
@@ -293,8 +308,16 @@ let
       echo "Metalium services must not retain the rejected CCD affinity trial: ${lib.concatStringsSep " " servicesWithRejectedCpuAffinity}"
       exit 1
     ''}
+    ${lib.optionalString (!hasTtWkv7CommandPackage) ''
+      echo "${brittonDesktopName} must include the ${ttWkv7PackageNameFragment} package"
+      exit 1
+    ''}
     ${lib.optionalString (!hasToolsReference) ''
       echo "${brittonDesktopName} Tenstorrent guide must reference ${ttMetaliumToolsUrl}"
+      exit 1
+    ''}
+    ${lib.optionalString (!documentsTtWkv7Boundary) ''
+      echo "${brittonDesktopName} Tenstorrent guide must document ttWKV7 invocation, licensing, and hardware boundaries"
       exit 1
     ''}
     ${lib.optionalString (!documentsManagedTtBenchmark) ''

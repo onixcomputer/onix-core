@@ -85,17 +85,41 @@ let
   # r[impl onix.tenstorrent.native_runtime.packages]
   tenstorrentMetal = mkTenstorrentPackageAlias "tt-metal" "tt-metal";
   tenstorrentLlamaCppMetalium = mkTenstorrentPackageAlias "llama-cpp-metalium" "llama-cpp-metalium";
+  # r[impl onix.tenstorrent.native_runtime.ttwkv7.host]
+  tenstorrentTtWkv7 = pkgs.callPackage ../../pkgs/ttwkv7 {
+    inherit (tenstorrentPackagesBase) enchantum tt-logger;
+    tt-metal = tenstorrentMetal;
+  };
   # r[impl onix.tenstorrent.native_runtime.p150x2_mesh]
   tenstorrentMetaliumRoot = "${tenstorrentMetal}/libexec/tt-metalium";
   p150x2MeshDescriptorFilename = "p150_x2_mesh_graph_descriptor.textproto";
   p150x2MeshDescriptorPath = "${tenstorrentMetaliumRoot}/tt_metal/fabric/mesh_graph_descriptors/${p150x2MeshDescriptorFilename}";
   missingMeshDescriptorPath = "${tenstorrentMetaliumRoot}/tt_metal/fabric/mesh_graph_descriptors/missing_mesh_graph_descriptor.textproto";
-  # Positive and negative layout cases for r[verify onix.tenstorrent.native_runtime.p150x2_mesh].
+  ttWkv7KernelRoot = "${tenstorrentTtWkv7}/share/ttwkv7/kernels";
+  ttWkv7KernelSourceNames = [
+    "wkv7_chunked_compute.cpp"
+    "wkv7_decodeL_compute.cpp"
+    "wkv7_decodeL_reader.cpp"
+    "wkv7_reader.cpp"
+    "wkv7_writer.cpp"
+  ];
+  missingTtWkv7KernelPath = "${ttWkv7KernelRoot}/missing-wkv7-kernel.cpp";
+  mkTtWkv7KernelLayoutCheck =
+    kernelSourceName: "test -f ${lib.escapeShellArg "${ttWkv7KernelRoot}/${kernelSourceName}"}";
+  ttWkv7KernelLayoutChecks =
+    lib.concatMapStringsSep "\n" mkTtWkv7KernelLayoutCheck
+      ttWkv7KernelSourceNames;
+  # Positive and negative layout cases for
+  # r[verify onix.tenstorrent.native_runtime.p150x2_mesh] and
+  # r[verify onix.tenstorrent.native_runtime.ttwkv7.host].
   tenstorrentNativeRuntimeLayoutCheck = pkgs.runCommand "tenstorrent-native-runtime-layout" { } ''
     test -d ${lib.escapeShellArg tenstorrentMetaliumRoot}
     test -f ${lib.escapeShellArg p150x2MeshDescriptorPath}
     test -x ${lib.escapeShellArg "${tenstorrentLlamaCppMetalium}/bin/llama-server"}
+    test -x ${lib.escapeShellArg "${tenstorrentTtWkv7}/bin/wkv7"}
+    ${ttWkv7KernelLayoutChecks}
     test ! -e ${lib.escapeShellArg missingMeshDescriptorPath}
+    test ! -e ${lib.escapeShellArg missingTtWkv7KernelPath}
     touch "$out"
   '';
   tenstorrentKernelModule = config.boot.kernelPackages.tt-kmd;
@@ -136,6 +160,10 @@ let
 
   softwareOverviewUrl = "https://docs.tenstorrent.com/software/index.html";
   ttMetaliumToolsUrl = "https://docs.tenstorrent.com/tt-metal/latest/tt-metalium/tools/index.html";
+  ttWkv7Url = "https://github.com/marty1885/ttWKV7";
+  ttWkv7CommandName = "wkv7";
+  ttWkv7UpstreamTarget = "Wormhole";
+  ttWkv7ManagedHostTarget = "Blackhole P150";
   ttInferenceServerUrl = "https://github.com/tenstorrent/tt-inference-server";
   ttInferenceServerPrerequisitesUrl = "https://github.com/tenstorrent/tt-inference-server/blob/main/docs/prerequisites.md";
   ttInferenceServerWorkflowsUrl = "https://github.com/tenstorrent/tt-inference-server/blob/main/docs/workflows_user_guide.md";
@@ -413,6 +441,7 @@ in
       - Firmware bundle: `${tenstorrentSystemFirmware}/share/tenstorrent/firmware/${firmwareBundleName}`.
       - Native runtime: `${tenstorrentMetal}` with TT-NN and TT-Metalium.
       - Native LLM runtime: `${tenstorrentLlamaCppMetalium}`.
+      - Standalone WKV7 operator: `${tenstorrentTtWkv7}` with immutable runtime JIT kernels.
       - Linked-card topology: `${p150x2MeshDescriptorPath}` for the two p150a cards.
 
       Verification after rebuild and reboot:
@@ -454,6 +483,45 @@ in
       `tt-smi -s` with the selected runtime's requirements. A Nix rebuild never
       flashes firmware; use the explicit reviewed `tt-flash` command above if an
       update is required.
+
+      ## Standalone ttWKV7 operator
+
+      r[impl onix.tenstorrent.native_runtime.ttwkv7.compatibility_boundary]
+
+      The `${ttWkv7CommandName}` command packages ${ttWkv7Url} against the same
+      pinned TT-Metalium runtime as this host. It preserves the repository-relative
+      kernel source tree required for JIT compilation. Use `${ttWkv7CommandName} test`
+      for the CPU-oracle comparison and `${ttWkv7CommandName} bench` for timing.
+
+      Upstream currently describes and benchmarks these kernels for
+      **${ttWkv7UpstreamTarget}**. This host contains **${ttWkv7ManagedHostTarget}**
+      accelerators. A successful Nix build proves host compilation and package
+      layout only; it does not establish P150 numerical correctness or performance.
+      Upstream also has no declared license at the pinned revision, so Onix
+      classifies this package as unfree rather than inferring redistribution rights.
+
+      Device execution is manual. Select one physical card, stop the service that
+      owns it, run one bounded test process, review TT-Metal logs, and restore only
+      the service you stopped. `TT_VISIBLE_DEVICES` maps that selected physical card
+      to logical device 0, which is the unit mesh opened by upstream:
+
+      ```sh
+      physical_device_id=PHYSICAL_ID
+      sequence_count=1
+      token_count=1
+      owner_unit=SERVICE.service
+
+      sudo systemctl stop "$owner_unit"
+      TT_VISIBLE_DEVICES="$physical_device_id" \
+        ${ttWkv7CommandName} test chunked "$sequence_count" "$token_count"
+      sudo systemctl start "$owner_unit"
+      ```
+
+      Do not put this command in an automatic retry loop. Upstream warns that
+      repeated Metalium device create/destroy cycles can wedge a board. If the test
+      fails, capture `tt-smi`, service journals, and Inspector evidence before any
+      reset or architecture-support claim. The current executable is single-device;
+      it does not exercise the P150x2 mesh.
 
       ## Debugging and profiling
 
@@ -639,6 +707,7 @@ in
         tenstorrentLlamaCppMetalium
         tenstorrentMetal
         tenstorrentSystemFirmware
+        tenstorrentTtWkv7
       ];
   };
 }
