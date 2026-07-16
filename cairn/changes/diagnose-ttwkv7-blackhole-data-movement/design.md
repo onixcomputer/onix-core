@@ -55,6 +55,12 @@ The first audit found positive-oracle coupling: an expected stream materialized 
 
 One advisory-model request failed at transport and supplied no evidence; it was not retried or treated as validation. Residual uncertainty is physical only: offline compilation cannot establish runtime scheduling, CB liveness, or numerical transfer on the selected P150. Those are exactly the claims reserved for a later single authorized process.
 
+## Authorized Zero-State Boundary
+
+The authorized evidence root is `/var/tmp/ttwkv7-data-movement-20260716T205921Z`, mode `0700`, with separate writable cache and log directories and Inspector address `127.0.0.1:43135`. Strict loopback SSH trust resolves to `SHA256:0vd1vzTWrAONyquNKjwnsGY7a5bY2NJlvFamtxy/akY`. The executable runbook pins the active system, package, kernel tree, owner helper, physical device 1, exact `probe` exec line, owner restoration trap, and a five-minute root-systemd rollback timer.
+
+A preparation-only exact-line check initially failed because the manual check searched for backslash-escaped quote characters. It did not execute the runbook, stop the owner, arm the real rollback, or invoke ttWKV7; counters remained `0,0,0`. The corrected literal wrapper check, runtime preflight, owner-control validation, strict root SSH check, owner HTTP 200 check, and free-port check passed. A disposable root-systemd timer targeting only `true` armed and disarmed successfully without owner mutation. The owner remained active/running with zero restarts and HTTP 200. This preparation failure is retained in the evidence root and does not expand or consume the one-process authorization.
+
 ## Classification Contract
 
 A later authorized process must emit exactly one record for each of `chunked/reader-capture`, `decodeL/reader-capture`, `chunked/writer-scatter`, and `decodeL/writer-scatter`, plus one aggregate marker and raw status. Exact zero mismatches in all four yields `data-movement-validated` and activates a finite common-primitive microprobe. Reader-only failures yield `reader-layout-suspected`; writer failures yield `writer-layout-suspected`; mixed failures yield `data-movement-mixed`; incomplete output yields `partial-diagnostic`. Initialization, timeout, isolation, or orchestration blockers remain terminal and do not authorize retry.
