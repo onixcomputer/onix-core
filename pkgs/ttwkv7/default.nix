@@ -23,6 +23,7 @@ let
   invalidMode = "invalid-mode";
   invalidModeExitStatus = 2;
   usageDiagnostic = "usage:";
+  meshGraphDescriptorVariable = "TT_MESH_GRAPH_DESC_PATH";
   requiredKernelSources = [
     "wkv7_chunked_compute.cpp"
     "wkv7_decodeL_compute.cpp"
@@ -64,6 +65,7 @@ stdenv.mkDerivation {
     makeWrapper ${packageExecutable} "$out/bin/${primaryCommand}" \
       --set TT_METAL_HOME ${lib.escapeShellArg metaliumRuntimeRoot} \
       --set TT_METAL_RUNTIME_ROOT ${lib.escapeShellArg metaliumRuntimeRoot} \
+      --unset ${meshGraphDescriptorVariable} \
       --chdir "$out/share/ttwkv7"
     ln -s ${primaryCommand} "$out/bin/${aliasCommand}"
   '';
@@ -80,6 +82,14 @@ stdenv.mkDerivation {
     for kernel_source in ${lib.escapeShellArgs requiredKernelSources}; do
       test -f "${packageKernelDirectory}/$kernel_source"
     done
+
+    # Positive and negative wrapper topology coverage for
+    # r[verify onix.tenstorrent.native_runtime.ttwkv7.single_device_topology].
+    grep -F ${lib.escapeShellArg "unset ${meshGraphDescriptorVariable}"} "$out/bin/${primaryCommand}"
+    if grep -F ${lib.escapeShellArg "export ${meshGraphDescriptorVariable}"} "$out/bin/${primaryCommand}"; then
+      echo "ttWKV7 wrapper must not export a mesh graph descriptor" >&2
+      exit 1
+    fi
 
     # Negative no-device CLI coverage for
     # r[verify onix.tenstorrent.native_runtime.ttwkv7.package].
