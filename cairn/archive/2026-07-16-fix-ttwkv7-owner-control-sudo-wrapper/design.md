@@ -52,3 +52,11 @@ Because an unrelated SOPS secret is known to fail, the switch command's status a
 5. Activate from the exact reviewed commit through fingerprint-pinned loopback root SSH.
 6. Validate profile/current-system convergence, sudoers, helper grants, unauthorized-command rejection, owner health, and HTTP health.
 7. Sync, archive, and commit the evidence without hardware access.
+
+## Validation Evidence
+
+The activated predecessor failed exactly at the raw store sudo boundary with `sudo must be owned by uid 0 and have the setuid bit set`; polkit and the device-1 owner remained active with `Result=success`, `NRestarts=0`, and HTTP health `200`. The repaired package and strengthened positive/negative machine checks passed the accelerator inventory and complete host-closure builds.
+
+Commit `071d32f2` built as `/nix/store/vb9zjhp20rpg7g1g4ypmmcsq7n4s9d3p-nixos-system-britton-desktop-26.11.20260629.7a1a647` and was activated through strict loopback root SSH using the pinned ED25519 fingerprint `SHA256:0vd1vzTWrAONyquNKjwnsGY7a5bY2NJlvFamtxy/akY`. The switch retained the known unrelated mesh-LLM SOPS error and returned status 2, but activation continued and both `/run/current-system` and `/nix/var/nix/profiles/system` converged on the reviewed closure. Polkit recovery returned status 0 and `/etc/sudoers` passed `visudo` with only the three argument-exact owner-control grants.
+
+`ttwkv7-owner-control validate` passed through `/run/wrappers/bin/sudo`. A non-interactive restart request was rejected with status 1 and `sudo: a password is required`. After validation, the owner remained active/running with `Result=success`, `NRestarts=0`, and HTTP health `200`. No isolation, restore, lsof device inspection, probe invocation, or Tenstorrent device access occurred.
