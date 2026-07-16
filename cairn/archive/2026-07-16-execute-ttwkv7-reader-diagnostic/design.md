@@ -12,9 +12,9 @@ Use three preparation mechanisms, one adversarial review, and deterministic chec
 
 | Family | Mechanism | Claim | Evidence | State |
 |---|---|---|---|---|
-| Immutable dispatch | Pin package, kernels, wrapper target/vector, active system, device, and clean commit | Prevents launch drift | Exact path and wrapper-line checks | active |
-| Independent restoration | Arm root-systemd restart before isolation and retain EXIT-trap restoration | Owner recovers from shell/process failure | Timer/service state plus health evidence | active |
-| Complete observability | Require thirteen raw captures, twenty-six vectors, thirteen result rows, thirteen log records, and one aggregate marker | One process remains analyzable offline | Manifest/files/log checks and BLAKE3 hashes | active |
+| Immutable dispatch | Pin package, kernels, wrapper target/vector, active system, device, and clean commit | Prevents launch drift | Exact path and wrapper-line checks | validated |
+| Independent restoration | Arm root-systemd restart before isolation and retain EXIT-trap restoration | Owner recovers from shell/process failure | Timer/service state plus health evidence | validated |
+| Complete observability | Require thirteen raw captures, twenty-six vectors, thirteen result rows, thirteen log records, and one aggregate marker | One process remains analyzable offline | Manifest/files/log checks and BLAKE3 hashes | validated |
 | Immediate retry | Correct a failed preparation or output by launching again | Might produce missing evidence | Forbidden by authorization boundary | falsified |
 
 ## Reviewed Immutable Inputs
@@ -57,6 +57,16 @@ The immutable package self-test passes and its public wrapper rejects the unrevi
 The adversarial pass found a concurrent re-entry gap: separate processes could both observe zero counters before either incremented the invocation count. The runbook now atomically creates a persistent execution lock after exact authorization and immutable metadata validation but before traps, privilege, owner, or device operations. Positive and negative checker fixtures require that lock and reject device/auth changes, counter removal, duplicate diagnostic commands, and evidence-validator removal. The suggested extra-log concern is already excluded by requiring exactly thirteen total `case=` lines plus each exact pattern once. The suggested rollback concern is already excluded because failed restoration or health deliberately leaves the independent timer armed.
 
 Run root `/var/tmp/ttwkv7-reader-diagnostic-20260716T221616Z` is mode 0700 with isolated mode-0700 cache/log directories, strict ED25519 fingerprint `SHA256:0vd1vzTWrAONyquNKjwnsGY7a5bY2NJlvFamtxy/akY`, free loopback Inspector port 43136, absent execution lock, absent authorization file, and attempt/invocation/stop/rollback counters all zero. An initially abbreviated runbook hash was corrected and recorded before any runbook preflight. Executing the committed runbook without authorization failed at the exact authorization check, retained zero state, and left the owner active/running with `Result=success`, `NRestarts=0`, and HTTP 200.
+
+## Terminal Physical Evidence
+
+Exact authorization was recorded and the committed runbook consumed one atomic attempt and one diagnostic invocation. The process returned status 1, while evidence-completeness status was 0. All thirteen raw bf16 captures, twenty-six runtime vectors, thirteen manifest results, thirteen log records, and one aggregate marker are present under `/var/tmp/ttwkv7-reader-diagnostic-20260716T221616Z`.
+
+CB21 loopback, all six input uploads, complete state upload, and both writer scatters pass exactly. Decode `L=1` and chunked `L=32/Lreal=1` each report 71,680 mismatches: 6,144 input and 65,536 state. Chunked `L=32/Lreal=32` reports 262,144 mismatches: 196,608 input and 65,536 state. The exact vectors contain 18 fields, `nc=1`, and instances `[0,32)`. The terminal classification is `shared-reader-gather-suspected`; the result does not validate production readers or broad P150 support.
+
+The surviving mechanism is Blackhole DRAM-read alignment. Pinned Blackhole `noc_parameters.h` requires 64-byte DRAM-read alignment, while pinned Wormhole requires 32 bytes. Both production readers issue 32-byte face-row gathers whose source and destination residues independently alternate between 0 and 32 modulo 64. The exact state odd-row and input half-layout histograms are consistent with that shared violation. This is strong localization, not proof of a corrected implementation; a future device-free patch must eliminate every Blackhole-invalid 32-byte gather while retaining Wormhole semantics and compile for both architectures.
+
+Owner restoration passed with active/running state, `Result=success`, `NRestarts=0`, HTTP 200, absent rollback units, free Inspector port, advancing heartbeats, zero uncorrectable GDDR errors, and zero thermal trips. Artifact-tree hash is `blake3-CbroeojXOcdd4a4yZlnFCjKRLXPaujkCqzY0z2KNYDU=`, diagnostic-log hash is `blake3-8gXkgs7WQ3/Mq5DLZ1MrBBwgwfLVgpUfLjPcxTXidgo=`, and classification hash is `blake3-GEgAzFSurMavs50c/H/wk6t/H5uqoO+9m+ZdVDtBxj8=`.
 
 ## Authorization Boundary
 
