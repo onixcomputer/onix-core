@@ -19,3 +19,7 @@ Install checks will assert both sides of the contract: the generated wrapper con
 ## Validation
 
 Build the package and layout checks, inspect the generated wrapper contract, deploy a clean committed generation, isolate physical device 1, run one bounded `wkv7 test chunked 1 1`, capture TT-SMI and TT-Metal evidence, and restore the owning inference service regardless of result. Do not automatically retry a failed hardware process.
+
+## Observed Outcome
+
+The corrected run used TT-Metal auto-discovery with no mesh graph descriptor, proving the wrapper topology boundary. Device creation completed and execution reached JIT compilation. The Blackhole compiler then rejected upstream's Wormhole-specific `math::set_addr_mod_base()` call in `wkv7_chunked_compute.cpp`; no WKV kernel executed and P150 compatibility remains unestablished. The owner API recovered, both cards retained healthy DRAM, heartbeats advanced, and no uncorrected GDDR errors or thermal trips appeared.

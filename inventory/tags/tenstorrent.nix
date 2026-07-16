@@ -500,6 +500,12 @@ in
       Upstream also has no declared license at the pinned revision, so Onix
       classifies this package as unfree rather than inferring redistribution rights.
 
+      The bounded P150 test on 2026-07-16 confirmed that the packaged wrapper clears
+      the linked-card descriptor and TT-Metal reaches single-device JIT compilation.
+      The Blackhole compiler then rejected upstream's Wormhole-specific
+      `math::set_addr_mod_base()` call in `wkv7_chunked_compute.cpp`. No WKV kernel
+      executed, so P150 runtime support remains blocked on a kernel port.
+
       Device execution is manual. Select one physical card, stop the service that
       owns it, run one bounded test process, review TT-Metal logs, and restore only
       the service you stopped. `TT_VISIBLE_DEVICES` maps that selected physical card
