@@ -61,6 +61,24 @@ The authorized evidence root is `/var/tmp/ttwkv7-data-movement-20260716T205921Z`
 
 A preparation-only exact-line check initially failed because the manual check searched for backslash-escaped quote characters. It did not execute the runbook, stop the owner, arm the real rollback, or invoke ttWKV7; counters remained `0,0,0`. The corrected literal wrapper check, runtime preflight, owner-control validation, strict root SSH check, owner HTTP 200 check, and free-port check passed. A disposable root-systemd timer targeting only `true` armed and disarmed successfully without owner mutation. The owner remained active/running with zero restarts and HTTP 200. This preparation failure is retained in the evidence root and does not expand or consume the one-process authorization.
 
+## Terminal Authorized Result
+
+Exactly one process ran from clean commit `00965bc07acdb5722561317095e78c2f8da4695c` with counters `1,1,1`. It emitted exactly four records and one aggregate marker:
+
+- `chunked/reader-capture`: 450896 mismatches, first mismatch 32, expected 0, actual `-4.7387116e-38`;
+- `decodeL/reader-capture`: 71680 mismatches, first mismatch 32, expected `-0.2734375`, actual `-3`;
+- `chunked/writer-scatter`: zero mismatches;
+- `decodeL/writer-scatter`: zero mismatches;
+- aggregate `data-movement device probe: FAIL`, diagnostic status 1.
+
+Post-run source audit found that the probe supplied `kTokenCount=1` as runtime argument 1 to both readers. The pinned chunked reader defines argument 1 as the on-device chunk size `L=cl`, always 32, and separately defines argument 12 as `Lreal`; the reviewed probe therefore ran chunked with invalid `L=1, Lreal=1`. This explains why its first row could match while expected neutral tail rows did not, and it invalidates the chunked reader record as evidence about the production vector. DecodeL correctly uses token count 1 and retains a real exact mismatch, but the exhausted process cannot distinguish production-reader behavior from the diagnostic's host state packing or capture boundary. Both exact production-writer configurations passed and narrowly validate the reviewed tagged writer scatter/extraction path.
+
+The aggregate classification is `partial-diagnostic`, not `reader-layout-suspected`: one required reader record used an invalid runtime vector. No finite primitive suite is activated. Any corrected reader diagnostic requires a new Cairn change, package, runbook, zero-state boundary, and explicit authorization; this process must not be retried.
+
+Restoration succeeded independently of the nonzero diagnostic: restore, restored-health, and rollback-disarm statuses are zero; the rollback units are absent/inactive; the owner is active/running with `Result=success`, `NRestarts=0`, and HTTP 200; Inspector port 43135 is free. Both boards retain healthy DRAM, zero uncorrectable GDDR errors, zero thermal trips, and advancing heartbeats. Retained runtime warnings remain limited to the known power-state `Invalid argument`, compatible single-erisc fallback, absent motherboard mapping, read-only optional fabric exports, and denied shared-memory statistics.
+
+Evidence is rooted at `/var/tmp/ttwkv7-data-movement-20260716T205921Z`. `diagnostic.log` hashes to `blake3-ZSf+bTDmeVa7DppVDYG+B9FWOiTgoti/+Wimwdkoiwk=` and `classification.txt` hashes to `blake3-ZQsclVHJ7Z/6IlGwgo6Bk+WIHEu/fLV1Fh/lu+3tQoI=`.
+
 ## Classification Contract
 
 A later authorized process must emit exactly one record for each of `chunked/reader-capture`, `decodeL/reader-capture`, `chunked/writer-scatter`, and `decodeL/writer-scatter`, plus one aggregate marker and raw status. Exact zero mismatches in all four yields `data-movement-validated` and activates a finite common-primitive microprobe. Reader-only failures yield `reader-layout-suspected`; writer failures yield `writer-layout-suspected`; mixed failures yield `data-movement-mixed`; incomplete output yields `partial-diagnostic`. Initialization, timeout, isolation, or orchestration blockers remain terminal and do not authorize retry.

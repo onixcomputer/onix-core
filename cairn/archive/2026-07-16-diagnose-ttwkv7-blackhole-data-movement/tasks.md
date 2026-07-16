@@ -11,5 +11,5 @@
 - [x] [serial] Bind the exact authorization, package, device, wrapper target, restoration controls, and counters into an executable one-shot. r[onix.tenstorrent.native_runtime.ttwkv7.data_movement_diagnostic]
 - [x] [serial] Validate and commit the authorization boundary before preparing mutable evidence state. r[onix.tenstorrent.native_runtime.ttwkv7.data_movement_diagnostic]
 - [x] [serial] Prepare a mode-0700 evidence root, strict loopback trust, zero counters, and a non-mutating rollback rehearsal; then commit the zero-state boundary. r[onix.tenstorrent.native_runtime.ttwkv7.data_movement_diagnostic]
-- [ ] [serial] Consume exactly one authorized process, restore owner health, and classify the four exact records without retry. r[onix.tenstorrent.native_runtime.ttwkv7.data_movement_diagnostic]
-- [ ] [serial] Sync the accepted requirement, archive the terminal change, and preserve evidence hashes and non-claims. r[onix.tenstorrent.native_runtime.ttwkv7.data_movement_diagnostic]
+- [x] [serial] Consume exactly one authorized process, restore owner health, and classify the four exact records without retry. r[onix.tenstorrent.native_runtime.ttwkv7.data_movement_diagnostic]
+- [x] [serial] Sync the accepted requirement, archive the terminal change, and preserve evidence hashes and non-claims. r[onix.tenstorrent.native_runtime.ttwkv7.data_movement_diagnostic]

@@ -32,6 +32,6 @@ r[onix.tenstorrent.native_runtime.ttwkv7.data_movement_diagnostic] Onix MUST pro
 - THEN it records exactly one result for each reader/path and writer/path combination, one aggregate marker, raw status, invocation count one, and healthy independent owner restoration
 
 #### Scenario: Physical output is incomplete or mismatched
-- GIVEN a nonzero mismatch, missing or duplicate record, nonzero status, timeout, initialization failure, isolation failure, or orchestration failure
+- GIVEN a nonzero mismatch, missing or duplicate record, nonzero status, timeout, initialization failure, isolation failure, orchestration failure, or invalid reviewed runtime vector
 - WHEN evidence is classified
 - THEN the result is narrow and terminal for that authorization and no retry, direct-runtime command, alternate probe, or broader compatibility claim is permitted
