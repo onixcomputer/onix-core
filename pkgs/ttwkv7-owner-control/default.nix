@@ -4,7 +4,6 @@
   coreutils,
   systemd,
   lsof,
-  sudo,
   commandName,
   ownerUnit,
   devicePath,
@@ -12,9 +11,10 @@
 let
   systemctlCommand = "${systemd}/bin/systemctl";
   lsofCommand = "${lsof}/bin/lsof";
-  sudoCommand = "${sudo}/bin/sudo";
+  sudoCommand = "/run/wrappers/bin/sudo";
 in
 # r[impl onix.tenstorrent.native_runtime.ttwkv7.owner_control]
+# r[impl onix.tenstorrent.native_runtime.ttwkv7.owner_control.sudo_wrapper]
 writeShellApplication {
   name = commandName;
   runtimeInputs = [ coreutils ];

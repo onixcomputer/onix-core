@@ -60,6 +60,8 @@ let
   ttWkv7OwnerControlCommandName = "ttwkv7-owner-control";
   ttWkv7OwnerControlSystemctl = "${brittonDesktopConfig.systemd.package}/bin/systemctl";
   ttWkv7OwnerControlLsof = "${pkgs.lsof}/bin/lsof";
+  ttWkv7OwnerControlSudoWrapper = "/run/wrappers/bin/sudo";
+  forbiddenTtWkv7OwnerControlStoreSudo = "${pkgs.sudo}/bin/sudo";
   requiredTtWkv7OwnerControlCommands = [
     "${ttWkv7OwnerControlSystemctl} stop ${llamaUnitName}"
     "${ttWkv7OwnerControlSystemctl} start ${llamaUnitName}"
@@ -276,6 +278,7 @@ let
   # r[verify onix.tenstorrent.native_runtime.ttwkv7.host],
   # r[verify onix.tenstorrent.native_runtime.ttwkv7.compatibility_boundary],
   # r[verify onix.tenstorrent.native_runtime.ttwkv7.owner_control],
+  # r[verify onix.tenstorrent.native_runtime.ttwkv7.owner_control.sudo_wrapper],
   # r[verify onix.tenstorrent.vllm.p150_llama], and
   # r[verify onix.tenstorrent.vllm.secrets].
   brittonDesktopAcceleratorInventory = pkgs.runCommand "britton-desktop-accelerator-inventory" { } ''
@@ -453,6 +456,11 @@ let
       grep -F -- ${lib.escapeShellArg llamaDevicePath} ${lib.escapeShellArg ttWkv7OwnerControlExecutable} >/dev/null
       grep -F -- ${lib.escapeShellArg ttWkv7OwnerControlSystemctl} ${lib.escapeShellArg ttWkv7OwnerControlExecutable} >/dev/null
       grep -F -- ${lib.escapeShellArg ttWkv7OwnerControlLsof} ${lib.escapeShellArg ttWkv7OwnerControlExecutable} >/dev/null
+      grep -F -- ${lib.escapeShellArg ttWkv7OwnerControlSudoWrapper} ${lib.escapeShellArg ttWkv7OwnerControlExecutable} >/dev/null
+      if grep -F -- ${lib.escapeShellArg forbiddenTtWkv7OwnerControlStoreSudo} ${lib.escapeShellArg ttWkv7OwnerControlExecutable}; then
+        echo "${ttWkv7OwnerControlCommandName} must not invoke the non-setuid store sudo executable" >&2
+        exit 1
+      fi
       if grep -F -- "TT_VISIBLE_DEVICES" ${lib.escapeShellArg ttWkv7OwnerControlExecutable}; then
         echo "${ttWkv7OwnerControlCommandName} must not select a device" >&2
         exit 1
