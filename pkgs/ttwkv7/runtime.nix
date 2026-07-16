@@ -21,11 +21,13 @@ let
   probePreflightMode = "validate-runtime";
   probeDeviceMode = "probe";
   probeForwardedArgument = "no-device-probe-argument";
+  hostileOutputPath = "/nonexistent-ttwkv7-output";
   invalidMode = "invalid-mode";
   invalidModeExitStatus = 2;
   wrapperFailureStatus = 1;
   usageDiagnostic = "usage:";
   preflightPassDiagnostic = "ttWKV7 runtime state preflight: PASS";
+  selfTestPassDiagnostic = "constant-tile oracle self-test: PASS";
   cachePathDiagnostic = "TT_METAL_CACHE must be an absolute writable path outside /nix/store";
   logsPathDiagnostic = "TT_METAL_LOGS_PATH must be an absolute writable path outside /nix/store";
   inspectorAddressDiagnostic = "TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS must be";
@@ -83,7 +85,7 @@ stdenvNoCC.mkDerivation {
       --unset ${meshGraphDescriptorVariable} \
       --chdir "$out/share/ttwkv7"
     substitute ${./probe-wrapper.sh} "$out/bin/${probeCommand}" \
-      --replace-fail '@probeExecutable@' ${lib.escapeShellArg wrappedProbeExecutable}
+      --replace-fail '@probeExecutable@' "$out/libexec/ttwkv7/wkv7-constant-probe-runtime"
     chmod +x "$out/bin/${probeCommand}"
     ln -s ${primaryCommand} "$out/bin/${aliasCommand}"
 
@@ -102,6 +104,31 @@ stdenvNoCC.mkDerivation {
     test -x ${packageExecutable}
     test -x ${probeExecutable}
     test -x ${wrappedProbeExecutable}
+
+    # Positive and negative production-dispatch coverage for
+    # r[verify onix.tenstorrent.native_runtime.ttwkv7.production_probe_wrapper].
+    production_probe_wrapper="$out/bin/${probeCommand}"
+    production_probe_target="$out/libexec/ttwkv7/wkv7-constant-probe-runtime"
+    test -x "$production_probe_target"
+    grep -F "exec \"$production_probe_target\" \"\$@\"" "$production_probe_wrapper"
+    if grep -F 'exec "$out/' "$production_probe_wrapper"; then
+      echo "ttWKV7 production probe wrapper must not expand out at runtime" >&2
+      exit 1
+    fi
+    if grep -F '@probeExecutable@' "$production_probe_wrapper"; then
+      echo "ttWKV7 production probe wrapper retained its executable placeholder" >&2
+      exit 1
+    fi
+    missing_out_log="$(mktemp)"
+    env -u out "$production_probe_wrapper" ${lib.escapeShellArg probeSelfTestMode} \
+      >"$missing_out_log"
+    grep -F ${lib.escapeShellArg selfTestPassDiagnostic} "$missing_out_log"
+    hostile_out_log="$(mktemp)"
+    env out=${lib.escapeShellArg hostileOutputPath} \
+      "$production_probe_wrapper" ${lib.escapeShellArg probeSelfTestMode} \
+      >"$hostile_out_log"
+    grep -F ${lib.escapeShellArg selfTestPassDiagnostic} "$hostile_out_log"
+
     for kernel_source in ${lib.escapeShellArgs requiredKernelSources}; do
       test -f "${packageKernelDirectory}/$kernel_source"
     done
