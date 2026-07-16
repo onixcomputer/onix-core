@@ -11,4 +11,4 @@
 
 ## Phase 3: Validation
 
-- [ ] [serial] Run Rust tests, package and machine checks, formatting, pre-commit, and Cairn validation; record any hardware execution blocker without weakening restoration safety. r[onix.tenstorrent.model_performance.managed_benchmark]
+- [x] [serial] Run Rust tests, package and machine checks, formatting, pre-commit, and Cairn validation; record any hardware execution blocker without weakening restoration safety. r[onix.tenstorrent.model_performance.managed_benchmark]
