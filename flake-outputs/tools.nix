@@ -43,6 +43,7 @@ in
     opendeck = pkgs.callPackage ../pkgs/opendeck { };
     open-notebook = pkgs.callPackage ../pkgs/open-notebook { };
     ttsim = pkgs.callPackage ../pkgs/ttsim { };
+    tt-vibethinker-bench = pkgs.callPackage ../pkgs/tt-vibethinker-bench { };
   }
   // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
     rbw-pinentry = pkgs.callPackage ../pkgs/rbw-pinentry { };

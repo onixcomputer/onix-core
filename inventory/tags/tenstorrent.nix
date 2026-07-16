@@ -481,6 +481,26 @@ in
       in a focused reproduction: they instrument kernels, can alter timing or
       binary size, and are not healthy-service defaults.
 
+      ### Managed VibeThinker benchmark matrix
+
+      r[impl onix.tenstorrent.model_performance.managed_benchmark]
+
+      Run the fixed device-0, device-1, and physical `1x2` comparison with:
+
+      ```sh
+      sudo tt-vibethinker-bench
+      ```
+
+      The manually invoked oneshot records whether VibeThinker was active, stops
+      it before acquiring either P150, and restores that prior active state on
+      success, benchmark failure, or ordinary termination. Results, TT-Metal
+      cache entries, and Inspector logs stay outside the source tree. The latest
+      validated result is `/var/lib/tt-vibethinker-benchmark/latest-summary.json`;
+      per-run evidence remains below the same state directory.
+
+      This diagnostic command does not enable production mesh aggregation. The
+      VibeThinker service remains on its measured single-device latency path.
+
       ### Current llama.cpp performance profile
 
       r[impl onix.tenstorrent.model_performance.trace_replay]

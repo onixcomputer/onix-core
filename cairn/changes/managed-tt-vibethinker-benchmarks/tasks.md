@@ -1,13 +1,13 @@
 ## Phase 1: Lifecycle and benchmark core
 
-- [ ] [serial] Define the managed benchmark lifecycle, restoration contract, and isolated artifact boundary. r[onix.tenstorrent.model_performance.managed_benchmark]
-- [ ] [serial] Add a Rust benchmark core with positive matrix/result tests and negative malformed-output, wrong-topology, and invalid-argument tests. r[onix.tenstorrent.model_performance.managed_benchmark]
+- [x] [serial] Define the managed benchmark lifecycle, restoration contract, and isolated artifact boundary. r[onix.tenstorrent.model_performance.managed_benchmark]
+- [x] [serial] Add a Rust benchmark core with positive matrix/result tests and negative malformed-output, wrong-topology, and invalid-argument tests. r[onix.tenstorrent.model_performance.managed_benchmark]
 
 ## Phase 2: Nix integration
 
-- [ ] [serial] Package the benchmark core and add a root-operated `britton-desktop` oneshot whose trap restores only a previously active VibeThinker service. r[onix.tenstorrent.model_performance.managed_benchmark]
-- [ ] [serial] Add positive and negative machine checks for command wiring, service restoration, mesh orientation, and source-tree artifact isolation. r[onix.tenstorrent.model_performance.managed_benchmark]
-- [ ] [serial] Document the operator command and result location without changing production VibeThinker mesh policy. r[onix.tenstorrent.model_performance.managed_benchmark]
+- [x] [serial] Package the benchmark core and add a root-operated `britton-desktop` oneshot whose trap restores only a previously active VibeThinker service. r[onix.tenstorrent.model_performance.managed_benchmark]
+- [x] [serial] Add positive and negative machine checks for command wiring, service restoration, mesh orientation, and source-tree artifact isolation. r[onix.tenstorrent.model_performance.managed_benchmark]
+- [x] [serial] Document the operator command and result location without changing production VibeThinker mesh policy. r[onix.tenstorrent.model_performance.managed_benchmark]
 
 ## Phase 3: Validation
 

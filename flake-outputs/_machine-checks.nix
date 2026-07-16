@@ -25,6 +25,12 @@ let
   forbiddenInitrdModule = "nvidia";
   removedNvidiaServiceName = "docker-sglang-diffusion-krea2-britton-desktop";
   vibeThinkerServiceName = "llamacpp-server-vibethinker-britton-desktop";
+  ttBenchmarkServiceName = "tt-vibethinker-benchmark";
+  ttBenchmarkCommandName = "tt-vibethinker-bench";
+  ttBenchmarkStateDirectory = ttBenchmarkServiceName;
+  ttBenchmarkStateDir = "/var/lib/${ttBenchmarkStateDirectory}";
+  ttBenchmarkCacheDir = "/var/cache/${ttBenchmarkServiceName}";
+  ttBenchmarkLogsDir = "/var/log/${ttBenchmarkServiceName}";
   supraRouterServiceName = "llamacpp-server-supra-router";
   llamaContainerName = "tt-inference-server-llama-3-1-8b-instruct-p150";
   llamaServiceName = "docker-${llamaContainerName}";
@@ -90,6 +96,29 @@ let
   keepsVibeThinkerWarmupDisabled = vibeThinkerWarmupCommand == null || vibeThinkerWarmupCommand == "";
   keepsVibeThinkerRunningAcrossSwitch =
     !(brittonDesktopServices.${vibeThinkerServiceName}.restartIfChanged or true);
+  vibeThinkerMeshEnvironmentValue = serviceEnvironmentValue vibeThinkerServiceName "GGML_METALIUM_MESH_SHAPE";
+  keepsVibeThinkerOnSingleDevice = vibeThinkerMeshEnvironmentValue == null;
+  hasManagedTtBenchmark = builtins.hasAttr ttBenchmarkServiceName brittonDesktopServices;
+  ttBenchmarkService = brittonDesktopServices.${ttBenchmarkServiceName} or { };
+  ttBenchmarkServiceConfig = ttBenchmarkService.serviceConfig or { };
+  ttBenchmarkExecStart = ttBenchmarkServiceConfig.ExecStart or null;
+  ttBenchmarkWorkingDirectory = ttBenchmarkServiceConfig.WorkingDirectory or null;
+  ttBenchmarkWantedBy = ttBenchmarkService.wantedBy or [ ];
+  ttBenchmarkEnvironment = ttBenchmarkService.environment or { };
+  hasIsolatedTtBenchmarkState =
+    (ttBenchmarkServiceConfig.StateDirectory or null) == ttBenchmarkStateDirectory
+    && (ttBenchmarkServiceConfig.CacheDirectory or null) == ttBenchmarkServiceName
+    && (ttBenchmarkServiceConfig.LogsDirectory or null) == ttBenchmarkServiceName
+    && ttBenchmarkWorkingDirectory == ttBenchmarkStateDir
+    && (ttBenchmarkEnvironment.HOME or null) == ttBenchmarkStateDir
+    && lib.hasPrefix "/var/lib/" ttBenchmarkWorkingDirectory;
+  ttBenchmarkIsManual = ttBenchmarkWantedBy == [ ];
+  ttBenchmarkCommandPackage = lib.findFirst (
+    package: lib.hasInfix ttBenchmarkCommandName (toString package)
+  ) null brittonDesktopConfig.environment.systemPackages;
+  hasTtBenchmarkCommand = ttBenchmarkCommandPackage != null;
+  ttBenchmarkCommandExecutable =
+    if hasTtBenchmarkCommand then lib.getExe ttBenchmarkCommandPackage else null;
   serviceExecStart = serviceName: brittonDesktopServices.${serviceName}.serviceConfig.ExecStart;
   hasValidatedMetaliumWorkerBudget =
     serviceName:
@@ -155,12 +184,16 @@ let
   llamaPreStart = brittonDesktopServices.${llamaServiceName}.preStart or "";
   repairsIncompleteLlamaWeights = lib.hasInfix "model-cache-repair" llamaPreStart;
   hasToolsReference = lib.hasInfix ttMetaliumToolsUrl tenstorrentHostGuide;
+  documentsManagedTtBenchmark =
+    lib.hasInfix "sudo ${ttBenchmarkCommandName}" tenstorrentHostGuide
+    && lib.hasInfix "${ttBenchmarkStateDir}/latest-summary.json" tenstorrentHostGuide;
 
   # Positive and negative coverage for
   # r[verify onix.britton_desktop.accelerators.inventory],
   # r[verify onix.britton_desktop.accelerators.services],
   # r[verify onix.tenstorrent.model_performance.trace_replay],
   # r[verify onix.tenstorrent.model_performance.concurrent_serving],
+  # r[verify onix.tenstorrent.model_performance.managed_benchmark],
   # r[verify onix.tenstorrent.vllm.p150_llama], and
   # r[verify onix.tenstorrent.vllm.secrets].
   brittonDesktopAcceleratorInventory = pkgs.runCommand "britton-desktop-accelerator-inventory" { } ''
@@ -212,6 +245,26 @@ let
       echo "${vibeThinkerServiceName} must not be interrupted by the supplementary Llama activation"
       exit 1
     ''}
+    ${lib.optionalString (!keepsVibeThinkerOnSingleDevice) ''
+      echo "${vibeThinkerServiceName} must remain on the accepted single-device serving path"
+      exit 1
+    ''}
+    ${lib.optionalString (!hasManagedTtBenchmark) ''
+      echo "${brittonDesktopName} must expose the managed TT benchmark service"
+      exit 1
+    ''}
+    ${lib.optionalString (hasManagedTtBenchmark && !hasIsolatedTtBenchmarkState) ''
+      echo "${ttBenchmarkServiceName} must isolate state, cache, logs, and working directory outside the source tree"
+      exit 1
+    ''}
+    ${lib.optionalString (hasManagedTtBenchmark && !ttBenchmarkIsManual) ''
+      echo "${ttBenchmarkServiceName} must remain a manually invoked benchmark"
+      exit 1
+    ''}
+    ${lib.optionalString (!hasTtBenchmarkCommand) ''
+      echo "${brittonDesktopName} must install the ${ttBenchmarkCommandName} operator command"
+      exit 1
+    ''}
     ${lib.optionalString (!keepsSupraOnCpu) ''
       echo "${supraRouterServiceName} must retain the validated CPU-only four-thread runtime"
       exit 1
@@ -243,6 +296,23 @@ let
     ${lib.optionalString (!hasToolsReference) ''
       echo "${brittonDesktopName} Tenstorrent guide must reference ${ttMetaliumToolsUrl}"
       exit 1
+    ''}
+    ${lib.optionalString (!documentsManagedTtBenchmark) ''
+      echo "${brittonDesktopName} Tenstorrent guide must document the managed benchmark command and summary"
+      exit 1
+    ''}
+    ${lib.optionalString (ttBenchmarkExecStart != null) ''
+      test -x ${lib.escapeShellArg ttBenchmarkExecStart}
+      grep -F -- "trap restore_vibethinker EXIT HUP INT TERM" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
+      grep -F -- "systemctl is-active --quiet" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
+      grep -F -- "last-run-succeeded" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
+      grep -F -- "--cache-root ${ttBenchmarkCacheDir}" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
+      grep -F -- "--logs-root ${ttBenchmarkLogsDir}" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
+    ''}
+    ${lib.optionalString (ttBenchmarkCommandExecutable != null) ''
+      test -x ${lib.escapeShellArg ttBenchmarkCommandExecutable}
+      grep -F -- "rm -f /run/${ttBenchmarkServiceName}-last-run-succeeded" ${lib.escapeShellArg ttBenchmarkCommandExecutable} >/dev/null
+      grep -F -- "did not complete a new validated run" ${lib.escapeShellArg ttBenchmarkCommandExecutable} >/dev/null
     ''}
     touch "$out"
   '';
