@@ -54,6 +54,18 @@ The fresh runbook is committed with filesystem mode `0755` and Git mode `100755`
 
 A disposable root-systemd timer rehearsal armed, proved active, stopped, and disappeared without service mutation. Evidence root `/var/tmp/ttwkv7-constant-probe-20260716T185657Z` is mode 0700 and binds repaired package `/nix/store/3f485zv9vz38rd8048bwc7qkshg2m5cl-ttwkv7-unstable-2026-06-22`, unchanged kernels, active closure, owner-control helper, device 1, Inspector `127.0.0.1:43131`, strict loopback SSH fingerprint, and explicit authorization. Production dispatch and hostile-environment self-tests pass, runtime-state preflight passes, the port is unused, the owner is active with HTTP 200, and invocation, service-stop, and rollback-arm counts are zero.
 
+## Measured Outcome
+
+The committed runbook armed and proved the independent rollback timer, isolated the prior owner, proved its container inactive and device 1 without an open owner, then changed invocation count from zero to one immediately before the sole process.
+
+The exact package opened selected Blackhole device 1 and returned status zero. Evidence contains exactly one record for every combination of seven reviewed patterns and lengths 1 and 32; all fourteen records report `mismatches=0 PASS`, and the log contains exactly one `constant-tile device probe: PASS` marker. The classifier rejects missing, duplicate, extra-pattern, wrong-length, nonzero-mismatch, absent-marker, or nonzero-status outcomes.
+
+Metalium emitted non-fatal environmental warnings: power-state setting returned invalid argument, firmware capability selected compatible single-erisc fallback, optional fabric mapping exports targeted a read-only store path, and shared-memory statistics creation was denied. These warnings did not prevent JIT execution, exact tile comparisons, status zero, or orderly device close; they are not generalized away from this exact run.
+
+The exit trap restored the owner with status 0, endpoint health recovered to HTTP 200, and rollback disarm returned 0. The rollback units are not found/inactive. The owner is active/running with `Result=success` and `NRestarts=0`; both boards retain healthy DRAM, zero uncorrectable GDDR errors, zero thermal trips, and advancing heartbeats.
+
+Outcome is `validated-exact-constant-tiles` for package `/nix/store/3f485zv9vz38rd8048bwc7qkshg2m5cl-ttwkv7-unstable-2026-06-22`, the unchanged immutable kernels, selected P150 device 1, seven patterns, and lengths 1 and 32. This does not establish full-WKV, decode, performance, or general P150 compatibility. Evidence is retained at `/var/tmp/ttwkv7-constant-probe-20260716T185657Z`.
+
 ## Risks / Trade-offs
 
 - Fake-target execution proves argument semantics but not hardware behavior; actual production path inspection and the pinned self-test independently cover composition without device access.
@@ -63,4 +75,4 @@ A disposable root-systemd timer rehearsal armed, proved active, stopped, and dis
 
 ## Search Budget
 
-Repair search is bounded to three argument-preservation mechanisms, one secondary adversarial review, and focused deterministic checks. Physical search is one process on device 1 under the committed timeout. The first exact terminal result ends the change.
+Repair search used three argument-preservation mechanisms, one secondary adversarial review, and focused deterministic checks. The explicit-mode candidate passed its adversarial oracles. The one-process physical search terminated validated with fourteen unique exact passes, one final pass marker, process status zero, and healthy restoration.
