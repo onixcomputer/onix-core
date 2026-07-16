@@ -3,7 +3,7 @@
 - [x] [serial] Validate proposal, design, tasks, and the timed-restoration requirement before service or device action. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.timed_restore]
 - [x] [serial] Rebuild the focused package and dual-architecture gate at the exact reviewed revision. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.timed_restore]
 - [x] [serial] Prove the one-shot has one probe boundary, exact targets, independent rollback, fail-closed negative paths, and no automatic retry. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.timed_restore]
-- [ ] [serial] Prepare unique evidence state, verify strict root SSH and rollback scheduling, pass no-device runtime preflight, and retain invocation count zero. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.timed_restore]
+- [x] [serial] Prepare unique evidence state, verify strict root SSH and rollback scheduling, pass no-device runtime preflight, and retain invocation count zero. r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.timed_restore]
 
 ## Phase 2: Authorized physical boundary
 

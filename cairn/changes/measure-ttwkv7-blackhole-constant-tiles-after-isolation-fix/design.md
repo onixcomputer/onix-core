@@ -51,6 +51,12 @@ False completion includes zero invocation, a passing subset, status zero without
 
 Root SSH is used only to prove the channel, arm/show/stop the named rollback timer, and inspect its state. Owner stop, ownership proof, and ordinary restoration remain inside the reviewed least-privilege helper. Hardware evidence is limited to tt-smi snapshots and the single probe process.
 
+## Validation Evidence Before Physical Invocation
+
+The exact package and dual-architecture checks passed. Cairn validation plus proposal, design, and task gates passed. The runbook passed Bash syntax, ShellCheck, tree formatting, `git diff --check`, a negative extra-argument test, one-literal-probe static counting, ordering checks that place rollback before isolation and count before probe, and a no-retry scan.
+
+A strict fingerprint-pinned root SSH rehearsal created, proved active, stopped, and removed a disposable root-systemd timer without changing the owner service. The unique evidence root was then prepared with mode 0700, exact metadata, one ED25519 known-host key matching `SHA256:0vd1vzTWrAONyquNKjwnsGY7a5bY2NJlvFamtxy/akY`, writable cache/log paths, an unused Inspector port, passing owner-control and root-SSH preflights, and a passing package `validate-runtime` result. The owner remained active and healthy with HTTP 200; invocation count, service-stop attempts, and rollback-arm attempts all remained zero.
+
 ## Search Budget
 
 Primary authority is the pinned package, active NixOS closure, systemd, retained evidence, and raw probe output. Offline review is bounded to package, architecture, shell, lifecycle, metadata, and no-device checks. Physical search is bounded to one process invocation, one selected device, and one 180-second timeout. Validated or any exact blocker terminates the search.
