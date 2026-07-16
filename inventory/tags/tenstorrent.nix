@@ -500,11 +500,14 @@ in
       Upstream also has no declared license at the pinned revision, so Onix
       classifies this package as unfree rather than inferring redistribution rights.
 
-      The bounded P150 test on 2026-07-16 confirmed that the packaged wrapper clears
-      the linked-card descriptor and TT-Metal reaches single-device JIT compilation.
-      The Blackhole compiler then rejected upstream's Wormhole-specific
-      `math::set_addr_mod_base()` call in `wkv7_chunked_compute.cpp`. No WKV kernel
-      executed, so P150 runtime support remains blocked on a kernel port.
+      The first bounded P150 test on 2026-07-16 confirmed that the packaged wrapper
+      clears the linked-card descriptor, then stopped at upstream's Wormhole-only
+      SFPU setup. The follow-up package delegates that setup to Metalium's
+      architecture-selected helpers. A single follow-up run JIT-compiled all 21
+      kernel artifacts and executed the chunked WKV path, but its CPU oracle failed:
+      output/state PCC were 0.565670/0.512575 and normalized mean-square errors were
+      1.00e+00/9.87e-01. P150 numerical compatibility is therefore disproved for
+      the tested package and shape; no broader Blackhole support is claimed.
 
       Device execution is manual. Select one physical card, stop the service that
       owns it, run one bounded test process, review TT-Metal logs, and restore only

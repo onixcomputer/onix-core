@@ -44,6 +44,14 @@ Review must verify that the helper pair is available through the pinned compute 
 
 Physical device 1 is owned by `docker-tt-inference-server-llama-3-1-8b-instruct-p150.service`. Capture service and TT-SMI state, stop only that unit, perform one bounded `TT_VISIBLE_DEVICES=1 wkv7 test chunked 1 1` invocation, then restore the prior active state through a trap. Device 0's VibeThinker service remains untouched.
 
+## Measured outcome
+
+Commit `eaa6d263` was deployed as generation `/nix/store/qhlp0ghkcqpdvvrnipqwipw3qa141aid-nixos-system-britton-desktop-26.11.20260629.7a1a647` with package `/nix/store/mdw5x4vgmq1nnnl9zd7nhyfxmydzcn9c-ttwkv7-unstable-2026-06-22`. The single device-1 test JIT-compiled all 21 kernel artifacts and executed the chunked WKV path, proving that the architecture-selected helper port crosses the prior compiler boundary.
+
+The CPU oracle rejected the numerical result: `pcc_out=0.565670`, `pcc_state=0.512575`, `nmse_out=1.00e+00`, and `nmse_state=9.87e-01`, against the upstream tolerance of `6e-02`. The process returned status 1. This disproves P150 numerical compatibility for the tested package and shape; the helper port does not establish broader Blackhole correctness.
+
+No retry was made. The owner service recovered with a passing health endpoint, `Result=success`, and `NRestarts=0`. Both boards retained healthy DRAM, zero uncorrected GDDR errors, zero thermal trips, and advancing heartbeats. Evidence is retained at `/var/tmp/ttwkv7-smoke-blackhole-sfpu-20260716T105341Z`.
+
 ## Search budget
 
-Use the pinned Metalium source as primary authority, the pinned ttWKV7 source as the implementation artifact, at most two advisory model reviews, and one post-deployment hardware execution. Stop with a precise blocker if compilation, execution, numerical comparison, service recovery, or board health fails.
+Use the pinned Metalium source as primary authority, the pinned ttWKV7 source as the implementation artifact, at most two advisory model reviews, and one post-deployment hardware execution. The budget terminated after that one execution reached WKV and produced a deterministic numerical failure; further Blackhole semantic work requires a separately reviewed test authorization.
