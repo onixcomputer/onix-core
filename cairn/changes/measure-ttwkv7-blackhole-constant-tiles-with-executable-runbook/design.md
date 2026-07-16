@@ -45,6 +45,12 @@ The retained count changes from zero to one immediately before the sole timeout-
 
 Offline success must fail if mode is not executable, Git mode is not `100755`, worktree metadata differs, invocation count is nonzero, Inspector is busy, owner/helper/root channel is unhealthy, timer cannot arm, isolation is incomplete, or device ownership remains. Static review requires one literal probe boundary and no probe retry loop. Post-run classification requires fourteen unique pattern/length records plus the final marker; duplicate or missing lines cannot pass.
 
+## Validation Evidence Before Physical Invocation
+
+The package and dual-architecture checks passed, as did Cairn validation and proposal/design/task gates. The runbook passed Bash syntax, ShellCheck, tree formatting, `git diff --check`, one-probe and no-retry inspection, and direct negative argument execution. Before and after its initial commit, filesystem mode was `0755` and Git index/tree mode was `100755`.
+
+A disposable strict root-SSH timer rehearsal armed, proved active, stopped, and removed a fresh timer without service mutation. Evidence root `/var/tmp/ttwkv7-constant-probe-20260716T175053Z` was created with mode 0700 and exact metadata. Its host key matches the pinned fingerprint, Inspector port 43129 is unused, owner-control and strict root SSH pass, package `validate-runtime` passes, the owner is active with HTTP 200, and invocation, service-stop, and rollback-arm counts remain zero.
+
 ## Search Budget
 
 Offline work is bounded to lifecycle, package, architecture, launchability, timer, metadata, and no-device runtime checks. Physical search is one process on device 1 under one 180-second timeout. Any exact terminal boundary ends the change.
