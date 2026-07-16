@@ -456,11 +456,15 @@ in
       `0.565670/0.512575` and decodeL `0.565647/0.512599`, with output NMSE `1.00e+00`
       for both. That result suspects a shared boundary but does not identify one component.
 
-      The next package-owned discriminator removes WKV compute entirely. It captures the exact
-      chunked and decodeL reader streams directly from CB21, then feeds tagged tiles directly into
-      the exact production writer through CB16. Its self-test exercises independent exact-layout
-      predicates and rejects transpose, permutation, duplicate/drop, wrong-scatter, and sentinel
-      corruption without a device:
+      The first package-owned data-movement discriminator removed WKV compute and validated both
+      tagged writer-scatter paths, but its sole process was only partial evidence: the chunked reader
+      received invalid `L=1/Lreal=1` instead of fixed chunk size `L=32`, while decodeL mismatched
+      exactly half of the compared elements. That package and authorization are exhausted.
+
+      The successor self-test now validates explicit 18-field decode, chunked-partial, and
+      chunked-full ABI fixtures, rejects the exhausted vector, checks CB21/input/state control
+      layouts, and preserves the existing transpose, permutation, duplicate/drop, scatter, and
+      sentinel negatives without a device:
 
       ```sh
       "$probe_package/bin/wkv7-data-movement" self-test
@@ -472,6 +476,12 @@ in
       export TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS=127.0.0.1:REVIEWED_PORT
       "$probe_package/bin/wkv7-data-movement" validate-runtime
       ```
+
+      A future separately authorized process must first record a tagged CB21 loopback, all six
+      complete input uploads, and the complete padded flat-state upload. It then records decode-L1,
+      chunked `L=32/Lreal=1`, chunked `L=32/Lreal=32`, and both writer paths. Raw bf16 buffers,
+      positional runtime vectors, and mismatch histograms are written below `TT_METAL_LOGS_PATH` so
+      one process can be analyzed offline without retry.
 
       These build, self-test, and preflight commands grant no hardware authorization. Never retry
       a terminal process, never substitute a mutable profile command for the reviewed store path,

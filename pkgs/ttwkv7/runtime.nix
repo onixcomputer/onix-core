@@ -39,6 +39,7 @@ let
   diagnosticWrongVisibleDevice = "0";
   diagnosticUnexpectedSuffix = "unexpected-diagnostic-suffix";
   dataMovementSelfTestMode = "self-test";
+  dataMovementArtifactSelfTestMode = "artifact-self-test";
   dataMovementPreflightMode = "validate-runtime";
   dataMovementDeviceMode = "probe";
   dataMovementVisibleDevice = "1";
@@ -56,6 +57,8 @@ let
   diagnosticDeviceSelectionDiagnostic = "TT_VISIBLE_DEVICES must select physical device 1 exactly";
   dataMovementPreflightPassDiagnostic = "ttWKV7 data-movement runtime state preflight: PASS";
   dataMovementSelfTestPassDiagnostic = "data-movement oracle self-test: PASS";
+  dataMovementArtifactSelfTestPassDiagnostic = "data-movement artifact self-test: PASS";
+  dataMovementArtifactRootDiagnostic = "data-movement artifact root could not be prepared";
   dataMovementSuffixDiagnostic = "probe does not accept additional arguments";
   dataMovementUsageDiagnostic = "usage: wkv7-data-movement self-test|validate-runtime|probe";
   selfTestPassDiagnostic = "constant-tile oracle self-test: PASS";
@@ -75,7 +78,7 @@ let
   testInspectorPort = 43127;
   invalidLowInspectorPort = 0;
   invalidHighInspectorPort = 65536;
-  expectedDataMovementCreateKernelCount = 4;
+  expectedDataMovementCreateKernelCount = 6;
   constantGeneratorSources = [
     "wkv7_chunked_compute.cpp"
     "wkv7_decodeL_compute.cpp"
@@ -90,6 +93,7 @@ let
     "ttwkv7_constant_tile_compute.cpp"
     "ttwkv7_constant_tile_writer.cpp"
     "ttwkv7_data_movement_capture_writer.cpp"
+    "ttwkv7_data_movement_capture_source_reader.cpp"
     "ttwkv7_data_movement_source_reader.cpp"
   ];
 in
@@ -376,6 +380,42 @@ stdenvNoCC.mkDerivation {
     grep -F ${lib.escapeShellArg dataMovementSelfTestPassDiagnostic} "$data_movement_hostile_out_log"
 
     data_movement_state_root="$(mktemp -d)"
+    data_movement_artifact_root="$data_movement_state_root/artifact-root"
+    mkdir -p "$data_movement_artifact_root"
+    "$production_data_movement_target" \
+      ${lib.escapeShellArg dataMovementArtifactSelfTestMode} \
+      "$data_movement_artifact_root" \
+      >"$data_movement_state_root/artifact-self-test.log"
+    grep -F ${lib.escapeShellArg dataMovementArtifactSelfTestPassDiagnostic} \
+      "$data_movement_state_root/artifact-self-test.log"
+    test -s "$data_movement_artifact_root/ttwkv7-data-movement/sample.bf16"
+    test -s "$data_movement_artifact_root/ttwkv7-data-movement/sample-producer.args"
+    grep -F ${lib.escapeShellArg "sample.bf16"} \
+      "$data_movement_artifact_root/ttwkv7-data-movement/manifest.tsv"
+    data_movement_artifact_file="$data_movement_state_root/artifact-file"
+    touch "$data_movement_artifact_file"
+    if "$production_data_movement_target" \
+      ${lib.escapeShellArg dataMovementArtifactSelfTestMode} \
+      "$data_movement_artifact_file" \
+      >"$data_movement_state_root/artifact-self-test-negative.log" 2>&1; then
+      echo "ttWKV7 data-movement artifact self-test accepted a file root" >&2
+      exit 1
+    else
+      data_movement_artifact_negative_status="$?"
+    fi
+    test "$data_movement_artifact_negative_status" -eq ${toString wrapperFailureStatus}
+    if env -u TT_METAL_LOGS_PATH \
+      "$production_data_movement_target" ${lib.escapeShellArg dataMovementDeviceMode} \
+      >"$data_movement_state_root/missing-artifact-root.log" 2>&1; then
+      echo "ttWKV7 data-movement probe accepted a missing artifact root" >&2
+      exit 1
+    else
+      data_movement_missing_artifact_status="$?"
+    fi
+    test "$data_movement_missing_artifact_status" -eq ${toString wrapperFailureStatus}
+    grep -F ${lib.escapeShellArg dataMovementArtifactRootDiagnostic} \
+      "$data_movement_state_root/missing-artifact-root.log"
+
     data_movement_cache="$data_movement_state_root/cache"
     data_movement_logs="$data_movement_state_root/logs"
     data_movement_inspector=${lib.escapeShellArg "${testInspectorHost}:${toString testInspectorPort}"}
@@ -443,8 +483,14 @@ stdenvNoCC.mkDerivation {
     grep -F ${lib.escapeShellArg "kernels/wkv7_reader.cpp"} ${./data-movement-probe.cpp}
     grep -F ${lib.escapeShellArg "kernels/wkv7_decodeL_reader.cpp"} ${./data-movement-probe.cpp}
     grep -F ${lib.escapeShellArg "kernels/wkv7_writer.cpp"} ${./data-movement-probe.cpp}
+    grep -F ${lib.escapeShellArg "kernels/ttwkv7_data_movement_capture_source_reader.cpp"} ${./data-movement-probe.cpp}
     grep -F ${lib.escapeShellArg "tt::CBIndex::c_21"} ${./data-movement-probe.cpp}
     grep -F ${lib.escapeShellArg "tt::CBIndex::c_16"} ${./data-movement-probe.cpp}
+    grep -F ${lib.escapeShellArg "chunked-partial-L1"} ${./data-movement-probe.cpp}
+    grep -F ${lib.escapeShellArg "chunked-full-L32"} ${./data-movement-probe.cpp}
+    grep -F ${lib.escapeShellArg "exhausted-L1-Lreal1-chunked-vector"} ${./data-movement-probe.cpp}
+    grep -F ${lib.escapeShellArg "TT_METAL_LOGS_PATH"} ${./data-movement-probe.cpp}
+    grep -F ${lib.escapeShellArg "manifest.tsv"} ${./data-movement-probe.cpp}
 
     for kernel_source in ${lib.escapeShellArgs requiredKernelSources}; do
       test -f "${packageKernelDirectory}/$kernel_source"

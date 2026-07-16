@@ -95,6 +95,7 @@ let
     "wkv7_reader.cpp"
     "wkv7_writer.cpp"
     "ttwkv7_data_movement_capture_writer.cpp"
+    "ttwkv7_data_movement_capture_source_reader.cpp"
     "ttwkv7_data_movement_source_reader.cpp"
   ];
   missingTtwkv7KernelPath = "${ttwkv7KernelRoot}/missing-wkv7-kernel.cpp";
@@ -105,8 +106,9 @@ let
       ttwkv7KernelSourceNames;
   # Positive and negative layout cases for
   # r[verify onix.tenstorrent.native_runtime.p150x2_mesh],
-  # r[verify onix.tenstorrent.native_runtime.ttwkv7.host], and
-  # r[verify onix.tenstorrent.native_runtime.ttwkv7.cross_kernel_diagnostic].
+  # r[verify onix.tenstorrent.native_runtime.ttwkv7.host],
+  # r[verify onix.tenstorrent.native_runtime.ttwkv7.cross_kernel_diagnostic], and
+  # r[verify onix.tenstorrent.native_runtime.ttwkv7.reader_diagnostic_loop].
   nativeRuntimeLayoutCheck = pkgs.runCommand "tenstorrent-native-runtime-layout" { } ''
     test -d ${lib.escapeShellArg metaliumRoot}
     test -f ${lib.escapeShellArg meshDescriptorPath}

@@ -20,6 +20,14 @@ let
   ];
   dataMovementKernelSpecs = [
     {
+      source = "ttwkv7_data_movement_capture_source_reader.cpp";
+      processorName = "brisc";
+      firmwareSource = "${metaliumRoot}/tt_metal/hw/firmware/src/tt-1xx/brisck.cc";
+      processorIndex = 0;
+      nocIndex = 0;
+      processorDefinition = "COMPILE_FOR_BRISC";
+    }
+    {
       source = "ttwkv7_data_movement_source_reader.cpp";
       processorName = "brisc";
       firmwareSource = "${metaliumRoot}/tt_metal/hw/firmware/src/tt-1xx/brisck.cc";
