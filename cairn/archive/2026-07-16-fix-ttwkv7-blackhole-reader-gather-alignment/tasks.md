@@ -7,4 +7,4 @@
 - [x] [serial] Add static negative checks that reject direct 32-byte Blackhole reader gathers and helper/cadence drift. r[onix.tenstorrent.native_runtime.ttwkv7.reader_gather_alignment]
 - [x] [serial] Compile both readers and diagnostic peers for pinned Blackhole and Wormhole, then pass package and host checks. r[onix.tenstorrent.native_runtime.ttwkv7.reader_gather_alignment]
 - [x] [serial] Adversarially audit alignment, scratch lifetime, CB cadence, Wormhole preservation, and claim boundaries. r[onix.tenstorrent.native_runtime.ttwkv7.reader_gather_alignment]
-- [ ] [serial] Pass formatting, pre-commit, and Cairn gates, sync the accepted requirement, and archive the device-free result without preparing a physical runbook. r[onix.tenstorrent.native_runtime.ttwkv7.reader_gather_alignment]
+- [x] [serial] Pass formatting, pre-commit, and Cairn gates, sync the accepted requirement, and archive the device-free result without preparing a physical runbook. r[onix.tenstorrent.native_runtime.ttwkv7.reader_gather_alignment]
