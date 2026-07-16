@@ -68,6 +68,8 @@ Baseline package and dual-architecture checks pass at commit `43e63661`. Impleme
 
 No physical process is authorized by “continue working on this.” A future run requires an explicit instruction authorizing exactly one device-1 cross-kernel diagnostic process after review of the committed package and one-shot. The run must retain independent timer restoration, invocation count zero before isolation, a single count transition immediately before `wkv7-diagnose diagnose`, and no retry or alternate command.
 
+On 2026-07-16 the user supplied the exact authorization `Authorize exactly one device-1 cross-kernel diagnostic process.` The executable `run-one-shot.sh` binds that authorization to package `/nix/store/kgm3azhdgva0bwrkvil2q35l7w132l7j-ttwkv7-unstable-2026-06-22`, device 1, vector `test all 1 1`, evidence root `/var/tmp/ttwkv7-cross-kernel-20260716T194725Z`, Inspector `127.0.0.1:43133`, one invocation-count transition, exit-trap restoration, and a root-systemd rollback timer. This authorization is consumed by the first launch attempt regardless of initialization or diagnostic outcome and permits no retry, direct-runtime invocation, alternate command, or fallback probe.
+
 ## Search Budget
 
 Use the pinned sources and retained evidence as primary authority, the official Tenstorrent tools pages as secondary authority, at most one advisory model review, five materially distinct mechanism families, one offline implementation round, and no hardware without new explicit authorization. Stop at validated offline readiness, an exact implementation blocker, or the authorization boundary.
