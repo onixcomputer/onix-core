@@ -83,6 +83,16 @@ Writable directories do not prove device safety or numerical correctness. The ru
 
 The focused package check and pinned Blackhole/Wormhole architecture check passed at commit `4910b700c08f4320ef0ed8f03973f01578f9b2ce`. The exact composed output resolved to `/nix/store/plr5vlpv1q5g4zl6c2q065bwsmbhxkrr-ttwkv7-unstable-2026-06-22`, and its kernel link resolved to `/nix/store/8m898sjjhcvva2l8375r1wi5alp6cmj3-ttwkv7-kernels-unstable-2026-06-22/share/ttwkv7/kernels`. Before preflight, `127.0.0.1:43127` was not listening and the owner service reported `ActiveState=active`, `SubState=running`, `Result=success`, and `NRestarts=0`. The exact package's `validate-runtime` mode created the reviewed cache/log directories and passed while the invocation count remained zero. The one-shot orchestration script passed Bash syntax, ShellCheck, tree formatting, and Cairn gates without stopping a service or executing probe mode.
 
+## Measured Outcome
+
+The committed orchestration script was started once and returned status 1 at its non-interactive privilege precondition: `sudo -n true` reported `sudo: a password is required`. This happened before the script's runtime preflight, service-state capture, owner stop, invocation-count update, timeout wrapper, or ttWKV7 probe execution. The earlier standalone no-device runtime preflight remains passing.
+
+The retained invocation count is 0; `probe-invoked.txt` and `service-stop-attempted.txt` are both 0; and no `probe.log` or `probe-status.txt` exists. `sudo -n -l` confirms that this account has passwordless access only to the reviewed bpftrace and chaoscontrol-trace commands, not `systemctl`, so the owner cannot be isolated safely from this non-interactive agent session.
+
+The owner remained `ActiveState=active`, `SubState=running`, `Result=success`, and `NRestarts=0`; its container remained up; and `http://127.0.0.1:8000/health` returned HTTP 200. Both post-boundary TT-SMI snapshots report `dram_status: true`, `GDDR_UNCORR_ERRS: 0x0`, `THERM_TRIP_COUNT: 0x0`, and advancing heartbeats on both boards.
+
+This is the reviewed **isolation-blocked** terminal outcome. It measures no mask and neither proves nor disproves SFPU finalization, destination mapping, WKV arithmetic, decode behavior, performance, or broad P150 support. Evidence is retained at `/var/tmp/ttwkv7-constant-probe-20260716T160230Z`. A future attempt requires a new reviewed change, separate authorization, and a privilege mechanism proven before that change's one-shot execution; this script must not be rerun.
+
 ## Search Budget
 
-Primary authority is the pinned package, Metalium runtime, service manager, and retained local evidence. The physical search budget is exactly one ttWKV7 device-owning process invocation. The budget terminates at its first process result; no correlated retry or alternate command is permitted.
+Primary authority is the pinned package, Metalium runtime, service manager, and retained local evidence. The physical search budget was bounded to one ttWKV7 device-owning process invocation, but the privilege precondition terminated the change with the retained invocation count still zero. The reviewed terminal boundary forbids a correlated retry or alternate isolation command under this change.
