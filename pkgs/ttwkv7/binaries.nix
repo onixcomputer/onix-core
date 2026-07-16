@@ -19,6 +19,7 @@ stdenv.mkDerivation {
 
   postPatch = ''
     cp ${./constant-tile-probe.cpp} constant-tile-probe.cpp
+    cp ${./data-movement-probe.cpp} data-movement-probe.cpp
   '';
 
   strictDeps = true;
@@ -39,5 +40,6 @@ stdenv.mkDerivation {
     rm -rf "$out/share"
     test -x "$out/libexec/ttwkv7/wkv7"
     test -x "$out/libexec/ttwkv7/wkv7-constant-probe"
+    test -x "$out/libexec/ttwkv7/wkv7-data-movement-probe"
   '';
 }

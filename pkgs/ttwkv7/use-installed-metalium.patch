@@ -2,7 +2,7 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 716e255..9740f44 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -1,61 +1,20 @@
+@@ -1,61 +1,23 @@
  cmake_minimum_required(VERSION 3.15)
  
  project(ttwkv7)
@@ -71,5 +71,8 @@ index 716e255..9740f44 100644
 +add_executable(wkv7-constant-probe constant-tile-probe.cpp)
 +target_link_libraries(wkv7-constant-probe PRIVATE TT::Metalium)
 +
-+install(TARGETS wkv7 wkv7-constant-probe RUNTIME DESTINATION libexec/ttwkv7)
++add_executable(wkv7-data-movement-probe data-movement-probe.cpp)
++target_link_libraries(wkv7-data-movement-probe PRIVATE TT::Metalium)
++
++install(TARGETS wkv7 wkv7-constant-probe wkv7-data-movement-probe RUNTIME DESTINATION libexec/ttwkv7)
 +install(DIRECTORY kernels DESTINATION share/ttwkv7)

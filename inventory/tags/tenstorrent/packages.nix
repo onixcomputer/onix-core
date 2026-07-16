@@ -94,6 +94,8 @@ let
     "wkv7_decodeL_reader.cpp"
     "wkv7_reader.cpp"
     "wkv7_writer.cpp"
+    "ttwkv7_data_movement_capture_writer.cpp"
+    "ttwkv7_data_movement_source_reader.cpp"
   ];
   missingTtwkv7KernelPath = "${ttwkv7KernelRoot}/missing-wkv7-kernel.cpp";
   mkTtwkv7KernelLayoutCheck =
@@ -111,6 +113,7 @@ let
     test -x ${lib.escapeShellArg "${llamaCppMetalium}/bin/llama-server"}
     test -x ${lib.escapeShellArg "${ttwkv7}/bin/wkv7"}
     test -x ${lib.escapeShellArg "${ttwkv7}/bin/wkv7-diagnose"}
+    test -x ${lib.escapeShellArg "${ttwkv7}/bin/wkv7-data-movement"}
     ${ttwkv7KernelLayoutChecks}
     test ! -e ${lib.escapeShellArg missingMeshDescriptorPath}
     test ! -e ${lib.escapeShellArg missingTtwkv7KernelPath}

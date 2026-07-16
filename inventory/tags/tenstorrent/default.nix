@@ -426,6 +426,7 @@ in
       probe_kernel_root=$(readlink -f "$probe_package/share/ttwkv7/kernels")
       test -x "$probe_package/bin/wkv7-constant-probe"
       test -x "$probe_package/bin/wkv7-diagnose"
+      test -x "$probe_package/bin/wkv7-data-movement"
       case "$probe_kernel_root" in
         /nix/store/*-ttwkv7-kernels-*/share/ttwkv7/kernels) ;;
         *) exit 1 ;;
@@ -450,10 +451,31 @@ in
       ```
 
       The wrapper fixes the immutable target vector to `test all 1 1`; callers cannot select
-      a different kernel, shape, tolerance, or suffix. These build and preflight commands grant
-      no hardware authorization. Never retry a terminal process, never substitute a mutable
-      profile command for the reviewed store path, and retain the resolved kernel path with the
-      run evidence.
+      a different kernel, shape, tolerance, or suffix. The authorized comparison completed with
+      nearly identical severe failures from both paths: chunked output/state PCC
+      `0.565670/0.512575` and decodeL `0.565647/0.512599`, with output NMSE `1.00e+00`
+      for both. That result suspects a shared boundary but does not identify one component.
+
+      The next package-owned discriminator removes WKV compute entirely. It captures the exact
+      chunked and decodeL reader streams directly from CB21, then feeds tagged tiles directly into
+      the exact production writer through CB16. Its self-test exercises independent exact-layout
+      predicates and rejects transpose, permutation, duplicate/drop, wrong-scatter, and sentinel
+      corruption without a device:
+
+      ```sh
+      "$probe_package/bin/wkv7-data-movement" self-test
+
+      data_root=/var/tmp/ttwkv7-data-movement-REVIEWED_RUN_ID
+      export TT_VISIBLE_DEVICES=1
+      export TT_METAL_CACHE="$data_root/cache"
+      export TT_METAL_LOGS_PATH="$data_root/logs"
+      export TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS=127.0.0.1:REVIEWED_PORT
+      "$probe_package/bin/wkv7-data-movement" validate-runtime
+      ```
+
+      These build, self-test, and preflight commands grant no hardware authorization. Never retry
+      a terminal process, never substitute a mutable profile command for the reviewed store path,
+      and retain the resolved kernel path with the run evidence.
 
       Device execution is manual. Select one physical card, stop the service that
       owns it, run one bounded test process, review TT-Metal logs, and restore only

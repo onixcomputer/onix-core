@@ -15,10 +15,13 @@ let
   probeExecutable = "$out/libexec/ttwkv7/wkv7-constant-probe";
   wrappedProbeExecutable = "$out/libexec/ttwkv7/wkv7-constant-probe-runtime";
   diagnosticRuntimeExecutable = "$out/libexec/ttwkv7/wkv7-diagnostic-runtime";
+  dataMovementExecutable = "$out/libexec/ttwkv7/wkv7-data-movement-probe";
+  dataMovementRuntimeExecutable = "$out/libexec/ttwkv7/wkv7-data-movement-runtime";
   primaryCommand = "wkv7";
   aliasCommand = "ttwkv7";
   probeCommand = "wkv7-constant-probe";
   diagnosticCommand = "wkv7-diagnose";
+  dataMovementCommand = "wkv7-data-movement";
   probeSelfTestMode = "self-test";
   probePreflightMode = "validate-runtime";
   probeDeviceMode = "probe";
@@ -35,6 +38,12 @@ let
   diagnosticChangedSequenceLength = "2";
   diagnosticWrongVisibleDevice = "0";
   diagnosticUnexpectedSuffix = "unexpected-diagnostic-suffix";
+  dataMovementSelfTestMode = "self-test";
+  dataMovementPreflightMode = "validate-runtime";
+  dataMovementDeviceMode = "probe";
+  dataMovementVisibleDevice = "1";
+  dataMovementWrongVisibleDevice = "0";
+  dataMovementUnexpectedSuffix = "unexpected-data-movement-suffix";
   hostileOutputPath = "/nonexistent-ttwkv7-output";
   invalidMode = "invalid-mode";
   invalidModeExitStatus = 2;
@@ -45,6 +54,10 @@ let
   diagnosticSuffixDiagnostic = "diagnose does not accept additional arguments";
   diagnosticUsageDiagnostic = "usage: wkv7-diagnose validate-runtime|diagnose";
   diagnosticDeviceSelectionDiagnostic = "TT_VISIBLE_DEVICES must select physical device 1 exactly";
+  dataMovementPreflightPassDiagnostic = "ttWKV7 data-movement runtime state preflight: PASS";
+  dataMovementSelfTestPassDiagnostic = "data-movement oracle self-test: PASS";
+  dataMovementSuffixDiagnostic = "probe does not accept additional arguments";
+  dataMovementUsageDiagnostic = "usage: wkv7-data-movement self-test|validate-runtime|probe";
   selfTestPassDiagnostic = "constant-tile oracle self-test: PASS";
   cachePathDiagnostic = "TT_METAL_CACHE must be an absolute writable path outside /nix/store";
   logsPathDiagnostic = "TT_METAL_LOGS_PATH must be an absolute writable path outside /nix/store";
@@ -62,6 +75,7 @@ let
   testInspectorPort = 43127;
   invalidLowInspectorPort = 0;
   invalidHighInspectorPort = 65536;
+  expectedDataMovementCreateKernelCount = 4;
   constantGeneratorSources = [
     "wkv7_chunked_compute.cpp"
     "wkv7_decodeL_compute.cpp"
@@ -75,6 +89,8 @@ let
     "wkv7_writer.cpp"
     "ttwkv7_constant_tile_compute.cpp"
     "ttwkv7_constant_tile_writer.cpp"
+    "ttwkv7_data_movement_capture_writer.cpp"
+    "ttwkv7_data_movement_source_reader.cpp"
   ];
 in
 stdenvNoCC.mkDerivation {
@@ -90,6 +106,7 @@ stdenvNoCC.mkDerivation {
     mkdir -p "$out/bin" "$out/libexec/ttwkv7" "$out/share/ttwkv7"
     ln -s ${binaries}/libexec/ttwkv7/wkv7 ${packageExecutable}
     ln -s ${binaries}/libexec/ttwkv7/wkv7-constant-probe ${probeExecutable}
+    ln -s ${binaries}/libexec/ttwkv7/wkv7-data-movement-probe ${dataMovementExecutable}
     ln -s ${kernels}/share/ttwkv7/kernels ${packageKernelDirectory}
 
     makeWrapper ${packageExecutable} "$out/bin/${primaryCommand}" \
@@ -107,11 +124,18 @@ stdenvNoCC.mkDerivation {
       --set TT_METAL_RUNTIME_ROOT ${lib.escapeShellArg metaliumRuntimeRoot} \
       --unset ${meshGraphDescriptorVariable} \
       --chdir "$out/share/ttwkv7"
+    makeWrapper ${dataMovementExecutable} ${dataMovementRuntimeExecutable} \
+      --set TT_METAL_HOME ${lib.escapeShellArg metaliumRuntimeRoot} \
+      --set TT_METAL_RUNTIME_ROOT ${lib.escapeShellArg metaliumRuntimeRoot} \
+      --unset ${meshGraphDescriptorVariable} \
+      --chdir "$out/share/ttwkv7"
     substitute ${./probe-wrapper.sh} "$out/bin/${probeCommand}" \
       --replace-fail '@probeExecutable@' "$out/libexec/ttwkv7/wkv7-constant-probe-runtime"
     substitute ${./diagnostic-wrapper.sh} "$out/bin/${diagnosticCommand}" \
       --replace-fail '@diagnosticExecutable@' "$out/libexec/ttwkv7/wkv7-diagnostic-runtime"
-    chmod +x "$out/bin/${probeCommand}" "$out/bin/${diagnosticCommand}"
+    substitute ${./data-movement-wrapper.sh} "$out/bin/${dataMovementCommand}" \
+      --replace-fail '@dataMovementExecutable@' "$out/libexec/ttwkv7/wkv7-data-movement-runtime"
+    chmod +x "$out/bin/${probeCommand}" "$out/bin/${diagnosticCommand}" "$out/bin/${dataMovementCommand}"
     ln -s ${primaryCommand} "$out/bin/${aliasCommand}"
 
     runHook postInstall
@@ -127,10 +151,13 @@ stdenvNoCC.mkDerivation {
     test -x "$out/bin/${aliasCommand}"
     test -x "$out/bin/${probeCommand}"
     test -x "$out/bin/${diagnosticCommand}"
+    test -x "$out/bin/${dataMovementCommand}"
     test -x ${packageExecutable}
     test -x ${probeExecutable}
     test -x ${wrappedProbeExecutable}
     test -x ${diagnosticRuntimeExecutable}
+    test -x ${dataMovementExecutable}
+    test -x ${dataMovementRuntimeExecutable}
 
     # Positive and negative production-dispatch coverage for
     # r[verify onix.tenstorrent.native_runtime.ttwkv7.production_probe_wrapper].
@@ -318,6 +345,106 @@ stdenvNoCC.mkDerivation {
     fi
     test "$diagnostic_invalid_status" -eq ${toString invalidModeExitStatus}
     grep -F ${lib.escapeShellArg diagnosticUsageDiagnostic} "$diagnostic_invalid_log"
+
+    # Positive and negative exact data-movement diagnostic coverage for
+    # r[verify onix.tenstorrent.native_runtime.ttwkv7.data_movement_diagnostic].
+    production_data_movement_wrapper="$out/bin/${dataMovementCommand}"
+    production_data_movement_target="$out/libexec/ttwkv7/wkv7-data-movement-runtime"
+    test -x "$production_data_movement_target"
+    data_movement_self_test_exec_line="  exec \"$production_data_movement_target\" ${lib.escapeShellArg dataMovementSelfTestMode}"
+    data_movement_probe_exec_line="  exec \"$production_data_movement_target\" ${lib.escapeShellArg dataMovementDeviceMode}"
+    test "$(grep -Fxc "$data_movement_self_test_exec_line" "$production_data_movement_wrapper")" -eq 1
+    test "$(grep -Fxc "$data_movement_probe_exec_line" "$production_data_movement_wrapper")" -eq 1
+    test "$(grep -Ec '^[[:space:]]*exec ' "$production_data_movement_wrapper")" -eq 2
+    if grep -F 'exec "$out/' "$production_data_movement_wrapper"; then
+      echo "ttWKV7 data-movement wrapper must not expand out at runtime" >&2
+      exit 1
+    fi
+    if grep -F '@dataMovementExecutable@' "$production_data_movement_wrapper"; then
+      echo "ttWKV7 data-movement wrapper retained its executable placeholder" >&2
+      exit 1
+    fi
+
+    data_movement_missing_out_log="$(mktemp)"
+    env -u out "$production_data_movement_wrapper" ${lib.escapeShellArg dataMovementSelfTestMode} \
+      >"$data_movement_missing_out_log"
+    grep -F ${lib.escapeShellArg dataMovementSelfTestPassDiagnostic} "$data_movement_missing_out_log"
+    data_movement_hostile_out_log="$(mktemp)"
+    env out=${lib.escapeShellArg hostileOutputPath} \
+      "$production_data_movement_wrapper" ${lib.escapeShellArg dataMovementSelfTestMode} \
+      >"$data_movement_hostile_out_log"
+    grep -F ${lib.escapeShellArg dataMovementSelfTestPassDiagnostic} "$data_movement_hostile_out_log"
+
+    data_movement_state_root="$(mktemp -d)"
+    data_movement_cache="$data_movement_state_root/cache"
+    data_movement_logs="$data_movement_state_root/logs"
+    data_movement_inspector=${lib.escapeShellArg "${testInspectorHost}:${toString testInspectorPort}"}
+    TT_VISIBLE_DEVICES=${lib.escapeShellArg dataMovementVisibleDevice} \
+      TT_METAL_CACHE="$data_movement_cache" \
+      TT_METAL_LOGS_PATH="$data_movement_logs" \
+      TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="$data_movement_inspector" \
+      "$production_data_movement_wrapper" ${lib.escapeShellArg dataMovementPreflightMode} \
+      >"$data_movement_state_root/production-preflight.log"
+    grep -F ${lib.escapeShellArg dataMovementPreflightPassDiagnostic} \
+      "$data_movement_state_root/production-preflight.log"
+
+    fake_data_movement="$data_movement_state_root/fake-data-movement"
+    printf '%s\n' \
+      '#!${stdenvNoCC.shell}' \
+      'printf "%s\n" "$@"' \
+      >"$fake_data_movement"
+    chmod +x "$fake_data_movement"
+    fake_data_movement_wrapper="$data_movement_state_root/fake-data-movement-wrapper"
+    substitute ${./data-movement-wrapper.sh} "$fake_data_movement_wrapper" \
+      --replace-fail '@dataMovementExecutable@' "$fake_data_movement"
+    chmod +x "$fake_data_movement_wrapper"
+
+    ${stdenvNoCC.shell} "$fake_data_movement_wrapper" ${lib.escapeShellArg dataMovementSelfTestMode} \
+      >"$data_movement_state_root/exact-self-test-vector.log"
+    test "$(cat "$data_movement_state_root/exact-self-test-vector.log")" = \
+      ${lib.escapeShellArg dataMovementSelfTestMode}
+    TT_VISIBLE_DEVICES=${lib.escapeShellArg dataMovementVisibleDevice} \
+      TT_METAL_CACHE="$data_movement_cache" \
+      TT_METAL_LOGS_PATH="$data_movement_logs" \
+      TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="$data_movement_inspector" \
+      ${stdenvNoCC.shell} "$fake_data_movement_wrapper" ${lib.escapeShellArg dataMovementDeviceMode} \
+      >"$data_movement_state_root/exact-probe-vector.log"
+    test "$(cat "$data_movement_state_root/exact-probe-vector.log")" = \
+      ${lib.escapeShellArg dataMovementDeviceMode}
+
+    data_movement_suffix_log="$data_movement_state_root/suffix-rejection.log"
+    if ${stdenvNoCC.shell} "$fake_data_movement_wrapper" \
+      ${lib.escapeShellArg dataMovementDeviceMode} ${lib.escapeShellArg dataMovementUnexpectedSuffix} \
+      >"$data_movement_suffix_log" 2>&1; then
+      echo "ttWKV7 data-movement wrapper accepted a caller-controlled suffix" >&2
+      exit 1
+    else
+      data_movement_suffix_status="$?"
+    fi
+    test "$data_movement_suffix_status" -eq ${toString wrapperFailureStatus}
+    grep -F ${lib.escapeShellArg dataMovementSuffixDiagnostic} "$data_movement_suffix_log"
+
+    data_movement_invalid_log="$data_movement_state_root/invalid-mode.log"
+    if "$production_data_movement_wrapper" ${lib.escapeShellArg invalidMode} \
+      >"$data_movement_invalid_log" 2>&1; then
+      echo "ttWKV7 data-movement wrapper accepted an invalid mode" >&2
+      exit 1
+    else
+      data_movement_invalid_status="$?"
+    fi
+    test "$data_movement_invalid_status" -eq ${toString invalidModeExitStatus}
+    grep -F ${lib.escapeShellArg dataMovementUsageDiagnostic} "$data_movement_invalid_log"
+    test "$(grep -Fc 'CreateKernel(' ${./data-movement-probe.cpp})" -eq \
+      ${toString expectedDataMovementCreateKernelCount}
+    if grep -F 'ComputeConfig' ${./data-movement-probe.cpp}; then
+      echo "ttWKV7 data-movement probe must not create a compute kernel" >&2
+      exit 1
+    fi
+    grep -F ${lib.escapeShellArg "kernels/wkv7_reader.cpp"} ${./data-movement-probe.cpp}
+    grep -F ${lib.escapeShellArg "kernels/wkv7_decodeL_reader.cpp"} ${./data-movement-probe.cpp}
+    grep -F ${lib.escapeShellArg "kernels/wkv7_writer.cpp"} ${./data-movement-probe.cpp}
+    grep -F ${lib.escapeShellArg "tt::CBIndex::c_21"} ${./data-movement-probe.cpp}
+    grep -F ${lib.escapeShellArg "tt::CBIndex::c_16"} ${./data-movement-probe.cpp}
 
     for kernel_source in ${lib.escapeShellArgs requiredKernelSources}; do
       test -f "${packageKernelDirectory}/$kernel_source"
@@ -551,6 +678,84 @@ stdenvNoCC.mkDerivation {
         TT_METAL_LOGS_PATH="$runtime_logs" \
         TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="${testInspectorHost}:${toString invalidHighInspectorPort}" \
         "$production_diagnostic_wrapper" ${lib.escapeShellArg diagnosticPreflightMode}
+    expect_wrapper_failure data-movement-missing-visible-device ${lib.escapeShellArg diagnosticDeviceSelectionDiagnostic} \
+      env -u TT_VISIBLE_DEVICES \
+        TT_METAL_CACHE="$runtime_cache" \
+        TT_METAL_LOGS_PATH="$runtime_logs" \
+        TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="$runtime_inspector" \
+        "$production_data_movement_wrapper" ${lib.escapeShellArg dataMovementPreflightMode}
+    expect_wrapper_failure data-movement-wrong-visible-device ${lib.escapeShellArg diagnosticDeviceSelectionDiagnostic} \
+      env TT_VISIBLE_DEVICES=${lib.escapeShellArg dataMovementWrongVisibleDevice} \
+        TT_METAL_CACHE="$runtime_cache" \
+        TT_METAL_LOGS_PATH="$runtime_logs" \
+        TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="$runtime_inspector" \
+        "$production_data_movement_wrapper" ${lib.escapeShellArg dataMovementPreflightMode}
+    expect_wrapper_failure data-movement-missing-cache ${lib.escapeShellArg cachePathDiagnostic} \
+      env -u TT_METAL_CACHE \
+        TT_VISIBLE_DEVICES=${lib.escapeShellArg dataMovementVisibleDevice} \
+        TT_METAL_LOGS_PATH="$runtime_logs" \
+        TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="$runtime_inspector" \
+        "$production_data_movement_wrapper" ${lib.escapeShellArg dataMovementPreflightMode}
+    expect_wrapper_failure data-movement-relative-cache ${lib.escapeShellArg cachePathDiagnostic} \
+      env TT_VISIBLE_DEVICES=${lib.escapeShellArg dataMovementVisibleDevice} \
+        TT_METAL_CACHE=relative-cache \
+        TT_METAL_LOGS_PATH="$runtime_logs" \
+        TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="$runtime_inspector" \
+        "$production_data_movement_wrapper" ${lib.escapeShellArg dataMovementPreflightMode}
+    expect_wrapper_failure data-movement-store-cache ${lib.escapeShellArg cachePathDiagnostic} \
+      env TT_VISIBLE_DEVICES=${lib.escapeShellArg dataMovementVisibleDevice} \
+        TT_METAL_CACHE=/nix/store/unsafe-cache \
+        TT_METAL_LOGS_PATH="$runtime_logs" \
+        TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="$runtime_inspector" \
+        "$production_data_movement_wrapper" ${lib.escapeShellArg dataMovementPreflightMode}
+    expect_wrapper_failure data-movement-missing-logs ${lib.escapeShellArg logsPathDiagnostic} \
+      env -u TT_METAL_LOGS_PATH \
+        TT_VISIBLE_DEVICES=${lib.escapeShellArg dataMovementVisibleDevice} \
+        TT_METAL_CACHE="$runtime_cache" \
+        TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="$runtime_inspector" \
+        "$production_data_movement_wrapper" ${lib.escapeShellArg dataMovementPreflightMode}
+    expect_wrapper_failure data-movement-relative-logs ${lib.escapeShellArg logsPathDiagnostic} \
+      env TT_VISIBLE_DEVICES=${lib.escapeShellArg dataMovementVisibleDevice} \
+        TT_METAL_CACHE="$runtime_cache" \
+        TT_METAL_LOGS_PATH=relative-logs \
+        TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="$runtime_inspector" \
+        "$production_data_movement_wrapper" ${lib.escapeShellArg dataMovementPreflightMode}
+    expect_wrapper_failure data-movement-store-logs ${lib.escapeShellArg logsPathDiagnostic} \
+      env TT_VISIBLE_DEVICES=${lib.escapeShellArg dataMovementVisibleDevice} \
+        TT_METAL_CACHE="$runtime_cache" \
+        TT_METAL_LOGS_PATH=/nix/store/unsafe-logs \
+        TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="$runtime_inspector" \
+        "$production_data_movement_wrapper" ${lib.escapeShellArg dataMovementPreflightMode}
+    expect_wrapper_failure data-movement-cache-file ${lib.escapeShellArg cacheCreationDiagnostic} \
+      env TT_VISIBLE_DEVICES=${lib.escapeShellArg dataMovementVisibleDevice} \
+        TT_METAL_CACHE="$cache_file" \
+        TT_METAL_LOGS_PATH="$runtime_logs" \
+        TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="$runtime_inspector" \
+        "$production_data_movement_wrapper" ${lib.escapeShellArg dataMovementPreflightMode}
+    expect_wrapper_failure data-movement-logs-file ${lib.escapeShellArg logsCreationDiagnostic} \
+      env TT_VISIBLE_DEVICES=${lib.escapeShellArg dataMovementVisibleDevice} \
+        TT_METAL_CACHE="$runtime_cache" \
+        TT_METAL_LOGS_PATH="$logs_file" \
+        TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="$runtime_inspector" \
+        "$production_data_movement_wrapper" ${lib.escapeShellArg dataMovementPreflightMode}
+    expect_wrapper_failure data-movement-non-loopback-inspector ${lib.escapeShellArg inspectorAddressDiagnostic} \
+      env TT_VISIBLE_DEVICES=${lib.escapeShellArg dataMovementVisibleDevice} \
+        TT_METAL_CACHE="$runtime_cache" \
+        TT_METAL_LOGS_PATH="$runtime_logs" \
+        TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="0.0.0.0:${toString testInspectorPort}" \
+        "$production_data_movement_wrapper" ${lib.escapeShellArg dataMovementPreflightMode}
+    expect_wrapper_failure data-movement-low-inspector-port ${lib.escapeShellArg inspectorAddressDiagnostic} \
+      env TT_VISIBLE_DEVICES=${lib.escapeShellArg dataMovementVisibleDevice} \
+        TT_METAL_CACHE="$runtime_cache" \
+        TT_METAL_LOGS_PATH="$runtime_logs" \
+        TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="${testInspectorHost}:${toString invalidLowInspectorPort}" \
+        "$production_data_movement_wrapper" ${lib.escapeShellArg dataMovementPreflightMode}
+    expect_wrapper_failure data-movement-high-inspector-port ${lib.escapeShellArg inspectorAddressDiagnostic} \
+      env TT_VISIBLE_DEVICES=${lib.escapeShellArg dataMovementVisibleDevice} \
+        TT_METAL_CACHE="$runtime_cache" \
+        TT_METAL_LOGS_PATH="$runtime_logs" \
+        TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="${testInspectorHost}:${toString invalidHighInspectorPort}" \
+        "$production_data_movement_wrapper" ${lib.escapeShellArg dataMovementPreflightMode}
     expect_wrapper_failure unsafe-probe ${lib.escapeShellArg cachePathDiagnostic} \
       env -u TT_METAL_CACHE \
         TT_METAL_LOGS_PATH="$runtime_logs" \
@@ -562,13 +767,20 @@ stdenvNoCC.mkDerivation {
         TT_METAL_LOGS_PATH="$runtime_logs" \
         TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="$runtime_inspector" \
         "$production_diagnostic_wrapper" ${lib.escapeShellArg diagnosticDeviceMode}
+    expect_wrapper_failure unsafe-data-movement ${lib.escapeShellArg cachePathDiagnostic} \
+      env -u TT_METAL_CACHE \
+        TT_VISIBLE_DEVICES=${lib.escapeShellArg dataMovementVisibleDevice} \
+        TT_METAL_LOGS_PATH="$runtime_logs" \
+        TT_METAL_INSPECTOR_RPC_SERVER_ADDRESS="$runtime_inspector" \
+        "$production_data_movement_wrapper" ${lib.escapeShellArg dataMovementDeviceMode}
 
     # Positive and negative wrapper topology coverage for
     # r[verify onix.tenstorrent.native_runtime.ttwkv7.single_device_topology].
     for wrapped_command in \
       "$out/bin/${primaryCommand}" \
       ${wrappedProbeExecutable} \
-      ${diagnosticRuntimeExecutable}; do
+      ${diagnosticRuntimeExecutable} \
+      ${dataMovementRuntimeExecutable}; do
       grep -F "export TT_METAL_HOME='${metaliumRuntimeRoot}'" "$wrapped_command"
       grep -F "export TT_METAL_RUNTIME_ROOT='${metaliumRuntimeRoot}'" "$wrapped_command"
       grep -F ${lib.escapeShellArg "unset ${meshGraphDescriptorVariable}"} "$wrapped_command"

@@ -18,6 +18,24 @@ let
     "wkv7_decodeL_compute.cpp"
     "ttwkv7_constant_tile_compute.cpp"
   ];
+  dataMovementKernelSpecs = [
+    {
+      source = "ttwkv7_data_movement_source_reader.cpp";
+      processorName = "brisc";
+      firmwareSource = "${metaliumRoot}/tt_metal/hw/firmware/src/tt-1xx/brisck.cc";
+      processorIndex = 0;
+      nocIndex = 0;
+      processorDefinition = "COMPILE_FOR_BRISC";
+    }
+    {
+      source = "ttwkv7_data_movement_capture_writer.cpp";
+      processorName = "ncrisc";
+      firmwareSource = "${metaliumRoot}/tt_metal/hw/firmware/src/tt-1xx/ncrisck.cc";
+      processorIndex = 1;
+      nocIndex = 1;
+      processorDefinition = "COMPILE_FOR_NCRISC";
+    }
+  ];
   commonCompilerFlags = [
     "-O3"
     "-std=c++17"
@@ -79,6 +97,7 @@ let
       numDramBanks = 8;
       numL1Banks = 130;
       extraDefinitions = [ "IS_NOT_POW2_NUM_L1_BANKS=1" ];
+      dataMovementBankDefinitions = [ "LOG_BASE_2_OF_NUM_DRAM_BANKS=3" ];
       includeDirectories = [
         "${metaliumRoot}/tt_metal/hw/ckernels/blackhole/metal/common"
         "${metaliumRoot}/tt_metal/hw/ckernels/blackhole/metal/llk_io"
@@ -99,6 +118,10 @@ let
       numDramBanks = 12;
       numL1Banks = 64;
       extraDefinitions = [ ];
+      dataMovementBankDefinitions = [
+        "IS_NOT_POW2_NUM_DRAM_BANKS=1"
+        "LOG_BASE_2_OF_NUM_L1_BANKS=6"
+      ];
       includeDirectories = [
         "${metaliumRoot}/tt_metal/hw/ckernels/wormhole_b0/metal/common"
         "${metaliumRoot}/tt_metal/hw/ckernels/wormhole_b0/metal/llk_io"
@@ -115,10 +138,8 @@ let
   ];
   mkIncludeFlag = directory: "-I${directory}";
   mkDefinitionFlag = definition: "-D${definition}";
-  commonFlags =
-    commonCompilerFlags
-    ++ map mkIncludeFlag commonIncludeDirectories
-    ++ map mkDefinitionFlag commonDefinitions;
+  baseFlags = commonCompilerFlags ++ map mkIncludeFlag commonIncludeDirectories;
+  commonFlags = baseFlags ++ map mkDefinitionFlag commonDefinitions;
   mkArchitectureFlags =
     architecture:
     [ "-mcpu=${architecture.compilerCpu}" ]
@@ -172,8 +193,69 @@ let
       mkdir -p "$out/${architecture.name}"
       ${lib.concatMapStringsSep "\n" compileKernel kernelSources}
     '';
-  positiveCompileCommands = lib.concatMapStringsSep "\n" mkArchitectureCompile architectures;
-  expectedObjectCount = builtins.length kernelSources * builtins.length architectures;
+  mkDataMovementScaffold =
+    {
+      buildDirectory,
+      kernelSource,
+    }:
+    ''
+      mkdir -p "${buildDirectory}"
+      cp ${lib.escapeShellArg architectureCheckDescriptors} "${buildDirectory}/chlkc_descriptors.h"
+      printf '%s\n' \
+        '#include "${kernelRoot}/${kernelSource}"' \
+        >"${buildDirectory}/kernel_includes.hpp"
+    '';
+  mkDataMovementCompile =
+    architecture:
+    let
+      architectureFlags = mkArchitectureFlags architecture;
+      compileKernel =
+        kernelSpec:
+        let
+          objectName = lib.removeSuffix ".cpp" kernelSpec.source;
+          buildDirectory = "$PWD/build/${architecture.name}/${objectName}-${kernelSpec.processorName}";
+          processorDefinitions = [
+            "TENSIX_FIRMWARE"
+            "LOCAL_MEM_EN=0"
+            "PCIE_NOC_X=${toString compileOnlyPcieNocX}"
+            "PCIE_NOC_Y=${toString compileOnlyPcieNocY}"
+            "DISPATCH_MESSAGE_ADDR=${toString compileOnlyDispatchMessageAddress}"
+            "PROCESSOR_INDEX=${toString kernelSpec.processorIndex}"
+            kernelSpec.processorDefinition
+            "NOC_INDEX=${toString kernelSpec.nocIndex}"
+            "NOC_MODE=0"
+            "KERNEL_BUILD"
+            "FULL_KERNEL_NAME=\"ttwkv7-data-movement-check/\""
+            "KERNEL_COMPILE_TIME_ARGS=1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"
+          ];
+          dataMovementFlags =
+            baseFlags
+            ++ architectureFlags
+            ++ map mkDefinitionFlag architecture.dataMovementBankDefinitions
+            ++ map mkDefinitionFlag processorDefinitions;
+        in
+        ''
+          echo "compiling ttWKV7 ${architecture.name} data-movement kernel: ${kernelSpec.source} (${kernelSpec.processorName})"
+          ${mkDataMovementScaffold {
+            inherit buildDirectory;
+            kernelSource = kernelSpec.source;
+          }}
+          (
+            cd "${buildDirectory}"
+            ${lib.escapeShellArgs ([ compiler ] ++ dataMovementFlags)} \
+              -I. \
+              -c ${lib.escapeShellArg kernelSpec.firmwareSource} \
+              -o "$out/${architecture.name}/${objectName}-${kernelSpec.processorName}.o"
+          )
+        '';
+    in
+    lib.concatMapStringsSep "\n" compileKernel dataMovementKernelSpecs;
+  positiveCompileCommands = lib.concatStringsSep "\n" (
+    map mkArchitectureCompile architectures ++ map mkDataMovementCompile architectures
+  );
+  expectedObjectCount =
+    (builtins.length kernelSources + builtins.length dataMovementKernelSpecs)
+    * builtins.length architectures;
   unsupportedArchitectureDiagnostic = "ttWKV7 constant generation requires a reviewed SFPU finalizer";
   negativeCompileSource = builtins.head kernelSources;
   negativeArchitecture = builtins.elemAt architectures 1;
@@ -199,6 +281,16 @@ runCommand "ttwkv7-architecture-check" { } ''
   test -f ${lib.escapeShellArg architectureCheckDescriptors}
   for kernel_source in ${lib.escapeShellArgs kernelSources}; do
     test -f ${lib.escapeShellArg kernelRoot}/"$kernel_source"
+  done
+  for kernel_source in ${
+    lib.escapeShellArgs (map (kernelSpec: kernelSpec.source) dataMovementKernelSpecs)
+  }; do
+    test -f ${lib.escapeShellArg kernelRoot}/"$kernel_source"
+  done
+  for firmware_source in ${
+    lib.escapeShellArgs (map (kernelSpec: kernelSpec.firmwareSource) dataMovementKernelSpecs)
+  }; do
+    test -f "$firmware_source"
   done
 
   ${positiveCompileCommands}

@@ -12,6 +12,8 @@ stdenvNoCC.mkDerivation {
   postPatch = ''
     cp ${./constant-tile-probe-compute.cpp} kernels/ttwkv7_constant_tile_compute.cpp
     cp ${./constant-tile-probe-writer.cpp} kernels/ttwkv7_constant_tile_writer.cpp
+    cp ${./data-movement-capture-writer.cpp} kernels/ttwkv7_data_movement_capture_writer.cpp
+    cp ${./data-movement-source-reader.cpp} kernels/ttwkv7_data_movement_source_reader.cpp
   '';
 
   dontBuild = true;
