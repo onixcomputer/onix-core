@@ -52,6 +52,18 @@ The executable runbook is committed with filesystem mode `0755` and Git mode `10
 
 A fresh root-systemd timer rehearsal armed, proved active, stopped, and disappeared without service mutation. Evidence root `/var/tmp/ttwkv7-constant-probe-20260716T182116Z` is mode 0700 and binds repaired package `/nix/store/ibrza5pk4sazc4w6yrjrikczghw4w54y-ttwkv7-unstable-2026-06-22`, unchanged kernel output, active closure, owner-control helper, device 1, Inspector `127.0.0.1:43130`, strict loopback SSH fingerprint, and explicit authorization. The actual production target and hostile-environment self-tests pass, runtime-state preflight passes, the port is unused, the owner is active with HTTP 200, and invocation, service-stop, and rollback-arm counts are zero.
 
+## Measured Outcome
+
+The immutable-target repair worked: the committed runbook reached the exact store wrapper once after rollback arming, owner isolation, inactive-container proof, and exact device-ownership proof. Invocation count changed from zero to one immediately before the sole process.
+
+The process returned status 2 before device open. In the production wrapper's `probe)` branch, line 78 shifts away `probe`; line 81 then executes the correct immutable runtime target with only `"$@"`. Because this authorized invocation had no additional arguments, the C++ binary received no mode, printed `usage: ... self-test|probe`, and returned before `MeshDevice::create_unit_mesh`.
+
+The device-free checks exposed a second false-completion path. Hostile-`out` self-tests use the wrapper's default branch and therefore do not exercise probe-mode dispatch. The fake probe test asserted only that an additional argument survived the shift, not that the required `probe` mode was restored. The focused secondary review and manual target audit also missed this semantic argument loss.
+
+The exit trap restored the owner with status 0, endpoint health recovered to HTTP 200, and rollback disarm returned 0. The timer and service units are not found/inactive. The owner is active/running with `Result=success` and `NRestarts=0`; both boards retain healthy DRAM, zero uncorrectable GDDR errors, zero thermal trips, and advancing heartbeats.
+
+This is the exact `probe-mode-dispatch-blocked-before-device-open` terminal result. Invocation count is one, so no argument repair, direct runtime-binary fallback, alternate command, or retry is authorized. All fourteen masks remain unmeasured. Evidence is retained at `/var/tmp/ttwkv7-constant-probe-20260716T182116Z`.
+
 ## Risks / Trade-offs
 
 - A no-device self-test could accidentally become device-owning upstream. The pinned source is inspected and package behavior remains bound to the fixed revision; physical authorization is not inferred from package tests.
@@ -61,4 +73,4 @@ A fresh root-systemd timer rehearsal armed, proved active, stopped, and disappea
 
 ## Search Budget
 
-The repair search is bounded to three mechanism families, one secondary review, focused source inspection, and deterministic package/architecture/closure checks. The physical search is exactly one process on device 1 under the committed timeout. Validated measurement or the first exact blocker ends the change.
+The repair search used three mechanism families, one secondary review, focused source inspection, and deterministic package/architecture/closure checks. The exact immutable-target candidate survived those checks but was falsified as a complete probe-dispatch repair by the missing mode argument. The single physical process returned status 2 before device open and exhausted the search without retry.

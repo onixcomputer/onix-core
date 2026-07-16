@@ -15,6 +15,12 @@ r[onix.tenstorrent.native_runtime.ttwkv7.production_probe_wrapper] The composed 
 - THEN the embedded target is an absolute path under the composed package's Nix store output
 - AND the target exists and is executable
 
+#### Scenario: Probe mode is preserved across runtime validation
+- GIVEN the production wrapper receives `probe` plus zero or more forwarded probe arguments
+- WHEN runtime-state validation succeeds and dispatch occurs
+- THEN the immutable runtime binary receives `probe` as its first mode argument
+- AND package validation rejects dropping, duplicating, or reordering that mode
+
 #### Scenario: Runtime output expansion regresses
 - GIVEN a candidate production wrapper containing an unexpanded `$out` target or validation that exercises only a fake probe
 - WHEN package validation runs
