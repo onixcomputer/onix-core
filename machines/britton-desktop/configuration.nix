@@ -47,6 +47,26 @@ let
   ttP150x2MeshDescriptor = "${ttMetaliumRuntimeRoot}/tt_metal/fabric/mesh_graph_descriptors/p150_x2_mesh_graph_descriptor.textproto";
   vibeThinkerServiceName = "llamacpp-server-vibethinker-britton-desktop";
   p150LlamaServiceName = "docker-tt-inference-server-llama-3-1-8b-instruct-p150";
+  p150LlamaUnitName = "${p150LlamaServiceName}.service";
+  p150LlamaDevicePath = "/dev/tenstorrent/1";
+  ttWkv7OwnerControlUser = "brittonr";
+  ttWkv7OwnerControlCommandName = "ttwkv7-owner-control";
+  ttWkv7OwnerControlSystemctl = "${config.systemd.package}/bin/systemctl";
+  ttWkv7OwnerControlLsof = "${pkgs.lsof}/bin/lsof";
+  ttWkv7OwnerControlSudoCommands = [
+    {
+      command = "${ttWkv7OwnerControlSystemctl} stop ${p150LlamaUnitName}";
+      options = [ "NOPASSWD" ];
+    }
+    {
+      command = "${ttWkv7OwnerControlSystemctl} start ${p150LlamaUnitName}";
+      options = [ "NOPASSWD" ];
+    }
+    {
+      command = "${ttWkv7OwnerControlLsof} ${p150LlamaDevicePath}";
+      options = [ "NOPASSWD" ];
+    }
+  ];
   vibeThinkerStateDirectory = vibeThinkerServiceName;
   vibeThinkerModelPath = "/var/lib/${vibeThinkerStateDirectory}/models/VibeThinker-3B.Q8_0.gguf";
   ttBenchmarkServiceName = "tt-vibethinker-benchmark";
@@ -149,6 +169,12 @@ let
       fi
       cat ${lib.escapeShellArg ttBenchmarkLatestSummary}
     '';
+  };
+  ttWkv7OwnerControl = pkgs.callPackage ../../pkgs/ttwkv7-owner-control {
+    commandName = ttWkv7OwnerControlCommandName;
+    ownerUnit = p150LlamaUnitName;
+    devicePath = p150LlamaDevicePath;
+    systemd = config.systemd.package;
   };
 in
 {
@@ -284,7 +310,7 @@ in
 
     sudo.extraRules = [
       {
-        users = [ "brittonr" ];
+        users = [ ttWkv7OwnerControlUser ];
         commands = [
           {
             command = "${pkgs.bpftrace}/bin/bpftrace";
@@ -294,7 +320,8 @@ in
             command = "/home/brittonr/.cargo-target/release/chaoscontrol-trace";
             options = [ "NOPASSWD" ];
           }
-        ];
+        ]
+        ++ ttWkv7OwnerControlSudoCommands;
       }
     ];
   };
@@ -421,6 +448,25 @@ in
     librepods
   ];
 
+  environment.etc."tenstorrent/README.md".text = lib.mkAfter ''
+
+    ### britton-desktop ttWKV7 owner control
+
+    The host installs `${ttWkv7OwnerControlCommandName}` as a least-privilege
+    interface for the device-1 owner lifecycle:
+
+    ```sh
+    ${ttWkv7OwnerControlCommandName} validate
+    ${ttWkv7OwnerControlCommandName} isolate
+    ${ttWkv7OwnerControlCommandName} restore
+    ```
+
+    `validate` performs no service mutation. `isolate` and `restore` affect only
+    `${p150LlamaUnitName}` and ownership inspection is fixed to
+    `${p150LlamaDevicePath}`. This capability does not authorize a hardware
+    probe, select a device, create runtime state, or permit a retry.
+  '';
+
   environment.systemPackages = with pkgs; [
     bpftrace
     imagemagick
@@ -429,6 +475,7 @@ in
     displaylink
     llamaCpuPkg
     ttBenchmarkCommand
+    ttWkv7OwnerControl
     self.packages.${pkgs.stdenv.hostPlatform.system}.opendeck
     self.packages.${pkgs.stdenv.hostPlatform.system}.ttsim
     inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr

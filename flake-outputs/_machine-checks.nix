@@ -55,6 +55,16 @@ let
   llamaDevice = "p150";
   llamaPhysicalDeviceId = 1;
   llamaDevicePath = "/dev/tenstorrent/${toString llamaPhysicalDeviceId}";
+  llamaUnitName = "${llamaServiceName}.service";
+  ttWkv7OwnerControlUser = "brittonr";
+  ttWkv7OwnerControlCommandName = "ttwkv7-owner-control";
+  ttWkv7OwnerControlSystemctl = "${brittonDesktopConfig.systemd.package}/bin/systemctl";
+  ttWkv7OwnerControlLsof = "${pkgs.lsof}/bin/lsof";
+  requiredTtWkv7OwnerControlCommands = [
+    "${ttWkv7OwnerControlSystemctl} stop ${llamaUnitName}"
+    "${ttWkv7OwnerControlSystemctl} start ${llamaUnitName}"
+    "${ttWkv7OwnerControlLsof} ${llamaDevicePath}"
+  ];
   llamaApiPort = 8000;
   llamaLoopbackHost = "127.0.0.1";
   llamaImage = "ghcr.io/tenstorrent/tt-inference-server/vllm-tt-metal-src-release-ubuntu-22.04-amd64:0.18.0-c49bb76-6b4a3a7@sha256:6aee48978be401c0a86cb1761c4d64af818df8380bc7b27c1018d704518545ff";
@@ -77,6 +87,7 @@ let
   tenstorrentDeviceCount = countPciVendor tenstorrentVendorId;
   nvidiaDeviceCount = countPciVendor nvidiaVendorId;
   brittonDesktopConfig = self.nixosConfigurations.${brittonDesktopName}.config;
+  brittonDesktopSudoers = brittonDesktopConfig.environment.etc.sudoers.source;
   brittonDesktopServices = brittonDesktopConfig.systemd.services;
   tenstorrentHostGuide = brittonDesktopConfig.environment.etc."tenstorrent/README.md".text;
   hasRequiredAccelerator = lib.elem requiredAcceleratorTag brittonDesktopTags;
@@ -191,6 +202,55 @@ let
     package: lib.hasInfix ttWkv7PackageNameFragment (toString package)
   ) null brittonDesktopConfig.environment.systemPackages;
   hasTtWkv7CommandPackage = ttWkv7CommandPackage != null;
+  ttWkv7OwnerControlGroups =
+    brittonDesktopConfig.users.users.${ttWkv7OwnerControlUser}.extraGroups or [ ];
+  sudoGrants = lib.concatMap (
+    rule:
+    map (command: {
+      commandText = command.command;
+      groups = rule.groups or [ ];
+      options = command.options or [ ];
+      users = rule.users or [ ];
+    }) (rule.commands or [ ])
+  ) brittonDesktopConfig.security.sudo.extraRules;
+  ownerControlPasswordlessGrants = builtins.filter (
+    grant:
+    (
+      lib.elem ttWkv7OwnerControlUser grant.users
+      || builtins.any (group: lib.elem group ttWkv7OwnerControlGroups) grant.groups
+    )
+    && lib.elem "NOPASSWD" grant.options
+  ) sudoGrants;
+  ownerControlPasswordlessCommands = map (grant: grant.commandText) ownerControlPasswordlessGrants;
+  hasRequiredOwnerControlCommands = lib.all (
+    requiredCommand:
+    builtins.any (
+      grant:
+      grant.commandText == requiredCommand
+      && grant.users == [ ttWkv7OwnerControlUser ]
+      && grant.options == [ "NOPASSWD" ]
+    ) sudoGrants
+  ) requiredTtWkv7OwnerControlCommands;
+  isBroadOwnerControlCommand =
+    commandText:
+    commandText == "ALL"
+    || commandText == ttWkv7OwnerControlSystemctl
+    || commandText == ttWkv7OwnerControlLsof
+    || (
+      lib.hasPrefix "${ttWkv7OwnerControlSystemctl} " commandText
+      && !(lib.elem commandText requiredTtWkv7OwnerControlCommands)
+    )
+    || (
+      lib.hasPrefix "${ttWkv7OwnerControlLsof} " commandText
+      && !(lib.elem commandText requiredTtWkv7OwnerControlCommands)
+    );
+  hasBroadOwnerControlCommand = builtins.any isBroadOwnerControlCommand ownerControlPasswordlessCommands;
+  ttWkv7OwnerControlPackage = lib.findFirst (
+    package: lib.hasInfix ttWkv7OwnerControlCommandName (toString package)
+  ) null brittonDesktopConfig.environment.systemPackages;
+  hasTtWkv7OwnerControlPackage = ttWkv7OwnerControlPackage != null;
+  ttWkv7OwnerControlExecutable =
+    if hasTtWkv7OwnerControlPackage then lib.getExe ttWkv7OwnerControlPackage else null;
   hasToolsReference = lib.hasInfix ttMetaliumToolsUrl tenstorrentHostGuide;
   documentsTtWkv7Boundary =
     lib.hasInfix "${ttWkv7CommandName} test" tenstorrentHostGuide
@@ -200,6 +260,12 @@ let
   documentsManagedTtBenchmark =
     lib.hasInfix "sudo ${ttBenchmarkCommandName}" tenstorrentHostGuide
     && lib.hasInfix "${ttBenchmarkStateDir}/latest-summary.json" tenstorrentHostGuide;
+  documentsTtWkv7OwnerControl =
+    lib.hasInfix "${ttWkv7OwnerControlCommandName} validate" tenstorrentHostGuide
+    && lib.hasInfix llamaUnitName tenstorrentHostGuide
+    && lib.hasInfix llamaDevicePath tenstorrentHostGuide
+    && lib.hasInfix "does not authorize a hardware" tenstorrentHostGuide
+    && lib.hasInfix "probe, select a device" tenstorrentHostGuide;
 
   # Positive and negative coverage for
   # r[verify onix.britton_desktop.accelerators.inventory],
@@ -209,6 +275,7 @@ let
   # r[verify onix.tenstorrent.model_performance.managed_benchmark],
   # r[verify onix.tenstorrent.native_runtime.ttwkv7.host],
   # r[verify onix.tenstorrent.native_runtime.ttwkv7.compatibility_boundary],
+  # r[verify onix.tenstorrent.native_runtime.ttwkv7.owner_control],
   # r[verify onix.tenstorrent.vllm.p150_llama], and
   # r[verify onix.tenstorrent.vllm.secrets].
   brittonDesktopAcceleratorInventory = pkgs.runCommand "britton-desktop-accelerator-inventory" { } ''
@@ -312,6 +379,18 @@ let
       echo "${brittonDesktopName} must include the ${ttWkv7PackageNameFragment} package"
       exit 1
     ''}
+    ${lib.optionalString (!hasRequiredOwnerControlCommands) ''
+      echo "${brittonDesktopName} must grant only the exact ttWKV7 owner-control commands"
+      exit 1
+    ''}
+    ${lib.optionalString hasBroadOwnerControlCommand ''
+      echo "${brittonDesktopName} must not grant wildcard or unrelated ttWKV7 owner-control commands"
+      exit 1
+    ''}
+    ${lib.optionalString (!hasTtWkv7OwnerControlPackage) ''
+      echo "${brittonDesktopName} must install ${ttWkv7OwnerControlCommandName}"
+      exit 1
+    ''}
     ${lib.optionalString (!hasToolsReference) ''
       echo "${brittonDesktopName} Tenstorrent guide must reference ${ttMetaliumToolsUrl}"
       exit 1
@@ -322,6 +401,10 @@ let
     ''}
     ${lib.optionalString (!documentsManagedTtBenchmark) ''
       echo "${brittonDesktopName} Tenstorrent guide must document the managed benchmark command and summary"
+      exit 1
+    ''}
+    ${lib.optionalString (!documentsTtWkv7OwnerControl) ''
+      echo "${brittonDesktopName} Tenstorrent guide must document least-privilege ttWKV7 owner control"
       exit 1
     ''}
     ${lib.optionalString (ttBenchmarkExecStart != null) ''
@@ -338,6 +421,46 @@ let
       test -x ${lib.escapeShellArg ttBenchmarkCommandExecutable}
       grep -F -- "rm -f /run/${ttBenchmarkServiceName}-last-run-succeeded" ${lib.escapeShellArg ttBenchmarkCommandExecutable} >/dev/null
       grep -F -- "did not complete a new validated run" ${lib.escapeShellArg ttBenchmarkCommandExecutable} >/dev/null
+    ''}
+    test -f ${lib.escapeShellArg brittonDesktopSudoers}
+    for required_command in ${lib.escapeShellArgs requiredTtWkv7OwnerControlCommands}; do
+      grep -F -- "NOPASSWD: $required_command" ${lib.escapeShellArg brittonDesktopSudoers} >/dev/null
+    done
+    ${lib.optionalString (ttWkv7OwnerControlExecutable != null) ''
+      test -x ${lib.escapeShellArg ttWkv7OwnerControlExecutable}
+      ${lib.escapeShellArg ttWkv7OwnerControlExecutable} --help >owner-control-help.log 2>&1
+      grep -F -- "usage: ${ttWkv7OwnerControlCommandName} --help|validate|isolate|restore" owner-control-help.log >/dev/null
+
+      if ${lib.escapeShellArg ttWkv7OwnerControlExecutable} invalid-mode >owner-control-invalid.log 2>&1; then
+        echo "${ttWkv7OwnerControlCommandName} unexpectedly accepted an invalid mode" >&2
+        exit 1
+      else
+        invalid_status="$?"
+      fi
+      test "$invalid_status" -eq 2
+      grep -F -- "usage:" owner-control-invalid.log >/dev/null
+
+      if ${lib.escapeShellArg ttWkv7OwnerControlExecutable} --help extra-argument >owner-control-extra.log 2>&1; then
+        echo "${ttWkv7OwnerControlCommandName} unexpectedly accepted an extra argument" >&2
+        exit 1
+      else
+        extra_status="$?"
+      fi
+      test "$extra_status" -eq 2
+      grep -F -- "usage:" owner-control-extra.log >/dev/null
+
+      grep -F -- ${lib.escapeShellArg llamaUnitName} ${lib.escapeShellArg ttWkv7OwnerControlExecutable} >/dev/null
+      grep -F -- ${lib.escapeShellArg llamaDevicePath} ${lib.escapeShellArg ttWkv7OwnerControlExecutable} >/dev/null
+      grep -F -- ${lib.escapeShellArg ttWkv7OwnerControlSystemctl} ${lib.escapeShellArg ttWkv7OwnerControlExecutable} >/dev/null
+      grep -F -- ${lib.escapeShellArg ttWkv7OwnerControlLsof} ${lib.escapeShellArg ttWkv7OwnerControlExecutable} >/dev/null
+      if grep -F -- "TT_VISIBLE_DEVICES" ${lib.escapeShellArg ttWkv7OwnerControlExecutable}; then
+        echo "${ttWkv7OwnerControlCommandName} must not select a device" >&2
+        exit 1
+      fi
+      if grep -F -- "wkv7-constant-probe" ${lib.escapeShellArg ttWkv7OwnerControlExecutable}; then
+        echo "${ttWkv7OwnerControlCommandName} must not invoke a probe" >&2
+        exit 1
+      fi
     ''}
     touch "$out"
   '';
