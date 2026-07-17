@@ -30,6 +30,25 @@ let
   expectedTokenFinalHiddenFingerprint = "af8775318ae4b28af27709dbe1052a8ffcd5bc58f3ae209dea0913801b334f70";
   expectedTokenLogitsFingerprint = "31e5a4c2f979966c1a8ac72b3af8daa16db0f61d33297f7aadea4196816b9662";
   expectedTokenStatesFingerprint = "7edee48128b2bb3f9f874e9cbc491d44a2af7f5bb19c53a595ff0bc8eed108fe";
+  expectedDecodeStepCount = 3;
+  expectedDecodeTokenId = 1;
+  expectedDecodeLogits = [
+    "0.04493069"
+    "6.9543834"
+    "6.486726"
+  ];
+  expectedDecodeFingerprints = [
+    "04f6971c67f2fb45e3e8d26164a872b6e7d4d8ba847f26ec170fcd347df6e89f"
+    "762581cfa10ae11cde207349bd844e59fdaceca5c9288db937928c4f356c3263"
+    "e61647dfa4e341599f939181919100509c652797050b76b4f2f80ada7134a591"
+    "812728ef2bd878f91df9d2ede34aebdffa19fc83c25319d8cf24d1b041bfa30a"
+    "3daaa9712bb4851e5fcccdc6d2b7644c9c29b495c7ece0f483e97cddf782be9d"
+    "15658cb672bb56cec6132e4b72463a5966db26fdc471ca631b3a308112bf76a2"
+    "401b9ad0f87cfc436fc53fe3d1e977c6aaba1546582e9f07daf46549730ed7ab"
+    "ccb66a0dde8fc0490872092dce9aa3b778a3b1d5ce0bb1d256d130ec7a423917"
+    "56ab5c6de04f5e359a7d26390ce36b0c7551ef41dbcb998373ab4c2f0f344ecb"
+  ];
+  expectedMinimumStateCarryDivergence = "32.84725";
 in
 rustPlatform.buildRustPackage {
   pname = "rwkv-layer-harness";
@@ -87,6 +106,26 @@ rustPlatform.buildRustPackage {
     grep -F 'The selected token is not executed as a recurrent third step.' "$fixture_root/token-first.json"
     grep -F 'No P150 numerical parity is established.' "$fixture_root/token-first.json"
 
+    $out/bin/rwkv-decode-harness >"$fixture_root/decode-first.json"
+    $out/bin/rwkv-decode-harness >"$fixture_root/decode-second.json"
+    cmp "$fixture_root/decode-first.json" "$fixture_root/decode-second.json"
+    grep -F '"seed_token_id": ${toString expectedDecodeTokenId}' "$fixture_root/decode-first.json"
+    grep -F '"generated_step_count": ${toString expectedDecodeStepCount}' "$fixture_root/decode-first.json"
+    generated_count="$(grep -c '"generated_token_id": ${toString expectedDecodeTokenId}' "$fixture_root/decode-first.json")"
+    test "$generated_count" -eq ${toString expectedDecodeStepCount}
+    for expected_logit in ${lib.escapeShellArgs expectedDecodeLogits}; do
+      grep -F "\"generated_logit\": $expected_logit" "$fixture_root/decode-first.json"
+    done
+    for expected_fingerprint in ${lib.escapeShellArgs expectedDecodeFingerprints}; do
+      grep -F "\"blake3\": \"$expected_fingerprint\"" "$fixture_root/decode-first.json"
+    done
+    grep -F '"maximum_replay_hidden_deviation": 0.0' "$fixture_root/decode-first.json"
+    grep -F '"maximum_replay_logits_deviation": 0.0' "$fixture_root/decode-first.json"
+    grep -F '"maximum_replay_state_deviation": 0.0' "$fixture_root/decode-first.json"
+    grep -F '"minimum_retained_vs_reset_hidden_deviation": ${expectedMinimumStateCarryDivergence}' "$fixture_root/decode-first.json"
+    grep -F '"continued_after_eos": false' "$fixture_root/decode-first.json"
+    grep -F 'No decoded text or tokenizer mapping is established.' "$fixture_root/decode-first.json"
+
     if $out/bin/rwkv-layer-harness unexpected-argument \
       >"$fixture_root/argument-rejection.log" 2>&1; then
       echo "rwkv-layer-harness accepted a caller-controlled argument" >&2
@@ -101,14 +140,22 @@ rustPlatform.buildRustPackage {
     fi
     grep -F 'does not accept arguments' "$fixture_root/token-argument-rejection.log"
 
+    if $out/bin/rwkv-decode-harness unexpected-argument \
+      >"$fixture_root/decode-argument-rejection.log" 2>&1; then
+      echo "rwkv-decode-harness accepted a caller-controlled argument" >&2
+      exit 1
+    fi
+    grep -F 'does not accept arguments' "$fixture_root/decode-argument-rejection.log"
+
     if grep -E 'std::process::Command|Command::new|/dev/tenstorrent|TT_VISIBLE_DEVICES|Metalium|owner-control|retry' \
-      ${./src/lib.rs} ${./src/main.rs} ${./src/bin/rwkv-token-harness.rs}; then
+      ${./src/lib.rs} ${./src/main.rs} ${./src/bin/rwkv-token-harness.rs} ${./src/bin/rwkv-decode-harness.rs}; then
       echo "rwkv-layer-harness must not contain hardware or process orchestration" >&2
       exit 1
     fi
 
     cat "$fixture_root/first.json"
     cat "$fixture_root/token-first.json"
+    cat "$fixture_root/decode-first.json"
     runHook postInstallCheck
   '';
 
@@ -117,7 +164,7 @@ rustPlatform.buildRustPackage {
   };
 
   meta = {
-    description = "Device-free real-weight RWKV-7 layer and greedy-token CPU reference";
+    description = "Device-free real-weight RWKV-7 layer, greedy-token, and stateful-decode CPU reference";
     license = lib.licenses.mit;
     mainProgram = "rwkv-layer-harness";
     platforms = lib.platforms.linux;

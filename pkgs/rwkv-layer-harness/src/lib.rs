@@ -15,11 +15,14 @@ pub const VOCABULARY_SIZE: usize = 65536;
 pub const BOS_TOKEN_ID: usize = 1;
 pub const EOS_TOKEN_ID: usize = 2;
 pub const RECEIPT_SCHEMA_VERSION: u32 = 1;
+pub const DECODE_STEP_COUNT: usize = 3;
 pub const MODEL_REVISION: &str = "d81965cb4e1a9f96696b4f70b84212b8f2e43216";
 pub const MODEL_SHA256_SRI: &str = "sha256-uWqL3CHhX3HgyVZT3MO+ieVkthmtUHPJ7b+9B/eElFM=";
 pub const MODEL_BLAKE3: &str = "905f82048a64b881f9267117a398feb8a8a92bcc5233666bf67904e0d899d0e5";
 pub const MODEL_BYTE_COUNT: u64 = 382_111_072;
 pub const ORACLE_TOLERANCE: f32 = 1.0e-5;
+pub const REPLAY_TOLERANCE: f32 = 1.0e-5;
+pub const STATE_CARRY_DIVERGENCE_FLOOR: f32 = 1.0e-4;
 const LAYER_NORM_EPSILON: f32 = 1.0e-5;
 const NORMALIZATION_FLOOR: f32 = 1.0e-12;
 const NEGATIVE_INVERSE_SQRT_E: f32 = -0.606_530_67;
@@ -48,6 +51,18 @@ const TOKEN_NON_CLAIMS: [&str; 9] = [
     "No P150 numerical parity is established.",
     "No ttWKV7 integration or parity is established.",
     "No repaired-reader completion is established.",
+    "No throughput or latency claim is established.",
+];
+const DECODE_NON_CLAIMS: [&str; 10] = [
+    "No decoded text or tokenizer mapping is established.",
+    "Continuing after EOS is diagnostic and is not normal stop behavior.",
+    "The final selected token is not executed as a recurrent next step.",
+    "No sampling or unbounded generation is established.",
+    "No arbitrary prompt or long-context stability is established.",
+    "No FLA or official-runtime bit parity is established.",
+    "No general RWKV correctness is established.",
+    "No P150 numerical parity is established.",
+    "No ttWKV7 integration or repaired-reader completion is established.",
     "No throughput or latency claim is established.",
 ];
 
@@ -175,6 +190,89 @@ impl LayerState {
 }
 
 #[derive(Clone, Debug)]
+struct ModelExecutionState {
+    layers: Vec<LayerState>,
+    oracle_matrices: Vec<Vec<f32>>,
+    maximum_state_deviations: [f32; MODEL_LAYER_COUNT],
+    maximum_output_deviations: [f32; MODEL_LAYER_COUNT],
+}
+
+impl ModelExecutionState {
+    fn zero(dimensions: Dimensions) -> Result<Self, String> {
+        let layers = (0..MODEL_LAYER_COUNT)
+            .map(|_| LayerState::zero(dimensions))
+            .collect::<Result<Vec<_>, _>>()?;
+        let oracle_matrices = layers
+            .iter()
+            .map(|state| state.matrix.clone())
+            .collect::<Vec<_>>();
+        Ok(Self {
+            layers,
+            oracle_matrices,
+            maximum_state_deviations: [0.0_f32; MODEL_LAYER_COUNT],
+            maximum_output_deviations: [0.0_f32; MODEL_LAYER_COUNT],
+        })
+    }
+
+    fn validate(&self, dimensions: Dimensions) -> Result<(), String> {
+        if self.layers.len() != MODEL_LAYER_COUNT || self.oracle_matrices.len() != MODEL_LAYER_COUNT
+        {
+            return Err(format!(
+                "model state requires {MODEL_LAYER_COUNT} layer and oracle slots, found {} and {}",
+                self.layers.len(),
+                self.oracle_matrices.len()
+            ));
+        }
+        let matrix_elements = dimensions
+            .head_count
+            .checked_mul(dimensions.head_size)
+            .and_then(|value| value.checked_mul(dimensions.head_size))
+            .ok_or_else(|| "state validation element count overflows usize".to_owned())?;
+        for (layer_index, (layer, oracle)) in self
+            .layers
+            .iter()
+            .zip(self.oracle_matrices.iter())
+            .enumerate()
+        {
+            require_length(
+                &layer.attention_previous,
+                dimensions.hidden_size,
+                &format!("layer {layer_index} attention state"),
+            )?;
+            require_length(
+                &layer.ffn_previous,
+                dimensions.hidden_size,
+                &format!("layer {layer_index} channel state"),
+            )?;
+            require_length(
+                &layer.matrix,
+                matrix_elements,
+                &format!("layer {layer_index} matrix state"),
+            )?;
+            require_length(
+                oracle,
+                matrix_elements,
+                &format!("layer {layer_index} oracle state"),
+            )?;
+            require_finite(&layer.attention_previous, "attention state")?;
+            require_finite(&layer.ffn_previous, "channel state")?;
+            require_finite(&layer.matrix, "matrix state")?;
+            require_finite(oracle, "oracle state")?;
+        }
+        require_finite(&self.maximum_state_deviations, "state deviations")?;
+        require_finite(&self.maximum_output_deviations, "output deviations")?;
+        Ok(())
+    }
+
+    fn flattened_matrices(&self) -> Vec<f32> {
+        self.layers
+            .iter()
+            .flat_map(|state| state.matrix.iter().copied())
+            .collect()
+    }
+}
+
+#[derive(Clone, Debug)]
 struct WkvInputs {
     r: Vec<f32>,
     w: Vec<f32>,
@@ -281,6 +379,54 @@ pub struct TokenReceipt {
     pub non_claims: Vec<&'static str>,
 }
 
+#[derive(Clone, Debug, Serialize)]
+pub struct DecodeStepReceipt {
+    pub step_index: usize,
+    pub input_token_id: usize,
+    pub generated_token_id: usize,
+    pub generated_logit: f32,
+    pub runner_up_token_id: usize,
+    pub runner_up_logit: f32,
+    pub greedy_margin: f32,
+    pub eos_selected: bool,
+    pub final_hidden: NumericReceipt,
+    pub logits: NumericReceipt,
+    pub recurrent_states: NumericReceipt,
+    pub layer_oracle_deviations: Vec<LayerDeviationReceipt>,
+    pub incremental_replay_hidden_deviation: f32,
+    pub incremental_replay_logits_deviation: f32,
+    pub incremental_replay_state_deviation: f32,
+    pub retained_vs_reset_hidden_deviation: f32,
+    pub head_oracle_logit_deviation: f32,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct DecodeReceipt {
+    pub schema_version: u32,
+    pub model: ModelReceipt,
+    pub dimensions: Dimensions,
+    pub layer_count: usize,
+    pub seed_token_id: usize,
+    pub generated_step_count: usize,
+    pub processed_input_ids: Vec<usize>,
+    pub generated_token_ids: Vec<usize>,
+    pub eos_token_id: usize,
+    pub eos_observed_steps: Vec<usize>,
+    pub continued_after_eos: bool,
+    pub arithmetic_precision: &'static str,
+    pub steps: Vec<DecodeStepReceipt>,
+    pub final_recurrent_states: NumericReceipt,
+    pub maximum_oracle_state_deviation: f32,
+    pub maximum_oracle_output_deviation: f32,
+    pub maximum_replay_hidden_deviation: f32,
+    pub maximum_replay_logits_deviation: f32,
+    pub maximum_replay_state_deviation: f32,
+    pub minimum_retained_vs_reset_hidden_deviation: f32,
+    pub oracle_tolerance: f32,
+    pub replay_tolerance: f32,
+    pub non_claims: Vec<&'static str>,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct RankedLogit {
     token_id: usize,
@@ -300,6 +446,14 @@ struct ModelSequenceResult {
     layer_deviations: Vec<LayerDeviationReceipt>,
     maximum_state_deviation: f32,
     maximum_output_deviation: f32,
+}
+
+#[derive(Clone, Debug)]
+struct HeadEvaluation {
+    final_hidden: Vec<f32>,
+    logits: Vec<f32>,
+    top_two: TopTwo,
+    head_oracle_logit_deviation: f32,
 }
 
 // r[impl onix.tenstorrent.native_runtime.rwkv_lab.real_weight_layer]
@@ -485,6 +639,345 @@ pub fn run_token_checkpoint(
         oracle_tolerance: ORACLE_TOLERANCE,
         non_claims: TOKEN_NON_CLAIMS.to_vec(),
     })
+}
+
+// r[impl onix.tenstorrent.native_runtime.rwkv_lab.stateful_decode]
+pub fn run_decode_checkpoint(
+    checkpoint: &[u8],
+    expected_blake3: &str,
+) -> Result<DecodeReceipt, String> {
+    verify_checkpoint_digest(checkpoint, expected_blake3)?;
+    let byte_count = u64::try_from(checkpoint.len())
+        .map_err(|error| format!("checkpoint byte count does not fit u64: {error}"))?;
+    if byte_count != MODEL_BYTE_COUNT {
+        return Err(format!(
+            "checkpoint byte count must be {MODEL_BYTE_COUNT}, found {byte_count}"
+        ));
+    }
+
+    let tensors = SafeTensors::deserialize(checkpoint)
+        .map_err(|error| format!("failed to decode safetensors checkpoint: {error}"))?;
+    let dimensions = Dimensions::reviewed();
+    let weights = (0..MODEL_LAYER_COUNT)
+        .map(|layer_index| load_layer(&tensors, dimensions, layer_index))
+        .collect::<Result<Vec<_>, _>>()?;
+    validate_model_weights(&weights)?;
+    let embedding = tensors
+        .tensor("model.embeddings.weight")
+        .map_err(|error| format!("missing model.embeddings.weight: {error}"))?;
+    let final_norm_weight = vector(&tensors, "model.norm.weight", dimensions.hidden_size)?;
+    let final_norm_bias = vector(&tensors, "model.norm.bias", dimensions.hidden_size)?;
+    let head_tensor = tensors
+        .tensor("lm_head.weight")
+        .map_err(|error| format!("missing lm_head.weight: {error}"))?;
+    let head = matrix(
+        &tensors,
+        "lm_head.weight",
+        VOCABULARY_SIZE,
+        dimensions.hidden_size,
+    )?;
+
+    let mut execution = ModelExecutionState::zero(dimensions)?;
+    let mut input_token_id = BOS_TOKEN_ID;
+    let mut processed_input_ids = Vec::with_capacity(DECODE_STEP_COUNT);
+    let mut generated_token_ids = Vec::with_capacity(DECODE_STEP_COUNT);
+    let mut eos_observed_steps = Vec::new();
+    let mut steps = Vec::with_capacity(DECODE_STEP_COUNT);
+    let mut maximum_replay_hidden_deviation = 0.0_f32;
+    let mut maximum_replay_logits_deviation = 0.0_f32;
+    let mut maximum_replay_state_deviation = 0.0_f32;
+    let mut minimum_retained_vs_reset_hidden_deviation = f32::INFINITY;
+
+    for step_index in 0..DECODE_STEP_COUNT {
+        let token_embedding = embedding_row(&embedding, input_token_id, dimensions.hidden_size)?;
+        let (next_execution, final_output) =
+            run_model_token(&weights, &token_embedding, execution)?;
+        execution = next_execution;
+        processed_input_ids.push(input_token_id);
+        ensure_oracle_tolerance(&execution, "incremental")?;
+        let evaluation = evaluate_head(
+            &final_output,
+            &final_norm_weight,
+            &final_norm_bias,
+            &head,
+            &head_tensor,
+            dimensions,
+        )?;
+        let incremental_states = execution.flattened_matrices();
+
+        let (replay_execution, replay_output) =
+            replay_input_ids(&weights, &embedding, &processed_input_ids, dimensions)?;
+        ensure_oracle_tolerance(&replay_execution, "replay")?;
+        let replay_evaluation = evaluate_head(
+            &replay_output,
+            &final_norm_weight,
+            &final_norm_bias,
+            &head,
+            &head_tensor,
+            dimensions,
+        )?;
+        let replay_states = replay_execution.flattened_matrices();
+        let (_, reset_output) =
+            replay_input_ids(&weights, &embedding, &[input_token_id], dimensions)?;
+        let reset_evaluation = evaluate_head(
+            &reset_output,
+            &final_norm_weight,
+            &final_norm_bias,
+            &head,
+            &head_tensor,
+            dimensions,
+        )?;
+        let retained_vs_reset_hidden_deviation =
+            max_abs_difference(&evaluation.final_hidden, &reset_evaluation.final_hidden)?;
+        if step_index == LAYER_INDEX {
+            require_replay_tolerance(
+                retained_vs_reset_hidden_deviation,
+                "zero-state control",
+                step_index,
+            )?;
+        } else {
+            require_state_carry_divergence(retained_vs_reset_hidden_deviation, step_index)?;
+            minimum_retained_vs_reset_hidden_deviation =
+                minimum_retained_vs_reset_hidden_deviation.min(retained_vs_reset_hidden_deviation);
+        }
+        let hidden_deviation =
+            max_abs_difference(&evaluation.final_hidden, &replay_evaluation.final_hidden)?;
+        let logits_deviation = max_abs_difference(&evaluation.logits, &replay_evaluation.logits)?;
+        let state_deviation = max_abs_difference(&incremental_states, &replay_states)?;
+        require_replay_tolerance(hidden_deviation, "final hidden", step_index)?;
+        require_replay_tolerance(logits_deviation, "logits", step_index)?;
+        require_replay_tolerance(state_deviation, "recurrent state", step_index)?;
+        if evaluation.top_two.first.token_id != replay_evaluation.top_two.first.token_id
+            || evaluation.top_two.second.token_id != replay_evaluation.top_two.second.token_id
+        {
+            return Err(format!(
+                "decode step {step_index} incremental/replay ranking mismatch"
+            ));
+        }
+        maximum_replay_hidden_deviation = maximum_replay_hidden_deviation.max(hidden_deviation);
+        maximum_replay_logits_deviation = maximum_replay_logits_deviation.max(logits_deviation);
+        maximum_replay_state_deviation = maximum_replay_state_deviation.max(state_deviation);
+
+        let generated = evaluation.top_two.first;
+        let runner_up = evaluation.top_two.second;
+        let greedy_margin = generated.logit - runner_up.logit;
+        if !greedy_margin.is_finite() || greedy_margin < 0.0 {
+            return Err(format!(
+                "decode step {step_index} has invalid greedy margin {greedy_margin}"
+            ));
+        }
+        let eos_selected = generated.token_id == EOS_TOKEN_ID;
+        if eos_selected {
+            eos_observed_steps.push(step_index);
+        }
+        generated_token_ids.push(generated.token_id);
+        steps.push(DecodeStepReceipt {
+            step_index,
+            input_token_id,
+            generated_token_id: generated.token_id,
+            generated_logit: generated.logit,
+            runner_up_token_id: runner_up.token_id,
+            runner_up_logit: runner_up.logit,
+            greedy_margin,
+            eos_selected,
+            final_hidden: numeric_receipt(&evaluation.final_hidden)?,
+            logits: numeric_receipt(&evaluation.logits)?,
+            recurrent_states: numeric_receipt(&incremental_states)?,
+            layer_oracle_deviations: layer_deviation_receipts(&execution),
+            incremental_replay_hidden_deviation: hidden_deviation,
+            incremental_replay_logits_deviation: logits_deviation,
+            incremental_replay_state_deviation: state_deviation,
+            retained_vs_reset_hidden_deviation,
+            head_oracle_logit_deviation: evaluation.head_oracle_logit_deviation,
+        });
+        input_token_id = generated.token_id;
+    }
+
+    validate_decode_chain(&processed_input_ids, &generated_token_ids)?;
+    if !minimum_retained_vs_reset_hidden_deviation.is_finite() {
+        return Err("stateful decode did not execute a retained-state discriminator".to_owned());
+    }
+    let continued_after_eos = eos_observed_steps
+        .iter()
+        .any(|step_index| step_index + 1 < DECODE_STEP_COUNT);
+    let maximum_oracle_state_deviation = execution
+        .maximum_state_deviations
+        .iter()
+        .copied()
+        .fold(0.0_f32, f32::max);
+    let maximum_oracle_output_deviation = execution
+        .maximum_output_deviations
+        .iter()
+        .copied()
+        .fold(0.0_f32, f32::max);
+    let final_recurrent_states = execution.flattened_matrices();
+
+    Ok(DecodeReceipt {
+        schema_version: RECEIPT_SCHEMA_VERSION,
+        model: ModelReceipt {
+            model_id: MODEL_ID,
+            revision: MODEL_REVISION,
+            sha256_sri: MODEL_SHA256_SRI,
+            blake3: blake3::hash(checkpoint).to_hex().to_string(),
+            byte_count,
+        },
+        dimensions,
+        layer_count: MODEL_LAYER_COUNT,
+        seed_token_id: BOS_TOKEN_ID,
+        generated_step_count: DECODE_STEP_COUNT,
+        processed_input_ids,
+        generated_token_ids,
+        eos_token_id: EOS_TOKEN_ID,
+        eos_observed_steps,
+        continued_after_eos,
+        arithmetic_precision: ARITHMETIC_PRECISION,
+        steps,
+        final_recurrent_states: numeric_receipt(&final_recurrent_states)?,
+        maximum_oracle_state_deviation,
+        maximum_oracle_output_deviation,
+        maximum_replay_hidden_deviation,
+        maximum_replay_logits_deviation,
+        maximum_replay_state_deviation,
+        minimum_retained_vs_reset_hidden_deviation,
+        oracle_tolerance: ORACLE_TOLERANCE,
+        replay_tolerance: REPLAY_TOLERANCE,
+        non_claims: DECODE_NON_CLAIMS.to_vec(),
+    })
+}
+
+fn replay_input_ids(
+    weights: &[LayerWeights],
+    embedding: &TensorView<'_>,
+    input_ids: &[usize],
+    dimensions: Dimensions,
+) -> Result<(ModelExecutionState, Vec<f32>), String> {
+    if input_ids.is_empty() {
+        return Err("replay requires at least one input token".to_owned());
+    }
+    let mut execution = ModelExecutionState::zero(dimensions)?;
+    let mut final_output = Vec::new();
+    for input_id in input_ids {
+        let token_embedding = embedding_row(embedding, *input_id, dimensions.hidden_size)?;
+        (execution, final_output) = run_model_token(weights, &token_embedding, execution)?;
+    }
+    Ok((execution, final_output))
+}
+
+fn evaluate_head(
+    final_output: &[f32],
+    final_norm_weight: &[f32],
+    final_norm_bias: &[f32],
+    head: &Matrix,
+    head_tensor: &TensorView<'_>,
+    dimensions: Dimensions,
+) -> Result<HeadEvaluation, String> {
+    let final_hidden = layer_norm(
+        final_output,
+        final_norm_weight,
+        final_norm_bias,
+        LAYER_NORM_EPSILON,
+    )?;
+    let logits = matvec(head, &final_hidden)?;
+    let top_two = rank_top_two(
+        logits
+            .iter()
+            .copied()
+            .enumerate()
+            .map(|(token_id, logit)| RankedLogit { token_id, logit }),
+    )?;
+    let oracle_top = direct_bf16_head_top_two(head_tensor, &final_hidden, dimensions.hidden_size)?;
+    if top_two.first.token_id != oracle_top.first.token_id
+        || top_two.second.token_id != oracle_top.second.token_id
+    {
+        return Err(format!(
+            "LM-head ranking mismatch: production [{}, {}], direct oracle [{}, {}]",
+            top_two.first.token_id,
+            top_two.second.token_id,
+            oracle_top.first.token_id,
+            oracle_top.second.token_id
+        ));
+    }
+    let head_oracle_logit_deviation = (top_two.first.logit - oracle_top.first.logit)
+        .abs()
+        .max((top_two.second.logit - oracle_top.second.logit).abs());
+    if head_oracle_logit_deviation > ORACLE_TOLERANCE {
+        return Err(format!(
+            "LM-head oracle logit deviation {head_oracle_logit_deviation} exceeds tolerance {ORACLE_TOLERANCE}"
+        ));
+    }
+    Ok(HeadEvaluation {
+        final_hidden,
+        logits,
+        top_two,
+        head_oracle_logit_deviation,
+    })
+}
+
+fn ensure_oracle_tolerance(execution: &ModelExecutionState, path_name: &str) -> Result<(), String> {
+    let state_deviation = execution
+        .maximum_state_deviations
+        .iter()
+        .copied()
+        .fold(0.0_f32, f32::max);
+    let output_deviation = execution
+        .maximum_output_deviations
+        .iter()
+        .copied()
+        .fold(0.0_f32, f32::max);
+    if state_deviation > ORACLE_TOLERANCE || output_deviation > ORACLE_TOLERANCE {
+        return Err(format!(
+            "{path_name} recurrence deviations state={state_deviation} output={output_deviation} exceed {ORACLE_TOLERANCE}"
+        ));
+    }
+    Ok(())
+}
+
+fn require_replay_tolerance(
+    deviation: f32,
+    artifact_name: &str,
+    step_index: usize,
+) -> Result<(), String> {
+    if !deviation.is_finite() || deviation > REPLAY_TOLERANCE {
+        return Err(format!(
+            "decode step {step_index} {artifact_name} replay deviation {deviation} exceeds {REPLAY_TOLERANCE}"
+        ));
+    }
+    Ok(())
+}
+
+fn require_state_carry_divergence(deviation: f32, step_index: usize) -> Result<(), String> {
+    if !deviation.is_finite() || deviation <= STATE_CARRY_DIVERGENCE_FLOOR {
+        return Err(format!(
+            "decode step {step_index} retained/reset hidden deviation {deviation} must exceed {STATE_CARRY_DIVERGENCE_FLOOR}"
+        ));
+    }
+    Ok(())
+}
+
+fn validate_decode_chain(
+    processed_input_ids: &[usize],
+    generated_token_ids: &[usize],
+) -> Result<(), String> {
+    if processed_input_ids.len() != DECODE_STEP_COUNT
+        || generated_token_ids.len() != DECODE_STEP_COUNT
+    {
+        return Err(format!(
+            "decode chain requires {DECODE_STEP_COUNT} processed and generated tokens"
+        ));
+    }
+    if processed_input_ids.first().copied() != Some(BOS_TOKEN_ID) {
+        return Err(format!(
+            "decode chain must start with BOS token {BOS_TOKEN_ID}"
+        ));
+    }
+    for step_index in 1..DECODE_STEP_COUNT {
+        if processed_input_ids[step_index] != generated_token_ids[step_index - 1] {
+            return Err(format!(
+                "decode input at step {step_index} does not equal the prior generated token"
+            ));
+        }
+    }
+    Ok(())
 }
 
 pub fn verify_checkpoint_digest(checkpoint: &[u8], expected: &str) -> Result<(), String> {
@@ -901,109 +1394,117 @@ fn run_model_sequence(
     weights: &[LayerWeights],
     embeddings: [&[f32]; TOKEN_COUNT],
 ) -> Result<ModelSequenceResult, String> {
+    validate_model_weights(weights)?;
+    let dimensions = Dimensions::reviewed();
+    let mut execution = ModelExecutionState::zero(dimensions)?;
+    let mut final_output = Vec::new();
+    for embedding in embeddings {
+        (execution, final_output) = run_model_token(weights, embedding, execution)?;
+    }
+    finish_model_execution(execution, final_output)
+}
+
+fn validate_model_weights(weights: &[LayerWeights]) -> Result<(), String> {
     if weights.len() != MODEL_LAYER_COUNT {
         return Err(format!(
             "full model requires {MODEL_LAYER_COUNT} layers, found {}",
             weights.len()
         ));
     }
-    let dimensions = Dimensions::reviewed();
-    let mut states = (0..MODEL_LAYER_COUNT)
-        .map(|_| LayerState::zero(dimensions))
-        .collect::<Result<Vec<_>, _>>()?;
-    let mut oracle_states = states
-        .iter()
-        .map(|state| state.matrix.clone())
-        .collect::<Vec<_>>();
-    let mut maximum_state_deviations = [0.0_f32; MODEL_LAYER_COUNT];
-    let mut maximum_output_deviations = [0.0_f32; MODEL_LAYER_COUNT];
-    let mut final_output = Vec::new();
-
-    for embedding in embeddings {
-        require_length(embedding, dimensions.hidden_size, "model embedding")?;
-        let mut hidden = embedding.to_vec();
-        let mut value_anchor = None;
-        for layer_index in 0..MODEL_LAYER_COUNT {
-            let layer = &weights[layer_index];
-            if layer.layer_index != layer_index {
-                return Err(format!(
-                    "layer slot {layer_index} contains weights for layer {}",
-                    layer.layer_index
-                ));
-            }
-            let residual = apply_pre_norm(layer, &hidden)?;
-            let attention_input = layer_norm(
-                &residual,
-                &layer.attn_norm_weight,
-                &layer.attn_norm_bias,
-                LAYER_NORM_EPSILON,
-            )?;
-            let time = time_mix(
-                layer,
-                &attention_input,
-                &states[layer_index].attention_previous,
-                &states[layer_index].matrix,
-                &oracle_states[layer_index],
-                value_anchor.as_deref(),
-            )?;
-            if layer_index == LAYER_INDEX {
-                value_anchor = Some(time.projected_value.clone());
-            }
-            states[layer_index]
-                .attention_previous
-                .clone_from(&attention_input);
-            let state_deviation = max_abs_difference(&time.matrix_state, &time.oracle_state)?;
-            maximum_state_deviations[layer_index] =
-                maximum_state_deviations[layer_index].max(state_deviation);
-            let output_deviation = max_abs_difference(&time.wkv_output, &time.oracle_output)?;
-            maximum_output_deviations[layer_index] =
-                maximum_output_deviations[layer_index].max(output_deviation);
-            states[layer_index].matrix = time.matrix_state;
-            oracle_states[layer_index] = time.oracle_state;
-
-            let after_attention = add_vectors(&residual, &time.wkv_output)?;
-            let ffn_input = layer_norm(
-                &after_attention,
-                &layer.ffn_norm_weight,
-                &layer.ffn_norm_bias,
-                LAYER_NORM_EPSILON,
-            )?;
-            let ffn_output = channel_mix(layer, &ffn_input, &states[layer_index].ffn_previous)?;
-            states[layer_index].ffn_previous.clone_from(&ffn_input);
-            hidden = add_vectors(&after_attention, &ffn_output)?;
+    for (layer_index, layer) in weights.iter().enumerate() {
+        if layer.layer_index != layer_index {
+            return Err(format!(
+                "layer slot {layer_index} contains weights for layer {}",
+                layer.layer_index
+            ));
         }
-        if value_anchor.is_none() {
-            return Err("layer zero did not establish v_first".to_owned());
-        }
-        final_output = hidden;
     }
+    Ok(())
+}
 
-    let recurrent_states = states
-        .iter()
-        .flat_map(|state| state.matrix.iter().copied())
-        .collect::<Vec<_>>();
+fn run_model_token(
+    weights: &[LayerWeights],
+    embedding: &[f32],
+    mut execution: ModelExecutionState,
+) -> Result<(ModelExecutionState, Vec<f32>), String> {
+    validate_model_weights(weights)?;
+    let dimensions = Dimensions::reviewed();
+    execution.validate(dimensions)?;
+    require_length(embedding, dimensions.hidden_size, "model embedding")?;
+    let mut hidden = embedding.to_vec();
+    let mut value_anchor = None;
+    for (layer_index, layer) in weights.iter().enumerate() {
+        let residual = apply_pre_norm(layer, &hidden)?;
+        let attention_input = layer_norm(
+            &residual,
+            &layer.attn_norm_weight,
+            &layer.attn_norm_bias,
+            LAYER_NORM_EPSILON,
+        )?;
+        let time = time_mix(
+            layer,
+            &attention_input,
+            &execution.layers[layer_index].attention_previous,
+            &execution.layers[layer_index].matrix,
+            &execution.oracle_matrices[layer_index],
+            value_anchor.as_deref(),
+        )?;
+        if layer_index == LAYER_INDEX {
+            value_anchor = Some(time.projected_value.clone());
+        }
+        execution.layers[layer_index]
+            .attention_previous
+            .clone_from(&attention_input);
+        let state_deviation = max_abs_difference(&time.matrix_state, &time.oracle_state)?;
+        execution.maximum_state_deviations[layer_index] =
+            execution.maximum_state_deviations[layer_index].max(state_deviation);
+        let output_deviation = max_abs_difference(&time.wkv_output, &time.oracle_output)?;
+        execution.maximum_output_deviations[layer_index] =
+            execution.maximum_output_deviations[layer_index].max(output_deviation);
+        execution.layers[layer_index].matrix = time.matrix_state;
+        execution.oracle_matrices[layer_index] = time.oracle_state;
+
+        let after_attention = add_vectors(&residual, &time.wkv_output)?;
+        let ffn_input = layer_norm(
+            &after_attention,
+            &layer.ffn_norm_weight,
+            &layer.ffn_norm_bias,
+            LAYER_NORM_EPSILON,
+        )?;
+        let ffn_output = channel_mix(
+            layer,
+            &ffn_input,
+            &execution.layers[layer_index].ffn_previous,
+        )?;
+        execution.layers[layer_index]
+            .ffn_previous
+            .clone_from(&ffn_input);
+        hidden = add_vectors(&after_attention, &ffn_output)?;
+    }
+    if value_anchor.is_none() {
+        return Err("layer zero did not establish v_first".to_owned());
+    }
+    require_finite(&hidden, "full-model token output")?;
+    execution.validate(dimensions)?;
+    Ok((execution, hidden))
+}
+
+fn finish_model_execution(
+    execution: ModelExecutionState,
+    final_output: Vec<f32>,
+) -> Result<ModelSequenceResult, String> {
+    execution.validate(Dimensions::reviewed())?;
     require_finite(&final_output, "full-model final layer output")?;
+    let recurrent_states = execution.flattened_matrices();
     require_finite(&recurrent_states, "full-model recurrent states")?;
-    let layer_deviations = maximum_state_deviations
-        .iter()
-        .copied()
-        .zip(maximum_output_deviations.iter().copied())
-        .enumerate()
-        .map(
-            |(layer_index, (maximum_state_deviation, maximum_output_deviation))| {
-                LayerDeviationReceipt {
-                    layer_index,
-                    maximum_state_deviation,
-                    maximum_output_deviation,
-                }
-            },
-        )
-        .collect::<Vec<_>>();
-    let maximum_state_deviation = maximum_state_deviations
+    let layer_deviations = layer_deviation_receipts(&execution);
+    let maximum_state_deviation = execution
+        .maximum_state_deviations
         .iter()
         .copied()
         .fold(0.0_f32, f32::max);
-    let maximum_output_deviation = maximum_output_deviations
+    let maximum_output_deviation = execution
+        .maximum_output_deviations
         .iter()
         .copied()
         .fold(0.0_f32, f32::max);
@@ -1014,6 +1515,25 @@ fn run_model_sequence(
         maximum_state_deviation,
         maximum_output_deviation,
     })
+}
+
+fn layer_deviation_receipts(execution: &ModelExecutionState) -> Vec<LayerDeviationReceipt> {
+    execution
+        .maximum_state_deviations
+        .iter()
+        .copied()
+        .zip(execution.maximum_output_deviations.iter().copied())
+        .enumerate()
+        .map(
+            |(layer_index, (maximum_state_deviation, maximum_output_deviation))| {
+                LayerDeviationReceipt {
+                    layer_index,
+                    maximum_state_deviation,
+                    maximum_output_deviation,
+                }
+            },
+        )
+        .collect()
 }
 
 fn apply_pre_norm(weights: &LayerWeights, input: &[f32]) -> Result<Vec<f32>, String> {
@@ -1867,6 +2387,87 @@ mod tests {
             run_model_sequence(&[], [&[], &[]])
                 .expect_err("empty layer inventory must fail")
                 .contains(&format!("requires {MODEL_LAYER_COUNT} layers"))
+        );
+    }
+
+    // r[verify onix.tenstorrent.native_runtime.rwkv_lab.stateful_decode]
+    #[test]
+    fn model_execution_state_rejects_missing_or_malformed_layer_state() {
+        let dimensions = Dimensions::reviewed();
+        let state =
+            ModelExecutionState::zero(dimensions).expect("complete zero model state must be valid");
+        state
+            .validate(dimensions)
+            .expect("complete zero model state must validate");
+
+        let mut missing_layer = state.clone();
+        missing_layer.layers.pop();
+        assert!(
+            missing_layer
+                .validate(dimensions)
+                .expect_err("missing layer state must fail")
+                .contains("layer and oracle slots")
+        );
+
+        let mut malformed_attention = state;
+        malformed_attention.layers[LAYER_INDEX]
+            .attention_previous
+            .pop();
+        assert!(
+            malformed_attention
+                .validate(dimensions)
+                .expect_err("malformed attention state must fail")
+                .contains("attention state")
+        );
+    }
+
+    #[test]
+    fn decode_chain_requires_selected_tokens_as_next_inputs() {
+        let valid_processed = [BOS_TOKEN_ID, EOS_TOKEN_ID, BOS_TOKEN_ID];
+        let valid_generated = [EOS_TOKEN_ID, BOS_TOKEN_ID, EOS_TOKEN_ID];
+        validate_decode_chain(&valid_processed, &valid_generated)
+            .expect("generated tokens used as next inputs must pass");
+
+        let stale_processed = [BOS_TOKEN_ID, BOS_TOKEN_ID, BOS_TOKEN_ID];
+        assert!(
+            validate_decode_chain(&stale_processed, &valid_generated)
+                .expect_err("stale next input must fail")
+                .contains("prior generated token")
+        );
+        assert!(
+            validate_decode_chain(&[BOS_TOKEN_ID], &[EOS_TOKEN_ID])
+                .expect_err("short decode chain must fail")
+                .contains("requires")
+        );
+    }
+
+    #[test]
+    fn replay_tolerance_accepts_exact_match_and_rejects_excess() {
+        require_replay_tolerance(0.0, "fixture", LAYER_INDEX)
+            .expect("exact replay match must pass");
+        assert!(
+            require_replay_tolerance(REPLAY_TOLERANCE + REPLAY_TOLERANCE, "fixture", LAYER_INDEX,)
+                .expect_err("excess replay deviation must fail")
+                .contains("exceeds")
+        );
+        assert!(
+            require_replay_tolerance(f32::NAN, "fixture", LAYER_INDEX)
+                .expect_err("non-finite replay deviation must fail")
+                .contains("exceeds")
+        );
+    }
+
+    #[test]
+    fn state_carry_discriminator_rejects_reset_equivalence() {
+        require_state_carry_divergence(
+            STATE_CARRY_DIVERGENCE_FLOOR + STATE_CARRY_DIVERGENCE_FLOOR,
+            LAYER_INDEX + 1,
+        )
+        .expect("visible retained-state divergence must pass");
+        assert!(
+            require_state_carry_divergence(0.0, LAYER_INDEX + 1)
+                .expect_err("reset-equivalent state must fail")
+                .contains("must exceed")
         );
     }
 
