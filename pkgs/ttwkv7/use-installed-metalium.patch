@@ -61,7 +61,7 @@
  # and are JIT-compiled at runtime (paths are relative to the run cwd).
  add_executable(wkv7 wkv7_runner.cpp)
 -target_link_libraries(wkv7 PRIVATE ttmetal)
-+target_link_libraries(wkv7 PRIVATE TT::Metalium)
++target_link_libraries(wkv7 PRIVATE BLAKE3::blake3 TT::Metalium)
 +
 +add_executable(wkv7-constant-probe constant-tile-probe.cpp)
 +target_link_libraries(wkv7-constant-probe PRIVATE TT::Metalium)

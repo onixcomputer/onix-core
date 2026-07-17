@@ -30,6 +30,10 @@ let
   validationFailureStatus = 1;
   invalidArgumentStatus = 2;
   truncatedFixtureByteCount = expectedFixtureByteCount - 1;
+  expectedRunnerNativeInputCallCount = 1;
+  expectedRunnerStateUploadCallCount = 2;
+  expectedRunnerWriterLayoutCallCount = 2;
+  expectedRunnerWriterIndexCallCount = 3;
 in
 # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_host_layout]
 runCommand "rwkv-ttwkv7-host-layout-check"
@@ -183,12 +187,17 @@ runCommand "rwkv-ttwkv7-host-layout-check"
     grep -Fq 'usage:' "$suffix_log"
 
     test "$(grep -Fc '#include "ttwkv7-host-layout.h"' ${lib.escapeShellArg runnerSource})" -eq 1
-    test "$(grep -Fc 'ttwkv7::host_layout::build_native_input(' ${lib.escapeShellArg runnerSource})" -eq 1
-    test "$(grep -Fc 'ttwkv7::host_layout::build_state_upload_matrix(' ${lib.escapeShellArg runnerSource})" -eq 1
-    test "$(grep -Fc 'ttwkv7::host_layout::derive_writer_layout(' ${lib.escapeShellArg runnerSource})" -eq 1
+    test "$(grep -Fc 'ttwkv7::host_layout::build_native_input(' ${lib.escapeShellArg runnerSource})" -eq \
+      ${toString expectedRunnerNativeInputCallCount}
+    test "$(grep -Fc 'ttwkv7::host_layout::build_state_upload_matrix(' ${lib.escapeShellArg runnerSource})" -eq \
+      ${toString expectedRunnerStateUploadCallCount}
+    test "$(grep -Fc 'ttwkv7::host_layout::derive_writer_layout(' ${lib.escapeShellArg runnerSource})" -eq \
+      ${toString expectedRunnerWriterLayoutCallCount}
     grep -Fq 'writer_layout->padded_rows / TH' ${lib.escapeShellArg runnerSource}
-    test "$(grep -Fc 'ttwkv7::host_layout::writer_output_index(' ${lib.escapeShellArg runnerSource})" -eq 1
-    test "$(grep -Fc 'ttwkv7::host_layout::writer_state_index(' ${lib.escapeShellArg runnerSource})" -eq 1
+    test "$(grep -Fc 'ttwkv7::host_layout::writer_output_index(' ${lib.escapeShellArg runnerSource})" -eq \
+      ${toString expectedRunnerWriterIndexCallCount}
+    test "$(grep -Fc 'ttwkv7::host_layout::writer_state_index(' ${lib.escapeShellArg runnerSource})" -eq \
+      ${toString expectedRunnerWriterIndexCallCount}
     if grep -F 'std::vector<float> mat((uint64_t)Gpad * cols' ${lib.escapeShellArg runnerSource}; then
       echo "production runner retained a duplicate state-upload formula" >&2
       exit 1

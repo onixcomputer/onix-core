@@ -19,11 +19,28 @@ let
     inherit (tenstorrentPackages) enchantum tt-logger;
     inherit (tenstorrentPackages) tt-metal;
   };
+  ttwkv7OwnerControl = pkgs.callPackage ../pkgs/ttwkv7-owner-control {
+    commandName = "ttwkv7-owner-control";
+    ownerUnit = "docker-tt-inference-server-llama-3-1-8b-instruct-p150.service";
+    devicePath = "/dev/tenstorrent/1";
+  };
+  rwkvTtwkv7BoundaryDevice = pkgs.callPackage ../pkgs/rwkv-ttwkv7-boundary-device {
+    inherit
+      rwkvLab
+      rwkvLayerHarness
+      ttwkv7
+      ttwkv7OwnerControl
+      ;
+  };
   rwkvTtwkv7HostLayoutCheck = ttwkv7Pkgs.callPackage ../pkgs/ttwkv7/rwkv-host-layout-check.nix {
     inherit rwkvLayerHarness ttwkv7;
   };
   rwkvTtwkv7DecodeReaderCheck = ttwkv7Pkgs.callPackage ../pkgs/ttwkv7/rwkv-decode-reader-check.nix {
     inherit rwkvLayerHarness ttwkv7;
+  };
+  rwkvTtwkv7BoundaryDeviceCheck = pkgs.callPackage ../pkgs/rwkv-ttwkv7-boundary-device/check.nix {
+    boundaryDevice = rwkvTtwkv7BoundaryDevice;
+    inherit ttwkv7;
   };
 in
 {
@@ -37,6 +54,8 @@ in
     # r[impl onix.tenstorrent.native_runtime.rwkv_lab.bounded_prompt]
     # r[impl onix.tenstorrent.native_runtime.rwkv_lab.torch_equation_parity]
     rwkv-layer-harness = rwkvLayerHarness;
+    # r[impl onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_boundary_device_harness]
+    rwkv-ttwkv7-boundary-device = rwkvTtwkv7BoundaryDevice;
     # r[impl onix.tenstorrent.native_runtime.ttwkv7.package]
     inherit ttwkv7;
   };
@@ -50,5 +69,7 @@ in
     rwkv-ttwkv7-host-layout = rwkvTtwkv7HostLayoutCheck;
     # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_decode_reader_abi]
     rwkv-ttwkv7-decode-reader = rwkvTtwkv7DecodeReaderCheck;
+    # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_boundary_device_harness]
+    rwkv-ttwkv7-boundary-device = rwkvTtwkv7BoundaryDeviceCheck;
   };
 }

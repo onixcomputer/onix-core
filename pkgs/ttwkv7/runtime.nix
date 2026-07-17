@@ -72,6 +72,8 @@ let
   checkpointShapeParserExpression = "std::from_chars(first, last, value)";
   checkpointShapeModeExpression = "if (mode == \"shape-test\")";
   checkpointShapeDeviceExpression = "MeshDevice::create_unit_mesh";
+  checkpointShapeHistoricalDeviceExpression = "auto dev = tt::tt_metal::distributed::MeshDevice::create_unit_mesh(0);";
+  expectedDeviceCreationSiteCount = 2;
   checkpointShapeFloorHeadTileExpression = "head_count / TH";
   checkpointShapeUnpaddedExpression = "ttwkv7::host_layout::build_unpadded_input(";
   checkpointShapeFloorWorkExpression = "(IC / NBg)";
@@ -224,6 +226,7 @@ stdenvNoCC.mkDerivation {
     test -f "${packageSourceDirectory}/${checkpointShapeSource}"
     test -f "${packageSourceDirectory}/rwkv-host-layout-validator.cpp"
     test -f "${packageSourceDirectory}/ttwkv7-host-layout.h"
+    test -f "${packageSourceDirectory}/ttwkv7-boundary-device.h"
 
     # Positive and negative checkpoint-shape coverage for
     # r[verify onix.tenstorrent.native_runtime.ttwkv7.checkpoint_shape].
@@ -318,11 +321,13 @@ stdenvNoCC.mkDerivation {
       grep -F ${lib.escapeShellArg checkpointShapeClampedEndExpression} "$source_file" >/dev/null || return 1
       grep -F ${lib.escapeShellArg checkpointShapeParserExpression} "$source_file" >/dev/null || return 1
       grep -F ${lib.escapeShellArg checkpointShapeModeExpression} "$source_file" >/dev/null || return 1
-      test "$(grep -Fc ${lib.escapeShellArg checkpointShapeDeviceExpression} "$source_file")" -eq 1 || return 1
+      test "$(grep -Fc ${lib.escapeShellArg checkpointShapeDeviceExpression} "$source_file")" -eq \
+        ${toString expectedDeviceCreationSiteCount} || return 1
+      test "$(grep -Fc ${lib.escapeShellArg checkpointShapeHistoricalDeviceExpression} "$source_file")" -eq 1 || return 1
       local shape_mode_line
       local device_line
       shape_mode_line="$(grep -Fn ${lib.escapeShellArg checkpointShapeModeExpression} "$source_file" | cut -d: -f1)"
-      device_line="$(grep -Fn ${lib.escapeShellArg checkpointShapeDeviceExpression} "$source_file" | cut -d: -f1)"
+      device_line="$(grep -Fn ${lib.escapeShellArg checkpointShapeHistoricalDeviceExpression} "$source_file" | cut -d: -f1)"
       test "$shape_mode_line" -lt "$device_line" || return 1
       if grep -F ${lib.escapeShellArg checkpointShapeFloorHeadTileExpression} "$source_file"; then return 1; fi
       if grep -F ${lib.escapeShellArg checkpointShapeUnpaddedExpression} "$source_file"; then return 1; fi

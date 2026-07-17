@@ -22,6 +22,7 @@ stdenv.mkDerivation {
     ./support-checkpoint-host-shape.patch
     ./share-checkpoint-host-layout.patch
     ./share-decode-runtime-abi.patch
+    ./add-boundary-device-mode.patch
   ];
 
   postPatch = ''
@@ -31,6 +32,7 @@ stdenv.mkDerivation {
     cp ${./rwkv-decode-reader-validator.cpp} rwkv-decode-reader-validator.cpp
     cp ${./ttwkv7-host-layout.h} ttwkv7-host-layout.h
     cp ${./ttwkv7-decode-abi.h} ttwkv7-decode-abi.h
+    cp ${./ttwkv7-boundary-device.h} ttwkv7-boundary-device.h
     cp wkv7_runner.cpp "$TMPDIR/ttwkv7-patched-wkv7-runner.cpp"
   '';
 
@@ -57,6 +59,7 @@ stdenv.mkDerivation {
     cp ${./rwkv-decode-reader-validator.cpp} "$out/share/ttwkv7/source/rwkv-decode-reader-validator.cpp"
     cp ${./ttwkv7-host-layout.h} "$out/share/ttwkv7/source/ttwkv7-host-layout.h"
     cp ${./ttwkv7-decode-abi.h} "$out/share/ttwkv7/source/ttwkv7-decode-abi.h"
+    cp ${./ttwkv7-boundary-device.h} "$out/share/ttwkv7/source/ttwkv7-boundary-device.h"
     test -x "$out/libexec/ttwkv7/wkv7"
     test -x "$out/libexec/ttwkv7/wkv7-constant-probe"
     test -x "$out/libexec/ttwkv7/wkv7-data-movement-probe"
