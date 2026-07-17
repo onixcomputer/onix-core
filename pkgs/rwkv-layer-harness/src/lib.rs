@@ -1,6 +1,7 @@
 use half::bf16;
 use safetensors::{Dtype, SafeTensors, tensor::TensorView};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use std::collections::{BTreeMap, BTreeSet};
 
 pub const HIDDEN_SIZE: usize = 768;
 pub const HEAD_SIZE: usize = 64;
@@ -12,10 +13,16 @@ pub const GATE_RANK: usize = 128;
 pub const VALUE_RANK: usize = 32;
 pub const MODEL_LAYER_COUNT: usize = 12;
 pub const VOCABULARY_SIZE: usize = 65536;
-pub const BOS_TOKEN_ID: usize = 1;
-pub const EOS_TOKEN_ID: usize = 2;
+pub const MODEL_CONFIG_BOS_TOKEN_ID: usize = 1;
+pub const MODEL_CONFIG_EOS_TOKEN_ID: usize = 2;
+pub const TOKENIZER_BOS_TOKEN_ID: usize = 0;
+pub const BYTE_VOCABULARY_EOS_TOKEN_ID: usize = 261;
+pub const TOKENIZER_WRAPPER_EOS_TOKEN_ID: usize = 65_530;
+pub const GENERATION_CONFIG_BOS_TOKEN_ID: usize = 0;
+pub const GENERATION_CONFIG_EOS_TOKEN_ID: usize = 0;
 pub const RECEIPT_SCHEMA_VERSION: u32 = 1;
 pub const DECODE_STEP_COUNT: usize = 3;
+pub const TEXT_GENERATION_STEP_LIMIT: usize = 3;
 pub const MODEL_REVISION: &str = "d81965cb4e1a9f96696b4f70b84212b8f2e43216";
 pub const MODEL_SHA256_SRI: &str = "sha256-uWqL3CHhX3HgyVZT3MO+ieVkthmtUHPJ7b+9B/eElFM=";
 pub const MODEL_BLAKE3: &str = "905f82048a64b881f9267117a398feb8a8a92bcc5233666bf67904e0d899d0e5";
@@ -23,14 +30,68 @@ pub const MODEL_BYTE_COUNT: u64 = 382_111_072;
 pub const ORACLE_TOLERANCE: f32 = 1.0e-5;
 pub const REPLAY_TOLERANCE: f32 = 1.0e-5;
 pub const STATE_CARRY_DIVERGENCE_FLOOR: f32 = 1.0e-4;
+pub const TOKENIZER_VOCAB_SHA256_SRI: &str = "sha256-5t7j1OMbTVxArJlQisbHAc7vS+1oG/IWfOmpCFUryok=";
+pub const TOKENIZER_CONFIG_SHA256_SRI: &str = "sha256-TgOqD11rGkAGoNnp8HDwFBjnNKsXx8SPKDM1lta9Xik=";
+pub const ADDED_TOKENS_SHA256_SRI: &str = "sha256-o0nK5s2qaAz2/A0pKbFvKp7bQ+twJ7LjRLHKgGOFT7k=";
+pub const TOKENIZER_IMPLEMENTATION_SHA256_SRI: &str =
+    "sha256-qspeag9W0EPKFlTp3K+Qb888DgO1FyhjrXUGDoaFoQ4=";
+pub const SPECIAL_TOKENS_MAP_SHA256_SRI: &str =
+    "sha256-H1EppN7ADOM+XFzScmyVKyKkeCcyHu08UY1DXUpkYBU=";
+pub const MODEL_CONFIG_SHA256_SRI: &str = "sha256-VcFZ/IlA4WVXpCsE8K7QN0TxdiIcwSY3aUqx9+EMTG8=";
+pub const GENERATION_CONFIG_SHA256_SRI: &str =
+    "sha256-2milZURvylpqKvSzCIkS6VOWX7+m6WgBmhTXVj1Y2Tc=";
+pub const TOKENIZER_VOCAB_BLAKE3: &str =
+    "3997a74891dd68ced8daadae0d7475274b08988c9263ca042896c8106967aef2";
+pub const TOKENIZER_CONFIG_BLAKE3: &str =
+    "b2411eb362aefa260493811c9414e8da589a19d6cec44e8456953507e293755e";
+pub const ADDED_TOKENS_BLAKE3: &str =
+    "02893c22a1e92502fdd31ba4d57b6e574692023505be7ba82d68d1e3142ff02f";
+pub const TOKENIZER_IMPLEMENTATION_BLAKE3: &str =
+    "0a2a88e97b455858e03bbbc83bb0228d8f36c2731fcb91cd94f05e2930e2aa24";
+pub const SPECIAL_TOKENS_MAP_BLAKE3: &str =
+    "751ae3ea4b59073218a85facbee1536739b0aa26d5d5670e11ef6815e5bac870";
+pub const MODEL_CONFIG_BLAKE3: &str =
+    "113edfd55813d327ae7e37987ee9c5ed123c69fa809670b3a0bcc07fd1e9295d";
+pub const GENERATION_CONFIG_BLAKE3: &str =
+    "2288838a56ea704a85691828bbc7f0ab2934c949b13a4d8f3af1b13d955ac2fa";
 const LAYER_NORM_EPSILON: f32 = 1.0e-5;
 const NORMALIZATION_FLOOR: f32 = 1.0e-12;
 const NEGATIVE_INVERSE_SQRT_E: f32 = -0.606_530_67;
 const BF16_BYTE_WIDTH: usize = 2;
 const HEX_RADIX: u32 = 16;
+const HEX_ALPHA_DIGIT_OFFSET: u32 = 10;
+const OCTAL_RADIX: u32 = 8;
+const PYTHON_BYTE_HEX_DIGITS: usize = 2;
+const PYTHON_SHORT_UNICODE_HEX_DIGITS: usize = 4;
+const PYTHON_LONG_UNICODE_HEX_DIGITS: usize = 8;
+const PYTHON_MAX_OCTAL_DIGITS: usize = 3;
+const UTF8_MAX_BYTES_PER_SCALAR: usize = 4;
+const HEX_CHARACTERS_PER_BYTE: usize = 2;
+const ASCII_ALERT_BYTE: u8 = 0x07;
+const ASCII_BACKSPACE_BYTE: u8 = 0x08;
+const ASCII_FORM_FEED_BYTE: u8 = 0x0c;
+const ASCII_VERTICAL_TAB_BYTE: u8 = 0x0b;
 const EXPECTED_DIGEST_HEX_LENGTH: usize = 64;
 const LAYER_INDEX: usize = 0;
 const TOKEN_COUNT: usize = 2;
+const TOKENIZER_VOCAB_ENTRY_COUNT: usize = 65_529;
+const TOKENIZER_FIRST_VOCAB_ID: usize = 1;
+const TOKENIZER_LAST_VOCAB_ID: usize = 65_529;
+const TOKENIZER_VOCAB_BYTE_COUNT: u64 = 1_093_733;
+const TOKENIZER_SPECIAL_TEXT: &str = "<|rwkv_tokenizer_end_of_text|>";
+const TOKENIZER_EOS_TEXT: &str = "\n\n";
+const FIXED_USER_MESSAGE: &str = "Hi";
+const FIXED_CHAT_PROMPT: &str = "User: Hi\n\nAssistant:";
+const FIXED_RENDERED_CHAT_PROMPT: &str = "<|rwkv_tokenizer_end_of_text|>User: Hi\n\nAssistant:";
+const REFERENCE_EMPTY_TOKEN_IDS: &[usize] = &[];
+const REFERENCE_EOS_TOKEN_IDS: &[usize] = &[BYTE_VOCABULARY_EOS_TOKEN_ID];
+const REFERENCE_OVERLAP_TOKEN_IDS: &[usize] = &[24_364];
+const REFERENCE_ASCII_TOKEN_IDS: &[usize] = &[34_550];
+const REFERENCE_UNICODE_TOKEN_IDS: &[usize] = &[1_413, 1_184, 5_044, 33, 10_267, 14_610];
+const REFERENCE_CONTROL_TOKEN_IDS: &[usize] = &[1, 2, 256];
+const REFERENCE_BYTE_PROMPT_TOKEN_IDS: &[usize] = &[24_281, 59, 3_880, 261, 5_585, 41_693, 59];
+const REFERENCE_WRAPPER_PROMPT_TOKEN_IDS: &[usize] =
+    &[0, 24_281, 59, 3_880, 65_530, 5_585, 41_693, 59];
 const ARITHMETIC_PRECISION: &str = "cpu_fp32_from_bf16";
 const MODEL_ID: &str = "RWKV/RWKV7-Goose-World2.8-0.1B-HF";
 const NON_CLAIMS: [&str; 7] = [
@@ -55,7 +116,7 @@ const TOKEN_NON_CLAIMS: [&str; 9] = [
 ];
 const DECODE_NON_CLAIMS: [&str; 10] = [
     "No decoded text or tokenizer mapping is established.",
-    "Continuing after EOS is diagnostic and is not normal stop behavior.",
+    "Continuing after model-config EOS ID 2 is diagnostic and is not generation-config stop behavior.",
     "The final selected token is not executed as a recurrent next step.",
     "No sampling or unbounded generation is established.",
     "No arbitrary prompt or long-context stability is established.",
@@ -63,6 +124,17 @@ const DECODE_NON_CLAIMS: [&str; 10] = [
     "No general RWKV correctness is established.",
     "No P150 numerical parity is established.",
     "No ttWKV7 integration or repaired-reader completion is established.",
+    "No throughput or latency claim is established.",
+];
+const TEXT_NON_CLAIMS: [&str; 9] = [
+    "No sampling or arbitrary prompt interface is established.",
+    "No long-context stability is established.",
+    "No FLA or official-runtime numerical parity is established.",
+    "No general RWKV correctness is established.",
+    "No P150 numerical parity is established.",
+    "No ttWKV7 integration or parity is established.",
+    "No repaired-reader completion is established.",
+    "No linguistic quality claim is established.",
     "No throughput or latency claim is established.",
 ];
 
@@ -388,7 +460,7 @@ pub struct DecodeStepReceipt {
     pub runner_up_token_id: usize,
     pub runner_up_logit: f32,
     pub greedy_margin: f32,
-    pub eos_selected: bool,
+    pub model_config_eos_selected: bool,
     pub final_hidden: NumericReceipt,
     pub logits: NumericReceipt,
     pub recurrent_states: NumericReceipt,
@@ -410,9 +482,9 @@ pub struct DecodeReceipt {
     pub generated_step_count: usize,
     pub processed_input_ids: Vec<usize>,
     pub generated_token_ids: Vec<usize>,
-    pub eos_token_id: usize,
-    pub eos_observed_steps: Vec<usize>,
-    pub continued_after_eos: bool,
+    pub model_config_eos_token_id: usize,
+    pub model_config_eos_observed_steps: Vec<usize>,
+    pub continued_after_model_config_eos: bool,
     pub arithmetic_precision: &'static str,
     pub steps: Vec<DecodeStepReceipt>,
     pub final_recurrent_states: NumericReceipt,
@@ -425,6 +497,110 @@ pub struct DecodeReceipt {
     pub oracle_tolerance: f32,
     pub replay_tolerance: f32,
     pub non_claims: Vec<&'static str>,
+}
+
+#[derive(Clone, Copy)]
+pub struct TokenizerAuthorityInputs<'a> {
+    pub vocabulary: &'a [u8],
+    pub tokenizer_config: &'a [u8],
+    pub added_tokens: &'a [u8],
+    pub tokenizer_implementation: &'a [u8],
+    pub special_tokens_map: &'a [u8],
+    pub model_config: &'a [u8],
+    pub generation_config: &'a [u8],
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct AuthorityArtifactReceipt {
+    pub name: &'static str,
+    pub sha256_sri: &'static str,
+    pub blake3: String,
+    pub byte_count: u64,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct TokenizerFixtureReceipt {
+    pub name: &'static str,
+    pub source_bytes_hex: String,
+    pub token_ids: Vec<usize>,
+    pub roundtrip_bytes_hex: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct TokenizerContractReceipt {
+    pub revision: &'static str,
+    pub vocabulary_entry_count: usize,
+    pub vocabulary_first_id: usize,
+    pub vocabulary_last_id: usize,
+    pub model_config_bos_token_id: usize,
+    pub model_config_eos_token_id: usize,
+    pub tokenizer_bos_token_id: usize,
+    pub byte_vocabulary_eos_token_id: usize,
+    pub tokenizer_wrapper_eos_token_id: usize,
+    pub generation_config_bos_token_id: usize,
+    pub generation_config_eos_token_id: usize,
+    pub reference_fixtures: Vec<TokenizerFixtureReceipt>,
+    pub artifacts: Vec<AuthorityArtifactReceipt>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct TextGenerationStepReceipt {
+    pub step_index: usize,
+    pub generated_token_id: usize,
+    pub generated_logit: f32,
+    pub runner_up_token_id: usize,
+    pub runner_up_logit: f32,
+    pub greedy_margin: f32,
+    pub generated_token_bytes_hex: String,
+    pub generation_eos_selected: bool,
+    pub post_token_final_hidden: Option<NumericReceipt>,
+    pub post_token_recurrent_states: Option<NumericReceipt>,
+    pub incremental_replay_hidden_deviation: Option<f32>,
+    pub incremental_replay_state_deviation: Option<f32>,
+    pub retained_vs_reset_hidden_deviation: Option<f32>,
+    pub head_oracle_logit_deviation: f32,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct TextReceipt {
+    pub schema_version: u32,
+    pub model: ModelReceipt,
+    pub tokenizer: TokenizerContractReceipt,
+    pub dimensions: Dimensions,
+    pub fixed_user_message: &'static str,
+    pub fixed_chat_prompt: &'static str,
+    pub rendered_chat_prompt: &'static str,
+    pub prompt_token_ids: Vec<usize>,
+    pub prompt_token_ids_blake3: String,
+    pub generation_step_limit: usize,
+    pub generated_token_ids: Vec<usize>,
+    pub generated_token_ids_blake3: String,
+    pub generated_bytes_hex: String,
+    pub generated_text: String,
+    pub stop_reason: &'static str,
+    pub arithmetic_precision: &'static str,
+    pub steps: Vec<TextGenerationStepReceipt>,
+    pub final_recurrent_states: NumericReceipt,
+    pub maximum_oracle_state_deviation: f32,
+    pub maximum_oracle_output_deviation: f32,
+    pub maximum_replay_hidden_deviation: f32,
+    pub maximum_replay_state_deviation: f32,
+    pub minimum_retained_vs_reset_hidden_deviation: f32,
+    pub oracle_tolerance: f32,
+    pub replay_tolerance: f32,
+    pub non_claims: Vec<&'static str>,
+}
+
+#[derive(Clone, Debug, Default)]
+struct TokenTrieNode {
+    children: BTreeMap<u8, usize>,
+    token_id: Option<usize>,
+}
+
+#[derive(Clone, Debug)]
+pub struct RwkvTokenizer {
+    tokens: Vec<Option<Vec<u8>>>,
+    trie: Vec<TokenTrieNode>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -456,6 +632,609 @@ struct HeadEvaluation {
     head_oracle_logit_deviation: f32,
 }
 
+#[derive(Debug, Deserialize)]
+struct TokenizerConfigFile {
+    bos_token: String,
+    eos_token: String,
+    added_tokens_decoder: BTreeMap<String, AddedTokenFile>,
+}
+
+#[derive(Debug, Deserialize)]
+struct AddedTokenFile {
+    content: String,
+    special: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct TokenIdConfigFile {
+    bos_token_id: usize,
+    eos_token_id: usize,
+}
+
+#[derive(Debug, Deserialize)]
+struct SpecialTokensMapFile {
+    bos_token: String,
+    eos_token: String,
+    unk_token: String,
+    pad_token: String,
+}
+
+impl RwkvTokenizer {
+    pub fn parse(vocabulary: &[u8]) -> Result<Self, String> {
+        let source = std::str::from_utf8(vocabulary)
+            .map_err(|error| format!("tokenizer vocabulary is not UTF-8: {error}"))?;
+        let lines = source.lines().collect::<Vec<_>>();
+        if lines.len() != TOKENIZER_VOCAB_ENTRY_COUNT {
+            return Err(format!(
+                "tokenizer vocabulary requires {TOKENIZER_VOCAB_ENTRY_COUNT} rows, found {}",
+                lines.len()
+            ));
+        }
+
+        let token_capacity = TOKENIZER_LAST_VOCAB_ID
+            .checked_add(1)
+            .ok_or_else(|| "tokenizer ID capacity overflows usize".to_owned())?;
+        let mut tokens = vec![None; token_capacity];
+        let mut unique_tokens = BTreeSet::new();
+        for (line_index, line) in lines.iter().enumerate() {
+            let expected_id = line_index
+                .checked_add(TOKENIZER_FIRST_VOCAB_ID)
+                .ok_or_else(|| "tokenizer row ID overflows usize".to_owned())?;
+            let (token_id, token_bytes) = parse_vocabulary_line(line)?;
+            if token_id != expected_id {
+                return Err(format!(
+                    "tokenizer row {} must contain ID {expected_id}, found {token_id}",
+                    line_index + 1
+                ));
+            }
+            if token_bytes.is_empty() {
+                return Err(format!("tokenizer ID {token_id} has an empty byte token"));
+            }
+            if !unique_tokens.insert(token_bytes.clone()) {
+                return Err(format!(
+                    "tokenizer ID {token_id} duplicates an earlier byte token"
+                ));
+            }
+            tokens[token_id] = Some(token_bytes);
+        }
+
+        Self::from_tokens(tokens)
+    }
+
+    fn from_tokens(tokens: Vec<Option<Vec<u8>>>) -> Result<Self, String> {
+        if tokens.len() <= TOKENIZER_FIRST_VOCAB_ID {
+            return Err("tokenizer requires at least one ordinary byte token".to_owned());
+        }
+        let mut trie = vec![TokenTrieNode::default()];
+        for (token_id, token) in tokens.iter().enumerate().skip(TOKENIZER_FIRST_VOCAB_ID) {
+            let token = token
+                .as_deref()
+                .ok_or_else(|| format!("tokenizer vocabulary is missing ID {token_id}"))?;
+            let mut node_index = 0_usize;
+            for byte in token {
+                let next_index = if let Some(index) = trie[node_index].children.get(byte) {
+                    *index
+                } else {
+                    let index = trie.len();
+                    trie.push(TokenTrieNode::default());
+                    trie[node_index].children.insert(*byte, index);
+                    index
+                };
+                node_index = next_index;
+            }
+            if trie[node_index].token_id.replace(token_id).is_some() {
+                return Err(format!("tokenizer trie contains duplicate ID {token_id}"));
+            }
+        }
+
+        Ok(Self { tokens, trie })
+    }
+
+    pub fn encode_bytes(&self, source: &[u8]) -> Result<Vec<usize>, String> {
+        let mut token_ids = Vec::new();
+        let mut offset = 0_usize;
+        while offset < source.len() {
+            let mut node_index = 0_usize;
+            let mut cursor = offset;
+            let mut longest = None;
+            while cursor < source.len() {
+                let Some(next_index) = self.trie[node_index].children.get(&source[cursor]) else {
+                    break;
+                };
+                node_index = *next_index;
+                cursor += 1;
+                if let Some(token_id) = self.trie[node_index].token_id {
+                    longest = Some((cursor, token_id));
+                }
+            }
+            let (next_offset, token_id) = longest
+                .ok_or_else(|| format!("tokenizer has no byte token at source offset {offset}"))?;
+            if next_offset <= offset {
+                return Err("tokenizer longest-prefix match did not advance".to_owned());
+            }
+            token_ids.push(token_id);
+            offset = next_offset;
+        }
+        Ok(token_ids)
+    }
+
+    pub fn decode_bytes(&self, token_ids: &[usize]) -> Result<Vec<u8>, String> {
+        let mut decoded = Vec::new();
+        for token_id in token_ids {
+            if *token_id == TOKENIZER_BOS_TOKEN_ID {
+                return Err("special tokenizer ID 0 has no ordinary vocabulary bytes".to_owned());
+            }
+            let token = self
+                .tokens
+                .get(*token_id)
+                .and_then(|token| token.as_deref())
+                .ok_or_else(|| format!("tokenizer cannot decode vocabulary ID {token_id}"))?;
+            decoded.extend_from_slice(token);
+        }
+        Ok(decoded)
+    }
+
+    fn encode_wrapper_text(&self, source: &str) -> Result<Vec<usize>, String> {
+        let source = source.as_bytes();
+        let bos = TOKENIZER_SPECIAL_TEXT.as_bytes();
+        let eos = TOKENIZER_EOS_TEXT.as_bytes();
+        let mut token_ids = Vec::new();
+        let mut offset = 0_usize;
+        while offset < source.len() {
+            if source[offset..].starts_with(bos) {
+                token_ids.push(TOKENIZER_BOS_TOKEN_ID);
+                offset += bos.len();
+                continue;
+            }
+            if source[offset..].starts_with(eos) {
+                token_ids.push(TOKENIZER_WRAPPER_EOS_TOKEN_ID);
+                offset += eos.len();
+                continue;
+            }
+            let mut end = offset + 1;
+            while end < source.len()
+                && !source[end..].starts_with(bos)
+                && !source[end..].starts_with(eos)
+            {
+                end += 1;
+            }
+            token_ids.extend(self.encode_bytes(&source[offset..end])?);
+            offset = end;
+        }
+        Ok(token_ids)
+    }
+
+    fn decode_wrapper_bytes(&self, token_ids: &[usize]) -> Result<Vec<u8>, String> {
+        let mut decoded = Vec::new();
+        for token_id in token_ids {
+            match *token_id {
+                TOKENIZER_BOS_TOKEN_ID => {
+                    decoded.extend_from_slice(TOKENIZER_SPECIAL_TEXT.as_bytes());
+                }
+                TOKENIZER_WRAPPER_EOS_TOKEN_ID => {
+                    decoded.extend_from_slice(TOKENIZER_EOS_TEXT.as_bytes());
+                }
+                _ => decoded.extend_from_slice(&self.decode_bytes(&[*token_id])?),
+            }
+        }
+        Ok(decoded)
+    }
+}
+
+fn parse_vocabulary_line(line: &str) -> Result<(usize, Vec<u8>), String> {
+    let (id_text, remainder) = line
+        .split_once(' ')
+        .ok_or_else(|| format!("tokenizer row has no ID separator: {line:?}"))?;
+    let (literal, length_text) = remainder
+        .rsplit_once(' ')
+        .ok_or_else(|| format!("tokenizer row has no length separator: {line:?}"))?;
+    let token_id = id_text
+        .parse::<usize>()
+        .map_err(|error| format!("invalid tokenizer ID {id_text:?}: {error}"))?;
+    let declared_length = length_text
+        .parse::<usize>()
+        .map_err(|error| format!("invalid tokenizer byte length {length_text:?}: {error}"))?;
+    let token_bytes = parse_python_bytes_literal(literal)?;
+    if token_bytes.len() != declared_length {
+        return Err(format!(
+            "tokenizer ID {token_id} declares {declared_length} bytes but literal contains {}",
+            token_bytes.len()
+        ));
+    }
+    Ok((token_id, token_bytes))
+}
+
+fn parse_python_bytes_literal(literal: &str) -> Result<Vec<u8>, String> {
+    let source = literal.as_bytes();
+    let (bytes_mode, quote_index) = match source {
+        [b'b', b'\'', ..] | [b'b', b'"', ..] => (true, 1_usize),
+        [b'\'', ..] | [b'"', ..] => (false, 0_usize),
+        _ => return Err(format!("unsupported tokenizer literal {literal:?}")),
+    };
+    let quote = source[quote_index];
+    if source.len() <= quote_index + 1 || source.last().copied() != Some(quote) {
+        return Err(format!("unterminated tokenizer literal {literal:?}"));
+    }
+    let end = source.len() - 1;
+    let mut output = Vec::new();
+    let mut index = quote_index + 1;
+    while index < end {
+        let byte = source[index];
+        if byte != b'\\' {
+            if byte == quote {
+                return Err(format!("unescaped quote in tokenizer literal {literal:?}"));
+            }
+            if bytes_mode && !byte.is_ascii() {
+                return Err(format!(
+                    "non-ASCII source byte in bytes literal {literal:?}"
+                ));
+            }
+            output.push(byte);
+            index += 1;
+            continue;
+        }
+
+        index += 1;
+        if index >= end {
+            return Err(format!("trailing escape in tokenizer literal {literal:?}"));
+        }
+        let escaped = source[index];
+        index += 1;
+        match escaped {
+            b'\\' => output.push(b'\\'),
+            b'\'' => output.push(b'\''),
+            b'"' => output.push(b'"'),
+            b'a' => output.push(ASCII_ALERT_BYTE),
+            b'b' => output.push(ASCII_BACKSPACE_BYTE),
+            b'f' => output.push(ASCII_FORM_FEED_BYTE),
+            b'n' => output.push(b'\n'),
+            b'r' => output.push(b'\r'),
+            b't' => output.push(b'\t'),
+            b'v' => output.push(ASCII_VERTICAL_TAB_BYTE),
+            b'x' => {
+                let value =
+                    parse_fixed_hex(source, &mut index, end, PYTHON_BYTE_HEX_DIGITS, literal)?;
+                if bytes_mode {
+                    output.push(u8::try_from(value).map_err(|error| {
+                        format!("hex byte escape is out of range in {literal:?}: {error}")
+                    })?);
+                } else {
+                    let character = char::from_u32(value)
+                        .ok_or_else(|| format!("invalid hex Unicode scalar in {literal:?}"))?;
+                    let mut encoded = [0_u8; UTF8_MAX_BYTES_PER_SCALAR];
+                    output.extend_from_slice(character.encode_utf8(&mut encoded).as_bytes());
+                }
+            }
+            b'u' | b'U' => {
+                if bytes_mode {
+                    return Err(format!(
+                        "Unicode escape in tokenizer bytes literal {literal:?}"
+                    ));
+                }
+                let digits = if escaped == b'u' {
+                    PYTHON_SHORT_UNICODE_HEX_DIGITS
+                } else {
+                    PYTHON_LONG_UNICODE_HEX_DIGITS
+                };
+                let value = parse_fixed_hex(source, &mut index, end, digits, literal)?;
+                let character = char::from_u32(value).ok_or_else(|| {
+                    format!("invalid Unicode scalar U+{value:04X} in {literal:?}")
+                })?;
+                let mut encoded = [0_u8; UTF8_MAX_BYTES_PER_SCALAR];
+                output.extend_from_slice(character.encode_utf8(&mut encoded).as_bytes());
+            }
+            b'0'..=b'7' => {
+                let mut value = u32::from(escaped - b'0');
+                let mut digits = 1_usize;
+                while digits < PYTHON_MAX_OCTAL_DIGITS
+                    && index < end
+                    && matches!(source[index], b'0'..=b'7')
+                {
+                    value = value * OCTAL_RADIX + u32::from(source[index] - b'0');
+                    index += 1;
+                    digits += 1;
+                }
+                if bytes_mode {
+                    output.push(u8::try_from(value).map_err(|error| {
+                        format!("octal byte escape is out of range in {literal:?}: {error}")
+                    })?);
+                } else {
+                    let character = char::from_u32(value)
+                        .ok_or_else(|| format!("invalid octal Unicode scalar in {literal:?}"))?;
+                    let mut encoded = [0_u8; UTF8_MAX_BYTES_PER_SCALAR];
+                    output.extend_from_slice(character.encode_utf8(&mut encoded).as_bytes());
+                }
+            }
+            _ => {
+                return Err(format!(
+                    "unsupported escape \\{} in {literal:?}",
+                    escaped as char
+                ));
+            }
+        }
+    }
+    Ok(output)
+}
+
+fn parse_fixed_hex(
+    source: &[u8],
+    index: &mut usize,
+    end: usize,
+    digit_count: usize,
+    literal: &str,
+) -> Result<u32, String> {
+    let next = index
+        .checked_add(digit_count)
+        .ok_or_else(|| "hex escape index overflows usize".to_owned())?;
+    if next > end {
+        return Err(format!("short hex escape in tokenizer literal {literal:?}"));
+    }
+    let mut value = 0_u32;
+    for digit in &source[*index..next] {
+        let digit_value = match digit {
+            b'0'..=b'9' => u32::from(*digit - b'0'),
+            b'a'..=b'f' => u32::from(*digit - b'a') + HEX_ALPHA_DIGIT_OFFSET,
+            b'A'..=b'F' => u32::from(*digit - b'A') + HEX_ALPHA_DIGIT_OFFSET,
+            _ => {
+                return Err(format!(
+                    "invalid hex escape in tokenizer literal {literal:?}"
+                ));
+            }
+        };
+        value = value
+            .checked_mul(HEX_RADIX)
+            .and_then(|partial| partial.checked_add(digit_value))
+            .ok_or_else(|| format!("hex escape overflows in tokenizer literal {literal:?}"))?;
+    }
+    *index = next;
+    Ok(value)
+}
+
+fn validate_reference_fixture(
+    tokenizer: &RwkvTokenizer,
+    name: &'static str,
+    source: &[u8],
+    expected_token_ids: &[usize],
+) -> Result<TokenizerFixtureReceipt, String> {
+    let token_ids = tokenizer.encode_bytes(source)?;
+    if token_ids != expected_token_ids {
+        return Err(format!(
+            "tokenizer reference fixture {name} expected {expected_token_ids:?}, found {token_ids:?}"
+        ));
+    }
+    let roundtrip = tokenizer.decode_bytes(&token_ids)?;
+    if roundtrip != source {
+        return Err(format!(
+            "tokenizer reference fixture {name} did not round-trip exact bytes"
+        ));
+    }
+    Ok(TokenizerFixtureReceipt {
+        name,
+        source_bytes_hex: encode_hex(source),
+        token_ids,
+        roundtrip_bytes_hex: encode_hex(&roundtrip),
+    })
+}
+
+fn validate_wrapper_reference_fixture(
+    tokenizer: &RwkvTokenizer,
+    name: &'static str,
+    source: &str,
+    expected_token_ids: &[usize],
+) -> Result<TokenizerFixtureReceipt, String> {
+    let token_ids = tokenizer.encode_wrapper_text(source)?;
+    if token_ids != expected_token_ids {
+        return Err(format!(
+            "tokenizer wrapper fixture {name} expected {expected_token_ids:?}, found {token_ids:?}"
+        ));
+    }
+    let roundtrip = tokenizer.decode_wrapper_bytes(&token_ids)?;
+    if roundtrip != source.as_bytes() {
+        return Err(format!(
+            "tokenizer wrapper fixture {name} did not round-trip exact text"
+        ));
+    }
+    Ok(TokenizerFixtureReceipt {
+        name,
+        source_bytes_hex: encode_hex(source.as_bytes()),
+        token_ids,
+        roundtrip_bytes_hex: encode_hex(&roundtrip),
+    })
+}
+
+fn authority_artifact_receipt(
+    name: &'static str,
+    bytes: &[u8],
+    sha256_sri: &'static str,
+    expected_blake3: &str,
+) -> Result<AuthorityArtifactReceipt, String> {
+    let actual_blake3 = blake3::hash(bytes).to_hex().to_string();
+    if actual_blake3 != expected_blake3 {
+        return Err(format!(
+            "{name} BLAKE3 mismatch: expected {expected_blake3}, found {actual_blake3}"
+        ));
+    }
+    let byte_count = u64::try_from(bytes.len())
+        .map_err(|error| format!("{name} byte count does not fit u64: {error}"))?;
+    Ok(AuthorityArtifactReceipt {
+        name,
+        sha256_sri,
+        blake3: actual_blake3,
+        byte_count,
+    })
+}
+
+fn validate_tokenizer_authority(
+    inputs: TokenizerAuthorityInputs<'_>,
+) -> Result<(RwkvTokenizer, TokenizerContractReceipt), String> {
+    let artifacts = vec![
+        authority_artifact_receipt(
+            "rwkv_vocab_v20230424.txt",
+            inputs.vocabulary,
+            TOKENIZER_VOCAB_SHA256_SRI,
+            TOKENIZER_VOCAB_BLAKE3,
+        )?,
+        authority_artifact_receipt(
+            "tokenizer_config.json",
+            inputs.tokenizer_config,
+            TOKENIZER_CONFIG_SHA256_SRI,
+            TOKENIZER_CONFIG_BLAKE3,
+        )?,
+        authority_artifact_receipt(
+            "added_tokens.json",
+            inputs.added_tokens,
+            ADDED_TOKENS_SHA256_SRI,
+            ADDED_TOKENS_BLAKE3,
+        )?,
+        authority_artifact_receipt(
+            "hf_rwkv_tokenizer.py",
+            inputs.tokenizer_implementation,
+            TOKENIZER_IMPLEMENTATION_SHA256_SRI,
+            TOKENIZER_IMPLEMENTATION_BLAKE3,
+        )?,
+        authority_artifact_receipt(
+            "special_tokens_map.json",
+            inputs.special_tokens_map,
+            SPECIAL_TOKENS_MAP_SHA256_SRI,
+            SPECIAL_TOKENS_MAP_BLAKE3,
+        )?,
+        authority_artifact_receipt(
+            "config.json",
+            inputs.model_config,
+            MODEL_CONFIG_SHA256_SRI,
+            MODEL_CONFIG_BLAKE3,
+        )?,
+        authority_artifact_receipt(
+            "generation_config.json",
+            inputs.generation_config,
+            GENERATION_CONFIG_SHA256_SRI,
+            GENERATION_CONFIG_BLAKE3,
+        )?,
+    ];
+    if artifacts[0].byte_count != TOKENIZER_VOCAB_BYTE_COUNT {
+        return Err(format!(
+            "tokenizer vocabulary must contain {TOKENIZER_VOCAB_BYTE_COUNT} bytes, found {}",
+            artifacts[0].byte_count
+        ));
+    }
+
+    let tokenizer_config: TokenizerConfigFile = serde_json::from_slice(inputs.tokenizer_config)
+        .map_err(|error| format!("invalid tokenizer_config.json: {error}"))?;
+    let added_tokens: BTreeMap<String, usize> = serde_json::from_slice(inputs.added_tokens)
+        .map_err(|error| format!("invalid added_tokens.json: {error}"))?;
+    let special_tokens: SpecialTokensMapFile = serde_json::from_slice(inputs.special_tokens_map)
+        .map_err(|error| format!("invalid special_tokens_map.json: {error}"))?;
+    let model_config: TokenIdConfigFile = serde_json::from_slice(inputs.model_config)
+        .map_err(|error| format!("invalid config.json token IDs: {error}"))?;
+    let generation_config: TokenIdConfigFile = serde_json::from_slice(inputs.generation_config)
+        .map_err(|error| format!("invalid generation_config.json token IDs: {error}"))?;
+
+    let added_decoder = tokenizer_config
+        .added_tokens_decoder
+        .get(&TOKENIZER_BOS_TOKEN_ID.to_string())
+        .ok_or_else(|| "tokenizer config is missing added special ID 0".to_owned())?;
+    if tokenizer_config.added_tokens_decoder.len() != 1
+        || added_decoder.content != TOKENIZER_SPECIAL_TEXT
+        || !added_decoder.special
+        || added_tokens.len() != 1
+        || added_tokens.get(TOKENIZER_SPECIAL_TEXT) != Some(&TOKENIZER_BOS_TOKEN_ID)
+    {
+        return Err("tokenizer added special token contract does not match ID 0".to_owned());
+    }
+    if tokenizer_config.bos_token != TOKENIZER_SPECIAL_TEXT
+        || tokenizer_config.eos_token != TOKENIZER_EOS_TEXT
+        || special_tokens.bos_token != TOKENIZER_SPECIAL_TEXT
+        || special_tokens.eos_token != TOKENIZER_EOS_TEXT
+        || special_tokens.unk_token != TOKENIZER_SPECIAL_TEXT
+        || special_tokens.pad_token != TOKENIZER_SPECIAL_TEXT
+    {
+        return Err("tokenizer special-token text contract is inconsistent".to_owned());
+    }
+    if model_config.bos_token_id != MODEL_CONFIG_BOS_TOKEN_ID
+        || model_config.eos_token_id != MODEL_CONFIG_EOS_TOKEN_ID
+        || generation_config.bos_token_id != GENERATION_CONFIG_BOS_TOKEN_ID
+        || generation_config.eos_token_id != GENERATION_CONFIG_EOS_TOKEN_ID
+    {
+        return Err("model or generation BOS/EOS IDs changed".to_owned());
+    }
+    let implementation = std::str::from_utf8(inputs.tokenizer_implementation)
+        .map_err(|error| format!("tokenizer implementation is not UTF-8: {error}"))?;
+    if !implementation.contains("rwkv_vocab_v20230424.txt")
+        || !implementation.contains("find_longest")
+        || !implementation.contains("decodeBytes")
+    {
+        return Err("tokenizer implementation lacks reviewed byte-trie markers".to_owned());
+    }
+
+    let tokenizer = RwkvTokenizer::parse(inputs.vocabulary)?;
+    let eos_ids = tokenizer.encode_bytes(TOKENIZER_EOS_TEXT.as_bytes())?;
+    if eos_ids != [BYTE_VOCABULARY_EOS_TOKEN_ID] {
+        return Err(format!(
+            "byte-vocabulary EOS text must encode to [{}], found {eos_ids:?}",
+            BYTE_VOCABULARY_EOS_TOKEN_ID
+        ));
+    }
+    let reference_fixtures = vec![
+        validate_reference_fixture(&tokenizer, "empty", b"", REFERENCE_EMPTY_TOKEN_IDS)?,
+        validate_reference_fixture(
+            &tokenizer,
+            "tokenizer_eos",
+            TOKENIZER_EOS_TEXT.as_bytes(),
+            REFERENCE_EOS_TOKEN_IDS,
+        )?,
+        validate_reference_fixture(
+            &tokenizer,
+            "overlapping_prefix",
+            b"aaaa",
+            REFERENCE_OVERLAP_TOKEN_IDS,
+        )?,
+        validate_reference_fixture(&tokenizer, "ascii", b"hello", REFERENCE_ASCII_TOKEN_IDS)?,
+        validate_reference_fixture(
+            &tokenizer,
+            "unicode",
+            "RWKV λ 世界".as_bytes(),
+            REFERENCE_UNICODE_TOKEN_IDS,
+        )?,
+        validate_reference_fixture(
+            &tokenizer,
+            "control_bytes",
+            &[0, 1, u8::MAX],
+            REFERENCE_CONTROL_TOKEN_IDS,
+        )?,
+        validate_reference_fixture(
+            &tokenizer,
+            "byte_fixed_chat_prompt",
+            FIXED_CHAT_PROMPT.as_bytes(),
+            REFERENCE_BYTE_PROMPT_TOKEN_IDS,
+        )?,
+        validate_wrapper_reference_fixture(
+            &tokenizer,
+            "wrapper_fixed_chat_prompt",
+            FIXED_RENDERED_CHAT_PROMPT,
+            REFERENCE_WRAPPER_PROMPT_TOKEN_IDS,
+        )?,
+    ];
+
+    Ok((
+        tokenizer,
+        TokenizerContractReceipt {
+            revision: MODEL_REVISION,
+            vocabulary_entry_count: TOKENIZER_VOCAB_ENTRY_COUNT,
+            vocabulary_first_id: TOKENIZER_FIRST_VOCAB_ID,
+            vocabulary_last_id: TOKENIZER_LAST_VOCAB_ID,
+            model_config_bos_token_id: MODEL_CONFIG_BOS_TOKEN_ID,
+            model_config_eos_token_id: MODEL_CONFIG_EOS_TOKEN_ID,
+            tokenizer_bos_token_id: TOKENIZER_BOS_TOKEN_ID,
+            byte_vocabulary_eos_token_id: BYTE_VOCABULARY_EOS_TOKEN_ID,
+            tokenizer_wrapper_eos_token_id: TOKENIZER_WRAPPER_EOS_TOKEN_ID,
+            generation_config_bos_token_id: GENERATION_CONFIG_BOS_TOKEN_ID,
+            generation_config_eos_token_id: GENERATION_CONFIG_EOS_TOKEN_ID,
+            reference_fixtures,
+            artifacts,
+        },
+    ))
+}
+
 // r[impl onix.tenstorrent.native_runtime.rwkv_lab.real_weight_layer]
 pub fn run_checkpoint(checkpoint: &[u8], expected_blake3: &str) -> Result<LayerReceipt, String> {
     verify_checkpoint_digest(checkpoint, expected_blake3)?;
@@ -474,9 +1253,17 @@ pub fn run_checkpoint(checkpoint: &[u8], expected_blake3: &str) -> Result<LayerR
     let embedding = tensors
         .tensor("model.embeddings.weight")
         .map_err(|error| format!("missing model.embeddings.weight: {error}"))?;
-    let bos = embedding_row(&embedding, BOS_TOKEN_ID, dimensions.hidden_size)?;
-    let eos = embedding_row(&embedding, EOS_TOKEN_ID, dimensions.hidden_size)?;
-    let result = run_sequence(&weights, [&bos, &eos])?;
+    let model_config_bos = embedding_row(
+        &embedding,
+        MODEL_CONFIG_BOS_TOKEN_ID,
+        dimensions.hidden_size,
+    )?;
+    let model_config_eos = embedding_row(
+        &embedding,
+        MODEL_CONFIG_EOS_TOKEN_ID,
+        dimensions.hidden_size,
+    )?;
+    let result = run_sequence(&weights, [&model_config_bos, &model_config_eos])?;
 
     if result.maximum_state_deviation > ORACLE_TOLERANCE {
         return Err(format!(
@@ -502,7 +1289,7 @@ pub fn run_checkpoint(checkpoint: &[u8], expected_blake3: &str) -> Result<LayerR
         },
         dimensions,
         layer_index: LAYER_INDEX,
-        token_ids: [BOS_TOKEN_ID, EOS_TOKEN_ID],
+        token_ids: [MODEL_CONFIG_BOS_TOKEN_ID, MODEL_CONFIG_EOS_TOKEN_ID],
         arithmetic_precision: ARITHMETIC_PRECISION,
         second_token_wkv: WkvReceipt {
             r: numeric_receipt(&result.second_inputs.r)?,
@@ -544,9 +1331,17 @@ pub fn run_token_checkpoint(
     let embedding = tensors
         .tensor("model.embeddings.weight")
         .map_err(|error| format!("missing model.embeddings.weight: {error}"))?;
-    let bos = embedding_row(&embedding, BOS_TOKEN_ID, dimensions.hidden_size)?;
-    let eos = embedding_row(&embedding, EOS_TOKEN_ID, dimensions.hidden_size)?;
-    let sequence = run_model_sequence(&weights, [&bos, &eos])?;
+    let model_config_bos = embedding_row(
+        &embedding,
+        MODEL_CONFIG_BOS_TOKEN_ID,
+        dimensions.hidden_size,
+    )?;
+    let model_config_eos = embedding_row(
+        &embedding,
+        MODEL_CONFIG_EOS_TOKEN_ID,
+        dimensions.hidden_size,
+    )?;
+    let sequence = run_model_sequence(&weights, [&model_config_bos, &model_config_eos])?;
 
     if sequence.maximum_state_deviation > ORACLE_TOLERANCE {
         return Err(format!(
@@ -622,7 +1417,7 @@ pub fn run_token_checkpoint(
         },
         dimensions,
         layer_count: MODEL_LAYER_COUNT,
-        prefix_token_ids: [BOS_TOKEN_ID, EOS_TOKEN_ID],
+        prefix_token_ids: [MODEL_CONFIG_BOS_TOKEN_ID, MODEL_CONFIG_EOS_TOKEN_ID],
         generated_token_id: production_top.first.token_id,
         generated_logit: production_top.first.logit,
         runner_up_token_id: production_top.second.token_id,
@@ -678,10 +1473,10 @@ pub fn run_decode_checkpoint(
     )?;
 
     let mut execution = ModelExecutionState::zero(dimensions)?;
-    let mut input_token_id = BOS_TOKEN_ID;
+    let mut input_token_id = MODEL_CONFIG_BOS_TOKEN_ID;
     let mut processed_input_ids = Vec::with_capacity(DECODE_STEP_COUNT);
     let mut generated_token_ids = Vec::with_capacity(DECODE_STEP_COUNT);
-    let mut eos_observed_steps = Vec::new();
+    let mut model_config_eos_observed_steps = Vec::new();
     let mut steps = Vec::with_capacity(DECODE_STEP_COUNT);
     let mut maximum_replay_hidden_deviation = 0.0_f32;
     let mut maximum_replay_logits_deviation = 0.0_f32;
@@ -766,9 +1561,9 @@ pub fn run_decode_checkpoint(
                 "decode step {step_index} has invalid greedy margin {greedy_margin}"
             ));
         }
-        let eos_selected = generated.token_id == EOS_TOKEN_ID;
-        if eos_selected {
-            eos_observed_steps.push(step_index);
+        let model_config_eos_selected = generated.token_id == MODEL_CONFIG_EOS_TOKEN_ID;
+        if model_config_eos_selected {
+            model_config_eos_observed_steps.push(step_index);
         }
         generated_token_ids.push(generated.token_id);
         steps.push(DecodeStepReceipt {
@@ -779,7 +1574,7 @@ pub fn run_decode_checkpoint(
             runner_up_token_id: runner_up.token_id,
             runner_up_logit: runner_up.logit,
             greedy_margin,
-            eos_selected,
+            model_config_eos_selected,
             final_hidden: numeric_receipt(&evaluation.final_hidden)?,
             logits: numeric_receipt(&evaluation.logits)?,
             recurrent_states: numeric_receipt(&incremental_states)?,
@@ -797,7 +1592,7 @@ pub fn run_decode_checkpoint(
     if !minimum_retained_vs_reset_hidden_deviation.is_finite() {
         return Err("stateful decode did not execute a retained-state discriminator".to_owned());
     }
-    let continued_after_eos = eos_observed_steps
+    let continued_after_model_config_eos = model_config_eos_observed_steps
         .iter()
         .any(|step_index| step_index + 1 < DECODE_STEP_COUNT);
     let maximum_oracle_state_deviation = execution
@@ -823,13 +1618,13 @@ pub fn run_decode_checkpoint(
         },
         dimensions,
         layer_count: MODEL_LAYER_COUNT,
-        seed_token_id: BOS_TOKEN_ID,
+        seed_token_id: MODEL_CONFIG_BOS_TOKEN_ID,
         generated_step_count: DECODE_STEP_COUNT,
         processed_input_ids,
         generated_token_ids,
-        eos_token_id: EOS_TOKEN_ID,
-        eos_observed_steps,
-        continued_after_eos,
+        model_config_eos_token_id: MODEL_CONFIG_EOS_TOKEN_ID,
+        model_config_eos_observed_steps,
+        continued_after_model_config_eos,
         arithmetic_precision: ARITHMETIC_PRECISION,
         steps,
         final_recurrent_states: numeric_receipt(&final_recurrent_states)?,
@@ -843,6 +1638,286 @@ pub fn run_decode_checkpoint(
         replay_tolerance: REPLAY_TOLERANCE,
         non_claims: DECODE_NON_CLAIMS.to_vec(),
     })
+}
+
+// r[impl onix.tenstorrent.native_runtime.rwkv_lab.tokenizer_text]
+pub fn run_text_checkpoint(
+    checkpoint: &[u8],
+    expected_model_blake3: &str,
+    authority_inputs: TokenizerAuthorityInputs<'_>,
+) -> Result<TextReceipt, String> {
+    verify_checkpoint_digest(checkpoint, expected_model_blake3)?;
+    let byte_count = u64::try_from(checkpoint.len())
+        .map_err(|error| format!("checkpoint byte count does not fit u64: {error}"))?;
+    if byte_count != MODEL_BYTE_COUNT {
+        return Err(format!(
+            "checkpoint byte count must be {MODEL_BYTE_COUNT}, found {byte_count}"
+        ));
+    }
+    let (tokenizer, tokenizer_receipt) = validate_tokenizer_authority(authority_inputs)?;
+    let prompt_token_ids = tokenizer.encode_wrapper_text(FIXED_RENDERED_CHAT_PROMPT)?;
+    if prompt_token_ids.len() <= 1 {
+        return Err("fixed chat prompt must contain ordinary vocabulary tokens".to_owned());
+    }
+
+    let tensors = SafeTensors::deserialize(checkpoint)
+        .map_err(|error| format!("failed to decode safetensors checkpoint: {error}"))?;
+    let dimensions = Dimensions::reviewed();
+    let weights = (0..MODEL_LAYER_COUNT)
+        .map(|layer_index| load_layer(&tensors, dimensions, layer_index))
+        .collect::<Result<Vec<_>, _>>()?;
+    validate_model_weights(&weights)?;
+    let embedding = tensors
+        .tensor("model.embeddings.weight")
+        .map_err(|error| format!("missing model.embeddings.weight: {error}"))?;
+    let final_norm_weight = vector(&tensors, "model.norm.weight", dimensions.hidden_size)?;
+    let final_norm_bias = vector(&tensors, "model.norm.bias", dimensions.hidden_size)?;
+    let head_tensor = tensors
+        .tensor("lm_head.weight")
+        .map_err(|error| format!("missing lm_head.weight: {error}"))?;
+    let head = matrix(
+        &tensors,
+        "lm_head.weight",
+        VOCABULARY_SIZE,
+        dimensions.hidden_size,
+    )?;
+
+    let mut execution = ModelExecutionState::zero(dimensions)?;
+    let mut final_output = Vec::new();
+    for token_id in &prompt_token_ids {
+        let token_embedding = embedding_row(&embedding, *token_id, dimensions.hidden_size)?;
+        (execution, final_output) = run_model_token(&weights, &token_embedding, execution)?;
+    }
+    ensure_oracle_tolerance(&execution, "fixed prompt")?;
+    let prompt_evaluation = evaluate_head(
+        &final_output,
+        &final_norm_weight,
+        &final_norm_bias,
+        &head,
+        &head_tensor,
+        dimensions,
+    )?;
+    let prompt_states = execution.flattened_matrices();
+    let (prompt_replay_execution, prompt_replay_output) =
+        replay_input_ids(&weights, &embedding, &prompt_token_ids, dimensions)?;
+    let prompt_replay_evaluation = evaluate_head(
+        &prompt_replay_output,
+        &final_norm_weight,
+        &final_norm_bias,
+        &head,
+        &head_tensor,
+        dimensions,
+    )?;
+    let prompt_replay_states = prompt_replay_execution.flattened_matrices();
+    let prompt_hidden_deviation = max_abs_difference(
+        &prompt_evaluation.final_hidden,
+        &prompt_replay_evaluation.final_hidden,
+    )?;
+    let prompt_state_deviation = max_abs_difference(&prompt_states, &prompt_replay_states)?;
+    require_replay_tolerance(prompt_hidden_deviation, "prompt final hidden", 0)?;
+    require_replay_tolerance(prompt_state_deviation, "prompt recurrent state", 0)?;
+    let last_prompt_id = *prompt_token_ids
+        .last()
+        .ok_or_else(|| "fixed prompt token IDs are empty".to_owned())?;
+    let (_, prompt_reset_output) =
+        replay_input_ids(&weights, &embedding, &[last_prompt_id], dimensions)?;
+    let prompt_reset_evaluation = evaluate_head(
+        &prompt_reset_output,
+        &final_norm_weight,
+        &final_norm_bias,
+        &head,
+        &head_tensor,
+        dimensions,
+    )?;
+    let prompt_retained_vs_reset = max_abs_difference(
+        &prompt_evaluation.final_hidden,
+        &prompt_reset_evaluation.final_hidden,
+    )?;
+    require_state_carry_divergence(prompt_retained_vs_reset, 0)?;
+
+    let mut processed_input_ids = prompt_token_ids.clone();
+    let mut generated_token_ids = Vec::with_capacity(TEXT_GENERATION_STEP_LIMIT);
+    let mut generated_bytes = Vec::new();
+    let mut steps = Vec::with_capacity(TEXT_GENERATION_STEP_LIMIT);
+    let mut maximum_replay_hidden_deviation = prompt_hidden_deviation;
+    let mut maximum_replay_state_deviation = prompt_state_deviation;
+    let mut minimum_retained_vs_reset_hidden_deviation = prompt_retained_vs_reset;
+    let mut stop_reason = "generation_step_limit";
+
+    for step_index in 0..TEXT_GENERATION_STEP_LIMIT {
+        let selection = evaluate_head(
+            &final_output,
+            &final_norm_weight,
+            &final_norm_bias,
+            &head,
+            &head_tensor,
+            dimensions,
+        )?;
+        let generated = selection.top_two.first;
+        let runner_up = selection.top_two.second;
+        let greedy_margin = generated.logit - runner_up.logit;
+        if !greedy_margin.is_finite() || greedy_margin < 0.0 {
+            return Err(format!(
+                "text generation step {step_index} has invalid greedy margin {greedy_margin}"
+            ));
+        }
+        generated_token_ids.push(generated.token_id);
+        let generation_eos_selected = generated.token_id == GENERATION_CONFIG_EOS_TOKEN_ID;
+        if generation_eos_selected {
+            stop_reason = "generation_config_eos";
+            steps.push(TextGenerationStepReceipt {
+                step_index,
+                generated_token_id: generated.token_id,
+                generated_logit: generated.logit,
+                runner_up_token_id: runner_up.token_id,
+                runner_up_logit: runner_up.logit,
+                greedy_margin,
+                generated_token_bytes_hex: String::new(),
+                generation_eos_selected,
+                post_token_final_hidden: None,
+                post_token_recurrent_states: None,
+                incremental_replay_hidden_deviation: None,
+                incremental_replay_state_deviation: None,
+                retained_vs_reset_hidden_deviation: None,
+                head_oracle_logit_deviation: selection.head_oracle_logit_deviation,
+            });
+            break;
+        }
+
+        let token_bytes = tokenizer.decode_wrapper_bytes(&[generated.token_id])?;
+        generated_bytes.extend_from_slice(&token_bytes);
+        let token_embedding =
+            embedding_row(&embedding, generated.token_id, dimensions.hidden_size)?;
+        (execution, final_output) = run_model_token(&weights, &token_embedding, execution)?;
+        processed_input_ids.push(generated.token_id);
+        ensure_oracle_tolerance(&execution, "generated token")?;
+        let post_evaluation = evaluate_head(
+            &final_output,
+            &final_norm_weight,
+            &final_norm_bias,
+            &head,
+            &head_tensor,
+            dimensions,
+        )?;
+        let incremental_states = execution.flattened_matrices();
+        let (replay_execution, replay_output) =
+            replay_input_ids(&weights, &embedding, &processed_input_ids, dimensions)?;
+        ensure_oracle_tolerance(&replay_execution, "text replay")?;
+        let replay_evaluation = evaluate_head(
+            &replay_output,
+            &final_norm_weight,
+            &final_norm_bias,
+            &head,
+            &head_tensor,
+            dimensions,
+        )?;
+        let replay_states = replay_execution.flattened_matrices();
+        let hidden_deviation = max_abs_difference(
+            &post_evaluation.final_hidden,
+            &replay_evaluation.final_hidden,
+        )?;
+        let state_deviation = max_abs_difference(&incremental_states, &replay_states)?;
+        require_replay_tolerance(hidden_deviation, "text final hidden", step_index)?;
+        require_replay_tolerance(state_deviation, "text recurrent state", step_index)?;
+        let (_, reset_output) =
+            replay_input_ids(&weights, &embedding, &[generated.token_id], dimensions)?;
+        let reset_evaluation = evaluate_head(
+            &reset_output,
+            &final_norm_weight,
+            &final_norm_bias,
+            &head,
+            &head_tensor,
+            dimensions,
+        )?;
+        let retained_vs_reset_hidden_deviation = max_abs_difference(
+            &post_evaluation.final_hidden,
+            &reset_evaluation.final_hidden,
+        )?;
+        require_state_carry_divergence(retained_vs_reset_hidden_deviation, step_index)?;
+        maximum_replay_hidden_deviation = maximum_replay_hidden_deviation.max(hidden_deviation);
+        maximum_replay_state_deviation = maximum_replay_state_deviation.max(state_deviation);
+        minimum_retained_vs_reset_hidden_deviation =
+            minimum_retained_vs_reset_hidden_deviation.min(retained_vs_reset_hidden_deviation);
+        steps.push(TextGenerationStepReceipt {
+            step_index,
+            generated_token_id: generated.token_id,
+            generated_logit: generated.logit,
+            runner_up_token_id: runner_up.token_id,
+            runner_up_logit: runner_up.logit,
+            greedy_margin,
+            generated_token_bytes_hex: encode_hex(&token_bytes),
+            generation_eos_selected,
+            post_token_final_hidden: Some(numeric_receipt(&post_evaluation.final_hidden)?),
+            post_token_recurrent_states: Some(numeric_receipt(&incremental_states)?),
+            incremental_replay_hidden_deviation: Some(hidden_deviation),
+            incremental_replay_state_deviation: Some(state_deviation),
+            retained_vs_reset_hidden_deviation: Some(retained_vs_reset_hidden_deviation),
+            head_oracle_logit_deviation: selection.head_oracle_logit_deviation,
+        });
+    }
+
+    let generated_text = String::from_utf8(generated_bytes.clone())
+        .map_err(|error| format!("bounded generated bytes are not valid UTF-8: {error}"))?;
+    let maximum_oracle_state_deviation = execution
+        .maximum_state_deviations
+        .iter()
+        .copied()
+        .fold(0.0_f32, f32::max);
+    let maximum_oracle_output_deviation = execution
+        .maximum_output_deviations
+        .iter()
+        .copied()
+        .fold(0.0_f32, f32::max);
+    let final_recurrent_states = execution.flattened_matrices();
+
+    Ok(TextReceipt {
+        schema_version: RECEIPT_SCHEMA_VERSION,
+        model: ModelReceipt {
+            model_id: MODEL_ID,
+            revision: MODEL_REVISION,
+            sha256_sri: MODEL_SHA256_SRI,
+            blake3: blake3::hash(checkpoint).to_hex().to_string(),
+            byte_count,
+        },
+        tokenizer: tokenizer_receipt,
+        dimensions,
+        fixed_user_message: FIXED_USER_MESSAGE,
+        fixed_chat_prompt: FIXED_CHAT_PROMPT,
+        rendered_chat_prompt: FIXED_RENDERED_CHAT_PROMPT,
+        prompt_token_ids_blake3: fingerprint_token_ids(&prompt_token_ids)?,
+        prompt_token_ids,
+        generation_step_limit: TEXT_GENERATION_STEP_LIMIT,
+        generated_token_ids_blake3: fingerprint_token_ids(&generated_token_ids)?,
+        generated_token_ids,
+        generated_bytes_hex: encode_hex(&generated_bytes),
+        generated_text,
+        stop_reason,
+        arithmetic_precision: ARITHMETIC_PRECISION,
+        steps,
+        final_recurrent_states: numeric_receipt(&final_recurrent_states)?,
+        maximum_oracle_state_deviation,
+        maximum_oracle_output_deviation,
+        maximum_replay_hidden_deviation,
+        maximum_replay_state_deviation,
+        minimum_retained_vs_reset_hidden_deviation,
+        oracle_tolerance: ORACLE_TOLERANCE,
+        replay_tolerance: REPLAY_TOLERANCE,
+        non_claims: TEXT_NON_CLAIMS.to_vec(),
+    })
+}
+
+fn encode_hex(bytes: &[u8]) -> String {
+    use std::fmt::Write as _;
+
+    let output_capacity = bytes
+        .len()
+        .checked_mul(HEX_CHARACTERS_PER_BYTE)
+        .unwrap_or_default();
+    let mut output = String::with_capacity(output_capacity);
+    for byte in bytes {
+        let _ = write!(&mut output, "{byte:02x}");
+    }
+    output
 }
 
 fn replay_input_ids(
@@ -965,9 +2040,9 @@ fn validate_decode_chain(
             "decode chain requires {DECODE_STEP_COUNT} processed and generated tokens"
         ));
     }
-    if processed_input_ids.first().copied() != Some(BOS_TOKEN_ID) {
+    if processed_input_ids.first().copied() != Some(MODEL_CONFIG_BOS_TOKEN_ID) {
         return Err(format!(
-            "decode chain must start with BOS token {BOS_TOKEN_ID}"
+            "decode chain must start with model-config BOS token {MODEL_CONFIG_BOS_TOKEN_ID}"
         ));
     }
     for step_index in 1..DECODE_STEP_COUNT {
@@ -2100,6 +3175,16 @@ fn numeric_receipt(values: &[f32]) -> Result<NumericReceipt, String> {
     })
 }
 
+fn fingerprint_token_ids(token_ids: &[usize]) -> Result<String, String> {
+    let mut hasher = blake3::Hasher::new();
+    for token_id in token_ids {
+        let token_id = u64::try_from(*token_id)
+            .map_err(|error| format!("token ID does not fit u64: {error}"))?;
+        hasher.update(&token_id.to_le_bytes());
+    }
+    Ok(hasher.finalize().to_hex().to_string())
+}
+
 fn fingerprint_f32(values: &[f32]) -> String {
     let mut hasher = blake3::Hasher::new();
     for value in values {
@@ -2423,19 +3508,31 @@ mod tests {
 
     #[test]
     fn decode_chain_requires_selected_tokens_as_next_inputs() {
-        let valid_processed = [BOS_TOKEN_ID, EOS_TOKEN_ID, BOS_TOKEN_ID];
-        let valid_generated = [EOS_TOKEN_ID, BOS_TOKEN_ID, EOS_TOKEN_ID];
+        let valid_processed = [
+            MODEL_CONFIG_BOS_TOKEN_ID,
+            MODEL_CONFIG_EOS_TOKEN_ID,
+            MODEL_CONFIG_BOS_TOKEN_ID,
+        ];
+        let valid_generated = [
+            MODEL_CONFIG_EOS_TOKEN_ID,
+            MODEL_CONFIG_BOS_TOKEN_ID,
+            MODEL_CONFIG_EOS_TOKEN_ID,
+        ];
         validate_decode_chain(&valid_processed, &valid_generated)
             .expect("generated tokens used as next inputs must pass");
 
-        let stale_processed = [BOS_TOKEN_ID, BOS_TOKEN_ID, BOS_TOKEN_ID];
+        let stale_processed = [
+            MODEL_CONFIG_BOS_TOKEN_ID,
+            MODEL_CONFIG_BOS_TOKEN_ID,
+            MODEL_CONFIG_BOS_TOKEN_ID,
+        ];
         assert!(
             validate_decode_chain(&stale_processed, &valid_generated)
                 .expect_err("stale next input must fail")
                 .contains("prior generated token")
         );
         assert!(
-            validate_decode_chain(&[BOS_TOKEN_ID], &[EOS_TOKEN_ID])
+            validate_decode_chain(&[MODEL_CONFIG_BOS_TOKEN_ID], &[MODEL_CONFIG_EOS_TOKEN_ID],)
                 .expect_err("short decode chain must fail")
                 .contains("requires")
         );
@@ -2497,6 +3594,133 @@ mod tests {
         );
     }
 
+    // r[verify onix.tenstorrent.native_runtime.rwkv_lab.tokenizer_text]
+    #[test]
+    fn tokenizer_literals_accept_reviewed_bytes_and_unicode() {
+        assert_eq!(
+            parse_python_bytes_literal(r"b'\xff'").expect("escaped byte literal must parse"),
+            vec![u8::MAX]
+        );
+        assert_eq!(
+            parse_python_bytes_literal("'é'").expect("Unicode literal must parse"),
+            "é".as_bytes()
+        );
+        assert_eq!(
+            parse_python_bytes_literal(r"'\n\u03bb'").expect("escaped Unicode literal must parse"),
+            "\nλ".as_bytes()
+        );
+        assert_eq!(
+            parse_vocabulary_line(r"261 '\n\n' 2").expect("reviewed EOS row must parse"),
+            (BYTE_VOCABULARY_EOS_TOKEN_ID, b"\n\n".to_vec())
+        );
+    }
+
+    #[test]
+    fn tokenizer_literals_and_rows_fail_closed() {
+        assert!(
+            parse_python_bytes_literal(r"b'\u0041'")
+                .expect_err("Unicode escape in bytes literal must fail")
+                .contains("Unicode escape")
+        );
+        assert!(
+            parse_python_bytes_literal(r"'\N{LATIN CAPITAL LETTER A}'")
+                .expect_err("named Unicode escape must fail")
+                .contains("unsupported escape")
+        );
+        assert!(
+            parse_vocabulary_line(r"261 '\n\n' 1")
+                .expect_err("wrong declared byte length must fail")
+                .contains("declares")
+        );
+        assert!(
+            parse_vocabulary_line("missing-fields")
+                .expect_err("malformed row must fail")
+                .contains("separator")
+        );
+    }
+
+    #[test]
+    fn tokenizer_uses_greedy_longest_prefix_and_exact_bytes() {
+        let tokenizer = RwkvTokenizer::from_tokens(vec![
+            None,
+            Some(b"a".to_vec()),
+            Some(b"ab".to_vec()),
+            Some(b"b".to_vec()),
+        ])
+        .expect("compact tokenizer fixture must be valid");
+        let encoded = tokenizer
+            .encode_bytes(b"abab")
+            .expect("overlapping token fixture must encode");
+        assert_eq!(encoded, vec![2, 2]);
+        assert_eq!(
+            tokenizer
+                .decode_bytes(&encoded)
+                .expect("encoded fixture must decode"),
+            b"abab"
+        );
+        assert!(
+            tokenizer
+                .decode_bytes(&[TOKENIZER_BOS_TOKEN_ID])
+                .expect_err("special ID must not decode as ordinary bytes")
+                .contains("special")
+        );
+        assert!(
+            tokenizer
+                .decode_bytes(&[4])
+                .expect_err("missing vocabulary ID must fail")
+                .contains("cannot decode")
+        );
+        assert!(
+            tokenizer
+                .encode_bytes(b"c")
+                .expect_err("unknown source byte must fail")
+                .contains("source offset")
+        );
+        let wrapper_text = format!("{TOKENIZER_SPECIAL_TEXT}a{TOKENIZER_EOS_TEXT}");
+        let wrapper_ids = tokenizer
+            .encode_wrapper_text(&wrapper_text)
+            .expect("added special tokens must encode outside the byte trie");
+        assert_eq!(
+            wrapper_ids,
+            vec![TOKENIZER_BOS_TOKEN_ID, 1, TOKENIZER_WRAPPER_EOS_TOKEN_ID,]
+        );
+        assert_eq!(
+            tokenizer
+                .decode_wrapper_bytes(&wrapper_ids)
+                .expect("added special tokens must decode"),
+            wrapper_text.as_bytes()
+        );
+    }
+
+    #[test]
+    fn tokenizer_rejects_missing_and_duplicate_token_entries() {
+        assert!(
+            RwkvTokenizer::from_tokens(vec![None, Some(b"a".to_vec()), None])
+                .expect_err("missing token entry must fail")
+                .contains("missing ID")
+        );
+        assert!(
+            RwkvTokenizer::from_tokens(vec![None, Some(b"a".to_vec()), Some(b"a".to_vec()),])
+                .expect_err("duplicate token bytes must fail")
+                .contains("duplicate")
+        );
+    }
+
+    #[test]
+    fn token_authority_conflict_remains_explicit() {
+        assert_eq!(MODEL_CONFIG_BOS_TOKEN_ID, 1);
+        assert_eq!(MODEL_CONFIG_EOS_TOKEN_ID, 2);
+        assert_eq!(TOKENIZER_BOS_TOKEN_ID, 0);
+        assert_eq!(BYTE_VOCABULARY_EOS_TOKEN_ID, 261);
+        assert_eq!(TOKENIZER_WRAPPER_EOS_TOKEN_ID, 65_530);
+        assert_eq!(GENERATION_CONFIG_BOS_TOKEN_ID, 0);
+        assert_eq!(GENERATION_CONFIG_EOS_TOKEN_ID, 0);
+        assert_ne!(MODEL_CONFIG_BOS_TOKEN_ID, TOKENIZER_BOS_TOKEN_ID);
+        assert_ne!(MODEL_CONFIG_EOS_TOKEN_ID, BYTE_VOCABULARY_EOS_TOKEN_ID);
+        assert_ne!(MODEL_CONFIG_EOS_TOKEN_ID, TOKENIZER_WRAPPER_EOS_TOKEN_ID);
+        assert_ne!(MODEL_CONFIG_EOS_TOKEN_ID, GENERATION_CONFIG_EOS_TOKEN_ID);
+    }
+
     #[test]
     fn fingerprints_are_stable_and_order_sensitive() {
         let first = fingerprint_f32(&[1.0, 2.0, 3.0]);
@@ -2505,5 +3729,13 @@ mod tests {
         assert_eq!(first, second);
         assert_ne!(first, reordered);
         assert_eq!(first.len(), EXPECTED_DIGEST_HEX_LENGTH);
+        let token_ids =
+            fingerprint_token_ids(&[1, 2, 3]).expect("token ID fingerprint must succeed");
+        let repeated =
+            fingerprint_token_ids(&[1, 2, 3]).expect("repeated token ID fingerprint must succeed");
+        let reordered_ids =
+            fingerprint_token_ids(&[3, 2, 1]).expect("reordered token ID fingerprint must succeed");
+        assert_eq!(token_ids, repeated);
+        assert_ne!(token_ids, reordered_ids);
     }
 }
