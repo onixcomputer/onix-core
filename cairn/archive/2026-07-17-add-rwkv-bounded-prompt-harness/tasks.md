@@ -10,4 +10,4 @@
 
 ## 3. Validation and lifecycle
 
-- [ ] [serial] Run focused Rust/Nix and Cairn validation, lock bounded-prompt and PyTorch comparison evidence, preserve narrow non-claims, sync, archive, and commit the accepted boundary. r[onix.tenstorrent.native_runtime.rwkv_lab.bounded_prompt] r[onix.tenstorrent.native_runtime.rwkv_lab.torch_equation_parity]
+- [x] [serial] Run focused Rust/Nix and Cairn validation, lock bounded-prompt and PyTorch comparison evidence, preserve narrow non-claims, sync, archive, and commit the accepted boundary. r[onix.tenstorrent.native_runtime.rwkv_lab.bounded_prompt] r[onix.tenstorrent.native_runtime.rwkv_lab.torch_equation_parity]
