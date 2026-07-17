@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "plan_id": "@planId@",
+  "process_attempts": 1,
+  "owner_isolation_attempts": 1,
+  "restoration_attempts": 1,
+  "process": {
+    "exit_status": 0,
+    "timed_out": false
+  },
+  "owner_active_after": true,
+  "owner_health_status_after": 200,
+  "board_healthy_after": true,
+  "artifacts": [
+    {
+      "role": "board_after",
+      "blake3": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 32
+    },
+    {
+      "role": "diagnostic_log",
+      "blake3": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "bytes": 64
+    },
+    {
+      "role": "owner_after",
+      "blake3": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "bytes": 32
+    }
+  ],
+  "observed_markers": ["data-movement device probe: PASS"]
+}
