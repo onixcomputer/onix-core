@@ -10,16 +10,21 @@
   tt-metal,
   source,
 }:
+# r[impl onix.tenstorrent.native_runtime.ttwkv7.checkpoint_shape]
 stdenv.mkDerivation {
   pname = "ttwkv7-binaries";
   inherit (source) version;
 
   src = source.upstream;
-  patches = [ ./use-installed-metalium.patch ];
+  patches = [
+    ./use-installed-metalium.patch
+    ./support-checkpoint-host-shape.patch
+  ];
 
   postPatch = ''
     cp ${./constant-tile-probe.cpp} constant-tile-probe.cpp
     cp ${./data-movement-probe.cpp} data-movement-probe.cpp
+    cp wkv7_runner.cpp "$TMPDIR/ttwkv7-patched-wkv7-runner.cpp"
   '';
 
   strictDeps = true;
@@ -38,6 +43,8 @@ stdenv.mkDerivation {
 
   postInstall = ''
     rm -rf "$out/share"
+    mkdir -p "$out/share/ttwkv7/source"
+    cp "$TMPDIR/ttwkv7-patched-wkv7-runner.cpp" "$out/share/ttwkv7/source/wkv7_runner.cpp"
     test -x "$out/libexec/ttwkv7/wkv7"
     test -x "$out/libexec/ttwkv7/wkv7-constant-probe"
     test -x "$out/libexec/ttwkv7/wkv7-data-movement-probe"

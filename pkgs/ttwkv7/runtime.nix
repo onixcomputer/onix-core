@@ -11,6 +11,7 @@
 let
   metaliumRuntimeRoot = "${tt-metal}/libexec/tt-metalium";
   packageKernelDirectory = "$out/share/ttwkv7/kernels";
+  packageSourceDirectory = "$out/share/ttwkv7/source";
   packageExecutable = "$out/libexec/ttwkv7/wkv7";
   probeExecutable = "$out/libexec/ttwkv7/wkv7-constant-probe";
   wrappedProbeExecutable = "$out/libexec/ttwkv7/wkv7-constant-probe-runtime";
@@ -46,6 +47,33 @@ let
   dataMovementWrongVisibleDevice = "0";
   dataMovementUnexpectedSuffix = "unexpected-data-movement-suffix";
   hostileOutputPath = "/nonexistent-ttwkv7-output";
+  checkpointShapeMode = "shape-test";
+  checkpointShapeUnexpectedSuffix = "unexpected-shape-suffix";
+  checkpointShapeHeadSize = "64";
+  checkpointShapeHeadCount = "12";
+  checkpointShapeExpectedDiagnostic = "ttWKV7 checkpoint shape self-test: PASS S=64 H=12 Hpad=32 St=2 Ht=1 C=768 chunked_units=6";
+  checkpointShapeSuffixDiagnostic = "shape-test does not accept additional arguments";
+  checkpointShapeMalformedWorkload = "1x";
+  checkpointShapeMalformedWorkloadDiagnostic = "G must be an exact positive decimal within the supported workload bound";
+  checkpointShapeMissingPartnerDiagnostic = "explicit head size requires an explicit head count";
+  checkpointShapeInvalidHeadCount = "0";
+  checkpointShapeInvalidHeadSize = "32";
+  checkpointShapeMalformedShapeDiagnostic = "S and H must be exact positive decimals";
+  checkpointShapeInvalidDiagnostic = "unsupported WKV shape: S must be 64 and H must be within the reviewed bound";
+  checkpointShapeUnexpectedArgumentDiagnostic = "unexpected argument suffix";
+  checkpointShapeSource = "wkv7_runner.cpp";
+  checkpointShapeHeadTileExpression = "ceil_div_u32(head_count, TH)";
+  checkpointShapePaddingExpression = "tilize(block, shape.padded_head_count, shape.head_size)";
+  checkpointShapeWorkExpression = "chunked_work_unit_count(IC)";
+  checkpointShapeClampedEndExpression = "units_done, units_here, IC, unit_to_inst";
+  checkpointShapeUnclampedEndExpression = "units_done, units_here, std::numeric_limits<uint32_t>::max(), unit_to_inst";
+  checkpointShapeParserExpression = "std::from_chars(first, last, value)";
+  checkpointShapeModeExpression = "if (mode == \"shape-test\")";
+  checkpointShapeDeviceExpression = "MeshDevice::create_unit_mesh";
+  checkpointShapeFloorHeadTileExpression = "head_count / TH";
+  checkpointShapeUnpaddedExpression = "tilize(block, shape.head_count, shape.head_size)";
+  checkpointShapeFloorWorkExpression = "(IC / NBg)";
+  checkpointShapeCoercingParserExpression = "std::atoi";
   invalidMode = "invalid-mode";
   invalidModeExitStatus = 2;
   wrapperFailureStatus = 1;
@@ -137,6 +165,7 @@ stdenvNoCC.mkDerivation {
     ln -s ${binaries}/libexec/ttwkv7/wkv7-constant-probe ${probeExecutable}
     ln -s ${binaries}/libexec/ttwkv7/wkv7-data-movement-probe ${dataMovementExecutable}
     ln -s ${kernels}/share/ttwkv7/kernels ${packageKernelDirectory}
+    ln -s ${binaries}/share/ttwkv7/source ${packageSourceDirectory}
 
     makeWrapper ${packageExecutable} "$out/bin/${primaryCommand}" \
       --set TT_METAL_HOME ${lib.escapeShellArg metaliumRuntimeRoot} \
@@ -187,6 +216,169 @@ stdenvNoCC.mkDerivation {
     test -x ${diagnosticRuntimeExecutable}
     test -x ${dataMovementExecutable}
     test -x ${dataMovementRuntimeExecutable}
+    test -f "${packageSourceDirectory}/${checkpointShapeSource}"
+
+    # Positive and negative checkpoint-shape coverage for
+    # r[verify onix.tenstorrent.native_runtime.ttwkv7.checkpoint_shape].
+    checkpoint_shape_first="$(${packageExecutable} ${lib.escapeShellArg checkpointShapeMode})"
+    checkpoint_shape_second="$(${packageExecutable} ${lib.escapeShellArg checkpointShapeMode})"
+    test "$checkpoint_shape_first" = "$checkpoint_shape_second"
+    test "$checkpoint_shape_first" = ${lib.escapeShellArg checkpointShapeExpectedDiagnostic}
+
+    checkpoint_shape_suffix_log="$(mktemp)"
+    if ${packageExecutable} ${lib.escapeShellArg checkpointShapeMode} \
+      ${lib.escapeShellArg checkpointShapeUnexpectedSuffix} >"$checkpoint_shape_suffix_log" 2>&1; then
+      echo "ttWKV7 checkpoint shape self-test accepted an argument suffix" >&2
+      exit 1
+    else
+      checkpoint_shape_suffix_status="$?"
+    fi
+    test "$checkpoint_shape_suffix_status" -eq ${toString invalidModeExitStatus}
+    grep -F ${lib.escapeShellArg checkpointShapeSuffixDiagnostic} "$checkpoint_shape_suffix_log"
+
+    checkpoint_shape_malformed_log="$(mktemp)"
+    if ${packageExecutable} test all ${lib.escapeShellArg checkpointShapeMalformedWorkload} \
+      >"$checkpoint_shape_malformed_log" 2>&1; then
+      echo "ttWKV7 checkpoint shape host accepted malformed workload input" >&2
+      exit 1
+    else
+      checkpoint_shape_malformed_status="$?"
+    fi
+    test "$checkpoint_shape_malformed_status" -eq ${toString invalidModeExitStatus}
+    grep -F ${lib.escapeShellArg checkpointShapeMalformedWorkloadDiagnostic} \
+      "$checkpoint_shape_malformed_log"
+
+    checkpoint_shape_missing_partner_log="$(mktemp)"
+    if ${packageExecutable} test all 1 1 ${lib.escapeShellArg checkpointShapeHeadSize} \
+      >"$checkpoint_shape_missing_partner_log" 2>&1; then
+      echo "ttWKV7 checkpoint shape host accepted a head size without a head count" >&2
+      exit 1
+    else
+      checkpoint_shape_missing_partner_status="$?"
+    fi
+    test "$checkpoint_shape_missing_partner_status" -eq ${toString invalidModeExitStatus}
+    grep -F ${lib.escapeShellArg checkpointShapeMissingPartnerDiagnostic} \
+      "$checkpoint_shape_missing_partner_log"
+
+    checkpoint_shape_zero_head_log="$(mktemp)"
+    if ${packageExecutable} test all 1 1 \
+      ${lib.escapeShellArg checkpointShapeHeadSize} \
+      ${lib.escapeShellArg checkpointShapeInvalidHeadCount} \
+      >"$checkpoint_shape_zero_head_log" 2>&1; then
+      echo "ttWKV7 checkpoint shape host accepted a zero head count" >&2
+      exit 1
+    else
+      checkpoint_shape_zero_head_status="$?"
+    fi
+    test "$checkpoint_shape_zero_head_status" -eq ${toString invalidModeExitStatus}
+    grep -F ${lib.escapeShellArg checkpointShapeMalformedShapeDiagnostic} \
+      "$checkpoint_shape_zero_head_log"
+
+    checkpoint_shape_invalid_size_log="$(mktemp)"
+    if ${packageExecutable} test all 1 1 \
+      ${lib.escapeShellArg checkpointShapeInvalidHeadSize} \
+      ${lib.escapeShellArg checkpointShapeHeadCount} \
+      >"$checkpoint_shape_invalid_size_log" 2>&1; then
+      echo "ttWKV7 checkpoint shape host accepted an unsupported head size" >&2
+      exit 1
+    else
+      checkpoint_shape_invalid_size_status="$?"
+    fi
+    test "$checkpoint_shape_invalid_size_status" -eq ${toString invalidModeExitStatus}
+    grep -F ${lib.escapeShellArg checkpointShapeInvalidDiagnostic} \
+      "$checkpoint_shape_invalid_size_log"
+
+    checkpoint_shape_unexpected_log="$(mktemp)"
+    if ${packageExecutable} test all 1 1 \
+      ${lib.escapeShellArg checkpointShapeHeadSize} \
+      ${lib.escapeShellArg checkpointShapeHeadCount} \
+      ${lib.escapeShellArg checkpointShapeUnexpectedSuffix} \
+      >"$checkpoint_shape_unexpected_log" 2>&1; then
+      echo "ttWKV7 checkpoint shape host accepted an unexpected suffix" >&2
+      exit 1
+    else
+      checkpoint_shape_unexpected_status="$?"
+    fi
+    test "$checkpoint_shape_unexpected_status" -eq ${toString invalidModeExitStatus}
+    grep -F ${lib.escapeShellArg checkpointShapeUnexpectedArgumentDiagnostic} \
+      "$checkpoint_shape_unexpected_log"
+
+    check_checkpoint_shape_source() {
+      local source_file="$1"
+      grep -F ${lib.escapeShellArg checkpointShapeHeadTileExpression} "$source_file" >/dev/null || return 1
+      grep -F ${lib.escapeShellArg checkpointShapePaddingExpression} "$source_file" >/dev/null || return 1
+      grep -F ${lib.escapeShellArg checkpointShapeWorkExpression} "$source_file" >/dev/null || return 1
+      grep -F ${lib.escapeShellArg checkpointShapeClampedEndExpression} "$source_file" >/dev/null || return 1
+      grep -F ${lib.escapeShellArg checkpointShapeParserExpression} "$source_file" >/dev/null || return 1
+      grep -F ${lib.escapeShellArg checkpointShapeModeExpression} "$source_file" >/dev/null || return 1
+      test "$(grep -Fc ${lib.escapeShellArg checkpointShapeDeviceExpression} "$source_file")" -eq 1 || return 1
+      local shape_mode_line
+      local device_line
+      shape_mode_line="$(grep -Fn ${lib.escapeShellArg checkpointShapeModeExpression} "$source_file" | cut -d: -f1)"
+      device_line="$(grep -Fn ${lib.escapeShellArg checkpointShapeDeviceExpression} "$source_file" | cut -d: -f1)"
+      test "$shape_mode_line" -lt "$device_line" || return 1
+      if grep -F ${lib.escapeShellArg checkpointShapeFloorHeadTileExpression} "$source_file"; then return 1; fi
+      if grep -F ${lib.escapeShellArg checkpointShapeUnpaddedExpression} "$source_file"; then return 1; fi
+      if grep -F ${lib.escapeShellArg checkpointShapeFloorWorkExpression} "$source_file"; then return 1; fi
+      if grep -F ${lib.escapeShellArg checkpointShapeCoercingParserExpression} "$source_file"; then return 1; fi
+    }
+
+    checkpoint_shape_source="${packageSourceDirectory}/${checkpointShapeSource}"
+    check_checkpoint_shape_source "$checkpoint_shape_source"
+    checkpoint_shape_fixture_root="$(mktemp -d)"
+
+    checkpoint_shape_floor_heads="$checkpoint_shape_fixture_root/floor-head-tiles.cpp"
+    cp "$checkpoint_shape_source" "$checkpoint_shape_floor_heads"
+    chmod u+w "$checkpoint_shape_floor_heads"
+    substituteInPlace "$checkpoint_shape_floor_heads" \
+      --replace-fail ${lib.escapeShellArg checkpointShapeHeadTileExpression} \
+      ${lib.escapeShellArg checkpointShapeFloorHeadTileExpression}
+    if check_checkpoint_shape_source "$checkpoint_shape_floor_heads"; then
+      echo "ttWKV7 checkpoint shape checker accepted floor head-tile division" >&2
+      exit 1
+    fi
+
+    checkpoint_shape_unpadded="$checkpoint_shape_fixture_root/unpadded-input.cpp"
+    cp "$checkpoint_shape_source" "$checkpoint_shape_unpadded"
+    chmod u+w "$checkpoint_shape_unpadded"
+    substituteInPlace "$checkpoint_shape_unpadded" \
+      --replace-fail ${lib.escapeShellArg checkpointShapePaddingExpression} \
+      ${lib.escapeShellArg checkpointShapeUnpaddedExpression}
+    if check_checkpoint_shape_source "$checkpoint_shape_unpadded"; then
+      echo "ttWKV7 checkpoint shape checker accepted unpadded input tilization" >&2
+      exit 1
+    fi
+
+    checkpoint_shape_floor_work="$checkpoint_shape_fixture_root/floor-work-groups.cpp"
+    cp "$checkpoint_shape_source" "$checkpoint_shape_floor_work"
+    chmod u+w "$checkpoint_shape_floor_work"
+    substituteInPlace "$checkpoint_shape_floor_work" \
+      --replace-fail ${lib.escapeShellArg checkpointShapeWorkExpression} \
+      ${lib.escapeShellArg checkpointShapeFloorWorkExpression}
+    if check_checkpoint_shape_source "$checkpoint_shape_floor_work"; then
+      echo "ttWKV7 checkpoint shape checker accepted floor work grouping" >&2
+      exit 1
+    fi
+
+    checkpoint_shape_unclamped_end="$checkpoint_shape_fixture_root/unclamped-instance-end.cpp"
+    cp "$checkpoint_shape_source" "$checkpoint_shape_unclamped_end"
+    chmod u+w "$checkpoint_shape_unclamped_end"
+    substituteInPlace "$checkpoint_shape_unclamped_end" \
+      --replace-fail ${lib.escapeShellArg checkpointShapeClampedEndExpression} \
+      ${lib.escapeShellArg checkpointShapeUnclampedEndExpression}
+    if check_checkpoint_shape_source "$checkpoint_shape_unclamped_end"; then
+      echo "ttWKV7 checkpoint shape checker accepted an unclamped partial-group end" >&2
+      exit 1
+    fi
+
+    checkpoint_shape_early_device="$checkpoint_shape_fixture_root/early-device.cpp"
+    cp "$checkpoint_shape_source" "$checkpoint_shape_early_device"
+    chmod u+w "$checkpoint_shape_early_device"
+    printf '%s\n' ${lib.escapeShellArg checkpointShapeDeviceExpression} >>"$checkpoint_shape_early_device"
+    if check_checkpoint_shape_source "$checkpoint_shape_early_device"; then
+      echo "ttWKV7 checkpoint shape checker accepted an additional device creation" >&2
+      exit 1
+    fi
 
     # Positive and negative production-dispatch coverage for
     # r[verify onix.tenstorrent.native_runtime.ttwkv7.production_probe_wrapper].

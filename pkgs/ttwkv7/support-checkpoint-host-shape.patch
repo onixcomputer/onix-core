@@ -1,0 +1,335 @@
+--- a/wkv7_runner.cpp
++++ b/wkv7_runner.cpp
+@@ -8,0 +9 @@
++#include <charconv>
+@@ -9,0 +11 @@
++#include <limits>
+@@ -10,0 +13 @@
++#include <optional>
+@@ -11,0 +15 @@
++#include <string_view>
+@@ -32,0 +37,71 @@
++constexpr uint32_t kDefaultHeadSize = 64;
++constexpr uint32_t kDefaultHeadCount = 32;
++constexpr uint32_t kCheckpointHeadSize = 64;
++constexpr uint32_t kCheckpointHeadCount = 12;
++constexpr uint32_t kChunkedGroupSize = 2;
++constexpr uint32_t kShapeTestSequenceCount = 1;
++constexpr uint32_t kShapeTestTokenCount = 1;
++constexpr uint32_t kMaximumHeadCount = 256;
++constexpr uint32_t kMaximumWorkloadCount = 256;
++constexpr uint32_t kFixtureValueOffset = 1;
++
++struct HostShape {
++    uint32_t head_size;
++    uint32_t head_count;
++    uint32_t padded_head_count;
++    uint32_t tiles_per_head_dimension;
++    uint32_t head_tile_rows;
++    uint32_t channel_count;
++};
++
++uint32_t ceil_div_u32(uint32_t value, uint32_t divisor) {
++    return value / divisor + static_cast<uint32_t>(value % divisor != 0);
++}
++
++std::optional<HostShape> derive_host_shape(uint32_t head_size, uint32_t head_count) {
++    if (head_size != kCheckpointHeadSize || head_count == 0 || head_count > kMaximumHeadCount) {
++        return std::nullopt;
++    }
++    if (head_count > std::numeric_limits<uint32_t>::max() / head_size) {
++        return std::nullopt;
++    }
++    const uint32_t head_tile_rows = ceil_div_u32(head_count, TH);
++    if (head_tile_rows > std::numeric_limits<uint32_t>::max() / TH) {
++        return std::nullopt;
++    }
++    return HostShape{
++        .head_size = head_size,
++        .head_count = head_count,
++        .padded_head_count = head_tile_rows * TH,
++        .tiles_per_head_dimension = head_size / TW,
++        .head_tile_rows = head_tile_rows,
++        .channel_count = head_size * head_count,
++    };
++}
++
++std::optional<uint32_t> parse_positive_u32(std::string_view text) {
++    if (text.empty()) return std::nullopt;
++    uint32_t value = 0;
++    const char* first = text.data();
++    const char* last = first + text.size();
++    const auto parsed = std::from_chars(first, last, value);
++    if (parsed.ec != std::errc{} || parsed.ptr != last || value == 0) return std::nullopt;
++    return value;
++}
++
++uint32_t chunked_work_unit_count(uint32_t instance_count) {
++    return ceil_div_u32(instance_count, kChunkedGroupSize);
++}
++
++uint32_t instance_end_for_units(uint32_t completed_units,
++                                uint32_t assigned_units,
++                                uint32_t instance_count,
++                                uint32_t instances_per_unit) {
++    const uint64_t unit_end =
++        (static_cast<uint64_t>(completed_units) + assigned_units) * instances_per_unit;
++    return static_cast<uint32_t>(std::min<uint64_t>(unit_end, instance_count));
++}
++
++bool workload_count_is_valid(uint32_t value) {
++    return value > 0 && value <= kMaximumWorkloadCount;
++}
+@@ -51,0 +127,115 @@
++std::vector<float> build_native_input(const std::vector<float>& input,
++                                      const HostShape& shape,
++                                      uint32_t token_count,
++                                      uint32_t sequence_count) {
++    const uint64_t expected_elements = static_cast<uint64_t>(sequence_count) * token_count *
++                                       shape.head_count * shape.head_size;
++    if (input.size() != expected_elements) return {};
++
++    std::vector<float> tiled;
++    tiled.reserve(static_cast<size_t>(sequence_count) * token_count *
++                  shape.padded_head_count * shape.head_size);
++    for (uint32_t sequence = 0; sequence < sequence_count; sequence++) {
++        for (uint32_t token = 0; token < token_count; token++) {
++            std::vector<float> block(static_cast<size_t>(shape.padded_head_count) * shape.head_size, 0.0f);
++            for (uint32_t head = 0; head < shape.head_count; head++) {
++                for (uint32_t dimension = 0; dimension < shape.head_size; dimension++) {
++                    const size_t source =
++                        ((static_cast<size_t>(sequence) * token_count + token) * shape.head_count + head) *
++                            shape.head_size +
++                        dimension;
++                    block[static_cast<size_t>(head) * shape.head_size + dimension] = input[source];
++                }
++            }
++            auto converted = tilize(block, shape.padded_head_count, shape.head_size);
++            tiled.insert(tiled.end(), converted.begin(), converted.end());
++        }
++    }
++    return tiled;
++}
++
++bool run_checkpoint_shape_self_test() {
++    const std::string checkpoint_head_text = std::to_string(kCheckpointHeadCount);
++    const auto parsed_checkpoint_heads = parse_positive_u32(checkpoint_head_text);
++    if (!parsed_checkpoint_heads || *parsed_checkpoint_heads != kCheckpointHeadCount) return false;
++    const auto maybe_default_shape = derive_host_shape(kDefaultHeadSize, kDefaultHeadCount);
++    if (!maybe_default_shape || maybe_default_shape->padded_head_count != kDefaultHeadCount ||
++        maybe_default_shape->head_tile_rows != ceil_div_u32(kDefaultHeadCount, TH)) {
++        return false;
++    }
++    if (derive_host_shape(TW, kCheckpointHeadCount) || derive_host_shape(kCheckpointHeadSize, 0) ||
++        derive_host_shape(kCheckpointHeadSize, kMaximumHeadCount + 1) ||
++        parse_positive_u32("") || parse_positive_u32("0") || parse_positive_u32("-1") ||
++        parse_positive_u32("+1") || parse_positive_u32("1x") || parse_positive_u32("4294967296")) {
++        return false;
++    }
++
++    const auto maybe_shape = derive_host_shape(kCheckpointHeadSize, kCheckpointHeadCount);
++    if (!maybe_shape) return false;
++    const HostShape shape = *maybe_shape;
++    const uint32_t expected_head_tile_rows = ceil_div_u32(kCheckpointHeadCount, TH);
++    const uint32_t expected_head_dimension_tiles = kCheckpointHeadSize / TW;
++    if (shape.head_tile_rows != expected_head_tile_rows ||
++        shape.tiles_per_head_dimension != expected_head_dimension_tiles ||
++        shape.channel_count != kCheckpointHeadSize * kCheckpointHeadCount) {
++        return false;
++    }
++
++    std::vector<float> input(static_cast<size_t>(shape.head_count) * shape.head_size);
++    for (uint32_t head = 0; head < shape.head_count; head++) {
++        for (uint32_t dimension = 0; dimension < shape.head_size; dimension++) {
++            input[static_cast<size_t>(head) * shape.head_size + dimension] =
++                static_cast<float>(head * shape.head_size + dimension + kFixtureValueOffset);
++        }
++    }
++    const auto tiled = build_native_input(input, shape, kShapeTestTokenCount, kShapeTestSequenceCount);
++    const size_t expected_tiled_elements =
++        static_cast<size_t>(shape.padded_head_count) * shape.head_size;
++    if (tiled.size() != expected_tiled_elements) return false;
++    const auto round_trip = untilize(tiled, shape.padded_head_count, shape.head_size);
++    if (round_trip.size() != expected_tiled_elements) return false;
++    for (uint32_t head = 0; head < shape.padded_head_count; head++) {
++        for (uint32_t dimension = 0; dimension < shape.head_size; dimension++) {
++            const size_t index = static_cast<size_t>(head) * shape.head_size + dimension;
++            const float expected = head < shape.head_count ? input[index] : 0.0f;
++            if (round_trip[index] != expected) return false;
++        }
++    }
++
++    std::vector<bool> writer_state_rows(static_cast<size_t>(shape.head_count) * shape.head_size, false);
++    for (uint32_t head = 0; head < shape.head_count; head++) {
++        for (uint32_t row = 0; row < shape.head_size; row++) {
++            const uint32_t source = head * shape.head_size + row;
++            const uint32_t destination = (source / shape.head_count) * shape.head_count +
++                                         source % shape.head_count;
++            if (destination != source || writer_state_rows[destination]) return false;
++            writer_state_rows[destination] = true;
++        }
++    }
++    if (std::find(writer_state_rows.begin(), writer_state_rows.end(), false) != writer_state_rows.end()) {
++        return false;
++    }
++
++    const uint32_t instance_count = kShapeTestSequenceCount * shape.head_count;
++    const uint32_t work_units = chunked_work_unit_count(instance_count);
++    const uint32_t odd_instance_count = instance_count + kShapeTestSequenceCount;
++    const uint32_t odd_work_units = chunked_work_unit_count(odd_instance_count);
++    const uint32_t odd_final_start = (odd_work_units - 1) * kChunkedGroupSize;
++    const uint32_t odd_final_end =
++        instance_end_for_units(odd_work_units - 1, kShapeTestSequenceCount,
++                               odd_instance_count, kChunkedGroupSize);
++    if (work_units * kChunkedGroupSize < instance_count ||
++        (work_units - 1) * kChunkedGroupSize >= instance_count ||
++        odd_work_units * kChunkedGroupSize < odd_instance_count ||
++        odd_final_start + kShapeTestSequenceCount != odd_instance_count ||
++        odd_final_end != odd_instance_count) {
++        return false;
++    }
++
++    std::printf("ttWKV7 checkpoint shape self-test: PASS S=%u H=%u Hpad=%u St=%u Ht=%u C=%u chunked_units=%u\n",
++                shape.head_size, shape.head_count, shape.padded_head_count,
++                shape.tiles_per_head_dimension, shape.head_tile_rows,
++                shape.channel_count, work_units);
++    return true;
++}
++
+@@ -117 +307 @@
+-                Kernel kind, int S_, int H_, int L_, int G_,
++                Kernel kind, const HostShape& shape, int L_, int G_,
+@@ -119,2 +309,2 @@
+-    const int64_t S = S_, H = H_, L = L_, G = G_, C = S * H;
+-    const uint32_t St = S / TW, Ht = H / TH, NS = St * St;
++    const int64_t S = shape.head_size, H = shape.head_count, L = L_, G = G_, C = shape.channel_count;
++    const uint32_t St = shape.tiles_per_head_dimension, Ht = shape.head_tile_rows, NS = St * St;
+@@ -145,11 +335,2 @@
+-    // ---- native input upload: per (seq,token) an [H,S] tilized block, L tokens/seq.
+-    // The reader neutral-pads any partial last chunk on-device, so no host padding.
+-    auto build_native_in = [&](const std::vector<float>& x) {
+-        std::vector<float> host;
+-        for (int64_t sq = 0; sq < G; sq++) for (int64_t tg = 0; tg < L; tg++) {
+-            std::vector<float> blk(H * S);
+-            for (int64_t hh = 0; hh < H; hh++) for (int64_t d = 0; d < S; d++) blk[hh * S + d] = x[(sq * L + tg) * C + hh * S + d];
+-            auto tl = tilize(blk, H, S); host.insert(host.end(), tl.begin(), tl.end());
+-        }
+-        return host;
+-    };
++    // ---- native input upload: per (seq,token) an [Hpad,S] tilized block, L tokens/seq.
++    // Head rows are zero-padded to a full tile; token-tail padding remains reader-owned.
+@@ -159 +340,4 @@
+-        distributed::EnqueueWriteMeshBuffer(cq, buf_nat[i], tobf(build_native_in(*ins[i])), false);
++        distributed::EnqueueWriteMeshBuffer(
++            cq, buf_nat[i],
++            tobf(build_native_input(*ins[i], shape, static_cast<uint32_t>(L), static_cast<uint32_t>(G))),
++            false);
+@@ -174,3 +358,3 @@
+-    constexpr uint32_t NBg = 2;             // chunked group size (reader/compute hardcode NB=2)
+-    const uint32_t P = 4;                   // decodeL instance-packing
+-    const uint32_t num_units = decode ? IC : (IC / NBg);
++    constexpr uint32_t NBg = kChunkedGroupSize;  // chunked group size (reader/compute hardcode NB=2)
++    const uint32_t P = 4;                        // decodeL instance-packing
++    const uint32_t num_units = decode ? IC : chunked_work_unit_count(IC);
+@@ -251 +435,2 @@
+-        const uint32_t inst_end   = (units_done + units_here) * unit_to_inst;
++        const uint32_t inst_end = instance_end_for_units(
++            units_done, units_here, IC, unit_to_inst);
+@@ -320,0 +506,6 @@
++constexpr int kSuccessStatus = 0;
++constexpr int kRuntimeFailureStatus = 1;
++constexpr int kInvalidArgumentStatus = 2;
++constexpr int kShapeTestArgumentCount = 2;
++constexpr int kMaximumArgumentCount = 7;
++constexpr int kHeadSizeOnlyArgumentCount = 6;
+@@ -339,2 +530,3 @@
+-            const std::vector<Kernel>& ks, int onlyG, int onlyL) {
+-    const int S = 64, H = 32;
++            const std::vector<Kernel>& ks, int onlyG, int onlyL,
++            const wkv7::HostShape& shape) {
++    const int S = static_cast<int>(shape.head_size), H = static_cast<int>(shape.head_count);
+@@ -350 +542 @@
+-        double ms = wkv7::run_wkv7(dev, k, S, H, L, G, true, &p1, &p2, &n1, &n2);
++        double ms = wkv7::run_wkv7(dev, k, shape, L, G, true, &p1, &p2, &n1, &n2);
+@@ -362,2 +554,3 @@
+-             const std::vector<Kernel>& ks, int onlyG, int onlyL) {
+-    const int S = 64, H = 32;
++             const std::vector<Kernel>& ks, int onlyG, int onlyL,
++             const wkv7::HostShape& shape) {
++    const int S = static_cast<int>(shape.head_size), H = static_cast<int>(shape.head_count);
+@@ -371 +564 @@
+-        double ms = wkv7::run_wkv7(dev, k, S, H, L, G, false, nullptr, nullptr, nullptr, nullptr);
++        double ms = wkv7::run_wkv7(dev, k, shape, L, G, false, nullptr, nullptr, nullptr, nullptr);
+@@ -381 +574,21 @@
+-    std::string mode = argc > 1 ? argv[1] : "test";
++    const std::string mode = argc > 1 ? argv[1] : "test";
++    if (mode == "shape-test") {
++        if (argc != kShapeTestArgumentCount) {
++            std::fprintf(stderr, "shape-test does not accept additional arguments\n");
++            return kInvalidArgumentStatus;
++        }
++        return wkv7::run_checkpoint_shape_self_test() ? kSuccessStatus : kRuntimeFailureStatus;
++    }
++    if (mode != "test" && mode != "bench") {
++        std::fprintf(stderr, "usage: %s test|bench [chunked|decodeL|all] [G] [L] [S] [H] | shape-test\n", argv[0]);
++        return kInvalidArgumentStatus;
++    }
++    if (argc > kMaximumArgumentCount) {
++        std::fprintf(stderr, "unexpected argument suffix\n");
++        return kInvalidArgumentStatus;
++    }
++    if (argc == kHeadSizeOnlyArgumentCount) {
++        std::fprintf(stderr, "explicit head size requires an explicit head count\n");
++        return kInvalidArgumentStatus;
++    }
++
+@@ -382,0 +596,4 @@
++    if (argc > 2 && !parse_kernel(argv[2], ks)) {
++        std::fprintf(stderr, "unknown kernel '%s'\n", argv[2]);
++        return kInvalidArgumentStatus;
++    }
+@@ -384,6 +601,15 @@
+-    if (argc > 2 && !parse_kernel(argv[2], ks)) { std::fprintf(stderr, "unknown kernel '%s'\n", argv[2]); return 2; }
+-    if (argc > 3) G = std::atoi(argv[3]);
+-    if (argc > 4) L = std::atoi(argv[4]);
+-    if (mode != "test" && mode != "bench") {
+-        std::fprintf(stderr, "usage: %s test|bench [chunked|decodeL|all] [G] [L]\n", argv[0]);
+-        return 2;
++    if (argc > 3) {
++        const auto parsed = wkv7::parse_positive_u32(argv[3]);
++        if (!parsed || !wkv7::workload_count_is_valid(*parsed)) {
++            std::fprintf(stderr, "G must be an exact positive decimal within the supported workload bound\n");
++            return kInvalidArgumentStatus;
++        }
++        G = static_cast<int>(*parsed);
++    }
++    if (argc > 4) {
++        const auto parsed = wkv7::parse_positive_u32(argv[4]);
++        if (!parsed || !wkv7::workload_count_is_valid(*parsed)) {
++            std::fprintf(stderr, "L must be an exact positive decimal within the supported workload bound\n");
++            return kInvalidArgumentStatus;
++        }
++        L = static_cast<int>(*parsed);
+@@ -390,0 +617,19 @@
++
++    uint32_t head_size = wkv7::kDefaultHeadSize;
++    uint32_t head_count = wkv7::kDefaultHeadCount;
++    if (argc == kMaximumArgumentCount) {
++        const auto parsed_head_size = wkv7::parse_positive_u32(argv[5]);
++        const auto parsed_head_count = wkv7::parse_positive_u32(argv[6]);
++        if (!parsed_head_size || !parsed_head_count) {
++            std::fprintf(stderr, "S and H must be exact positive decimals\n");
++            return kInvalidArgumentStatus;
++        }
++        head_size = *parsed_head_size;
++        head_count = *parsed_head_count;
++    }
++    const auto shape = wkv7::derive_host_shape(head_size, head_count);
++    if (!shape) {
++        std::fprintf(stderr, "unsupported WKV shape: S must be 64 and H must be within the reviewed bound\n");
++        return kInvalidArgumentStatus;
++    }
++
+@@ -394 +639 @@
+-    return (mode == "test") ? do_test(dev, ks, G, L) : do_bench(dev, ks, G, L);
++    return (mode == "test") ? do_test(dev, ks, G, L, *shape) : do_bench(dev, ks, G, L, *shape);
