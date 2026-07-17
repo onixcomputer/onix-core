@@ -21,6 +21,15 @@ let
   ];
   expectedFinalStateFingerprint = "63718d8139e7a70770d8ca7b0663faca0d87ea3d5b99a45a5d895a827cec868f";
   expectedFinalOutputFingerprint = "cca5dded173404e19115bc749f25aab0c26200282a739bb3da98923d2d9a8e26";
+  expectedModelLayerCount = 12;
+  expectedGeneratedTokenId = 2;
+  expectedGeneratedLogit = "2.8641083";
+  expectedRunnerUpTokenId = 33;
+  expectedRunnerUpLogit = "0.89640886";
+  expectedGreedyMargin = "1.9676995";
+  expectedTokenFinalHiddenFingerprint = "af8775318ae4b28af27709dbe1052a8ffcd5bc58f3ae209dea0913801b334f70";
+  expectedTokenLogitsFingerprint = "31e5a4c2f979966c1a8ac72b3af8daa16db0f61d33297f7aadea4196816b9662";
+  expectedTokenStatesFingerprint = "7edee48128b2bb3f9f874e9cbc491d44a2af7f5bb19c53a595ff0bc8eed108fe";
 in
 rustPlatform.buildRustPackage {
   pname = "rwkv-layer-harness";
@@ -61,6 +70,23 @@ rustPlatform.buildRustPackage {
     grep -F '"blake3": "${expectedFinalOutputFingerprint}"' "$fixture_root/first.json"
     grep -F 'No generated token is established.' "$fixture_root/first.json"
 
+    $out/bin/rwkv-token-harness >"$fixture_root/token-first.json"
+    $out/bin/rwkv-token-harness >"$fixture_root/token-second.json"
+    cmp "$fixture_root/token-first.json" "$fixture_root/token-second.json"
+    grep -F '"layer_count": ${toString expectedModelLayerCount}' "$fixture_root/token-first.json"
+    grep -F '"prefix_token_ids": [' "$fixture_root/token-first.json"
+    grep -F '"generated_token_id": ${toString expectedGeneratedTokenId}' "$fixture_root/token-first.json"
+    grep -F '"generated_logit": ${expectedGeneratedLogit}' "$fixture_root/token-first.json"
+    grep -F '"runner_up_token_id": ${toString expectedRunnerUpTokenId}' "$fixture_root/token-first.json"
+    grep -F '"runner_up_logit": ${expectedRunnerUpLogit}' "$fixture_root/token-first.json"
+    grep -F '"greedy_margin": ${expectedGreedyMargin}' "$fixture_root/token-first.json"
+    grep -F '"blake3": "${expectedTokenFinalHiddenFingerprint}"' "$fixture_root/token-first.json"
+    grep -F '"blake3": "${expectedTokenLogitsFingerprint}"' "$fixture_root/token-first.json"
+    grep -F '"blake3": "${expectedTokenStatesFingerprint}"' "$fixture_root/token-first.json"
+    grep -F '"head_oracle_logit_deviation": 0.0' "$fixture_root/token-first.json"
+    grep -F 'The selected token is not executed as a recurrent third step.' "$fixture_root/token-first.json"
+    grep -F 'No P150 numerical parity is established.' "$fixture_root/token-first.json"
+
     if $out/bin/rwkv-layer-harness unexpected-argument \
       >"$fixture_root/argument-rejection.log" 2>&1; then
       echo "rwkv-layer-harness accepted a caller-controlled argument" >&2
@@ -68,13 +94,21 @@ rustPlatform.buildRustPackage {
     fi
     grep -F 'does not accept arguments' "$fixture_root/argument-rejection.log"
 
+    if $out/bin/rwkv-token-harness unexpected-argument \
+      >"$fixture_root/token-argument-rejection.log" 2>&1; then
+      echo "rwkv-token-harness accepted a caller-controlled argument" >&2
+      exit 1
+    fi
+    grep -F 'does not accept arguments' "$fixture_root/token-argument-rejection.log"
+
     if grep -E 'std::process::Command|Command::new|/dev/tenstorrent|TT_VISIBLE_DEVICES|Metalium|owner-control|retry' \
-      ${./src/lib.rs} ${./src/main.rs}; then
+      ${./src/lib.rs} ${./src/main.rs} ${./src/bin/rwkv-token-harness.rs}; then
       echo "rwkv-layer-harness must not contain hardware or process orchestration" >&2
       exit 1
     fi
 
     cat "$fixture_root/first.json"
+    cat "$fixture_root/token-first.json"
     runHook postInstallCheck
   '';
 
@@ -83,7 +117,7 @@ rustPlatform.buildRustPackage {
   };
 
   meta = {
-    description = "Device-free real-weight RWKV-7 layer-zero CPU reference";
+    description = "Device-free real-weight RWKV-7 layer and greedy-token CPU reference";
     license = lib.licenses.mit;
     mainProgram = "rwkv-layer-harness";
     platforms = lib.platforms.linux;

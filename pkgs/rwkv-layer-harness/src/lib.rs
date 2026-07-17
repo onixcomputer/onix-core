@@ -9,6 +9,8 @@ pub const INTERMEDIATE_SIZE: usize = 3072;
 pub const DECAY_RANK: usize = 64;
 pub const A_RANK: usize = 64;
 pub const GATE_RANK: usize = 128;
+pub const VALUE_RANK: usize = 32;
+pub const MODEL_LAYER_COUNT: usize = 12;
 pub const VOCABULARY_SIZE: usize = 65536;
 pub const BOS_TOKEN_ID: usize = 1;
 pub const EOS_TOKEN_ID: usize = 2;
@@ -35,6 +37,17 @@ const NON_CLAIMS: [&str; 7] = [
     "No P150 numerical parity is established.",
     "No repaired-reader completion is established.",
     "No text generation is established.",
+    "No throughput or latency claim is established.",
+];
+const TOKEN_NON_CLAIMS: [&str; 9] = [
+    "No decoded text is established.",
+    "The selected token is not executed as a recurrent third step.",
+    "No sampling or multi-token generation is established.",
+    "No FLA or official-runtime bit parity is established.",
+    "No general RWKV correctness is established.",
+    "No P150 numerical parity is established.",
+    "No ttWKV7 integration or parity is established.",
+    "No repaired-reader completion is established.",
     "No throughput or latency claim is established.",
 ];
 
@@ -99,9 +112,10 @@ impl Matrix {
 
 #[derive(Clone, Debug)]
 struct LayerWeights {
+    layer_index: usize,
     dimensions: Dimensions,
-    pre_norm_weight: Vec<f32>,
-    pre_norm_bias: Vec<f32>,
+    pre_norm_weight: Option<Vec<f32>>,
+    pre_norm_bias: Option<Vec<f32>>,
     attn_norm_weight: Vec<f32>,
     attn_norm_bias: Vec<f32>,
     x_r: Vec<f32>,
@@ -122,6 +136,9 @@ struct LayerWeights {
     a_bias: Vec<f32>,
     gate_down: Matrix,
     gate_up: Matrix,
+    value_down: Option<Matrix>,
+    value_up: Option<Matrix>,
+    value_bias: Option<Vec<f32>>,
     k_k: Vec<f32>,
     k_a: Vec<f32>,
     r_k: Vec<f32>,
@@ -169,6 +186,7 @@ struct WkvInputs {
 
 #[derive(Clone, Debug)]
 struct TimeMixOutput {
+    projected_value: Vec<f32>,
     wkv_inputs: WkvInputs,
     wkv_output: Vec<f32>,
     oracle_output: Vec<f32>,
@@ -230,6 +248,58 @@ pub struct LayerReceipt {
     pub maximum_oracle_output_deviation: f32,
     pub oracle_tolerance: f32,
     pub non_claims: Vec<&'static str>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct LayerDeviationReceipt {
+    pub layer_index: usize,
+    pub maximum_state_deviation: f32,
+    pub maximum_output_deviation: f32,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct TokenReceipt {
+    pub schema_version: u32,
+    pub model: ModelReceipt,
+    pub dimensions: Dimensions,
+    pub layer_count: usize,
+    pub prefix_token_ids: [usize; TOKEN_COUNT],
+    pub generated_token_id: usize,
+    pub generated_logit: f32,
+    pub runner_up_token_id: usize,
+    pub runner_up_logit: f32,
+    pub greedy_margin: f32,
+    pub arithmetic_precision: &'static str,
+    pub final_hidden: NumericReceipt,
+    pub logits: NumericReceipt,
+    pub recurrent_states: NumericReceipt,
+    pub layer_oracle_deviations: Vec<LayerDeviationReceipt>,
+    pub maximum_oracle_state_deviation: f32,
+    pub maximum_oracle_output_deviation: f32,
+    pub head_oracle_logit_deviation: f32,
+    pub oracle_tolerance: f32,
+    pub non_claims: Vec<&'static str>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct RankedLogit {
+    token_id: usize,
+    logit: f32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct TopTwo {
+    first: RankedLogit,
+    second: RankedLogit,
+}
+
+#[derive(Clone, Debug)]
+struct ModelSequenceResult {
+    final_output: Vec<f32>,
+    recurrent_states: Vec<f32>,
+    layer_deviations: Vec<LayerDeviationReceipt>,
+    maximum_state_deviation: f32,
+    maximum_output_deviation: f32,
 }
 
 // r[impl onix.tenstorrent.native_runtime.rwkv_lab.real_weight_layer]
@@ -297,6 +367,126 @@ pub fn run_checkpoint(checkpoint: &[u8], expected_blake3: &str) -> Result<LayerR
     })
 }
 
+// r[impl onix.tenstorrent.native_runtime.rwkv_lab.greedy_token]
+pub fn run_token_checkpoint(
+    checkpoint: &[u8],
+    expected_blake3: &str,
+) -> Result<TokenReceipt, String> {
+    verify_checkpoint_digest(checkpoint, expected_blake3)?;
+    let byte_count = u64::try_from(checkpoint.len())
+        .map_err(|error| format!("checkpoint byte count does not fit u64: {error}"))?;
+    if byte_count != MODEL_BYTE_COUNT {
+        return Err(format!(
+            "checkpoint byte count must be {MODEL_BYTE_COUNT}, found {byte_count}"
+        ));
+    }
+
+    let tensors = SafeTensors::deserialize(checkpoint)
+        .map_err(|error| format!("failed to decode safetensors checkpoint: {error}"))?;
+    let dimensions = Dimensions::reviewed();
+    let weights = (0..MODEL_LAYER_COUNT)
+        .map(|layer_index| load_layer(&tensors, dimensions, layer_index))
+        .collect::<Result<Vec<_>, _>>()?;
+    let embedding = tensors
+        .tensor("model.embeddings.weight")
+        .map_err(|error| format!("missing model.embeddings.weight: {error}"))?;
+    let bos = embedding_row(&embedding, BOS_TOKEN_ID, dimensions.hidden_size)?;
+    let eos = embedding_row(&embedding, EOS_TOKEN_ID, dimensions.hidden_size)?;
+    let sequence = run_model_sequence(&weights, [&bos, &eos])?;
+
+    if sequence.maximum_state_deviation > ORACLE_TOLERANCE {
+        return Err(format!(
+            "full-model recurrence state deviation {} exceeds tolerance {ORACLE_TOLERANCE}",
+            sequence.maximum_state_deviation
+        ));
+    }
+    if sequence.maximum_output_deviation > ORACLE_TOLERANCE {
+        return Err(format!(
+            "full-model recurrence output deviation {} exceeds tolerance {ORACLE_TOLERANCE}",
+            sequence.maximum_output_deviation
+        ));
+    }
+
+    let final_norm_weight = vector(&tensors, "model.norm.weight", dimensions.hidden_size)?;
+    let final_norm_bias = vector(&tensors, "model.norm.bias", dimensions.hidden_size)?;
+    let final_hidden = layer_norm(
+        &sequence.final_output,
+        &final_norm_weight,
+        &final_norm_bias,
+        LAYER_NORM_EPSILON,
+    )?;
+    let head_tensor = tensors
+        .tensor("lm_head.weight")
+        .map_err(|error| format!("missing lm_head.weight: {error}"))?;
+    let head = matrix(
+        &tensors,
+        "lm_head.weight",
+        VOCABULARY_SIZE,
+        dimensions.hidden_size,
+    )?;
+    let logits = matvec(&head, &final_hidden)?;
+    let production_top = rank_top_two(
+        logits
+            .iter()
+            .copied()
+            .enumerate()
+            .map(|(token_id, logit)| RankedLogit { token_id, logit }),
+    )?;
+    let oracle_top = direct_bf16_head_top_two(&head_tensor, &final_hidden, dimensions.hidden_size)?;
+    if production_top.first.token_id != oracle_top.first.token_id
+        || production_top.second.token_id != oracle_top.second.token_id
+    {
+        return Err(format!(
+            "LM-head ranking mismatch: production [{}, {}], direct oracle [{}, {}]",
+            production_top.first.token_id,
+            production_top.second.token_id,
+            oracle_top.first.token_id,
+            oracle_top.second.token_id
+        ));
+    }
+    let head_oracle_logit_deviation = (production_top.first.logit - oracle_top.first.logit)
+        .abs()
+        .max((production_top.second.logit - oracle_top.second.logit).abs());
+    if head_oracle_logit_deviation > ORACLE_TOLERANCE {
+        return Err(format!(
+            "LM-head oracle logit deviation {head_oracle_logit_deviation} exceeds tolerance {ORACLE_TOLERANCE}"
+        ));
+    }
+    let greedy_margin = production_top.first.logit - production_top.second.logit;
+    if !greedy_margin.is_finite() || greedy_margin < 0.0 {
+        return Err(format!("invalid greedy margin {greedy_margin}"));
+    }
+
+    Ok(TokenReceipt {
+        schema_version: RECEIPT_SCHEMA_VERSION,
+        model: ModelReceipt {
+            model_id: MODEL_ID,
+            revision: MODEL_REVISION,
+            sha256_sri: MODEL_SHA256_SRI,
+            blake3: blake3::hash(checkpoint).to_hex().to_string(),
+            byte_count,
+        },
+        dimensions,
+        layer_count: MODEL_LAYER_COUNT,
+        prefix_token_ids: [BOS_TOKEN_ID, EOS_TOKEN_ID],
+        generated_token_id: production_top.first.token_id,
+        generated_logit: production_top.first.logit,
+        runner_up_token_id: production_top.second.token_id,
+        runner_up_logit: production_top.second.logit,
+        greedy_margin,
+        arithmetic_precision: ARITHMETIC_PRECISION,
+        final_hidden: numeric_receipt(&final_hidden)?,
+        logits: numeric_receipt(&logits)?,
+        recurrent_states: numeric_receipt(&sequence.recurrent_states)?,
+        layer_oracle_deviations: sequence.layer_deviations,
+        maximum_oracle_state_deviation: sequence.maximum_state_deviation,
+        maximum_oracle_output_deviation: sequence.maximum_output_deviation,
+        head_oracle_logit_deviation,
+        oracle_tolerance: ORACLE_TOLERANCE,
+        non_claims: TOKEN_NON_CLAIMS.to_vec(),
+    })
+}
+
 pub fn verify_checkpoint_digest(checkpoint: &[u8], expected: &str) -> Result<(), String> {
     validate_blake3_hex(expected)?;
     let actual = blake3::hash(checkpoint).to_hex().to_string();
@@ -325,85 +515,110 @@ fn load_layer_zero(
     tensors: &SafeTensors<'_>,
     dimensions: Dimensions,
 ) -> Result<LayerWeights, String> {
+    load_layer(tensors, dimensions, LAYER_INDEX)
+}
+
+fn load_layer(
+    tensors: &SafeTensors<'_>,
+    dimensions: Dimensions,
+    layer_index: usize,
+) -> Result<LayerWeights, String> {
     dimensions.validate()?;
+    if layer_index >= MODEL_LAYER_COUNT {
+        return Err(format!(
+            "layer index {layer_index} exceeds model layer count {MODEL_LAYER_COUNT}"
+        ));
+    }
     let hidden = dimensions.hidden_size;
     let intermediate = dimensions.intermediate_size;
     let head_count = dimensions.head_count;
     let head_size = dimensions.head_size;
+    let name = |suffix: &str| format!("model.layers.{layer_index}.{suffix}");
+    let (pre_norm_weight, pre_norm_bias) = if layer_index == LAYER_INDEX {
+        (
+            Some(vector(tensors, &name("pre_norm.weight"), hidden)?),
+            Some(vector(tensors, &name("pre_norm.bias"), hidden)?),
+        )
+    } else {
+        (None, None)
+    };
+    let (value_down, value_up, value_bias) = if layer_index == LAYER_INDEX {
+        (None, None, None)
+    } else {
+        (
+            Some(matrix(
+                tensors,
+                &name("attn.v_lora.lora.0.weight"),
+                VALUE_RANK,
+                hidden,
+            )?),
+            Some(matrix(
+                tensors,
+                &name("attn.v_lora.lora.2.weight"),
+                hidden,
+                VALUE_RANK,
+            )?),
+            Some(vector(tensors, &name("attn.v_lora.lora.2.bias"), hidden)?),
+        )
+    };
     Ok(LayerWeights {
+        layer_index,
         dimensions,
-        pre_norm_weight: vector(tensors, "model.layers.0.pre_norm.weight", hidden)?,
-        pre_norm_bias: vector(tensors, "model.layers.0.pre_norm.bias", hidden)?,
-        attn_norm_weight: vector(tensors, "model.layers.0.attn_norm.weight", hidden)?,
-        attn_norm_bias: vector(tensors, "model.layers.0.attn_norm.bias", hidden)?,
-        x_r: flexible_vector(tensors, "model.layers.0.attn.x_r", hidden)?,
-        x_w: flexible_vector(tensors, "model.layers.0.attn.x_w", hidden)?,
-        x_k: flexible_vector(tensors, "model.layers.0.attn.x_k", hidden)?,
-        x_v: flexible_vector(tensors, "model.layers.0.attn.x_v", hidden)?,
-        x_a: flexible_vector(tensors, "model.layers.0.attn.x_a", hidden)?,
-        x_g: flexible_vector(tensors, "model.layers.0.attn.x_g", hidden)?,
-        r_projection: matrix(tensors, "model.layers.0.attn.r_proj.weight", hidden, hidden)?,
-        k_projection: matrix(tensors, "model.layers.0.attn.k_proj.weight", hidden, hidden)?,
-        v_projection: matrix(tensors, "model.layers.0.attn.v_proj.weight", hidden, hidden)?,
-        output_projection: matrix(tensors, "model.layers.0.attn.o_proj.weight", hidden, hidden)?,
+        pre_norm_weight,
+        pre_norm_bias,
+        attn_norm_weight: vector(tensors, &name("attn_norm.weight"), hidden)?,
+        attn_norm_bias: vector(tensors, &name("attn_norm.bias"), hidden)?,
+        x_r: flexible_vector(tensors, &name("attn.x_r"), hidden)?,
+        x_w: flexible_vector(tensors, &name("attn.x_w"), hidden)?,
+        x_k: flexible_vector(tensors, &name("attn.x_k"), hidden)?,
+        x_v: flexible_vector(tensors, &name("attn.x_v"), hidden)?,
+        x_a: flexible_vector(tensors, &name("attn.x_a"), hidden)?,
+        x_g: flexible_vector(tensors, &name("attn.x_g"), hidden)?,
+        r_projection: matrix(tensors, &name("attn.r_proj.weight"), hidden, hidden)?,
+        k_projection: matrix(tensors, &name("attn.k_proj.weight"), hidden, hidden)?,
+        v_projection: matrix(tensors, &name("attn.v_proj.weight"), hidden, hidden)?,
+        output_projection: matrix(tensors, &name("attn.o_proj.weight"), hidden, hidden)?,
         w_down: matrix(
             tensors,
-            "model.layers.0.attn.w_lora.lora.0.weight",
+            &name("attn.w_lora.lora.0.weight"),
             DECAY_RANK,
             hidden,
         )?,
         w_up: matrix(
             tensors,
-            "model.layers.0.attn.w_lora.lora.2.weight",
+            &name("attn.w_lora.lora.2.weight"),
             hidden,
             DECAY_RANK,
         )?,
-        w_bias: vector(tensors, "model.layers.0.attn.w_lora.lora.2.bias", hidden)?,
-        a_down: matrix(
-            tensors,
-            "model.layers.0.attn.a_lora.lora.0.weight",
-            A_RANK,
-            hidden,
-        )?,
-        a_up: matrix(
-            tensors,
-            "model.layers.0.attn.a_lora.lora.2.weight",
-            hidden,
-            A_RANK,
-        )?,
-        a_bias: vector(tensors, "model.layers.0.attn.a_lora.lora.2.bias", hidden)?,
+        w_bias: vector(tensors, &name("attn.w_lora.lora.2.bias"), hidden)?,
+        a_down: matrix(tensors, &name("attn.a_lora.lora.0.weight"), A_RANK, hidden)?,
+        a_up: matrix(tensors, &name("attn.a_lora.lora.2.weight"), hidden, A_RANK)?,
+        a_bias: vector(tensors, &name("attn.a_lora.lora.2.bias"), hidden)?,
         gate_down: matrix(
             tensors,
-            "model.layers.0.attn.g_lora.lora.0.weight",
+            &name("attn.g_lora.lora.0.weight"),
             GATE_RANK,
             hidden,
         )?,
         gate_up: matrix(
             tensors,
-            "model.layers.0.attn.g_lora.lora.2.weight",
+            &name("attn.g_lora.lora.2.weight"),
             hidden,
             GATE_RANK,
         )?,
-        k_k: vector(tensors, "model.layers.0.attn.k_k", hidden)?,
-        k_a: vector(tensors, "model.layers.0.attn.k_a", hidden)?,
-        r_k: shaped_vector(tensors, "model.layers.0.attn.r_k", &[head_count, head_size])?,
-        group_norm_weight: vector(tensors, "model.layers.0.attn.g_norm.weight", hidden)?,
-        group_norm_bias: vector(tensors, "model.layers.0.attn.g_norm.bias", hidden)?,
-        ffn_norm_weight: vector(tensors, "model.layers.0.ffn_norm.weight", hidden)?,
-        ffn_norm_bias: vector(tensors, "model.layers.0.ffn_norm.bias", hidden)?,
-        ffn_x_k: vector(tensors, "model.layers.0.ffn.x_k", hidden)?,
-        ffn_key: matrix(
-            tensors,
-            "model.layers.0.ffn.key.weight",
-            intermediate,
-            hidden,
-        )?,
-        ffn_value: matrix(
-            tensors,
-            "model.layers.0.ffn.value.weight",
-            hidden,
-            intermediate,
-        )?,
+        value_down,
+        value_up,
+        value_bias,
+        k_k: vector(tensors, &name("attn.k_k"), hidden)?,
+        k_a: vector(tensors, &name("attn.k_a"), hidden)?,
+        r_k: shaped_vector(tensors, &name("attn.r_k"), &[head_count, head_size])?,
+        group_norm_weight: vector(tensors, &name("attn.g_norm.weight"), hidden)?,
+        group_norm_bias: vector(tensors, &name("attn.g_norm.bias"), hidden)?,
+        ffn_norm_weight: vector(tensors, &name("ffn_norm.weight"), hidden)?,
+        ffn_norm_bias: vector(tensors, &name("ffn_norm.bias"), hidden)?,
+        ffn_x_k: vector(tensors, &name("ffn.x_k"), hidden)?,
+        ffn_key: matrix(tensors, &name("ffn.key.weight"), intermediate, hidden)?,
+        ffn_value: matrix(tensors, &name("ffn.value.weight"), hidden, intermediate)?,
     })
 }
 
@@ -483,6 +698,91 @@ fn embedding_row(
     decode_bf16_bytes(bytes, "model.embeddings.weight row")
 }
 
+fn direct_bf16_head_top_two(
+    tensor: &TensorView<'_>,
+    input: &[f32],
+    hidden_size: usize,
+) -> Result<TopTwo, String> {
+    require_dtype(tensor, "lm_head.weight", Dtype::BF16)?;
+    require_shape(tensor, "lm_head.weight", &[VOCABULARY_SIZE, hidden_size])?;
+    require_length(input, hidden_size, "direct head input")?;
+    require_finite(input, "direct head input")?;
+    let row_bytes = hidden_size
+        .checked_mul(BF16_BYTE_WIDTH)
+        .ok_or_else(|| "LM-head row byte count overflows usize".to_owned())?;
+    let ranked = (0..VOCABULARY_SIZE).map(|token_id| {
+        let start = token_id
+            .checked_mul(row_bytes)
+            .ok_or_else(|| "LM-head row offset overflows usize".to_owned())?;
+        let end = start
+            .checked_add(row_bytes)
+            .ok_or_else(|| "LM-head row end overflows usize".to_owned())?;
+        let bytes = tensor
+            .data()
+            .get(start..end)
+            .ok_or_else(|| format!("LM-head row {token_id} is outside tensor data"))?;
+        let mut logit = 0.0_f32;
+        for (column, chunk) in bytes.chunks_exact(BF16_BYTE_WIDTH).enumerate() {
+            let weight = bf16::from_bits(u16::from_le_bytes([chunk[0], chunk[1]])).to_f32();
+            logit += weight * input[column];
+        }
+        if !logit.is_finite() {
+            return Err(format!(
+                "LM-head row {token_id} produced a non-finite logit"
+            ));
+        }
+        Ok(RankedLogit { token_id, logit })
+    });
+    rank_top_two_results(ranked)
+}
+
+fn rank_top_two<I>(ranked: I) -> Result<TopTwo, String>
+where
+    I: IntoIterator<Item = RankedLogit>,
+{
+    rank_top_two_results(ranked.into_iter().map(Ok::<RankedLogit, String>))
+}
+
+fn rank_top_two_results<I>(ranked: I) -> Result<TopTwo, String>
+where
+    I: IntoIterator<Item = Result<RankedLogit, String>>,
+{
+    let mut first = None;
+    let mut second = None;
+    for candidate in ranked {
+        let candidate = candidate?;
+        if !candidate.logit.is_finite() {
+            return Err(format!(
+                "token {} has a non-finite logit",
+                candidate.token_id
+            ));
+        }
+        match first {
+            None => first = Some(candidate),
+            Some(current_first) if ranked_before(candidate, current_first) => {
+                second = first;
+                first = Some(candidate);
+            }
+            Some(_) => match second {
+                None => second = Some(candidate),
+                Some(current_second) if ranked_before(candidate, current_second) => {
+                    second = Some(candidate);
+                }
+                Some(_) => {}
+            },
+        }
+    }
+    Ok(TopTwo {
+        first: first.ok_or_else(|| "top-two ranking requires at least two logits".to_owned())?,
+        second: second.ok_or_else(|| "top-two ranking requires at least two logits".to_owned())?,
+    })
+}
+
+fn ranked_before(candidate: RankedLogit, current: RankedLogit) -> bool {
+    candidate.logit > current.logit
+        || (candidate.logit == current.logit && candidate.token_id < current.token_id)
+}
+
 fn require_shape(tensor: &TensorView<'_>, name: &str, expected: &[usize]) -> Result<(), String> {
     if tensor.shape() != expected {
         return Err(format!(
@@ -534,10 +834,18 @@ fn run_sequence(
 
     for (token_index, embedding) in embeddings.into_iter().enumerate() {
         require_length(embedding, dimensions.hidden_size, "embedding")?;
+        let pre_norm_weight = weights
+            .pre_norm_weight
+            .as_deref()
+            .ok_or_else(|| "layer-zero pre-norm weight is missing".to_owned())?;
+        let pre_norm_bias = weights
+            .pre_norm_bias
+            .as_deref()
+            .ok_or_else(|| "layer-zero pre-norm bias is missing".to_owned())?;
         let residual = layer_norm(
             embedding,
-            &weights.pre_norm_weight,
-            &weights.pre_norm_bias,
+            pre_norm_weight,
+            pre_norm_bias,
             LAYER_NORM_EPSILON,
         )?;
         let attention_input = layer_norm(
@@ -552,6 +860,7 @@ fn run_sequence(
             &state.attention_previous,
             &state.matrix,
             &oracle_state,
+            None,
         )?;
         state.attention_previous.clone_from(&attention_input);
         maximum_state_deviation = maximum_state_deviation
@@ -588,12 +897,150 @@ fn run_sequence(
     })
 }
 
+fn run_model_sequence(
+    weights: &[LayerWeights],
+    embeddings: [&[f32]; TOKEN_COUNT],
+) -> Result<ModelSequenceResult, String> {
+    if weights.len() != MODEL_LAYER_COUNT {
+        return Err(format!(
+            "full model requires {MODEL_LAYER_COUNT} layers, found {}",
+            weights.len()
+        ));
+    }
+    let dimensions = Dimensions::reviewed();
+    let mut states = (0..MODEL_LAYER_COUNT)
+        .map(|_| LayerState::zero(dimensions))
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut oracle_states = states
+        .iter()
+        .map(|state| state.matrix.clone())
+        .collect::<Vec<_>>();
+    let mut maximum_state_deviations = [0.0_f32; MODEL_LAYER_COUNT];
+    let mut maximum_output_deviations = [0.0_f32; MODEL_LAYER_COUNT];
+    let mut final_output = Vec::new();
+
+    for embedding in embeddings {
+        require_length(embedding, dimensions.hidden_size, "model embedding")?;
+        let mut hidden = embedding.to_vec();
+        let mut value_anchor = None;
+        for layer_index in 0..MODEL_LAYER_COUNT {
+            let layer = &weights[layer_index];
+            if layer.layer_index != layer_index {
+                return Err(format!(
+                    "layer slot {layer_index} contains weights for layer {}",
+                    layer.layer_index
+                ));
+            }
+            let residual = apply_pre_norm(layer, &hidden)?;
+            let attention_input = layer_norm(
+                &residual,
+                &layer.attn_norm_weight,
+                &layer.attn_norm_bias,
+                LAYER_NORM_EPSILON,
+            )?;
+            let time = time_mix(
+                layer,
+                &attention_input,
+                &states[layer_index].attention_previous,
+                &states[layer_index].matrix,
+                &oracle_states[layer_index],
+                value_anchor.as_deref(),
+            )?;
+            if layer_index == LAYER_INDEX {
+                value_anchor = Some(time.projected_value.clone());
+            }
+            states[layer_index]
+                .attention_previous
+                .clone_from(&attention_input);
+            let state_deviation = max_abs_difference(&time.matrix_state, &time.oracle_state)?;
+            maximum_state_deviations[layer_index] =
+                maximum_state_deviations[layer_index].max(state_deviation);
+            let output_deviation = max_abs_difference(&time.wkv_output, &time.oracle_output)?;
+            maximum_output_deviations[layer_index] =
+                maximum_output_deviations[layer_index].max(output_deviation);
+            states[layer_index].matrix = time.matrix_state;
+            oracle_states[layer_index] = time.oracle_state;
+
+            let after_attention = add_vectors(&residual, &time.wkv_output)?;
+            let ffn_input = layer_norm(
+                &after_attention,
+                &layer.ffn_norm_weight,
+                &layer.ffn_norm_bias,
+                LAYER_NORM_EPSILON,
+            )?;
+            let ffn_output = channel_mix(layer, &ffn_input, &states[layer_index].ffn_previous)?;
+            states[layer_index].ffn_previous.clone_from(&ffn_input);
+            hidden = add_vectors(&after_attention, &ffn_output)?;
+        }
+        if value_anchor.is_none() {
+            return Err("layer zero did not establish v_first".to_owned());
+        }
+        final_output = hidden;
+    }
+
+    let recurrent_states = states
+        .iter()
+        .flat_map(|state| state.matrix.iter().copied())
+        .collect::<Vec<_>>();
+    require_finite(&final_output, "full-model final layer output")?;
+    require_finite(&recurrent_states, "full-model recurrent states")?;
+    let layer_deviations = maximum_state_deviations
+        .iter()
+        .copied()
+        .zip(maximum_output_deviations.iter().copied())
+        .enumerate()
+        .map(
+            |(layer_index, (maximum_state_deviation, maximum_output_deviation))| {
+                LayerDeviationReceipt {
+                    layer_index,
+                    maximum_state_deviation,
+                    maximum_output_deviation,
+                }
+            },
+        )
+        .collect::<Vec<_>>();
+    let maximum_state_deviation = maximum_state_deviations
+        .iter()
+        .copied()
+        .fold(0.0_f32, f32::max);
+    let maximum_output_deviation = maximum_output_deviations
+        .iter()
+        .copied()
+        .fold(0.0_f32, f32::max);
+    Ok(ModelSequenceResult {
+        final_output,
+        recurrent_states,
+        layer_deviations,
+        maximum_state_deviation,
+        maximum_output_deviation,
+    })
+}
+
+fn apply_pre_norm(weights: &LayerWeights, input: &[f32]) -> Result<Vec<f32>, String> {
+    match (
+        weights.layer_index,
+        weights.pre_norm_weight.as_deref(),
+        weights.pre_norm_bias.as_deref(),
+    ) {
+        (LAYER_INDEX, Some(weight), Some(bias)) => {
+            layer_norm(input, weight, bias, LAYER_NORM_EPSILON)
+        }
+        (LAYER_INDEX, _, _) => Err("layer zero requires pre-norm weight and bias".to_owned()),
+        (_, None, None) => Ok(input.to_vec()),
+        (_, _, _) => Err(format!(
+            "layer {} must not contain layer-zero pre-norm tensors",
+            weights.layer_index
+        )),
+    }
+}
+
 fn time_mix(
     weights: &LayerWeights,
     input: &[f32],
     previous: &[f32],
     state: &[f32],
     oracle_state: &[f32],
+    value_anchor: Option<&[f32]>,
 ) -> Result<TimeMixOutput, String> {
     let dimensions = weights.dimensions;
     let x_r = mixed(input, previous, &weights.x_r)?;
@@ -605,7 +1052,8 @@ fn time_mix(
 
     let r = matvec(&weights.r_projection, &x_r)?;
     let raw_k = matvec(&weights.k_projection, &x_k)?;
-    let v = matvec(&weights.v_projection, &x_v)?;
+    let projected_value = matvec(&weights.v_projection, &x_v)?;
+    let v = resolve_layer_value(weights, &x_v, &projected_value, value_anchor)?;
 
     let w_hidden = matvec(&weights.w_down, &x_w)?
         .into_iter()
@@ -684,12 +1132,86 @@ fn time_mix(
     }
 
     Ok(TimeMixOutput {
+        projected_value,
         wkv_inputs: inputs,
         wkv_output: attention_output,
         oracle_output,
         matrix_state: next_state,
         oracle_state: next_oracle_state,
     })
+}
+
+fn resolve_layer_value(
+    weights: &LayerWeights,
+    mixed_value_input: &[f32],
+    projected_value: &[f32],
+    value_anchor: Option<&[f32]>,
+) -> Result<Vec<f32>, String> {
+    require_length(
+        projected_value,
+        weights.dimensions.hidden_size,
+        "projected value",
+    )?;
+    if weights.layer_index == LAYER_INDEX {
+        if value_anchor.is_some()
+            || weights.value_down.is_some()
+            || weights.value_up.is_some()
+            || weights.value_bias.is_some()
+        {
+            return Err("layer zero must establish v_first without value LoRA".to_owned());
+        }
+        return Ok(projected_value.to_vec());
+    }
+
+    let anchor = value_anchor.ok_or_else(|| {
+        format!(
+            "layer {} requires the current token's layer-zero v_first",
+            weights.layer_index
+        )
+    })?;
+    let down = weights.value_down.as_ref().ok_or_else(|| {
+        format!(
+            "layer {} value LoRA down matrix is missing",
+            weights.layer_index
+        )
+    })?;
+    let up = weights.value_up.as_ref().ok_or_else(|| {
+        format!(
+            "layer {} value LoRA up matrix is missing",
+            weights.layer_index
+        )
+    })?;
+    let bias = weights
+        .value_bias
+        .as_deref()
+        .ok_or_else(|| format!("layer {} value LoRA bias is missing", weights.layer_index))?;
+    let hidden = matvec(down, mixed_value_input)?;
+    let logits = add_vectors(&matvec(up, &hidden)?, bias)?;
+    let gates = logits.into_iter().map(sigmoid).collect::<Vec<_>>();
+    interpolate_values(projected_value, anchor, &gates)
+}
+
+fn interpolate_values(
+    projected: &[f32],
+    anchor: &[f32],
+    gates: &[f32],
+) -> Result<Vec<f32>, String> {
+    require_same_lengths(projected, anchor, "value interpolation projected/anchor")?;
+    require_same_lengths(projected, gates, "value interpolation projected/gates")?;
+    require_finite(projected, "value interpolation projected")?;
+    require_finite(anchor, "value interpolation anchor")?;
+    require_finite(gates, "value interpolation gates")?;
+    if gates.iter().any(|gate| !(0.0..=1.0).contains(gate)) {
+        return Err("value interpolation gate must be in the inclusive range [0, 1]".to_owned());
+    }
+    let output = projected
+        .iter()
+        .zip(anchor.iter())
+        .zip(gates.iter())
+        .map(|((&value, &first), &gate)| value + gate * (first - value))
+        .collect::<Vec<_>>();
+    require_finite(&output, "value interpolation output")?;
+    Ok(output)
 }
 
 fn channel_mix(
@@ -1081,6 +1603,10 @@ mod tests {
     const EXPECTED_OUTPUT_1: f32 = -0.42;
     const ASSERTION_TOLERANCE: f32 = 1.0e-6;
     const DIVERGENCE_FLOOR: f32 = 1.0e-2;
+    const LOW_INTERPOLATION_GATE: f32 = 0.25;
+    const HIGH_INTERPOLATION_GATE: f32 = 0.75;
+    const EXPECTED_INTERPOLATED_VALUE: f32 = 0.5;
+    const INVALID_INTERPOLATION_GATE: f32 = 1.5;
 
     fn small_dimensions() -> Dimensions {
         Dimensions {
@@ -1243,6 +1769,104 @@ mod tests {
             require_shape(&tensor, "fixture", &[SMALL_HIDDEN_SIZE])
                 .expect_err("wrong tensor shape must fail")
                 .contains("must have shape")
+        );
+    }
+
+    // r[verify onix.tenstorrent.native_runtime.rwkv_lab.greedy_token]
+    #[test]
+    fn token_local_value_interpolation_is_bounded_and_oriented() {
+        let projected = [0.0, 2.0];
+        let anchor = [2.0, 0.0];
+        let gates = [LOW_INTERPOLATION_GATE, HIGH_INTERPOLATION_GATE];
+        let interpolated = interpolate_values(&projected, &anchor, &gates)
+            .expect("bounded value interpolation must succeed");
+        assert_eq!(
+            interpolated,
+            vec![EXPECTED_INTERPOLATED_VALUE, EXPECTED_INTERPOLATED_VALUE]
+        );
+        assert!(
+            interpolate_values(&projected, &anchor, &[INVALID_INTERPOLATION_GATE, 0.0])
+                .expect_err("out-of-range gate must fail")
+                .contains("inclusive range")
+        );
+        assert!(
+            interpolate_values(&projected, &[2.0], &gates)
+                .expect_err("wrong anchor shape must fail")
+                .contains("equal lengths")
+        );
+    }
+
+    #[test]
+    fn top_two_ranking_is_deterministic_and_rejects_non_finite_logits() {
+        let ranked = rank_top_two([
+            RankedLogit {
+                token_id: 3,
+                logit: 2.0,
+            },
+            RankedLogit {
+                token_id: 1,
+                logit: 2.0,
+            },
+            RankedLogit {
+                token_id: 2,
+                logit: 1.0,
+            },
+        ])
+        .expect("finite ranking must succeed");
+        assert_eq!(ranked.first.token_id, 1);
+        assert_eq!(ranked.second.token_id, 3);
+        assert!(
+            rank_top_two([RankedLogit {
+                token_id: 0,
+                logit: f32::NAN,
+            }])
+            .expect_err("non-finite ranking must fail")
+            .contains("non-finite")
+        );
+        assert!(
+            rank_top_two([RankedLogit {
+                token_id: 0,
+                logit: 1.0,
+            }])
+            .expect_err("a single logit must fail")
+            .contains("at least two")
+        );
+    }
+
+    #[test]
+    fn direct_bf16_head_audit_accepts_rows_and_rejects_transpose() {
+        let hidden_size = SMALL_HIDDEN_SIZE;
+        let mut values = vec![0.0_f32; VOCABULARY_SIZE * hidden_size];
+        values[0] = 1.0;
+        values[hidden_size + 1] = 2.0;
+        let bytes = values
+            .iter()
+            .flat_map(|value| bf16::from_f32(*value).to_bits().to_le_bytes())
+            .collect::<Vec<_>>();
+        let tensor = TensorView::new(Dtype::BF16, vec![VOCABULARY_SIZE, hidden_size], &bytes)
+            .expect("BF16 head fixture must be valid");
+        let direct = direct_bf16_head_top_two(&tensor, &[1.0, 1.0], hidden_size)
+            .expect("direct head audit must succeed");
+        assert_eq!(direct.first.token_id, 1);
+        assert_eq!(direct.first.logit, 2.0);
+        assert_eq!(direct.second.token_id, 0);
+        assert_eq!(direct.second.logit, 1.0);
+
+        let transposed = TensorView::new(Dtype::BF16, vec![hidden_size, VOCABULARY_SIZE], &bytes)
+            .expect("transposed BF16 fixture must be structurally valid");
+        assert!(
+            direct_bf16_head_top_two(&transposed, &[1.0, 1.0], hidden_size)
+                .expect_err("transposed head must fail")
+                .contains("must have shape")
+        );
+    }
+
+    #[test]
+    fn full_model_rejects_incomplete_layer_inventory() {
+        assert!(
+            run_model_sequence(&[], [&[], &[]])
+                .expect_err("empty layer inventory must fail")
+                .contains(&format!("requires {MODEL_LAYER_COUNT} layers"))
         );
     }
 

@@ -25,6 +25,7 @@ in
     # r[impl onix.tenstorrent.native_runtime.rwkv_lab.session_receipts]
     rwkv-lab = rwkvLab;
     # r[impl onix.tenstorrent.native_runtime.rwkv_lab.real_weight_layer]
+    # r[impl onix.tenstorrent.native_runtime.rwkv_lab.greedy_token]
     rwkv-layer-harness = rwkvLayerHarness;
     # r[impl onix.tenstorrent.native_runtime.ttwkv7.package]
     inherit ttwkv7;
