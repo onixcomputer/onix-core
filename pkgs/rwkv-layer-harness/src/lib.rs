@@ -23,6 +23,9 @@ pub const GENERATION_CONFIG_EOS_TOKEN_ID: usize = 0;
 pub const RECEIPT_SCHEMA_VERSION: u32 = 1;
 pub const DECODE_STEP_COUNT: usize = 3;
 pub const TEXT_GENERATION_STEP_LIMIT: usize = 3;
+pub const PROMPT_MAX_MESSAGE_BYTES: usize = 256;
+pub const PROMPT_MAX_TOKEN_COUNT: usize = 32;
+pub const PROMPT_MAX_NEW_TOKEN_COUNT: usize = 4;
 pub const MODEL_REVISION: &str = "d81965cb4e1a9f96696b4f70b84212b8f2e43216";
 pub const MODEL_SHA256_SRI: &str = "sha256-uWqL3CHhX3HgyVZT3MO+ieVkthmtUHPJ7b+9B/eElFM=";
 pub const MODEL_BLAKE3: &str = "905f82048a64b881f9267117a398feb8a8a92bcc5233666bf67904e0d899d0e5";
@@ -83,6 +86,13 @@ const TOKENIZER_EOS_TEXT: &str = "\n\n";
 const FIXED_USER_MESSAGE: &str = "Hi";
 const FIXED_CHAT_PROMPT: &str = "User: Hi\n\nAssistant:";
 const FIXED_RENDERED_CHAT_PROMPT: &str = "<|rwkv_tokenizer_end_of_text|>User: Hi\n\nAssistant:";
+const PROMPT_MESSAGE_OPTION: &str = "--message";
+const PROMPT_TOKEN_LIMIT_OPTION: &str = "--max-prompt-tokens";
+const PROMPT_NEW_TOKEN_LIMIT_OPTION: &str = "--max-new-tokens";
+const PROMPT_REQUIRED_OPTION_COUNT: usize = 3;
+const PROMPT_OPTION_COMPONENT_COUNT: usize = 2;
+const PROMPT_EXPECTED_ARGUMENT_COUNT: usize =
+    PROMPT_REQUIRED_OPTION_COUNT * PROMPT_OPTION_COMPONENT_COUNT;
 const REFERENCE_EMPTY_TOKEN_IDS: &[usize] = &[];
 const REFERENCE_EOS_TOKEN_IDS: &[usize] = &[BYTE_VOCABULARY_EOS_TOKEN_ID];
 const REFERENCE_OVERLAP_TOKEN_IDS: &[usize] = &[24_364];
@@ -130,6 +140,19 @@ const TEXT_NON_CLAIMS: [&str; 9] = [
     "No sampling or arbitrary prompt interface is established.",
     "No long-context stability is established.",
     "No FLA or official-runtime numerical parity is established.",
+    "No general RWKV correctness is established.",
+    "No P150 numerical parity is established.",
+    "No ttWKV7 integration or parity is established.",
+    "No repaired-reader completion is established.",
+    "No linguistic quality claim is established.",
+    "No throughput or latency claim is established.",
+];
+const PROMPT_NON_CLAIMS: [&str; 11] = [
+    "No sampling or unbounded generation is established.",
+    "No prompt secrecy or prompt-safety property is established.",
+    "No long-context stability beyond the reported package cap is established.",
+    "No FLA kernel/runtime or Transformers generation parity is established.",
+    "No official checkpoint-runtime numerical parity is established.",
     "No general RWKV correctness is established.",
     "No P150 numerical parity is established.",
     "No ttWKV7 integration or parity is established.",
@@ -452,6 +475,23 @@ pub struct TokenReceipt {
 }
 
 #[derive(Clone, Debug, Serialize)]
+pub struct FrameworkVectorFixture {
+    pub schema_version: u32,
+    pub model: ModelReceipt,
+    pub dimensions: Dimensions,
+    pub layer_count: usize,
+    pub prefix_token_ids: [usize; TOKEN_COUNT],
+    pub arithmetic_precision: &'static str,
+    pub final_hidden: Vec<f32>,
+    pub logits: Vec<f32>,
+    pub recurrent_states: Vec<f32>,
+    pub generated_token_id: usize,
+    pub generated_logit: f32,
+    pub runner_up_token_id: usize,
+    pub runner_up_logit: f32,
+}
+
+#[derive(Clone, Debug, Serialize)]
 pub struct DecodeStepReceipt {
     pub step_index: usize,
     pub input_token_id: usize,
@@ -589,6 +629,185 @@ pub struct TextReceipt {
     pub oracle_tolerance: f32,
     pub replay_tolerance: f32,
     pub non_claims: Vec<&'static str>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PromptRequest {
+    pub user_message: String,
+    pub max_prompt_tokens: usize,
+    pub max_new_tokens: usize,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct PromptRequestReceipt {
+    pub user_message: String,
+    pub user_message_byte_count: usize,
+    pub user_message_blake3: String,
+    pub max_prompt_tokens: usize,
+    pub max_new_tokens: usize,
+    pub package_max_message_bytes: usize,
+    pub package_max_prompt_tokens: usize,
+    pub package_max_new_tokens: usize,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct PromptReceipt {
+    pub schema_version: u32,
+    pub model: ModelReceipt,
+    pub tokenizer: TokenizerContractReceipt,
+    pub dimensions: Dimensions,
+    pub request: PromptRequestReceipt,
+    pub rendered_chat_prompt: String,
+    pub rendered_chat_prompt_byte_count: usize,
+    pub rendered_chat_prompt_blake3: String,
+    pub prompt_token_count: usize,
+    pub prompt_token_ids: Vec<usize>,
+    pub prompt_token_ids_blake3: String,
+    pub generated_token_limit: usize,
+    pub generated_token_ids: Vec<usize>,
+    pub generated_token_ids_blake3: String,
+    pub generated_bytes_hex: String,
+    pub generated_utf8_complete: bool,
+    pub generated_text: Option<String>,
+    pub stop_reason: &'static str,
+    pub arithmetic_precision: &'static str,
+    pub steps: Vec<TextGenerationStepReceipt>,
+    pub final_recurrent_states: NumericReceipt,
+    pub maximum_oracle_state_deviation: f32,
+    pub maximum_oracle_output_deviation: f32,
+    pub maximum_replay_hidden_deviation: f32,
+    pub maximum_replay_state_deviation: f32,
+    pub minimum_retained_vs_reset_hidden_deviation: f32,
+    pub oracle_tolerance: f32,
+    pub replay_tolerance: f32,
+    pub non_claims: Vec<&'static str>,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct TextExecutionPolicy<'a> {
+    rendered_chat_prompt: &'a str,
+    prompt_token_limit: Option<usize>,
+    generation_step_limit: usize,
+}
+
+#[derive(Clone, Debug)]
+struct TextExecutionResult {
+    model: ModelReceipt,
+    tokenizer: TokenizerContractReceipt,
+    dimensions: Dimensions,
+    prompt_token_ids: Vec<usize>,
+    prompt_token_ids_blake3: String,
+    generation_step_limit: usize,
+    generated_token_ids: Vec<usize>,
+    generated_token_ids_blake3: String,
+    generated_bytes_hex: String,
+    generated_text: Option<String>,
+    stop_reason: &'static str,
+    steps: Vec<TextGenerationStepReceipt>,
+    final_recurrent_states: NumericReceipt,
+    maximum_oracle_state_deviation: f32,
+    maximum_oracle_output_deviation: f32,
+    maximum_replay_hidden_deviation: f32,
+    maximum_replay_state_deviation: f32,
+    minimum_retained_vs_reset_hidden_deviation: f32,
+}
+
+impl PromptRequest {
+    pub fn validate(&self) -> Result<(), String> {
+        let message_bytes = self.user_message.len();
+        if message_bytes > PROMPT_MAX_MESSAGE_BYTES {
+            return Err(format!(
+                "user message has {message_bytes} bytes, exceeding package cap {PROMPT_MAX_MESSAGE_BYTES}"
+            ));
+        }
+        if self.max_prompt_tokens == 0 || self.max_prompt_tokens > PROMPT_MAX_TOKEN_COUNT {
+            return Err(format!(
+                "max prompt tokens must be in 1..={PROMPT_MAX_TOKEN_COUNT}, found {}",
+                self.max_prompt_tokens
+            ));
+        }
+        if self.max_new_tokens == 0 || self.max_new_tokens > PROMPT_MAX_NEW_TOKEN_COUNT {
+            return Err(format!(
+                "max new tokens must be in 1..={PROMPT_MAX_NEW_TOKEN_COUNT}, found {}",
+                self.max_new_tokens
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn render_chat_prompt(&self) -> Result<String, String> {
+        self.validate()?;
+        Ok(format!(
+            "{TOKENIZER_SPECIAL_TEXT}User: {}{TOKENIZER_EOS_TEXT}Assistant:",
+            self.user_message
+        ))
+    }
+}
+
+// r[impl onix.tenstorrent.native_runtime.rwkv_lab.bounded_prompt]
+pub fn parse_prompt_arguments(arguments: &[String]) -> Result<PromptRequest, String> {
+    if arguments.len() != PROMPT_EXPECTED_ARGUMENT_COUNT {
+        return Err(format!(
+            "rwkv-prompt-harness requires {PROMPT_MESSAGE_OPTION} TEXT {PROMPT_TOKEN_LIMIT_OPTION} COUNT {PROMPT_NEW_TOKEN_LIMIT_OPTION} COUNT"
+        ));
+    }
+
+    let mut message = None;
+    let mut prompt_token_limit = None;
+    let mut new_token_limit = None;
+    let mut index = 0_usize;
+    while index < arguments.len() {
+        let option = &arguments[index];
+        let value_index = index
+            .checked_add(1)
+            .ok_or_else(|| "prompt argument index overflows usize".to_owned())?;
+        let value = arguments
+            .get(value_index)
+            .ok_or_else(|| format!("option {option} requires a value"))?;
+        match option.as_str() {
+            PROMPT_MESSAGE_OPTION => {
+                if message.replace(value.clone()).is_some() {
+                    return Err(format!("duplicate option {PROMPT_MESSAGE_OPTION}"));
+                }
+            }
+            PROMPT_TOKEN_LIMIT_OPTION => {
+                if prompt_token_limit.is_some() {
+                    return Err(format!("duplicate option {PROMPT_TOKEN_LIMIT_OPTION}"));
+                }
+                prompt_token_limit = Some(parse_positive_limit(value, PROMPT_TOKEN_LIMIT_OPTION)?);
+            }
+            PROMPT_NEW_TOKEN_LIMIT_OPTION => {
+                if new_token_limit.is_some() {
+                    return Err(format!("duplicate option {PROMPT_NEW_TOKEN_LIMIT_OPTION}"));
+                }
+                new_token_limit = Some(parse_positive_limit(value, PROMPT_NEW_TOKEN_LIMIT_OPTION)?);
+            }
+            _ => return Err(format!("unknown option {option}")),
+        }
+        index = value_index
+            .checked_add(1)
+            .ok_or_else(|| "prompt argument index overflows usize".to_owned())?;
+    }
+
+    let request = PromptRequest {
+        user_message: message.ok_or_else(|| format!("missing option {PROMPT_MESSAGE_OPTION}"))?,
+        max_prompt_tokens: prompt_token_limit
+            .ok_or_else(|| format!("missing option {PROMPT_TOKEN_LIMIT_OPTION}"))?,
+        max_new_tokens: new_token_limit
+            .ok_or_else(|| format!("missing option {PROMPT_NEW_TOKEN_LIMIT_OPTION}"))?,
+    };
+    request.validate()?;
+    Ok(request)
+}
+
+fn parse_positive_limit(value: &str, option: &str) -> Result<usize, String> {
+    let parsed = value
+        .parse::<usize>()
+        .map_err(|error| format!("{option} requires a positive integer: {error}"))?;
+    if parsed == 0 {
+        return Err(format!("{option} requires a positive integer"));
+    }
+    Ok(parsed)
 }
 
 #[derive(Clone, Debug, Default)]
@@ -1436,6 +1655,112 @@ pub fn run_token_checkpoint(
     })
 }
 
+// r[impl onix.tenstorrent.native_runtime.rwkv_lab.torch_equation_parity]
+pub fn run_framework_vector_fixture(
+    checkpoint: &[u8],
+    expected_blake3: &str,
+) -> Result<FrameworkVectorFixture, String> {
+    verify_checkpoint_digest(checkpoint, expected_blake3)?;
+    let byte_count = u64::try_from(checkpoint.len())
+        .map_err(|error| format!("checkpoint byte count does not fit u64: {error}"))?;
+    if byte_count != MODEL_BYTE_COUNT {
+        return Err(format!(
+            "checkpoint byte count must be {MODEL_BYTE_COUNT}, found {byte_count}"
+        ));
+    }
+
+    let tensors = SafeTensors::deserialize(checkpoint)
+        .map_err(|error| format!("failed to decode safetensors checkpoint: {error}"))?;
+    let dimensions = Dimensions::reviewed();
+    let weights = (0..MODEL_LAYER_COUNT)
+        .map(|layer_index| load_layer(&tensors, dimensions, layer_index))
+        .collect::<Result<Vec<_>, _>>()?;
+    validate_model_weights(&weights)?;
+    let embedding = tensors
+        .tensor("model.embeddings.weight")
+        .map_err(|error| format!("missing model.embeddings.weight: {error}"))?;
+    let model_config_bos = embedding_row(
+        &embedding,
+        MODEL_CONFIG_BOS_TOKEN_ID,
+        dimensions.hidden_size,
+    )?;
+    let model_config_eos = embedding_row(
+        &embedding,
+        MODEL_CONFIG_EOS_TOKEN_ID,
+        dimensions.hidden_size,
+    )?;
+    let sequence = run_model_sequence(&weights, [&model_config_bos, &model_config_eos])?;
+    if sequence.maximum_state_deviation > ORACLE_TOLERANCE
+        || sequence.maximum_output_deviation > ORACLE_TOLERANCE
+    {
+        return Err("framework fixture recurrence oracle exceeded tolerance".to_owned());
+    }
+
+    let final_norm_weight = vector(&tensors, "model.norm.weight", dimensions.hidden_size)?;
+    let final_norm_bias = vector(&tensors, "model.norm.bias", dimensions.hidden_size)?;
+    let final_hidden = layer_norm(
+        &sequence.final_output,
+        &final_norm_weight,
+        &final_norm_bias,
+        LAYER_NORM_EPSILON,
+    )?;
+    let head_tensor = tensors
+        .tensor("lm_head.weight")
+        .map_err(|error| format!("missing lm_head.weight: {error}"))?;
+    let head = matrix(
+        &tensors,
+        "lm_head.weight",
+        VOCABULARY_SIZE,
+        dimensions.hidden_size,
+    )?;
+    let logits = matvec(&head, &final_hidden)?;
+    let production_top = rank_top_two(
+        logits
+            .iter()
+            .copied()
+            .enumerate()
+            .map(|(token_id, logit)| RankedLogit { token_id, logit }),
+    )?;
+    let oracle_top = direct_bf16_head_top_two(&head_tensor, &final_hidden, dimensions.hidden_size)?;
+    if production_top.first.token_id != oracle_top.first.token_id
+        || production_top.second.token_id != oracle_top.second.token_id
+    {
+        return Err(
+            "framework fixture LM-head ranking disagrees with direct BF16 audit".to_owned(),
+        );
+    }
+    let head_deviation = (production_top.first.logit - oracle_top.first.logit)
+        .abs()
+        .max((production_top.second.logit - oracle_top.second.logit).abs());
+    if head_deviation > ORACLE_TOLERANCE {
+        return Err(format!(
+            "framework fixture LM-head deviation {head_deviation} exceeds {ORACLE_TOLERANCE}"
+        ));
+    }
+
+    Ok(FrameworkVectorFixture {
+        schema_version: RECEIPT_SCHEMA_VERSION,
+        model: ModelReceipt {
+            model_id: MODEL_ID,
+            revision: MODEL_REVISION,
+            sha256_sri: MODEL_SHA256_SRI,
+            blake3: blake3::hash(checkpoint).to_hex().to_string(),
+            byte_count,
+        },
+        dimensions,
+        layer_count: MODEL_LAYER_COUNT,
+        prefix_token_ids: [MODEL_CONFIG_BOS_TOKEN_ID, MODEL_CONFIG_EOS_TOKEN_ID],
+        arithmetic_precision: ARITHMETIC_PRECISION,
+        final_hidden,
+        logits,
+        recurrent_states: sequence.recurrent_states,
+        generated_token_id: production_top.first.token_id,
+        generated_logit: production_top.first.logit,
+        runner_up_token_id: production_top.second.token_id,
+        runner_up_logit: production_top.second.logit,
+    })
+}
+
 // r[impl onix.tenstorrent.native_runtime.rwkv_lab.stateful_decode]
 pub fn run_decode_checkpoint(
     checkpoint: &[u8],
@@ -1646,6 +1971,125 @@ pub fn run_text_checkpoint(
     expected_model_blake3: &str,
     authority_inputs: TokenizerAuthorityInputs<'_>,
 ) -> Result<TextReceipt, String> {
+    let execution = run_text_execution(
+        checkpoint,
+        expected_model_blake3,
+        authority_inputs,
+        TextExecutionPolicy {
+            rendered_chat_prompt: FIXED_RENDERED_CHAT_PROMPT,
+            prompt_token_limit: None,
+            generation_step_limit: TEXT_GENERATION_STEP_LIMIT,
+        },
+    )?;
+    let generated_text = execution
+        .generated_text
+        .clone()
+        .ok_or_else(|| "fixed bounded generated bytes are not complete UTF-8".to_owned())?;
+    Ok(TextReceipt {
+        schema_version: RECEIPT_SCHEMA_VERSION,
+        model: execution.model,
+        tokenizer: execution.tokenizer,
+        dimensions: execution.dimensions,
+        fixed_user_message: FIXED_USER_MESSAGE,
+        fixed_chat_prompt: FIXED_CHAT_PROMPT,
+        rendered_chat_prompt: FIXED_RENDERED_CHAT_PROMPT,
+        prompt_token_ids: execution.prompt_token_ids,
+        prompt_token_ids_blake3: execution.prompt_token_ids_blake3,
+        generation_step_limit: execution.generation_step_limit,
+        generated_token_ids: execution.generated_token_ids,
+        generated_token_ids_blake3: execution.generated_token_ids_blake3,
+        generated_bytes_hex: execution.generated_bytes_hex,
+        generated_text,
+        stop_reason: execution.stop_reason,
+        arithmetic_precision: ARITHMETIC_PRECISION,
+        steps: execution.steps,
+        final_recurrent_states: execution.final_recurrent_states,
+        maximum_oracle_state_deviation: execution.maximum_oracle_state_deviation,
+        maximum_oracle_output_deviation: execution.maximum_oracle_output_deviation,
+        maximum_replay_hidden_deviation: execution.maximum_replay_hidden_deviation,
+        maximum_replay_state_deviation: execution.maximum_replay_state_deviation,
+        minimum_retained_vs_reset_hidden_deviation: execution
+            .minimum_retained_vs_reset_hidden_deviation,
+        oracle_tolerance: ORACLE_TOLERANCE,
+        replay_tolerance: REPLAY_TOLERANCE,
+        non_claims: TEXT_NON_CLAIMS.to_vec(),
+    })
+}
+
+// r[impl onix.tenstorrent.native_runtime.rwkv_lab.bounded_prompt]
+pub fn run_prompt_checkpoint(
+    checkpoint: &[u8],
+    expected_model_blake3: &str,
+    authority_inputs: TokenizerAuthorityInputs<'_>,
+    request: PromptRequest,
+) -> Result<PromptReceipt, String> {
+    request.validate()?;
+    let rendered_chat_prompt = request.render_chat_prompt()?;
+    let execution = run_text_execution(
+        checkpoint,
+        expected_model_blake3,
+        authority_inputs,
+        TextExecutionPolicy {
+            rendered_chat_prompt: &rendered_chat_prompt,
+            prompt_token_limit: Some(request.max_prompt_tokens),
+            generation_step_limit: request.max_new_tokens,
+        },
+    )?;
+    let prompt_token_count = execution.prompt_token_ids.len();
+    let generated_utf8_complete = execution.generated_text.is_some();
+    Ok(PromptReceipt {
+        schema_version: RECEIPT_SCHEMA_VERSION,
+        model: execution.model,
+        tokenizer: execution.tokenizer,
+        dimensions: execution.dimensions,
+        request: PromptRequestReceipt {
+            user_message_blake3: blake3::hash(request.user_message.as_bytes())
+                .to_hex()
+                .to_string(),
+            user_message_byte_count: request.user_message.len(),
+            user_message: request.user_message,
+            max_prompt_tokens: request.max_prompt_tokens,
+            max_new_tokens: request.max_new_tokens,
+            package_max_message_bytes: PROMPT_MAX_MESSAGE_BYTES,
+            package_max_prompt_tokens: PROMPT_MAX_TOKEN_COUNT,
+            package_max_new_tokens: PROMPT_MAX_NEW_TOKEN_COUNT,
+        },
+        rendered_chat_prompt_blake3: blake3::hash(rendered_chat_prompt.as_bytes())
+            .to_hex()
+            .to_string(),
+        rendered_chat_prompt_byte_count: rendered_chat_prompt.len(),
+        rendered_chat_prompt,
+        prompt_token_count,
+        prompt_token_ids: execution.prompt_token_ids,
+        prompt_token_ids_blake3: execution.prompt_token_ids_blake3,
+        generated_token_limit: execution.generation_step_limit,
+        generated_token_ids: execution.generated_token_ids,
+        generated_token_ids_blake3: execution.generated_token_ids_blake3,
+        generated_bytes_hex: execution.generated_bytes_hex,
+        generated_utf8_complete,
+        generated_text: execution.generated_text,
+        stop_reason: execution.stop_reason,
+        arithmetic_precision: ARITHMETIC_PRECISION,
+        steps: execution.steps,
+        final_recurrent_states: execution.final_recurrent_states,
+        maximum_oracle_state_deviation: execution.maximum_oracle_state_deviation,
+        maximum_oracle_output_deviation: execution.maximum_oracle_output_deviation,
+        maximum_replay_hidden_deviation: execution.maximum_replay_hidden_deviation,
+        maximum_replay_state_deviation: execution.maximum_replay_state_deviation,
+        minimum_retained_vs_reset_hidden_deviation: execution
+            .minimum_retained_vs_reset_hidden_deviation,
+        oracle_tolerance: ORACLE_TOLERANCE,
+        replay_tolerance: REPLAY_TOLERANCE,
+        non_claims: PROMPT_NON_CLAIMS.to_vec(),
+    })
+}
+
+fn run_text_execution(
+    checkpoint: &[u8],
+    expected_model_blake3: &str,
+    authority_inputs: TokenizerAuthorityInputs<'_>,
+    policy: TextExecutionPolicy<'_>,
+) -> Result<TextExecutionResult, String> {
     verify_checkpoint_digest(checkpoint, expected_model_blake3)?;
     let byte_count = u64::try_from(checkpoint.len())
         .map_err(|error| format!("checkpoint byte count does not fit u64: {error}"))?;
@@ -1654,10 +2098,16 @@ pub fn run_text_checkpoint(
             "checkpoint byte count must be {MODEL_BYTE_COUNT}, found {byte_count}"
         ));
     }
+    if policy.generation_step_limit == 0 {
+        return Err("text execution requires a positive generation step limit".to_owned());
+    }
     let (tokenizer, tokenizer_receipt) = validate_tokenizer_authority(authority_inputs)?;
-    let prompt_token_ids = tokenizer.encode_wrapper_text(FIXED_RENDERED_CHAT_PROMPT)?;
+    let prompt_token_ids = tokenizer.encode_wrapper_text(policy.rendered_chat_prompt)?;
     if prompt_token_ids.len() <= 1 {
-        return Err("fixed chat prompt must contain ordinary vocabulary tokens".to_owned());
+        return Err("chat prompt must contain ordinary vocabulary tokens".to_owned());
+    }
+    if let Some(prompt_token_limit) = policy.prompt_token_limit {
+        require_prompt_token_limit(prompt_token_ids.len(), prompt_token_limit)?;
     }
 
     let tensors = SafeTensors::deserialize(checkpoint)
@@ -1688,7 +2138,7 @@ pub fn run_text_checkpoint(
         let token_embedding = embedding_row(&embedding, *token_id, dimensions.hidden_size)?;
         (execution, final_output) = run_model_token(&weights, &token_embedding, execution)?;
     }
-    ensure_oracle_tolerance(&execution, "fixed prompt")?;
+    ensure_oracle_tolerance(&execution, "chat prompt")?;
     let prompt_evaluation = evaluate_head(
         &final_output,
         &final_norm_weight,
@@ -1718,7 +2168,7 @@ pub fn run_text_checkpoint(
     require_replay_tolerance(prompt_state_deviation, "prompt recurrent state", 0)?;
     let last_prompt_id = *prompt_token_ids
         .last()
-        .ok_or_else(|| "fixed prompt token IDs are empty".to_owned())?;
+        .ok_or_else(|| "chat prompt token IDs are empty".to_owned())?;
     let (_, prompt_reset_output) =
         replay_input_ids(&weights, &embedding, &[last_prompt_id], dimensions)?;
     let prompt_reset_evaluation = evaluate_head(
@@ -1736,15 +2186,15 @@ pub fn run_text_checkpoint(
     require_state_carry_divergence(prompt_retained_vs_reset, 0)?;
 
     let mut processed_input_ids = prompt_token_ids.clone();
-    let mut generated_token_ids = Vec::with_capacity(TEXT_GENERATION_STEP_LIMIT);
+    let mut generated_token_ids = Vec::with_capacity(policy.generation_step_limit);
     let mut generated_bytes = Vec::new();
-    let mut steps = Vec::with_capacity(TEXT_GENERATION_STEP_LIMIT);
+    let mut steps = Vec::with_capacity(policy.generation_step_limit);
     let mut maximum_replay_hidden_deviation = prompt_hidden_deviation;
     let mut maximum_replay_state_deviation = prompt_state_deviation;
     let mut minimum_retained_vs_reset_hidden_deviation = prompt_retained_vs_reset;
     let mut stop_reason = "generation_step_limit";
 
-    for step_index in 0..TEXT_GENERATION_STEP_LIMIT {
+    for step_index in 0..policy.generation_step_limit {
         let selection = evaluate_head(
             &final_output,
             &final_norm_weight,
@@ -1856,8 +2306,7 @@ pub fn run_text_checkpoint(
         });
     }
 
-    let generated_text = String::from_utf8(generated_bytes.clone())
-        .map_err(|error| format!("bounded generated bytes are not valid UTF-8: {error}"))?;
+    let generated_text = decode_complete_utf8(&generated_bytes);
     let maximum_oracle_state_deviation = execution
         .maximum_state_deviations
         .iter()
@@ -1870,8 +2319,7 @@ pub fn run_text_checkpoint(
         .fold(0.0_f32, f32::max);
     let final_recurrent_states = execution.flattened_matrices();
 
-    Ok(TextReceipt {
-        schema_version: RECEIPT_SCHEMA_VERSION,
+    Ok(TextExecutionResult {
         model: ModelReceipt {
             model_id: MODEL_ID,
             revision: MODEL_REVISION,
@@ -1881,18 +2329,14 @@ pub fn run_text_checkpoint(
         },
         tokenizer: tokenizer_receipt,
         dimensions,
-        fixed_user_message: FIXED_USER_MESSAGE,
-        fixed_chat_prompt: FIXED_CHAT_PROMPT,
-        rendered_chat_prompt: FIXED_RENDERED_CHAT_PROMPT,
         prompt_token_ids_blake3: fingerprint_token_ids(&prompt_token_ids)?,
         prompt_token_ids,
-        generation_step_limit: TEXT_GENERATION_STEP_LIMIT,
+        generation_step_limit: policy.generation_step_limit,
         generated_token_ids_blake3: fingerprint_token_ids(&generated_token_ids)?,
         generated_token_ids,
         generated_bytes_hex: encode_hex(&generated_bytes),
         generated_text,
         stop_reason,
-        arithmetic_precision: ARITHMETIC_PRECISION,
         steps,
         final_recurrent_states: numeric_receipt(&final_recurrent_states)?,
         maximum_oracle_state_deviation,
@@ -1900,10 +2344,20 @@ pub fn run_text_checkpoint(
         maximum_replay_hidden_deviation,
         maximum_replay_state_deviation,
         minimum_retained_vs_reset_hidden_deviation,
-        oracle_tolerance: ORACLE_TOLERANCE,
-        replay_tolerance: REPLAY_TOLERANCE,
-        non_claims: TEXT_NON_CLAIMS.to_vec(),
     })
+}
+
+fn require_prompt_token_limit(actual: usize, limit: usize) -> Result<(), String> {
+    if actual > limit {
+        return Err(format!(
+            "rendered chat prompt has {actual} tokens, exceeding caller limit {limit}"
+        ));
+    }
+    Ok(())
+}
+
+fn decode_complete_utf8(bytes: &[u8]) -> Option<String> {
+    String::from_utf8(bytes.to_vec()).ok()
 }
 
 fn encode_hex(bytes: &[u8]) -> String {
@@ -3704,6 +4158,114 @@ mod tests {
                 .expect_err("duplicate token bytes must fail")
                 .contains("duplicate")
         );
+    }
+
+    // r[verify onix.tenstorrent.native_runtime.rwkv_lab.bounded_prompt]
+    #[test]
+    fn bounded_prompt_arguments_render_exact_chat_text() {
+        let arguments = vec![
+            PROMPT_NEW_TOKEN_LIMIT_OPTION.to_owned(),
+            PROMPT_MAX_NEW_TOKEN_COUNT.to_string(),
+            PROMPT_MESSAGE_OPTION.to_owned(),
+            "Hello λ".to_owned(),
+            PROMPT_TOKEN_LIMIT_OPTION.to_owned(),
+            PROMPT_MAX_TOKEN_COUNT.to_string(),
+        ];
+        let request = parse_prompt_arguments(&arguments)
+            .expect("complete bounded prompt arguments must parse");
+        assert_eq!(request.user_message, "Hello λ");
+        assert_eq!(request.max_prompt_tokens, PROMPT_MAX_TOKEN_COUNT);
+        assert_eq!(request.max_new_tokens, PROMPT_MAX_NEW_TOKEN_COUNT);
+        assert_eq!(
+            request
+                .render_chat_prompt()
+                .expect("bounded message must render"),
+            format!("{TOKENIZER_SPECIAL_TEXT}User: Hello λ{TOKENIZER_EOS_TEXT}Assistant:")
+        );
+        require_prompt_token_limit(PROMPT_MAX_TOKEN_COUNT, PROMPT_MAX_TOKEN_COUNT)
+            .expect("exact prompt token cap must pass");
+    }
+
+    #[test]
+    fn bounded_prompt_arguments_fail_closed() {
+        let duplicate = vec![
+            PROMPT_MESSAGE_OPTION.to_owned(),
+            "first".to_owned(),
+            PROMPT_MESSAGE_OPTION.to_owned(),
+            "second".to_owned(),
+            PROMPT_NEW_TOKEN_LIMIT_OPTION.to_owned(),
+            "1".to_owned(),
+        ];
+        assert!(
+            parse_prompt_arguments(&duplicate)
+                .expect_err("duplicate prompt option must fail")
+                .contains("duplicate")
+        );
+
+        let unknown = vec![
+            "--unknown".to_owned(),
+            "value".to_owned(),
+            PROMPT_MESSAGE_OPTION.to_owned(),
+            "hello".to_owned(),
+            PROMPT_NEW_TOKEN_LIMIT_OPTION.to_owned(),
+            "1".to_owned(),
+        ];
+        assert!(
+            parse_prompt_arguments(&unknown)
+                .expect_err("unknown option must fail")
+                .contains("unknown option")
+        );
+
+        let invalid_number = vec![
+            PROMPT_MESSAGE_OPTION.to_owned(),
+            "hello".to_owned(),
+            PROMPT_TOKEN_LIMIT_OPTION.to_owned(),
+            "not-a-number".to_owned(),
+            PROMPT_NEW_TOKEN_LIMIT_OPTION.to_owned(),
+            "1".to_owned(),
+        ];
+        assert!(
+            parse_prompt_arguments(&invalid_number)
+                .expect_err("non-integer limit must fail")
+                .contains("positive integer")
+        );
+
+        for request in [
+            PromptRequest {
+                user_message: "hello".to_owned(),
+                max_prompt_tokens: 0,
+                max_new_tokens: 1,
+            },
+            PromptRequest {
+                user_message: "hello".to_owned(),
+                max_prompt_tokens: PROMPT_MAX_TOKEN_COUNT + 1,
+                max_new_tokens: 1,
+            },
+            PromptRequest {
+                user_message: "hello".to_owned(),
+                max_prompt_tokens: 1,
+                max_new_tokens: PROMPT_MAX_NEW_TOKEN_COUNT + 1,
+            },
+            PromptRequest {
+                user_message: "a".repeat(PROMPT_MAX_MESSAGE_BYTES + 1),
+                max_prompt_tokens: 1,
+                max_new_tokens: 1,
+            },
+        ] {
+            request
+                .validate()
+                .expect_err("zero or excessive request bound must fail");
+        }
+        require_prompt_token_limit(PROMPT_MAX_TOKEN_COUNT + 1, PROMPT_MAX_TOKEN_COUNT)
+            .expect_err("actual prompt token excess must fail");
+    }
+
+    #[test]
+    fn bounded_prompt_utf8_classification_preserves_exact_bytes() {
+        const INCOMPLETE_UTF8_LEAD_BYTE: u8 = 0xf0;
+        assert_eq!(decode_complete_utf8("λ".as_bytes()), Some("λ".to_owned()));
+        assert_eq!(decode_complete_utf8(&[INCOMPLETE_UTF8_LEAD_BYTE]), None);
+        assert_eq!(encode_hex(&[INCOMPLETE_UTF8_LEAD_BYTE]), "f0");
     }
 
     #[test]

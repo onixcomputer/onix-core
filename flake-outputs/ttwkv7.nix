@@ -28,12 +28,16 @@ in
     # r[impl onix.tenstorrent.native_runtime.rwkv_lab.greedy_token]
     # r[impl onix.tenstorrent.native_runtime.rwkv_lab.stateful_decode]
     # r[impl onix.tenstorrent.native_runtime.rwkv_lab.tokenizer_text]
+    # r[impl onix.tenstorrent.native_runtime.rwkv_lab.bounded_prompt]
+    # r[impl onix.tenstorrent.native_runtime.rwkv_lab.torch_equation_parity]
     rwkv-layer-harness = rwkvLayerHarness;
     # r[impl onix.tenstorrent.native_runtime.ttwkv7.package]
     inherit ttwkv7;
   };
 
   checks = lib.optionalAttrs isSupportedSystem {
+    # r[verify onix.tenstorrent.native_runtime.rwkv_lab.torch_equation_parity]
+    rwkv-layer-framework-parity = rwkvLayerHarness.passthru.frameworkParityCheck;
     # r[verify onix.tenstorrent.native_runtime.ttwkv7.fast_iteration]
     ttwkv7-architectures = ttwkv7.passthru.architectureCheck;
   };

@@ -1,6 +1,8 @@
 {
   fetchurl,
   lib,
+  python3,
+  runCommand,
   rustPlatform,
 }:
 let
@@ -24,6 +26,28 @@ let
   specialTokensMap = tokenizerArtifact "special_tokens_map.json" "sha256-H1EppN7ADOM+XFzScmyVKyKkeCcyHu08UY1DXUpkYBU=";
   modelConfig = tokenizerArtifact "config.json" "sha256-VcFZ/IlA4WVXpCsE8K7QN0TxdiIcwSY3aUqx9+EMTG8=";
   generationConfig = tokenizerArtifact "generation_config.json" "sha256-2milZURvylpqKvSzCIkS6VOWX7+m6WgBmhTXVj1Y2Tc=";
+  hfModelingSource = fetchurl {
+    name = "modeling_rwkv7-${modelRevision}.py";
+    url = "https://huggingface.co/RWKV/RWKV7-Goose-World2.8-0.1B-HF/resolve/${modelRevision}/modeling_rwkv7.py";
+    hash = "sha256-CwBZk2Oziq7f+c1xUZ1aDqfHSOHXcaTXQkNp+S6FChc=";
+  };
+  flaRevision = "17dd5662554d46b6bcb1d1ff728cebb461c9aef9";
+  flaRwkv7Source = fetchurl {
+    name = "fla-rwkv7-${flaRevision}.py";
+    url = "https://raw.githubusercontent.com/fla-org/flash-linear-attention/${flaRevision}/fla/layers/rwkv7.py";
+    hash = "sha256-h6+adGlQ+98G4s/NnRDZwM1arEm1JUurWhrGhC9J/YM=";
+  };
+  officialRwkvRevision = "e6f74b63a06e08606d130043599d218209628bad";
+  officialRwkvSource = fetchurl {
+    name = "rwkv-v7-demo-${officialRwkvRevision}.py";
+    url = "https://raw.githubusercontent.com/BlinkDL/RWKV-LM/${officialRwkvRevision}/RWKV-v7/rwkv_v7_demo.py";
+    hash = "sha256-PYNJReeIL19qtCM5WLE20KSbwmMx7ASOtkXUjKhxbN4=";
+  };
+  pythonEnvironment = python3.withPackages (packages: [
+    packages.blake3
+    packages.safetensors
+    packages.torch
+  ]);
   expectedSecondTokenFingerprints = [
     "6e5391b0a6ddd727c0a5359b18676bd5d3dfd3fcc69f088da9fb15bba69934e3"
     "34cbe8c4586627577d9a51d49db1b6a2106b50f616ae5983593b0c4196488b33"
@@ -92,185 +116,348 @@ let
     "a5de08fbd73c84cedc1032bb29f64f31c2c984d886c4928acdfc318253c0faec"
   ];
   expectedTextStateCarryDivergence = "21.653366";
+  promptMaxMessageBytes = 256;
+  promptMaxTokenCount = 32;
+  promptMaxNewTokenCount = 4;
+  promptFixtureNewTokenCount = 3;
+  promptExcessTokenCount = promptMaxTokenCount + 1;
+  expectedPromptUserMessageBlake3 = "fbc2b0516ee8744d293b980779178a3508850fdcfe965985782c39601b65794f";
+  expectedPromptRenderedBlake3 = "4ad5b9a4f9b23f30294d312c06cd4990196c9f064fd46c0c562a883de52426dc";
+  expectedPromptIdsBlake3 = "9faebfda36655992fada28a962424b5a232b10464c1186a3df075dbcafff8587";
+  expectedPromptGeneratedIdsBlake3 = "1b1e2ebd4fad81dce97e84c1a518e562f115bd5a698743b170df25655410d6cc";
+  expectedPromptGeneratedTokenIds = [
+    36786
+    34
+    308
+  ];
+  expectedPromptGeneratedLogits = [
+    "6.8237233"
+    "8.615999"
+    "6.9682403"
+  ];
+  expectedPromptFingerprints = [
+    "f73020d4121b16d3ed6c5e3c0d3ed2ae9f37edb2e19c7150b3c98c3c9b86923c"
+    "323bc686dcc6c3d4d5e8cd508686dcb88688ac94d19933f1ab202d0ba85c332b"
+    "197d52fdc793bf7122acfec1ed1fb19086be91a8069f655eee4ef4f811e3d4ef"
+    "80d100d77e820351dc17a62bdba795fe82ec7cd6606f6768053ef085a2bf2ceb"
+    "e8cbffe2d965a92037f3a76a43624dea614b4435d10f0c341e4ad956736424ea"
+    "cc77a2cab3678c33cf311c7854d1632d054eb4e38ba3ad04fe2e49692aa097ad"
+  ];
+  expectedPromptStateCarryDivergence = "22.658165";
+  frameworkParityCheck =
+    runCommand "rwkv-layer-harness-torch-equation-parity"
+      {
+        nativeBuildInputs = [ pythonEnvironment ];
+      }
+      ''
+        set -euo pipefail
+        mkdir -p "$out"
+
+        ${package}/bin/rwkv-framework-fixture > rust-fixture-first.json
+        ${package}/bin/rwkv-framework-fixture > rust-fixture-second.json
+        cmp rust-fixture-first.json rust-fixture-second.json
+        python ${./reference/rwkv7_torch_equation_reference.py} --self-test > "$out/self-test.json"
+        grep -Fq '"changed_vector_rejected":true' "$out/self-test.json"
+        grep -Fq '"malformed_vector_rejected":true' "$out/self-test.json"
+
+        printf '{}\n' > malformed-fixture.json
+        if python ${./reference/rwkv7_torch_equation_reference.py} \
+          --model ${model} \
+          --rust-fixture malformed-fixture.json \
+          --hf-source ${hfModelingSource} \
+          --fla-source ${flaRwkv7Source} \
+          --official-source ${officialRwkvSource} \
+          > malformed-output.json 2> malformed-error.log; then
+          echo "PyTorch reference accepted a malformed Rust fixture" >&2
+          exit 1
+        fi
+        grep -F 'Rust fixture is missing fields' malformed-error.log
+
+        if grep -E 'torch\.cuda|device=.*cuda|import subprocess|from subprocess|import requests|import urllib' \
+          ${./reference/rwkv7_torch_equation_reference.py}; then
+          echo "PyTorch equation reference contains a GPU, subprocess, or network surface" >&2
+          exit 1
+        fi
+        grep -Fq 'from fla.models.rwkv7' ${hfModelingSource}
+        grep -Fq 'potentially buggy FLA implementation of RWKV' ${flaRwkv7Source}
+        grep -Fq 'state = state * w' ${officialRwkvSource}
+
+        for receipt_name in receipt-first.json receipt-second.json; do
+          python ${./reference/rwkv7_torch_equation_reference.py} \
+            --model ${model} \
+            --rust-fixture rust-fixture-first.json \
+            --hf-source ${hfModelingSource} \
+            --fla-source ${flaRwkv7Source} \
+            --official-source ${officialRwkvSource} \
+            > "$receipt_name"
+        done
+        cmp receipt-first.json receipt-second.json
+        cp receipt-first.json "$out/receipt.json"
+        grep -Fq '"valid":true' "$out/receipt.json"
+        grep -Fq '"top_two_token_ids_match":true' "$out/receipt.json"
+        grep -Fq '"device":"cpu"' "$out/receipt.json"
+        grep -Fq 'No FLA kernel/runtime parity is established.' "$out/receipt.json"
+      '';
+  package = rustPlatform.buildRustPackage {
+    pname = "rwkv-layer-harness";
+    version = "0.1.0";
+
+    src = lib.cleanSource ./.;
+    cargoLock.lockFile = ./Cargo.lock;
+
+    RWKV_LAYER_MODEL = model;
+    RWKV_LAYER_MODEL_BLAKE3 = modelBlake3;
+    RWKV_TOKENIZER_VOCABULARY = tokenizerVocabulary;
+    RWKV_TOKENIZER_CONFIG = tokenizerConfig;
+    RWKV_TOKENIZER_ADDED_TOKENS = addedTokens;
+    RWKV_TOKENIZER_IMPLEMENTATION = tokenizerImplementation;
+    RWKV_SPECIAL_TOKENS_MAP = specialTokensMap;
+    RWKV_MODEL_CONFIG = modelConfig;
+    RWKV_GENERATION_CONFIG = generationConfig;
+
+    doInstallCheck = true;
+    installCheckPhase = ''
+      runHook preInstallCheck
+      set -euo pipefail
+
+      fixture_root="$(mktemp -d)"
+      $out/bin/rwkv-layer-harness >"$fixture_root/first.json"
+      $out/bin/rwkv-layer-harness >"$fixture_root/second.json"
+      cmp "$fixture_root/first.json" "$fixture_root/second.json"
+
+      grep -F '"model_id": "RWKV/RWKV7-Goose-World2.8-0.1B-HF"' "$fixture_root/first.json"
+      grep -F '"revision": "${modelRevision}"' "$fixture_root/first.json"
+      grep -F '"blake3": "${modelBlake3}"' "$fixture_root/first.json"
+      grep -F '"hidden_size": 768' "$fixture_root/first.json"
+      grep -F '"head_size": 64' "$fixture_root/first.json"
+      grep -F '"head_count": 12' "$fixture_root/first.json"
+      grep -F '"intermediate_size": 3072' "$fixture_root/first.json"
+      grep -F '"token_ids": [' "$fixture_root/first.json"
+      grep -F '"arithmetic_precision": "cpu_fp32_from_bf16"' "$fixture_root/first.json"
+      grep -F '"finite": true' "$fixture_root/first.json"
+      grep -F '"maximum_oracle_state_deviation":' "$fixture_root/first.json"
+      grep -F '"maximum_oracle_output_deviation":' "$fixture_root/first.json"
+      for expected_fingerprint in ${lib.escapeShellArgs expectedSecondTokenFingerprints}; do
+        grep -F "\"blake3\": \"$expected_fingerprint\"" "$fixture_root/first.json"
+      done
+      grep -F '"blake3": "${expectedFinalStateFingerprint}"' "$fixture_root/first.json"
+      grep -F '"blake3": "${expectedFinalOutputFingerprint}"' "$fixture_root/first.json"
+      grep -F 'No generated token is established.' "$fixture_root/first.json"
+
+      $out/bin/rwkv-token-harness >"$fixture_root/token-first.json"
+      $out/bin/rwkv-token-harness >"$fixture_root/token-second.json"
+      cmp "$fixture_root/token-first.json" "$fixture_root/token-second.json"
+      grep -F '"layer_count": ${toString expectedModelLayerCount}' "$fixture_root/token-first.json"
+      grep -F '"prefix_token_ids": [' "$fixture_root/token-first.json"
+      grep -F '"generated_token_id": ${toString expectedGeneratedTokenId}' "$fixture_root/token-first.json"
+      grep -F '"generated_logit": ${expectedGeneratedLogit}' "$fixture_root/token-first.json"
+      grep -F '"runner_up_token_id": ${toString expectedRunnerUpTokenId}' "$fixture_root/token-first.json"
+      grep -F '"runner_up_logit": ${expectedRunnerUpLogit}' "$fixture_root/token-first.json"
+      grep -F '"greedy_margin": ${expectedGreedyMargin}' "$fixture_root/token-first.json"
+      grep -F '"blake3": "${expectedTokenFinalHiddenFingerprint}"' "$fixture_root/token-first.json"
+      grep -F '"blake3": "${expectedTokenLogitsFingerprint}"' "$fixture_root/token-first.json"
+      grep -F '"blake3": "${expectedTokenStatesFingerprint}"' "$fixture_root/token-first.json"
+      grep -F '"head_oracle_logit_deviation": 0.0' "$fixture_root/token-first.json"
+      grep -F 'The selected token is not executed as a recurrent third step.' "$fixture_root/token-first.json"
+      grep -F 'No P150 numerical parity is established.' "$fixture_root/token-first.json"
+
+      $out/bin/rwkv-decode-harness >"$fixture_root/decode-first.json"
+      $out/bin/rwkv-decode-harness >"$fixture_root/decode-second.json"
+      cmp "$fixture_root/decode-first.json" "$fixture_root/decode-second.json"
+      grep -F '"seed_token_id": ${toString expectedDecodeTokenId}' "$fixture_root/decode-first.json"
+      grep -F '"generated_step_count": ${toString expectedDecodeStepCount}' "$fixture_root/decode-first.json"
+      generated_count="$(grep -c '"generated_token_id": ${toString expectedDecodeTokenId}' "$fixture_root/decode-first.json")"
+      test "$generated_count" -eq ${toString expectedDecodeStepCount}
+      for expected_logit in ${lib.escapeShellArgs expectedDecodeLogits}; do
+        grep -F "\"generated_logit\": $expected_logit" "$fixture_root/decode-first.json"
+      done
+      for expected_fingerprint in ${lib.escapeShellArgs expectedDecodeFingerprints}; do
+        grep -F "\"blake3\": \"$expected_fingerprint\"" "$fixture_root/decode-first.json"
+      done
+      grep -F '"maximum_replay_hidden_deviation": 0.0' "$fixture_root/decode-first.json"
+      grep -F '"maximum_replay_logits_deviation": 0.0' "$fixture_root/decode-first.json"
+      grep -F '"maximum_replay_state_deviation": 0.0' "$fixture_root/decode-first.json"
+      grep -F '"minimum_retained_vs_reset_hidden_deviation": ${expectedMinimumStateCarryDivergence}' "$fixture_root/decode-first.json"
+      grep -F '"model_config_eos_token_id": 2' "$fixture_root/decode-first.json"
+      grep -F '"continued_after_model_config_eos": false' "$fixture_root/decode-first.json"
+      grep -F 'No decoded text or tokenizer mapping is established.' "$fixture_root/decode-first.json"
+
+      $out/bin/rwkv-text-harness >"$fixture_root/text-first.json"
+      $out/bin/rwkv-text-harness >"$fixture_root/text-second.json"
+      cmp "$fixture_root/text-first.json" "$fixture_root/text-second.json"
+      grep -F '"vocabulary_entry_count": 65529' "$fixture_root/text-first.json"
+      grep -F '"model_config_bos_token_id": 1' "$fixture_root/text-first.json"
+      grep -F '"model_config_eos_token_id": 2' "$fixture_root/text-first.json"
+      grep -F '"tokenizer_bos_token_id": 0' "$fixture_root/text-first.json"
+      grep -F '"byte_vocabulary_eos_token_id": 261' "$fixture_root/text-first.json"
+      grep -F '"tokenizer_wrapper_eos_token_id": 65530' "$fixture_root/text-first.json"
+      grep -F '"generation_config_bos_token_id": 0' "$fixture_root/text-first.json"
+      grep -F '"generation_config_eos_token_id": 0' "$fixture_root/text-first.json"
+      for expected_blake3 in ${lib.escapeShellArgs expectedTokenizerBlake3}; do
+        grep -F "\"blake3\": \"$expected_blake3\"" "$fixture_root/text-first.json"
+      done
+      for fixture_name in empty tokenizer_eos overlapping_prefix ascii unicode control_bytes byte_fixed_chat_prompt wrapper_fixed_chat_prompt; do
+        grep -F "\"name\": \"$fixture_name\"" "$fixture_root/text-first.json"
+      done
+      grep -F '"prompt_token_ids_blake3": "${expectedTextPromptIdsBlake3}"' "$fixture_root/text-first.json"
+      grep -F '"generated_token_ids_blake3": "${expectedTextGeneratedIdsBlake3}"' "$fixture_root/text-first.json"
+      grep -F '"generated_bytes_hex": "2048692c2049"' "$fixture_root/text-first.json"
+      grep -F '"generated_text": " Hi, I"' "$fixture_root/text-first.json"
+      grep -F '"stop_reason": "generation_step_limit"' "$fixture_root/text-first.json"
+      for expected_token_id in ${lib.escapeShellArgs (map toString expectedTextGeneratedTokenIds)}; do
+        grep -F "\"generated_token_id\": $expected_token_id" "$fixture_root/text-first.json"
+      done
+      for expected_logit in ${lib.escapeShellArgs expectedTextGeneratedLogits}; do
+        grep -F "\"generated_logit\": $expected_logit" "$fixture_root/text-first.json"
+      done
+      for expected_fingerprint in ${lib.escapeShellArgs expectedTextFingerprints}; do
+        grep -F "\"blake3\": \"$expected_fingerprint\"" "$fixture_root/text-first.json"
+      done
+      grep -F '"maximum_replay_hidden_deviation": 0.0' "$fixture_root/text-first.json"
+      grep -F '"maximum_replay_state_deviation": 0.0' "$fixture_root/text-first.json"
+      grep -F '"minimum_retained_vs_reset_hidden_deviation": ${expectedTextStateCarryDivergence}' "$fixture_root/text-first.json"
+      grep -F 'No P150 numerical parity is established.' "$fixture_root/text-first.json"
+
+      $out/bin/rwkv-prompt-harness \
+        --message Hello \
+        --max-prompt-tokens ${toString promptMaxTokenCount} \
+        --max-new-tokens ${toString promptFixtureNewTokenCount} \
+        >"$fixture_root/prompt-first.json"
+      $out/bin/rwkv-prompt-harness \
+        --max-new-tokens ${toString promptFixtureNewTokenCount} \
+        --message Hello \
+        --max-prompt-tokens ${toString promptMaxTokenCount} \
+        >"$fixture_root/prompt-second.json"
+      cmp "$fixture_root/prompt-first.json" "$fixture_root/prompt-second.json"
+      grep -F '"user_message": "Hello"' "$fixture_root/prompt-first.json"
+      grep -F '"user_message_blake3": "${expectedPromptUserMessageBlake3}"' "$fixture_root/prompt-first.json"
+      grep -F '"rendered_chat_prompt_blake3": "${expectedPromptRenderedBlake3}"' "$fixture_root/prompt-first.json"
+      grep -F '"prompt_token_ids_blake3": "${expectedPromptIdsBlake3}"' "$fixture_root/prompt-first.json"
+      grep -F '"generated_token_ids_blake3": "${expectedPromptGeneratedIdsBlake3}"' "$fixture_root/prompt-first.json"
+      grep -F '"package_max_message_bytes": ${toString promptMaxMessageBytes}' "$fixture_root/prompt-first.json"
+      grep -F '"package_max_prompt_tokens": ${toString promptMaxTokenCount}' "$fixture_root/prompt-first.json"
+      grep -F '"package_max_new_tokens": ${toString promptMaxNewTokenCount}' "$fixture_root/prompt-first.json"
+      grep -F '"max_new_tokens": ${toString promptFixtureNewTokenCount}' "$fixture_root/prompt-first.json"
+      grep -F '"generated_token_limit": ${toString promptFixtureNewTokenCount}' "$fixture_root/prompt-first.json"
+      grep -F '"generated_bytes_hex": "2048656c6c6f212049"' "$fixture_root/prompt-first.json"
+      grep -F '"generated_utf8_complete": true' "$fixture_root/prompt-first.json"
+      grep -F '"generated_text": " Hello! I"' "$fixture_root/prompt-first.json"
+      for expected_token_id in ${lib.escapeShellArgs (map toString expectedPromptGeneratedTokenIds)}; do
+        grep -F "\"generated_token_id\": $expected_token_id" "$fixture_root/prompt-first.json"
+      done
+      for expected_logit in ${lib.escapeShellArgs expectedPromptGeneratedLogits}; do
+        grep -F "\"generated_logit\": $expected_logit" "$fixture_root/prompt-first.json"
+      done
+      for expected_fingerprint in ${lib.escapeShellArgs expectedPromptFingerprints}; do
+        grep -F "\"blake3\": \"$expected_fingerprint\"" "$fixture_root/prompt-first.json"
+      done
+      grep -F '"maximum_replay_hidden_deviation": 0.0' "$fixture_root/prompt-first.json"
+      grep -F '"maximum_replay_state_deviation": 0.0' "$fixture_root/prompt-first.json"
+      grep -F '"minimum_retained_vs_reset_hidden_deviation": ${expectedPromptStateCarryDivergence}' "$fixture_root/prompt-first.json"
+      grep -F 'No FLA kernel/runtime or Transformers generation parity is established.' "$fixture_root/prompt-first.json"
+
+      if $out/bin/rwkv-prompt-harness \
+        --message Hello \
+        --max-prompt-tokens ${toString promptMaxTokenCount} \
+        >"$fixture_root/prompt-missing-limit.log" 2>&1; then
+        echo "rwkv-prompt-harness accepted a missing generation limit" >&2
+        exit 1
+      fi
+      grep -F 'requires --message TEXT --max-prompt-tokens COUNT --max-new-tokens COUNT' \
+        "$fixture_root/prompt-missing-limit.log"
+
+      if $out/bin/rwkv-prompt-harness \
+        --message Hello \
+        --max-prompt-tokens ${toString promptExcessTokenCount} \
+        --max-new-tokens ${toString promptFixtureNewTokenCount} \
+        >"$fixture_root/prompt-excess-limit.log" 2>&1; then
+        echo "rwkv-prompt-harness accepted an excessive prompt limit" >&2
+        exit 1
+      fi
+      grep -F 'max prompt tokens must be in' "$fixture_root/prompt-excess-limit.log"
+
+      if $out/bin/rwkv-prompt-harness \
+        --message Hello \
+        --max-prompt-tokens 1 \
+        --max-new-tokens ${toString promptFixtureNewTokenCount} \
+        >"$fixture_root/prompt-actual-excess.log" 2>&1; then
+        echo "rwkv-prompt-harness truncated a prompt over the caller limit" >&2
+        exit 1
+      fi
+      grep -F 'exceeding caller limit 1' "$fixture_root/prompt-actual-excess.log"
+
+      if $out/bin/rwkv-layer-harness unexpected-argument \
+        >"$fixture_root/argument-rejection.log" 2>&1; then
+        echo "rwkv-layer-harness accepted a caller-controlled argument" >&2
+        exit 1
+      fi
+      grep -F 'does not accept arguments' "$fixture_root/argument-rejection.log"
+
+      if $out/bin/rwkv-token-harness unexpected-argument \
+        >"$fixture_root/token-argument-rejection.log" 2>&1; then
+        echo "rwkv-token-harness accepted a caller-controlled argument" >&2
+        exit 1
+      fi
+      grep -F 'does not accept arguments' "$fixture_root/token-argument-rejection.log"
+
+      if $out/bin/rwkv-decode-harness unexpected-argument \
+        >"$fixture_root/decode-argument-rejection.log" 2>&1; then
+        echo "rwkv-decode-harness accepted a caller-controlled argument" >&2
+        exit 1
+      fi
+      grep -F 'does not accept arguments' "$fixture_root/decode-argument-rejection.log"
+
+      if $out/bin/rwkv-text-harness unexpected-argument \
+        >"$fixture_root/text-argument-rejection.log" 2>&1; then
+        echo "rwkv-text-harness accepted a caller-controlled argument" >&2
+        exit 1
+      fi
+      grep -F 'does not accept arguments' "$fixture_root/text-argument-rejection.log"
+
+      if $out/bin/rwkv-framework-fixture unexpected-argument \
+        >"$fixture_root/framework-argument-rejection.log" 2>&1; then
+        echo "rwkv-framework-fixture accepted a caller-controlled argument" >&2
+        exit 1
+      fi
+      grep -F 'does not accept arguments' "$fixture_root/framework-argument-rejection.log"
+
+      if grep -E 'std::process::Command|Command::new|/dev/tenstorrent|TT_VISIBLE_DEVICES|Metalium|owner-control|retry' \
+        ${./src/lib.rs} ${./src/main.rs} ${./src/bin/rwkv-token-harness.rs} ${./src/bin/rwkv-decode-harness.rs} ${./src/bin/rwkv-text-harness.rs} ${./src/bin/rwkv-prompt-harness.rs} ${./src/bin/rwkv-framework-fixture.rs}; then
+        echo "rwkv-layer-harness must not contain hardware or process orchestration" >&2
+        exit 1
+      fi
+
+      cat "$fixture_root/first.json"
+      cat "$fixture_root/token-first.json"
+      cat "$fixture_root/decode-first.json"
+      cat "$fixture_root/text-first.json"
+      cat "$fixture_root/prompt-first.json"
+      runHook postInstallCheck
+    '';
+
+    passthru = {
+      inherit
+        addedTokens
+        flaRwkv7Source
+        frameworkParityCheck
+        generationConfig
+        hfModelingSource
+        model
+        modelConfig
+        officialRwkvSource
+        specialTokensMap
+        tokenizerConfig
+        tokenizerImplementation
+        tokenizerVocabulary
+        ;
+    };
+
+    meta = {
+      description = "Device-free real-weight RWKV-7 layer, tokenizer, stateful-decode, fixed-text, and bounded-prompt CPU reference";
+      license = lib.licenses.mit;
+      mainProgram = "rwkv-layer-harness";
+      platforms = lib.platforms.linux;
+    };
+  };
 in
-rustPlatform.buildRustPackage {
-  pname = "rwkv-layer-harness";
-  version = "0.1.0";
-
-  src = lib.cleanSource ./.;
-  cargoLock.lockFile = ./Cargo.lock;
-
-  RWKV_LAYER_MODEL = model;
-  RWKV_LAYER_MODEL_BLAKE3 = modelBlake3;
-  RWKV_TOKENIZER_VOCABULARY = tokenizerVocabulary;
-  RWKV_TOKENIZER_CONFIG = tokenizerConfig;
-  RWKV_TOKENIZER_ADDED_TOKENS = addedTokens;
-  RWKV_TOKENIZER_IMPLEMENTATION = tokenizerImplementation;
-  RWKV_SPECIAL_TOKENS_MAP = specialTokensMap;
-  RWKV_MODEL_CONFIG = modelConfig;
-  RWKV_GENERATION_CONFIG = generationConfig;
-
-  doInstallCheck = true;
-  installCheckPhase = ''
-    runHook preInstallCheck
-    set -euo pipefail
-
-    fixture_root="$(mktemp -d)"
-    $out/bin/rwkv-layer-harness >"$fixture_root/first.json"
-    $out/bin/rwkv-layer-harness >"$fixture_root/second.json"
-    cmp "$fixture_root/first.json" "$fixture_root/second.json"
-
-    grep -F '"model_id": "RWKV/RWKV7-Goose-World2.8-0.1B-HF"' "$fixture_root/first.json"
-    grep -F '"revision": "${modelRevision}"' "$fixture_root/first.json"
-    grep -F '"blake3": "${modelBlake3}"' "$fixture_root/first.json"
-    grep -F '"hidden_size": 768' "$fixture_root/first.json"
-    grep -F '"head_size": 64' "$fixture_root/first.json"
-    grep -F '"head_count": 12' "$fixture_root/first.json"
-    grep -F '"intermediate_size": 3072' "$fixture_root/first.json"
-    grep -F '"token_ids": [' "$fixture_root/first.json"
-    grep -F '"arithmetic_precision": "cpu_fp32_from_bf16"' "$fixture_root/first.json"
-    grep -F '"finite": true' "$fixture_root/first.json"
-    grep -F '"maximum_oracle_state_deviation":' "$fixture_root/first.json"
-    grep -F '"maximum_oracle_output_deviation":' "$fixture_root/first.json"
-    for expected_fingerprint in ${lib.escapeShellArgs expectedSecondTokenFingerprints}; do
-      grep -F "\"blake3\": \"$expected_fingerprint\"" "$fixture_root/first.json"
-    done
-    grep -F '"blake3": "${expectedFinalStateFingerprint}"' "$fixture_root/first.json"
-    grep -F '"blake3": "${expectedFinalOutputFingerprint}"' "$fixture_root/first.json"
-    grep -F 'No generated token is established.' "$fixture_root/first.json"
-
-    $out/bin/rwkv-token-harness >"$fixture_root/token-first.json"
-    $out/bin/rwkv-token-harness >"$fixture_root/token-second.json"
-    cmp "$fixture_root/token-first.json" "$fixture_root/token-second.json"
-    grep -F '"layer_count": ${toString expectedModelLayerCount}' "$fixture_root/token-first.json"
-    grep -F '"prefix_token_ids": [' "$fixture_root/token-first.json"
-    grep -F '"generated_token_id": ${toString expectedGeneratedTokenId}' "$fixture_root/token-first.json"
-    grep -F '"generated_logit": ${expectedGeneratedLogit}' "$fixture_root/token-first.json"
-    grep -F '"runner_up_token_id": ${toString expectedRunnerUpTokenId}' "$fixture_root/token-first.json"
-    grep -F '"runner_up_logit": ${expectedRunnerUpLogit}' "$fixture_root/token-first.json"
-    grep -F '"greedy_margin": ${expectedGreedyMargin}' "$fixture_root/token-first.json"
-    grep -F '"blake3": "${expectedTokenFinalHiddenFingerprint}"' "$fixture_root/token-first.json"
-    grep -F '"blake3": "${expectedTokenLogitsFingerprint}"' "$fixture_root/token-first.json"
-    grep -F '"blake3": "${expectedTokenStatesFingerprint}"' "$fixture_root/token-first.json"
-    grep -F '"head_oracle_logit_deviation": 0.0' "$fixture_root/token-first.json"
-    grep -F 'The selected token is not executed as a recurrent third step.' "$fixture_root/token-first.json"
-    grep -F 'No P150 numerical parity is established.' "$fixture_root/token-first.json"
-
-    $out/bin/rwkv-decode-harness >"$fixture_root/decode-first.json"
-    $out/bin/rwkv-decode-harness >"$fixture_root/decode-second.json"
-    cmp "$fixture_root/decode-first.json" "$fixture_root/decode-second.json"
-    grep -F '"seed_token_id": ${toString expectedDecodeTokenId}' "$fixture_root/decode-first.json"
-    grep -F '"generated_step_count": ${toString expectedDecodeStepCount}' "$fixture_root/decode-first.json"
-    generated_count="$(grep -c '"generated_token_id": ${toString expectedDecodeTokenId}' "$fixture_root/decode-first.json")"
-    test "$generated_count" -eq ${toString expectedDecodeStepCount}
-    for expected_logit in ${lib.escapeShellArgs expectedDecodeLogits}; do
-      grep -F "\"generated_logit\": $expected_logit" "$fixture_root/decode-first.json"
-    done
-    for expected_fingerprint in ${lib.escapeShellArgs expectedDecodeFingerprints}; do
-      grep -F "\"blake3\": \"$expected_fingerprint\"" "$fixture_root/decode-first.json"
-    done
-    grep -F '"maximum_replay_hidden_deviation": 0.0' "$fixture_root/decode-first.json"
-    grep -F '"maximum_replay_logits_deviation": 0.0' "$fixture_root/decode-first.json"
-    grep -F '"maximum_replay_state_deviation": 0.0' "$fixture_root/decode-first.json"
-    grep -F '"minimum_retained_vs_reset_hidden_deviation": ${expectedMinimumStateCarryDivergence}' "$fixture_root/decode-first.json"
-    grep -F '"model_config_eos_token_id": 2' "$fixture_root/decode-first.json"
-    grep -F '"continued_after_model_config_eos": false' "$fixture_root/decode-first.json"
-    grep -F 'No decoded text or tokenizer mapping is established.' "$fixture_root/decode-first.json"
-
-    $out/bin/rwkv-text-harness >"$fixture_root/text-first.json"
-    $out/bin/rwkv-text-harness >"$fixture_root/text-second.json"
-    cmp "$fixture_root/text-first.json" "$fixture_root/text-second.json"
-    grep -F '"vocabulary_entry_count": 65529' "$fixture_root/text-first.json"
-    grep -F '"model_config_bos_token_id": 1' "$fixture_root/text-first.json"
-    grep -F '"model_config_eos_token_id": 2' "$fixture_root/text-first.json"
-    grep -F '"tokenizer_bos_token_id": 0' "$fixture_root/text-first.json"
-    grep -F '"byte_vocabulary_eos_token_id": 261' "$fixture_root/text-first.json"
-    grep -F '"tokenizer_wrapper_eos_token_id": 65530' "$fixture_root/text-first.json"
-    grep -F '"generation_config_bos_token_id": 0' "$fixture_root/text-first.json"
-    grep -F '"generation_config_eos_token_id": 0' "$fixture_root/text-first.json"
-    for expected_blake3 in ${lib.escapeShellArgs expectedTokenizerBlake3}; do
-      grep -F "\"blake3\": \"$expected_blake3\"" "$fixture_root/text-first.json"
-    done
-    for fixture_name in empty tokenizer_eos overlapping_prefix ascii unicode control_bytes byte_fixed_chat_prompt wrapper_fixed_chat_prompt; do
-      grep -F "\"name\": \"$fixture_name\"" "$fixture_root/text-first.json"
-    done
-    grep -F '"prompt_token_ids_blake3": "${expectedTextPromptIdsBlake3}"' "$fixture_root/text-first.json"
-    grep -F '"generated_token_ids_blake3": "${expectedTextGeneratedIdsBlake3}"' "$fixture_root/text-first.json"
-    grep -F '"generated_bytes_hex": "2048692c2049"' "$fixture_root/text-first.json"
-    grep -F '"generated_text": " Hi, I"' "$fixture_root/text-first.json"
-    grep -F '"stop_reason": "generation_step_limit"' "$fixture_root/text-first.json"
-    for expected_token_id in ${lib.escapeShellArgs (map toString expectedTextGeneratedTokenIds)}; do
-      grep -F "\"generated_token_id\": $expected_token_id" "$fixture_root/text-first.json"
-    done
-    for expected_logit in ${lib.escapeShellArgs expectedTextGeneratedLogits}; do
-      grep -F "\"generated_logit\": $expected_logit" "$fixture_root/text-first.json"
-    done
-    for expected_fingerprint in ${lib.escapeShellArgs expectedTextFingerprints}; do
-      grep -F "\"blake3\": \"$expected_fingerprint\"" "$fixture_root/text-first.json"
-    done
-    grep -F '"maximum_replay_hidden_deviation": 0.0' "$fixture_root/text-first.json"
-    grep -F '"maximum_replay_state_deviation": 0.0' "$fixture_root/text-first.json"
-    grep -F '"minimum_retained_vs_reset_hidden_deviation": ${expectedTextStateCarryDivergence}' "$fixture_root/text-first.json"
-    grep -F 'No P150 numerical parity is established.' "$fixture_root/text-first.json"
-
-    if $out/bin/rwkv-layer-harness unexpected-argument \
-      >"$fixture_root/argument-rejection.log" 2>&1; then
-      echo "rwkv-layer-harness accepted a caller-controlled argument" >&2
-      exit 1
-    fi
-    grep -F 'does not accept arguments' "$fixture_root/argument-rejection.log"
-
-    if $out/bin/rwkv-token-harness unexpected-argument \
-      >"$fixture_root/token-argument-rejection.log" 2>&1; then
-      echo "rwkv-token-harness accepted a caller-controlled argument" >&2
-      exit 1
-    fi
-    grep -F 'does not accept arguments' "$fixture_root/token-argument-rejection.log"
-
-    if $out/bin/rwkv-decode-harness unexpected-argument \
-      >"$fixture_root/decode-argument-rejection.log" 2>&1; then
-      echo "rwkv-decode-harness accepted a caller-controlled argument" >&2
-      exit 1
-    fi
-    grep -F 'does not accept arguments' "$fixture_root/decode-argument-rejection.log"
-
-    if $out/bin/rwkv-text-harness unexpected-argument \
-      >"$fixture_root/text-argument-rejection.log" 2>&1; then
-      echo "rwkv-text-harness accepted a caller-controlled argument" >&2
-      exit 1
-    fi
-    grep -F 'does not accept arguments' "$fixture_root/text-argument-rejection.log"
-
-    if grep -E 'std::process::Command|Command::new|/dev/tenstorrent|TT_VISIBLE_DEVICES|Metalium|owner-control|retry' \
-      ${./src/lib.rs} ${./src/main.rs} ${./src/bin/rwkv-token-harness.rs} ${./src/bin/rwkv-decode-harness.rs} ${./src/bin/rwkv-text-harness.rs}; then
-      echo "rwkv-layer-harness must not contain hardware or process orchestration" >&2
-      exit 1
-    fi
-
-    cat "$fixture_root/first.json"
-    cat "$fixture_root/token-first.json"
-    cat "$fixture_root/decode-first.json"
-    cat "$fixture_root/text-first.json"
-    runHook postInstallCheck
-  '';
-
-  passthru = {
-    inherit
-      addedTokens
-      generationConfig
-      model
-      modelConfig
-      specialTokensMap
-      tokenizerConfig
-      tokenizerImplementation
-      tokenizerVocabulary
-      ;
-  };
-
-  meta = {
-    description = "Device-free real-weight RWKV-7 layer, tokenizer, stateful-decode, and fixed-text CPU reference";
-    license = lib.licenses.mit;
-    mainProgram = "rwkv-layer-harness";
-    platforms = lib.platforms.linux;
-  };
-}
+package

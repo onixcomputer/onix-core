@@ -3,7 +3,7 @@ name = "rwkv-layer-harness"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
-description = "Device-free real-weight RWKV-7 layer, tokenizer, stateful-decode, and fixed-text CPU reference"
+description = "Device-free real-weight RWKV-7 layer, tokenizer, stateful-decode, fixed-text, and bounded-prompt CPU reference"
 
 [dependencies]
 blake3 = "1"
