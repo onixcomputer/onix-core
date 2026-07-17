@@ -11,7 +11,10 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 const EXPECTED_MODE: u32 = 0o755;
-const RUNBOOK_FILENAME: &str = "run-one-shot.sh";
+const ACTIVE_RUNBOOK_RELATIVE_PATH: &str =
+    "cairn/changes/prepare-rwkv-ttwkv7-boundary-one-shot/run-one-shot.sh";
+const ARCHIVED_RUNBOOK_RELATIVE_PATH: &str =
+    "cairn/archive/2026-07-17-prepare-rwkv-ttwkv7-boundary-one-shot/run-one-shot.sh";
 const SELF_TEST_ARGUMENT: &str = "--self-test";
 const EXPECTED_WRAPPER_COMMAND_COUNT: usize = 2;
 const EXPECTED_PROBE_COMMAND_COUNT: usize = 1;
@@ -226,9 +229,19 @@ fn run_self_test(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+fn default_runbook_path() -> Result<PathBuf, String> {
+    let repository_root = env::current_dir()
+        .map_err(|error| format!("current directory could not be read: {error}"))?;
+    let active_path = repository_root.join(ACTIVE_RUNBOOK_RELATIVE_PATH);
+    if active_path.is_file() {
+        return Ok(active_path);
+    }
+    Ok(repository_root.join(ARCHIVED_RUNBOOK_RELATIVE_PATH))
+}
+
 fn run() -> Result<(), String> {
     let arguments: Vec<String> = env::args().skip(1).collect();
-    let default_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(RUNBOOK_FILENAME);
+    let default_path = default_runbook_path()?;
     match arguments.as_slice() {
         [] => {
             validate_file(&default_path)?;
