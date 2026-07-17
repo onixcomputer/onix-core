@@ -3,6 +3,7 @@
   runCommand,
   writeText,
   kernels,
+  source,
   tt-metal,
 }:
 let
@@ -13,6 +14,25 @@ let
     builtins.readFile ./architecture-check-descriptors.h
   );
   kernelRoot = "${kernels}/share/ttwkv7/kernels";
+  runnerSource = "${source.upstream}/wkv7_runner.cpp";
+  scratchCbIndex = 22;
+  decodeScratchPageCount = 2;
+  minimumChunkedScratchPageCount = 32;
+  tileEdgeElements = 32;
+  scratchCbName = "c_dram_read_scratch";
+  scratchCbDeclaration = "${scratchCbName} = ${toString scratchCbIndex};";
+  scratchReserve = "cb_reserve_back(${scratchCbName}, 1);";
+  scratchWritePointer = "get_write_ptr(${scratchCbName})";
+  stackScratchDeclaration = "uint32_t dram_read_scratch[";
+  stackScratchCast = "reinterpret_cast<uint32_t>(dram_read_scratch)";
+  productionReaderSources = [
+    "wkv7_reader.cpp"
+    "wkv7_decodeL_reader.cpp"
+  ];
+  hostScratchAllocationPatterns = [
+    "MakeCB(prog, core, CB::c_${toString scratchCbIndex}, std::max((uint32_t)cl, ${toString minimumChunkedScratchPageCount}u));"
+    "MakeCB(prog, core, CB::c_${toString scratchCbIndex}, ${toString decodeScratchPageCount}u);"
+  ];
   kernelSources = [
     "wkv7_chunked_compute.cpp"
     "wkv7_decodeL_compute.cpp"
@@ -317,6 +337,62 @@ runCommand "ttwkv7-architecture-check" { } ''
   }; do
     test -f "$firmware_source"
   done
+  test -f ${lib.escapeShellArg runnerSource}
+
+  validate_reader_l1_scratch() {
+    local reader_source="$1"
+
+    grep -Fq ${lib.escapeShellArg scratchCbDeclaration} "$reader_source" || return 1
+    grep -Fq '#if defined(ARCH_BLACKHOLE)' "$reader_source" || return 1
+    grep -Fq ${lib.escapeShellArg scratchReserve} "$reader_source" || return 1
+    grep -Fq ${lib.escapeShellArg scratchWritePointer} "$reader_source" || return 1
+    grep -Fq 'ttwkv7::aligned_l1_scratch_address' "$reader_source" || return 1
+    grep -Fq 'constexpr uint32_t dram_read_scratch_l1_address = 0;' "$reader_source" || return 1
+    ! grep -Fq ${lib.escapeShellArg stackScratchDeclaration} "$reader_source" || return 1
+    ! grep -Fq ${lib.escapeShellArg stackScratchCast} "$reader_source" || return 1
+  }
+
+  for reader_source in ${lib.escapeShellArgs productionReaderSources}; do
+    validate_reader_l1_scratch ${lib.escapeShellArg kernelRoot}/"$reader_source"
+  done
+
+  grep -Fq 'constexpr uint32_t TW = ${toString tileEdgeElements}, TH = ${toString tileEdgeElements};' ${lib.escapeShellArg runnerSource}
+  grep -Fq 'const uint32_t ts = sizeof(bfloat16) * TW * TH;' ${lib.escapeShellArg runnerSource}
+  grep -Fq '.set_page_size(cb, ts);' ${lib.escapeShellArg runnerSource}
+  for allocation_pattern in ${lib.escapeShellArgs hostScratchAllocationPatterns}; do
+    test "$(grep -Fc "$allocation_pattern" ${lib.escapeShellArg runnerSource})" -eq 1
+  done
+
+  for forbidden_alias_operation in \
+    'cb_reserve_back(c_selstage' \
+    'cb_wait_front(c_selstage' \
+    'cb_push_back(c_selstage' \
+    'cb_pop_front(c_selstage' \
+    'get_write_ptr(c_selstage'; do
+    if grep -RFq "$forbidden_alias_operation" ${lib.escapeShellArg kernelRoot}; then
+      echo "CB${toString scratchCbIndex} selection-stage alias unexpectedly participates in kernel flow: $forbidden_alias_operation" >&2
+      exit 1
+    fi
+  done
+
+  invalid_stack_reader="$PWD/invalid-stack-reader.cpp"
+  cp ${lib.escapeShellArg kernelRoot}/${builtins.head productionReaderSources} "$invalid_stack_reader"
+  chmod u+w "$invalid_stack_reader"
+  printf '%s\n' ${lib.escapeShellArg stackScratchDeclaration} >>"$invalid_stack_reader"
+  if validate_reader_l1_scratch "$invalid_stack_reader" >/dev/null 2>&1; then
+    echo "ttWKV7 reader scratch check unexpectedly accepted process-local stack scratch" >&2
+    exit 1
+  fi
+
+  missing_reserve_reader="$PWD/missing-reserve-reader.cpp"
+  cp ${lib.escapeShellArg kernelRoot}/${builtins.head productionReaderSources} "$missing_reserve_reader"
+  chmod u+w "$missing_reserve_reader"
+  substituteInPlace "$missing_reserve_reader" \
+    --replace-fail ${lib.escapeShellArg scratchReserve} '// invalid fixture removed the scratch reservation'
+  if validate_reader_l1_scratch "$missing_reserve_reader" >/dev/null 2>&1; then
+    echo "ttWKV7 reader scratch check unexpectedly accepted a missing CB reservation" >&2
+    exit 1
+  fi
 
   ${positiveCompileCommands}
 

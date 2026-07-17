@@ -10,17 +10,32 @@ constexpr uint32_t kRowsPerFace = 16;
 constexpr uint32_t kTileRows = 32;
 constexpr uint32_t kColumnFaceCount = 2;
 constexpr uint32_t kFaceBytes = kRowsPerFace * kFaceRowBytes;
+constexpr uint32_t kRowFaceCount = kTileRows / kRowsPerFace;
+constexpr uint32_t kTileFaceCount = kRowFaceCount * kColumnFaceCount;
+constexpr uint32_t kTileBytes = kTileFaceCount * kFaceBytes;
 constexpr uint32_t kLastFaceRowOffset = kFaceBytes - kFaceRowBytes;
 constexpr uint32_t kBytesPerWord = sizeof(uint32_t);
 constexpr uint32_t kWordsPerFaceRow = kFaceRowBytes / kBytesPerWord;
 constexpr uint32_t kDramReadAlignmentBytes = NOC_DRAM_READ_ALIGNMENT_BYTES;
-constexpr uint32_t kDramReadScratchWords =
-    kDramReadAlignmentBytes / kBytesPerWord;
+constexpr uint32_t kDramReadAlignmentMask = kDramReadAlignmentBytes - 1;
 
 static_assert(kFaceRowBytes % kBytesPerWord == 0);
+static_assert(kTileRows % kRowsPerFace == 0);
 static_assert(kDramReadAlignmentBytes >= kFaceRowBytes);
 static_assert(kDramReadAlignmentBytes <= kColumnFaceCount * kFaceRowBytes);
 static_assert(kDramReadAlignmentBytes % kFaceRowBytes == 0);
+static_assert((kDramReadAlignmentBytes & kDramReadAlignmentMask) == 0,
+              "DRAM read alignment must be a power of two");
+static_assert(kDramReadAlignmentMask + kDramReadAlignmentBytes <= kTileBytes);
+
+constexpr uint32_t aligned_l1_scratch_address(uint32_t l1_page_address) {
+  return (l1_page_address + kDramReadAlignmentMask) & ~kDramReadAlignmentMask;
+}
+
+static_assert(aligned_l1_scratch_address(0) == 0);
+static_assert(aligned_l1_scratch_address(1) == kDramReadAlignmentBytes);
+static_assert(aligned_l1_scratch_address(kDramReadAlignmentBytes) ==
+              kDramReadAlignmentBytes);
 
 constexpr uint32_t tile_face_row_offset(uint32_t row, uint32_t column_face) {
   return ((row / kRowsPerFace) * kColumnFaceCount + column_face) * kFaceBytes +

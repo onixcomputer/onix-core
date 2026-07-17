@@ -16,7 +16,7 @@ let
   };
   kernels = callPackage ./kernels.nix { inherit source; };
   architectureCheck = callPackage ./architecture-check.nix {
-    inherit kernels tt-metal;
+    inherit kernels source tt-metal;
   };
 in
 # r[impl onix.tenstorrent.native_runtime.ttwkv7.fast_iteration]

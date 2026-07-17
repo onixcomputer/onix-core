@@ -81,15 +81,24 @@ let
   expectedDataMovementCreateKernelCount = 6;
   expectedReaderHelperCallCount = 4;
   expectedReaderCbCadenceSiteCount = 2;
+  expectedReaderScratchReserveCount = 1;
+  alignedReaderScratchCbIndex = 22;
+  alignedReaderScratchCbName = "c_dram_read_scratch";
   alignedReaderHelperSource = "ttwkv7_aligned_dram_face_read.h";
   alignedReaderHelperInclude = "#include \"${alignedReaderHelperSource}\"";
   alignedReaderHelperCall = "ttwkv7::read_dram_face_row(";
-  alignedReaderBlackholeBranch = "#ifdef ARCH_BLACKHOLE";
+  alignedReaderHelperBlackholeBranch = "#ifdef ARCH_BLACKHOLE";
+  alignedReaderSetupBlackholeBranch = "#if defined(ARCH_BLACKHOLE)";
   alignedReaderNocCall = "noc_async_read(";
   alignedReaderCbReserveCall = "cb_reserve_back(c_natstage";
   alignedReaderCbPushCall = "cb_push_back(c_natstage";
+  alignedReaderScratchDeclaration = "${alignedReaderScratchCbName} = ${toString alignedReaderScratchCbIndex};";
+  alignedReaderScratchReserveCall = "cb_reserve_back(${alignedReaderScratchCbName}, 1);";
+  alignedReaderScratchWritePointer = "get_write_ptr(${alignedReaderScratchCbName})";
   invalidDirectReaderGather = "noc_async_read(source, destination, kFaceRowBytes);";
   invalidReaderCadence = "cb_push_back(c_natstage, 1);";
+  invalidReaderStackScratch = "uint32_t dram_read_scratch[";
+  invalidReaderStackScratchCast = "reinterpret_cast<uint32_t>(dram_read_scratch)";
   constantGeneratorSources = [
     "wkv7_chunked_compute.cpp"
     "wkv7_decodeL_compute.cpp"
@@ -514,12 +523,11 @@ stdenvNoCC.mkDerivation {
 
     # r[verify onix.tenstorrent.native_runtime.ttwkv7.reader_gather_alignment]
     aligned_reader_helper="${packageKernelDirectory}/${alignedReaderHelperSource}"
-    grep -F ${lib.escapeShellArg alignedReaderBlackholeBranch} "$aligned_reader_helper"
+    grep -F ${lib.escapeShellArg alignedReaderHelperBlackholeBranch} "$aligned_reader_helper"
+    grep -F ${lib.escapeShellArg "aligned_l1_scratch_address"} "$aligned_reader_helper"
+    grep -F ${lib.escapeShellArg "kDramReadAlignmentMask + kDramReadAlignmentBytes <= kTileBytes"} \
+      "$aligned_reader_helper"
     test "$(grep -Fc ${lib.escapeShellArg alignedReaderNocCall} "$aligned_reader_helper")" -eq 2
-    grep -F ${lib.escapeShellArg "alignas(ttwkv7::kDramReadAlignmentBytes)"} \
-      "${packageKernelDirectory}/wkv7_reader.cpp"
-    grep -F ${lib.escapeShellArg "alignas(ttwkv7::kDramReadAlignmentBytes)"} \
-      "${packageKernelDirectory}/wkv7_decodeL_reader.cpp"
     check_aligned_reader_source() {
       local reader_source="$1"
       test "$(grep -Fc ${lib.escapeShellArg alignedReaderHelperInclude} "$reader_source")" -eq 1 || return 1
@@ -529,7 +537,20 @@ stdenvNoCC.mkDerivation {
         ${toString expectedReaderCbCadenceSiteCount} || return 1
       test "$(grep -Fc ${lib.escapeShellArg alignedReaderCbPushCall} "$reader_source")" -eq \
         ${toString expectedReaderCbCadenceSiteCount} || return 1
+      test "$(grep -Fc ${lib.escapeShellArg alignedReaderScratchDeclaration} "$reader_source")" -eq 1 || return 1
+      test "$(grep -Fc ${lib.escapeShellArg alignedReaderSetupBlackholeBranch} "$reader_source")" -eq 1 || return 1
+      test "$(grep -Fc ${lib.escapeShellArg alignedReaderScratchReserveCall} "$reader_source")" -eq \
+        ${toString expectedReaderScratchReserveCount} || return 1
+      test "$(grep -Fc ${lib.escapeShellArg alignedReaderScratchWritePointer} "$reader_source")" -eq 1 || return 1
+      test "$(grep -Fc ${lib.escapeShellArg "ttwkv7::aligned_l1_scratch_address"} "$reader_source")" -eq 1 || return 1
+      test "$(grep -Fc ${lib.escapeShellArg "constexpr uint32_t dram_read_scratch_l1_address = 0;"} "$reader_source")" -eq 1 || return 1
       if grep -F ${lib.escapeShellArg alignedReaderNocCall} "$reader_source"; then
+        return 1
+      fi
+      if grep -F ${lib.escapeShellArg invalidReaderStackScratch} "$reader_source"; then
+        return 1
+      fi
+      if grep -F ${lib.escapeShellArg invalidReaderStackScratchCast} "$reader_source"; then
         return 1
       fi
     }
@@ -550,6 +571,24 @@ stdenvNoCC.mkDerivation {
     printf '%s\n' ${lib.escapeShellArg invalidReaderCadence} >>"$invalid_cadence_reader"
     if check_aligned_reader_source "$invalid_cadence_reader"; then
       echo "ttWKV7 aligned-reader source checker accepted CB cadence drift" >&2
+      exit 1
+    fi
+    invalid_stack_reader="$data_movement_state_root/invalid-stack-reader.cpp"
+    cp "${packageKernelDirectory}/wkv7_reader.cpp" "$invalid_stack_reader"
+    chmod u+w "$invalid_stack_reader"
+    printf '%s\n' ${lib.escapeShellArg invalidReaderStackScratch} >>"$invalid_stack_reader"
+    if check_aligned_reader_source "$invalid_stack_reader"; then
+      echo "ttWKV7 aligned-reader source checker accepted process-local stack scratch" >&2
+      exit 1
+    fi
+    missing_scratch_reserve_reader="$data_movement_state_root/missing-scratch-reserve-reader.cpp"
+    cp "${packageKernelDirectory}/wkv7_decodeL_reader.cpp" "$missing_scratch_reserve_reader"
+    chmod u+w "$missing_scratch_reserve_reader"
+    substituteInPlace "$missing_scratch_reserve_reader" \
+      --replace-fail ${lib.escapeShellArg alignedReaderScratchReserveCall} \
+      '// invalid fixture removed the scratch reservation'
+    if check_aligned_reader_source "$missing_scratch_reserve_reader"; then
+      echo "ttWKV7 aligned-reader source checker accepted a missing scratch reservation" >&2
       exit 1
     fi
 
