@@ -6,4 +6,4 @@
 ## Phase 2: Cross-package evidence
 
 - [x] [serial] Add deterministic runtime-vector, source-trace, state-payload, input-payload, and combined receipts with positive replay and adversarial ABI/gather/fixture controls. r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_decode_reader_abi]
-- [ ] [serial] Run package, historical host-layout/data-movement, architecture, closure, formatting, and clean Cairn gates; record narrow evidence; sync, archive, and commit the accepted boundary. r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_decode_reader_abi]
+- [x] [serial] Run package, historical host-layout/data-movement, architecture, closure, formatting, and clean Cairn gates; record narrow evidence; sync, archive, and commit the accepted boundary. r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_decode_reader_abi]
