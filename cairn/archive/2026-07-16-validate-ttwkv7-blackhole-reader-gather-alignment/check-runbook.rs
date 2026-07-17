@@ -1,4 +1,4 @@
-#!/usr/bin/env -S CARGO_TARGET_DIR=target/check-ttwkv7-runbook-script nix --option secret-key-files '' shell "github:nix-community/fenix?rev=8df3642541009d2a5f15520462a8dec719c5fddb#minimal.toolchain" nixpkgs#gcc -c cargo -q -Zscript
+#!/usr/bin/env -S CARGO_TARGET_DIR=target/ttwkv7-align-archive nix --option secret-key-files '' shell "github:nix-community/fenix?rev=8df3642541009d2a5f15520462a8dec719c5fddb#minimal.toolchain" nixpkgs#gcc -c cargo -q -Zscript
 ---
 [package]
 edition = "2024"
