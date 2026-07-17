@@ -187,7 +187,7 @@ r[onix.tenstorrent.native_runtime.ttwkv7.fast_iteration] Onix MUST provide a foc
 
 #### Scenario: Exact package runs without profile activation
 - GIVEN an exact reviewed ttWKV7 package output exists in the managed host's Nix store
-- WHEN an operator prepares a separately authorized diagnostic
+- WHEN an operator prepares a reviewed diagnostic
 - THEN the operator can invoke that exact store output without first activating a new NixOS generation
 - AND the full machine closure remains a required final integration gate rather than an inner-loop prerequisite
 
@@ -218,16 +218,16 @@ r[onix.tenstorrent.native_runtime.ttwkv7.explicit_runtime_state] The packaged tt
 - THEN the wrapper returns nonzero before executing the device-owning probe binary
 - AND it does not report a mask result
 
-#### Scenario: Explicit state does not authorize hardware
+#### Scenario: Runtime preflight remains non-orchestrating
 - GIVEN runtime preflight passes for an exact package output
-- WHEN no separate hardware authorization has been granted
-- THEN the operator does not invoke probe mode
-- AND the wrapper does not stop services, select devices, retry, or claim compatibility by itself
+- WHEN the operator invokes preflight without launching probe mode
+- THEN no owner service is stopped and no Tenstorrent device is selected or initialized
+- AND the wrapper does not retry or claim compatibility by itself
 
 ### Requirement: ttWKV7 one-shot constant-tile measurement
-r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement] An authorized ttWKV7 constant-tile measurement MUST bind one exact package output, immutable kernel target, isolated physical device, explicit writable runtime state, owner-restoration trap, hard timeout, and invocation count before executing probe mode, and MUST treat the first process result as exhausting the change's hardware budget.
+r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement] A ttWKV7 constant-tile measurement MUST bind one exact package output, immutable kernel target, isolated physical device, explicit writable runtime state, owner-restoration trap, hard timeout, and invocation count before executing probe mode, and MUST treat the first process result as exhausting the change's hardware budget.
 
-#### Scenario: Offline review does not consume authorization
+#### Scenario: Offline review remains device-free
 - GIVEN an exact reviewed package and proposed runtime-state paths
 - WHEN package checks, architecture compilation, path capture, and runtime preflight execute
 - THEN no Tenstorrent device is created by those checks
@@ -284,11 +284,11 @@ r[onix.tenstorrent.native_runtime.ttwkv7.owner_control] The managed Blackhole ho
 - THEN no wildcard systemctl, restart, unrelated unit, arbitrary device, or all-command permission is present
 - AND unsupported wrapper modes or extra arguments fail before sudo executes
 
-#### Scenario: Owner control does not authorize a probe
-- GIVEN validation or isolation succeeds
-- WHEN no separate reviewed hardware authorization exists
+#### Scenario: Owner control does not invoke a probe
+- GIVEN the operator invokes validation, isolation, or restoration mode
+- WHEN the owner-control operation completes
 - THEN the wrapper does not invoke ttWKV7, select a device, create runtime state, retry, or claim compatibility
-- AND the operator does not execute a hardware probe
+- AND probe execution remains a separate immutable runbook action
 
 ### Requirement: ttWKV7 NixOS sudo trampoline
 r[onix.tenstorrent.native_runtime.ttwkv7.owner_control.sudo_wrapper] The managed ttWKV7 owner-control helper MUST invoke sudo through the root-managed NixOS setuid wrapper at `/run/wrappers/bin/sudo`, MUST NOT invoke a raw Nix store sudo executable, and MUST preserve the argument-exact privileged target commands defined by the owner-control policy.
@@ -313,9 +313,9 @@ r[onix.tenstorrent.native_runtime.ttwkv7.owner_control.sudo_wrapper] The managed
 - AND the owner service remains active and healthy
 
 ### Requirement: ttWKV7 independently restored one-shot measurement
-r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.timed_restore] An authorized ttWKV7 constant-tile measurement MUST arm an independently surviving timed owner restoration before isolation, MUST preserve ordinary exit-trap restoration, MUST bind one exact package, kernel, device, runtime state, timeout, and invocation count, and MUST treat the first probe process result as exhausting the change's hardware budget.
+r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.timed_restore] A ttWKV7 constant-tile measurement MUST arm an independently surviving timed owner restoration before isolation, MUST preserve ordinary exit-trap restoration, MUST bind one exact package, kernel, device, runtime state, timeout, and invocation count, and MUST treat the first probe process result as exhausting the change's hardware budget.
 
-#### Scenario: Offline review preserves authorization
+#### Scenario: Offline review remains device-free
 - GIVEN an exact package, owner-control helper, rollback command, and proposed runtime state
 - WHEN lifecycle gates, package checks, architecture compilation, shell review, and runtime preflight execute
 - THEN no Tenstorrent device is created by those checks
@@ -329,7 +329,7 @@ r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.timed_restore
 
 #### Scenario: Rollback must arm before isolation
 - GIVEN the owner service is active and healthy
-- WHEN the authorized physical phase begins
+- WHEN the physical phase begins
 - THEN the named independent rollback timer is armed and proven active before owner isolation
 - AND failure to arm the timer prevents owner stop and probe invocation
 
@@ -352,7 +352,7 @@ r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.timed_restore
 - AND no full-WKV correctness, performance, decode correctness, or general P150 compatibility is inferred
 
 ### Requirement: ttWKV7 executable one-shot boundary
-r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.executable_runbook] A newly authorized ttWKV7 measurement MUST use a fresh runbook committed with executable mode, MUST prove direct launchability before owner isolation, MUST preserve independently timed and exit-trap restoration, and MUST consume at most one exact probe process result without interpreter fallback or retry.
+r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.executable_runbook] A fresh ttWKV7 measurement MUST use a runbook committed with executable mode, MUST prove direct launchability before owner isolation, MUST preserve independently timed and exit-trap restoration, and MUST consume at most one exact probe process result without interpreter fallback or retry.
 
 #### Scenario: Executable mode is reviewed before launch
 - GIVEN a fresh committed one-shot runbook and zero invocation count
@@ -374,11 +374,11 @@ r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.executable_ru
 
 #### Scenario: Rollback precedes owner isolation
 - GIVEN the owner is active and healthy and all launchability checks pass
-- WHEN the authorized physical phase begins
+- WHEN the physical phase begins
 - THEN the named independent rollback timer is active before owner isolation
 - AND the exit trap retains ordinary immediate restoration
 
-#### Scenario: One process exhausts authorization
+#### Scenario: One process exhausts the one-shot budget
 - GIVEN exact metadata, isolation, device ownership, and runtime state are proven
 - WHEN probe mode starts
 - THEN invocation count changes from zero to one immediately before the process
@@ -415,10 +415,10 @@ r[onix.tenstorrent.native_runtime.ttwkv7.production_probe_wrapper] The composed 
 - GIVEN a candidate production wrapper containing an unexpanded `$out` target or validation that exercises only a fake probe
 - WHEN package validation runs
 - THEN validation fails before publication
-- AND no hardware authorization or compatibility claim is inferred
+- AND no hardware result or compatibility claim is inferred
 
 ### Requirement: ttWKV7 post-wrapper-repair one-shot measurement
-r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.wrapper_repair] A newly authorized post-repair ttWKV7 measurement MUST bind the verified immutable production wrapper, exact package and kernels, isolated device 1, explicit writable runtime state, independently timed and exit-trap restoration, and zero invocation count before consuming exactly one probe process result without fallback or retry.
+r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.wrapper_repair] A fresh post-repair ttWKV7 measurement MUST bind the verified immutable production wrapper, exact package and kernels, isolated device 1, explicit writable runtime state, independently timed and exit-trap restoration, and zero invocation count before consuming exactly one probe process result without fallback or retry.
 
 #### Scenario: Repaired wrapper is proven before isolation
 - GIVEN a fresh package output and committed executable runbook
@@ -426,7 +426,7 @@ r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.wrapper_repai
 - THEN the production wrapper's immutable target, no-device dispatch, runbook mode, exact metadata, runtime state, and rollback mechanism all pass
 - AND invocation, service-stop, and rollback-arm counts remain zero
 
-#### Scenario: One repaired process exhausts authorization
+#### Scenario: One repaired process exhausts the one-shot budget
 - GIVEN the rollback timer is active, the prior owner is isolated, device 1 has no open owner, and exact metadata still matches
 - WHEN the runbook changes invocation count from zero to one and directly invokes probe mode
 - THEN the first status, mismatch, initialization failure, signal, or timeout terminates physical search
@@ -466,7 +466,7 @@ r[onix.tenstorrent.native_runtime.ttwkv7.probe_mode_dispatch] After successful r
 - AND validation does not rely only on the fake target or caller-controlled `out`
 
 ### Requirement: ttWKV7 post-probe-mode-repair one-shot measurement
-r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.probe_mode_repair] A newly authorized post-dispatch-repair measurement MUST bind the verified production argument vector, exact package and kernels, isolated device 1, explicit writable runtime state, independent timed restoration, exit-trap restoration, and zero invocation count before consuming exactly one probe process result without fallback or retry.
+r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.probe_mode_repair] A fresh post-dispatch-repair measurement MUST bind the verified production argument vector, exact package and kernels, isolated device 1, explicit writable runtime state, independent timed restoration, exit-trap restoration, and zero invocation count before consuming exactly one probe process result without fallback or retry.
 
 #### Scenario: Dispatch and restoration pass before isolation
 - GIVEN a fresh package output, executable runbook, and zero invocation count
@@ -474,7 +474,7 @@ r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.probe_mode_re
 - THEN exact production dispatch, immutable paths, runtime state, runbook mode, owner control, root SSH, and rollback rehearsal all pass
 - AND service-stop and rollback-arm counts remain zero
 
-#### Scenario: One process exhausts authorization
+#### Scenario: One process exhausts the one-shot budget
 - GIVEN rollback is active, the prior owner is isolated, device 1 has no open owner, and exact metadata still matches
 - WHEN invocation count changes from zero to one and the runbook starts probe mode
 - THEN the first status, mismatch, initialization failure, signal, or timeout terminates physical search
@@ -493,7 +493,7 @@ r[onix.tenstorrent.native_runtime.ttwkv7.constant_tile_measurement.probe_mode_re
 - AND no full-WKV, decode, performance, or general P150 compatibility claim is inferred
 
 ### Requirement: ttWKV7 exact cross-kernel diagnostic
-r[onix.tenstorrent.native_runtime.ttwkv7.cross_kernel_diagnostic] Onix MUST provide a device-free validated diagnostic boundary that accepts only reviewed writable Metalium runtime state and, after separate physical authorization, executes the immutable packaged ttWKV7 runtime with exactly `test all 1 1` in one process without caller-controlled kernel, shape, tolerance, target, suffix, fallback, or retry.
+r[onix.tenstorrent.native_runtime.ttwkv7.cross_kernel_diagnostic] Onix MUST provide a device-free validated diagnostic boundary that accepts only reviewed writable Metalium runtime state and executes the immutable packaged ttWKV7 runtime from a fresh one-shot with exactly `test all 1 1` in one process without caller-controlled kernel, shape, tolerance, target, suffix, fallback, or retry.
 
 #### Scenario: Exact diagnostic dispatch is validated without a device
 - GIVEN a fake executable target and valid temporary cache, log, and loopback Inspector state
@@ -504,21 +504,16 @@ r[onix.tenstorrent.native_runtime.ttwkv7.cross_kernel_diagnostic] Onix MUST prov
 #### Scenario: Diagnostic vector is changed
 - GIVEN a candidate wrapper or composed package dispatch
 - WHEN the target, mode, kernel selector, group count, sequence length, order, multiplicity, or suffix differs from the reviewed vector
-- THEN deterministic validation fails before any physical authorization
+- THEN deterministic validation fails before device access
 
 #### Scenario: Runtime state is unsafe
 - GIVEN missing or non-exact device-1 visibility, a missing, relative, Nix-store, non-directory, or unwritable cache or log path, or a non-loopback or invalid Inspector address
 - WHEN validation or diagnostic mode is requested
 - THEN the wrapper fails before target execution
 
-#### Scenario: Physical comparison is not explicitly authorized
-- GIVEN device-free gates pass but no new instruction explicitly authorizes one device-1 cross-kernel diagnostic process
-- WHEN implementation reaches the physical boundary
-- THEN the owner remains active and no diagnostic process, device initialization, isolation, or invocation-count transition occurs
-
-#### Scenario: One physical comparison is authorized
-- GIVEN a fresh committed executable one-shot, exact reviewed store paths, healthy owner, independent restoration, zero counters, and explicit authorization for one device-1 cross-kernel process
-- WHEN the one-shot invokes diagnostic mode
+#### Scenario: One physical comparison runs from a reviewed plan
+- GIVEN a fresh committed executable one-shot, exact reviewed store paths, healthy owner, independent restoration, and zero counters
+- WHEN the operator directly launches the one-shot without arguments and it invokes diagnostic mode
 - THEN invocation count changes from zero to one immediately before one timeout-bounded outer wrapper process
 - AND the process runs the reviewed chunked and decodeL cases without an alternate command or retry
 
@@ -554,18 +549,18 @@ r[onix.tenstorrent.native_runtime.ttwkv7.data_movement_diagnostic] Onix MUST pro
 - THEN it fails before target execution or device access
 
 #### Scenario: One later physical comparison is complete
-- GIVEN a separately committed one-shot and explicit authorization for exactly one device-1 data-movement process
+- GIVEN a committed one-shot fixed to exactly one device-1 data-movement process
 - WHEN the immutable diagnostic executes
 - THEN it records exactly one result for each reader/path and writer/path combination, one aggregate marker, raw status, invocation count one, and healthy independent owner restoration
 
 #### Scenario: Physical output is incomplete or mismatched
 - GIVEN a nonzero mismatch, missing or duplicate record, nonzero status, timeout, initialization failure, isolation failure, orchestration failure, or invalid reviewed runtime vector
 - WHEN evidence is classified
-- THEN the result is narrow and terminal for that authorization and no retry, direct-runtime command, alternate probe, or broader compatibility claim is permitted
+- THEN the result is narrow and terminal for that one-shot and no retry, direct-runtime command, alternate probe, or broader compatibility claim is permitted
 
 ### Requirement: ttWKV7 high-information reader diagnostic loop
 
-r[onix.tenstorrent.native_runtime.ttwkv7.reader_diagnostic_loop] Onix MUST validate every production-reader runtime vector and diagnostic control without a device, MUST independently distinguish CB21 capture and host upload packing from production reader behavior, and MUST preserve raw exact artifacts sufficient for offline classification after one separately authorized process.
+r[onix.tenstorrent.native_runtime.ttwkv7.reader_diagnostic_loop] Onix MUST validate every production-reader runtime vector and diagnostic control without a device, MUST independently distinguish CB21 capture and host upload packing from production reader behavior, and MUST preserve raw exact artifacts sufficient for offline classification after one reviewed one-shot process.
 
 #### Scenario: Reader ABI vectors are validated without hardware
 - GIVEN named decode, chunked-partial, and chunked-full reader cases with sentinel addresses
@@ -595,11 +590,11 @@ r[onix.tenstorrent.native_runtime.ttwkv7.reader_diagnostic_loop] Onix MUST valid
 - GIVEN an invalid runtime vector, failed control, artifact-write error, missing or duplicate record, or incomplete output
 - WHEN evidence is classified
 - THEN production reader corruption is not inferred
-- AND the result remains terminal for that authorization without retry or broader compatibility claims
+- AND the result remains terminal for that one-shot without retry or broader compatibility claims
 
 ### Requirement: Exact one-process ttWKV7 reader diagnostic execution
 
-r[onix.tenstorrent.native_runtime.ttwkv7.reader_diagnostic_execution] Onix MUST bind a fresh ttWKV7 reader diagnostic authorization to one clean committed executable runbook, one immutable package and kernel closure, one exact device-1 wrapper command, zero-state counters, complete raw evidence, independent owner restoration, and a terminal no-retry classification.
+r[onix.tenstorrent.native_runtime.ttwkv7.reader_diagnostic_execution] Onix MUST bind a fresh ttWKV7 reader diagnostic to one clean committed executable runbook, one immutable package and kernel closure, one exact device-1 wrapper command, zero-state counters, complete raw evidence, independent owner restoration, and a terminal no-retry classification.
 
 #### Scenario: Preparation is safe and exact
 - GIVEN the reviewed package, active system, owner helper, loopback trust fingerprint, run root, Inspector endpoint, and executable runbook
@@ -607,13 +602,8 @@ r[onix.tenstorrent.native_runtime.ttwkv7.reader_diagnostic_execution] Onix MUST 
 - THEN wrapper target and vector, clean commit, metadata, writable isolated roots, free port, absent execution lock, and zero counters match exactly
 - AND no Tenstorrent device is enumerated, initialized, opened, stopped, or contacted
 
-#### Scenario: Authorization is absent or inexact
-- GIVEN no authorization or text other than `Authorize exactly one device-1 reader diagnostic process.`
-- WHEN the one-shot validates its metadata
-- THEN it fails before owner isolation or device access
-
 #### Scenario: Exactly one physical process is consumed
-- GIVEN exact fresh authorization, an atomically acquired persistent execution lock, healthy owner state, armed independent rollback, successful isolation, and no device owner
+- GIVEN an atomically acquired persistent execution lock, healthy owner state, armed independent rollback, successful isolation, and no device owner
 - WHEN the invocation counter changes from zero to one
 - THEN exactly one timeout-bounded production wrapper process runs with `TT_VISIBLE_DEVICES=1`
 - AND no suffix, retry, fallback, alternate command, or direct-runtime invocation is permitted
@@ -669,3 +659,25 @@ r[onix.tenstorrent.native_runtime.ttwkv7.reader_gather_alignment] Onix MUST make
 - WHEN the patch is validated
 - THEN all existing positive and negative checks pass without relaxed comparison or changed runtime vectors
 - AND no physical correctness or broad P150 compatibility claim is made
+
+### Requirement: Plan-gated ttWKV7 hardware execution
+
+r[onix.tenstorrent.native_runtime.ttwkv7.plan_gated_hardware_execution] Onix MUST permit a reviewed immutable ttWKV7 hardware runbook to execute without a prompt authorization sentence or authorization file while retaining exact device selection, immutable command dispatch, atomic attempt accounting, owner isolation, independent restoration, timeout, evidence completeness, and narrow result classification.
+
+#### Scenario: Prompt-free runbook is ready
+- GIVEN an immutable reviewed runbook with exact metadata, zero counters, an absent attempt lock, a healthy owner, and passing device-free checks
+- WHEN the operator directly launches the runbook without arguments
+- THEN no prompt authorization sentence, authorization file, environment toggle, or interactive confirmation is required
+- AND the runbook still validates every immutable safety boundary before owner isolation or device access
+
+#### Scenario: Prompt authorization gate is reintroduced
+- GIVEN a candidate runbook or source checker that requires `authorization.txt`, an expected authorization sentence, or equivalent prompt-derived launch state
+- WHEN device-free runbook validation executes
+- THEN validation fails before publication
+- AND no owner service or Tenstorrent device is contacted
+
+#### Scenario: One-shot safeguards remain
+- GIVEN the prompt-free runbook passes its immutable boundary checks
+- WHEN it reaches the physical phase
+- THEN it atomically consumes one attempt before one exact timeout-bounded wrapper process
+- AND no caller suffix, alternate command, direct-runtime fallback, automatic retry, or broad compatibility claim is permitted

@@ -9,11 +9,11 @@ r[onix.tenstorrent.native_runtime.ttwkv7.reader_alignment_validation] Onix MUST 
 #### Scenario: Corrected boundary is prepared
 - GIVEN the committed package, kernel closure, executable runbook, strict trust, run root, free port, and zero counters
 - WHEN preparation validates the boundary
-- THEN exact paths, wrapper vector, authorization scope, absent attempt lock, and healthy owner match
-- AND no device is contacted before fresh authorization
+- THEN exact paths, wrapper vector, absent attempt lock, and healthy owner match without a prompt authorization artifact
+- AND no device is contacted during preparation
 
 #### Scenario: Sole process compares the corrected readers
-- GIVEN exact authorization and successful independent owner isolation
+- GIVEN successful independent owner isolation and an atomically acquired attempt lock
 - WHEN the atomic attempt and invocation counters change from zero to one
 - THEN one timeout-bounded wrapper process runs CB21, six input, state, three reader, and two writer records
 - AND every downloaded result preserves raw bf16 and both runtime vectors before comparison

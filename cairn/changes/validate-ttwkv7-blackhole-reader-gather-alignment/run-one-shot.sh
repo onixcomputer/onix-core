@@ -22,7 +22,6 @@ readonly ssh_keygen_path="/nix/store/ww2wf5b928m0b53dp2bdifpgqqyfshvb-openssh-10
 readonly git_path="/nix/store/k3wl6cg7q50zkx47af3msmg1yrg1f203-git-2.54.0/bin/git"
 readonly root_ssh_identity="/home/brittonr/.ssh/framework"
 readonly expected_host_fingerprint="SHA256:0vd1vzTWrAONyquNKjwnsGY7a5bY2NJlvFamtxy/akY"
-readonly expected_authorization="Authorize exactly one device-1 aligned-reader validation process."
 readonly run_root="/var/tmp/ttwkv7-aligned-reader-validation-20260716T232813Z"
 readonly cache_path="$run_root/cache"
 readonly logs_path="$run_root/logs"
@@ -342,6 +341,7 @@ fail() {
   exit "$generic_failure_status"
 }
 
+# r[impl onix.tenstorrent.native_runtime.ttwkv7.plan_gated_hardware_execution]
 [[ $# -eq $expected_argument_count ]] || fail "arguments are not accepted"
 [[ -x $diagnostic_path ]] || fail "reviewed diagnostic is not executable: $diagnostic_path"
 [[ -x $diagnostic_runtime_path ]] || fail "reviewed diagnostic runtime is not executable: $diagnostic_runtime_path"
@@ -375,7 +375,6 @@ printf '%s\n' "$expected_probe_exec_line" >"$run_root/production-wrapper-target-
 [[ $(cat "$run_root/kernel-path.txt") == "$kernel_path" ]] || fail "kernel metadata mismatch"
 [[ $(cat "$run_root/owner-control-path.txt") == "$owner_control_path" ]] || fail "owner-control metadata mismatch"
 [[ $(cat "$run_root/inspector-address.txt") == "$inspector_address" ]] || fail "Inspector metadata mismatch"
-[[ $(cat "$run_root/authorization.txt") == "$expected_authorization" ]] || fail "authorization metadata mismatch"
 [[ $(cat "$run_root/execution-attempt-count.txt") == "$initial_counter_value" ]] || fail "execution attempt budget is not zero"
 [[ ! -e $execution_lock_path ]] || fail "execution attempt was already consumed"
 [[ $(cat "$run_root/invocation-count.txt") == "$initial_counter_value" ]] || fail "invocation budget is not zero"

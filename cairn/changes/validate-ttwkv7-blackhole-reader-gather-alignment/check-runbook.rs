@@ -21,7 +21,6 @@ const REQUIRED_SINGLETONS: &[&str] = &[
     "readonly reviewed_base_commit=\"7cc34589484579a408e358852428fe0e3f681f6d\"",
     "readonly package_path=\"/nix/store/4d6syhgiq81md3m9np6j39qdaa6rl8rj-ttwkv7-unstable-2026-06-22\"",
     "readonly kernel_path=\"/nix/store/fda5gkrr1klpk5ha49yih1myk5sni78p-ttwkv7-kernels-unstable-2026-06-22/share/ttwkv7/kernels\"",
-    "readonly expected_authorization=\"Authorize exactly one device-1 aligned-reader validation process.\"",
     "readonly run_root=\"/var/tmp/ttwkv7-aligned-reader-validation-20260716T232813Z\"",
     "readonly inspector_port=\"43137\"",
     "readonly execution_lock_path=\"$run_root/execution-consumed.lock\"",
@@ -53,8 +52,13 @@ const RECORD_NAMES: &[&str] = &[
     "decodeL-writer",
 ];
 
-const AUTHORIZATION_CHECK: &str =
-    "[[ $(cat \"$run_root/authorization.txt\") == \"$expected_authorization\" ]]";
+// r[verify onix.tenstorrent.native_runtime.ttwkv7.plan_gated_hardware_execution]
+const FORBIDDEN_AUTHORIZATION_MARKERS: &[&str] = &[
+    "authorization.txt",
+    "expected_authorization",
+    "authorization metadata mismatch",
+    "Authorize exactly",
+];
 const EXECUTION_LOCK_ACQUIRE: &str =
     "mkdir \"$execution_lock_path\" || fail \"execution attempt lock could not be acquired\"";
 const TRAP_INSTALL: &str = "trap restore_owner EXIT";
@@ -109,6 +113,9 @@ fn validate_runbook(source: &str) -> Result<(), String> {
     for singleton in REQUIRED_SINGLETONS {
         require_count(source, singleton, 1)?;
     }
+    for marker in FORBIDDEN_AUTHORIZATION_MARKERS {
+        require_count(source, marker, 0)?;
+    }
     if RECORD_NAMES.len() != EXPECTED_RECORD_COUNT {
         return Err("checker record cardinality drifted".to_string());
     }
@@ -131,7 +138,6 @@ fn validate_runbook(source: &str) -> Result<(), String> {
     )?;
     require_count(log_block, "phase=", EXPECTED_RECORD_COUNT)?;
 
-    require_before(source, AUTHORIZATION_CHECK, EXECUTION_LOCK_ACQUIRE)?;
     require_before(source, EXECUTION_LOCK_ACQUIRE, TRAP_INSTALL)?;
     require_before(source, TRAP_INSTALL, ROLLBACK_CALL)?;
     require_before(source, ROLLBACK_CALL, ISOLATE_CALL)?;
@@ -174,10 +180,12 @@ fn run_self_test(path: &Path) -> Result<(), String> {
         ),
     )?;
     expect_rejected(
-        "authorization mutation",
+        "authorization gate reintroduction",
         source.replacen(
-            "Authorize exactly one device-1 aligned-reader validation process.",
-            "Authorize a reader diagnostic.",
+            EXECUTION_LOCK_ACQUIRE,
+            &format!(
+                "[[ -f \"$run_root/authorization.txt\" ]] || fail \"authorization missing\"\n{EXECUTION_LOCK_ACQUIRE}"
+            ),
             1,
         ),
     )?;
