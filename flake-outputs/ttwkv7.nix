@@ -22,6 +22,9 @@ let
   rwkvTtwkv7HostLayoutCheck = ttwkv7Pkgs.callPackage ../pkgs/ttwkv7/rwkv-host-layout-check.nix {
     inherit rwkvLayerHarness ttwkv7;
   };
+  rwkvTtwkv7DecodeReaderCheck = ttwkv7Pkgs.callPackage ../pkgs/ttwkv7/rwkv-decode-reader-check.nix {
+    inherit rwkvLayerHarness ttwkv7;
+  };
 in
 {
   packages = lib.optionalAttrs isSupportedSystem {
@@ -45,5 +48,7 @@ in
     ttwkv7-architectures = ttwkv7.passthru.architectureCheck;
     # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_host_layout]
     rwkv-ttwkv7-host-layout = rwkvTtwkv7HostLayoutCheck;
+    # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_decode_reader_abi]
+    rwkv-ttwkv7-decode-reader = rwkvTtwkv7DecodeReaderCheck;
   };
 }

@@ -1,0 +1,111 @@
+--- a/wkv7_runner.cpp
++++ b/wkv7_runner.cpp
+@@ -26,6 +26,7 @@
+ #include <tt-metalium/work_split.hpp>
+ #include <tt-metalium/distributed.hpp>
+
++#include "ttwkv7-decode-abi.h"
+ #include "ttwkv7-host-layout.h"
+
+ using namespace tt::tt_metal;
+@@ -42,6 +43,7 @@
+ constexpr uint32_t kCheckpointHeadSize = 64;
+ constexpr uint32_t kCheckpointHeadCount = 12;
+ constexpr uint32_t kChunkedGroupSize = 2;
++constexpr uint32_t kChunkedTokensPerChunk = 32;
+ constexpr uint32_t kShapeTestSequenceCount = 1;
+ constexpr uint32_t kShapeTestTokenCount = 1;
+ constexpr uint32_t kMaximumHeadCount = 256;
+@@ -350,7 +352,7 @@
+     // ---- SPMD core assignment via the tt-metal primitive. One unit of work = one
+     // decode instance (decodeL) or one NBg-instance group (chunked).
+     constexpr uint32_t NBg = kChunkedGroupSize;  // chunked group size (reader/compute hardcode NB=2)
+-    const uint32_t P = 4;                        // decodeL instance-packing
++    constexpr uint32_t P = ttwkv7::decode_abi::kDecodeInstancePack;
+     const uint32_t num_units = decode ? IC : chunked_work_unit_count(IC);
+     auto [num_cores, core, core_group_1, core_group_2, units_per_core_1, units_per_core_2] =
+         split_work_to_cores(grid, num_units);
+@@ -404,18 +406,34 @@
+         cp = CreateKernel(prog, kpath(kind, false), core, cc);
+     }
+
+-    // ---- runtime args (reader arg layout shared by both readers) ----
+-    std::vector<uint32_t> ra{(uint32_t)H, (uint32_t)cl, St, Ht, (uint32_t)G};
+-    for (int i = 0; i < 6; i++) ra.push_back((uint32_t)buf_nat[i]->address());
+-    ra.push_back((uint32_t)buf_natst->address());
+-    ra.push_back((uint32_t)L);   // Lreal: real tokens/seq (reader pads the partial last chunk)
+-    ra.push_back(0u);            // sels_addr (unused)
+-    ra.push_back(0u);            // cst_addr  (unused: consts SFPU-generated in compute)
+-    ra.push_back(nc);
+-
+-    const uint32_t writer_tpc = decode ? 1u : 32u;
+-    const uint32_t writer_NB  = decode ? 1u : NBg;
+-    const uint32_t writer_nc  = decode ? (uint32_t)L : nc;
++    // ---- runtime args ----
++    std::vector<uint32_t> chunked_reader_base;
++    if (!decode) {
++        chunked_reader_base = {(uint32_t)H, (uint32_t)cl, St, Ht, (uint32_t)G};
++        for (std::size_t i = 0; i < ttwkv7::decode_abi::kInputCount; i++) {
++            chunked_reader_base.push_back((uint32_t)buf_nat[i]->address());
++        }
++        chunked_reader_base.push_back((uint32_t)buf_natst->address());
++        chunked_reader_base.push_back((uint32_t)L);
++        chunked_reader_base.push_back(0u);
++        chunked_reader_base.push_back(0u);
++        chunked_reader_base.push_back(nc);
++    }
++
++    ttwkv7::decode_abi::DecodeAddresses decode_addresses{};
++    for (std::size_t i = 0; i < decode_addresses.inputs.size(); i++) {
++        decode_addresses.inputs[i] = (uint32_t)buf_nat[i]->address();
++    }
++    decode_addresses.state = (uint32_t)buf_natst->address();
++    decode_addresses.output = (uint32_t)buf_out->address();
++    const ttwkv7::decode_abi::DecodeConfig decode_config{
++        .head_count = (uint32_t)H,
++        .tiles_per_head_dimension = St,
++        .head_tile_rows = Ht,
++        .sequence_count = (uint32_t)G,
++        .token_count = (uint32_t)L,
++        .channel_tile_count = Ct,
++    };
+
+     // Walk the used cores in order, handing each a contiguous run of units; convert
+     // that run to an instance range (x NBg for chunked groups, x1 for decode).
+@@ -429,14 +447,28 @@
+         const uint32_t inst_end = instance_end_for_units(
+             units_done, units_here, IC, unit_to_inst);
+         units_done += units_here;
+-        auto rak = ra; rak.push_back(inst_start); rak.push_back(inst_end);
+-        SetRuntimeArgs(prog, rd, cc2, rak);
+-        if (kind == Kernel::Chunked)
+-            SetRuntimeArgs(prog, cp, cc2, std::vector<uint32_t>{St, IC, (uint32_t)cl, Ht, nc, inst_start, inst_end});
+-        else
+-            SetRuntimeArgs(prog, cp, cc2, std::vector<uint32_t>{St, IC, (uint32_t)cl, Ht, nc, inst_start, inst_end, P});
+-        SetRuntimeArgs(prog, wrk, cc2, std::vector<uint32_t>{
+-            (uint32_t)buf_out->address(), inst_start, inst_end, IC, writer_nc, (uint32_t)H, St, Ct, (uint32_t)T, (uint32_t)L, writer_tpc, writer_NB});
++        if (decode) {
++            const auto arguments = ttwkv7::decode_abi::make_decode_runtime_arguments(
++                decode_config, decode_addresses, inst_start, inst_end);
++            if (!arguments) throw std::logic_error("decode runtime arguments are invalid");
++            SetRuntimeArgs(prog, rd, cc2,
++                           std::vector<uint32_t>(arguments->reader.begin(), arguments->reader.end()));
++            SetRuntimeArgs(prog, cp, cc2,
++                           std::vector<uint32_t>(arguments->compute.begin(), arguments->compute.end()));
++            SetRuntimeArgs(prog, wrk, cc2,
++                           std::vector<uint32_t>(arguments->writer.begin(), arguments->writer.end()));
++        } else {
++            auto reader_arguments = chunked_reader_base;
++            reader_arguments.push_back(inst_start);
++            reader_arguments.push_back(inst_end);
++            SetRuntimeArgs(prog, rd, cc2, reader_arguments);
++            SetRuntimeArgs(prog, cp, cc2,
++                           std::vector<uint32_t>{St, IC, (uint32_t)cl, Ht, nc, inst_start, inst_end});
++            SetRuntimeArgs(prog, wrk, cc2, std::vector<uint32_t>{
++                (uint32_t)buf_out->address(), inst_start, inst_end, IC, nc,
++                (uint32_t)H, St, Ct, (uint32_t)T, (uint32_t)L,
++                kChunkedTokensPerChunk, NBg});
++        }
+     }
+
+     distributed::MeshWorkload wl; wl.add_program(distributed::MeshCoordinateRange(dev->shape()), std::move(prog));
