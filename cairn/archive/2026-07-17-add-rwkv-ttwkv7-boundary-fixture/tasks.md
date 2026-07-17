@@ -6,4 +6,4 @@
 ## 2. Reproducible fixture shell
 
 - [x] [serial] Add the argument-free fixture binary, install its canonical JSON, and validate complete lengths, fixed ABI order, deterministic bytes, exact identities, and argument rejection. r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_boundary_fixture]
-- [ ] [serial] Run focused Rust/Nix and clean Cairn validation, record narrow evidence, sync, archive, and commit the accepted boundary. r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_boundary_fixture]
+- [x] [serial] Run focused Rust/Nix and clean Cairn validation, record narrow evidence, sync, archive, and commit the accepted boundary. r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_boundary_fixture]
