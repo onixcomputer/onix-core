@@ -26,6 +26,8 @@ pub const TEXT_GENERATION_STEP_LIMIT: usize = 3;
 pub const PROMPT_MAX_MESSAGE_BYTES: usize = 256;
 pub const PROMPT_MAX_TOKEN_COUNT: usize = 32;
 pub const PROMPT_MAX_NEW_TOKEN_COUNT: usize = 4;
+pub const TTWKV7_BOUNDARY_INPUT_COUNT: usize = 6;
+pub const TTWKV7_BOUNDARY_ARTIFACT_COUNT: usize = 9;
 pub const MODEL_REVISION: &str = "d81965cb4e1a9f96696b4f70b84212b8f2e43216";
 pub const MODEL_SHA256_SRI: &str = "sha256-uWqL3CHhX3HgyVZT3MO+ieVkthmtUHPJ7b+9B/eElFM=";
 pub const MODEL_BLAKE3: &str = "905f82048a64b881f9267117a398feb8a8a92bcc5233666bf67904e0d899d0e5";
@@ -93,6 +95,29 @@ const PROMPT_REQUIRED_OPTION_COUNT: usize = 3;
 const PROMPT_OPTION_COMPONENT_COUNT: usize = 2;
 const PROMPT_EXPECTED_ARGUMENT_COUNT: usize =
     PROMPT_REQUIRED_OPTION_COUNT * PROMPT_OPTION_COMPONENT_COUNT;
+const TTWKV7_BOUNDARY_TARGET: &str = "ttwkv7_logical_wkv_boundary";
+const TTWKV7_BOUNDARY_PRECISION: &str = "little_endian_bf16_storage_cpu_fp32_recurrence";
+const TTWKV7_BOUNDARY_BYTE_ORDER: &str = "little_endian";
+const TTWKV7_BOUNDARY_STATE_ORDER: &str = "head_row_column";
+const TTWKV7_BOUNDARY_VECTOR_ORDER: &str = "head_dimension";
+const TTWKV7_BOUNDARY_OUTPUT_ORDER: &str = "head_row";
+const TTWKV7_BOUNDARY_HASH_DOMAIN: &[u8] = b"rwkv-ttwkv7-boundary-v1";
+const TTWKV7_BOUNDARY_NONZERO_FLOOR: f32 = 1.0e-6;
+const TTWKV7_BOUNDARY_INPUT_ORDER: [&str; TTWKV7_BOUNDARY_INPUT_COUNT] =
+    ["a", "w", "k", "v", "r", "b"];
+const TTWKV7_BOUNDARY_VECTOR_SHAPE: [usize; 2] = [HEAD_COUNT, HEAD_SIZE];
+const TTWKV7_BOUNDARY_STATE_SHAPE: [usize; 3] = [HEAD_COUNT, HEAD_SIZE, HEAD_SIZE];
+const TTWKV7_BOUNDARY_ARTIFACT_ORDER: [&str; TTWKV7_BOUNDARY_ARTIFACT_COUNT] = [
+    "a",
+    "w",
+    "k",
+    "v",
+    "r",
+    "b",
+    "pre_state",
+    "expected_output",
+    "expected_post_state",
+];
 const REFERENCE_EMPTY_TOKEN_IDS: &[usize] = &[];
 const REFERENCE_EOS_TOKEN_IDS: &[usize] = &[BYTE_VOCABULARY_EOS_TOKEN_ID];
 const REFERENCE_OVERLAP_TOKEN_IDS: &[usize] = &[24_364];
@@ -146,6 +171,18 @@ const TEXT_NON_CLAIMS: [&str; 9] = [
     "No repaired-reader completion is established.",
     "No linguistic quality claim is established.",
     "No throughput or latency claim is established.",
+];
+const TTWKV7_BOUNDARY_NON_CLAIMS: [&str; 10] = [
+    "No ttWKV7 kernel execution or numerical parity is established.",
+    "No accelerator runtime initialization is established.",
+    "No P150 numerical correctness is established.",
+    "No repaired-reader completion is established.",
+    "No full-layer BF16 parity is established.",
+    "No full-model BF16 parity is established.",
+    "No token generation through ttWKV7 is established.",
+    "No tt-kernel or serving integration is established.",
+    "No throughput or latency claim is established.",
+    "No new hardware execution is authorized.",
 ];
 const PROMPT_NON_CLAIMS: [&str; 11] = [
     "No sampling or unbounded generation is established.",
@@ -381,6 +418,7 @@ struct WkvInputs {
 struct TimeMixOutput {
     projected_value: Vec<f32>,
     wkv_inputs: WkvInputs,
+    raw_wkv_output: Vec<f32>,
     wkv_output: Vec<f32>,
     oracle_output: Vec<f32>,
     matrix_state: Vec<f32>,
@@ -391,7 +429,9 @@ struct TimeMixOutput {
 struct SequenceResult {
     final_output: Vec<f32>,
     final_state: Vec<f32>,
+    second_pre_state: Vec<f32>,
     second_inputs: WkvInputs,
+    second_raw_output: Vec<f32>,
     maximum_state_deviation: f32,
     maximum_output_deviation: f32,
 }
@@ -415,6 +455,56 @@ pub struct WkvReceipt {
     pub v: NumericReceipt,
     pub a: NumericReceipt,
     pub b: NumericReceipt,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct Bf16ArtifactReceipt {
+    pub name: &'static str,
+    pub logical_shape: Vec<usize>,
+    pub element_count: usize,
+    pub byte_count: usize,
+    pub blake3: String,
+    pub bytes_hex: String,
+}
+
+#[derive(Clone, Debug)]
+struct EncodedBf16Artifact {
+    receipt: Bf16ArtifactReceipt,
+    bytes: Vec<u8>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct Ttwkv7BoundaryReceipt {
+    pub schema_version: u32,
+    pub model: ModelReceipt,
+    pub dimensions: Dimensions,
+    pub layer_index: usize,
+    pub prefix_token_ids: [usize; TOKEN_COUNT],
+    pub target: &'static str,
+    pub arithmetic_precision: &'static str,
+    pub byte_order: &'static str,
+    pub vector_order: &'static str,
+    pub state_order: &'static str,
+    pub output_order: &'static str,
+    pub input_order: [&'static str; TTWKV7_BOUNDARY_INPUT_COUNT],
+    pub source_fp32_inputs: WkvReceipt,
+    pub source_fp32_pre_state: NumericReceipt,
+    pub source_fp32_raw_output: NumericReceipt,
+    pub source_fp32_post_state: NumericReceipt,
+    pub input_artifacts: Vec<Bf16ArtifactReceipt>,
+    pub pre_state_artifact: Bf16ArtifactReceipt,
+    pub expected_output_artifact: Bf16ArtifactReceipt,
+    pub expected_post_state_artifact: Bf16ArtifactReceipt,
+    pub ordered_artifact_blake3: String,
+    pub maximum_input_quantization_deviation: f32,
+    pub pre_state_quantization_deviation: f32,
+    pub expected_output_vs_source_deviation: f32,
+    pub expected_post_state_vs_source_deviation: f32,
+    pub matrix_oracle_output_deviation: f32,
+    pub matrix_oracle_state_deviation: f32,
+    pub retained_pre_state_maximum_absolute_value: f32,
+    pub oracle_tolerance: f32,
+    pub non_claims: Vec<&'static str>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -1524,6 +1614,180 @@ pub fn run_checkpoint(checkpoint: &[u8], expected_blake3: &str) -> Result<LayerR
         maximum_oracle_output_deviation: result.maximum_output_deviation,
         oracle_tolerance: ORACLE_TOLERANCE,
         non_claims: NON_CLAIMS.to_vec(),
+    })
+}
+
+// r[impl onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_boundary_fixture]
+pub fn run_ttwkv7_boundary_checkpoint(
+    checkpoint: &[u8],
+    expected_blake3: &str,
+) -> Result<Ttwkv7BoundaryReceipt, String> {
+    verify_checkpoint_digest(checkpoint, expected_blake3)?;
+    let byte_count = u64::try_from(checkpoint.len())
+        .map_err(|error| format!("checkpoint byte count does not fit u64: {error}"))?;
+    if byte_count != MODEL_BYTE_COUNT {
+        return Err(format!(
+            "checkpoint byte count must be {MODEL_BYTE_COUNT}, found {byte_count}"
+        ));
+    }
+
+    let tensors = SafeTensors::deserialize(checkpoint)
+        .map_err(|error| format!("failed to decode safetensors checkpoint: {error}"))?;
+    let dimensions = Dimensions::reviewed();
+    let weights = load_layer_zero(&tensors, dimensions)?;
+    let embedding = tensors
+        .tensor("model.embeddings.weight")
+        .map_err(|error| format!("missing model.embeddings.weight: {error}"))?;
+    let model_config_bos = embedding_row(
+        &embedding,
+        MODEL_CONFIG_BOS_TOKEN_ID,
+        dimensions.hidden_size,
+    )?;
+    let model_config_eos = embedding_row(
+        &embedding,
+        MODEL_CONFIG_EOS_TOKEN_ID,
+        dimensions.hidden_size,
+    )?;
+    let result = run_sequence(&weights, [&model_config_bos, &model_config_eos])?;
+
+    let vector_shape = [dimensions.head_count, dimensions.head_size];
+    let state_shape = [
+        dimensions.head_count,
+        dimensions.head_size,
+        dimensions.head_size,
+    ];
+    let encoded_a = encode_bf16_artifact("a", &vector_shape, &result.second_inputs.a)?;
+    let encoded_w = encode_bf16_artifact("w", &vector_shape, &result.second_inputs.w)?;
+    let encoded_k = encode_bf16_artifact("k", &vector_shape, &result.second_inputs.k)?;
+    let encoded_v = encode_bf16_artifact("v", &vector_shape, &result.second_inputs.v)?;
+    let encoded_r = encode_bf16_artifact("r", &vector_shape, &result.second_inputs.r)?;
+    let encoded_b = encode_bf16_artifact("b", &vector_shape, &result.second_inputs.b)?;
+    let encoded_pre_state =
+        encode_bf16_artifact("pre_state", &state_shape, &result.second_pre_state)?;
+
+    let quantized_a = decode_bf16_bytes(&encoded_a.bytes, "a")?;
+    let quantized_w = decode_bf16_bytes(&encoded_w.bytes, "w")?;
+    let quantized_k = decode_bf16_bytes(&encoded_k.bytes, "k")?;
+    let quantized_v = decode_bf16_bytes(&encoded_v.bytes, "v")?;
+    let quantized_r = decode_bf16_bytes(&encoded_r.bytes, "r")?;
+    let quantized_b = decode_bf16_bytes(&encoded_b.bytes, "b")?;
+    let quantized_pre_state = decode_bf16_bytes(&encoded_pre_state.bytes, "pre_state")?;
+    let quantized_inputs = WkvInputs {
+        r: quantized_r.clone(),
+        w: quantized_w.clone(),
+        k: quantized_k.clone(),
+        v: quantized_v.clone(),
+        a: quantized_a.clone(),
+        b: quantized_b.clone(),
+    };
+    let (matrix_post_state, matrix_output) =
+        wkv_step_matrix(&quantized_pre_state, &quantized_inputs, dimensions)?;
+    let (oracle_post_state, oracle_output) =
+        wkv_step_oracle(&quantized_pre_state, &quantized_inputs, dimensions)?;
+    let matrix_oracle_state_deviation = max_abs_difference(&matrix_post_state, &oracle_post_state)?;
+    let matrix_oracle_output_deviation = max_abs_difference(&matrix_output, &oracle_output)?;
+    if matrix_oracle_state_deviation > ORACLE_TOLERANCE
+        || matrix_oracle_output_deviation > ORACLE_TOLERANCE
+    {
+        return Err(format!(
+            "BF16 boundary recurrence deviations {matrix_oracle_state_deviation} and {matrix_oracle_output_deviation} exceed {ORACLE_TOLERANCE}"
+        ));
+    }
+
+    let encoded_output = encode_bf16_artifact("expected_output", &vector_shape, &matrix_output)?;
+    let encoded_post_state =
+        encode_bf16_artifact("expected_post_state", &state_shape, &matrix_post_state)?;
+    let retained_pre_state_maximum_absolute_value =
+        maximum_absolute_value(&quantized_pre_state, "quantized retained pre-state")?;
+    if retained_pre_state_maximum_absolute_value <= TTWKV7_BOUNDARY_NONZERO_FLOOR {
+        return Err(format!(
+            "retained BF16 pre-state maximum {retained_pre_state_maximum_absolute_value} does not exceed {TTWKV7_BOUNDARY_NONZERO_FLOOR}"
+        ));
+    }
+
+    let input_quantization_deviations = [
+        max_abs_difference(&result.second_inputs.a, &quantized_a)?,
+        max_abs_difference(&result.second_inputs.w, &quantized_w)?,
+        max_abs_difference(&result.second_inputs.k, &quantized_k)?,
+        max_abs_difference(&result.second_inputs.v, &quantized_v)?,
+        max_abs_difference(&result.second_inputs.r, &quantized_r)?,
+        max_abs_difference(&result.second_inputs.b, &quantized_b)?,
+    ];
+    let maximum_input_quantization_deviation = input_quantization_deviations
+        .into_iter()
+        .fold(0.0_f32, f32::max);
+    let pre_state_quantization_deviation =
+        max_abs_difference(&result.second_pre_state, &quantized_pre_state)?;
+    let expected_output_vs_source_deviation =
+        max_abs_difference(&result.second_raw_output, &matrix_output)?;
+    let expected_post_state_vs_source_deviation =
+        max_abs_difference(&result.final_state, &matrix_post_state)?;
+
+    let input_artifacts = vec![
+        encoded_a.receipt.clone(),
+        encoded_w.receipt.clone(),
+        encoded_k.receipt.clone(),
+        encoded_v.receipt.clone(),
+        encoded_r.receipt.clone(),
+        encoded_b.receipt.clone(),
+    ];
+    let ordered_artifacts = vec![
+        encoded_a.receipt,
+        encoded_w.receipt,
+        encoded_k.receipt,
+        encoded_v.receipt,
+        encoded_r.receipt,
+        encoded_b.receipt,
+        encoded_pre_state.receipt.clone(),
+        encoded_output.receipt.clone(),
+        encoded_post_state.receipt.clone(),
+    ];
+    let ordered_artifact_blake3 = ordered_artifact_blake3(&ordered_artifacts)?;
+
+    Ok(Ttwkv7BoundaryReceipt {
+        schema_version: RECEIPT_SCHEMA_VERSION,
+        model: ModelReceipt {
+            model_id: MODEL_ID,
+            revision: MODEL_REVISION,
+            sha256_sri: MODEL_SHA256_SRI,
+            blake3: blake3::hash(checkpoint).to_hex().to_string(),
+            byte_count,
+        },
+        dimensions,
+        layer_index: LAYER_INDEX,
+        prefix_token_ids: [MODEL_CONFIG_BOS_TOKEN_ID, MODEL_CONFIG_EOS_TOKEN_ID],
+        target: TTWKV7_BOUNDARY_TARGET,
+        arithmetic_precision: TTWKV7_BOUNDARY_PRECISION,
+        byte_order: TTWKV7_BOUNDARY_BYTE_ORDER,
+        vector_order: TTWKV7_BOUNDARY_VECTOR_ORDER,
+        state_order: TTWKV7_BOUNDARY_STATE_ORDER,
+        output_order: TTWKV7_BOUNDARY_OUTPUT_ORDER,
+        input_order: TTWKV7_BOUNDARY_INPUT_ORDER,
+        source_fp32_inputs: WkvReceipt {
+            r: numeric_receipt(&result.second_inputs.r)?,
+            w: numeric_receipt(&result.second_inputs.w)?,
+            k: numeric_receipt(&result.second_inputs.k)?,
+            v: numeric_receipt(&result.second_inputs.v)?,
+            a: numeric_receipt(&result.second_inputs.a)?,
+            b: numeric_receipt(&result.second_inputs.b)?,
+        },
+        source_fp32_pre_state: numeric_receipt(&result.second_pre_state)?,
+        source_fp32_raw_output: numeric_receipt(&result.second_raw_output)?,
+        source_fp32_post_state: numeric_receipt(&result.final_state)?,
+        input_artifacts,
+        pre_state_artifact: encoded_pre_state.receipt,
+        expected_output_artifact: encoded_output.receipt,
+        expected_post_state_artifact: encoded_post_state.receipt,
+        ordered_artifact_blake3,
+        maximum_input_quantization_deviation,
+        pre_state_quantization_deviation,
+        expected_output_vs_source_deviation,
+        expected_post_state_vs_source_deviation,
+        matrix_oracle_output_deviation,
+        matrix_oracle_state_deviation,
+        retained_pre_state_maximum_absolute_value,
+        oracle_tolerance: ORACLE_TOLERANCE,
+        non_claims: TTWKV7_BOUNDARY_NON_CLAIMS.to_vec(),
     })
 }
 
@@ -2842,6 +3106,173 @@ fn decode_bf16_bytes(bytes: &[u8], name: &str) -> Result<Vec<f32>, String> {
     Ok(values)
 }
 
+fn checked_shape_elements(shape: &[usize], name: &str) -> Result<usize, String> {
+    if shape.is_empty() || shape.contains(&0) {
+        return Err(format!("{name} logical shape dimensions must be positive"));
+    }
+    shape.iter().try_fold(1_usize, |elements, dimension| {
+        elements
+            .checked_mul(*dimension)
+            .ok_or_else(|| format!("{name} logical shape element count overflows usize"))
+    })
+}
+
+fn encode_bf16_artifact(
+    name: &'static str,
+    logical_shape: &[usize],
+    values: &[f32],
+) -> Result<EncodedBf16Artifact, String> {
+    let expected_elements = checked_shape_elements(logical_shape, name)?;
+    require_length(values, expected_elements, name)?;
+    require_finite(values, name)?;
+    let byte_count = values
+        .len()
+        .checked_mul(BF16_BYTE_WIDTH)
+        .ok_or_else(|| format!("{name} BF16 byte count overflows usize"))?;
+    let mut bytes = Vec::with_capacity(byte_count);
+    for value in values {
+        bytes.extend_from_slice(&bf16::from_f32(*value).to_bits().to_le_bytes());
+    }
+    let receipt = Bf16ArtifactReceipt {
+        name,
+        logical_shape: logical_shape.to_vec(),
+        element_count: values.len(),
+        byte_count,
+        blake3: blake3::hash(&bytes).to_hex().to_string(),
+        bytes_hex: encode_hex(&bytes),
+    };
+    let decoded = validate_bf16_artifact(&receipt)?;
+    if decoded.len() != values.len() {
+        return Err(format!("{name} BF16 artifact round-trip length changed"));
+    }
+    Ok(EncodedBf16Artifact { receipt, bytes })
+}
+
+fn lowercase_hex_nibble(byte: u8) -> Option<u8> {
+    match byte {
+        b'0'..=b'9' => Some(byte - b'0'),
+        b'a'..=b'f' => Some(byte - b'a' + u8::try_from(HEX_ALPHA_DIGIT_OFFSET).ok()?),
+        _ => None,
+    }
+}
+
+fn decode_lowercase_hex(text: &str, name: &str) -> Result<Vec<u8>, String> {
+    if !text.len().is_multiple_of(HEX_CHARACTERS_PER_BYTE) {
+        return Err(format!(
+            "{name} hexadecimal byte string must have even length"
+        ));
+    }
+    let mut bytes = Vec::with_capacity(text.len() / HEX_CHARACTERS_PER_BYTE);
+    for pair in text.as_bytes().chunks_exact(HEX_CHARACTERS_PER_BYTE) {
+        let high = lowercase_hex_nibble(pair[0])
+            .ok_or_else(|| format!("{name} contains non-lowercase-hexadecimal data"))?;
+        let low = lowercase_hex_nibble(pair[1])
+            .ok_or_else(|| format!("{name} contains non-lowercase-hexadecimal data"))?;
+        bytes.push(high * u8::try_from(HEX_RADIX).map_err(|error| error.to_string())? + low);
+    }
+    Ok(bytes)
+}
+
+fn validate_bf16_artifact(artifact: &Bf16ArtifactReceipt) -> Result<Vec<f32>, String> {
+    let expected_elements = checked_shape_elements(&artifact.logical_shape, artifact.name)?;
+    if artifact.element_count != expected_elements {
+        return Err(format!(
+            "{} BF16 artifact shape requires {expected_elements} elements, found {}",
+            artifact.name, artifact.element_count
+        ));
+    }
+    let expected_bytes = expected_elements
+        .checked_mul(BF16_BYTE_WIDTH)
+        .ok_or_else(|| format!("{} BF16 byte count overflows usize", artifact.name))?;
+    if artifact.byte_count != expected_bytes {
+        return Err(format!(
+            "{} BF16 artifact requires {expected_bytes} bytes, found {}",
+            artifact.name, artifact.byte_count
+        ));
+    }
+    let bytes = decode_lowercase_hex(&artifact.bytes_hex, artifact.name)?;
+    if bytes.len() != artifact.byte_count {
+        return Err(format!(
+            "{} BF16 hexadecimal data contains {} bytes, expected {}",
+            artifact.name,
+            bytes.len(),
+            artifact.byte_count
+        ));
+    }
+    let actual_blake3 = blake3::hash(&bytes).to_hex().to_string();
+    if actual_blake3 != artifact.blake3 {
+        return Err(format!(
+            "{} BF16 artifact BLAKE3 mismatch: expected {}, found {actual_blake3}",
+            artifact.name, artifact.blake3
+        ));
+    }
+    decode_bf16_bytes(&bytes, artifact.name)
+}
+
+fn expected_ttwkv7_artifact_shape(name: &str) -> Option<&'static [usize]> {
+    match name {
+        "a" | "w" | "k" | "v" | "r" | "b" | "expected_output" => {
+            Some(&TTWKV7_BOUNDARY_VECTOR_SHAPE)
+        }
+        "pre_state" | "expected_post_state" => Some(&TTWKV7_BOUNDARY_STATE_SHAPE),
+        _ => None,
+    }
+}
+
+fn ordered_artifact_blake3(artifacts: &[Bf16ArtifactReceipt]) -> Result<String, String> {
+    if artifacts.len() != TTWKV7_BOUNDARY_ARTIFACT_COUNT {
+        return Err(format!(
+            "ttWKV7 boundary requires {TTWKV7_BOUNDARY_ARTIFACT_COUNT} ordered artifacts, found {}",
+            artifacts.len()
+        ));
+    }
+    let mut hasher = blake3::Hasher::new();
+    hasher.update(TTWKV7_BOUNDARY_HASH_DOMAIN);
+    for (expected_name, artifact) in TTWKV7_BOUNDARY_ARTIFACT_ORDER.iter().zip(artifacts) {
+        if artifact.name != *expected_name {
+            return Err(format!(
+                "ttWKV7 boundary artifact order expected {expected_name}, found {}",
+                artifact.name
+            ));
+        }
+        let expected_shape = expected_ttwkv7_artifact_shape(artifact.name)
+            .ok_or_else(|| format!("unknown ttWKV7 boundary artifact {}", artifact.name))?;
+        if artifact.logical_shape != expected_shape {
+            return Err(format!(
+                "{} logical shape must be {expected_shape:?}, found {:?}",
+                artifact.name, artifact.logical_shape
+            ));
+        }
+        validate_bf16_artifact(artifact)?;
+        let bytes = decode_lowercase_hex(&artifact.bytes_hex, artifact.name)?;
+        if blake3::hash(&bytes).to_hex().as_str() != artifact.blake3 {
+            return Err(format!("{} changed before combined hashing", artifact.name));
+        }
+        let name_length = u64::try_from(artifact.name.len())
+            .map_err(|error| format!("artifact name length does not fit u64: {error}"))?;
+        let element_count = u64::try_from(artifact.element_count)
+            .map_err(|error| format!("artifact element count does not fit u64: {error}"))?;
+        let shape_rank = u64::try_from(artifact.logical_shape.len())
+            .map_err(|error| format!("artifact shape rank does not fit u64: {error}"))?;
+        hasher.update(&name_length.to_le_bytes());
+        hasher.update(artifact.name.as_bytes());
+        hasher.update(&shape_rank.to_le_bytes());
+        for dimension in &artifact.logical_shape {
+            let dimension = u64::try_from(*dimension)
+                .map_err(|error| format!("artifact shape dimension does not fit u64: {error}"))?;
+            hasher.update(&dimension.to_le_bytes());
+        }
+        hasher.update(&element_count.to_le_bytes());
+        hasher.update(&bytes);
+    }
+    Ok(hasher.finalize().to_hex().to_string())
+}
+
+fn maximum_absolute_value(values: &[f32], name: &str) -> Result<f32, String> {
+    require_finite(values, name)?;
+    Ok(values.iter().copied().map(f32::abs).fold(0.0_f32, f32::max))
+}
+
 fn run_sequence(
     weights: &LayerWeights,
     embeddings: [&[f32]; TOKEN_COUNT],
@@ -2851,7 +3282,9 @@ fn run_sequence(
     let mut oracle_state = state.matrix.clone();
     let mut maximum_state_deviation = 0.0_f32;
     let mut maximum_output_deviation = 0.0_f32;
+    let mut second_pre_state = None;
     let mut second_inputs = None;
+    let mut second_raw_output = None;
     let mut final_output = Vec::new();
 
     for (token_index, embedding) in embeddings.into_iter().enumerate() {
@@ -2876,6 +3309,10 @@ fn run_sequence(
             &weights.attn_norm_bias,
             LAYER_NORM_EPSILON,
         )?;
+        let is_second_token = token_index + 1 == TOKEN_COUNT;
+        if is_second_token {
+            second_pre_state = Some(state.matrix.clone());
+        }
         let time = time_mix(
             weights,
             &attention_input,
@@ -2901,19 +3338,26 @@ fn run_sequence(
         let ffn_output = channel_mix(weights, &ffn_input, &state.ffn_previous)?;
         state.ffn_previous.clone_from(&ffn_input);
         final_output = add_vectors(&after_attention, &ffn_output)?;
-        if token_index + 1 == TOKEN_COUNT {
+        if is_second_token {
+            second_raw_output = Some(time.raw_wkv_output);
             second_inputs = Some(time.wkv_inputs);
         }
     }
 
+    let second_pre_state =
+        second_pre_state.ok_or_else(|| "second-token pre-state was not produced".to_owned())?;
     let second_inputs =
         second_inputs.ok_or_else(|| "second-token inputs were not produced".to_owned())?;
+    let second_raw_output =
+        second_raw_output.ok_or_else(|| "second-token raw output was not produced".to_owned())?;
     require_finite(&final_output, "final layer output")?;
     require_finite(&state.matrix, "final recurrent state")?;
     Ok(SequenceResult {
         final_output,
         final_state: state.matrix,
+        second_pre_state,
         second_inputs,
+        second_raw_output,
         maximum_state_deviation,
         maximum_output_deviation,
     })
@@ -3183,6 +3627,7 @@ fn time_mix(
     Ok(TimeMixOutput {
         projected_value,
         wkv_inputs: inputs,
+        raw_wkv_output: raw_output,
         wkv_output: attention_output,
         oracle_output,
         matrix_state: next_state,
@@ -3811,6 +4256,109 @@ mod tests {
             verify_checkpoint_digest(checkpoint, "not-a-digest")
                 .expect_err("malformed digest must fail")
                 .contains("lowercase hexadecimal")
+        );
+    }
+
+    // r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_boundary_fixture]
+    #[test]
+    fn ttwkv7_bf16_artifact_is_little_endian_and_fails_closed() {
+        const EXPECTED_FIXTURE_HEX: &str = "803f00c0";
+        let artifact = encode_bf16_artifact("fixture", &[1, SMALL_HEAD_SIZE], &[1.0, -2.0])
+            .expect("finite shaped BF16 artifact must encode");
+        assert_eq!(artifact.receipt.bytes_hex, EXPECTED_FIXTURE_HEX);
+        assert_eq!(
+            validate_bf16_artifact(&artifact.receipt).expect("exact BF16 artifact must validate"),
+            vec![1.0, -2.0]
+        );
+
+        let mut changed = artifact.receipt.clone();
+        changed
+            .bytes_hex
+            .replace_range(..HEX_CHARACTERS_PER_BYTE, "00");
+        assert!(
+            validate_bf16_artifact(&changed)
+                .expect_err("changed bytes under the old digest must fail")
+                .contains("BLAKE3 mismatch")
+        );
+        let mut wrong_shape = artifact.receipt.clone();
+        wrong_shape.logical_shape = vec![SMALL_HEAD_SIZE, SMALL_HEAD_SIZE];
+        assert!(
+            validate_bf16_artifact(&wrong_shape)
+                .expect_err("wrong shape must fail")
+                .contains("shape requires")
+        );
+        let mut odd_hex = artifact.receipt.clone();
+        odd_hex.bytes_hex.pop();
+        assert!(
+            validate_bf16_artifact(&odd_hex)
+                .expect_err("odd hexadecimal length must fail")
+                .contains("even length")
+        );
+        let mut uppercase_hex = artifact.receipt;
+        uppercase_hex.bytes_hex = "803F00C0".to_owned();
+        assert!(
+            validate_bf16_artifact(&uppercase_hex)
+                .expect_err("uppercase hexadecimal must fail")
+                .contains("non-lowercase-hexadecimal")
+        );
+        assert!(
+            encode_bf16_artifact("non_finite", &[1], &[f32::NAN])
+                .expect_err("non-finite source must fail")
+                .contains("non-finite")
+        );
+        assert!(
+            encode_bf16_artifact("bad_shape", &[], &[])
+                .expect_err("empty shape must fail")
+                .contains("must be positive")
+        );
+    }
+
+    // r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_boundary_fixture]
+    #[test]
+    fn ttwkv7_combined_identity_binds_order_and_every_byte() {
+        let artifacts = TTWKV7_BOUNDARY_ARTIFACT_ORDER
+            .iter()
+            .enumerate()
+            .map(|(index, name)| {
+                let shape = expected_ttwkv7_artifact_shape(name)
+                    .expect("reviewed artifact must have a shape");
+                let element_count =
+                    checked_shape_elements(shape, name).expect("reviewed artifact shape must fit");
+                let values = vec![index as f32 + 1.0; element_count];
+                encode_bf16_artifact(name, shape, &values)
+                    .expect("ordered fixture artifact must encode")
+                    .receipt
+            })
+            .collect::<Vec<_>>();
+        let first =
+            ordered_artifact_blake3(&artifacts).expect("complete ordered fixture must hash");
+        let second = ordered_artifact_blake3(&artifacts)
+            .expect("repeated complete ordered fixture must hash");
+        assert_eq!(first, second);
+        assert_eq!(first.len(), EXPECTED_DIGEST_HEX_LENGTH);
+
+        let mut reordered = artifacts.clone();
+        reordered.swap(0, 1);
+        assert!(
+            ordered_artifact_blake3(&reordered)
+                .expect_err("reordered ABI artifacts must fail")
+                .contains("artifact order")
+        );
+        let mut wrong_shape = artifacts.clone();
+        wrong_shape[0].logical_shape = vec![1, wrong_shape[0].element_count];
+        assert!(
+            ordered_artifact_blake3(&wrong_shape)
+                .expect_err("changed logical shape must fail")
+                .contains("logical shape must be")
+        );
+        let mut changed = artifacts;
+        changed[0]
+            .bytes_hex
+            .replace_range(..HEX_CHARACTERS_PER_BYTE, "00");
+        assert!(
+            ordered_artifact_blake3(&changed)
+                .expect_err("changed artifact bytes must fail")
+                .contains("BLAKE3 mismatch")
         );
     }
 

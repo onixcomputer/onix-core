@@ -144,6 +144,30 @@ let
     "cc77a2cab3678c33cf311c7854d1632d054eb4e38ba3ad04fe2e49692aa097ad"
   ];
   expectedPromptStateCarryDivergence = "22.658165";
+  expectedTtwkv7BoundaryCombinedBlake3 = "44d91ad223079fa9ae5f6f0dc9943fc6d13cc25cb09262111ad433c7e6288494";
+  expectedTtwkv7BoundaryArtifactBlake3 = [
+    "2f2bec8195c8fca1027cdb8ef9421921643cc97db9404efe84b5139432096f89"
+    "e549e829df1f6a05c9e8cbbc0b1e08d078196de57731f54a16cfcc4c9849a0ee"
+    "4b0248fce75e5ff0d462be2edee6c16c1f2e2f68f1b9f5dbf696e9b3d1f7699b"
+    "813277dddaee3ee19e87ede402bd65fa0393073c9fb86fb12096d1531676c68f"
+    "63a08981b8cf0c852cc273e1626ab8aa77d19b141746f729af7cf269de41893d"
+    "ad9f5a87a3dcfd04aebef24e0faebdfae30ec06d27369d2ff77fef90c9d38f66"
+    "be643f1302ec76ea76ada70b24a830a3398bc463a39915226c61fcf8f67b52cd"
+    "9af55cd740a0534c91e6656da5e0fca63386e06ded01d183157d07cba6ea50e8"
+    "c76c943bab4cda028b5edae8393919ae3f93f35b79b6a02648d4617e21b414d6"
+  ];
+  expectedTtwkv7BoundarySourceBlake3 = [
+    "3dc1ff13a5ebff20cb32cc43727ec6cbbd1bd6ba828c3f6b60a1acbd193ed30f"
+    "5b882f55afc0afb4aa98b243708ce506b895c60b9aee83aea225a4b2e11b30e5"
+    expectedFinalStateFingerprint
+  ];
+  expectedTtwkv7BoundaryInputQuantizationDeviation = "0.00641346";
+  expectedTtwkv7BoundaryPreStateQuantizationDeviation = "0.0017508864";
+  expectedTtwkv7BoundaryOutputSourceDeviation = "0.00065533817";
+  expectedTtwkv7BoundaryPostStateSourceDeviation = "0.0021299124";
+  expectedTtwkv7BoundaryOracleOutputDeviation = "3.7252903e-9";
+  expectedTtwkv7BoundaryOracleStateDeviation = "2.9802322e-8";
+  expectedTtwkv7BoundaryRetainedStateMaximum = "1.2421875";
   frameworkParityCheck =
     runCommand "rwkv-layer-harness-torch-equation-parity"
       {
@@ -214,6 +238,12 @@ let
     RWKV_SPECIAL_TOKENS_MAP = specialTokensMap;
     RWKV_MODEL_CONFIG = modelConfig;
     RWKV_GENERATION_CONFIG = generationConfig;
+
+    postInstall = ''
+      mkdir -p "$out/share/rwkv-layer-harness"
+      "$out/bin/rwkv-ttwkv7-fixture" \
+        >"$out/share/rwkv-layer-harness/ttwkv7-boundary.json"
+    '';
 
     doInstallCheck = true;
     installCheckPhase = ''
@@ -386,6 +416,61 @@ let
       fi
       grep -F 'exceeding caller limit 1' "$fixture_root/prompt-actual-excess.log"
 
+      $out/bin/rwkv-ttwkv7-fixture >"$fixture_root/ttwkv7-boundary-first.json"
+      $out/bin/rwkv-ttwkv7-fixture >"$fixture_root/ttwkv7-boundary-second.json"
+      cmp "$fixture_root/ttwkv7-boundary-first.json" \
+        "$fixture_root/ttwkv7-boundary-second.json"
+      cmp "$fixture_root/ttwkv7-boundary-first.json" \
+        "$out/share/rwkv-layer-harness/ttwkv7-boundary.json"
+      grep -Fq '"target":"ttwkv7_logical_wkv_boundary"' \
+        "$fixture_root/ttwkv7-boundary-first.json"
+      grep -Fq '"arithmetic_precision":"little_endian_bf16_storage_cpu_fp32_recurrence"' \
+        "$fixture_root/ttwkv7-boundary-first.json"
+      grep -Fq '"input_order":["a","w","k","v","r","b"]' \
+        "$fixture_root/ttwkv7-boundary-first.json"
+      grep -Fq '"state_order":"head_row_column"' \
+        "$fixture_root/ttwkv7-boundary-first.json"
+      grep -Fq '"prefix_token_ids":[1,2]' \
+        "$fixture_root/ttwkv7-boundary-first.json"
+      test "$(grep -o '"name":' "$fixture_root/ttwkv7-boundary-first.json" | wc -l)" -eq 9
+      test "$(grep -o '"byte_count":1536' "$fixture_root/ttwkv7-boundary-first.json" | wc -l)" -eq 7
+      test "$(grep -o '"byte_count":98304' "$fixture_root/ttwkv7-boundary-first.json" | wc -l)" -eq 2
+      test "$(grep -o '"bytes_hex":' "$fixture_root/ttwkv7-boundary-first.json" | wc -l)" -eq 9
+      grep -Fq '"ordered_artifact_blake3":"${expectedTtwkv7BoundaryCombinedBlake3}"' \
+        "$fixture_root/ttwkv7-boundary-first.json"
+      for expected_blake3 in ${lib.escapeShellArgs expectedTtwkv7BoundaryArtifactBlake3}; do
+        grep -Fq "\"blake3\":\"$expected_blake3\"" \
+          "$fixture_root/ttwkv7-boundary-first.json"
+      done
+      for expected_blake3 in ${lib.escapeShellArgs expectedTtwkv7BoundarySourceBlake3}; do
+        grep -Fq "\"blake3\":\"$expected_blake3\"" \
+          "$fixture_root/ttwkv7-boundary-first.json"
+      done
+      grep -Fq '"maximum_input_quantization_deviation":${expectedTtwkv7BoundaryInputQuantizationDeviation}' \
+        "$fixture_root/ttwkv7-boundary-first.json"
+      grep -Fq '"pre_state_quantization_deviation":${expectedTtwkv7BoundaryPreStateQuantizationDeviation}' \
+        "$fixture_root/ttwkv7-boundary-first.json"
+      grep -Fq '"expected_output_vs_source_deviation":${expectedTtwkv7BoundaryOutputSourceDeviation}' \
+        "$fixture_root/ttwkv7-boundary-first.json"
+      grep -Fq '"expected_post_state_vs_source_deviation":${expectedTtwkv7BoundaryPostStateSourceDeviation}' \
+        "$fixture_root/ttwkv7-boundary-first.json"
+      grep -Fq '"matrix_oracle_output_deviation":${expectedTtwkv7BoundaryOracleOutputDeviation}' \
+        "$fixture_root/ttwkv7-boundary-first.json"
+      grep -Fq '"matrix_oracle_state_deviation":${expectedTtwkv7BoundaryOracleStateDeviation}' \
+        "$fixture_root/ttwkv7-boundary-first.json"
+      grep -Fq '"retained_pre_state_maximum_absolute_value":${expectedTtwkv7BoundaryRetainedStateMaximum}' \
+        "$fixture_root/ttwkv7-boundary-first.json"
+      grep -Fq 'No ttWKV7 kernel execution or numerical parity is established.' \
+        "$fixture_root/ttwkv7-boundary-first.json"
+
+      if $out/bin/rwkv-ttwkv7-fixture unexpected-argument \
+        >"$fixture_root/ttwkv7-boundary-argument-rejection.log" 2>&1; then
+        echo "rwkv-ttwkv7-fixture accepted a caller-controlled argument" >&2
+        exit 1
+      fi
+      grep -F 'does not accept arguments' \
+        "$fixture_root/ttwkv7-boundary-argument-rejection.log"
+
       if $out/bin/rwkv-layer-harness unexpected-argument \
         >"$fixture_root/argument-rejection.log" 2>&1; then
         echo "rwkv-layer-harness accepted a caller-controlled argument" >&2
@@ -422,7 +507,7 @@ let
       grep -F 'does not accept arguments' "$fixture_root/framework-argument-rejection.log"
 
       if grep -E 'std::process::Command|Command::new|/dev/tenstorrent|TT_VISIBLE_DEVICES|Metalium|owner-control|retry' \
-        ${./src/lib.rs} ${./src/main.rs} ${./src/bin/rwkv-token-harness.rs} ${./src/bin/rwkv-decode-harness.rs} ${./src/bin/rwkv-text-harness.rs} ${./src/bin/rwkv-prompt-harness.rs} ${./src/bin/rwkv-framework-fixture.rs}; then
+        ${./src/lib.rs} ${./src/main.rs} ${./src/bin/rwkv-token-harness.rs} ${./src/bin/rwkv-decode-harness.rs} ${./src/bin/rwkv-text-harness.rs} ${./src/bin/rwkv-prompt-harness.rs} ${./src/bin/rwkv-framework-fixture.rs} ${./src/bin/rwkv-ttwkv7-fixture.rs}; then
         echo "rwkv-layer-harness must not contain hardware or process orchestration" >&2
         exit 1
       fi
