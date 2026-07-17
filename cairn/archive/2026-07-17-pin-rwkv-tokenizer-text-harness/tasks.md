@@ -10,4 +10,4 @@
 
 ## Phase 3: Acceptance
 
-- [ ] [serial] Run focused Rust/Nix and Cairn validation, lock exact tokenizer/text evidence, sync the requirement, archive the change, and preserve hardware/framework/performance exclusions. r[onix.tenstorrent.native_runtime.rwkv_lab.tokenizer_text]
+- [x] [serial] Run focused Rust/Nix and Cairn validation, lock exact tokenizer/text evidence, sync the requirement, archive the change, and preserve hardware/framework/performance exclusions. r[onix.tenstorrent.native_runtime.rwkv_lab.tokenizer_text]
