@@ -11,6 +11,9 @@
 let
   commandName = "wkv7-rwkv-boundary";
   fixtureFilename = "ttwkv7-boundary.json";
+  recoveryAttemptOrdinal = "2";
+  recoverySessionId = "rwkv-ttwkv7-boundary-device-${recoveryAttemptOrdinal}";
+  recoveryRunRoot = "/var/tmp/${recoverySessionId}";
   runtimeExecutable = "${ttwkv7}/bin/wkv7";
   expectedFixtureByteCount = 420072;
   expectedFixtureBlake3 = "731f44866c869300ca330f703f1adad4c3ae7ee62b832fa881a6bf4ea90211cd";
@@ -30,7 +33,7 @@ in
 # r[impl onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_boundary_device_harness]
 stdenvNoCC.mkDerivation {
   pname = "rwkv-ttwkv7-boundary-device";
-  version = "0.1.0";
+  version = "0.2.0";
 
   dontUnpack = true;
   nativeBuildInputs = [
@@ -61,7 +64,9 @@ stdenvNoCC.mkDerivation {
       --replace-fail '@packagePath@' "$out" \
       --replace-fail '@kernelPath@' ${lib.escapeShellArg "${ttwkv7}/share/ttwkv7/kernels"} \
       --replace-fail '@executablePath@' "$wrapper_path" \
-      --replace-fail '@ownerControlPath@' ${lib.escapeShellArg ownerControlExecutable}
+      --replace-fail '@ownerControlPath@' ${lib.escapeShellArg ownerControlExecutable} \
+      --replace-fail '@sessionId@' ${lib.escapeShellArg recoverySessionId} \
+      --replace-fail '@runRoot@' ${lib.escapeShellArg recoveryRunRoot}
     nickel export --format json "$session_root/session-plan.ncl" >"$session_root/manifest.json"
     rwkv-lab check "$session_root/manifest.json" >"$session_root/plan-receipt.json"
     plan_id="$(rwkv-lab plan-id "$session_root/manifest.json")"
@@ -209,7 +214,8 @@ stdenvNoCC.mkDerivation {
     grep -F '"outcome": "not_run"' "$session_root/not-run-receipt.json"
     grep -F '"process_budget_exhausted": false' "$session_root/not-run-receipt.json"
     grep -F '"success_claim": null' "$session_root/not-run-receipt.json"
-    grep -F '"session_id": "rwkv-ttwkv7-boundary-device-1"' "$session_root/plan-receipt.json"
+    grep -F ${lib.escapeShellArg "\"session_id\": \"${recoverySessionId}\""} "$session_root/plan-receipt.json"
+    grep -F ${lib.escapeShellArg "\"run_root\": \"${recoveryRunRoot}\""} "$session_root/plan-receipt.json"
     grep -F '"stage": "operator"' "$session_root/plan-receipt.json"
     grep -F '"max_processes": 1' "$session_root/plan-receipt.json"
     grep -F '"physical_device": 1' "$session_root/plan-receipt.json"

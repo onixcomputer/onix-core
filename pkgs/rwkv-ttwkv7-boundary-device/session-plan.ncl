@@ -5,10 +5,12 @@ let timeout_kill_grace_seconds = 10 in
 let independent_rollback_delay_seconds = 1200 in
 let owner_expected_health_status = 200 in
 let inspector_port = 43147 in
+let recovery_session_id = "@sessionId@" in
+let recovery_run_root = "@runRoot@" in
 
 {
   schema_version = 1,
-  session_id = "rwkv-ttwkv7-boundary-device-1",
+  session_id = recovery_session_id,
   stage = "operator",
   target = {
     package_path = "@packagePath@",
@@ -24,9 +26,9 @@ let inspector_port = 43147 in
     owner_control_path = "@ownerControlPath@",
   },
   runtime = {
-    run_root = "/var/tmp/rwkv-ttwkv7-boundary-device-1",
-    cache_path = "/var/tmp/rwkv-ttwkv7-boundary-device-1/cache",
-    logs_path = "/var/tmp/rwkv-ttwkv7-boundary-device-1/logs",
+    run_root = recovery_run_root,
+    cache_path = "%{recovery_run_root}/cache",
+    logs_path = "%{recovery_run_root}/logs",
     inspector_address = "127.0.0.1:%{inspector_port}",
   },
   budget = {

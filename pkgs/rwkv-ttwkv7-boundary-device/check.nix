@@ -3,6 +3,7 @@
   runCommand,
   closureInfo,
   b3sum,
+  nickel,
   boundaryDevice,
   ttwkv7,
 }:
@@ -16,11 +17,13 @@ let
   wrapper = "${boundaryDevice}/bin/wkv7-rwkv-boundary";
   planReceipt = "${boundaryDevice}/share/rwkv-ttwkv7-boundary-device/session/plan-receipt.json";
   notRunReceipt = "${boundaryDevice}/share/rwkv-ttwkv7-boundary-device/session/not-run-receipt.json";
+  preflightReceiptSource = ./preflight-attempt-1.ncl;
   expectedFixtureByteCount = 420072;
   expectedFixtureBlake3 = "731f44866c869300ca330f703f1adad4c3ae7ee62b832fa881a6bf4ea90211cd";
   expectedSelfTestBlake3 = "c1b6b14a04acb3aca238a2ae77854a22701d70da1ffcc2e9efee9f852048d6e8";
-  expectedPlanReceiptBlake3 = "f67d0ec34a6b67f3a887d1c9c57134d165f6f74fb811b65aecda89068bdd5e89";
-  expectedNotRunReceiptBlake3 = "a7169162e27db4a98b6b3cca834f1e601739ccd7c7398ad49ccd32bc09f38190";
+  expectedPlanReceiptBlake3 = "307efa0052ae9b5b003d7c6026ba0340e527cbea4a6e057bfa70df84c53e0291";
+  expectedNotRunReceiptBlake3 = "d2c21fd3646654ce1045e22cc43ccf7c093aa14f32de5fc132879377acd455bd";
+  expectedPreflightReceiptBlake3 = "ff37d0a0f54d9c99c373d2815613acb9d02f1c6d230146755e2f6cbe34ec5e69";
   expectedRunnerBlake3 = "29ecf61ab7333b4fabcf3ea2d13855bd0280a6dad5d695d749c2a1f3430dc370";
   expectedBoundaryCoreBlake3 = "e644934c561be74c852e6e223f8a25e2564e1cdeda165c2a7570efa378de8b20";
   expectedDecodeReaderBlake3 = "221a9e9cb987902e99e4e50bfe5dce2d9f44a5252720b5d3dcbd13fbadb85fca";
@@ -38,7 +41,10 @@ in
 # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_boundary_device_harness]
 runCommand "rwkv-ttwkv7-boundary-device-check"
   {
-    nativeBuildInputs = [ b3sum ];
+    nativeBuildInputs = [
+      b3sum
+      nickel
+    ];
   }
   ''
     set -euo pipefail
@@ -82,6 +88,21 @@ runCommand "rwkv-ttwkv7-boundary-device-check"
     test "$(b3sum ${lib.escapeShellArg notRunReceipt} | cut -d' ' -f1)" = \
       ${lib.escapeShellArg expectedNotRunReceiptBlake3}
 
+    nickel export --format json ${preflightReceiptSource} >preflight-attempt-1.json
+    test "$(b3sum preflight-attempt-1.json | cut -d' ' -f1)" = \
+      ${lib.escapeShellArg expectedPreflightReceiptBlake3}
+    grep -F '"outcome": "not_run"' preflight-attempt-1.json
+    grep -F '"process_attempts": 0' preflight-attempt-1.json
+    grep -F '"owner_isolation_attempts": 0' preflight-attempt-1.json
+    grep -F '"device_path_metadata_checked": true' preflight-attempt-1.json
+    grep -F '"board_queried": false' preflight-attempt-1.json
+    grep -F '"device_opened": false' preflight-attempt-1.json
+    grep -F '"metalium_initialized": false' preflight-attempt-1.json
+    grep -F '"kernel_executed": false' preflight-attempt-1.json
+    grep -F '"device_process_started": false' preflight-attempt-1.json
+    grep -F ${lib.escapeShellArg "\"observed_fingerprint\": \"SHA256:DOOddCNRRRqCVbueQZovbR8Q//NwYeeMCaznz+GqxQE\""} \
+      preflight-attempt-1.json
+
     ${lib.escapeShellArg wrapper} self-test >self-test.json
     test "$(b3sum self-test.json | cut -d' ' -f1)" = \
       ${lib.escapeShellArg expectedSelfTestBlake3}
@@ -95,6 +116,7 @@ runCommand "rwkv-ttwkv7-boundary-device-check"
     cp self-test.json "$out/self-test.json"
     cp ${lib.escapeShellArg planReceipt} "$out/plan-receipt.json"
     cp ${lib.escapeShellArg notRunReceipt} "$out/not-run-receipt.json"
+    cp preflight-attempt-1.json "$out/preflight-attempt-1.json"
     printf '%s\n' \
       "{" \
       "  \"boundary_closure_path_count\": ${toString boundaryClosurePathCount}," \
@@ -102,6 +124,7 @@ runCommand "rwkv-ttwkv7-boundary-device-check"
       "  \"fixture_blake3\": \"${expectedFixtureBlake3}\"," \
       "  \"not_run_receipt_blake3\": \"$not_run_receipt_blake3\"," \
       "  \"ordinary_closure_path_count\": ${toString ordinaryClosurePathCount}," \
+      "  \"preflight_attempt_1_blake3\": \"${expectedPreflightReceiptBlake3}\"," \
       "  \"plan_receipt_blake3\": \"$plan_receipt_blake3\"," \
       "  \"self_test_blake3\": \"$self_test_blake3\"," \
       "  \"target\": \"rwkv_ttwkv7_boundary_device_readiness\"" \
