@@ -3,6 +3,7 @@
   cmake,
   ninja,
   fmt,
+  libblake3,
   nlohmann_json,
   spdlog,
   enchantum,
@@ -19,11 +20,14 @@ stdenv.mkDerivation {
   patches = [
     ./use-installed-metalium.patch
     ./support-checkpoint-host-shape.patch
+    ./share-checkpoint-host-layout.patch
   ];
 
   postPatch = ''
     cp ${./constant-tile-probe.cpp} constant-tile-probe.cpp
     cp ${./data-movement-probe.cpp} data-movement-probe.cpp
+    cp ${./rwkv-host-layout-validator.cpp} rwkv-host-layout-validator.cpp
+    cp ${./ttwkv7-host-layout.h} ttwkv7-host-layout.h
     cp wkv7_runner.cpp "$TMPDIR/ttwkv7-patched-wkv7-runner.cpp"
   '';
 
@@ -35,6 +39,7 @@ stdenv.mkDerivation {
   buildInputs = [
     enchantum
     fmt
+    libblake3
     nlohmann_json
     spdlog
     tt-logger
@@ -45,8 +50,11 @@ stdenv.mkDerivation {
     rm -rf "$out/share"
     mkdir -p "$out/share/ttwkv7/source"
     cp "$TMPDIR/ttwkv7-patched-wkv7-runner.cpp" "$out/share/ttwkv7/source/wkv7_runner.cpp"
+    cp ${./rwkv-host-layout-validator.cpp} "$out/share/ttwkv7/source/rwkv-host-layout-validator.cpp"
+    cp ${./ttwkv7-host-layout.h} "$out/share/ttwkv7/source/ttwkv7-host-layout.h"
     test -x "$out/libexec/ttwkv7/wkv7"
     test -x "$out/libexec/ttwkv7/wkv7-constant-probe"
     test -x "$out/libexec/ttwkv7/wkv7-data-movement-probe"
+    test -x "$out/libexec/ttwkv7/wkv7-rwkv-host-layout-validator"
   '';
 }

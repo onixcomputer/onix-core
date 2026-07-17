@@ -18,6 +18,7 @@ let
   diagnosticRuntimeExecutable = "$out/libexec/ttwkv7/wkv7-diagnostic-runtime";
   dataMovementExecutable = "$out/libexec/ttwkv7/wkv7-data-movement-probe";
   dataMovementRuntimeExecutable = "$out/libexec/ttwkv7/wkv7-data-movement-runtime";
+  rwkvHostLayoutExecutable = "$out/libexec/ttwkv7/wkv7-rwkv-host-layout-validator";
   primaryCommand = "wkv7";
   aliasCommand = "ttwkv7";
   probeCommand = "wkv7-constant-probe";
@@ -63,7 +64,7 @@ let
   checkpointShapeUnexpectedArgumentDiagnostic = "unexpected argument suffix";
   checkpointShapeSource = "wkv7_runner.cpp";
   checkpointShapeHeadTileExpression = "ceil_div_u32(head_count, TH)";
-  checkpointShapePaddingExpression = "tilize(block, shape.padded_head_count, shape.head_size)";
+  checkpointShapePaddingExpression = "ttwkv7::host_layout::build_native_input(";
   checkpointShapeWorkExpression = "chunked_work_unit_count(IC)";
   checkpointShapeClampedEndExpression = "units_done, units_here, IC, unit_to_inst";
   checkpointShapeUnclampedEndExpression = "units_done, units_here, std::numeric_limits<uint32_t>::max(), unit_to_inst";
@@ -71,7 +72,7 @@ let
   checkpointShapeModeExpression = "if (mode == \"shape-test\")";
   checkpointShapeDeviceExpression = "MeshDevice::create_unit_mesh";
   checkpointShapeFloorHeadTileExpression = "head_count / TH";
-  checkpointShapeUnpaddedExpression = "tilize(block, shape.head_count, shape.head_size)";
+  checkpointShapeUnpaddedExpression = "ttwkv7::host_layout::build_unpadded_input(";
   checkpointShapeFloorWorkExpression = "(IC / NBg)";
   checkpointShapeCoercingParserExpression = "std::atoi";
   invalidMode = "invalid-mode";
@@ -164,6 +165,7 @@ stdenvNoCC.mkDerivation {
     ln -s ${binaries}/libexec/ttwkv7/wkv7 ${packageExecutable}
     ln -s ${binaries}/libexec/ttwkv7/wkv7-constant-probe ${probeExecutable}
     ln -s ${binaries}/libexec/ttwkv7/wkv7-data-movement-probe ${dataMovementExecutable}
+    ln -s ${binaries}/libexec/ttwkv7/wkv7-rwkv-host-layout-validator ${rwkvHostLayoutExecutable}
     ln -s ${kernels}/share/ttwkv7/kernels ${packageKernelDirectory}
     ln -s ${binaries}/share/ttwkv7/source ${packageSourceDirectory}
 
@@ -216,7 +218,10 @@ stdenvNoCC.mkDerivation {
     test -x ${diagnosticRuntimeExecutable}
     test -x ${dataMovementExecutable}
     test -x ${dataMovementRuntimeExecutable}
+    test -x ${rwkvHostLayoutExecutable}
     test -f "${packageSourceDirectory}/${checkpointShapeSource}"
+    test -f "${packageSourceDirectory}/rwkv-host-layout-validator.cpp"
+    test -f "${packageSourceDirectory}/ttwkv7-host-layout.h"
 
     # Positive and negative checkpoint-shape coverage for
     # r[verify onix.tenstorrent.native_runtime.ttwkv7.checkpoint_shape].

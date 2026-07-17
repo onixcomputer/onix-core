@@ -19,6 +19,9 @@ let
     inherit (tenstorrentPackages) enchantum tt-logger;
     inherit (tenstorrentPackages) tt-metal;
   };
+  rwkvTtwkv7HostLayoutCheck = ttwkv7Pkgs.callPackage ../pkgs/ttwkv7/rwkv-host-layout-check.nix {
+    inherit rwkvLayerHarness ttwkv7;
+  };
 in
 {
   packages = lib.optionalAttrs isSupportedSystem {
@@ -40,5 +43,7 @@ in
     rwkv-layer-framework-parity = rwkvLayerHarness.passthru.frameworkParityCheck;
     # r[verify onix.tenstorrent.native_runtime.ttwkv7.fast_iteration]
     ttwkv7-architectures = ttwkv7.passthru.architectureCheck;
+    # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_host_layout]
+    rwkv-ttwkv7-host-layout = rwkvTtwkv7HostLayoutCheck;
   };
 }
