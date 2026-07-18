@@ -1,8 +1,8 @@
 mod observed_layer;
 
 pub use observed_layer::{
-    Ttwkv7ObservedLayerEvidence, Ttwkv7ObservedLayerReplayReceipt,
-    run_ttwkv7_observed_layer_checkpoint,
+    Ttwkv7ObservedLayerEvidence, Ttwkv7ObservedLayerReplayReceipt, Ttwkv7ObservedStateCarryReceipt,
+    run_ttwkv7_observed_layer_checkpoint, run_ttwkv7_observed_state_carry_checkpoint,
 };
 
 use half::bf16;
@@ -448,6 +448,8 @@ struct LayerSuffixOutput {
 struct SequenceResult {
     final_output: Vec<f32>,
     final_state: Vec<f32>,
+    final_attention_previous: Vec<f32>,
+    final_ffn_previous: Vec<f32>,
     second_pre_state: Vec<f32>,
     second_preparation: TimeMixPreparation,
     second_residual: Vec<f32>,
@@ -3384,6 +3386,8 @@ fn run_sequence(
     Ok(SequenceResult {
         final_output,
         final_state: state.matrix,
+        final_attention_previous: state.attention_previous,
+        final_ffn_previous: state.ffn_previous,
         second_pre_state,
         second_preparation,
         second_residual,

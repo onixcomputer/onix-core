@@ -181,6 +181,27 @@ let
   expectedSourceAttentionBlake3 = "f6f21abaf40152a89d54287b32b5e1da316c2b21432def1cf918006ba3b87763";
   expectedObservedFinalVsExpectedDeviation = "0.0017949939";
   expectedObservedFinalVsSourceDeviation = "0.00022334047";
+  expectedStateCarryReplayBlake3 = "58e433a04a10319293b18d6003659b53a04a95e9cf9cc7b540c2448c98ed6a33";
+  expectedStateCarrySourcePostStateBlake3 = "04adbbbeddffa682c5be3d10b450791542977e498672778d097cf43451736cce";
+  expectedStateCarrySourceFinalBlake3 = "1044e5f1eec226adb0e4b3e623e7a92861328776350c7f8eba4555a23502df13";
+  expectedStateCarryBf16PostStateBlake3 = "8e61bb8af9d99296632933c93152af67bce8cf9a7846781f8025d656b0580cec";
+  expectedStateCarryBf16FinalBlake3 = "68fb5eea444a7f27ca9bcdfa4ea99fffb7f609ed6f14dcf9b2aa6f0cefb59c1f";
+  expectedStateCarryObservedPreStateBlake3 = "f8c894bac89637de0885f6fb351b7b21dbfcaa7a6f665d22fd0d27838de0257c";
+  expectedStateCarryObservedRawBlake3 = "cc9b373258d7a49b44e1ab3d2f2d06853b549f8b72acc0f007a4d591005921e5";
+  expectedStateCarryObservedPostStateBlake3 = "e6069234ca935f70dcc8278876fb15cbacc0e374b52e6f33efa5482b5daba7bc";
+  expectedStateCarryObservedFinalBlake3 = "67a0a53d12921095d47995f4a4845543c8e00e569e6f94c1b43fc5a451a2b39d";
+  expectedStateCarryResetPostStateBlake3 = "69e597e791c859bb35808620efd6a166047b8b1e0e0844e8dd06c4dcecd85797";
+  expectedStateCarryResetFinalBlake3 = "1f32242632bab3ff85bc73c0eb4c4ec431c706096e8383e6d3d0ddaea401fb5e";
+  expectedStateCarryTransposedPreStateBlake3 = "ca779160e627b05b2013b19e61bab1d75c2ac3647cd92711331113d71a5ef805";
+  expectedStateCarryTransposedPostStateBlake3 = "2d1b67ccc063338d4b5df3b829cd5da8bd2ff4487b7a04858e1ec0d54fc3bc8f";
+  expectedStateCarryTransposedFinalBlake3 = "ad2d12f70ce5f1e096c3e4db857ab1aa7712e008d84a43521f7942ec9cc96af3";
+  expectedStateCarryObservedVsExpectedRawDeviation = "0.00024414062";
+  expectedStateCarryObservedVsExpectedStateDeviation = "0.0078125";
+  expectedStateCarryObservedVsExpectedFinalDeviation = "0.00032252073";
+  expectedStateCarryResetStateDivergence = "1.1815033";
+  expectedStateCarryResetOutputDivergence = "1.3526523";
+  expectedStateCarryTransposedStateDivergence = "1.2164612";
+  expectedStateCarryTransposedOutputDivergence = "1.3400576";
   observedOutputByteCount = 1536;
   observedPostStateByteCount = 98304;
   writerRawByteCount = 147456;
@@ -354,7 +375,7 @@ let
         expect_failure 'writer raw BF16 BLAKE3 mismatch' \
           changed-writer.log "$replay" --evidence-root "$changed_root"
 
-        test "$(grep -Fc 'wkv_step_matrix(' ${./src/observed_layer.rs})" -eq 1
+        test "$(grep -Fc 'wkv_step_matrix(' ${./src/observed_layer.rs})" -eq 2
         if grep -E 'std::process::Command|Command::new|MeshDevice|EnqueueMeshWorkload|TT_VISIBLE_DEVICES|tt-smi' \
           ${./src/observed_layer.rs} ${./src/bin/rwkv-ttwkv7-observed-layer.rs}; then
           echo "observed-layer replay contains a process or device execution surface" >&2
@@ -365,6 +386,121 @@ let
 
         cp replay-first.json "$out/receipt.json"
         cp typed-evidence.json "$out/evidence.json"
+      '';
+  stateCarryCheck =
+    runCommand "rwkv-ttwkv7-observed-state-carry"
+      {
+        nativeBuildInputs = [ b3sum ];
+      }
+      ''
+        set -euo pipefail
+        mkdir -p "$out"
+        replay=${package}/bin/rwkv-ttwkv7-observed-layer
+        carry=${package}/bin/rwkv-ttwkv7-observed-state-carry
+        evidence=${observedEvidenceRoot}
+
+        "$replay" --evidence-root "$evidence" >observed-layer.json
+        test "$(b3sum observed-layer.json | cut -d' ' -f1)" = \
+          ${lib.escapeShellArg expectedObservedReplayBlake3}
+
+        "$carry" --evidence-root "$evidence" >carry-first.json
+        "$carry" --evidence-root "$evidence" >carry-second.json
+        cmp carry-first.json carry-second.json
+        test "$(b3sum carry-first.json | cut -d' ' -f1)" = \
+          ${lib.escapeShellArg expectedStateCarryReplayBlake3}
+        grep -F '"target": "rwkv_ttwkv7_observed_state_carry"' carry-first.json
+        grep -F '"token_ids": [' carry-first.json
+        grep -F '"observed_layer_receipt_blake3": "${expectedObservedReplayBlake3}"' \
+          carry-first.json
+        grep -F '"terminal_session_outcome": "unsafe"' carry-first.json
+        grep -F '"evidence_bundle_blake3": "${expectedObservedEvidenceBundleBlake3}"' \
+          carry-first.json
+        grep -F '"physical_seed_post_state_blake3": "b3321aeb38963fb96a720ae33d9477e8fbfb83b3750213abc64786885d3771a9"' \
+          carry-first.json
+        test "$(grep -Fc '"wkv_executor": "cpu_matrix_recurrence"' carry-first.json)" -eq 5
+        test "$(grep -Fc '"transport_precision": "bf16_round_trip_around_cpu_fp32"' carry-first.json)" -eq 4
+        for expected_blake3 in \
+          ${
+            lib.escapeShellArgs [
+              expectedStateCarrySourcePostStateBlake3
+              expectedStateCarrySourceFinalBlake3
+              expectedStateCarryBf16PostStateBlake3
+              expectedStateCarryBf16FinalBlake3
+              expectedStateCarryObservedPreStateBlake3
+              expectedStateCarryObservedRawBlake3
+              expectedStateCarryObservedPostStateBlake3
+              expectedStateCarryObservedFinalBlake3
+              expectedStateCarryResetPostStateBlake3
+              expectedStateCarryResetFinalBlake3
+              expectedStateCarryTransposedPreStateBlake3
+              expectedStateCarryTransposedPostStateBlake3
+              expectedStateCarryTransposedFinalBlake3
+            ]
+          }; do
+          grep -F "\"blake3\": \"$expected_blake3\"" carry-first.json
+        done
+        grep -F '"observed_raw_output_vs_expected_bf16": ${expectedStateCarryObservedVsExpectedRawDeviation}' \
+          carry-first.json
+        grep -F '"observed_post_state_vs_expected_bf16": ${expectedStateCarryObservedVsExpectedStateDeviation}' \
+          carry-first.json
+        grep -F '"observed_final_layer_output_vs_expected_bf16": ${expectedStateCarryObservedVsExpectedFinalDeviation}' \
+          carry-first.json
+        grep -F '"observed_post_state_vs_reset_state": ${expectedStateCarryResetStateDivergence}' \
+          carry-first.json
+        grep -F '"observed_final_layer_output_vs_reset_state": ${expectedStateCarryResetOutputDivergence}' \
+          carry-first.json
+        grep -F '"observed_post_state_vs_transposed_state": ${expectedStateCarryTransposedStateDivergence}' \
+          carry-first.json
+        grep -F '"observed_final_layer_output_vs_transposed_state": ${expectedStateCarryTransposedOutputDivergence}' \
+          carry-first.json
+        grep -F 'The next recurrent WKV step is executed by the CPU equation, not physical hardware.' \
+          carry-first.json
+        grep -F 'No hardware-backed token generation is established.' carry-first.json
+
+        expect_failure() {
+          expected_diagnostic="$1"
+          output_path="$2"
+          shift 2
+          if "$@" >"$output_path" 2>&1; then
+            echo "state-carry negative command unexpectedly passed: $*" >&2
+            exit 1
+          fi
+          grep -F "$expected_diagnostic" "$output_path"
+        }
+
+        expect_failure 'usage: rwkv-ttwkv7-observed-state-carry --evidence-root PATH' \
+          missing-arguments.log "$carry"
+        expect_failure 'usage: rwkv-ttwkv7-observed-state-carry --evidence-root PATH' \
+          extra-arguments.log "$carry" --evidence-root "$evidence" unexpected
+        expect_failure 'usage: rwkv-ttwkv7-observed-state-carry --evidence-root PATH' \
+          reordered-arguments.log "$carry" "$evidence" --evidence-root
+
+        changed_root="$(mktemp -d)"
+        cp -R "$evidence/." "$changed_root/"
+        chmod -R u+w "$changed_root"
+        printf '\n' >>"$changed_root/classification-receipt.json"
+        expect_failure 'classification receipt BLAKE3 mismatch' \
+          changed-classification.log "$carry" --evidence-root "$changed_root"
+
+        rm -rf "$changed_root"
+        changed_root="$(mktemp -d)"
+        cp -R "$evidence/." "$changed_root/"
+        chmod -R u+w "$changed_root"
+        printf 'x' | dd of="$changed_root/observed-post-state.bf16" \
+          bs=1 seek=0 conv=notrunc status=none
+        expect_failure 'observed post-state BF16 BLAKE3 mismatch' \
+          changed-state.log "$carry" --evidence-root "$changed_root"
+
+        test ! -e ${package}/share/rwkv-layer-harness/ttwkv7-device-2
+        if grep -E 'std::process::Command|Command::new|MeshDevice|EnqueueMeshWorkload|TT_VISIBLE_DEVICES|tt-smi' \
+          ${./src/observed_layer.rs} ${./src/bin/rwkv-ttwkv7-observed-state-carry.rs}; then
+          echo "state-carry replay contains a process or device execution surface" >&2
+          exit 1
+        fi
+        test "$(grep -Fc 'wkv_step_matrix(' ${./src/observed_layer.rs})" -eq 2
+        test "$(grep -Fc 'next[index] = state[index]' ${./src/lib.rs})" -eq 1
+
+        cp carry-first.json "$out/receipt.json"
       '';
   package = rustPlatform.buildRustPackage {
     pname = "rwkv-layer-harness";
@@ -670,6 +806,7 @@ let
         flaRwkv7Source
         frameworkParityCheck
         observedLayerReplayCheck
+        stateCarryCheck
         generationConfig
         hfModelingSource
         model

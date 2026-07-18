@@ -66,6 +66,8 @@ in
     rwkv-layer-framework-parity = rwkvLayerHarness.passthru.frameworkParityCheck;
     # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_layer_replay]
     rwkv-ttwkv7-observed-layer = rwkvLayerHarness.passthru.observedLayerReplayCheck;
+    # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_state_carry]
+    rwkv-ttwkv7-observed-state-carry = rwkvLayerHarness.passthru.stateCarryCheck;
     # r[verify onix.tenstorrent.native_runtime.ttwkv7.fast_iteration]
     ttwkv7-architectures = ttwkv7.passthru.architectureCheck;
     # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_host_layout]

@@ -102,6 +102,23 @@ const OBSERVED_NON_CLAIMS: [&str; 8] = [
     "No serving, throughput, or latency claim is established.",
     "No new hardware execution is authorized by this replay.",
 ];
+const STATE_CARRY_TARGET: &str = "rwkv_ttwkv7_observed_state_carry";
+const STATE_CARRY_TOKEN_COUNT: usize = 3;
+const STATE_CARRY_OBSERVED_RECEIPT_BLAKE3: &str =
+    "0f2e08a9966672ab8d076ec2a601e336c0e0022ea4af023e472a7bbc05ba6d18";
+const STATE_CARRY_RESET_STATE_DIVERGENCE_FLOOR: f32 = 1.0e-7;
+const STATE_CARRY_RESET_OUTPUT_DIVERGENCE_FLOOR: f32 = 1.0e-7;
+const STATE_CARRY_NON_CLAIMS: [&str; 9] = [
+    "The terminal rwkv-lab session remains unsafe and is not reclassified.",
+    "The next recurrent WKV step is executed by the CPU equation, not physical hardware.",
+    "BF16 transport emulation does not establish a physical next-step WKV execution.",
+    "No complete RWKV layer ran wholly on a Tenstorrent device.",
+    "No all-layer retained-state execution is established.",
+    "No hardware-backed token generation is established.",
+    "No general P150 compatibility is established.",
+    "No serving, throughput, or latency claim is established.",
+    "No new hardware execution is authorized by this replay.",
+];
 
 pub struct Ttwkv7ObservedLayerEvidence<'a> {
     pub classification_receipt: &'a [u8],
@@ -199,6 +216,71 @@ pub struct Ttwkv7ObservedLayerReplayReceipt {
     pub expected_bf16_boundary: ObservedLayerPathReceipt,
     pub observed_device: ObservedLayerPathReceipt,
     pub maximum_absolute_deviations: ObservedLayerDeviationReceipt,
+    pub non_claims: Vec<&'static str>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct StateCarryWkvInputReceipt {
+    pub r: NumericReceipt,
+    pub w: NumericReceipt,
+    pub k: NumericReceipt,
+    pub v: NumericReceipt,
+    pub a: NumericReceipt,
+    pub b: NumericReceipt,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct StateCarryPathReceipt {
+    pub wkv_executor: &'static str,
+    pub transport_precision: &'static str,
+    pub seed_attention_previous: NumericReceipt,
+    pub seed_ffn_previous: NumericReceipt,
+    pub wkv_inputs: StateCarryWkvInputReceipt,
+    pub pre_state: NumericReceipt,
+    pub raw_wkv_output: NumericReceipt,
+    pub post_state: NumericReceipt,
+    pub attention_output: NumericReceipt,
+    pub ffn_input: NumericReceipt,
+    pub final_layer_output: NumericReceipt,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct StateCarryDeviationReceipt {
+    pub expected_raw_output_vs_source_fp32: f32,
+    pub observed_raw_output_vs_expected_bf16: f32,
+    pub observed_raw_output_vs_source_fp32: f32,
+    pub expected_post_state_vs_source_fp32: f32,
+    pub observed_post_state_vs_expected_bf16: f32,
+    pub observed_post_state_vs_source_fp32: f32,
+    pub expected_final_layer_output_vs_source_fp32: f32,
+    pub observed_final_layer_output_vs_expected_bf16: f32,
+    pub observed_final_layer_output_vs_source_fp32: f32,
+    pub observed_post_state_vs_reset_state: f32,
+    pub observed_final_layer_output_vs_reset_state: f32,
+    pub observed_post_state_vs_transposed_state: f32,
+    pub observed_final_layer_output_vs_transposed_state: f32,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct Ttwkv7ObservedStateCarryReceipt {
+    pub schema_version: u32,
+    pub target: &'static str,
+    pub model: ModelReceipt,
+    pub dimensions: Dimensions,
+    pub layer_index: usize,
+    pub token_ids: [usize; STATE_CARRY_TOKEN_COUNT],
+    pub observed_layer_receipt_blake3: String,
+    pub terminal_session_outcome: &'static str,
+    pub evidence_bundle_blake3: String,
+    pub physical_seed_post_state_blake3: &'static str,
+    pub source_fp32: StateCarryPathReceipt,
+    pub expected_bf16_boundary: StateCarryPathReceipt,
+    pub observed_physical_state_cpu_continuation: StateCarryPathReceipt,
+    pub reset_state_control: StateCarryPathReceipt,
+    pub transposed_state_control: StateCarryPathReceipt,
+    pub maximum_absolute_deviations: StateCarryDeviationReceipt,
+    pub reset_state_divergence_floor: f32,
+    pub reset_output_divergence_floor: f32,
     pub non_claims: Vec<&'static str>,
 }
 
@@ -593,6 +675,435 @@ pub fn run_ttwkv7_observed_layer_checkpoint(
         maximum_absolute_deviations: deviations,
         non_claims: OBSERVED_NON_CLAIMS.to_vec(),
     })
+}
+
+#[derive(Clone, Copy, Debug)]
+enum StateCarryArithmetic {
+    SourceFp32,
+    Bf16Transport,
+}
+
+#[derive(Clone, Debug)]
+struct StateCarrySeed {
+    attention_previous: Vec<f32>,
+    ffn_previous: Vec<f32>,
+    matrix: Vec<f32>,
+}
+
+#[derive(Clone, Debug)]
+struct StateCarryStep {
+    seed: StateCarrySeed,
+    consumed_inputs: WkvInputs,
+    consumed_pre_state: Vec<f32>,
+    raw_wkv_output: Vec<f32>,
+    post_state: Vec<f32>,
+    attention_output: Vec<f32>,
+    ffn_input: Vec<f32>,
+    final_layer_output: Vec<f32>,
+    arithmetic: StateCarryArithmetic,
+}
+
+// r[impl onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_state_carry]
+pub fn run_ttwkv7_observed_state_carry_checkpoint(
+    checkpoint: &[u8],
+    expected_model_blake3: &str,
+    evidence: &Ttwkv7ObservedLayerEvidence<'_>,
+) -> Result<Ttwkv7ObservedStateCarryReceipt, String> {
+    let observed_layer =
+        run_ttwkv7_observed_layer_checkpoint(checkpoint, expected_model_blake3, evidence)?;
+    let observed_layer_receipt_blake3 = canonical_receipt_blake3(&observed_layer)?;
+    if observed_layer_receipt_blake3 != STATE_CARRY_OBSERVED_RECEIPT_BLAKE3 {
+        return Err(format!(
+            "accepted observed-layer receipt identity changed: expected {STATE_CARRY_OBSERVED_RECEIPT_BLAKE3}, found {observed_layer_receipt_blake3}"
+        ));
+    }
+
+    let tensors = SafeTensors::deserialize(checkpoint)
+        .map_err(|error| format!("failed to decode safetensors checkpoint: {error}"))?;
+    let dimensions = Dimensions::reviewed();
+    let weights = load_layer_zero(&tensors, dimensions)?;
+    let embedding = tensors
+        .tensor("model.embeddings.weight")
+        .map_err(|error| format!("missing model.embeddings.weight: {error}"))?;
+    let model_config_bos = embedding_row(
+        &embedding,
+        MODEL_CONFIG_BOS_TOKEN_ID,
+        dimensions.hidden_size,
+    )?;
+    let model_config_eos = embedding_row(
+        &embedding,
+        MODEL_CONFIG_EOS_TOKEN_ID,
+        dimensions.hidden_size,
+    )?;
+    let source = run_sequence(&weights, [&model_config_bos, &model_config_eos])?;
+    let expected_second = expected_boundary_values(&source, dimensions)?;
+    let observed_second_raw = decode_bf16_bytes(
+        evidence.observed_output_bf16,
+        "observed device raw WKV output",
+    )?;
+    let observed_second_state = decode_bf16_bytes(
+        evidence.observed_post_state_bf16,
+        "observed device post-state",
+    )?;
+
+    let source_second_attention = finish_time_mix_attention(
+        &weights,
+        &source.second_preparation,
+        &source.second_raw_output,
+    )?;
+    let expected_second_attention = finish_time_mix_attention(
+        &weights,
+        &source.second_preparation,
+        &expected_second.raw_output,
+    )?;
+    let observed_second_attention =
+        finish_time_mix_attention(&weights, &source.second_preparation, &observed_second_raw)?;
+    let source_second_suffix = finish_layer_suffix(
+        &weights,
+        &source.second_residual,
+        &source_second_attention,
+        &source.second_ffn_previous,
+    )?;
+    let expected_second_suffix = finish_layer_suffix(
+        &weights,
+        &source.second_residual,
+        &expected_second_attention,
+        &source.second_ffn_previous,
+    )?;
+    let observed_second_suffix = finish_layer_suffix(
+        &weights,
+        &source.second_residual,
+        &observed_second_attention,
+        &source.second_ffn_previous,
+    )?;
+    let source_host_state_deviation =
+        max_abs_difference(&source.final_ffn_previous, &source_second_suffix.ffn_input)?;
+    if source_host_state_deviation != ZERO_DEVIATION {
+        return Err(format!(
+            "source final channel state changed under suffix replay by {source_host_state_deviation}"
+        ));
+    }
+
+    let source_seed = StateCarrySeed {
+        attention_previous: source.final_attention_previous.clone(),
+        ffn_previous: source.final_ffn_previous.clone(),
+        matrix: source.final_state.clone(),
+    };
+    let expected_seed = StateCarrySeed {
+        attention_previous: source.final_attention_previous.clone(),
+        ffn_previous: expected_second_suffix.ffn_input,
+        matrix: expected_second.post_state,
+    };
+    let observed_seed = StateCarrySeed {
+        attention_previous: source.final_attention_previous,
+        ffn_previous: observed_second_suffix.ffn_input,
+        matrix: observed_second_state,
+    };
+    let reset_seed = StateCarrySeed {
+        attention_previous: observed_seed.attention_previous.clone(),
+        ffn_previous: observed_seed.ffn_previous.clone(),
+        matrix: vec![0.0; OBSERVED_STATE_ELEMENT_COUNT],
+    };
+    let transposed_seed = StateCarrySeed {
+        attention_previous: observed_seed.attention_previous.clone(),
+        ffn_previous: observed_seed.ffn_previous.clone(),
+        matrix: transpose_head_matrices(&observed_seed.matrix, dimensions)?,
+    };
+
+    let source_step = run_state_carry_step(
+        &weights,
+        &model_config_eos,
+        source_seed,
+        StateCarryArithmetic::SourceFp32,
+    )?;
+    let expected_step = run_state_carry_step(
+        &weights,
+        &model_config_eos,
+        expected_seed,
+        StateCarryArithmetic::Bf16Transport,
+    )?;
+    let observed_step = run_state_carry_step(
+        &weights,
+        &model_config_eos,
+        observed_seed,
+        StateCarryArithmetic::Bf16Transport,
+    )?;
+    let reset_step = run_state_carry_step(
+        &weights,
+        &model_config_eos,
+        reset_seed,
+        StateCarryArithmetic::Bf16Transport,
+    )?;
+    let transposed_step = run_state_carry_step(
+        &weights,
+        &model_config_eos,
+        transposed_seed,
+        StateCarryArithmetic::Bf16Transport,
+    )?;
+
+    let deviations = StateCarryDeviationReceipt {
+        expected_raw_output_vs_source_fp32: max_abs_difference(
+            &expected_step.raw_wkv_output,
+            &source_step.raw_wkv_output,
+        )?,
+        observed_raw_output_vs_expected_bf16: max_abs_difference(
+            &observed_step.raw_wkv_output,
+            &expected_step.raw_wkv_output,
+        )?,
+        observed_raw_output_vs_source_fp32: max_abs_difference(
+            &observed_step.raw_wkv_output,
+            &source_step.raw_wkv_output,
+        )?,
+        expected_post_state_vs_source_fp32: max_abs_difference(
+            &expected_step.post_state,
+            &source_step.post_state,
+        )?,
+        observed_post_state_vs_expected_bf16: max_abs_difference(
+            &observed_step.post_state,
+            &expected_step.post_state,
+        )?,
+        observed_post_state_vs_source_fp32: max_abs_difference(
+            &observed_step.post_state,
+            &source_step.post_state,
+        )?,
+        expected_final_layer_output_vs_source_fp32: max_abs_difference(
+            &expected_step.final_layer_output,
+            &source_step.final_layer_output,
+        )?,
+        observed_final_layer_output_vs_expected_bf16: max_abs_difference(
+            &observed_step.final_layer_output,
+            &expected_step.final_layer_output,
+        )?,
+        observed_final_layer_output_vs_source_fp32: max_abs_difference(
+            &observed_step.final_layer_output,
+            &source_step.final_layer_output,
+        )?,
+        observed_post_state_vs_reset_state: max_abs_difference(
+            &observed_step.post_state,
+            &reset_step.post_state,
+        )?,
+        observed_final_layer_output_vs_reset_state: max_abs_difference(
+            &observed_step.final_layer_output,
+            &reset_step.final_layer_output,
+        )?,
+        observed_post_state_vs_transposed_state: max_abs_difference(
+            &observed_step.post_state,
+            &transposed_step.post_state,
+        )?,
+        observed_final_layer_output_vs_transposed_state: max_abs_difference(
+            &observed_step.final_layer_output,
+            &transposed_step.final_layer_output,
+        )?,
+    };
+    if deviations.observed_post_state_vs_reset_state <= STATE_CARRY_RESET_STATE_DIVERGENCE_FLOOR {
+        return Err(format!(
+            "observed post-state carry divergence {} does not exceed {}",
+            deviations.observed_post_state_vs_reset_state, STATE_CARRY_RESET_STATE_DIVERGENCE_FLOOR
+        ));
+    }
+    if deviations.observed_final_layer_output_vs_reset_state
+        <= STATE_CARRY_RESET_OUTPUT_DIVERGENCE_FLOOR
+    {
+        return Err(format!(
+            "observed output carry divergence {} does not exceed {}",
+            deviations.observed_final_layer_output_vs_reset_state,
+            STATE_CARRY_RESET_OUTPUT_DIVERGENCE_FLOOR
+        ));
+    }
+    if deviations.observed_post_state_vs_expected_bf16
+        >= deviations.observed_post_state_vs_transposed_state
+    {
+        return Err(format!(
+            "observed post-state is not closer to expected state than to transposed-state control: {} versus {}",
+            deviations.observed_post_state_vs_expected_bf16,
+            deviations.observed_post_state_vs_transposed_state
+        ));
+    }
+    if deviations.observed_final_layer_output_vs_expected_bf16
+        >= deviations.observed_final_layer_output_vs_transposed_state
+    {
+        return Err(format!(
+            "observed output is not closer to expected output than to transposed-state control: {} versus {}",
+            deviations.observed_final_layer_output_vs_expected_bf16,
+            deviations.observed_final_layer_output_vs_transposed_state
+        ));
+    }
+
+    Ok(Ttwkv7ObservedStateCarryReceipt {
+        schema_version: RECEIPT_SCHEMA_VERSION,
+        target: STATE_CARRY_TARGET,
+        model: observed_layer.model,
+        dimensions,
+        layer_index: LAYER_INDEX,
+        token_ids: [
+            MODEL_CONFIG_BOS_TOKEN_ID,
+            MODEL_CONFIG_EOS_TOKEN_ID,
+            MODEL_CONFIG_EOS_TOKEN_ID,
+        ],
+        observed_layer_receipt_blake3,
+        terminal_session_outcome: OBSERVED_SESSION_OUTCOME,
+        evidence_bundle_blake3: observed_layer.evidence.evidence_bundle_blake3,
+        physical_seed_post_state_blake3: OBSERVED_POST_STATE_BLAKE3,
+        source_fp32: state_carry_path_receipt(&source_step)?,
+        expected_bf16_boundary: state_carry_path_receipt(&expected_step)?,
+        observed_physical_state_cpu_continuation: state_carry_path_receipt(&observed_step)?,
+        reset_state_control: state_carry_path_receipt(&reset_step)?,
+        transposed_state_control: state_carry_path_receipt(&transposed_step)?,
+        maximum_absolute_deviations: deviations,
+        reset_state_divergence_floor: STATE_CARRY_RESET_STATE_DIVERGENCE_FLOOR,
+        reset_output_divergence_floor: STATE_CARRY_RESET_OUTPUT_DIVERGENCE_FLOOR,
+        non_claims: STATE_CARRY_NON_CLAIMS.to_vec(),
+    })
+}
+
+fn run_state_carry_step(
+    weights: &LayerWeights,
+    embedding: &[f32],
+    seed: StateCarrySeed,
+    arithmetic: StateCarryArithmetic,
+) -> Result<StateCarryStep, String> {
+    let dimensions = weights.dimensions;
+    require_length(embedding, dimensions.hidden_size, "state-carry embedding")?;
+    require_length(
+        &seed.attention_previous,
+        dimensions.hidden_size,
+        "state-carry attention previous",
+    )?;
+    require_length(
+        &seed.ffn_previous,
+        dimensions.hidden_size,
+        "state-carry FFN previous",
+    )?;
+    require_length(
+        &seed.matrix,
+        OBSERVED_STATE_ELEMENT_COUNT,
+        "state-carry matrix",
+    )?;
+    require_finite(&seed.attention_previous, "state-carry attention previous")?;
+    require_finite(&seed.ffn_previous, "state-carry FFN previous")?;
+    require_finite(&seed.matrix, "state-carry matrix")?;
+
+    let residual = apply_pre_norm(weights, embedding)?;
+    let attention_input = layer_norm(
+        &residual,
+        &weights.attn_norm_weight,
+        &weights.attn_norm_bias,
+        LAYER_NORM_EPSILON,
+    )?;
+    let preparation = prepare_time_mix(weights, &attention_input, &seed.attention_previous, None)?;
+    let (consumed_inputs, consumed_pre_state) = match arithmetic {
+        StateCarryArithmetic::SourceFp32 => (preparation.wkv_inputs.clone(), seed.matrix.clone()),
+        StateCarryArithmetic::Bf16Transport => (
+            quantize_wkv_inputs(&preparation.wkv_inputs)?,
+            quantize_bf16_values(&seed.matrix, "state-carry pre-state")?,
+        ),
+    };
+    let (matrix_post_state, matrix_output) =
+        wkv_step_matrix(&consumed_pre_state, &consumed_inputs, dimensions)?;
+    let (post_state, raw_wkv_output) = match arithmetic {
+        StateCarryArithmetic::SourceFp32 => (matrix_post_state, matrix_output),
+        StateCarryArithmetic::Bf16Transport => (
+            quantize_bf16_values(&matrix_post_state, "state-carry post-state")?,
+            quantize_bf16_values(&matrix_output, "state-carry raw output")?,
+        ),
+    };
+    let attention_output = finish_time_mix_attention(weights, &preparation, &raw_wkv_output)?;
+    let suffix = finish_layer_suffix(weights, &residual, &attention_output, &seed.ffn_previous)?;
+
+    Ok(StateCarryStep {
+        seed,
+        consumed_inputs,
+        consumed_pre_state,
+        raw_wkv_output,
+        post_state,
+        attention_output,
+        ffn_input: suffix.ffn_input,
+        final_layer_output: suffix.final_output,
+        arithmetic,
+    })
+}
+
+fn transpose_head_matrices(state: &[f32], dimensions: Dimensions) -> Result<Vec<f32>, String> {
+    require_length(
+        state,
+        OBSERVED_STATE_ELEMENT_COUNT,
+        "state-carry transpose input",
+    )?;
+    require_finite(state, "state-carry transpose input")?;
+    let matrix_elements = dimensions
+        .head_size
+        .checked_mul(dimensions.head_size)
+        .ok_or_else(|| "state-carry head matrix element count overflows usize".to_owned())?;
+    let mut transposed = vec![0.0_f32; state.len()];
+    for head in 0..dimensions.head_count {
+        let matrix_base = head * matrix_elements;
+        for row in 0..dimensions.head_size {
+            for column in 0..dimensions.head_size {
+                let destination = matrix_base + row * dimensions.head_size + column;
+                let source = matrix_base + column * dimensions.head_size + row;
+                transposed[destination] = state[source];
+            }
+        }
+    }
+    require_finite(&transposed, "state-carry transposed state")?;
+    Ok(transposed)
+}
+
+fn quantize_wkv_inputs(inputs: &WkvInputs) -> Result<WkvInputs, String> {
+    Ok(WkvInputs {
+        r: quantize_bf16_values(&inputs.r, "state-carry r")?,
+        w: quantize_bf16_values(&inputs.w, "state-carry w")?,
+        k: quantize_bf16_values(&inputs.k, "state-carry k")?,
+        v: quantize_bf16_values(&inputs.v, "state-carry v")?,
+        a: quantize_bf16_values(&inputs.a, "state-carry a")?,
+        b: quantize_bf16_values(&inputs.b, "state-carry b")?,
+    })
+}
+
+fn quantize_bf16_values(values: &[f32], name: &str) -> Result<Vec<f32>, String> {
+    require_finite(values, name)?;
+    let quantized = values
+        .iter()
+        .map(|value| bf16::from_f32(*value).to_f32())
+        .collect::<Vec<_>>();
+    require_finite(&quantized, name)?;
+    Ok(quantized)
+}
+
+fn state_carry_path_receipt(step: &StateCarryStep) -> Result<StateCarryPathReceipt, String> {
+    let (wkv_executor, transport_precision) = match step.arithmetic {
+        StateCarryArithmetic::SourceFp32 => ("cpu_matrix_recurrence", "fp32"),
+        StateCarryArithmetic::Bf16Transport => {
+            ("cpu_matrix_recurrence", "bf16_round_trip_around_cpu_fp32")
+        }
+    };
+    Ok(StateCarryPathReceipt {
+        wkv_executor,
+        transport_precision,
+        seed_attention_previous: numeric_receipt(&step.seed.attention_previous)?,
+        seed_ffn_previous: numeric_receipt(&step.seed.ffn_previous)?,
+        wkv_inputs: StateCarryWkvInputReceipt {
+            r: numeric_receipt(&step.consumed_inputs.r)?,
+            w: numeric_receipt(&step.consumed_inputs.w)?,
+            k: numeric_receipt(&step.consumed_inputs.k)?,
+            v: numeric_receipt(&step.consumed_inputs.v)?,
+            a: numeric_receipt(&step.consumed_inputs.a)?,
+            b: numeric_receipt(&step.consumed_inputs.b)?,
+        },
+        pre_state: numeric_receipt(&step.consumed_pre_state)?,
+        raw_wkv_output: numeric_receipt(&step.raw_wkv_output)?,
+        post_state: numeric_receipt(&step.post_state)?,
+        attention_output: numeric_receipt(&step.attention_output)?,
+        ffn_input: numeric_receipt(&step.ffn_input)?,
+        final_layer_output: numeric_receipt(&step.final_layer_output)?,
+    })
+}
+
+fn canonical_receipt_blake3<T: Serialize>(receipt: &T) -> Result<String, String> {
+    let mut bytes = serde_json::to_vec_pretty(receipt)
+        .map_err(|error| format!("failed to serialize canonical receipt: {error}"))?;
+    bytes.push(b'\n');
+    Ok(blake3::hash(&bytes).to_hex().to_string())
 }
 
 struct ValidatedObservedEvidence {
