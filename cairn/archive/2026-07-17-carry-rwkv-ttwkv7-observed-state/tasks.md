@@ -18,4 +18,4 @@
 ## 4. Validate and close
 
 - [x] [serial] Run focused formatting, clean detached-worktree builds, Cairn validation, and proposal/design/tasks gates; record exact receipts, deviations, identities, and blockers r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_state_carry]
-- [ ] [serial] Sync the accepted requirement, archive the completed change, commit both boundaries, and report the exact CPU-continuation claim and remaining hardware authorization blocker r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_state_carry]
+- [x] [serial] Sync the accepted requirement, archive the completed change, commit both boundaries, and report the exact CPU-continuation claim and remaining hardware authorization blocker r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_state_carry]
