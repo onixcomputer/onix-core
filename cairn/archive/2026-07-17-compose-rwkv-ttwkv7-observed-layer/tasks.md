@@ -11,4 +11,4 @@
 ## Phase 3: Acceptance
 
 - [x] [serial] Run pre-change and post-change Rust tests, historical receipt checks, closure isolation, focused Nix builds, formatting, and clean Cairn validation/gates without invoking Metalium or a Tenstorrent device for r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_layer_replay].
-- [ ] [serial] Sync the accepted requirement, archive the completed change with deterministic receipts, commit both boundaries, and report the exact hybrid claim and remaining hardware blocker for r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_layer_replay].
+- [x] [serial] Sync the accepted requirement, archive the completed change with deterministic receipts, commit both boundaries, and report the exact hybrid claim and remaining hardware blocker for r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_layer_replay].
