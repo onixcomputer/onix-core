@@ -1670,7 +1670,10 @@ fn run_state_carry_step(
     })
 }
 
-fn transpose_head_matrices(state: &[f32], dimensions: Dimensions) -> Result<Vec<f32>, String> {
+pub(super) fn transpose_head_matrices(
+    state: &[f32],
+    dimensions: Dimensions,
+) -> Result<Vec<f32>, String> {
     require_length(
         state,
         OBSERVED_STATE_ELEMENT_COUNT,

@@ -1,5 +1,7 @@
+mod dispatch_abi;
 mod observed_layer;
 
+pub use dispatch_abi::{Ttwkv7DispatchAbiReceipt, run_ttwkv7_dispatch_abi_fixture};
 pub use observed_layer::{
     Ttwkv7ObservedLayerEvidence, Ttwkv7ObservedLayerReplayReceipt, Ttwkv7ObservedModelCarryReceipt,
     Ttwkv7ObservedStateCarryReceipt, run_ttwkv7_observed_layer_checkpoint,

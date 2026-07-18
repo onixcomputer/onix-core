@@ -71,6 +71,8 @@ in
     rwkv-ttwkv7-observed-state-carry = rwkvLayerHarness.passthru.stateCarryCheck;
     # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_model_carry]
     rwkv-ttwkv7-observed-model-carry = rwkvLayerHarness.passthru.modelCarryCheck;
+    # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_dispatch_abi]
+    rwkv-ttwkv7-dispatch-abi = rwkvLayerHarness.passthru.dispatchAbiCheck;
     # r[verify onix.tenstorrent.native_runtime.ttwkv7.fast_iteration]
     ttwkv7-architectures = ttwkv7.passthru.architectureCheck;
     # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_host_layout]

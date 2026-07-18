@@ -240,6 +240,15 @@ let
   expectedModelCarryResetStateDivergence = "3.5060477";
   expectedModelCarryTransposedLogitsDivergence = "1.1483517";
   expectedModelCarryTransposedStateDivergence = "4.229019";
+  expectedDispatchAbiReplayBlake3 = "65ab5583647dc79b1d1c78870cedccd6f556a58264dd9b9640c9214f010fe431";
+  expectedDispatchAbiReceiptByteCount = 5234;
+  expectedDispatchAbiSequenceBlake3 = "84e59e1fc4bb63ce7facc8ed34ee4d598335640ae157079fe879123fe03b6d59";
+  expectedDispatchAbiTranscriptBlake3 = "ba8d3c401468f9ba751afb4baacc6c353242f2dd23f129a808f002b57d869ccf";
+  expectedDispatchAbiRetainedStateBlake3 = "0820459ef5213b56abe294b26b63e4cf24c18c642089c8eebddea9352375a97a";
+  expectedDispatchAbiResetStateBlake3 = "b6a12cc17d7b02da79cda6451cbf09567411e54abd9958fba89a0d41e0c269dc";
+  expectedDispatchAbiTransposedStateBlake3 = "946815abb8242af5035b426afd7746fab14b5d4511cb4408045f40d188f089f7";
+  expectedDispatchAbiResetDivergence = "0.0023040771";
+  expectedDispatchAbiTransposedDivergence = "0.003791809";
   observedOutputByteCount = 1536;
   observedPostStateByteCount = 98304;
   writerRawByteCount = 147456;
@@ -662,6 +671,69 @@ let
 
         cp model-first.json "$out/receipt.json"
       '';
+  dispatchAbiCheck =
+    runCommand "rwkv-ttwkv7-dispatch-abi"
+      {
+        nativeBuildInputs = [ b3sum ];
+      }
+      ''
+        set -euo pipefail
+        mkdir -p "$out"
+        replay=${package}/bin/rwkv-ttwkv7-dispatch-abi
+
+        "$replay" >dispatch-first.json
+        "$replay" >dispatch-second.json
+        cmp dispatch-first.json dispatch-second.json
+        test "$(b3sum dispatch-first.json | cut -d' ' -f1)" = \
+          ${lib.escapeShellArg expectedDispatchAbiReplayBlake3}
+        test "$(wc -c <dispatch-first.json)" -eq \
+          ${toString expectedDispatchAbiReceiptByteCount}
+        grep -F '"target": "rwkv_ttwkv7_dispatch_abi"' dispatch-first.json
+        grep -F '"layer_count": 12' dispatch-first.json
+        grep -F '"token_count": 2' dispatch-first.json
+        grep -F '"call_count": 24' dispatch-first.json
+        grep -F '"input_order": [' dispatch-first.json
+        for role in a w k v r b; do
+          grep -F "\"$role\"" dispatch-first.json
+        done
+        grep -F '"request_frame_byte_count": 107588' dispatch-first.json
+        grep -F '"response_frame_byte_count": 99940' dispatch-first.json
+        grep -F '"sequence_id_blake3": "${expectedDispatchAbiSequenceBlake3}"' \
+          dispatch-first.json
+        grep -F '"transcript_blake3": "${expectedDispatchAbiTranscriptBlake3}"' \
+          dispatch-first.json
+        grep -F '"retained_final_state_blake3": "${expectedDispatchAbiRetainedStateBlake3}"' \
+          dispatch-first.json
+        grep -F '"reset_final_state_blake3": "${expectedDispatchAbiResetStateBlake3}"' \
+          dispatch-first.json
+        grep -F '"transposed_final_state_blake3": "${expectedDispatchAbiTransposedStateBlake3}"' \
+          dispatch-first.json
+        grep -F '"retained_vs_reset_maximum_absolute_deviation": ${expectedDispatchAbiResetDivergence}' \
+          dispatch-first.json
+        grep -F '"retained_vs_transposed_maximum_absolute_deviation": ${expectedDispatchAbiTransposedDivergence}' \
+          dispatch-first.json
+        grep -F '"terminal_session_outcome": "unsafe"' dispatch-first.json
+        grep -F '"physical_wkv_call_count": 0' dispatch-first.json
+        test "$(grep -Ec '^    "[0-9a-f]{64}"[, ]*$' dispatch-first.json)" -eq 48
+        grep -F 'The dispatch vectors are deterministic ABI fixtures, not model-derived vectors.' \
+          dispatch-first.json
+        grep -F 'No new hardware execution is authorized by this receipt.' \
+          dispatch-first.json
+
+        if "$replay" unexpected >argument-rejection.log 2>&1; then
+          echo "dispatch ABI replay accepted an argument" >&2
+          exit 1
+        fi
+        grep -F 'rwkv-ttwkv7-dispatch-abi accepts no arguments' argument-rejection.log
+
+        if grep -E 'std::process::Command|Command::new|MeshDevice|EnqueueMeshWorkload|/dev/tenstorrent|TT_VISIBLE_DEVICES|tt-smi' \
+          ${./src/dispatch_abi.rs} ${./src/bin/rwkv-ttwkv7-dispatch-abi.rs}; then
+          echo "dispatch ABI replay contains a process or device execution surface" >&2
+          exit 1
+        fi
+        test ! -e ${package}/share/rwkv-layer-harness/ttwkv7-device-2
+        cp dispatch-first.json "$out/receipt.json"
+      '';
   package = rustPlatform.buildRustPackage {
     pname = "rwkv-layer-harness";
     version = "0.1.0";
@@ -964,6 +1036,7 @@ let
       inherit
         addedTokens
         flaRwkv7Source
+        dispatchAbiCheck
         frameworkParityCheck
         modelCarryCheck
         observedLayerReplayCheck
