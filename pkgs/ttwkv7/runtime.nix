@@ -50,6 +50,10 @@ let
   dataMovementUnexpectedSuffix = "unexpected-data-movement-suffix";
   hostileOutputPath = "/nonexistent-ttwkv7-output";
   checkpointShapeMode = "shape-test";
+  dispatchServerSelfTestMode = "dispatch-server-self-test";
+  dispatchServerUnexpectedSuffix = "unexpected-dispatch-server-suffix";
+  dispatchServerSelfTestDiagnostic = "persistent ttWKV7 dispatch server self-test: PASS";
+  dispatchServerSuffixDiagnostic = "dispatch-server-self-test does not accept additional arguments";
   checkpointShapeUnexpectedSuffix = "unexpected-shape-suffix";
   checkpointShapeHeadSize = "64";
   checkpointShapeHeadCount = "12";
@@ -73,7 +77,7 @@ let
   checkpointShapeModeExpression = "if (mode == \"shape-test\")";
   checkpointShapeDeviceExpression = "MeshDevice::create_unit_mesh";
   checkpointShapeHistoricalDeviceExpression = "auto dev = tt::tt_metal::distributed::MeshDevice::create_unit_mesh(0);";
-  expectedDeviceCreationSiteCount = 2;
+  expectedDeviceCreationSiteCount = 3;
   checkpointShapeFloorHeadTileExpression = "head_count / TH";
   checkpointShapeUnpaddedExpression = "ttwkv7::host_layout::build_unpadded_input(";
   checkpointShapeFloorWorkExpression = "(IC / NBg)";
@@ -227,6 +231,22 @@ stdenvNoCC.mkDerivation {
     test -f "${packageSourceDirectory}/rwkv-host-layout-validator.cpp"
     test -f "${packageSourceDirectory}/ttwkv7-host-layout.h"
     test -f "${packageSourceDirectory}/ttwkv7-boundary-device.h"
+    test -f "${packageSourceDirectory}/ttwkv7-dispatch-transport.h"
+
+    dispatch_self_test_first="$(${packageExecutable} ${lib.escapeShellArg dispatchServerSelfTestMode})"
+    dispatch_self_test_second="$(${packageExecutable} ${lib.escapeShellArg dispatchServerSelfTestMode})"
+    test "$dispatch_self_test_first" = "$dispatch_self_test_second"
+    test "$dispatch_self_test_first" = ${lib.escapeShellArg dispatchServerSelfTestDiagnostic}
+    dispatch_suffix_log="$(mktemp)"
+    if ${packageExecutable} ${lib.escapeShellArg dispatchServerSelfTestMode} \
+      ${lib.escapeShellArg dispatchServerUnexpectedSuffix} >"$dispatch_suffix_log" 2>&1; then
+      echo "persistent dispatch server self-test accepted an argument suffix" >&2
+      exit 1
+    else
+      dispatch_suffix_status="$?"
+    fi
+    test "$dispatch_suffix_status" -eq ${toString invalidModeExitStatus}
+    grep -F ${lib.escapeShellArg dispatchServerSuffixDiagnostic} "$dispatch_suffix_log"
 
     # Positive and negative checkpoint-shape coverage for
     # r[verify onix.tenstorrent.native_runtime.ttwkv7.checkpoint_shape].

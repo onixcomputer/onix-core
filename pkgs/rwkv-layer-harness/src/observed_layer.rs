@@ -186,6 +186,24 @@ const PERSISTENT_MODEL_DISPATCH_NON_CLAIMS: [&str; 13] = [
     "Tasks 30 and 64 remain terminal and are not reusable.",
     "No new hardware execution is authorized by this replay.",
 ];
+const PERSISTENT_METALIUM_CORE_TARGET: &str = "rwkv_ttwkv7_persistent_metalium_core";
+const PERSISTENT_METALIUM_PRIOR_CPU_RECEIPT_BLAKE3: &str =
+    "31f3e1dea79fb152ddb7ae5cc9049b97b8b38ca2a187964ee9edac5f5d45feae";
+const PERSISTENT_METALIUM_SEQUENCE_DOMAIN: &[u8] = b"rwkv-ttwkv7-persistent-metalium-retained-v1";
+const PERSISTENT_METALIUM_NMSE_CEILING: f64 = 6.0e-2;
+const PERSISTENT_METALIUM_NMSE_DENOMINATOR_FLOOR: f64 = 1.0e-12;
+const PERSISTENT_METALIUM_PHYSICAL_CALL_COUNT: usize =
+    MODEL_LAYER_COUNT * PERSISTENT_MODEL_DISPATCH_TOKEN_COUNT;
+const PERSISTENT_METALIUM_NON_CLAIMS: [&str; 8] = [
+    "The pure driver does not itself open a process, socket, Metalium device, or owner service.",
+    "A numerical tolerance pass does not establish exact BF16 parity.",
+    "Only ttWKV7 executes on the physical device; normalization, projections, residuals, channel mix, and the head remain host FP32.",
+    "No complete RWKV layer or model executes wholly on Tenstorrent devices.",
+    "No general P150 compatibility is established.",
+    "No serving, throughput, or latency claim is established.",
+    "The historical unsafe session remains unsafe and is not reclassified.",
+    "Tasks 30 and 64 remain terminal and are not reusable.",
+];
 const MODEL_CARRY_NON_CLAIMS: [&str; 11] = [
     "The terminal rwkv-lab session remains unsafe and is not reclassified.",
     "Only the accepted layer-zero second-token WKV output and post-state came from physical execution.",
@@ -596,6 +614,72 @@ pub struct Ttwkv7PersistentObservedModelDispatchReceipt {
     pub non_claims: Vec<&'static str>,
 }
 
+#[derive(Clone, Debug, Serialize)]
+pub struct PersistentMetaliumVectorComparisonReceipt {
+    pub exact_bf16_mismatch_count: usize,
+    pub maximum_absolute_deviation: f32,
+    pub nmse: f64,
+    pub ceiling: f64,
+    pub passed: bool,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct PersistentMetaliumCallReceipt {
+    pub call_ordinal: usize,
+    pub token_index_zero_based: usize,
+    pub layer_index_zero_based: usize,
+    pub request_blake3: String,
+    pub response_blake3: String,
+    pub raw_output: PersistentMetaliumVectorComparisonReceipt,
+    pub post_state: PersistentMetaliumVectorComparisonReceipt,
+}
+
+#[derive(Clone, Debug)]
+pub struct PersistentMetaliumDispatchRequest {
+    pub call_ordinal: usize,
+    pub token_index_zero_based: usize,
+    pub layer_index_zero_based: usize,
+    pub frame: Vec<u8>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct PersistentMetaliumDispatchProgress {
+    pub accepted_call_count: usize,
+    pub completed_token_index_zero_based: Option<usize>,
+    pub selected_token_id: Option<usize>,
+    pub complete: bool,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct Ttwkv7PersistentMetaliumCoreReceipt {
+    pub schema_version: u32,
+    pub target: &'static str,
+    pub model: ModelReceipt,
+    pub dimensions: Dimensions,
+    pub token_ids: [usize; PERSISTENT_MODEL_DISPATCH_TOTAL_TOKEN_COUNT],
+    pub dispatched_token_indices_zero_based: [usize; PERSISTENT_MODEL_DISPATCH_TOKEN_COUNT],
+    pub prior_model_dispatch_receipt_blake3: String,
+    pub prior_persistent_cpu_receipt_blake3: &'static str,
+    pub physical_wkv_call_count: usize,
+    pub selected_fourth_token_id: usize,
+    pub call_comparisons: Vec<PersistentMetaliumCallReceipt>,
+    pub session: PersistentModelSessionReceipt,
+    pub oracle_bf16: PersistentModelOraclePathReceipt,
+    pub physical: PersistentModelOraclePathReceipt,
+    pub third_token_physical_vs_oracle: PersistentModelTokenDeviationReceipt,
+    pub fourth_token_physical_vs_oracle: PersistentModelTokenDeviationReceipt,
+    pub nmse_ceiling: f64,
+    pub terminal_state: &'static str,
+    pub non_claims: Vec<&'static str>,
+}
+
+pub type PersistentPhysicalCallReceipt = PersistentMetaliumCallReceipt;
+pub type PersistentPhysicalDispatchProgress = PersistentMetaliumDispatchProgress;
+pub type PersistentPhysicalDispatchRequest = PersistentMetaliumDispatchRequest;
+pub type PersistentPhysicalModelDriver = PersistentMetaliumModelDriver;
+pub type PersistentPhysicalVectorComparisonReceipt = PersistentMetaliumVectorComparisonReceipt;
+pub type Ttwkv7PersistentPhysicalCoreReceipt = Ttwkv7PersistentMetaliumCoreReceipt;
+
 struct RoutedModelToken {
     token: ModelTokenExecution,
     raw_outputs: Vec<Vec<f32>>,
@@ -626,6 +710,48 @@ struct ModelDispatchSetup {
     final_norm_bias: Vec<f32>,
     head: Matrix,
     observed_second: ModelTokenExecution,
+}
+
+struct PendingPersistentMetaliumLayer {
+    call_ordinal: usize,
+    token_index: usize,
+    layer_index: usize,
+    residual: Vec<f32>,
+    attention_input: Vec<f32>,
+    preparation: TimeMixPreparation,
+    oracle_raw_output: Vec<f32>,
+    oracle_post_state: Vec<f32>,
+}
+
+pub struct PersistentMetaliumModelDriver {
+    model: ModelReceipt,
+    dimensions: Dimensions,
+    weights: Vec<LayerWeights>,
+    continuation_embedding: Vec<f32>,
+    final_norm_weight: Vec<f32>,
+    final_norm_bias: Vec<f32>,
+    head: Matrix,
+    head_bytes: Vec<u8>,
+    execution: ModelExecutionState,
+    hidden: Vec<f32>,
+    value_anchor: Option<Vec<f32>>,
+    token_index: usize,
+    input_token_id: usize,
+    layer_index: usize,
+    layer_outputs: Vec<Vec<f32>>,
+    raw_outputs: Vec<Vec<f32>>,
+    post_states: Vec<Vec<f32>>,
+    dispatch_steps: Vec<super::dispatch_abi::CpuDispatchStep>,
+    layer_zero_pre_state: Option<Vec<f32>>,
+    layer_zero_raw_output: Option<Vec<f32>>,
+    layer_zero_post_state: Option<Vec<f32>>,
+    pending: Option<PendingPersistentMetaliumLayer>,
+    session: Option<super::dispatch_abi::PersistentCpuDispatchSession>,
+    oracle: PersistentModelPath,
+    physical_tokens: Vec<CompletedPersistentModelToken>,
+    call_comparisons: Vec<PersistentMetaliumCallReceipt>,
+    prior_model_dispatch_receipt_blake3: String,
+    faulted: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -2763,6 +2889,551 @@ pub fn run_ttwkv7_persistent_observed_model_dispatch_checkpoint(
         divergence_floor: MODEL_DISPATCH_DIVERGENCE_FLOOR,
         non_claims: PERSISTENT_MODEL_DISPATCH_NON_CLAIMS.to_vec(),
     })
+}
+
+fn complete_persistent_model_token_from_head_bytes(
+    token_index: usize,
+    input_token_id: usize,
+    routed: RoutedModelToken,
+    final_norm_weight: &[f32],
+    final_norm_bias: &[f32],
+    head: &Matrix,
+    head_bytes: &[u8],
+) -> Result<CompletedPersistentModelToken, String> {
+    if routed.token.layer_outputs.len() != MODEL_LAYER_COUNT {
+        return Err(format!(
+            "persistent Metalium model token {token_index} requires {MODEL_LAYER_COUNT} layer outputs, found {}",
+            routed.token.layer_outputs.len()
+        ));
+    }
+    let dimensions = Dimensions::reviewed();
+    let final_hidden = layer_norm(
+        &routed.token.final_output,
+        final_norm_weight,
+        final_norm_bias,
+        LAYER_NORM_EPSILON,
+    )?;
+    let logits = matvec(head, &final_hidden)?;
+    let ranking = rank_top_two(
+        logits
+            .iter()
+            .copied()
+            .enumerate()
+            .map(|(token_id, logit)| RankedLogit { token_id, logit }),
+    )?;
+    let direct_ranking =
+        direct_bf16_head_top_two_bytes(head_bytes, &final_hidden, dimensions.hidden_size)?;
+    if ranking.first.token_id != direct_ranking.first.token_id
+        || ranking.second.token_id != direct_ranking.second.token_id
+    {
+        return Err(format!(
+            "persistent Metalium token {token_index} LM-head ranking mismatch: production [{}, {}], direct [{}, {}]",
+            ranking.first.token_id,
+            ranking.second.token_id,
+            direct_ranking.first.token_id,
+            direct_ranking.second.token_id
+        ));
+    }
+    let direct_bf16_head_deviation = (ranking.first.logit - direct_ranking.first.logit)
+        .abs()
+        .max((ranking.second.logit - direct_ranking.second.logit).abs());
+    if direct_bf16_head_deviation > ORACLE_TOLERANCE {
+        return Err(format!(
+            "persistent Metalium token {token_index} LM-head deviation {direct_bf16_head_deviation} exceeds {ORACLE_TOLERANCE}"
+        ));
+    }
+    Ok(CompletedPersistentModelToken {
+        token_index,
+        input_token_id,
+        routed,
+        final_hidden,
+        logits,
+        ranking,
+        direct_bf16_head_deviation,
+    })
+}
+
+fn persistent_metalium_vector_comparison(
+    actual: &[f32],
+    expected: &[f32],
+    name: &str,
+) -> Result<PersistentMetaliumVectorComparisonReceipt, String> {
+    require_length(actual, expected.len(), name)?;
+    require_finite(actual, name)?;
+    require_finite(expected, name)?;
+    let mut numerator = 0.0_f64;
+    let mut denominator = 0.0_f64;
+    let mut maximum_absolute_deviation = 0.0_f32;
+    let mut exact_bf16_mismatch_count = 0_usize;
+    for (actual_value, expected_value) in actual.iter().zip(expected) {
+        let difference = *actual_value - *expected_value;
+        maximum_absolute_deviation = maximum_absolute_deviation.max(difference.abs());
+        numerator += f64::from(difference) * f64::from(difference);
+        denominator += f64::from(*expected_value) * f64::from(*expected_value);
+        if bf16::from_f32(*actual_value).to_bits() != bf16::from_f32(*expected_value).to_bits() {
+            exact_bf16_mismatch_count += 1;
+        }
+    }
+    let nmse = numerator / (denominator + PERSISTENT_METALIUM_NMSE_DENOMINATOR_FLOOR);
+    let passed = nmse.is_finite() && nmse < PERSISTENT_METALIUM_NMSE_CEILING;
+    Ok(PersistentMetaliumVectorComparisonReceipt {
+        exact_bf16_mismatch_count,
+        maximum_absolute_deviation,
+        nmse,
+        ceiling: PERSISTENT_METALIUM_NMSE_CEILING,
+        passed,
+    })
+}
+
+// r[impl onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_persistent_metalium_dispatch]
+pub fn begin_ttwkv7_persistent_metalium_model_driver(
+    checkpoint: &[u8],
+    expected_model_blake3: &str,
+    evidence: &Ttwkv7ObservedLayerEvidence<'_>,
+) -> Result<PersistentMetaliumModelDriver, String> {
+    let prior =
+        run_ttwkv7_observed_model_dispatch_checkpoint(checkpoint, expected_model_blake3, evidence)?;
+    let prior_model_dispatch_receipt_blake3 = canonical_receipt_blake3(&prior)?;
+    if prior_model_dispatch_receipt_blake3 != PERSISTENT_MODEL_DISPATCH_PRIOR_RECEIPT_BLAKE3 {
+        return Err(format!(
+            "persistent Metalium prior model-dispatch receipt changed: expected {PERSISTENT_MODEL_DISPATCH_PRIOR_RECEIPT_BLAKE3}, found {prior_model_dispatch_receipt_blake3}"
+        ));
+    }
+    let tensors = SafeTensors::deserialize(checkpoint)
+        .map_err(|error| format!("failed to decode safetensors checkpoint: {error}"))?;
+    let setup = prepare_model_dispatch_setup(
+        &tensors,
+        evidence,
+        &prior.dispatched_physical_seed.model,
+        "persistent-metalium-model-dispatch",
+    )?;
+    let embedding = tensors
+        .tensor("model.embeddings.weight")
+        .map_err(|error| format!("missing model.embeddings.weight: {error}"))?;
+    let continuation_embedding = embedding_row(
+        &embedding,
+        MODEL_CONFIG_EOS_TOKEN_ID,
+        setup.dimensions.hidden_size,
+    )?;
+    let head_tensor = tensors
+        .tensor("lm_head.weight")
+        .map_err(|error| format!("missing lm_head.weight: {error}"))?;
+    let head_bytes = head_tensor.data().to_vec();
+    let oracle = run_persistent_model_path(
+        &setup.weights,
+        &setup.model_config_eos,
+        &continuation_embedding,
+        setup.observed_second.clone(),
+        PersistentModelRoute::Oracle,
+        &setup.final_norm_weight,
+        &setup.final_norm_bias,
+        &setup.head,
+        &head_tensor,
+    )?;
+    if oracle.tokens.len() != PERSISTENT_MODEL_DISPATCH_TOKEN_COUNT {
+        return Err(format!(
+            "persistent Metalium oracle requires {PERSISTENT_MODEL_DISPATCH_TOKEN_COUNT} tokens, found {}",
+            oracle.tokens.len()
+        ));
+    }
+    let execution = setup.observed_second.execution;
+    let session = super::dispatch_abi::PersistentCpuDispatchSession::new(
+        super::dispatch_abi::derive_sequence_id(PERSISTENT_METALIUM_SEQUENCE_DOMAIN),
+        PERSISTENT_MODEL_DISPATCH_FIRST_TOKEN_INDEX,
+        PERSISTENT_MODEL_DISPATCH_TOKEN_COUNT,
+    )?;
+    Ok(PersistentMetaliumModelDriver {
+        model: prior.model,
+        dimensions: setup.dimensions,
+        weights: setup.weights,
+        continuation_embedding,
+        final_norm_weight: setup.final_norm_weight,
+        final_norm_bias: setup.final_norm_bias,
+        head: setup.head,
+        head_bytes,
+        execution,
+        hidden: setup.model_config_eos,
+        value_anchor: None,
+        token_index: PERSISTENT_MODEL_DISPATCH_FIRST_TOKEN_INDEX,
+        input_token_id: MODEL_CONFIG_EOS_TOKEN_ID,
+        layer_index: 0,
+        layer_outputs: Vec::with_capacity(MODEL_LAYER_COUNT),
+        raw_outputs: Vec::with_capacity(MODEL_LAYER_COUNT),
+        post_states: Vec::with_capacity(MODEL_LAYER_COUNT),
+        dispatch_steps: Vec::with_capacity(MODEL_LAYER_COUNT),
+        layer_zero_pre_state: None,
+        layer_zero_raw_output: None,
+        layer_zero_post_state: None,
+        pending: None,
+        session: Some(session),
+        oracle,
+        physical_tokens: Vec::with_capacity(PERSISTENT_MODEL_DISPATCH_TOKEN_COUNT),
+        call_comparisons: Vec::with_capacity(PERSISTENT_METALIUM_PHYSICAL_CALL_COUNT),
+        prior_model_dispatch_receipt_blake3,
+        faulted: false,
+    })
+}
+
+pub fn begin_ttwkv7_persistent_physical_model_driver(
+    checkpoint: &[u8],
+    expected_model_blake3: &str,
+    evidence: &Ttwkv7ObservedLayerEvidence<'_>,
+) -> Result<PersistentPhysicalModelDriver, String> {
+    begin_ttwkv7_persistent_metalium_model_driver(checkpoint, expected_model_blake3, evidence)
+}
+
+impl PersistentMetaliumModelDriver {
+    pub fn prepare_next_request(&mut self) -> Result<PersistentMetaliumDispatchRequest, String> {
+        if self.faulted {
+            return Err("persistent Metalium driver is terminally faulted".to_owned());
+        }
+        if self.pending.is_some() {
+            self.faulted = true;
+            return Err("persistent Metalium driver already has a pending request".to_owned());
+        }
+        if self.physical_tokens.len() >= PERSISTENT_MODEL_DISPATCH_TOKEN_COUNT {
+            self.faulted = true;
+            return Err("persistent Metalium driver received an extra request".to_owned());
+        }
+        if self.layer_index >= MODEL_LAYER_COUNT {
+            self.faulted = true;
+            return Err("persistent Metalium driver layer index is outside the model".to_owned());
+        }
+        let layer = &self.weights[self.layer_index];
+        let residual = apply_pre_norm(layer, &self.hidden)?;
+        let attention_input = layer_norm(
+            &residual,
+            &layer.attn_norm_weight,
+            &layer.attn_norm_bias,
+            LAYER_NORM_EPSILON,
+        )?;
+        let preparation = prepare_time_mix(
+            layer,
+            &attention_input,
+            &self.execution.layers[self.layer_index].attention_previous,
+            self.value_anchor.as_deref(),
+        )?;
+        if self.layer_index == LAYER_INDEX {
+            self.value_anchor = Some(preparation.projected_value.clone());
+            self.layer_zero_pre_state =
+                Some(self.execution.layers[self.layer_index].matrix.clone());
+        }
+        let consumed_inputs = quantize_wkv_inputs(&preparation.wkv_inputs)?;
+        let consumed_state = quantize_bf16_values(
+            &self.execution.layers[self.layer_index].matrix,
+            "persistent Metalium pre-state",
+        )?;
+        let (oracle_post_state, oracle_raw_output) =
+            wkv_step_oracle(&consumed_state, &consumed_inputs, self.dimensions)?;
+        let oracle_post_state =
+            quantize_bf16_values(&oracle_post_state, "persistent Metalium oracle post-state")?;
+        let oracle_raw_output =
+            quantize_bf16_values(&oracle_raw_output, "persistent Metalium oracle raw output")?;
+        let call_ordinal = self
+            .physical_tokens
+            .len()
+            .checked_mul(MODEL_LAYER_COUNT)
+            .and_then(|offset| offset.checked_add(self.layer_index))
+            .ok_or_else(|| "persistent Metalium call ordinal overflow".to_owned())?;
+        let request_frame = match self.session.as_mut() {
+            Some(session) => session.prepare(
+                self.token_index,
+                self.layer_index,
+                &preparation.wkv_inputs,
+                &self.execution.layers[self.layer_index].matrix,
+            ),
+            None => Err("persistent Metalium driver session is unavailable".to_owned()),
+        };
+        let request_frame = match request_frame {
+            Ok(frame) => frame,
+            Err(error) => {
+                self.faulted = true;
+                return Err(error);
+            }
+        };
+        self.pending = Some(PendingPersistentMetaliumLayer {
+            call_ordinal,
+            token_index: self.token_index,
+            layer_index: self.layer_index,
+            residual,
+            attention_input,
+            preparation,
+            oracle_raw_output,
+            oracle_post_state,
+        });
+        Ok(PersistentMetaliumDispatchRequest {
+            call_ordinal,
+            token_index_zero_based: self.token_index,
+            layer_index_zero_based: self.layer_index,
+            frame: request_frame,
+        })
+    }
+
+    pub fn accept_response(
+        &mut self,
+        response_frame: &[u8],
+    ) -> Result<PersistentMetaliumDispatchProgress, String> {
+        if self.faulted {
+            return Err("persistent Metalium driver is terminally faulted".to_owned());
+        }
+        let pending = self
+            .pending
+            .take()
+            .ok_or_else(|| "persistent Metalium driver has no pending request".to_owned())?;
+        let step = match self.session.as_mut() {
+            Some(session) => session.accept(response_frame),
+            None => Err("persistent Metalium driver session is unavailable".to_owned()),
+        };
+        let step = match step {
+            Ok(step) => step,
+            Err(error) => {
+                self.faulted = true;
+                return Err(error);
+            }
+        };
+        let raw_comparison = persistent_metalium_vector_comparison(
+            &step.raw_output,
+            &pending.oracle_raw_output,
+            "persistent Metalium raw output",
+        )?;
+        let state_comparison = persistent_metalium_vector_comparison(
+            &step.post_state,
+            &pending.oracle_post_state,
+            "persistent Metalium post-state",
+        )?;
+        if !raw_comparison.passed || !state_comparison.passed {
+            self.faulted = true;
+            if let Some(session) = self.session.as_mut() {
+                let _ =
+                    session.fault(super::dispatch_abi::PersistentDispatchFault::InvalidResponse);
+            }
+            return Err(format!(
+                "persistent Metalium call {} numerical ceiling failed: raw_nmse={} state_nmse={} ceiling={PERSISTENT_METALIUM_NMSE_CEILING}",
+                pending.call_ordinal, raw_comparison.nmse, state_comparison.nmse
+            ));
+        }
+        let attention_output = finish_time_mix_attention(
+            &self.weights[pending.layer_index],
+            &pending.preparation,
+            &step.raw_output,
+        )?;
+        let oracle_attention = finish_time_mix_attention(
+            &self.weights[pending.layer_index],
+            &pending.preparation,
+            &pending.oracle_raw_output,
+        )?;
+        let state_deviation = max_abs_difference(&step.post_state, &pending.oracle_post_state)?;
+        let attention_deviation = max_abs_difference(&attention_output, &oracle_attention)?;
+        self.execution.layers[pending.layer_index]
+            .attention_previous
+            .clone_from(&pending.attention_input);
+        self.execution.maximum_state_deviations[pending.layer_index] =
+            self.execution.maximum_state_deviations[pending.layer_index].max(state_deviation);
+        self.execution.maximum_output_deviations[pending.layer_index] =
+            self.execution.maximum_output_deviations[pending.layer_index].max(attention_deviation);
+        self.execution.layers[pending.layer_index].matrix = step.post_state.clone();
+        self.execution.oracle_matrices[pending.layer_index] = pending.oracle_post_state;
+        let suffix = finish_layer_suffix(
+            &self.weights[pending.layer_index],
+            &pending.residual,
+            &attention_output,
+            &self.execution.layers[pending.layer_index].ffn_previous,
+        )?;
+        self.execution.layers[pending.layer_index].ffn_previous = suffix.ffn_input;
+        self.hidden = suffix.final_output;
+        self.raw_outputs.push(step.raw_output.clone());
+        self.post_states.push(step.post_state.clone());
+        self.layer_outputs.push(self.hidden.clone());
+        if pending.layer_index == LAYER_INDEX {
+            self.layer_zero_raw_output = Some(step.raw_output.clone());
+            self.layer_zero_post_state = Some(step.post_state.clone());
+        }
+        self.call_comparisons.push(PersistentMetaliumCallReceipt {
+            call_ordinal: pending.call_ordinal,
+            token_index_zero_based: pending.token_index,
+            layer_index_zero_based: pending.layer_index,
+            request_blake3: blake3::hash(&step.request_frame).to_hex().to_string(),
+            response_blake3: blake3::hash(&step.response_frame).to_hex().to_string(),
+            raw_output: raw_comparison,
+            post_state: state_comparison,
+        });
+        self.dispatch_steps.push(step);
+        self.layer_index += 1;
+        let mut completed_token_index = None;
+        let mut selected_token_id = None;
+        if self.layer_index == MODEL_LAYER_COUNT {
+            let routed = RoutedModelToken {
+                token: ModelTokenExecution {
+                    execution: self.execution.clone(),
+                    final_output: self.hidden.clone(),
+                    layer_outputs: std::mem::take(&mut self.layer_outputs),
+                    layer_zero_pre_state: self.layer_zero_pre_state.take().ok_or_else(|| {
+                        "persistent Metalium token is missing layer-zero pre-state".to_owned()
+                    })?,
+                    layer_zero_raw_output: self.layer_zero_raw_output.take().ok_or_else(|| {
+                        "persistent Metalium token is missing layer-zero raw output".to_owned()
+                    })?,
+                    layer_zero_post_state: self.layer_zero_post_state.take().ok_or_else(|| {
+                        "persistent Metalium token is missing layer-zero post-state".to_owned()
+                    })?,
+                },
+                raw_outputs: std::mem::take(&mut self.raw_outputs),
+                post_states: std::mem::take(&mut self.post_states),
+                dispatch_steps: std::mem::take(&mut self.dispatch_steps),
+            };
+            let completed = complete_persistent_model_token_from_head_bytes(
+                self.token_index,
+                self.input_token_id,
+                routed,
+                &self.final_norm_weight,
+                &self.final_norm_bias,
+                &self.head,
+                &self.head_bytes,
+            )?;
+            let oracle_token = self
+                .oracle
+                .tokens
+                .get(self.physical_tokens.len())
+                .ok_or_else(|| "persistent Metalium oracle token is missing".to_owned())?;
+            if completed.ranking.first.token_id != oracle_token.ranking.first.token_id
+                || completed.ranking.second.token_id != oracle_token.ranking.second.token_id
+            {
+                self.faulted = true;
+                if let Some(session) = self.session.as_mut() {
+                    let _ = session
+                        .fault(super::dispatch_abi::PersistentDispatchFault::InvalidResponse);
+                }
+                return Err(format!(
+                    "persistent Metalium token {} ranking [{}, {}] differs from oracle [{}, {}]",
+                    self.token_index,
+                    completed.ranking.first.token_id,
+                    completed.ranking.second.token_id,
+                    oracle_token.ranking.first.token_id,
+                    oracle_token.ranking.second.token_id
+                ));
+            }
+            completed_token_index = Some(self.token_index);
+            selected_token_id = Some(completed.ranking.first.token_id);
+            self.physical_tokens.push(completed);
+            if self.physical_tokens.len() < PERSISTENT_MODEL_DISPATCH_TOKEN_COUNT {
+                if selected_token_id != Some(MODEL_CONFIG_EOS_TOKEN_ID) {
+                    self.faulted = true;
+                    return Err(format!(
+                        "persistent Metalium third token selected {:?}, expected {MODEL_CONFIG_EOS_TOKEN_ID}",
+                        selected_token_id
+                    ));
+                }
+                self.token_index = PERSISTENT_MODEL_DISPATCH_SECOND_TOKEN_INDEX;
+                self.input_token_id = selected_token_id
+                    .ok_or_else(|| "persistent Metalium continuation token is absent".to_owned())?;
+                self.hidden.clone_from(&self.continuation_embedding);
+                self.value_anchor = None;
+                self.layer_index = 0;
+                self.layer_outputs = Vec::with_capacity(MODEL_LAYER_COUNT);
+                self.raw_outputs = Vec::with_capacity(MODEL_LAYER_COUNT);
+                self.post_states = Vec::with_capacity(MODEL_LAYER_COUNT);
+                self.dispatch_steps = Vec::with_capacity(MODEL_LAYER_COUNT);
+            }
+        }
+        Ok(PersistentMetaliumDispatchProgress {
+            accepted_call_count: self.call_comparisons.len(),
+            completed_token_index_zero_based: completed_token_index,
+            selected_token_id,
+            complete: self.physical_tokens.len() == PERSISTENT_MODEL_DISPATCH_TOKEN_COUNT,
+        })
+    }
+
+    pub fn fault_timeout(&mut self) -> Result<(), String> {
+        self.faulted = true;
+        match self.session.as_mut() {
+            Some(session) => session.fault(super::dispatch_abi::PersistentDispatchFault::Timeout),
+            None => Err("persistent Metalium driver session is unavailable".to_owned()),
+        }
+    }
+
+    pub fn fault_interrupted(&mut self) -> Result<(), String> {
+        self.faulted = true;
+        match self.session.as_mut() {
+            Some(session) => {
+                session.fault(super::dispatch_abi::PersistentDispatchFault::Interrupted)
+            }
+            None => Err("persistent Metalium driver session is unavailable".to_owned()),
+        }
+    }
+
+    pub fn finish(mut self) -> Result<Ttwkv7PersistentMetaliumCoreReceipt, String> {
+        if self.faulted {
+            return Err(
+                "persistent Metalium driver cannot finish after a terminal fault".to_owned(),
+            );
+        }
+        if self.pending.is_some()
+            || self.physical_tokens.len() != PERSISTENT_MODEL_DISPATCH_TOKEN_COUNT
+            || self.call_comparisons.len() != PERSISTENT_METALIUM_PHYSICAL_CALL_COUNT
+        {
+            return Err(format!(
+                "persistent Metalium driver is incomplete: pending={} tokens={} calls={}",
+                self.pending.is_some(),
+                self.physical_tokens.len(),
+                self.call_comparisons.len()
+            ));
+        }
+        let summary = self
+            .session
+            .as_mut()
+            .ok_or_else(|| "persistent Metalium driver session is unavailable".to_owned())?
+            .close()?;
+        let session = persistent_model_session_receipt(&summary);
+        let selected_fourth_token_id = self.physical_tokens[0].ranking.first.token_id;
+        let third_token_physical_vs_oracle =
+            persistent_model_token_deviation(&self.physical_tokens[0], &self.oracle.tokens[0])?;
+        let fourth_token_physical_vs_oracle =
+            persistent_model_token_deviation(&self.physical_tokens[1], &self.oracle.tokens[1])?;
+        let oracle_tokens = self
+            .oracle
+            .tokens
+            .iter()
+            .map(persistent_model_token_receipt)
+            .collect::<Result<Vec<_>, _>>()?;
+        let physical_tokens = self
+            .physical_tokens
+            .iter()
+            .map(persistent_model_token_receipt)
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(Ttwkv7PersistentMetaliumCoreReceipt {
+            schema_version: RECEIPT_SCHEMA_VERSION,
+            target: PERSISTENT_METALIUM_CORE_TARGET,
+            model: self.model,
+            dimensions: self.dimensions,
+            token_ids: [
+                MODEL_CONFIG_BOS_TOKEN_ID,
+                MODEL_CONFIG_EOS_TOKEN_ID,
+                MODEL_CONFIG_EOS_TOKEN_ID,
+                selected_fourth_token_id,
+            ],
+            dispatched_token_indices_zero_based: [
+                PERSISTENT_MODEL_DISPATCH_FIRST_TOKEN_INDEX,
+                PERSISTENT_MODEL_DISPATCH_SECOND_TOKEN_INDEX,
+            ],
+            prior_model_dispatch_receipt_blake3: self.prior_model_dispatch_receipt_blake3,
+            prior_persistent_cpu_receipt_blake3: PERSISTENT_METALIUM_PRIOR_CPU_RECEIPT_BLAKE3,
+            physical_wkv_call_count: PERSISTENT_METALIUM_PHYSICAL_CALL_COUNT,
+            selected_fourth_token_id,
+            call_comparisons: self.call_comparisons,
+            session,
+            oracle_bf16: PersistentModelOraclePathReceipt {
+                tokens: oracle_tokens,
+            },
+            physical: PersistentModelOraclePathReceipt {
+                tokens: physical_tokens,
+            },
+            third_token_physical_vs_oracle,
+            fourth_token_physical_vs_oracle,
+            nmse_ceiling: PERSISTENT_METALIUM_NMSE_CEILING,
+            terminal_state: "closed",
+            non_claims: PERSISTENT_METALIUM_NON_CLAIMS.to_vec(),
+        })
+    }
 }
 
 #[derive(Clone, Copy)]

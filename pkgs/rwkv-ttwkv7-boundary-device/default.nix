@@ -228,10 +228,11 @@ stdenvNoCC.mkDerivation {
     boundary_header=${lib.escapeShellArg "${ttwkv7}/share/ttwkv7/source/ttwkv7-boundary-device.h"}
     test -f "$boundary_header"
     test "$(grep -Fc '#include "ttwkv7-boundary-device.h"' "$runner_source")" -eq 1
-    test "$(grep -Fc 'MeshDevice::create_unit_mesh' "$runner_source")" -eq 2
+    test "$(grep -Fc 'MeshDevice::create_unit_mesh' "$runner_source")" -eq 3
+    test "$(grep -Fc 'rwkv_ttwkv7_persistent_dispatch_server' "$runner_source")" -eq 1
     test "$(grep -Fc 'boundary-self-test' "$runner_source")" -ge 1
     test "$(grep -Fc 'boundary-run' "$runner_source")" -ge 1
-    test "$(grep -Fc 'kBoundaryOneShotExecutionPolicy' "$runner_source")" -eq 2
+    test "$(grep -Fc 'kBoundaryOneShotExecutionPolicy' "$runner_source")" -eq 3
     grep -F 'if (!one_shot)' "$runner_source"
     grep -F 'boundary_capture->writer_raw = bf16_bits(raw);' "$runner_source"
     grep -F 'workload_enqueue_count' "$runner_source"

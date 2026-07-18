@@ -32,15 +32,32 @@ let
       ttwkv7OwnerControl
       ;
   };
+  rwkvTtwkv7PersistentDevice = pkgs.callPackage ../pkgs/rwkv-ttwkv7-persistent-device {
+    inherit
+      rwkvLab
+      rwkvLayerHarness
+      ttwkv7
+      ttwkv7OwnerControl
+      ;
+  };
   rwkvTtwkv7HostLayoutCheck = ttwkv7Pkgs.callPackage ../pkgs/ttwkv7/rwkv-host-layout-check.nix {
     inherit rwkvLayerHarness ttwkv7;
   };
   rwkvTtwkv7DecodeReaderCheck = ttwkv7Pkgs.callPackage ../pkgs/ttwkv7/rwkv-decode-reader-check.nix {
     inherit rwkvLayerHarness ttwkv7;
   };
+  rwkvTtwkv7PersistentDispatchTransportCheck =
+    ttwkv7Pkgs.callPackage ../pkgs/ttwkv7/rwkv-persistent-dispatch-transport-check.nix
+      {
+        inherit rwkvLayerHarness ttwkv7;
+      };
   rwkvTtwkv7BoundaryDeviceCheck = pkgs.callPackage ../pkgs/rwkv-ttwkv7-boundary-device/check.nix {
     boundaryDevice = rwkvTtwkv7BoundaryDevice;
     inherit ttwkv7;
+  };
+  rwkvTtwkv7PersistentDeviceCheck = pkgs.callPackage ../pkgs/rwkv-ttwkv7-persistent-device/check.nix {
+    persistentDevice = rwkvTtwkv7PersistentDevice;
+    inherit rwkvLayerHarness ttwkv7;
   };
 in
 {
@@ -58,6 +75,8 @@ in
     rwkv-layer-harness = rwkvLayerHarness;
     # r[impl onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_boundary_device_harness]
     rwkv-ttwkv7-boundary-device = rwkvTtwkv7BoundaryDevice;
+    # r[impl onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_persistent_metalium_dispatch]
+    rwkv-ttwkv7-persistent-device = rwkvTtwkv7PersistentDevice;
     # r[impl onix.tenstorrent.native_runtime.ttwkv7.package]
     inherit ttwkv7;
   };
@@ -77,6 +96,15 @@ in
     rwkv-ttwkv7-model-dispatch = rwkvLayerHarness.passthru.modelDispatchCheck;
     # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_persistent_model_dispatch]
     rwkv-ttwkv7-persistent-model-dispatch = rwkvLayerHarness.passthru.persistentModelDispatchCheck;
+    # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_persistent_metalium_dispatch]
+    rwkv-ttwkv7-persistent-physical-core = rwkvLayerHarness.passthru.persistentPhysicalCoreCheck;
+    # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_persistent_metalium_dispatch]
+    rwkv-ttwkv7-persistent-physical-process-shell =
+      rwkvLayerHarness.passthru.persistentPhysicalProcessShellCheck;
+    # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_persistent_metalium_dispatch]
+    rwkv-ttwkv7-persistent-dispatch-transport = rwkvTtwkv7PersistentDispatchTransportCheck;
+    # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_persistent_metalium_dispatch]
+    rwkv-ttwkv7-persistent-device = rwkvTtwkv7PersistentDeviceCheck;
     # r[verify onix.tenstorrent.native_runtime.ttwkv7.fast_iteration]
     ttwkv7-architectures = ttwkv7.passthru.architectureCheck;
     # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_host_layout]

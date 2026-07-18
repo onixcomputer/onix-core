@@ -1045,10 +1045,24 @@ pub(super) fn execute_cpu_dispatch_step(
     })
 }
 
-pub(super) fn emulate_cpu_response_frame(request_frame: &[u8]) -> Result<Vec<u8>, String> {
+pub fn emulate_ttwkv7_dispatch_response_frame(request_frame: &[u8]) -> Result<Vec<u8>, String> {
     let request = decode_request(request_frame)?;
     let response = emulate_cpu_response(&request, request_frame)?;
     encode_response(&response)
+}
+
+pub fn validate_ttwkv7_dispatch_response_frame(
+    request_frame: &[u8],
+    response_frame: &[u8],
+) -> Result<(), String> {
+    let request = decode_request(request_frame)?;
+    let response = decode_response(response_frame)?;
+    validate_response(&request, request_frame, &response)
+}
+
+#[cfg(test)]
+fn emulate_cpu_response_frame(request_frame: &[u8]) -> Result<Vec<u8>, String> {
+    emulate_ttwkv7_dispatch_response_frame(request_frame)
 }
 
 pub(super) fn execute_persistent_cpu_dispatch_step(
@@ -1059,7 +1073,7 @@ pub(super) fn execute_persistent_cpu_dispatch_step(
     pre_state: &[f32],
 ) -> Result<CpuDispatchStep, String> {
     let request_frame = session.prepare(token_index, layer_index, inputs, pre_state)?;
-    let response_frame = emulate_cpu_response_frame(&request_frame)?;
+    let response_frame = emulate_ttwkv7_dispatch_response_frame(&request_frame)?;
     session.accept(&response_frame)
 }
 

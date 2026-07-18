@@ -1,11 +1,18 @@
 mod dispatch_abi;
 mod observed_layer;
 
-pub use dispatch_abi::{Ttwkv7DispatchAbiReceipt, run_ttwkv7_dispatch_abi_fixture};
+pub use dispatch_abi::{
+    Ttwkv7DispatchAbiReceipt, emulate_ttwkv7_dispatch_response_frame,
+    run_ttwkv7_dispatch_abi_fixture, validate_ttwkv7_dispatch_response_frame,
+};
 pub use observed_layer::{
-    Ttwkv7ObservedLayerEvidence, Ttwkv7ObservedLayerReplayReceipt, Ttwkv7ObservedModelCarryReceipt,
+    PersistentPhysicalCallReceipt, PersistentPhysicalDispatchProgress,
+    PersistentPhysicalDispatchRequest, PersistentPhysicalModelDriver,
+    PersistentPhysicalVectorComparisonReceipt, Ttwkv7ObservedLayerEvidence,
+    Ttwkv7ObservedLayerReplayReceipt, Ttwkv7ObservedModelCarryReceipt,
     Ttwkv7ObservedModelDispatchReceipt, Ttwkv7ObservedStateCarryReceipt,
-    Ttwkv7PersistentObservedModelDispatchReceipt, run_ttwkv7_observed_layer_checkpoint,
+    Ttwkv7PersistentObservedModelDispatchReceipt, Ttwkv7PersistentPhysicalCoreReceipt,
+    begin_ttwkv7_persistent_physical_model_driver, run_ttwkv7_observed_layer_checkpoint,
     run_ttwkv7_observed_model_carry_checkpoint, run_ttwkv7_observed_model_dispatch_checkpoint,
     run_ttwkv7_observed_state_carry_checkpoint,
     run_ttwkv7_persistent_observed_model_dispatch_checkpoint,
@@ -3074,11 +3081,28 @@ fn direct_bf16_head_top_two(
 ) -> Result<TopTwo, String> {
     require_dtype(tensor, "lm_head.weight", Dtype::BF16)?;
     require_shape(tensor, "lm_head.weight", &[VOCABULARY_SIZE, hidden_size])?;
+    direct_bf16_head_top_two_bytes(tensor.data(), input, hidden_size)
+}
+
+fn direct_bf16_head_top_two_bytes(
+    head_bytes: &[u8],
+    input: &[f32],
+    hidden_size: usize,
+) -> Result<TopTwo, String> {
     require_length(input, hidden_size, "direct head input")?;
     require_finite(input, "direct head input")?;
     let row_bytes = hidden_size
         .checked_mul(BF16_BYTE_WIDTH)
         .ok_or_else(|| "LM-head row byte count overflows usize".to_owned())?;
+    let expected_bytes = VOCABULARY_SIZE
+        .checked_mul(row_bytes)
+        .ok_or_else(|| "LM-head byte count overflows usize".to_owned())?;
+    if head_bytes.len() != expected_bytes {
+        return Err(format!(
+            "LM-head byte count mismatch: expected {expected_bytes}, found {}",
+            head_bytes.len()
+        ));
+    }
     let ranked = (0..VOCABULARY_SIZE).map(|token_id| {
         let start = token_id
             .checked_mul(row_bytes)
@@ -3086,8 +3110,7 @@ fn direct_bf16_head_top_two(
         let end = start
             .checked_add(row_bytes)
             .ok_or_else(|| "LM-head row end overflows usize".to_owned())?;
-        let bytes = tensor
-            .data()
+        let bytes = head_bytes
             .get(start..end)
             .ok_or_else(|| format!("LM-head row {token_id} is outside tensor data"))?;
         let mut logit = 0.0_f32;

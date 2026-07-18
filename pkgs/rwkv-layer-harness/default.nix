@@ -341,6 +341,11 @@ let
     "24.41396"
     "54.99176"
   ];
+  expectedPersistentPhysicalCoreBlake3 = "de05540f46e16803d999432792e5586760c9625de44a36aab105a255c4f4a9d5";
+  expectedPersistentPhysicalCoreByteCount = 53208;
+  expectedPersistentPhysicalSequenceId = "fa4adfb2828a49de825541858d886d7a6a59e2df62e96e25934b040cdf596aea";
+  expectedPersistentPhysicalTranscript = "cb1a02c0fa9a1c0ecae680d3b8b7bfda0909ffbe1b575411eff6357b77cd7bd1";
+  expectedPersistentPhysicalTranscriptByteCount = 4981056;
   observedOutputByteCount = 1536;
   observedPostStateByteCount = 98304;
   writerRawByteCount = 147456;
@@ -985,6 +990,157 @@ let
         test ! -e ${package}/share/rwkv-layer-harness/ttwkv7-device-2
         cp persistent-first.json "$out/receipt.json"
       '';
+  persistentPhysicalCoreCheck =
+    runCommand "rwkv-ttwkv7-persistent-physical-core"
+      {
+        nativeBuildInputs = [ b3sum ];
+      }
+      ''
+        set -euo pipefail
+        mkdir -p "$out"
+        replay=${package}/bin/rwkv-ttwkv7-persistent-physical-core
+        evidence=${observedEvidenceRoot}
+
+        "$replay" --evidence-root "$evidence" >physical-first.json
+        "$replay" --evidence-root "$evidence" >physical-second.json
+        cmp physical-first.json physical-second.json
+        test "$(b3sum physical-first.json | cut -d' ' -f1)" = \
+          ${lib.escapeShellArg expectedPersistentPhysicalCoreBlake3}
+        test "$(wc -c <physical-first.json)" -eq \
+          ${toString expectedPersistentPhysicalCoreByteCount}
+        grep -F '"target": "rwkv_ttwkv7_persistent_metalium_core"' physical-first.json
+        grep -F '"prior_persistent_cpu_receipt_blake3": "${expectedPersistentModelDispatchReplayBlake3}"' \
+          physical-first.json
+        grep -F '"physical_wkv_call_count": 24' physical-first.json
+        grep -F '"selected_fourth_token_id": 2' physical-first.json
+        grep -F '"sequence_id": "${expectedPersistentPhysicalSequenceId}"' physical-first.json
+        grep -F '"transcript_blake3": "${expectedPersistentPhysicalTranscript}"' physical-first.json
+        grep -F '"call_count": 24' physical-first.json
+        grep -F '"same_layer_state_continuity_count": 12' physical-first.json
+        grep -F '"request_frame_byte_count": 107588' physical-first.json
+        grep -F '"response_frame_byte_count": 99940' physical-first.json
+        test "$(grep -Fc '"call_ordinal":' physical-first.json)" -eq 24
+        test "$(grep -Fc '"passed": true' physical-first.json)" -eq 48
+        test "$(grep -Fc '"generated_token_id": 2' physical-first.json)" -eq 4
+        test "$(grep -Fc '"runner_up_token_id": 33' physical-first.json)" -eq 4
+        grep -F '"nmse_ceiling": 0.06' physical-first.json
+        grep -F 'Tasks 30 and 64 remain terminal and are not reusable.' physical-first.json
+
+        "$replay" --negative-response-self-test "$evidence" >negative.log
+        grep -F 'persistent physical core negative response self-test: PASS' negative.log
+
+        expect_failure() {
+          expected_diagnostic="$1"
+          output_path="$2"
+          shift 2
+          if "$@" >"$output_path" 2>&1; then
+            echo "persistent physical core negative command unexpectedly passed: $*" >&2
+            exit 1
+          fi
+          grep -F "$expected_diagnostic" "$output_path"
+        }
+        usage='usage: rwkv-ttwkv7-persistent-physical-core --evidence-root PATH | --negative-response-self-test PATH | --emit-first-request PATH | --validate-response REQUEST RESPONSE'
+        expect_failure "$usage" missing-arguments.log "$replay"
+        expect_failure "$usage" extra-arguments.log \
+          "$replay" --evidence-root "$evidence" unexpected
+        expect_failure "$usage" reordered-arguments.log \
+          "$replay" "$evidence" --evidence-root
+
+        if grep -E 'std::process::Command|Command::new|UnixStream|TcpStream|MeshDevice::|EnqueueMeshWorkload|TT_VISIBLE_DEVICES' \
+          ${./src/dispatch_abi.rs} ${./src/observed_layer.rs} \
+          ${./src/bin/rwkv-ttwkv7-persistent-physical-core.rs}; then
+          echo "persistent physical core contains a process, socket, or device execution surface" >&2
+          exit 1
+        fi
+        test ! -e ${package}/share/rwkv-layer-harness/ttwkv7-device-2
+        cp physical-first.json "$out/receipt.json"
+      '';
+  persistentPhysicalProcessShellCheck =
+    runCommand "rwkv-ttwkv7-persistent-physical-process-shell"
+      {
+        nativeBuildInputs = [ b3sum ];
+      }
+      ''
+        set -euo pipefail
+        mkdir -p "$out"
+        host=${package}/bin/rwkv-ttwkv7-persistent-physical-dispatch
+        server=${package}/bin/rwkv-ttwkv7-cpu-dispatch-server
+        evidence=${observedEvidenceRoot}
+        first="$PWD/first"
+        second="$PWD/second"
+
+        "$host" --test-server "$server" --evidence-root "$evidence" \
+          --artifact-root "$first" >first.log
+        "$host" --test-server "$server" --evidence-root "$evidence" \
+          --artifact-root "$second" >second.log
+        cmp first.log second.log
+        grep -F 'rwkv persistent dispatch process shell self-test: PASS' first.log
+        for artifact in core-receipt.json self-test.json server-stderr.log \
+          server-summary.json transcript.bin; do
+          cmp "$first/$artifact" "$second/$artifact"
+        done
+        test ! -e "$first/receipt.json"
+        test ! -e "$first/manifest.tsv"
+        test "$(wc -c <"$first/transcript.bin")" -eq \
+          ${toString expectedPersistentPhysicalTranscriptByteCount}
+        test "$(b3sum "$first/core-receipt.json" | cut -d' ' -f1)" = \
+          ${lib.escapeShellArg expectedPersistentPhysicalCoreBlake3}
+        grep -F '"device_initialized": false' "$first/self-test.json"
+        grep -F '"metalium_child_process_count": 0' "$first/self-test.json"
+        grep -F '"process_shell_exercised": true' "$first/self-test.json"
+        grep -F '"test_only_cpu_server":true' "$first/server-summary.json"
+
+        expect_failure() {
+          expected_diagnostic="$1"
+          output_path="$2"
+          shift 2
+          if "$@" >"$output_path" 2>&1; then
+            echo "persistent physical process shell mutation unexpectedly passed: $*" >&2
+            exit 1
+          fi
+          grep -F "$expected_diagnostic" "$output_path"
+        }
+
+        expect_failure 'failed to fill whole buffer' truncated.log env \
+          RWKV_TTWKV7_CPU_SERVER_FAULT=truncated \
+          "$host" --test-server "$server" --evidence-root "$evidence" \
+          --artifact-root "$PWD/truncated"
+        expect_failure 'response authority does not match request' stale.log env \
+          RWKV_TTWKV7_CPU_SERVER_FAULT=stale \
+          "$host" --test-server "$server" --evidence-root "$evidence" \
+          --artifact-root "$PWD/stale"
+        expect_failure 'Broken pipe' early-exit.log env \
+          RWKV_TTWKV7_CPU_SERVER_FAULT=early-exit \
+          "$host" --test-server "$server" --evidence-root "$evidence" \
+          --artifact-root "$PWD/early-exit"
+        expect_failure 'usage: rwkv-ttwkv7-persistent-physical-dispatch' \
+          missing-arguments.log "$host"
+        expect_failure 'usage: rwkv-ttwkv7-persistent-physical-dispatch' \
+          extra-arguments.log "$host" --server "$server" \
+          --evidence-root "$evidence" --artifact-root "$PWD/extra" unexpected
+
+        test "$(grep -Fc 'Command::new(&server_path)' \
+          ${./src/bin/rwkv-ttwkv7-persistent-physical-dispatch.rs})" -eq 1
+        test "$(grep -Fc '.spawn()?' \
+          ${./src/bin/rwkv-ttwkv7-persistent-physical-dispatch.rs})" -eq 1
+        grep -F 'struct ChildGuard' \
+          ${./src/bin/rwkv-ttwkv7-persistent-physical-dispatch.rs}
+        grep -F 'let _ = self.child.kill();' \
+          ${./src/bin/rwkv-ttwkv7-persistent-physical-dispatch.rs}
+        grep -F 'for expected_call in 0..DISPATCH_CALL_COUNT' \
+          ${./src/bin/rwkv-ttwkv7-persistent-physical-dispatch.rs}
+        if grep -E 'thread::sleep|TcpStream|UnixStream' \
+          ${./src/bin/rwkv-ttwkv7-persistent-physical-dispatch.rs}; then
+          echo 'persistent physical process shell contains a retry or socket surface' >&2
+          exit 1
+        fi
+        if grep -E 'std::process::Command|Command::new|MeshDevice::|EnqueueMeshWorkload|TT_VISIBLE_DEVICES' \
+          ${./src/dispatch_abi.rs} ${./src/observed_layer.rs}; then
+          echo 'persistent physical functional core contains an imperative execution surface' >&2
+          exit 1
+        fi
+        cp "$first/self-test.json" "$out/receipt.json"
+      '';
   dispatchAbiCheck =
     runCommand "rwkv-ttwkv7-dispatch-abi"
       {
@@ -1356,6 +1512,8 @@ let
         modelDispatchCheck
         observedLayerReplayCheck
         persistentModelDispatchCheck
+        persistentPhysicalCoreCheck
+        persistentPhysicalProcessShellCheck
         stateCarryCheck
         generationConfig
         hfModelingSource
