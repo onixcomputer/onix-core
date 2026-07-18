@@ -5,8 +5,8 @@ let timeout_kill_grace_seconds = 10 in
 let independent_rollback_delay_seconds = 2100 in
 let owner_health_window_seconds = 600 in
 let owner_expected_health_status = 200 in
-let inspector_port = 43157 in
-let persistent_session_id = "rwkv-ttwkv7-persistent-device-3" in
+let inspector_port = 43158 in
+let persistent_session_id = "rwkv-ttwkv7-persistent-device-4" in
 let persistent_run_root = "/var/tmp/%{persistent_session_id}" in
 
 {
@@ -47,6 +47,7 @@ let persistent_run_root = "/var/tmp/%{persistent_session_id}" in
     required_artifact_roles = [
       "board_after",
       "child_stderr",
+      "child_stdout",
       "core_receipt",
       "diagnostic_log",
       "host_manifest",
@@ -67,7 +68,7 @@ let persistent_run_root = "/var/tmp/%{persistent_session_id}" in
       "No hardware execution is authorized by this plan artifact alone.",
       "No serving, throughput, or latency claim is established.",
       "Only ttWKV7 executes on the device; model composition remains on the CPU host.",
-      "Tasks 30 and 64 remain terminal and are not reusable.",
+      "Tasks 30, 64, and 281 remain terminal and are not reusable.",
     ],
   },
 } | Session

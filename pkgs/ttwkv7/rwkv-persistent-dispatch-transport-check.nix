@@ -2,6 +2,7 @@
   lib,
   runCommand,
   b3sum,
+  socat,
   rwkvLayerHarness,
   ttwkv7,
 }:
@@ -15,10 +16,19 @@ let
   responseByteCount = 99940;
   expectedRequestBlake3 = "90189e44d52b7835eae5bff0d8a993859b1fc04282b58880a4b9b322a740d247";
   expectedResponseBlake3 = "401dcccd689aacf994c51db5ff746f8ed863179cbea386047e2e9012e2652bd2";
+  responseSocketEnvironment = "RWKV_TTWKV7_DISPATCH_RESPONSE_SOCKET";
+  responseChannelMode = "dispatch-response-channel-self-test";
+  responseChannelNoise = "persistent dispatch channel stdout noise fixture";
+  socketReadyAttemptCount = 100;
+  socketReadyDelaySeconds = "0.01";
+  overlongSocketComponentLength = 200;
 in
 runCommand "rwkv-ttwkv7-persistent-dispatch-transport-check"
   {
-    nativeBuildInputs = [ b3sum ];
+    nativeBuildInputs = [
+      b3sum
+      socat
+    ];
   }
   ''
     set -euo pipefail
@@ -37,6 +47,31 @@ runCommand "rwkv-ttwkv7-persistent-dispatch-transport-check"
       ${lib.escapeShellArg expectedResponseBlake3}
     ${host} --validate-response request.bin response-first.bin >validation.log
     grep -F 'persistent physical core response validation: PASS' validation.log
+
+    response_socket="$PWD/response.sock"
+    socat -u "UNIX-LISTEN:$response_socket" \
+      "OPEN:$PWD/response-channel.bin,creat,trunc" &
+    listener_pid="$!"
+    socket_ready=false
+    for _ in $(seq 1 ${toString socketReadyAttemptCount}); do
+      if test -S "$response_socket"; then
+        socket_ready=true
+        break
+      fi
+      sleep ${socketReadyDelaySeconds}
+    done
+    test "$socket_ready" = true
+    env ${responseSocketEnvironment}="$response_socket" \
+      ${server} ${responseChannelMode} <request.bin >response-channel-stdout.log
+    wait "$listener_pid"
+    test "$(cat response-channel-stdout.log)" = \
+      ${lib.escapeShellArg responseChannelNoise}
+    cmp response-first.bin response-channel.bin
+    ${host} --validate-response request.bin response-channel.bin \
+      >response-channel-validation.log
+    grep -F 'persistent physical core response validation: PASS' \
+      response-channel-validation.log
+    rm -f "$response_socket"
 
     self_test_first="$(${server} dispatch-server-self-test)"
     self_test_second="$(${server} dispatch-server-self-test)"
@@ -83,6 +118,26 @@ runCommand "rwkv-ttwkv7-persistent-dispatch-transport-check"
       frame-suffix.log ${server} dispatch-frame-self-test unexpected
     expect_failure 'dispatch-server-self-test does not accept additional arguments' \
       self-test-suffix.log ${server} dispatch-server-self-test unexpected
+    expect_failure 'response socket path is not configured' \
+      channel-missing-path.log ${server} ${responseChannelMode} <request.bin
+    expect_failure 'response socket path is invalid' \
+      channel-relative-path.log env \
+      ${responseSocketEnvironment}=relative.sock \
+      ${server} ${responseChannelMode} <request.bin
+    printf 'not a socket\n' >not-a-socket
+    expect_failure 'response socket connection failed' \
+      channel-not-socket.log env \
+      ${responseSocketEnvironment}="$PWD/not-a-socket" \
+      ${server} ${responseChannelMode} <request.bin
+    overlong_socket="/$(
+      printf '%0.sx' $(seq 1 ${toString overlongSocketComponentLength})
+    )"
+    expect_failure 'response socket path is invalid' \
+      channel-overlong-path.log env \
+      ${responseSocketEnvironment}="$overlong_socket" \
+      ${server} ${responseChannelMode} <request.bin
+    expect_failure 'dispatch-response-channel-self-test does not accept additional arguments' \
+      channel-suffix.log ${server} ${responseChannelMode} unexpected
 
     test -f ${transportHeader}
     grep -F 'class DispatchSessionCore' ${transportHeader}
@@ -103,6 +158,18 @@ runCommand "rwkv-ttwkv7-persistent-dispatch-transport-check"
     grep -F 'session.record_response(request, request_bytes, payload)' ${runnerSource}
     grep -F 'const int trailing = std::fgetc(stdin);' ${runnerSource}
     grep -F 'write_text(summary_path, receipt.dump() + "\n")' ${runnerSource}
+    grep -F 'class DispatchResponseChannel' ${runnerSource}
+    grep -F 'MSG_NOSIGNAL' ${runnerSource}
+    grep -F 'response_channel.write_response(response);' ${runnerSource}
+    channel_line="$(
+      grep -n 'DispatchResponseChannel response_channel(dispatch_response_socket_path())' \
+        ${runnerSource} | tail -n 1 | cut -d: -f1
+    )"
+    device_line="$(
+      grep -n 'auto device = distributed::MeshDevice::create_unit_mesh(0);' \
+        ${runnerSource} | tail -n 1 | cut -d: -f1
+    )"
+    test "$channel_line" -lt "$device_line"
     if grep -E 'retry|reconnect|backoff' ${runnerSource}; then
       echo 'persistent dispatch server contains a retry or reconnect surface' >&2
       exit 1

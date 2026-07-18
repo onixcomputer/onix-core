@@ -21,20 +21,22 @@ let
   transportHeader = "${ttwkv7}/share/ttwkv7/source/ttwkv7-dispatch-transport.h";
   hostExecutable = "${rwkvLayerHarness}/bin/rwkv-ttwkv7-persistent-physical-dispatch";
   coreExecutable = "${rwkvLayerHarness}/bin/rwkv-ttwkv7-persistent-physical-core";
-  expectedManifestBlake3 = "b39ce7ff9ee4d52cd3d574c4cb91550f27a6e6558175fd6b338ab0473f5aa809";
-  expectedPlanReceiptBlake3 = "aac7aabc0d1d1fe1ab7c26c1864889307913e4b45237b325522239562bb86ebb";
-  expectedNotRunReceiptBlake3 = "86ac1e63a4ec96ff3cd02c4592192a5b682ac1c51c4d1c6b2f919ec8cc090ce5";
-  expectedWrapperBlake3 = "64376bd99c31aa1106b06372bf8433e68bc91df90c5cd4cc8128e9cf9e4d611a";
+  metaliumExecutable = "${ttwkv7}/bin/wkv7";
+  expectedManifestBlake3 = "8261cc89daafa3118ae8da1ea7b46228978f4a1422443ae2c875d83d63791d4d";
+  expectedPlanReceiptBlake3 = "4cfb670fd9c9bc92b9e5d06c5a4adf4439d96b67b44b6de450cb93bf003464fc";
+  expectedNotRunReceiptBlake3 = "f1628fb83aac17fe3c39345f45239b8a5116a9434e6dfe4aa95a3f7eec28b6c7";
+  expectedWrapperBlake3 = "7339ef2d8b0f607a2b1577a4c1c9859f043a6b5c31755557594682ab1115eb9e";
   expectedSelfTestBlake3 = "8e8e17fe7b81fe74afd69ff109199655aac438a0dc9ab580ff53a651cea9ae8d";
-  expectedRunnerBlake3 = "f5272a3fdc24249979e6033b23deb5d0a0e415b8e11aa60b595cf8430345f0ce";
+  expectedRunnerBlake3 = "58c01b487e5cd419ff6185290919a40db2e550071c83143f0a9d7eaf2c27eecf";
   expectedTransportHeaderBlake3 = "a30c2f099a06e48635d06ea5af55f71c7c43cf5cf985dcf9635d3640dfcd1f2f";
-  expectedHostExecutableBlake3 = "dd3641da315320a2e6d9d05f41bf0fb53b22053bc5d5dec8122a97ef9969eeb7";
+  expectedHostExecutableBlake3 = "68c327c40a776de2df98800b54e9efb6d45725ff8e5e362b955195a13d6efa47";
   expectedCoreExecutableBlake3 = "0f042500558aeda86ae0444b8673065d3774eac40e86cfdb228e03d412ac5fc0";
+  expectedMetaliumExecutableBlake3 = "7706e92ff8125360a1470d1d14b6eff0a20f9f2b66988baa4a387e51a9fa9512";
   expectedDecodeReaderBlake3 = "221a9e9cb987902e99e4e50bfe5dce2d9f44a5252720b5d3dcbd13fbadb85fca";
   expectedDecodeComputeBlake3 = "bbda1f84aa2fcef7a946de76e0a0a03202e068c822f54b80c9cab5f4e13e35d0";
   expectedWriterBlake3 = "80ecf2f848144aa1a693f6b3b854542d2fd752bed8c83d9cbce31bd16e261b74";
-  expectedPlanId = "9736c1b59a87d0af30a4b34087cdc56446cce69f6236accf6011b8eb5f165bf4";
-  inspectorAddress = "127.0.0.1:43157";
+  expectedPlanId = "7c1d1dbc06ba73e5d54f52f929f80aacac52084ad0610a3cce5da60b325df427";
+  inspectorAddress = "127.0.0.1:43158";
 in
 runCommand "rwkv-ttwkv7-persistent-device-check"
   {
@@ -62,6 +64,7 @@ runCommand "rwkv-ttwkv7-persistent-device-check"
         transportHeader
         hostExecutable
         coreExecutable
+        metaliumExecutable
       ]
     }; do
       test -f "$path"
@@ -84,6 +87,8 @@ runCommand "rwkv-ttwkv7-persistent-device-check"
       ${lib.escapeShellArg expectedHostExecutableBlake3}
     test "$(b3sum ${lib.escapeShellArg coreExecutable} | cut -d' ' -f1)" = \
       ${lib.escapeShellArg expectedCoreExecutableBlake3}
+    test "$(b3sum ${lib.escapeShellArg metaliumExecutable} | cut -d' ' -f1)" = \
+      ${lib.escapeShellArg expectedMetaliumExecutableBlake3}
     test "$(b3sum ${ttwkv7}/share/ttwkv7/kernels/wkv7_decodeL_reader.cpp | cut -d' ' -f1)" = \
       ${lib.escapeShellArg expectedDecodeReaderBlake3}
     test "$(b3sum ${ttwkv7}/share/ttwkv7/kernels/wkv7_decodeL_compute.cpp | cut -d' ' -f1)" = \
@@ -106,8 +111,9 @@ runCommand "rwkv-ttwkv7-persistent-device-check"
     test ! -e "$runtime_root/logs/rwkv-persistent-physical-dispatch"
 
     grep -F ${lib.escapeShellArg "\"plan_id\": \"${expectedPlanId}\""} ${lib.escapeShellArg planReceipt}
-    grep -F '"session_id": "rwkv-ttwkv7-persistent-device-3"' ${lib.escapeShellArg planReceipt}
-    grep -F '"run_root": "/var/tmp/rwkv-ttwkv7-persistent-device-3"' ${lib.escapeShellArg planReceipt}
+    grep -F '"session_id": "rwkv-ttwkv7-persistent-device-4"' ${lib.escapeShellArg planReceipt}
+    grep -F '"run_root": "/var/tmp/rwkv-ttwkv7-persistent-device-4"' ${lib.escapeShellArg planReceipt}
+    grep -F '"child_stdout"' ${lib.escapeShellArg planReceipt}
     grep -F '"max_processes": 1' ${lib.escapeShellArg planReceipt}
     grep -F '"timeout_seconds": 1800' ${lib.escapeShellArg planReceipt}
     grep -F '"rollback_delay_seconds": 2100' ${lib.escapeShellArg planReceipt}
@@ -117,6 +123,9 @@ runCommand "rwkv-ttwkv7-persistent-device-check"
 
     grep -F '::prctl(PR_SET_PDEATHSIG, kParentDeathSignal)' ${lib.escapeShellArg runnerSource}
     grep -F '::getppid() != expected_parent' ${lib.escapeShellArg runnerSource}
+    grep -F 'DispatchResponseChannel response_channel(dispatch_response_socket_path())' \
+      ${lib.escapeShellArg runnerSource}
+    grep -F 'response_channel.write_response(response);' ${lib.escapeShellArg runnerSource}
 
     mkdir -p "$out"
     cp self-test-first.log "$out/self-test.log"

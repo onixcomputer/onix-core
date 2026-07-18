@@ -24,6 +24,7 @@ stdenv.mkDerivation {
     ./share-decode-runtime-abi.patch
     ./add-boundary-device-mode.patch
     ./add-persistent-dispatch-server.patch
+    ./isolate-persistent-dispatch-response.patch
   ];
 
   postPatch = ''

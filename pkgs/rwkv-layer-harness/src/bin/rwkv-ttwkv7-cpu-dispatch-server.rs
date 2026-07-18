@@ -3,20 +3,26 @@ use serde::Serialize;
 use std::error::Error;
 use std::fs::OpenOptions;
 use std::io::{self, Read, Write};
-use std::path::Path;
+use std::os::unix::net::UnixStream;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 const SERVER_MODE: &str = "dispatch-server";
 const EXPECTED_ARGUMENT_COUNT: usize = 2;
 const SERVER_SUMMARY_ENVIRONMENT: &str = "RWKV_TTWKV7_DISPATCH_SERVER_SUMMARY";
+const RESPONSE_SOCKET_ENVIRONMENT: &str = "RWKV_TTWKV7_DISPATCH_RESPONSE_SOCKET";
 const FAULT_ENVIRONMENT: &str = "RWKV_TTWKV7_CPU_SERVER_FAULT";
 const TRUNCATED_FAULT: &str = "truncated";
 const STALE_FAULT: &str = "stale";
 const EARLY_EXIT_FAULT: &str = "early-exit";
+const CONTAMINATED_FAULT: &str = "contaminated";
+const EXTRA_CONNECTION_FAULT: &str = "extra-connection";
+const STDOUT_NOISE: &str = "rwkv CPU dispatch server stdout noise fixture";
 const REQUEST_FRAME_BYTE_COUNT: usize = 107588;
 const RESPONSE_FRAME_BYTE_COUNT: usize = 99940;
 const DISPATCH_CALL_COUNT: usize = 24;
 const SAME_LAYER_CONTINUITY_COUNT: usize = 12;
+const RESPONSE_CONNECTION_COUNT: usize = 1;
 const SCHEMA_VERSION: u32 = 1;
 const TRANSCRIPT_DOMAIN: &[u8] = b"rwkv-ttwkv7-dispatch-abi-transcript-v1";
 
@@ -29,6 +35,8 @@ struct CpuServerSummary {
     workload_enqueue_count: usize,
     request_frame_byte_count: usize,
     response_frame_byte_count: usize,
+    response_channel: &'static str,
+    response_connection_count: usize,
     same_layer_state_continuity_count: usize,
     ordered_request_blake3: Vec<String>,
     ordered_response_blake3: Vec<String>,
@@ -76,11 +84,20 @@ fn run() -> Result<(), Box<dyn Error>> {
         && fault != TRUNCATED_FAULT
         && fault != STALE_FAULT
         && fault != EARLY_EXIT_FAULT
+        && fault != CONTAMINATED_FAULT
+        && fault != EXTRA_CONNECTION_FAULT
     {
         return Err(invalid_data(format!("unknown CPU server fault: {fault}")).into());
     }
+    let response_socket_path = require_response_socket_path()?;
+    let mut output = UnixStream::connect(&response_socket_path)?;
+    let _extra_connection = if fault == EXTRA_CONNECTION_FAULT {
+        Some(UnixStream::connect(&response_socket_path)?)
+    } else {
+        None
+    };
+    println!("{STDOUT_NOISE}");
     let mut input = io::stdin().lock();
-    let mut output = io::stdout().lock();
     let mut ordered_request_blake3 = Vec::with_capacity(DISPATCH_CALL_COUNT);
     let mut ordered_response_blake3 = Vec::with_capacity(DISPATCH_CALL_COUNT);
     let mut transcript = blake3::Hasher::new();
@@ -103,6 +120,10 @@ fn run() -> Result<(), Box<dyn Error>> {
         } else {
             generated
         };
+        if fault == CONTAMINATED_FAULT && call == 0 {
+            output.write_all(b"X")?;
+            output.flush()?;
+        }
         if fault == TRUNCATED_FAULT && call == 0 {
             let truncated_length = response
                 .len()
@@ -134,6 +155,8 @@ fn run() -> Result<(), Box<dyn Error>> {
         workload_enqueue_count: 0,
         request_frame_byte_count: REQUEST_FRAME_BYTE_COUNT,
         response_frame_byte_count: RESPONSE_FRAME_BYTE_COUNT,
+        response_channel: "unix_stream",
+        response_connection_count: RESPONSE_CONNECTION_COUNT,
         same_layer_state_continuity_count: SAME_LAYER_CONTINUITY_COUNT,
         runtime_argument_blake3: ordered_request_blake3.clone(),
         transcript_blake3: transcript.finalize().to_hex().to_string(),
@@ -152,6 +175,24 @@ fn run() -> Result<(), Box<dyn Error>> {
     file.flush()?;
     file.sync_all()?;
     Ok(())
+}
+
+fn require_response_socket_path() -> Result<PathBuf, Box<dyn Error>> {
+    let configured = std::env::var_os(RESPONSE_SOCKET_ENVIRONMENT).ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "CPU dispatch response socket path is not configured",
+        )
+    })?;
+    let path = PathBuf::from(configured);
+    if !path.is_absolute() || path.starts_with("/nix/store") {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "CPU dispatch response socket path must be absolute and outside /nix/store",
+        )
+        .into());
+    }
+    Ok(path)
 }
 
 fn update_transcript(

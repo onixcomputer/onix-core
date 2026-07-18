@@ -10,7 +10,7 @@
 }:
 let
   commandName = "rwkv-ttwkv7-persistent-device";
-  sessionId = "rwkv-ttwkv7-persistent-device-3";
+  sessionId = "rwkv-ttwkv7-persistent-device-4";
   runRoot = "/var/tmp/${sessionId}";
   evidenceSource = ../rwkv-layer-harness/fixtures/ttwkv7-device-2;
   hostExecutable = "${rwkvLayerHarness}/bin/rwkv-ttwkv7-persistent-physical-dispatch";
@@ -20,8 +20,8 @@ let
   ownerControlExecutable = "${ttwkv7OwnerControl}/bin/ttwkv7-owner-control";
   expectedVisibleDevice = "1";
   wrongVisibleDevice = "0";
-  testInspectorAddress = "127.0.0.1:43157";
-  invalidInspectorAddress = "0.0.0.0:43157";
+  testInspectorAddress = "127.0.0.1:43158";
+  invalidInspectorAddress = "0.0.0.0:43158";
   expectedCoreReceiptBlake3 = "de05540f46e16803d999432792e5586760c9625de44a36aab105a255c4f4a9d5";
   expectedCoreReceiptByteCount = 53208;
   expectedTranscriptByteCount = 4981056;
@@ -31,7 +31,7 @@ let
 in
 stdenvNoCC.mkDerivation {
   pname = "rwkv-ttwkv7-persistent-device";
-  version = "0.1.0";
+  version = "0.2.0";
 
   dontUnpack = true;
   nativeBuildInputs = [
@@ -225,7 +225,7 @@ stdenvNoCC.mkDerivation {
   '';
 
   meta = {
-    description = "Prepared single-attempt persistent physical RWKV ttWKV7 dispatch session";
+    description = "Device-free prepared RWKV ttWKV7 dispatch session with isolated response transport";
     license = lib.licenses.mit;
     mainProgram = commandName;
     platforms = [ "x86_64-linux" ];

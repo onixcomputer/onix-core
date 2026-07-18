@@ -1075,12 +1075,16 @@ let
           --artifact-root "$second" >second.log
         cmp first.log second.log
         grep -F 'rwkv persistent dispatch process shell self-test: PASS' first.log
-        for artifact in core-receipt.json self-test.json server-stderr.log \
-          server-summary.json transcript.bin; do
+        for artifact in core-receipt.json self-test.json server-stdout.log \
+          server-stderr.log server-summary.json transcript.bin; do
           cmp "$first/$artifact" "$second/$artifact"
         done
         test ! -e "$first/receipt.json"
         test ! -e "$first/manifest.tsv"
+        test ! -e "$first/response.sock"
+        test "$(stat -c '%a' "$first")" = 700
+        test "$(cat "$first/server-stdout.log")" = \
+          'rwkv CPU dispatch server stdout noise fixture'
         test "$(wc -c <"$first/transcript.bin")" -eq \
           ${toString expectedPersistentPhysicalTranscriptByteCount}
         test "$(b3sum "$first/core-receipt.json" | cut -d' ' -f1)" = \
@@ -1088,7 +1092,11 @@ let
         grep -F '"device_initialized": false' "$first/self-test.json"
         grep -F '"metalium_child_process_count": 0' "$first/self-test.json"
         grep -F '"process_shell_exercised": true' "$first/self-test.json"
+        grep -F '"response_channel": "unix_stream"' "$first/self-test.json"
+        grep -F '"response_connection_count": 1' "$first/self-test.json"
         grep -F '"test_only_cpu_server":true' "$first/server-summary.json"
+        grep -F '"response_channel":"unix_stream"' "$first/server-summary.json"
+        grep -F '"response_connection_count":1' "$first/server-summary.json"
 
         expect_failure() {
           expected_diagnostic="$1"
@@ -1109,6 +1117,14 @@ let
           RWKV_TTWKV7_CPU_SERVER_FAULT=stale \
           "$host" --test-server "$server" --evidence-root "$evidence" \
           --artifact-root "$PWD/stale"
+        expect_failure 'response magic mismatch' contaminated.log env \
+          RWKV_TTWKV7_CPU_SERVER_FAULT=contaminated \
+          "$host" --test-server "$server" --evidence-root "$evidence" \
+          --artifact-root "$PWD/contaminated"
+        expect_failure 'more than one connection' extra-connection.log env \
+          RWKV_TTWKV7_CPU_SERVER_FAULT=extra-connection \
+          "$host" --test-server "$server" --evidence-root "$evidence" \
+          --artifact-root "$PWD/extra-connection"
         expect_failure 'Broken pipe' early-exit.log env \
           RWKV_TTWKV7_CPU_SERVER_FAULT=early-exit \
           "$host" --test-server "$server" --evidence-root "$evidence" \
@@ -1118,6 +1134,9 @@ let
         expect_failure 'usage: rwkv-ttwkv7-persistent-physical-dispatch' \
           extra-arguments.log "$host" --server "$server" \
           --evidence-root "$evidence" --artifact-root "$PWD/extra" unexpected
+        for failed_root in truncated stale contaminated extra-connection early-exit; do
+          test ! -e "$PWD/$failed_root/response.sock"
+        done
 
         test "$(grep -Fc 'Command::new(&server_path)' \
           ${./src/bin/rwkv-ttwkv7-persistent-physical-dispatch.rs})" -eq 1
@@ -1129,9 +1148,15 @@ let
           ${./src/bin/rwkv-ttwkv7-persistent-physical-dispatch.rs}
         grep -F 'for expected_call in 0..DISPATCH_CALL_COUNT' \
           ${./src/bin/rwkv-ttwkv7-persistent-physical-dispatch.rs}
-        if grep -E 'thread::sleep|TcpStream|UnixStream' \
+        grep -F 'UnixListener::bind(&path)?' \
+          ${./src/bin/rwkv-ttwkv7-persistent-physical-dispatch.rs}
+        grep -F '.env(RESPONSE_SOCKET_ENVIRONMENT, &response_socket.path)' \
+          ${./src/bin/rwkv-ttwkv7-persistent-physical-dispatch.rs}
+        grep -F '.stdout(Stdio::from(child_stdout))' \
+          ${./src/bin/rwkv-ttwkv7-persistent-physical-dispatch.rs}
+        if grep -E 'thread::sleep|TcpStream|find_response_magic|stdout\(Stdio::piped' \
           ${./src/bin/rwkv-ttwkv7-persistent-physical-dispatch.rs}; then
-          echo 'persistent physical process shell contains a retry or socket surface' >&2
+          echo 'persistent physical process shell contains retry, scan, or stdout-protocol fallback' >&2
           exit 1
         fi
         if grep -E 'std::process::Command|Command::new|MeshDevice::|EnqueueMeshWorkload|TT_VISIBLE_DEVICES' \

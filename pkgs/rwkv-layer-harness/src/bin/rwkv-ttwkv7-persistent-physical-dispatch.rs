@@ -7,6 +7,8 @@ use serde_json::Value;
 use std::error::Error;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read, Write};
+use std::os::unix::fs::PermissionsExt;
+use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, ExitCode, Stdio};
 
@@ -19,17 +21,23 @@ const EVIDENCE_ROOT_OPTION: &str = "--evidence-root";
 const ARTIFACT_ROOT_OPTION: &str = "--artifact-root";
 const SERVER_MODE: &str = "dispatch-server";
 const SERVER_SUMMARY_ENVIRONMENT: &str = "RWKV_TTWKV7_DISPATCH_SERVER_SUMMARY";
+const RESPONSE_SOCKET_ENVIRONMENT: &str = "RWKV_TTWKV7_DISPATCH_RESPONSE_SOCKET";
 const REQUEST_FRAME_BYTE_COUNT: usize = 107588;
 const RESPONSE_FRAME_BYTE_COUNT: usize = 99940;
 const DISPATCH_CALL_COUNT: usize = 24;
 const SAME_LAYER_CONTINUITY_COUNT: usize = 12;
+const RESPONSE_CONNECTION_COUNT: usize = 1;
 const LENGTH_PREFIX_WIDTH: usize = 8;
 const SCHEMA_VERSION: u32 = 1;
 const HISTORICAL_PHYSICAL_WKV_CALL_COUNT: usize = 1;
 const CORE_RECEIPT_FILENAME: &str = "core-receipt.json";
 const SERVER_SUMMARY_FILENAME: &str = "server-summary.json";
 const TRANSCRIPT_FILENAME: &str = "transcript.bin";
+const RESPONSE_SOCKET_FILENAME: &str = "response.sock";
+const CHILD_STDOUT_FILENAME: &str = "server-stdout.log";
 const CHILD_STDERR_FILENAME: &str = "server-stderr.log";
+const PRIVATE_DIRECTORY_MODE: u32 = 0o700;
+const CPU_STDOUT_NOISE: &[u8] = b"rwkv CPU dispatch server stdout noise fixture\n";
 const HOST_RECEIPT_FILENAME: &str = "receipt.json";
 const MANIFEST_FILENAME: &str = "manifest.tsv";
 const SUCCESS_MARKER: &str = "rwkv persistent physical ttWKV7 dispatch: PASS";
@@ -72,6 +80,8 @@ struct PersistentPhysicalHostReceipt {
     total_physical_wkv_call_count: usize,
     request_frame_byte_count: usize,
     response_frame_byte_count: usize,
+    response_channel: &'static str,
+    response_connection_count: usize,
     same_layer_state_continuity_count: usize,
     child_exit_status: i32,
     core: Ttwkv7PersistentPhysicalCoreReceipt,
@@ -110,6 +120,43 @@ impl Drop for ChildGuard {
             let _ = self.child.wait();
             self.reaped = true;
         }
+    }
+}
+
+struct ResponseSocketGuard {
+    listener: UnixListener,
+    path: PathBuf,
+}
+
+impl ResponseSocketGuard {
+    fn bind(artifact_root: &Path) -> io::Result<Self> {
+        let path = artifact_root.join(RESPONSE_SOCKET_FILENAME);
+        let listener = UnixListener::bind(&path)?;
+        Ok(Self { listener, path })
+    }
+
+    fn accept_one(&self) -> io::Result<UnixStream> {
+        let (stream, _) = self.listener.accept()?;
+        Ok(stream)
+    }
+
+    fn reject_queued_connection(&self) -> io::Result<()> {
+        self.listener.set_nonblocking(true)?;
+        let result = self.listener.accept();
+        self.listener.set_nonblocking(false)?;
+        match result {
+            Err(error) if error.kind() == io::ErrorKind::WouldBlock => Ok(()),
+            Ok(_) => Err(invalid_data(
+                "dispatch response channel accepted more than one connection".to_owned(),
+            )),
+            Err(error) => Err(error),
+        }
+    }
+}
+
+impl Drop for ResponseSocketGuard {
+    fn drop(&mut self) {
+        let _ = fs::remove_file(&self.path);
     }
 }
 
@@ -161,27 +208,31 @@ fn run() -> Result<(), Box<dyn Error>> {
             .map_err(invalid_data)?;
 
     fs::create_dir(&artifact_root)?;
+    fs::set_permissions(
+        &artifact_root,
+        fs::Permissions::from_mode(PRIVATE_DIRECTORY_MODE),
+    )?;
+    let response_socket = ResponseSocketGuard::bind(&artifact_root)?;
     let summary_path = artifact_root.join(SERVER_SUMMARY_FILENAME);
+    let child_stdout_path = artifact_root.join(CHILD_STDOUT_FILENAME);
     let child_stderr_path = artifact_root.join(CHILD_STDERR_FILENAME);
+    let child_stdout = create_new_file(&child_stdout_path)?;
     let child_stderr = create_new_file(&child_stderr_path)?;
     let child = Command::new(&server_path)
         .arg(SERVER_MODE)
         .env(SERVER_SUMMARY_ENVIRONMENT, &summary_path)
+        .env(RESPONSE_SOCKET_ENVIRONMENT, &response_socket.path)
         .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
+        .stdout(Stdio::from(child_stdout))
         .stderr(Stdio::from(child_stderr))
         .spawn()?;
     let mut child = ChildGuard::new(child);
+    let mut response_stream = response_socket.accept_one()?;
     let mut child_stdin = child
         .child
         .stdin
         .take()
         .ok_or_else(|| io::Error::other("dispatch child stdin is unavailable"))?;
-    let mut child_stdout = child
-        .child
-        .stdout
-        .take()
-        .ok_or_else(|| io::Error::other("dispatch child stdout is unavailable"))?;
     let transcript_path = artifact_root.join(TRANSCRIPT_FILENAME);
     let mut transcript = create_new_file(&transcript_path)?;
 
@@ -200,7 +251,7 @@ fn run() -> Result<(), Box<dyn Error>> {
         child_stdin.write_all(&request.frame)?;
         child_stdin.flush()?;
         let mut response = vec![0_u8; RESPONSE_FRAME_BYTE_COUNT];
-        child_stdout.read_exact(&mut response)?;
+        response_stream.read_exact(&mut response)?;
         write_framed(&mut transcript, &response)?;
         let progress = driver.accept_response(&response).map_err(invalid_data)?;
         if progress.accepted_call_count != expected_call + 1 {
@@ -218,12 +269,22 @@ fn run() -> Result<(), Box<dyn Error>> {
         ))
         .into());
     }
+    let mut trailing_response = [0_u8; 1];
+    if response_stream.read(&mut trailing_response)? != 0 {
+        return Err(
+            invalid_data("dispatch response channel contains trailing data".to_owned()).into(),
+        );
+    }
+    drop(response_stream);
+    response_socket.reject_queued_connection()?;
     transcript.flush()?;
     transcript.sync_all()?;
     drop(transcript);
 
     let core = driver.finish().map_err(invalid_data)?;
     let summary_bytes = read_regular_file(&summary_path, "server summary")?;
+    let child_stdout_bytes = read_regular_file(&child_stdout_path, "server stdout")?;
+    validate_server_stdout(&child_stdout_bytes, test_server)?;
     let summary: Value = serde_json::from_slice(&summary_bytes)?;
     validate_server_summary(&summary, &core, test_server)?;
     let core_bytes = pretty_json_bytes(&core)?;
@@ -234,6 +295,8 @@ fn run() -> Result<(), Box<dyn Error>> {
             "dispatch_call_count": DISPATCH_CALL_COUNT,
             "metalium_child_process_count": 0,
             "process_shell_exercised": true,
+            "response_channel": "unix_stream",
+            "response_connection_count": RESPONSE_CONNECTION_COUNT,
             "self_test_passed": true,
             "target": "rwkv_ttwkv7_persistent_dispatch_process_shell_self_test",
         });
@@ -253,6 +316,7 @@ fn run() -> Result<(), Box<dyn Error>> {
         artifact_receipt("core_receipt", CORE_RECEIPT_FILENAME, &core_bytes),
         artifact_receipt("server_summary", SERVER_SUMMARY_FILENAME, &summary_bytes),
         artifact_receipt("transcript", TRANSCRIPT_FILENAME, &transcript_bytes),
+        artifact_receipt("server_stdout", CHILD_STDOUT_FILENAME, &child_stdout_bytes),
         artifact_receipt("server_stderr", CHILD_STDERR_FILENAME, &child_stderr_bytes),
     ];
     let receipt = PersistentPhysicalHostReceipt {
@@ -269,6 +333,8 @@ fn run() -> Result<(), Box<dyn Error>> {
         total_physical_wkv_call_count: HISTORICAL_PHYSICAL_WKV_CALL_COUNT + DISPATCH_CALL_COUNT,
         request_frame_byte_count: REQUEST_FRAME_BYTE_COUNT,
         response_frame_byte_count: RESPONSE_FRAME_BYTE_COUNT,
+        response_channel: "unix_stream",
+        response_connection_count: RESPONSE_CONNECTION_COUNT,
         same_layer_state_continuity_count: SAME_LAYER_CONTINUITY_COUNT,
         child_exit_status,
         core,
@@ -284,7 +350,7 @@ fn run() -> Result<(), Box<dyn Error>> {
             "No general P150 compatibility is established.",
             "No serving, throughput, or latency claim is established.",
             "Owner safety is established only by the enclosing runbook classification.",
-            "Tasks 30 and 64 remain terminal and are not reused.",
+            "Tasks 30, 64, and 281 remain terminal and are not reused.",
         ],
     };
     let receipt_bytes = pretty_json_bytes(&receipt)?;
@@ -304,6 +370,13 @@ fn write_framed(output: &mut File, frame: &[u8]) -> io::Result<()> {
     }
     output.write_all(&bytes)?;
     output.write_all(frame)
+}
+
+fn validate_server_stdout(bytes: &[u8], test_server: bool) -> Result<(), Box<dyn Error>> {
+    if test_server && bytes != CPU_STDOUT_NOISE {
+        return Err(invalid_data("CPU server stdout noise fixture mismatch".to_owned()).into());
+    }
+    Ok(())
 }
 
 fn validate_server_summary(
@@ -347,6 +420,11 @@ fn validate_server_summary(
     if summary.get("target").and_then(Value::as_str)
         != Some("rwkv_ttwkv7_persistent_dispatch_server")
         || summary.get("terminal_state").and_then(Value::as_str) != Some("closed")
+        || summary.get("response_channel").and_then(Value::as_str) != Some("unix_stream")
+        || summary
+            .get("response_connection_count")
+            .and_then(Value::as_u64)
+            != Some(RESPONSE_CONNECTION_COUNT as u64)
         || summary.get("transcript_blake3").and_then(Value::as_str)
             != Some(&core.session.transcript_blake3)
     {
@@ -395,6 +473,7 @@ fn artifact_manifest(root: &Path, receipt_bytes: &[u8]) -> Result<String, Box<dy
         ("core_receipt", CORE_RECEIPT_FILENAME),
         ("server_summary", SERVER_SUMMARY_FILENAME),
         ("transcript", TRANSCRIPT_FILENAME),
+        ("server_stdout", CHILD_STDOUT_FILENAME),
         ("server_stderr", CHILD_STDERR_FILENAME),
     ] {
         let bytes = read_regular_file(&root.join(filename), role)?;
