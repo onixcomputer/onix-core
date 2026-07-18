@@ -128,6 +128,31 @@ const MODEL_CARRY_CPU_THIRD_TOKEN_LAYER_COUNT: usize = MODEL_LAYER_COUNT;
 const MODEL_CARRY_STATE_RECEIPT_BLAKE3: &str =
     "58e433a04a10319293b18d6003659b53a04a95e9cf9cc7b540c2448c98ed6a33";
 const MODEL_CARRY_DIVERGENCE_FLOOR: f32 = 1.0e-7;
+const MODEL_DISPATCH_TARGET: &str = "rwkv_ttwkv7_observed_model_dispatch";
+const MODEL_DISPATCH_MODEL_CARRY_BLAKE3: &str =
+    "74306bd245d0bf3b4de9ce5c5f0736edcb516ac9556bc67e7c8116653de973ed";
+const MODEL_DISPATCH_ABI_BLAKE3: &str =
+    "65ab5583647dc79b1d1c78870cedccd6f556a58264dd9b9640c9214f010fe431";
+const MODEL_DISPATCH_TOKEN_INDEX: usize = 2;
+const MODEL_DISPATCH_CALL_COUNT: usize = MODEL_LAYER_COUNT;
+const MODEL_DISPATCH_ORACLE_TOLERANCE: f32 = 2.0e-3;
+const MODEL_DISPATCH_DIVERGENCE_FLOOR: f32 = 1.0e-7;
+const MODEL_DISPATCH_RETAINED_DOMAIN: &[u8] = b"rwkv-ttwkv7-model-dispatch-retained-v1";
+const MODEL_DISPATCH_RESET_DOMAIN: &[u8] = b"rwkv-ttwkv7-model-dispatch-reset-v1";
+const MODEL_DISPATCH_TRANSPOSED_DOMAIN: &[u8] = b"rwkv-ttwkv7-model-dispatch-transposed-v1";
+const MODEL_DISPATCH_NON_CLAIMS: [&str; 11] = [
+    "The terminal rwkv-lab session remains unsafe and is not reclassified.",
+    "Only the accepted layer-zero second-token WKV output and post-state came from physical execution.",
+    "All twelve third-token WKV calls execute in the device-free CPU dispatcher.",
+    "Canonical framing does not establish a persistent process transport.",
+    "No Metalium device is opened or initialized.",
+    "No complete RWKV layer ran wholly on a Tenstorrent device.",
+    "No complete RWKV model ran wholly on Tenstorrent devices.",
+    "The selected logits do not establish hardware-backed token generation.",
+    "No serving, throughput, or latency claim is established.",
+    "No additional physical workload is executed by this replay.",
+    "No new hardware execution is authorized by this replay.",
+];
 const MODEL_CARRY_NON_CLAIMS: [&str; 11] = [
     "The terminal rwkv-lab session remains unsafe and is not reclassified.",
     "Only the accepted layer-zero second-token WKV output and post-state came from physical execution.",
@@ -377,6 +402,76 @@ pub struct Ttwkv7ObservedModelCarryReceipt {
     pub maximum_absolute_deviations: ObservedModelDeviationReceipt,
     pub divergence_floor: f32,
     pub non_claims: Vec<&'static str>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ModelDispatchTranscriptReceipt {
+    pub sequence_id: String,
+    pub call_count: usize,
+    pub token_index_zero_based: usize,
+    pub request_frame_byte_count: usize,
+    pub response_frame_byte_count: usize,
+    pub ordered_request_blake3: Vec<String>,
+    pub ordered_response_blake3: Vec<String>,
+    pub transcript_blake3: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ModelDispatchPathReceipt {
+    pub transcript: ModelDispatchTranscriptReceipt,
+    pub model: ObservedModelPathReceipt,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ModelDispatchDeviationReceipt {
+    pub dispatched_raw_output_vs_oracle: f32,
+    pub dispatched_post_state_vs_oracle: f32,
+    pub dispatched_layer_output_vs_oracle: f32,
+    pub dispatched_final_hidden_vs_oracle: f32,
+    pub dispatched_logits_vs_oracle: f32,
+    pub dispatched_complete_state_vs_oracle: f32,
+    pub dispatched_final_output_vs_reset: f32,
+    pub dispatched_logits_vs_reset: f32,
+    pub dispatched_complete_state_vs_reset: f32,
+    pub dispatched_final_output_vs_transposed: f32,
+    pub dispatched_logits_vs_transposed: f32,
+    pub dispatched_complete_state_vs_transposed: f32,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct Ttwkv7ObservedModelDispatchReceipt {
+    pub schema_version: u32,
+    pub target: &'static str,
+    pub model: ModelReceipt,
+    pub dimensions: Dimensions,
+    pub token_ids: [usize; MODEL_CARRY_TOKEN_COUNT],
+    pub dispatched_token_index_zero_based: usize,
+    pub dispatch_call_count: usize,
+    pub physical_wkv_call_count: usize,
+    pub new_physical_wkv_call_count: usize,
+    pub observed_model_carry_receipt_blake3: String,
+    pub dispatch_abi_receipt_blake3: String,
+    pub terminal_session_outcome: &'static str,
+    pub evidence_bundle_blake3: String,
+    pub physical_seed_attention_states: NumericReceipt,
+    pub physical_seed_channel_states: NumericReceipt,
+    pub physical_seed_matrix_states: NumericReceipt,
+    pub physical_seed_complete_recurrent_state: NumericReceipt,
+    pub oracle_bf16: ObservedModelPathReceipt,
+    pub dispatched_physical_seed: ModelDispatchPathReceipt,
+    pub reset_all_matrix_states_control: ModelDispatchPathReceipt,
+    pub transposed_all_matrix_states_control: ModelDispatchPathReceipt,
+    pub maximum_absolute_deviations: ModelDispatchDeviationReceipt,
+    pub oracle_tolerance: f32,
+    pub divergence_floor: f32,
+    pub non_claims: Vec<&'static str>,
+}
+
+struct RoutedModelToken {
+    token: ModelTokenExecution,
+    raw_outputs: Vec<Vec<f32>>,
+    post_states: Vec<Vec<f32>>,
+    dispatch_steps: Vec<super::dispatch_abi::CpuDispatchStep>,
 }
 
 #[derive(Clone, Debug)]
@@ -1342,6 +1437,672 @@ pub fn run_ttwkv7_observed_model_carry_checkpoint(
     })
 }
 
+// r[impl onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_model_dispatch]
+pub fn run_ttwkv7_observed_model_dispatch_checkpoint(
+    checkpoint: &[u8],
+    expected_model_blake3: &str,
+    evidence: &Ttwkv7ObservedLayerEvidence<'_>,
+) -> Result<Ttwkv7ObservedModelDispatchReceipt, String> {
+    let model_carry =
+        run_ttwkv7_observed_model_carry_checkpoint(checkpoint, expected_model_blake3, evidence)?;
+    let observed_model_carry_receipt_blake3 = canonical_receipt_blake3(&model_carry)?;
+    if observed_model_carry_receipt_blake3 != MODEL_DISPATCH_MODEL_CARRY_BLAKE3 {
+        return Err(format!(
+            "accepted observed-model-carry receipt identity changed: expected {MODEL_DISPATCH_MODEL_CARRY_BLAKE3}, found {observed_model_carry_receipt_blake3}"
+        ));
+    }
+    let dispatch_abi = super::run_ttwkv7_dispatch_abi_fixture()?;
+    let dispatch_abi_receipt_blake3 = canonical_receipt_blake3(&dispatch_abi)?;
+    if dispatch_abi_receipt_blake3 != MODEL_DISPATCH_ABI_BLAKE3 {
+        return Err(format!(
+            "accepted dispatch-ABI receipt identity changed: expected {MODEL_DISPATCH_ABI_BLAKE3}, found {dispatch_abi_receipt_blake3}"
+        ));
+    }
+
+    let tensors = SafeTensors::deserialize(checkpoint)
+        .map_err(|error| format!("failed to decode safetensors checkpoint: {error}"))?;
+    let dimensions = Dimensions::reviewed();
+    let weights = (0..MODEL_LAYER_COUNT)
+        .map(|layer_index| load_layer(&tensors, dimensions, layer_index))
+        .collect::<Result<Vec<_>, _>>()?;
+    validate_model_weights(&weights)?;
+    let embedding = tensors
+        .tensor("model.embeddings.weight")
+        .map_err(|error| format!("missing model.embeddings.weight: {error}"))?;
+    let model_config_bos = embedding_row(
+        &embedding,
+        MODEL_CONFIG_BOS_TOKEN_ID,
+        dimensions.hidden_size,
+    )?;
+    let model_config_eos = embedding_row(
+        &embedding,
+        MODEL_CONFIG_EOS_TOKEN_ID,
+        dimensions.hidden_size,
+    )?;
+    let final_norm_weight = vector(&tensors, "model.norm.weight", dimensions.hidden_size)?;
+    let final_norm_bias = vector(&tensors, "model.norm.bias", dimensions.hidden_size)?;
+    let head_tensor = tensors
+        .tensor("lm_head.weight")
+        .map_err(|error| format!("missing lm_head.weight: {error}"))?;
+    let head = matrix(
+        &tensors,
+        "lm_head.weight",
+        VOCABULARY_SIZE,
+        dimensions.hidden_size,
+    )?;
+
+    let first_token = run_model_token_with_layer_zero_mode(
+        &weights,
+        &model_config_bos,
+        ModelExecutionState::zero(dimensions)?,
+        LayerZeroWkvMode::SourceFp32,
+    )?;
+    let observed_raw_output = decode_bf16_bytes(
+        evidence.observed_output_bf16,
+        "model-dispatch observed raw WKV output",
+    )?;
+    let observed_post_state = decode_bf16_bytes(
+        evidence.observed_post_state_bf16,
+        "model-dispatch observed post-state",
+    )?;
+    let observed_second = run_model_token_with_layer_zero_mode(
+        &weights,
+        &model_config_eos,
+        first_token.execution,
+        LayerZeroWkvMode::Observed {
+            raw_output: &observed_raw_output,
+            post_state: &observed_post_state,
+        },
+    )?;
+    require_numeric_identity(
+        &observed_second.layer_zero_raw_output,
+        &model_carry
+            .observed_physical_seed
+            .second_token_layer_zero_raw_output,
+        "model-dispatch physical-seed raw output",
+    )?;
+    require_numeric_identity(
+        &observed_second.layer_zero_post_state,
+        &model_carry
+            .observed_physical_seed
+            .second_token_layer_zero_post_state,
+        "model-dispatch physical-seed post-state",
+    )?;
+    let observed_second_layer_zero = observed_second
+        .layer_outputs
+        .get(LAYER_INDEX)
+        .ok_or_else(|| "model-dispatch second token is missing layer-zero output".to_owned())?;
+    require_numeric_identity(
+        observed_second_layer_zero,
+        &model_carry
+            .observed_physical_seed
+            .second_token_layer_zero_output,
+        "model-dispatch physical-seed layer-zero output",
+    )?;
+
+    let oracle_token = run_model_token_all_layers_bf16(
+        &weights,
+        &model_config_eos,
+        observed_second.execution.clone(),
+        ModelWkvRoute::Oracle,
+    )?;
+    let retained_sequence = super::dispatch_abi::derive_sequence_id(MODEL_DISPATCH_RETAINED_DOMAIN);
+    let dispatched_token = run_model_token_all_layers_bf16(
+        &weights,
+        &model_config_eos,
+        observed_second.execution.clone(),
+        ModelWkvRoute::Dispatch(retained_sequence),
+    )?;
+    let reset_second = reset_all_model_matrices(observed_second.clone(), dimensions)?;
+    let reset_sequence = super::dispatch_abi::derive_sequence_id(MODEL_DISPATCH_RESET_DOMAIN);
+    let reset_token = run_model_token_all_layers_bf16(
+        &weights,
+        &model_config_eos,
+        reset_second.execution.clone(),
+        ModelWkvRoute::Dispatch(reset_sequence),
+    )?;
+    let transposed_second = transpose_all_model_matrices(observed_second.clone(), dimensions)?;
+    validate_model_matrix_control(
+        &observed_second,
+        &reset_second,
+        dimensions,
+        ModelMatrixControl::Reset,
+    )?;
+    validate_model_matrix_control(
+        &observed_second,
+        &transposed_second,
+        dimensions,
+        ModelMatrixControl::Transposed,
+    )?;
+    let transposed_sequence =
+        super::dispatch_abi::derive_sequence_id(MODEL_DISPATCH_TRANSPOSED_DOMAIN);
+    let transposed_token = run_model_token_all_layers_bf16(
+        &weights,
+        &model_config_eos,
+        transposed_second.execution.clone(),
+        ModelWkvRoute::Dispatch(transposed_sequence),
+    )?;
+
+    let raw_deviation = maximum_nested_deviation(
+        &dispatched_token.raw_outputs,
+        &oracle_token.raw_outputs,
+        "dispatched/oracle raw outputs",
+    )?;
+    let state_deviation = maximum_nested_deviation(
+        &dispatched_token.post_states,
+        &oracle_token.post_states,
+        "dispatched/oracle post-states",
+    )?;
+    let layer_deviation = maximum_nested_deviation(
+        &dispatched_token.token.layer_outputs,
+        &oracle_token.token.layer_outputs,
+        "dispatched/oracle layer outputs",
+    )?;
+
+    let oracle = finish_observed_model_path(
+        observed_second.clone(),
+        oracle_token.token,
+        &final_norm_weight,
+        &final_norm_bias,
+        &head,
+        &head_tensor,
+    )?;
+    let dispatched = finish_observed_model_path(
+        observed_second.clone(),
+        dispatched_token.token,
+        &final_norm_weight,
+        &final_norm_bias,
+        &head,
+        &head_tensor,
+    )?;
+    let reset = finish_observed_model_path(
+        reset_second,
+        reset_token.token,
+        &final_norm_weight,
+        &final_norm_bias,
+        &head,
+        &head_tensor,
+    )?;
+    let transposed = finish_observed_model_path(
+        transposed_second,
+        transposed_token.token,
+        &final_norm_weight,
+        &final_norm_bias,
+        &head,
+        &head_tensor,
+    )?;
+
+    if dispatched.ranking.first.token_id != oracle.ranking.first.token_id
+        || dispatched.ranking.second.token_id != oracle.ranking.second.token_id
+    {
+        return Err(format!(
+            "dispatched top-two ranking [{}, {}] differs from BF16 oracle [{}, {}]",
+            dispatched.ranking.first.token_id,
+            dispatched.ranking.second.token_id,
+            oracle.ranking.first.token_id,
+            oracle.ranking.second.token_id
+        ));
+    }
+
+    let dispatched_complete_state = dispatched.third_token.execution.flattened_complete_state();
+    let oracle_complete_state = oracle.third_token.execution.flattened_complete_state();
+    let reset_complete_state = reset.third_token.execution.flattened_complete_state();
+    let transposed_complete_state = transposed.third_token.execution.flattened_complete_state();
+    let deviations = ModelDispatchDeviationReceipt {
+        dispatched_raw_output_vs_oracle: raw_deviation,
+        dispatched_post_state_vs_oracle: state_deviation,
+        dispatched_layer_output_vs_oracle: layer_deviation,
+        dispatched_final_hidden_vs_oracle: max_abs_difference(
+            &dispatched.final_hidden,
+            &oracle.final_hidden,
+        )?,
+        dispatched_logits_vs_oracle: max_abs_difference(&dispatched.logits, &oracle.logits)?,
+        dispatched_complete_state_vs_oracle: max_abs_difference(
+            &dispatched_complete_state,
+            &oracle_complete_state,
+        )?,
+        dispatched_final_output_vs_reset: max_abs_difference(
+            &dispatched.third_token.final_output,
+            &reset.third_token.final_output,
+        )?,
+        dispatched_logits_vs_reset: max_abs_difference(&dispatched.logits, &reset.logits)?,
+        dispatched_complete_state_vs_reset: max_abs_difference(
+            &dispatched_complete_state,
+            &reset_complete_state,
+        )?,
+        dispatched_final_output_vs_transposed: max_abs_difference(
+            &dispatched.third_token.final_output,
+            &transposed.third_token.final_output,
+        )?,
+        dispatched_logits_vs_transposed: max_abs_difference(
+            &dispatched.logits,
+            &transposed.logits,
+        )?,
+        dispatched_complete_state_vs_transposed: max_abs_difference(
+            &dispatched_complete_state,
+            &transposed_complete_state,
+        )?,
+    };
+    validate_model_dispatch_deviations(&deviations)?;
+
+    let dispatched_transcript =
+        model_dispatch_transcript_receipt(retained_sequence, &dispatched_token.dispatch_steps)?;
+    let reset_transcript =
+        model_dispatch_transcript_receipt(reset_sequence, &reset_token.dispatch_steps)?;
+    let transposed_transcript =
+        model_dispatch_transcript_receipt(transposed_sequence, &transposed_token.dispatch_steps)?;
+
+    let physical_seed_attention_states = observed_second.execution.flattened_attention_previous();
+    let physical_seed_channel_states = observed_second.execution.flattened_ffn_previous();
+    let physical_seed_matrix_states = observed_second.execution.flattened_matrices();
+    let physical_seed_complete_recurrent_state =
+        observed_second.execution.flattened_complete_state();
+
+    Ok(Ttwkv7ObservedModelDispatchReceipt {
+        schema_version: RECEIPT_SCHEMA_VERSION,
+        target: MODEL_DISPATCH_TARGET,
+        model: model_carry.model,
+        dimensions,
+        token_ids: [
+            MODEL_CONFIG_BOS_TOKEN_ID,
+            MODEL_CONFIG_EOS_TOKEN_ID,
+            MODEL_CONFIG_EOS_TOKEN_ID,
+        ],
+        dispatched_token_index_zero_based: MODEL_DISPATCH_TOKEN_INDEX,
+        dispatch_call_count: MODEL_DISPATCH_CALL_COUNT,
+        physical_wkv_call_count: MODEL_CARRY_PHYSICAL_WKV_COUNT,
+        new_physical_wkv_call_count: 0,
+        observed_model_carry_receipt_blake3,
+        dispatch_abi_receipt_blake3,
+        terminal_session_outcome: OBSERVED_SESSION_OUTCOME,
+        evidence_bundle_blake3: model_carry.evidence_bundle_blake3,
+        physical_seed_attention_states: numeric_receipt(&physical_seed_attention_states)?,
+        physical_seed_channel_states: numeric_receipt(&physical_seed_channel_states)?,
+        physical_seed_matrix_states: numeric_receipt(&physical_seed_matrix_states)?,
+        physical_seed_complete_recurrent_state: numeric_receipt(
+            &physical_seed_complete_recurrent_state,
+        )?,
+        oracle_bf16: observed_model_path_receipt(&oracle)?,
+        dispatched_physical_seed: ModelDispatchPathReceipt {
+            transcript: dispatched_transcript,
+            model: observed_model_path_receipt(&dispatched)?,
+        },
+        reset_all_matrix_states_control: ModelDispatchPathReceipt {
+            transcript: reset_transcript,
+            model: observed_model_path_receipt(&reset)?,
+        },
+        transposed_all_matrix_states_control: ModelDispatchPathReceipt {
+            transcript: transposed_transcript,
+            model: observed_model_path_receipt(&transposed)?,
+        },
+        maximum_absolute_deviations: deviations,
+        oracle_tolerance: MODEL_DISPATCH_ORACLE_TOLERANCE,
+        divergence_floor: MODEL_DISPATCH_DIVERGENCE_FLOOR,
+        non_claims: MODEL_DISPATCH_NON_CLAIMS.to_vec(),
+    })
+}
+
+#[derive(Clone, Copy)]
+enum ModelWkvRoute {
+    Oracle,
+    Dispatch(super::dispatch_abi::DispatchSequenceId),
+}
+
+fn run_model_token_all_layers_bf16(
+    weights: &[LayerWeights],
+    embedding: &[f32],
+    mut execution: ModelExecutionState,
+    route: ModelWkvRoute,
+) -> Result<RoutedModelToken, String> {
+    validate_model_weights(weights)?;
+    let dimensions = Dimensions::reviewed();
+    execution.validate(dimensions)?;
+    require_length(
+        embedding,
+        dimensions.hidden_size,
+        "model-dispatch embedding",
+    )?;
+    let mut hidden = embedding.to_vec();
+    let mut value_anchor = None;
+    let mut layer_outputs = Vec::with_capacity(MODEL_LAYER_COUNT);
+    let mut raw_outputs = Vec::with_capacity(MODEL_LAYER_COUNT);
+    let mut post_states = Vec::with_capacity(MODEL_LAYER_COUNT);
+    let mut dispatch_steps = Vec::with_capacity(MODEL_LAYER_COUNT);
+    let mut layer_zero_pre_state = None;
+    let mut layer_zero_raw_output = None;
+    let mut layer_zero_post_state = None;
+
+    for (layer_index, layer) in weights.iter().enumerate() {
+        let residual = apply_pre_norm(layer, &hidden)?;
+        let attention_input = layer_norm(
+            &residual,
+            &layer.attn_norm_weight,
+            &layer.attn_norm_bias,
+            LAYER_NORM_EPSILON,
+        )?;
+        let preparation = prepare_time_mix(
+            layer,
+            &attention_input,
+            &execution.layers[layer_index].attention_previous,
+            value_anchor.as_deref(),
+        )?;
+        if layer_index == LAYER_INDEX {
+            value_anchor = Some(preparation.projected_value.clone());
+            layer_zero_pre_state = Some(execution.layers[layer_index].matrix.clone());
+        }
+
+        let (raw_output, post_state, oracle_raw_output, oracle_post_state) = match route {
+            ModelWkvRoute::Oracle => {
+                let consumed_inputs = quantize_wkv_inputs(&preparation.wkv_inputs)?;
+                let consumed_state = quantize_bf16_values(
+                    &execution.layers[layer_index].matrix,
+                    "model-dispatch oracle pre-state",
+                )?;
+                let (oracle_state, oracle_output) =
+                    wkv_step_oracle(&consumed_state, &consumed_inputs, dimensions)?;
+                let oracle_state =
+                    quantize_bf16_values(&oracle_state, "model-dispatch oracle post-state")?;
+                let oracle_output =
+                    quantize_bf16_values(&oracle_output, "model-dispatch oracle raw output")?;
+                (
+                    oracle_output.clone(),
+                    oracle_state.clone(),
+                    oracle_output,
+                    oracle_state,
+                )
+            }
+            ModelWkvRoute::Dispatch(sequence_id) => {
+                let step = super::dispatch_abi::execute_cpu_dispatch_step(
+                    sequence_id,
+                    layer_index,
+                    MODEL_DISPATCH_TOKEN_INDEX,
+                    layer_index,
+                    &preparation.wkv_inputs,
+                    &execution.layers[layer_index].matrix,
+                )?;
+                let (oracle_state, oracle_output) =
+                    wkv_step_oracle(&step.consumed_pre_state, &step.consumed_inputs, dimensions)?;
+                let oracle_state =
+                    quantize_bf16_values(&oracle_state, "model-dispatch oracle post-state")?;
+                let oracle_output =
+                    quantize_bf16_values(&oracle_output, "model-dispatch oracle raw output")?;
+                let raw_output = step.raw_output.clone();
+                let post_state = step.post_state.clone();
+                dispatch_steps.push(step);
+                (raw_output, post_state, oracle_output, oracle_state)
+            }
+        };
+        let state_deviation = max_abs_difference(&post_state, &oracle_post_state)?;
+        let raw_deviation = max_abs_difference(&raw_output, &oracle_raw_output)?;
+        if state_deviation > MODEL_DISPATCH_ORACLE_TOLERANCE
+            || raw_deviation > MODEL_DISPATCH_ORACLE_TOLERANCE
+        {
+            return Err(format!(
+                "model-dispatch layer {layer_index} oracle deviation state={state_deviation} raw={raw_deviation} exceeds {MODEL_DISPATCH_ORACLE_TOLERANCE}"
+            ));
+        }
+        let attention_output = finish_time_mix_attention(layer, &preparation, &raw_output)?;
+        let oracle_attention = finish_time_mix_attention(layer, &preparation, &oracle_raw_output)?;
+        let attention_deviation = max_abs_difference(&attention_output, &oracle_attention)?;
+        if attention_deviation > MODEL_DISPATCH_ORACLE_TOLERANCE {
+            return Err(format!(
+                "model-dispatch layer {layer_index} attention deviation {attention_deviation} exceeds {MODEL_DISPATCH_ORACLE_TOLERANCE}"
+            ));
+        }
+
+        execution.layers[layer_index]
+            .attention_previous
+            .clone_from(&attention_input);
+        execution.maximum_state_deviations[layer_index] =
+            execution.maximum_state_deviations[layer_index].max(state_deviation);
+        execution.maximum_output_deviations[layer_index] =
+            execution.maximum_output_deviations[layer_index].max(attention_deviation);
+        execution.layers[layer_index].matrix = post_state.clone();
+        execution.oracle_matrices[layer_index] = oracle_post_state;
+        let suffix = finish_layer_suffix(
+            layer,
+            &residual,
+            &attention_output,
+            &execution.layers[layer_index].ffn_previous,
+        )?;
+        execution.layers[layer_index].ffn_previous = suffix.ffn_input;
+        hidden = suffix.final_output;
+        raw_outputs.push(raw_output.clone());
+        post_states.push(post_state.clone());
+        layer_outputs.push(hidden.clone());
+        if layer_index == LAYER_INDEX {
+            layer_zero_raw_output = Some(raw_output);
+            layer_zero_post_state = Some(post_state);
+        }
+    }
+    match route {
+        ModelWkvRoute::Oracle if !dispatch_steps.is_empty() => {
+            return Err("oracle route unexpectedly produced dispatch steps".to_owned());
+        }
+        ModelWkvRoute::Dispatch(_) if dispatch_steps.len() != MODEL_DISPATCH_CALL_COUNT => {
+            return Err(format!(
+                "model dispatch requires {MODEL_DISPATCH_CALL_COUNT} steps, found {}",
+                dispatch_steps.len()
+            ));
+        }
+        _ => {}
+    }
+    require_finite(&hidden, "model-dispatch final output")?;
+    execution.validate(dimensions)?;
+    Ok(RoutedModelToken {
+        token: ModelTokenExecution {
+            execution,
+            final_output: hidden,
+            layer_outputs,
+            layer_zero_pre_state: layer_zero_pre_state
+                .ok_or_else(|| "model dispatch did not record layer-zero pre-state".to_owned())?,
+            layer_zero_raw_output: layer_zero_raw_output
+                .ok_or_else(|| "model dispatch did not record layer-zero raw output".to_owned())?,
+            layer_zero_post_state: layer_zero_post_state
+                .ok_or_else(|| "model dispatch did not record layer-zero post-state".to_owned())?,
+        },
+        raw_outputs,
+        post_states,
+        dispatch_steps,
+    })
+}
+
+#[derive(Clone, Copy)]
+enum ModelMatrixControl {
+    Reset,
+    Transposed,
+}
+
+fn validate_model_matrix_control(
+    original: &ModelTokenExecution,
+    controlled: &ModelTokenExecution,
+    dimensions: Dimensions,
+    control: ModelMatrixControl,
+) -> Result<(), String> {
+    original.execution.validate(dimensions)?;
+    controlled.execution.validate(dimensions)?;
+    if original.execution.layers.len() != controlled.execution.layers.len() {
+        return Err("model-dispatch control changed layer count".to_owned());
+    }
+    for (layer_index, (original_layer, controlled_layer)) in original
+        .execution
+        .layers
+        .iter()
+        .zip(&controlled.execution.layers)
+        .enumerate()
+    {
+        if original_layer.attention_previous != controlled_layer.attention_previous
+            || original_layer.ffn_previous != controlled_layer.ffn_previous
+        {
+            return Err(format!(
+                "model-dispatch control changed host state for layer {layer_index}"
+            ));
+        }
+        let expected_matrix = match control {
+            ModelMatrixControl::Reset => vec![0.0; original_layer.matrix.len()],
+            ModelMatrixControl::Transposed => {
+                transpose_head_matrices(&original_layer.matrix, dimensions)?
+            }
+        };
+        if controlled_layer.matrix != expected_matrix
+            || controlled.execution.oracle_matrices[layer_index] != expected_matrix
+        {
+            return Err(format!(
+                "model-dispatch control matrix mismatch for layer {layer_index}"
+            ));
+        }
+    }
+    if original.execution.maximum_state_deviations != controlled.execution.maximum_state_deviations
+        || original.execution.maximum_output_deviations
+            != controlled.execution.maximum_output_deviations
+    {
+        return Err("model-dispatch control changed accumulated deviations".to_owned());
+    }
+    Ok(())
+}
+
+fn reset_all_model_matrices(
+    mut second_token: ModelTokenExecution,
+    dimensions: Dimensions,
+) -> Result<ModelTokenExecution, String> {
+    second_token.execution.validate(dimensions)?;
+    let state_count = dimensions.head_count * dimensions.head_size * dimensions.head_size;
+    for (layer, oracle) in second_token
+        .execution
+        .layers
+        .iter_mut()
+        .zip(second_token.execution.oracle_matrices.iter_mut())
+    {
+        layer.matrix = vec![0.0; state_count];
+        *oracle = layer.matrix.clone();
+    }
+    Ok(second_token)
+}
+
+fn transpose_all_model_matrices(
+    mut second_token: ModelTokenExecution,
+    dimensions: Dimensions,
+) -> Result<ModelTokenExecution, String> {
+    second_token.execution.validate(dimensions)?;
+    for (layer, oracle) in second_token
+        .execution
+        .layers
+        .iter_mut()
+        .zip(second_token.execution.oracle_matrices.iter_mut())
+    {
+        layer.matrix = transpose_head_matrices(&layer.matrix, dimensions)?;
+        *oracle = layer.matrix.clone();
+    }
+    Ok(second_token)
+}
+
+fn maximum_nested_deviation(
+    left: &[Vec<f32>],
+    right: &[Vec<f32>],
+    name: &str,
+) -> Result<f32, String> {
+    if left.len() != right.len() {
+        return Err(format!(
+            "{name} outer length mismatch: {} versus {}",
+            left.len(),
+            right.len()
+        ));
+    }
+    left.iter()
+        .zip(right)
+        .try_fold(0.0_f32, |maximum, (left_values, right_values)| {
+            Ok(maximum.max(max_abs_difference(left_values, right_values)?))
+        })
+}
+
+fn model_dispatch_transcript_receipt(
+    sequence_id: super::dispatch_abi::DispatchSequenceId,
+    steps: &[super::dispatch_abi::CpuDispatchStep],
+) -> Result<ModelDispatchTranscriptReceipt, String> {
+    let summary = super::dispatch_abi::summarize_dispatch_steps(sequence_id, steps)?;
+    if summary.ordered_request_blake3.len() != MODEL_DISPATCH_CALL_COUNT
+        || summary.ordered_response_blake3.len() != MODEL_DISPATCH_CALL_COUNT
+    {
+        return Err(format!(
+            "model dispatch transcript requires {MODEL_DISPATCH_CALL_COUNT} request/response identities"
+        ));
+    }
+    Ok(ModelDispatchTranscriptReceipt {
+        sequence_id: summary.sequence_id,
+        call_count: MODEL_DISPATCH_CALL_COUNT,
+        token_index_zero_based: MODEL_DISPATCH_TOKEN_INDEX,
+        request_frame_byte_count: summary.request_frame_byte_count,
+        response_frame_byte_count: summary.response_frame_byte_count,
+        ordered_request_blake3: summary.ordered_request_blake3,
+        ordered_response_blake3: summary.ordered_response_blake3,
+        transcript_blake3: summary.transcript_blake3,
+    })
+}
+
+fn validate_model_dispatch_deviations(
+    deviations: &ModelDispatchDeviationReceipt,
+) -> Result<(), String> {
+    for (name, deviation) in [
+        (
+            "raw output oracle",
+            deviations.dispatched_raw_output_vs_oracle,
+        ),
+        (
+            "post-state oracle",
+            deviations.dispatched_post_state_vs_oracle,
+        ),
+        (
+            "layer output oracle",
+            deviations.dispatched_layer_output_vs_oracle,
+        ),
+        (
+            "final hidden oracle",
+            deviations.dispatched_final_hidden_vs_oracle,
+        ),
+        ("logits oracle", deviations.dispatched_logits_vs_oracle),
+        (
+            "complete state oracle",
+            deviations.dispatched_complete_state_vs_oracle,
+        ),
+    ] {
+        if !deviation.is_finite() || deviation > MODEL_DISPATCH_ORACLE_TOLERANCE {
+            return Err(format!(
+                "model-dispatch {name} deviation {deviation} exceeds {MODEL_DISPATCH_ORACLE_TOLERANCE}"
+            ));
+        }
+    }
+    for (name, divergence) in [
+        (
+            "reset final output",
+            deviations.dispatched_final_output_vs_reset,
+        ),
+        ("reset logits", deviations.dispatched_logits_vs_reset),
+        (
+            "reset complete state",
+            deviations.dispatched_complete_state_vs_reset,
+        ),
+        (
+            "transposed final output",
+            deviations.dispatched_final_output_vs_transposed,
+        ),
+        (
+            "transposed logits",
+            deviations.dispatched_logits_vs_transposed,
+        ),
+        (
+            "transposed complete state",
+            deviations.dispatched_complete_state_vs_transposed,
+        ),
+    ] {
+        if !divergence.is_finite() || divergence <= MODEL_DISPATCH_DIVERGENCE_FLOOR {
+            return Err(format!(
+                "model-dispatch {name} divergence {divergence} does not exceed {MODEL_DISPATCH_DIVERGENCE_FLOOR}"
+            ));
+        }
+    }
+    Ok(())
+}
+
 fn advance_observed_model_path(
     weights: &[LayerWeights],
     embedding: &[f32],
@@ -1352,13 +2113,31 @@ fn advance_observed_model_path(
     head: &Matrix,
     head_tensor: &TensorView<'_>,
 ) -> Result<ObservedModelPath, String> {
-    let dimensions = Dimensions::reviewed();
     let third_token = run_model_token_with_layer_zero_mode(
         weights,
         embedding,
         second_token.execution.clone(),
         layer_zero_mode,
     )?;
+    finish_observed_model_path(
+        second_token,
+        third_token,
+        final_norm_weight,
+        final_norm_bias,
+        head,
+        head_tensor,
+    )
+}
+
+fn finish_observed_model_path(
+    second_token: ModelTokenExecution,
+    third_token: ModelTokenExecution,
+    final_norm_weight: &[f32],
+    final_norm_bias: &[f32],
+    head: &Matrix,
+    head_tensor: &TensorView<'_>,
+) -> Result<ObservedModelPath, String> {
+    let dimensions = Dimensions::reviewed();
     if third_token.layer_outputs.len() != MODEL_LAYER_COUNT {
         return Err(format!(
             "third token requires {MODEL_LAYER_COUNT} layer outputs, found {}",

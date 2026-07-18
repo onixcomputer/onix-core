@@ -249,6 +249,58 @@ let
   expectedDispatchAbiTransposedStateBlake3 = "946815abb8242af5035b426afd7746fab14b5d4511cb4408045f40d188f089f7";
   expectedDispatchAbiResetDivergence = "0.0023040771";
   expectedDispatchAbiTransposedDivergence = "0.003791809";
+  expectedModelDispatchReplayBlake3 = "81c3b5c9904d2469b89d3f6732609514996fbe910a0c9ff0c150fb6044832b5d";
+  expectedModelDispatchReceiptByteCount = 43080;
+  expectedModelDispatchSeedBlake3 = [
+    "ad0016542abe85df264a65b9083b30fe61b844cd568a8696fe457d853c47a0fb"
+    "9e938d7dfbfc02c0b16a064a28c7fcbb10dc4294d8b00fea7fd3aa8af22a5c95"
+    "b0984844f004f2a92bd06efcdc5dddb692e69948b9bb0d4599c4d5c3c6ce4afb"
+    "07639ace76eb47cd7ce733b0754d1905af3c117701821850da9abfc695d232dd"
+  ];
+  expectedModelDispatchTranscripts = [
+    "c425dfc393850ff6a5041837d7904bb75c825be14e16d9df775d1b510cb04d38"
+    "1285fddeabae7153596a3f5bc6f9cc6063d441046a6ab261123dc6c8085c2715"
+    "ae85f1bb6595bbfde0b1c7e2d90ab3aa84e4b3e537d3d7baf5d286557aeb78ed"
+  ];
+  expectedModelDispatchSequenceIds = [
+    "e8fcf5046591b9ca0147ece598b858b07744cc2a4ca24a6a8e8944d926d54cab"
+    "e8a1ca1eec4cad16201e5214d1c30e31ba3dc3a0d8641e3eda7b99d0269384e2"
+    "3cf1c3dc2f1ce354f4e21aae62affaf0637c0af09c1d84d369bc08becb894020"
+  ];
+  expectedModelDispatchPathBlake3 = [
+    "904ca4c9005599ae4f61edc293c020b8fc5320eb1910862932a0e6a8408a69b3"
+    "ef2c2b0c6cb617772e068dc8b886cf8e9c773b49cee4561881064ce5fb7981a3"
+    "c520d204d96742b47c996e04ba7b244b2beb64a970cc25ded1aa549b99870735"
+    "0c64c023c7655e1d88e87c3077b75862bd711fd1353bfa0b5299317dbeb4f15a"
+    "0371b6e8be0ee060081c8fe02309ca450e26a3ae97e22bf10cb0cf0b50eda9dd"
+    "732b71ced9fe143e40ea3ed1f40e82a6998fcc4cb8307534517b1a05712dd766"
+    "281ca311f6dcf93145e2aabdd40e38194c95e9f81b27b9aa2c6194d1bb50a0e9"
+    "82633e9fbdb31910b4502fd592006e2bf0bf3264b17319d27f15a304fa313a8e"
+    "bc5b9849924b2a3c4a2d0ac4e569a6135327599cfbd19275400cc6982e477e23"
+    "75740dd094d24b5da35018422782e98098a95595ecd233d5510647ba22b529ee"
+    "5404025716b139d8aa45819e05076bd94affc89e80614763f74dc222b2dad075"
+    "591e1eb82e7a4f4bae035954c5b1416751d1e74731b0edbe45d4475a6ec08a47"
+    "f76d8978a0863239d7713f28c34168c2e2aadfbd08728685e33ce9529507b092"
+    "d71476979c3c25314d0ceb8e8450fc2cefb93b67767d43e8cb7b903d27f4c657"
+    "6b21cf3ad161b1bdeeda432c4e8fce09f3dba3538bc510bab3538a29284c52ef"
+    "cc0ef40882c1341eff2ce0c7061df28ca4bc1b1eedb947b0150827a88b2f62f2"
+  ];
+  expectedModelDispatchOracleDeviations = [
+    "0.001953125"
+    "0.0009765625"
+    "0.0001604557"
+    "0.00035476685"
+    "0.00018692017"
+    "0.0009765625"
+  ];
+  expectedModelDispatchControlDivergences = [
+    "134.51514"
+    "15.3446"
+    "55.0"
+    "90.17365"
+    "22.17935"
+    "54.99176"
+  ];
   observedOutputByteCount = 1536;
   observedPostStateByteCount = 98304;
   writerRawByteCount = 147456;
@@ -671,6 +723,110 @@ let
 
         cp model-first.json "$out/receipt.json"
       '';
+  modelDispatchCheck =
+    runCommand "rwkv-ttwkv7-observed-model-dispatch"
+      {
+        nativeBuildInputs = [ b3sum ];
+      }
+      ''
+        set -euo pipefail
+        mkdir -p "$out"
+        replay=${package}/bin/rwkv-ttwkv7-observed-model-dispatch
+        evidence=${observedEvidenceRoot}
+
+        "$replay" --evidence-root "$evidence" >dispatch-first.json
+        "$replay" --evidence-root "$evidence" >dispatch-second.json
+        cmp dispatch-first.json dispatch-second.json
+        test "$(b3sum dispatch-first.json | cut -d' ' -f1)" = \
+          ${lib.escapeShellArg expectedModelDispatchReplayBlake3}
+        test "$(wc -c <dispatch-first.json)" -eq \
+          ${toString expectedModelDispatchReceiptByteCount}
+        grep -F '"target": "rwkv_ttwkv7_observed_model_dispatch"' dispatch-first.json
+        grep -F '"dispatched_token_index_zero_based": 2' dispatch-first.json
+        grep -F '"dispatch_call_count": 12' dispatch-first.json
+        grep -F '"physical_wkv_call_count": 1' dispatch-first.json
+        grep -F '"new_physical_wkv_call_count": 0' dispatch-first.json
+        grep -F '"observed_model_carry_receipt_blake3": "${expectedModelCarryReplayBlake3}"' \
+          dispatch-first.json
+        grep -F '"dispatch_abi_receipt_blake3": "${expectedDispatchAbiReplayBlake3}"' \
+          dispatch-first.json
+        grep -F '"terminal_session_outcome": "unsafe"' dispatch-first.json
+        grep -F '"evidence_bundle_blake3": "${expectedObservedEvidenceBundleBlake3}"' \
+          dispatch-first.json
+        test "$(grep -Fc '"request_frame_byte_count": 107588' dispatch-first.json)" -eq 3
+        test "$(grep -Fc '"response_frame_byte_count": 99940' dispatch-first.json)" -eq 3
+        test "$(grep -Fc '"third_token_layer_outputs": [' dispatch-first.json)" -eq 4
+        test "$(grep -Ec '^        "[0-9a-f]{64}"[, ]*$' dispatch-first.json)" -eq 72
+        test "$(grep -Fc '"generated_token_id": 2' dispatch-first.json)" -eq 2
+        test "$(grep -Fc '"runner_up_token_id": 33' dispatch-first.json)" -eq 2
+        grep -F '"generated_token_id": 92' dispatch-first.json
+        grep -F '"runner_up_token_id": 11' dispatch-first.json
+        grep -F '"generated_token_id": 47' dispatch-first.json
+        grep -F '"runner_up_token_id": 1753' dispatch-first.json
+        for expected in ${lib.escapeShellArgs expectedModelDispatchTranscripts}; do
+          grep -F "\"transcript_blake3\": \"$expected\"" dispatch-first.json
+        done
+        for expected in ${lib.escapeShellArgs expectedModelDispatchSequenceIds}; do
+          grep -F "\"sequence_id\": \"$expected\"" dispatch-first.json
+        done
+        for expected in ${
+          lib.escapeShellArgs (expectedModelDispatchSeedBlake3 ++ expectedModelDispatchPathBlake3)
+        }; do
+          grep -F "\"blake3\": \"$expected\"" dispatch-first.json
+        done
+        for expected in ${lib.escapeShellArgs expectedModelDispatchOracleDeviations}; do
+          grep -F ": $expected" dispatch-first.json
+        done
+        for expected in ${lib.escapeShellArgs expectedModelDispatchControlDivergences}; do
+          grep -F ": $expected" dispatch-first.json
+        done
+        grep -F '"oracle_tolerance": 0.002' dispatch-first.json
+        grep -F 'All twelve third-token WKV calls execute in the device-free CPU dispatcher.' \
+          dispatch-first.json
+        grep -F 'No new hardware execution is authorized by this replay.' dispatch-first.json
+
+        expect_failure() {
+          expected_diagnostic="$1"
+          output_path="$2"
+          shift 2
+          if "$@" >"$output_path" 2>&1; then
+            echo "model-dispatch negative command unexpectedly passed: $*" >&2
+            exit 1
+          fi
+          grep -F "$expected_diagnostic" "$output_path"
+        }
+        usage='usage: rwkv-ttwkv7-observed-model-dispatch --evidence-root PATH'
+        expect_failure "$usage" missing-arguments.log "$replay"
+        expect_failure "$usage" extra-arguments.log \
+          "$replay" --evidence-root "$evidence" unexpected
+        expect_failure "$usage" reordered-arguments.log \
+          "$replay" "$evidence" --evidence-root
+
+        changed_root="$(mktemp -d)"
+        cp -R "$evidence/." "$changed_root/"
+        chmod -R u+w "$changed_root"
+        printf '\n' >>"$changed_root/classification-receipt.json"
+        expect_failure 'classification receipt BLAKE3 mismatch' \
+          changed-classification.log "$replay" --evidence-root "$changed_root"
+
+        rm -rf "$changed_root"
+        changed_root="$(mktemp -d)"
+        cp -R "$evidence/." "$changed_root/"
+        chmod -R u+w "$changed_root"
+        printf 'x' | dd of="$changed_root/observed-post-state.bf16" \
+          bs=1 seek=0 conv=notrunc status=none
+        expect_failure 'observed post-state BF16 BLAKE3 mismatch' \
+          changed-state.log "$replay" --evidence-root "$changed_root"
+
+        if grep -E 'std::process::Command|Command::new|MeshDevice::|EnqueueMeshWorkload|TT_VISIBLE_DEVICES' \
+          ${./src/dispatch_abi.rs} ${./src/observed_layer.rs} \
+          ${./src/bin/rwkv-ttwkv7-observed-model-dispatch.rs}; then
+          echo "model dispatch contains a process or device execution surface" >&2
+          exit 1
+        fi
+        test ! -e ${package}/share/rwkv-layer-harness/ttwkv7-device-2
+        cp dispatch-first.json "$out/receipt.json"
+      '';
   dispatchAbiCheck =
     runCommand "rwkv-ttwkv7-dispatch-abi"
       {
@@ -1039,6 +1195,7 @@ let
         dispatchAbiCheck
         frameworkParityCheck
         modelCarryCheck
+        modelDispatchCheck
         observedLayerReplayCheck
         stateCarryCheck
         generationConfig

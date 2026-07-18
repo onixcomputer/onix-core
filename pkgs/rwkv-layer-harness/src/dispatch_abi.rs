@@ -24,6 +24,7 @@ const FRAME_ORDINAL_COUNT: usize = 3;
 const FRAME_DIMENSION_COUNT: usize = 3;
 const U32_WIDTH: usize = 4;
 const SEQUENCE_ID_WIDTH: usize = 32;
+pub(super) type DispatchSequenceId = [u8; SEQUENCE_ID_WIDTH];
 const REQUEST_ID_WIDTH: usize = 32;
 const FIXTURE_PERIOD: usize = 29;
 const FIXTURE_CENTER: f32 = 14.0;
@@ -105,6 +106,24 @@ struct DispatchReplay {
     response_blake3: Vec<String>,
     transcript_blake3: String,
     final_state: Vec<f32>,
+}
+
+pub(super) struct CpuDispatchStep {
+    pub consumed_inputs: WkvInputs,
+    pub consumed_pre_state: Vec<f32>,
+    pub raw_output: Vec<f32>,
+    pub post_state: Vec<f32>,
+    pub request_frame: Vec<u8>,
+    pub response_frame: Vec<u8>,
+}
+
+pub(super) struct DispatchTranscriptSummary {
+    pub sequence_id: String,
+    pub request_frame_byte_count: usize,
+    pub response_frame_byte_count: usize,
+    pub ordered_request_blake3: Vec<String>,
+    pub ordered_response_blake3: Vec<String>,
+    pub transcript_blake3: String,
 }
 
 struct FrameCursor<'a> {
@@ -228,35 +247,30 @@ fn execute_fixture(control: SecondTokenControl) -> Result<DispatchReplay, String
                 state,
                 dimensions,
             )?;
-            let request_frame = encode_request(&request)?;
-            set_or_check_frame_size(
-                &mut request_frame_byte_count,
-                request_frame.len(),
-                "request",
-            )?;
-            let decoded_request = decode_request(&request_frame)?;
-            validate_request_ordinals(
-                &decoded_request,
+            let step = execute_cpu_dispatch_step(
                 sequence_id,
                 call_ordinal,
                 token_ordinal,
                 layer_ordinal,
+                &request.inputs,
+                &request.pre_state,
             )?;
-            let response = emulate_cpu_response(&decoded_request, &request_frame)?;
-            let response_frame = encode_response(&response)?;
+            set_or_check_frame_size(
+                &mut request_frame_byte_count,
+                step.request_frame.len(),
+                "request",
+            )?;
             set_or_check_frame_size(
                 &mut response_frame_byte_count,
-                response_frame.len(),
+                step.response_frame.len(),
                 "response",
             )?;
-            let decoded_response = decode_response(&response_frame)?;
-            validate_response(&decoded_request, &request_frame, &decoded_response)?;
-            state.clone_from(&decoded_response.post_state);
-            let request_hash = blake3::hash(&request_frame);
-            let response_hash = blake3::hash(&response_frame);
+            state.clone_from(&step.post_state);
+            let request_hash = blake3::hash(&step.request_frame);
+            let response_hash = blake3::hash(&step.response_frame);
             requests.push(request_hash.to_hex().to_string());
             responses.push(response_hash.to_hex().to_string());
-            update_transcript(&mut transcript, &request_frame, &response_frame)?;
+            update_transcript(&mut transcript, &step.request_frame, &step.response_frame)?;
         }
     }
     if requests.len() != DISPATCH_CALL_COUNT || responses.len() != DISPATCH_CALL_COUNT {
@@ -701,8 +715,93 @@ fn update_transcript(
     Ok(())
 }
 
+pub(super) fn execute_cpu_dispatch_step(
+    sequence_id: DispatchSequenceId,
+    call_ordinal: usize,
+    token_ordinal: usize,
+    layer_ordinal: usize,
+    inputs: &WkvInputs,
+    pre_state: &[f32],
+) -> Result<CpuDispatchStep, String> {
+    let dimensions = Dimensions::reviewed();
+    let request = DispatchRequest {
+        sequence_id,
+        call_ordinal: checked_u32(call_ordinal, "call ordinal")?,
+        token_ordinal: checked_u32(token_ordinal, "token ordinal")?,
+        layer_ordinal: checked_u32(layer_ordinal, "layer ordinal")?,
+        dimensions,
+        inputs: inputs.clone(),
+        pre_state: pre_state.to_vec(),
+    };
+    let request_frame = encode_request(&request)?;
+    let decoded_request = decode_request(&request_frame)?;
+    validate_request_ordinals(
+        &decoded_request,
+        sequence_id,
+        call_ordinal,
+        token_ordinal,
+        layer_ordinal,
+    )?;
+    let response = emulate_cpu_response(&decoded_request, &request_frame)?;
+    let response_frame = encode_response(&response)?;
+    let decoded_response = decode_response(&response_frame)?;
+    validate_response(&decoded_request, &request_frame, &decoded_response)?;
+    Ok(CpuDispatchStep {
+        consumed_inputs: decoded_request.inputs,
+        consumed_pre_state: decoded_request.pre_state,
+        raw_output: decoded_response.raw_output,
+        post_state: decoded_response.post_state,
+        request_frame,
+        response_frame,
+    })
+}
+
+pub(super) fn summarize_dispatch_steps(
+    sequence_id: DispatchSequenceId,
+    steps: &[CpuDispatchStep],
+) -> Result<DispatchTranscriptSummary, String> {
+    if steps.is_empty() {
+        return Err("dispatch transcript requires at least one step".to_owned());
+    }
+    let mut request_frame_byte_count = None;
+    let mut response_frame_byte_count = None;
+    let mut ordered_request_blake3 = Vec::with_capacity(steps.len());
+    let mut ordered_response_blake3 = Vec::with_capacity(steps.len());
+    let mut transcript = blake3::Hasher::new();
+    transcript.update(TRANSCRIPT_DOMAIN);
+    for step in steps {
+        set_or_check_frame_size(
+            &mut request_frame_byte_count,
+            step.request_frame.len(),
+            "request",
+        )?;
+        set_or_check_frame_size(
+            &mut response_frame_byte_count,
+            step.response_frame.len(),
+            "response",
+        )?;
+        ordered_request_blake3.push(blake3::hash(&step.request_frame).to_hex().to_string());
+        ordered_response_blake3.push(blake3::hash(&step.response_frame).to_hex().to_string());
+        update_transcript(&mut transcript, &step.request_frame, &step.response_frame)?;
+    }
+    Ok(DispatchTranscriptSummary {
+        sequence_id: hex_bytes(&sequence_id),
+        request_frame_byte_count: request_frame_byte_count
+            .ok_or_else(|| "request frame size was not recorded".to_owned())?,
+        response_frame_byte_count: response_frame_byte_count
+            .ok_or_else(|| "response frame size was not recorded".to_owned())?,
+        ordered_request_blake3,
+        ordered_response_blake3,
+        transcript_blake3: transcript.finalize().to_hex().to_string(),
+    })
+}
+
+pub(super) fn derive_sequence_id(domain: &[u8]) -> DispatchSequenceId {
+    *blake3::hash(domain).as_bytes()
+}
+
 fn sequence_id() -> [u8; SEQUENCE_ID_WIDTH] {
-    *blake3::hash(SEQUENCE_DOMAIN).as_bytes()
+    derive_sequence_id(SEQUENCE_DOMAIN)
 }
 
 fn hash_f32(values: &[f32]) -> String {
