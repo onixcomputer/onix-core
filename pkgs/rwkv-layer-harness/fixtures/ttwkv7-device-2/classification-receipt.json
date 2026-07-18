@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "plan_id": "d4886116b76df2cf63090e3a1f7efff35aa215aa2d05652d7accaa9b61a9abb1",
+  "outcome": "unsafe",
+  "process_budget_exhausted": true,
+  "missing_artifact_roles": [],
+  "missing_success_markers": [],
+  "safety_issues": [
+    "owner health status did not match the manifest"
+  ],
+  "success_claim": null,
+  "non_claims": [
+    "No exact BF16 parity is established by a tolerance pass.",
+    "No full RWKV layer or model execution is established.",
+    "No general P150 compatibility is established.",
+    "No generation or serving behavior is established.",
+    "No hardware execution is authorized by this plan artifact.",
+    "No throughput or latency claim is established."
+  ]
+}

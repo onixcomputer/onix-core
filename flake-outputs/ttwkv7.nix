@@ -53,6 +53,7 @@ in
     # r[impl onix.tenstorrent.native_runtime.rwkv_lab.tokenizer_text]
     # r[impl onix.tenstorrent.native_runtime.rwkv_lab.bounded_prompt]
     # r[impl onix.tenstorrent.native_runtime.rwkv_lab.torch_equation_parity]
+    # r[impl onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_layer_replay]
     rwkv-layer-harness = rwkvLayerHarness;
     # r[impl onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_boundary_device_harness]
     rwkv-ttwkv7-boundary-device = rwkvTtwkv7BoundaryDevice;
@@ -63,6 +64,8 @@ in
   checks = lib.optionalAttrs isSupportedSystem {
     # r[verify onix.tenstorrent.native_runtime.rwkv_lab.torch_equation_parity]
     rwkv-layer-framework-parity = rwkvLayerHarness.passthru.frameworkParityCheck;
+    # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_layer_replay]
+    rwkv-ttwkv7-observed-layer = rwkvLayerHarness.passthru.observedLayerReplayCheck;
     # r[verify onix.tenstorrent.native_runtime.ttwkv7.fast_iteration]
     ttwkv7-architectures = ttwkv7.passthru.architectureCheck;
     # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_host_layout]

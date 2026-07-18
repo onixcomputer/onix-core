@@ -1,0 +1,2 @@
+# Preserve immutable external hardware logs byte-for-byte.
+pkgs/rwkv-layer-harness/fixtures/ttwkv7-device-2/diagnostic.log binary

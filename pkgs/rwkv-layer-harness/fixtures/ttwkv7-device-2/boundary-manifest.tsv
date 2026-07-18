@@ -1,0 +1,4 @@
+role	filename	elements	bytes	blake3
+observed_output_bf16	observed-output.bf16	768	1536	417a583d87e901c5488266e84f3f9cfba98e2bbe45fc8da952c8cb4b06afc66a
+observed_post_state_bf16	observed-post-state.bf16	49152	98304	b3321aeb38963fb96a720ae33d9477e8fbfb83b3750213abc64786885d3771a9
+writer_raw_bf16	writer-raw.bf16	73728	147456	a8d4304ca77c69cb58e55360755acd25a5847a2ca5884fbe807fe634d89a0c18

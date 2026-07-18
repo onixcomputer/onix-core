@@ -1,6 +1,8 @@
 {
+  b3sum,
   fetchurl,
   lib,
+  nickel,
   python3,
   runCommand,
   rustPlatform,
@@ -168,6 +170,21 @@ let
   expectedTtwkv7BoundaryOracleOutputDeviation = "3.7252903e-9";
   expectedTtwkv7BoundaryOracleStateDeviation = "2.9802322e-8";
   expectedTtwkv7BoundaryRetainedStateMaximum = "1.2421875";
+  observedEvidenceRoot = ./fixtures/ttwkv7-device-2;
+  expectedObservedReplayBlake3 = "0f2e08a9966672ab8d076ec2a601e336c0e0022ea4af023e472a7bbc05ba6d18";
+  expectedObservedTypedEvidenceBlake3 = "3d7c9c9f256612f5885fad7cd7aef9b73dfcea11df83da8fbe28cf7a625dab54";
+  expectedObservedEvidenceBundleBlake3 = "2c184f63f7ba298aea7f3eabd189494b4b1d65e9e21c8cc7745c38451d62aa31";
+  expectedObservedAttentionBlake3 = "3ceb34498ce82d176e17a2372a3213e7008f13b429239f8ff3d718bafe464d37";
+  expectedObservedFinalLayerBlake3 = "f9b56d68f21cea629b101ebe6d2c56e709ace8beb03f37b51cfc20beead95581";
+  expectedBf16BoundaryAttentionBlake3 = "b577a38ed9cad20ddece194f1618fd27b27a81f72cd780a87ddbf4e51d9ac39f";
+  expectedBf16BoundaryFinalLayerBlake3 = "67a8e5d826efafcb9fbdcfbdcc3135d80352ba5d34e8cbd826b0ae9efd6f0b20";
+  expectedSourceAttentionBlake3 = "f6f21abaf40152a89d54287b32b5e1da316c2b21432def1cf918006ba3b87763";
+  expectedObservedFinalVsExpectedDeviation = "0.0017949939";
+  expectedObservedFinalVsSourceDeviation = "0.00022334047";
+  observedOutputByteCount = 1536;
+  observedPostStateByteCount = 98304;
+  writerRawByteCount = 147456;
+  truncatedOutputByteCount = observedOutputByteCount - 1;
   frameworkParityCheck =
     runCommand "rwkv-layer-harness-torch-equation-parity"
       {
@@ -221,6 +238,133 @@ let
         grep -Fq '"top_two_token_ids_match":true' "$out/receipt.json"
         grep -Fq '"device":"cpu"' "$out/receipt.json"
         grep -Fq 'No FLA kernel/runtime parity is established.' "$out/receipt.json"
+      '';
+  observedLayerReplayCheck =
+    runCommand "rwkv-ttwkv7-observed-layer-replay"
+      {
+        nativeBuildInputs = [
+          b3sum
+          nickel
+        ];
+      }
+      ''
+        set -euo pipefail
+        mkdir -p "$out"
+        replay=${package}/bin/rwkv-ttwkv7-observed-layer
+        evidence=${observedEvidenceRoot}
+
+        nickel export --format json ${./observed-layer-evidence.ncl} >typed-evidence.json
+        test "$(b3sum typed-evidence.json | cut -d' ' -f1)" = \
+          ${lib.escapeShellArg expectedObservedTypedEvidenceBlake3}
+        grep -F '"outcome": "unsafe"' typed-evidence.json
+        grep -F '"terminal_classification_rewritten": false' typed-evidence.json
+        grep -F '"owner_health_status": 200' typed-evidence.json
+
+        "$replay" --evidence-root "$evidence" >replay-first.json
+        "$replay" --evidence-root "$evidence" >replay-second.json
+        cmp replay-first.json replay-second.json
+        test "$(b3sum replay-first.json | cut -d' ' -f1)" = \
+          ${lib.escapeShellArg expectedObservedReplayBlake3}
+        grep -F '"target": "rwkv_ttwkv7_observed_layer_replay"' replay-first.json
+        grep -F '"terminal_outcome": "unsafe"' replay-first.json
+        grep -F '"terminal_owner_health_status": null' replay-first.json
+        grep -F '"device_initialized": true' replay-first.json
+        grep -F '"workload_enqueue_count": 1' replay-first.json
+        grep -F '"process_exit_status": 0' replay-first.json
+        grep -F '"process_timed_out": false' replay-first.json
+        grep -F '"evidence_bundle_blake3": "${expectedObservedEvidenceBundleBlake3}"' replay-first.json
+        grep -F '"blake3": "${expectedSourceAttentionBlake3}"' replay-first.json
+        grep -F '"blake3": "${expectedBf16BoundaryAttentionBlake3}"' replay-first.json
+        grep -F '"blake3": "${expectedBf16BoundaryFinalLayerBlake3}"' replay-first.json
+        grep -F '"blake3": "${expectedObservedAttentionBlake3}"' replay-first.json
+        grep -F '"blake3": "${expectedObservedFinalLayerBlake3}"' replay-first.json
+        grep -F '"observed_final_layer_output_vs_expected_bf16": ${expectedObservedFinalVsExpectedDeviation}' \
+          replay-first.json
+        grep -F '"observed_final_layer_output_vs_source_fp32": ${expectedObservedFinalVsSourceDeviation}' \
+          replay-first.json
+        grep -F 'No complete RWKV layer ran wholly on a Tenstorrent device.' replay-first.json
+        grep -F 'No hardware-backed token generation is established.' replay-first.json
+
+        test "$(wc -c <"$evidence/observed-output.bf16")" -eq ${toString observedOutputByteCount}
+        test "$(wc -c <"$evidence/observed-post-state.bf16")" -eq ${toString observedPostStateByteCount}
+        test "$(wc -c <"$evidence/writer-raw.bf16")" -eq ${toString writerRawByteCount}
+        test ! -e ${package}/share/rwkv-layer-harness/ttwkv7-device-2
+
+        expect_failure() {
+          expected_diagnostic="$1"
+          output_path="$2"
+          shift 2
+          if "$@" >"$output_path" 2>&1; then
+            echo "observed-layer negative command unexpectedly passed: $*" >&2
+            exit 1
+          fi
+          grep -F "$expected_diagnostic" "$output_path"
+        }
+
+        expect_failure 'usage: rwkv-ttwkv7-observed-layer --evidence-root PATH' \
+          missing-arguments.log "$replay"
+        expect_failure 'usage: rwkv-ttwkv7-observed-layer --evidence-root PATH' \
+          extra-arguments.log "$replay" --evidence-root "$evidence" unexpected
+
+        changed_root="$(mktemp -d)"
+        cp -R "$evidence/." "$changed_root/"
+        chmod -R u+w "$changed_root"
+        printf '\n' >>"$changed_root/classification-receipt.json"
+        expect_failure 'classification receipt BLAKE3 mismatch' \
+          changed-classification.log "$replay" --evidence-root "$changed_root"
+
+        rm -rf "$changed_root"
+        changed_root="$(mktemp -d)"
+        cp -R "$evidence/." "$changed_root/"
+        chmod -R u+w "$changed_root"
+        printf '\n' >>"$changed_root/boundary-receipt.json"
+        expect_failure 'boundary receipt BLAKE3 mismatch' \
+          changed-receipt.log "$replay" --evidence-root "$changed_root"
+
+        rm -rf "$changed_root"
+        changed_root="$(mktemp -d)"
+        cp -R "$evidence/." "$changed_root/"
+        chmod -R u+w "$changed_root"
+        printf 'x' | dd of="$changed_root/observed-output.bf16" bs=1 seek=0 conv=notrunc status=none
+        expect_failure 'observed output BF16 BLAKE3 mismatch' \
+          changed-output.log "$replay" --evidence-root "$changed_root"
+
+        rm -rf "$changed_root"
+        changed_root="$(mktemp -d)"
+        cp -R "$evidence/." "$changed_root/"
+        chmod -R u+w "$changed_root"
+        head -c ${toString truncatedOutputByteCount} "$evidence/observed-output.bf16" \
+          >"$changed_root/observed-output.bf16"
+        expect_failure 'observed output BF16 BLAKE3 mismatch' \
+          truncated-output.log "$replay" --evidence-root "$changed_root"
+
+        rm -rf "$changed_root"
+        changed_root="$(mktemp -d)"
+        cp -R "$evidence/." "$changed_root/"
+        chmod -R u+w "$changed_root"
+        printf 'x' | dd of="$changed_root/observed-post-state.bf16" bs=1 seek=0 conv=notrunc status=none
+        expect_failure 'observed post-state BF16 BLAKE3 mismatch' \
+          changed-state.log "$replay" --evidence-root "$changed_root"
+
+        rm -rf "$changed_root"
+        changed_root="$(mktemp -d)"
+        cp -R "$evidence/." "$changed_root/"
+        chmod -R u+w "$changed_root"
+        printf 'x' | dd of="$changed_root/writer-raw.bf16" bs=1 seek=0 conv=notrunc status=none
+        expect_failure 'writer raw BF16 BLAKE3 mismatch' \
+          changed-writer.log "$replay" --evidence-root "$changed_root"
+
+        test "$(grep -Fc 'wkv_step_matrix(' ${./src/observed_layer.rs})" -eq 1
+        if grep -E 'std::process::Command|Command::new|MeshDevice|EnqueueMeshWorkload|TT_VISIBLE_DEVICES|tt-smi' \
+          ${./src/observed_layer.rs} ${./src/bin/rwkv-ttwkv7-observed-layer.rs}; then
+          echo "observed-layer replay contains a process or device execution surface" >&2
+          exit 1
+        fi
+        test "$(grep -Fc 'finish_time_mix_attention(' ${./src/lib.rs})" -ge 3
+        test "$(grep -Fc 'finish_layer_suffix(' ${./src/lib.rs})" -ge 3
+
+        cp replay-first.json "$out/receipt.json"
+        cp typed-evidence.json "$out/evidence.json"
       '';
   package = rustPlatform.buildRustPackage {
     pname = "rwkv-layer-harness";
@@ -525,6 +669,7 @@ let
         addedTokens
         flaRwkv7Source
         frameworkParityCheck
+        observedLayerReplayCheck
         generationConfig
         hfModelingSource
         model
@@ -538,7 +683,7 @@ let
     };
 
     meta = {
-      description = "Device-free real-weight RWKV-7 layer, tokenizer, stateful-decode, fixed-text, and bounded-prompt CPU reference";
+      description = "Device-free real-weight RWKV-7 references and observed ttWKV7 layer replay";
       license = lib.licenses.mit;
       mainProgram = "rwkv-layer-harness";
       platforms = lib.platforms.linux;

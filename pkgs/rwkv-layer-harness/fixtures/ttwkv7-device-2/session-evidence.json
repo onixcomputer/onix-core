@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "plan_id": "d4886116b76df2cf63090e3a1f7efff35aa215aa2d05652d7accaa9b61a9abb1",
+  "process_attempts": 1,
+  "owner_isolation_attempts": 1,
+  "restoration_attempts": 1,
+  "process": {"exit_status":0,"timed_out":false},
+  "owner_active_after": true,
+  "owner_health_status_after": null,
+  "board_healthy_after": true,
+  "artifacts": [{"role":"board_after","blake3":"532278a6f786713d51e5a1e36450d1fd64555f2e5ad947ff548b88a06d709ab6","bytes":8722},{"role":"boundary_manifest","blake3":"7f62e65f31033b12709a19897fb81779c8236e187ab734a56d6c553bf36550e9","bytes":389},{"role":"boundary_receipt","blake3":"ed95aeeeef6fd579f5b257c6ff7fe63eeae260f616e6a52b9b192c9b37f35436","bytes":4175},{"role":"diagnostic_log","blake3":"6fba33e0b51530d63346415f25565283f68b05e0260d7f89024abb58bac60fdd","bytes":41554},{"role":"observed_output_bf16","blake3":"417a583d87e901c5488266e84f3f9cfba98e2bbe45fc8da952c8cb4b06afc66a","bytes":1536},{"role":"observed_post_state_bf16","blake3":"b3321aeb38963fb96a720ae33d9477e8fbfb83b3750213abc64786885d3771a9","bytes":98304},{"role":"owner_after","blake3":"ca21ead27b78c78bf3bf23fa04f42cc3922190ca93e1cdedc1d64b36c5b24d85","bytes":63},{"role":"writer_raw_bf16","blake3":"a8d4304ca77c69cb58e55360755acd25a5847a2ca5884fbe807fe634d89a0c18","bytes":147456}],
+  "observed_markers": ["rwkv ttWKV7 boundary device probe: PASS"]
+}

@@ -1,3 +1,10 @@
+mod observed_layer;
+
+pub use observed_layer::{
+    Ttwkv7ObservedLayerEvidence, Ttwkv7ObservedLayerReplayReceipt,
+    run_ttwkv7_observed_layer_checkpoint,
+};
+
 use half::bf16;
 use safetensors::{Dtype, SafeTensors, tensor::TensorView};
 use serde::{Deserialize, Serialize};
@@ -415,9 +422,15 @@ struct WkvInputs {
 }
 
 #[derive(Clone, Debug)]
-struct TimeMixOutput {
+struct TimeMixPreparation {
     projected_value: Vec<f32>,
     wkv_inputs: WkvInputs,
+    gate: Vec<f32>,
+}
+
+#[derive(Clone, Debug)]
+struct TimeMixOutput {
+    preparation: TimeMixPreparation,
     raw_wkv_output: Vec<f32>,
     wkv_output: Vec<f32>,
     oracle_output: Vec<f32>,
@@ -426,11 +439,19 @@ struct TimeMixOutput {
 }
 
 #[derive(Clone, Debug)]
+struct LayerSuffixOutput {
+    ffn_input: Vec<f32>,
+    final_output: Vec<f32>,
+}
+
+#[derive(Clone, Debug)]
 struct SequenceResult {
     final_output: Vec<f32>,
     final_state: Vec<f32>,
     second_pre_state: Vec<f32>,
-    second_inputs: WkvInputs,
+    second_preparation: TimeMixPreparation,
+    second_residual: Vec<f32>,
+    second_ffn_previous: Vec<f32>,
     second_raw_output: Vec<f32>,
     maximum_state_deviation: f32,
     maximum_output_deviation: f32,
@@ -1601,12 +1622,12 @@ pub fn run_checkpoint(checkpoint: &[u8], expected_blake3: &str) -> Result<LayerR
         token_ids: [MODEL_CONFIG_BOS_TOKEN_ID, MODEL_CONFIG_EOS_TOKEN_ID],
         arithmetic_precision: ARITHMETIC_PRECISION,
         second_token_wkv: WkvReceipt {
-            r: numeric_receipt(&result.second_inputs.r)?,
-            w: numeric_receipt(&result.second_inputs.w)?,
-            k: numeric_receipt(&result.second_inputs.k)?,
-            v: numeric_receipt(&result.second_inputs.v)?,
-            a: numeric_receipt(&result.second_inputs.a)?,
-            b: numeric_receipt(&result.second_inputs.b)?,
+            r: numeric_receipt(&result.second_preparation.wkv_inputs.r)?,
+            w: numeric_receipt(&result.second_preparation.wkv_inputs.w)?,
+            k: numeric_receipt(&result.second_preparation.wkv_inputs.k)?,
+            v: numeric_receipt(&result.second_preparation.wkv_inputs.v)?,
+            a: numeric_receipt(&result.second_preparation.wkv_inputs.a)?,
+            b: numeric_receipt(&result.second_preparation.wkv_inputs.b)?,
         },
         final_state: numeric_receipt(&result.final_state)?,
         final_layer_output: numeric_receipt(&result.final_output)?,
@@ -1656,12 +1677,18 @@ pub fn run_ttwkv7_boundary_checkpoint(
         dimensions.head_size,
         dimensions.head_size,
     ];
-    let encoded_a = encode_bf16_artifact("a", &vector_shape, &result.second_inputs.a)?;
-    let encoded_w = encode_bf16_artifact("w", &vector_shape, &result.second_inputs.w)?;
-    let encoded_k = encode_bf16_artifact("k", &vector_shape, &result.second_inputs.k)?;
-    let encoded_v = encode_bf16_artifact("v", &vector_shape, &result.second_inputs.v)?;
-    let encoded_r = encode_bf16_artifact("r", &vector_shape, &result.second_inputs.r)?;
-    let encoded_b = encode_bf16_artifact("b", &vector_shape, &result.second_inputs.b)?;
+    let encoded_a =
+        encode_bf16_artifact("a", &vector_shape, &result.second_preparation.wkv_inputs.a)?;
+    let encoded_w =
+        encode_bf16_artifact("w", &vector_shape, &result.second_preparation.wkv_inputs.w)?;
+    let encoded_k =
+        encode_bf16_artifact("k", &vector_shape, &result.second_preparation.wkv_inputs.k)?;
+    let encoded_v =
+        encode_bf16_artifact("v", &vector_shape, &result.second_preparation.wkv_inputs.v)?;
+    let encoded_r =
+        encode_bf16_artifact("r", &vector_shape, &result.second_preparation.wkv_inputs.r)?;
+    let encoded_b =
+        encode_bf16_artifact("b", &vector_shape, &result.second_preparation.wkv_inputs.b)?;
     let encoded_pre_state =
         encode_bf16_artifact("pre_state", &state_shape, &result.second_pre_state)?;
 
@@ -1706,12 +1733,12 @@ pub fn run_ttwkv7_boundary_checkpoint(
     }
 
     let input_quantization_deviations = [
-        max_abs_difference(&result.second_inputs.a, &quantized_a)?,
-        max_abs_difference(&result.second_inputs.w, &quantized_w)?,
-        max_abs_difference(&result.second_inputs.k, &quantized_k)?,
-        max_abs_difference(&result.second_inputs.v, &quantized_v)?,
-        max_abs_difference(&result.second_inputs.r, &quantized_r)?,
-        max_abs_difference(&result.second_inputs.b, &quantized_b)?,
+        max_abs_difference(&result.second_preparation.wkv_inputs.a, &quantized_a)?,
+        max_abs_difference(&result.second_preparation.wkv_inputs.w, &quantized_w)?,
+        max_abs_difference(&result.second_preparation.wkv_inputs.k, &quantized_k)?,
+        max_abs_difference(&result.second_preparation.wkv_inputs.v, &quantized_v)?,
+        max_abs_difference(&result.second_preparation.wkv_inputs.r, &quantized_r)?,
+        max_abs_difference(&result.second_preparation.wkv_inputs.b, &quantized_b)?,
     ];
     let maximum_input_quantization_deviation = input_quantization_deviations
         .into_iter()
@@ -1764,12 +1791,12 @@ pub fn run_ttwkv7_boundary_checkpoint(
         output_order: TTWKV7_BOUNDARY_OUTPUT_ORDER,
         input_order: TTWKV7_BOUNDARY_INPUT_ORDER,
         source_fp32_inputs: WkvReceipt {
-            r: numeric_receipt(&result.second_inputs.r)?,
-            w: numeric_receipt(&result.second_inputs.w)?,
-            k: numeric_receipt(&result.second_inputs.k)?,
-            v: numeric_receipt(&result.second_inputs.v)?,
-            a: numeric_receipt(&result.second_inputs.a)?,
-            b: numeric_receipt(&result.second_inputs.b)?,
+            r: numeric_receipt(&result.second_preparation.wkv_inputs.r)?,
+            w: numeric_receipt(&result.second_preparation.wkv_inputs.w)?,
+            k: numeric_receipt(&result.second_preparation.wkv_inputs.k)?,
+            v: numeric_receipt(&result.second_preparation.wkv_inputs.v)?,
+            a: numeric_receipt(&result.second_preparation.wkv_inputs.a)?,
+            b: numeric_receipt(&result.second_preparation.wkv_inputs.b)?,
         },
         source_fp32_pre_state: numeric_receipt(&result.second_pre_state)?,
         source_fp32_raw_output: numeric_receipt(&result.second_raw_output)?,
@@ -3283,7 +3310,9 @@ fn run_sequence(
     let mut maximum_state_deviation = 0.0_f32;
     let mut maximum_output_deviation = 0.0_f32;
     let mut second_pre_state = None;
-    let mut second_inputs = None;
+    let mut second_preparation = None;
+    let mut second_residual = None;
+    let mut second_ffn_previous = None;
     let mut second_raw_output = None;
     let mut final_output = Vec::new();
 
@@ -3312,6 +3341,8 @@ fn run_sequence(
         let is_second_token = token_index + 1 == TOKEN_COUNT;
         if is_second_token {
             second_pre_state = Some(state.matrix.clone());
+            second_residual = Some(residual.clone());
+            second_ffn_previous = Some(state.ffn_previous.clone());
         }
         let time = time_mix(
             weights,
@@ -3328,26 +3359,24 @@ fn run_sequence(
         oracle_state = time.oracle_state;
         maximum_output_deviation = maximum_output_deviation
             .max(max_abs_difference(&time.wkv_output, &time.oracle_output)?);
-        let after_attention = add_vectors(&residual, &time.wkv_output)?;
-        let ffn_input = layer_norm(
-            &after_attention,
-            &weights.ffn_norm_weight,
-            &weights.ffn_norm_bias,
-            LAYER_NORM_EPSILON,
-        )?;
-        let ffn_output = channel_mix(weights, &ffn_input, &state.ffn_previous)?;
-        state.ffn_previous.clone_from(&ffn_input);
-        final_output = add_vectors(&after_attention, &ffn_output)?;
+        let suffix =
+            finish_layer_suffix(weights, &residual, &time.wkv_output, &state.ffn_previous)?;
+        state.ffn_previous = suffix.ffn_input;
+        final_output = suffix.final_output;
         if is_second_token {
             second_raw_output = Some(time.raw_wkv_output);
-            second_inputs = Some(time.wkv_inputs);
+            second_preparation = Some(time.preparation);
         }
     }
 
     let second_pre_state =
         second_pre_state.ok_or_else(|| "second-token pre-state was not produced".to_owned())?;
-    let second_inputs =
-        second_inputs.ok_or_else(|| "second-token inputs were not produced".to_owned())?;
+    let second_preparation = second_preparation
+        .ok_or_else(|| "second-token time-mix preparation was not produced".to_owned())?;
+    let second_residual =
+        second_residual.ok_or_else(|| "second-token residual was not produced".to_owned())?;
+    let second_ffn_previous =
+        second_ffn_previous.ok_or_else(|| "second-token FFN state was not produced".to_owned())?;
     let second_raw_output =
         second_raw_output.ok_or_else(|| "second-token raw output was not produced".to_owned())?;
     require_finite(&final_output, "final layer output")?;
@@ -3356,10 +3385,34 @@ fn run_sequence(
         final_output,
         final_state: state.matrix,
         second_pre_state,
-        second_inputs,
+        second_preparation,
+        second_residual,
+        second_ffn_previous,
         second_raw_output,
         maximum_state_deviation,
         maximum_output_deviation,
+    })
+}
+
+fn finish_layer_suffix(
+    weights: &LayerWeights,
+    residual: &[f32],
+    attention_output: &[f32],
+    ffn_previous: &[f32],
+) -> Result<LayerSuffixOutput, String> {
+    let after_attention = add_vectors(residual, attention_output)?;
+    let ffn_input = layer_norm(
+        &after_attention,
+        &weights.ffn_norm_weight,
+        &weights.ffn_norm_bias,
+        LAYER_NORM_EPSILON,
+    )?;
+    let ffn_output = channel_mix(weights, &ffn_input, ffn_previous)?;
+    let final_output = add_vectors(&after_attention, &ffn_output)?;
+    require_finite(&final_output, "layer suffix output")?;
+    Ok(LayerSuffixOutput {
+        ffn_input,
+        final_output,
     })
 }
 
@@ -3423,7 +3476,7 @@ fn run_model_token(
             value_anchor.as_deref(),
         )?;
         if layer_index == LAYER_INDEX {
-            value_anchor = Some(time.projected_value.clone());
+            value_anchor = Some(time.preparation.projected_value.clone());
         }
         execution.layers[layer_index]
             .attention_previous
@@ -3437,22 +3490,14 @@ fn run_model_token(
         execution.layers[layer_index].matrix = time.matrix_state;
         execution.oracle_matrices[layer_index] = time.oracle_state;
 
-        let after_attention = add_vectors(&residual, &time.wkv_output)?;
-        let ffn_input = layer_norm(
-            &after_attention,
-            &layer.ffn_norm_weight,
-            &layer.ffn_norm_bias,
-            LAYER_NORM_EPSILON,
-        )?;
-        let ffn_output = channel_mix(
+        let suffix = finish_layer_suffix(
             layer,
-            &ffn_input,
+            &residual,
+            &time.wkv_output,
             &execution.layers[layer_index].ffn_previous,
         )?;
-        execution.layers[layer_index]
-            .ffn_previous
-            .clone_from(&ffn_input);
-        hidden = add_vectors(&after_attention, &ffn_output)?;
+        execution.layers[layer_index].ffn_previous = suffix.ffn_input;
+        hidden = suffix.final_output;
     }
     if value_anchor.is_none() {
         return Err("layer zero did not establish v_first".to_owned());
@@ -3536,6 +3581,36 @@ fn time_mix(
     value_anchor: Option<&[f32]>,
 ) -> Result<TimeMixOutput, String> {
     let dimensions = weights.dimensions;
+    let preparation = prepare_time_mix(weights, input, previous, value_anchor)?;
+    let (next_state, raw_output) = wkv_step_matrix(state, &preparation.wkv_inputs, dimensions)?;
+    let (next_oracle_state, oracle_raw_output) =
+        wkv_step_oracle(oracle_state, &preparation.wkv_inputs, dimensions)?;
+    let attention_output = finish_time_mix_attention(weights, &preparation, &raw_output)?;
+    let oracle_output = finish_time_mix_attention(weights, &preparation, &oracle_raw_output)?;
+    let state_deviation = max_abs_difference(&next_state, &next_oracle_state)?;
+    if state_deviation > ORACLE_TOLERANCE {
+        return Err(format!(
+            "time-mix recurrence state deviation {state_deviation} exceeds {ORACLE_TOLERANCE}"
+        ));
+    }
+
+    Ok(TimeMixOutput {
+        preparation,
+        raw_wkv_output: raw_output,
+        wkv_output: attention_output,
+        oracle_output,
+        matrix_state: next_state,
+        oracle_state: next_oracle_state,
+    })
+}
+
+fn prepare_time_mix(
+    weights: &LayerWeights,
+    input: &[f32],
+    previous: &[f32],
+    value_anchor: Option<&[f32]>,
+) -> Result<TimeMixPreparation, String> {
+    let dimensions = weights.dimensions;
     let x_r = mixed(input, previous, &weights.x_r)?;
     let x_w = mixed(input, previous, &weights.x_w)?;
     let x_k = mixed(input, previous, &weights.x_k)?;
@@ -3578,61 +3653,41 @@ fn time_mix(
         .collect::<Vec<_>>();
     let a = kk.iter().map(|value| -*value).collect::<Vec<_>>();
     let b = multiply_vectors(&kk, &a_gate)?;
-    let inputs = WkvInputs { r, w, k, v, a, b };
+    let wkv_inputs = WkvInputs { r, w, k, v, a, b };
 
-    let (next_state, raw_output) = wkv_step_matrix(state, &inputs, dimensions)?;
-    let (next_oracle_state, oracle_raw_output) =
-        wkv_step_oracle(oracle_state, &inputs, dimensions)?;
+    Ok(TimeMixPreparation {
+        projected_value,
+        wkv_inputs,
+        gate,
+    })
+}
+
+fn finish_time_mix_attention(
+    weights: &LayerWeights,
+    preparation: &TimeMixPreparation,
+    raw_output: &[f32],
+) -> Result<Vec<f32>, String> {
+    let dimensions = weights.dimensions;
+    require_length(raw_output, dimensions.hidden_size, "raw WKV output")?;
+    require_finite(raw_output, "raw WKV output")?;
     let normalized = group_norm(
-        &raw_output,
+        raw_output,
         &weights.group_norm_weight,
         &weights.group_norm_bias,
         dimensions,
     )?;
     let corrected = gate_correction(
         &normalized,
-        &inputs.r,
-        &inputs.k,
+        &preparation.wkv_inputs.r,
+        &preparation.wkv_inputs.k,
         &weights.r_k,
-        &inputs.v,
-        &gate,
+        &preparation.wkv_inputs.v,
+        &preparation.gate,
         dimensions,
     )?;
     let attention_output = matvec(&weights.output_projection, &corrected)?;
     require_finite(&attention_output, "attention output")?;
-
-    let oracle_normalized = group_norm(
-        &oracle_raw_output,
-        &weights.group_norm_weight,
-        &weights.group_norm_bias,
-        dimensions,
-    )?;
-    let oracle_corrected = gate_correction(
-        &oracle_normalized,
-        &inputs.r,
-        &inputs.k,
-        &weights.r_k,
-        &inputs.v,
-        &gate,
-        dimensions,
-    )?;
-    let oracle_output = matvec(&weights.output_projection, &oracle_corrected)?;
-    let state_deviation = max_abs_difference(&next_state, &next_oracle_state)?;
-    if state_deviation > ORACLE_TOLERANCE {
-        return Err(format!(
-            "time-mix recurrence state deviation {state_deviation} exceeds {ORACLE_TOLERANCE}"
-        ));
-    }
-
-    Ok(TimeMixOutput {
-        projected_value,
-        wkv_inputs: inputs,
-        raw_wkv_output: raw_output,
-        wkv_output: attention_output,
-        oracle_output,
-        matrix_state: next_state,
-        oracle_state: next_oracle_state,
-    })
+    Ok(attention_output)
 }
 
 fn resolve_layer_value(

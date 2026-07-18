@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "plan_id": "d4886116b76df2cf63090e3a1f7efff35aa215aa2d05652d7accaa9b61a9abb1",
+  "plan": {
+    "schema_version": 1,
+    "session_id": "rwkv-ttwkv7-boundary-device-2",
+    "stage": "operator",
+    "target": {
+      "package_path": "/nix/store/av4m3qy5m0qjvrrfrn1dckjxnd7vzbkv-rwkv-ttwkv7-boundary-device-0.2.0",
+      "kernel_path": "/nix/store/5alwcj7ff65s1zg6q475akwayafmh0bz-ttwkv7-unstable-2026-06-22/share/ttwkv7/kernels",
+      "executable": "/nix/store/av4m3qy5m0qjvrrfrn1dckjxnd7vzbkv-rwkv-ttwkv7-boundary-device-0.2.0/bin/wkv7-rwkv-boundary",
+      "arguments": [
+        "probe"
+      ]
+    },
+    "hardware": {
+      "architecture": "Blackhole P150",
+      "physical_device": 1,
+      "device_path": "/dev/tenstorrent/1",
+      "owner_unit": "docker-tt-inference-server-llama-3-1-8b-instruct-p150.service",
+      "owner_control_path": "/nix/store/6m9zwmdfc1vyrxw2znbl39s78bz73ycp-ttwkv7-owner-control/bin/ttwkv7-owner-control"
+    },
+    "runtime": {
+      "run_root": "/var/tmp/rwkv-ttwkv7-boundary-device-2",
+      "cache_path": "/var/tmp/rwkv-ttwkv7-boundary-device-2/cache",
+      "logs_path": "/var/tmp/rwkv-ttwkv7-boundary-device-2/logs",
+      "inspector_address": "127.0.0.1:43147"
+    },
+    "budget": {
+      "max_processes": 1,
+      "timeout_seconds": 900,
+      "timeout_exit_status": 124,
+      "kill_grace_seconds": 10
+    },
+    "restoration": {
+      "rollback_delay_seconds": 1200,
+      "health_url": "http://127.0.0.1:8000/health",
+      "expected_health_status": 200
+    },
+    "evidence": {
+      "required_artifact_roles": [
+        "board_after",
+        "boundary_manifest",
+        "boundary_receipt",
+        "diagnostic_log",
+        "observed_output_bf16",
+        "observed_post_state_bf16",
+        "owner_after",
+        "writer_raw_bf16"
+      ],
+      "success_markers": [
+        "rwkv ttWKV7 boundary device probe: PASS"
+      ]
+    },
+    "claims": {
+      "success": "The exact retained-state BF16 boundary completed one production DecodeL workload within the predeclared output and state NMSE ceilings, with complete evidence and restored ownership.",
+      "non_claims": [
+        "No exact BF16 parity is established by a tolerance pass.",
+        "No full RWKV layer or model execution is established.",
+        "No general P150 compatibility is established.",
+        "No generation or serving behavior is established.",
+        "No hardware execution is authorized by this plan artifact.",
+        "No throughput or latency claim is established."
+      ]
+    }
+  }
+}
