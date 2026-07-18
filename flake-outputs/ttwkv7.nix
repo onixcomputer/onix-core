@@ -54,6 +54,7 @@ in
     # r[impl onix.tenstorrent.native_runtime.rwkv_lab.bounded_prompt]
     # r[impl onix.tenstorrent.native_runtime.rwkv_lab.torch_equation_parity]
     # r[impl onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_layer_replay]
+    # r[impl onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_model_carry]
     rwkv-layer-harness = rwkvLayerHarness;
     # r[impl onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_boundary_device_harness]
     rwkv-ttwkv7-boundary-device = rwkvTtwkv7BoundaryDevice;
@@ -68,6 +69,8 @@ in
     rwkv-ttwkv7-observed-layer = rwkvLayerHarness.passthru.observedLayerReplayCheck;
     # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_state_carry]
     rwkv-ttwkv7-observed-state-carry = rwkvLayerHarness.passthru.stateCarryCheck;
+    # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_model_carry]
+    rwkv-ttwkv7-observed-model-carry = rwkvLayerHarness.passthru.modelCarryCheck;
     # r[verify onix.tenstorrent.native_runtime.ttwkv7.fast_iteration]
     ttwkv7-architectures = ttwkv7.passthru.architectureCheck;
     # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_host_layout]

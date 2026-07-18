@@ -21,8 +21,8 @@ let
   expectedFixtureByteCount = 420072;
   expectedFixtureBlake3 = "731f44866c869300ca330f703f1adad4c3ae7ee62b832fa881a6bf4ea90211cd";
   expectedSelfTestBlake3 = "c1b6b14a04acb3aca238a2ae77854a22701d70da1ffcc2e9efee9f852048d6e8";
-  expectedPlanReceiptBlake3 = "d288da56d5d10fbf32b9ccbf8abd08133c1778b74b63848b58754f1737c9a3ac";
-  expectedNotRunReceiptBlake3 = "79a229599cd82c732f2cfaca629530c363354737a90c4f7f7456d5da16c6adc0";
+  expectedPlanReceiptBlake3 = "03a7d05a4eb3d522d9791764cad6ca2407894593345ff955d6e0a33aad62c178";
+  expectedNotRunReceiptBlake3 = "aba4ff445bfbe0e4463c1fa69b95a7d8fc5f0001ed7104455e9c4f056e0a0ffd";
   expectedPreflightReceiptBlake3 = "ff37d0a0f54d9c99c373d2815613acb9d02f1c6d230146755e2f6cbe34ec5e69";
   expectedRunnerBlake3 = "29ecf61ab7333b4fabcf3ea2d13855bd0280a6dad5d695d749c2a1f3430dc370";
   expectedBoundaryCoreBlake3 = "e644934c561be74c852e6e223f8a25e2564e1cdeda165c2a7570efa378de8b20";

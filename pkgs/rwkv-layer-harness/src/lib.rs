@@ -1,8 +1,9 @@
 mod observed_layer;
 
 pub use observed_layer::{
-    Ttwkv7ObservedLayerEvidence, Ttwkv7ObservedLayerReplayReceipt, Ttwkv7ObservedStateCarryReceipt,
-    run_ttwkv7_observed_layer_checkpoint, run_ttwkv7_observed_state_carry_checkpoint,
+    Ttwkv7ObservedLayerEvidence, Ttwkv7ObservedLayerReplayReceipt, Ttwkv7ObservedModelCarryReceipt,
+    Ttwkv7ObservedStateCarryReceipt, run_ttwkv7_observed_layer_checkpoint,
+    run_ttwkv7_observed_model_carry_checkpoint, run_ttwkv7_observed_state_carry_checkpoint,
 };
 
 use half::bf16;
@@ -403,10 +404,38 @@ impl ModelExecutionState {
         Ok(())
     }
 
+    fn flattened_attention_previous(&self) -> Vec<f32> {
+        self.layers
+            .iter()
+            .flat_map(|state| state.attention_previous.iter().copied())
+            .collect()
+    }
+
+    fn flattened_ffn_previous(&self) -> Vec<f32> {
+        self.layers
+            .iter()
+            .flat_map(|state| state.ffn_previous.iter().copied())
+            .collect()
+    }
+
     fn flattened_matrices(&self) -> Vec<f32> {
         self.layers
             .iter()
             .flat_map(|state| state.matrix.iter().copied())
+            .collect()
+    }
+
+    fn flattened_complete_state(&self) -> Vec<f32> {
+        self.layers
+            .iter()
+            .flat_map(|state| {
+                state
+                    .attention_previous
+                    .iter()
+                    .chain(state.ffn_previous.iter())
+                    .chain(state.matrix.iter())
+                    .copied()
+            })
             .collect()
     }
 }
@@ -442,6 +471,26 @@ struct TimeMixOutput {
 struct LayerSuffixOutput {
     ffn_input: Vec<f32>,
     final_output: Vec<f32>,
+}
+
+#[derive(Clone, Copy, Debug)]
+enum LayerZeroWkvMode<'a> {
+    SourceFp32,
+    Bf16Cpu,
+    Observed {
+        raw_output: &'a [f32],
+        post_state: &'a [f32],
+    },
+}
+
+#[derive(Clone, Debug)]
+struct ModelTokenExecution {
+    execution: ModelExecutionState,
+    final_output: Vec<f32>,
+    layer_outputs: Vec<Vec<f32>>,
+    layer_zero_pre_state: Vec<f32>,
+    layer_zero_raw_output: Vec<f32>,
+    layer_zero_post_state: Vec<f32>,
 }
 
 #[derive(Clone, Debug)]
@@ -3455,14 +3504,33 @@ fn validate_model_weights(weights: &[LayerWeights]) -> Result<(), String> {
 fn run_model_token(
     weights: &[LayerWeights],
     embedding: &[f32],
-    mut execution: ModelExecutionState,
+    execution: ModelExecutionState,
 ) -> Result<(ModelExecutionState, Vec<f32>), String> {
+    let result = run_model_token_with_layer_zero_mode(
+        weights,
+        embedding,
+        execution,
+        LayerZeroWkvMode::SourceFp32,
+    )?;
+    Ok((result.execution, result.final_output))
+}
+
+fn run_model_token_with_layer_zero_mode(
+    weights: &[LayerWeights],
+    embedding: &[f32],
+    mut execution: ModelExecutionState,
+    layer_zero_mode: LayerZeroWkvMode<'_>,
+) -> Result<ModelTokenExecution, String> {
     validate_model_weights(weights)?;
     let dimensions = Dimensions::reviewed();
     execution.validate(dimensions)?;
     require_length(embedding, dimensions.hidden_size, "model embedding")?;
     let mut hidden = embedding.to_vec();
     let mut value_anchor = None;
+    let mut layer_outputs = Vec::with_capacity(MODEL_LAYER_COUNT);
+    let mut layer_zero_pre_state = None;
+    let mut layer_zero_raw_output = None;
+    let mut layer_zero_post_state = None;
     for (layer_index, layer) in weights.iter().enumerate() {
         let residual = apply_pre_norm(layer, &hidden)?;
         let attention_input = layer_norm(
@@ -3471,16 +3539,30 @@ fn run_model_token(
             &layer.attn_norm_bias,
             LAYER_NORM_EPSILON,
         )?;
-        let time = time_mix(
-            layer,
-            &attention_input,
-            &execution.layers[layer_index].attention_previous,
-            &execution.layers[layer_index].matrix,
-            &execution.oracle_matrices[layer_index],
-            value_anchor.as_deref(),
-        )?;
+        let time = if layer_index == LAYER_INDEX {
+            layer_zero_pre_state = Some(execution.layers[layer_index].matrix.clone());
+            time_mix_layer_zero_mode(
+                layer,
+                &attention_input,
+                &execution.layers[layer_index].attention_previous,
+                &execution.layers[layer_index].matrix,
+                &execution.oracle_matrices[layer_index],
+                layer_zero_mode,
+            )?
+        } else {
+            time_mix(
+                layer,
+                &attention_input,
+                &execution.layers[layer_index].attention_previous,
+                &execution.layers[layer_index].matrix,
+                &execution.oracle_matrices[layer_index],
+                value_anchor.as_deref(),
+            )?
+        };
         if layer_index == LAYER_INDEX {
             value_anchor = Some(time.preparation.projected_value.clone());
+            layer_zero_raw_output = Some(time.raw_wkv_output.clone());
+            layer_zero_post_state = Some(time.matrix_state.clone());
         }
         execution.layers[layer_index]
             .attention_previous
@@ -3502,13 +3584,109 @@ fn run_model_token(
         )?;
         execution.layers[layer_index].ffn_previous = suffix.ffn_input;
         hidden = suffix.final_output;
+        layer_outputs.push(hidden.clone());
     }
     if value_anchor.is_none() {
         return Err("layer zero did not establish v_first".to_owned());
     }
     require_finite(&hidden, "full-model token output")?;
     execution.validate(dimensions)?;
-    Ok((execution, hidden))
+    Ok(ModelTokenExecution {
+        execution,
+        final_output: hidden,
+        layer_outputs,
+        layer_zero_pre_state: layer_zero_pre_state
+            .ok_or_else(|| "layer zero did not record pre-state".to_owned())?,
+        layer_zero_raw_output: layer_zero_raw_output
+            .ok_or_else(|| "layer zero did not record raw WKV output".to_owned())?,
+        layer_zero_post_state: layer_zero_post_state
+            .ok_or_else(|| "layer zero did not record post-state".to_owned())?,
+    })
+}
+
+fn quantize_wkv_inputs(inputs: &WkvInputs) -> Result<WkvInputs, String> {
+    Ok(WkvInputs {
+        r: quantize_bf16_values(&inputs.r, "BF16-boundary r")?,
+        w: quantize_bf16_values(&inputs.w, "BF16-boundary w")?,
+        k: quantize_bf16_values(&inputs.k, "BF16-boundary k")?,
+        v: quantize_bf16_values(&inputs.v, "BF16-boundary v")?,
+        a: quantize_bf16_values(&inputs.a, "BF16-boundary a")?,
+        b: quantize_bf16_values(&inputs.b, "BF16-boundary b")?,
+    })
+}
+
+fn quantize_bf16_values(values: &[f32], name: &str) -> Result<Vec<f32>, String> {
+    require_finite(values, name)?;
+    let quantized = values
+        .iter()
+        .map(|value| bf16::from_f32(*value).to_f32())
+        .collect::<Vec<_>>();
+    require_finite(&quantized, name)?;
+    Ok(quantized)
+}
+
+fn time_mix_layer_zero_mode(
+    weights: &LayerWeights,
+    input: &[f32],
+    previous: &[f32],
+    state: &[f32],
+    oracle_state: &[f32],
+    mode: LayerZeroWkvMode<'_>,
+) -> Result<TimeMixOutput, String> {
+    if weights.layer_index != LAYER_INDEX {
+        return Err(format!(
+            "layer-zero WKV mode received layer {}",
+            weights.layer_index
+        ));
+    }
+    if matches!(mode, LayerZeroWkvMode::SourceFp32) {
+        return time_mix(weights, input, previous, state, oracle_state, None);
+    }
+
+    let dimensions = weights.dimensions;
+    let preparation = prepare_time_mix(weights, input, previous, None)?;
+    let (matrix_state, raw_wkv_output) = match mode {
+        LayerZeroWkvMode::SourceFp32 => {
+            return Err("source FP32 layer-zero mode escaped the direct path".to_owned());
+        }
+        LayerZeroWkvMode::Bf16Cpu => {
+            let consumed_inputs = quantize_wkv_inputs(&preparation.wkv_inputs)?;
+            let consumed_state = quantize_bf16_values(state, "model layer-zero pre-state")?;
+            let (next_state, raw_output) =
+                wkv_step_matrix(&consumed_state, &consumed_inputs, dimensions)?;
+            (
+                quantize_bf16_values(&next_state, "model layer-zero post-state")?,
+                quantize_bf16_values(&raw_output, "model layer-zero raw output")?,
+            )
+        }
+        LayerZeroWkvMode::Observed {
+            raw_output,
+            post_state,
+        } => {
+            require_length(
+                raw_output,
+                dimensions.hidden_size,
+                "observed model layer-zero raw output",
+            )?;
+            require_length(
+                post_state,
+                dimensions.head_count * dimensions.head_size * dimensions.head_size,
+                "observed model layer-zero post-state",
+            )?;
+            require_finite(raw_output, "observed model layer-zero raw output")?;
+            require_finite(post_state, "observed model layer-zero post-state")?;
+            (post_state.to_vec(), raw_output.to_vec())
+        }
+    };
+    let attention_output = finish_time_mix_attention(weights, &preparation, &raw_wkv_output)?;
+    Ok(TimeMixOutput {
+        preparation,
+        raw_wkv_output,
+        wkv_output: attention_output.clone(),
+        oracle_output: attention_output,
+        matrix_state: matrix_state.clone(),
+        oracle_state: matrix_state,
+    })
 }
 
 fn finish_model_execution(

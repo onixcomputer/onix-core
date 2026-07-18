@@ -202,6 +202,44 @@ let
   expectedStateCarryResetOutputDivergence = "1.3526523";
   expectedStateCarryTransposedStateDivergence = "1.2164612";
   expectedStateCarryTransposedOutputDivergence = "1.3400576";
+  expectedModelCarryReplayBlake3 = "74306bd245d0bf3b4de9ce5c5f0736edcb516ac9556bc67e7c8116653de973ed";
+  expectedModelCarryReceiptByteCount = 41591;
+  expectedModelCarrySourceBlake3 = [
+    "b71dc8f926863ce6cdec9397686590d11ee1de7709fff5d49971792eb0447bc6"
+    "602dfc220819e2023f84d0094982e1a7338ee699be44f95a17159d834d8fe50f"
+    "a4d17e9d52cf2b39036da43dfa70988883df865bd9a263950f88ebb772cce097"
+    "1031e9be4eac463b3a7244fa851eeaa56bda27c09c2973d920e36709d80b4c19"
+  ];
+  expectedModelCarryBf16Blake3 = [
+    "37b2925cb4535fec695b51fb07aa0b390b1d7b3c20dc34e4cd7501c849b38ef0"
+    "c4c5578b5748205962f61c64c4c403cb810bbc617ec9b63d37546df50db43e7d"
+    "240cb16de60cdcd2a94e80a0f6b8725451d46ef8921afc131cade192f0fb7901"
+    "0923301470d60bf84edf6d3136605586726607f7212ddce4d82187c208a09e1a"
+  ];
+  expectedModelCarryObservedBlake3 = [
+    "61382a251ce618622dcd695737b08fe8981f5e8d435b8261887237d97210dc64"
+    "60de3a8afa23de56006671a09aca735e17da2946807e827b5dc731cb539859ec"
+    "b1ba3cdf9579c2233d16e22168e0aa4da0447273c10ff7229ecfda0a34d8482e"
+    "fa8b37ad9d490ea8152e1eb3abba522348e1c5181bb94f031a03fec907f4e9bb"
+  ];
+  expectedModelCarryResetBlake3 = [
+    "545513fb11d45f840df20bf03d85610a343824a2ecfa1a3bd385dae49ec20a88"
+    "b7f02cd85283a203815f1d85eff3333cec69ce3df515d8fc3a5a43821c8c44fa"
+    "c53deb06759eb769b069d617eee78c15e2bce6dc7da92aee3d18c398ee20b4e8"
+    "1044330769d93e68a14e0abfed48b6657a83f4a8e2cafebd26f6e2fd52ee896a"
+  ];
+  expectedModelCarryTransposedBlake3 = [
+    "c99573a422f61839f8ae97ab4af6a35dd4cb89490e28dd9cb6fd06a1011a38aa"
+    "40d8f13194d04246430563aa0a6f315d731b626b4ca6aebbef529cc2a1ec72f4"
+    "07e86dc660427fd3a5251e42890a25de738a3484d5ff1eaed79e98a3f99f4745"
+    "e2b169a0b7453fc2e4b878f4aa32909e481d7cf4b77d4d7b330033c4bd091a42"
+  ];
+  expectedModelCarryObservedVsExpectedLogitsDeviation = "0.005589485";
+  expectedModelCarryObservedVsExpectedStateDeviation = "0.01061058";
+  expectedModelCarryResetLogitsDivergence = "0.742733";
+  expectedModelCarryResetStateDivergence = "3.5060477";
+  expectedModelCarryTransposedLogitsDivergence = "1.1483517";
+  expectedModelCarryTransposedStateDivergence = "4.229019";
   observedOutputByteCount = 1536;
   observedPostStateByteCount = 98304;
   writerRawByteCount = 147456;
@@ -501,6 +539,128 @@ let
         test "$(grep -Fc 'next[index] = state[index]' ${./src/lib.rs})" -eq 1
 
         cp carry-first.json "$out/receipt.json"
+      '';
+  modelCarryCheck =
+    runCommand "rwkv-ttwkv7-observed-model-carry"
+      {
+        nativeBuildInputs = [ b3sum ];
+      }
+      ''
+        set -euo pipefail
+        mkdir -p "$out"
+        replay=${package}/bin/rwkv-ttwkv7-observed-model-carry
+        evidence=${observedEvidenceRoot}
+
+        "$replay" --evidence-root "$evidence" >model-first.json
+        "$replay" --evidence-root "$evidence" >model-second.json
+        cmp model-first.json model-second.json
+        test "$(b3sum model-first.json | cut -d' ' -f1)" = \
+          ${lib.escapeShellArg expectedModelCarryReplayBlake3}
+        test "$(wc -c <model-first.json)" -eq ${toString expectedModelCarryReceiptByteCount}
+        grep -F '"target": "rwkv_ttwkv7_observed_model_carry"' model-first.json
+        grep -F '"layer_count": 12' model-first.json
+        grep -F '"physical_evidence_layer_index": 0' model-first.json
+        grep -F '"physical_evidence_token_ordinal": 2' model-first.json
+        grep -F '"physical_wkv_call_count": 1' model-first.json
+        grep -F '"cpu_second_token_layer_count": 11' model-first.json
+        grep -F '"cpu_third_token_layer_count": 12' model-first.json
+        grep -F '"observed_layer_receipt_blake3": "${expectedObservedReplayBlake3}"' \
+          model-first.json
+        grep -F '"observed_state_carry_receipt_blake3": "${expectedStateCarryReplayBlake3}"' \
+          model-first.json
+        grep -F '"terminal_session_outcome": "unsafe"' model-first.json
+        grep -F '"evidence_bundle_blake3": "${expectedObservedEvidenceBundleBlake3}"' \
+          model-first.json
+        test "$(grep -Fc '"third_token_layer_outputs": [' model-first.json)" -eq 5
+        test "$(grep -Fc '"generated_token_id": 2' model-first.json)" -eq 5
+        test "$(grep -Fc '"runner_up_token_id": 33' model-first.json)" -eq 5
+        test "$(grep -Fc '"direct_bf16_head_deviation": 0.0' model-first.json)" -eq 5
+
+        for expected_blake3 in \
+          ${
+            lib.escapeShellArgs (
+              expectedModelCarrySourceBlake3
+              ++ expectedModelCarryBf16Blake3
+              ++ expectedModelCarryObservedBlake3
+              ++ expectedModelCarryResetBlake3
+              ++ expectedModelCarryTransposedBlake3
+            )
+          }; do
+          grep -F "\"blake3\": \"$expected_blake3\"" model-first.json
+        done
+        grep -F '"observed_logits_vs_expected_bf16": ${expectedModelCarryObservedVsExpectedLogitsDeviation}' \
+          model-first.json
+        grep -F '"observed_complete_state_vs_expected_bf16": ${expectedModelCarryObservedVsExpectedStateDeviation}' \
+          model-first.json
+        grep -F '"observed_logits_vs_reset_state": ${expectedModelCarryResetLogitsDivergence}' \
+          model-first.json
+        grep -F '"observed_complete_state_vs_reset_state": ${expectedModelCarryResetStateDivergence}' \
+          model-first.json
+        grep -F '"observed_logits_vs_transposed_state": ${expectedModelCarryTransposedLogitsDivergence}' \
+          model-first.json
+        grep -F '"observed_complete_state_vs_transposed_state": ${expectedModelCarryTransposedStateDivergence}' \
+          model-first.json
+        grep -F 'Only the accepted layer-zero second-token WKV output and post-state came from physical execution.' \
+          model-first.json
+        grep -F 'The third-token layer-zero WKV step is executed by the CPU equation with BF16 transport emulation.' \
+          model-first.json
+        grep -F 'The selected logits do not establish hardware-backed token generation.' \
+          model-first.json
+
+        expect_failure() {
+          expected_diagnostic="$1"
+          output_path="$2"
+          shift 2
+          if "$@" >"$output_path" 2>&1; then
+            echo "observed-model negative command unexpectedly passed: $*" >&2
+            exit 1
+          fi
+          grep -F "$expected_diagnostic" "$output_path"
+        }
+
+        expect_failure 'usage: rwkv-ttwkv7-observed-model-carry --evidence-root PATH' \
+          missing-arguments.log "$replay"
+        expect_failure 'usage: rwkv-ttwkv7-observed-model-carry --evidence-root PATH' \
+          extra-arguments.log "$replay" --evidence-root "$evidence" unexpected
+        expect_failure 'usage: rwkv-ttwkv7-observed-model-carry --evidence-root PATH' \
+          reordered-arguments.log "$replay" "$evidence" --evidence-root
+
+        changed_root="$(mktemp -d)"
+        cp -R "$evidence/." "$changed_root/"
+        chmod -R u+w "$changed_root"
+        printf '\n' >>"$changed_root/classification-receipt.json"
+        expect_failure 'classification receipt BLAKE3 mismatch' \
+          changed-classification.log "$replay" --evidence-root "$changed_root"
+
+        rm -rf "$changed_root"
+        changed_root="$(mktemp -d)"
+        cp -R "$evidence/." "$changed_root/"
+        chmod -R u+w "$changed_root"
+        printf 'x' | dd of="$changed_root/observed-output.bf16" \
+          bs=1 seek=0 conv=notrunc status=none
+        expect_failure 'observed output BF16 BLAKE3 mismatch' \
+          changed-output.log "$replay" --evidence-root "$changed_root"
+
+        rm -rf "$changed_root"
+        changed_root="$(mktemp -d)"
+        cp -R "$evidence/." "$changed_root/"
+        chmod -R u+w "$changed_root"
+        printf 'x' | dd of="$changed_root/observed-post-state.bf16" \
+          bs=1 seek=0 conv=notrunc status=none
+        expect_failure 'observed post-state BF16 BLAKE3 mismatch' \
+          changed-state.log "$replay" --evidence-root "$changed_root"
+
+        test ! -e ${package}/share/rwkv-layer-harness/ttwkv7-device-2
+        test "$(grep -Fc 'for (layer_index, layer) in weights.iter().enumerate()' \
+          ${./src/lib.rs})" -ge 2
+        test "$(grep -Fc 'LayerZeroWkvMode::Observed' ${./src/lib.rs})" -eq 1
+        if grep -E 'std::process::Command|Command::new|MeshDevice|EnqueueMeshWorkload|TT_VISIBLE_DEVICES|tt-smi' \
+          ${./src/observed_layer.rs} ${./src/bin/rwkv-ttwkv7-observed-model-carry.rs}; then
+          echo "observed-model replay contains a process or device execution surface" >&2
+          exit 1
+        fi
+
+        cp model-first.json "$out/receipt.json"
       '';
   package = rustPlatform.buildRustPackage {
     pname = "rwkv-layer-harness";
@@ -805,6 +965,7 @@ let
         addedTokens
         flaRwkv7Source
         frameworkParityCheck
+        modelCarryCheck
         observedLayerReplayCheck
         stateCarryCheck
         generationConfig

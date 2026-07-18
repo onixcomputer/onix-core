@@ -119,6 +119,28 @@ const STATE_CARRY_NON_CLAIMS: [&str; 9] = [
     "No serving, throughput, or latency claim is established.",
     "No new hardware execution is authorized by this replay.",
 ];
+const MODEL_CARRY_TARGET: &str = "rwkv_ttwkv7_observed_model_carry";
+const MODEL_CARRY_TOKEN_COUNT: usize = 3;
+const MODEL_CARRY_PHYSICAL_TOKEN_ORDINAL: usize = 2;
+const MODEL_CARRY_PHYSICAL_WKV_COUNT: usize = 1;
+const MODEL_CARRY_CPU_SECOND_TOKEN_LAYER_COUNT: usize = MODEL_LAYER_COUNT - 1;
+const MODEL_CARRY_CPU_THIRD_TOKEN_LAYER_COUNT: usize = MODEL_LAYER_COUNT;
+const MODEL_CARRY_STATE_RECEIPT_BLAKE3: &str =
+    "58e433a04a10319293b18d6003659b53a04a95e9cf9cc7b540c2448c98ed6a33";
+const MODEL_CARRY_DIVERGENCE_FLOOR: f32 = 1.0e-7;
+const MODEL_CARRY_NON_CLAIMS: [&str; 11] = [
+    "The terminal rwkv-lab session remains unsafe and is not reclassified.",
+    "Only the accepted layer-zero second-token WKV output and post-state came from physical execution.",
+    "The third-token layer-zero WKV step is executed by the CPU equation with BF16 transport emulation.",
+    "Second-token layers 1 through 11 and all third-token layers execute on CPU.",
+    "No complete RWKV layer ran wholly on a Tenstorrent device.",
+    "No complete RWKV model ran wholly on Tenstorrent devices.",
+    "The selected logits do not establish hardware-backed token generation.",
+    "No general P150 compatibility is established.",
+    "No serving, throughput, or latency claim is established.",
+    "No additional physical workload is executed by this replay.",
+    "No new hardware execution is authorized by this replay.",
+];
 
 pub struct Ttwkv7ObservedLayerEvidence<'a> {
     pub classification_receipt: &'a [u8],
@@ -282,6 +304,89 @@ pub struct Ttwkv7ObservedStateCarryReceipt {
     pub reset_state_divergence_floor: f32,
     pub reset_output_divergence_floor: f32,
     pub non_claims: Vec<&'static str>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ObservedModelRankingReceipt {
+    pub generated_token_id: usize,
+    pub generated_logit: f32,
+    pub runner_up_token_id: usize,
+    pub runner_up_logit: f32,
+    pub greedy_margin: f32,
+    pub direct_bf16_head_deviation: f32,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ObservedModelPathReceipt {
+    pub second_token_layer_zero_raw_output: NumericReceipt,
+    pub second_token_layer_zero_post_state: NumericReceipt,
+    pub second_token_layer_zero_output: NumericReceipt,
+    pub third_token_layer_zero_pre_state: NumericReceipt,
+    pub third_token_layer_zero_raw_output: NumericReceipt,
+    pub third_token_layer_zero_post_state: NumericReceipt,
+    pub third_token_layer_outputs: Vec<NumericReceipt>,
+    pub final_layer_output: NumericReceipt,
+    pub final_hidden: NumericReceipt,
+    pub logits: NumericReceipt,
+    pub attention_states: NumericReceipt,
+    pub channel_states: NumericReceipt,
+    pub matrix_states: NumericReceipt,
+    pub complete_recurrent_state: NumericReceipt,
+    pub ranking: ObservedModelRankingReceipt,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ObservedModelDeviationReceipt {
+    pub expected_final_hidden_vs_source_fp32: f32,
+    pub observed_final_hidden_vs_expected_bf16: f32,
+    pub observed_final_hidden_vs_source_fp32: f32,
+    pub expected_logits_vs_source_fp32: f32,
+    pub observed_logits_vs_expected_bf16: f32,
+    pub observed_logits_vs_source_fp32: f32,
+    pub expected_complete_state_vs_source_fp32: f32,
+    pub observed_complete_state_vs_expected_bf16: f32,
+    pub observed_complete_state_vs_source_fp32: f32,
+    pub observed_logits_vs_reset_state: f32,
+    pub observed_complete_state_vs_reset_state: f32,
+    pub observed_logits_vs_transposed_state: f32,
+    pub observed_complete_state_vs_transposed_state: f32,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct Ttwkv7ObservedModelCarryReceipt {
+    pub schema_version: u32,
+    pub target: &'static str,
+    pub model: ModelReceipt,
+    pub dimensions: Dimensions,
+    pub layer_count: usize,
+    pub token_ids: [usize; MODEL_CARRY_TOKEN_COUNT],
+    pub physical_evidence_layer_index: usize,
+    pub physical_evidence_token_ordinal: usize,
+    pub physical_wkv_call_count: usize,
+    pub cpu_second_token_layer_count: usize,
+    pub cpu_third_token_layer_count: usize,
+    pub observed_layer_receipt_blake3: String,
+    pub observed_state_carry_receipt_blake3: String,
+    pub terminal_session_outcome: &'static str,
+    pub evidence_bundle_blake3: String,
+    pub source_fp32: ObservedModelPathReceipt,
+    pub expected_bf16_boundary: ObservedModelPathReceipt,
+    pub observed_physical_seed: ObservedModelPathReceipt,
+    pub reset_state_control: ObservedModelPathReceipt,
+    pub transposed_state_control: ObservedModelPathReceipt,
+    pub maximum_absolute_deviations: ObservedModelDeviationReceipt,
+    pub divergence_floor: f32,
+    pub non_claims: Vec<&'static str>,
+}
+
+#[derive(Clone, Debug)]
+struct ObservedModelPath {
+    second_token: ModelTokenExecution,
+    third_token: ModelTokenExecution,
+    final_hidden: Vec<f32>,
+    logits: Vec<f32>,
+    ranking: TopTwo,
+    direct_bf16_head_deviation: f32,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -956,6 +1061,548 @@ pub fn run_ttwkv7_observed_state_carry_checkpoint(
     })
 }
 
+// r[impl onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_model_carry]
+pub fn run_ttwkv7_observed_model_carry_checkpoint(
+    checkpoint: &[u8],
+    expected_model_blake3: &str,
+    evidence: &Ttwkv7ObservedLayerEvidence<'_>,
+) -> Result<Ttwkv7ObservedModelCarryReceipt, String> {
+    let observed_layer =
+        run_ttwkv7_observed_layer_checkpoint(checkpoint, expected_model_blake3, evidence)?;
+    let observed_layer_receipt_blake3 = canonical_receipt_blake3(&observed_layer)?;
+    if observed_layer_receipt_blake3 != STATE_CARRY_OBSERVED_RECEIPT_BLAKE3 {
+        return Err(format!(
+            "accepted observed-layer receipt identity changed: expected {STATE_CARRY_OBSERVED_RECEIPT_BLAKE3}, found {observed_layer_receipt_blake3}"
+        ));
+    }
+    let state_carry =
+        run_ttwkv7_observed_state_carry_checkpoint(checkpoint, expected_model_blake3, evidence)?;
+    let observed_state_carry_receipt_blake3 = canonical_receipt_blake3(&state_carry)?;
+    if observed_state_carry_receipt_blake3 != MODEL_CARRY_STATE_RECEIPT_BLAKE3 {
+        return Err(format!(
+            "accepted observed-state-carry receipt identity changed: expected {MODEL_CARRY_STATE_RECEIPT_BLAKE3}, found {observed_state_carry_receipt_blake3}"
+        ));
+    }
+
+    let tensors = SafeTensors::deserialize(checkpoint)
+        .map_err(|error| format!("failed to decode safetensors checkpoint: {error}"))?;
+    let dimensions = Dimensions::reviewed();
+    let weights = (0..MODEL_LAYER_COUNT)
+        .map(|layer_index| load_layer(&tensors, dimensions, layer_index))
+        .collect::<Result<Vec<_>, _>>()?;
+    validate_model_weights(&weights)?;
+    let embedding = tensors
+        .tensor("model.embeddings.weight")
+        .map_err(|error| format!("missing model.embeddings.weight: {error}"))?;
+    let model_config_bos = embedding_row(
+        &embedding,
+        MODEL_CONFIG_BOS_TOKEN_ID,
+        dimensions.hidden_size,
+    )?;
+    let model_config_eos = embedding_row(
+        &embedding,
+        MODEL_CONFIG_EOS_TOKEN_ID,
+        dimensions.hidden_size,
+    )?;
+    let final_norm_weight = vector(&tensors, "model.norm.weight", dimensions.hidden_size)?;
+    let final_norm_bias = vector(&tensors, "model.norm.bias", dimensions.hidden_size)?;
+    let head_tensor = tensors
+        .tensor("lm_head.weight")
+        .map_err(|error| format!("missing lm_head.weight: {error}"))?;
+    let head = matrix(
+        &tensors,
+        "lm_head.weight",
+        VOCABULARY_SIZE,
+        dimensions.hidden_size,
+    )?;
+
+    let first_token = run_model_token_with_layer_zero_mode(
+        &weights,
+        &model_config_bos,
+        ModelExecutionState::zero(dimensions)?,
+        LayerZeroWkvMode::SourceFp32,
+    )?;
+    let source_second = run_model_token_with_layer_zero_mode(
+        &weights,
+        &model_config_eos,
+        first_token.execution.clone(),
+        LayerZeroWkvMode::SourceFp32,
+    )?;
+    let expected_second = run_model_token_with_layer_zero_mode(
+        &weights,
+        &model_config_eos,
+        first_token.execution.clone(),
+        LayerZeroWkvMode::Bf16Cpu,
+    )?;
+    let observed_raw_output = decode_bf16_bytes(
+        evidence.observed_output_bf16,
+        "observed model raw WKV output",
+    )?;
+    let observed_post_state = decode_bf16_bytes(
+        evidence.observed_post_state_bf16,
+        "observed model post-state",
+    )?;
+    let observed_second = run_model_token_with_layer_zero_mode(
+        &weights,
+        &model_config_eos,
+        first_token.execution,
+        LayerZeroWkvMode::Observed {
+            raw_output: &observed_raw_output,
+            post_state: &observed_post_state,
+        },
+    )?;
+
+    validate_observed_layer_token(
+        &source_second,
+        &observed_layer.source_fp32,
+        "source second token",
+    )?;
+    validate_observed_layer_token(
+        &expected_second,
+        &observed_layer.expected_bf16_boundary,
+        "expected second token",
+    )?;
+    validate_observed_layer_token(
+        &observed_second,
+        &observed_layer.observed_device,
+        "observed second token",
+    )?;
+
+    let source = advance_observed_model_path(
+        &weights,
+        &model_config_eos,
+        source_second,
+        LayerZeroWkvMode::SourceFp32,
+        &final_norm_weight,
+        &final_norm_bias,
+        &head,
+        &head_tensor,
+    )?;
+    let expected = advance_observed_model_path(
+        &weights,
+        &model_config_eos,
+        expected_second,
+        LayerZeroWkvMode::Bf16Cpu,
+        &final_norm_weight,
+        &final_norm_bias,
+        &head,
+        &head_tensor,
+    )?;
+    let observed = advance_observed_model_path(
+        &weights,
+        &model_config_eos,
+        observed_second.clone(),
+        LayerZeroWkvMode::Bf16Cpu,
+        &final_norm_weight,
+        &final_norm_bias,
+        &head,
+        &head_tensor,
+    )?;
+
+    let reset_matrix = vec![0.0_f32; observed_post_state.len()];
+    let reset_second = replace_model_layer_zero_matrix(observed_second.clone(), reset_matrix)?;
+    let reset = advance_observed_model_path(
+        &weights,
+        &model_config_eos,
+        reset_second,
+        LayerZeroWkvMode::Bf16Cpu,
+        &final_norm_weight,
+        &final_norm_bias,
+        &head,
+        &head_tensor,
+    )?;
+    let transposed_matrix = transpose_head_matrices(&observed_post_state, dimensions)?;
+    let transposed_second = replace_model_layer_zero_matrix(observed_second, transposed_matrix)?;
+    let transposed = advance_observed_model_path(
+        &weights,
+        &model_config_eos,
+        transposed_second,
+        LayerZeroWkvMode::Bf16Cpu,
+        &final_norm_weight,
+        &final_norm_bias,
+        &head,
+        &head_tensor,
+    )?;
+
+    validate_state_carry_token(
+        &source.third_token,
+        &state_carry.source_fp32,
+        "source third token",
+    )?;
+    validate_state_carry_token(
+        &expected.third_token,
+        &state_carry.expected_bf16_boundary,
+        "expected third token",
+    )?;
+    validate_state_carry_token(
+        &observed.third_token,
+        &state_carry.observed_physical_state_cpu_continuation,
+        "observed third token",
+    )?;
+    validate_state_carry_token(
+        &reset.third_token,
+        &state_carry.reset_state_control,
+        "reset third token",
+    )?;
+    validate_state_carry_token(
+        &transposed.third_token,
+        &state_carry.transposed_state_control,
+        "transposed third token",
+    )?;
+
+    if observed.ranking.first.token_id != expected.ranking.first.token_id
+        || observed.ranking.second.token_id != expected.ranking.second.token_id
+    {
+        return Err(format!(
+            "observed top-two ranking [{}, {}] differs from expected BF16 [{}, {}]",
+            observed.ranking.first.token_id,
+            observed.ranking.second.token_id,
+            expected.ranking.first.token_id,
+            expected.ranking.second.token_id
+        ));
+    }
+
+    let source_complete_state = source.third_token.execution.flattened_complete_state();
+    let expected_complete_state = expected.third_token.execution.flattened_complete_state();
+    let observed_complete_state = observed.third_token.execution.flattened_complete_state();
+    let reset_complete_state = reset.third_token.execution.flattened_complete_state();
+    let transposed_complete_state = transposed.third_token.execution.flattened_complete_state();
+    let deviations = ObservedModelDeviationReceipt {
+        expected_final_hidden_vs_source_fp32: max_abs_difference(
+            &expected.final_hidden,
+            &source.final_hidden,
+        )?,
+        observed_final_hidden_vs_expected_bf16: max_abs_difference(
+            &observed.final_hidden,
+            &expected.final_hidden,
+        )?,
+        observed_final_hidden_vs_source_fp32: max_abs_difference(
+            &observed.final_hidden,
+            &source.final_hidden,
+        )?,
+        expected_logits_vs_source_fp32: max_abs_difference(&expected.logits, &source.logits)?,
+        observed_logits_vs_expected_bf16: max_abs_difference(&observed.logits, &expected.logits)?,
+        observed_logits_vs_source_fp32: max_abs_difference(&observed.logits, &source.logits)?,
+        expected_complete_state_vs_source_fp32: max_abs_difference(
+            &expected_complete_state,
+            &source_complete_state,
+        )?,
+        observed_complete_state_vs_expected_bf16: max_abs_difference(
+            &observed_complete_state,
+            &expected_complete_state,
+        )?,
+        observed_complete_state_vs_source_fp32: max_abs_difference(
+            &observed_complete_state,
+            &source_complete_state,
+        )?,
+        observed_logits_vs_reset_state: max_abs_difference(&observed.logits, &reset.logits)?,
+        observed_complete_state_vs_reset_state: max_abs_difference(
+            &observed_complete_state,
+            &reset_complete_state,
+        )?,
+        observed_logits_vs_transposed_state: max_abs_difference(
+            &observed.logits,
+            &transposed.logits,
+        )?,
+        observed_complete_state_vs_transposed_state: max_abs_difference(
+            &observed_complete_state,
+            &transposed_complete_state,
+        )?,
+    };
+    validate_observed_model_deviations(&deviations)?;
+
+    Ok(Ttwkv7ObservedModelCarryReceipt {
+        schema_version: RECEIPT_SCHEMA_VERSION,
+        target: MODEL_CARRY_TARGET,
+        model: state_carry.model,
+        dimensions,
+        layer_count: MODEL_LAYER_COUNT,
+        token_ids: [
+            MODEL_CONFIG_BOS_TOKEN_ID,
+            MODEL_CONFIG_EOS_TOKEN_ID,
+            MODEL_CONFIG_EOS_TOKEN_ID,
+        ],
+        physical_evidence_layer_index: LAYER_INDEX,
+        physical_evidence_token_ordinal: MODEL_CARRY_PHYSICAL_TOKEN_ORDINAL,
+        physical_wkv_call_count: MODEL_CARRY_PHYSICAL_WKV_COUNT,
+        cpu_second_token_layer_count: MODEL_CARRY_CPU_SECOND_TOKEN_LAYER_COUNT,
+        cpu_third_token_layer_count: MODEL_CARRY_CPU_THIRD_TOKEN_LAYER_COUNT,
+        observed_layer_receipt_blake3,
+        observed_state_carry_receipt_blake3,
+        terminal_session_outcome: OBSERVED_SESSION_OUTCOME,
+        evidence_bundle_blake3: state_carry.evidence_bundle_blake3,
+        source_fp32: observed_model_path_receipt(&source)?,
+        expected_bf16_boundary: observed_model_path_receipt(&expected)?,
+        observed_physical_seed: observed_model_path_receipt(&observed)?,
+        reset_state_control: observed_model_path_receipt(&reset)?,
+        transposed_state_control: observed_model_path_receipt(&transposed)?,
+        maximum_absolute_deviations: deviations,
+        divergence_floor: MODEL_CARRY_DIVERGENCE_FLOOR,
+        non_claims: MODEL_CARRY_NON_CLAIMS.to_vec(),
+    })
+}
+
+fn advance_observed_model_path(
+    weights: &[LayerWeights],
+    embedding: &[f32],
+    second_token: ModelTokenExecution,
+    layer_zero_mode: LayerZeroWkvMode<'_>,
+    final_norm_weight: &[f32],
+    final_norm_bias: &[f32],
+    head: &Matrix,
+    head_tensor: &TensorView<'_>,
+) -> Result<ObservedModelPath, String> {
+    let dimensions = Dimensions::reviewed();
+    let third_token = run_model_token_with_layer_zero_mode(
+        weights,
+        embedding,
+        second_token.execution.clone(),
+        layer_zero_mode,
+    )?;
+    if third_token.layer_outputs.len() != MODEL_LAYER_COUNT {
+        return Err(format!(
+            "third token requires {MODEL_LAYER_COUNT} layer outputs, found {}",
+            third_token.layer_outputs.len()
+        ));
+    }
+    let final_hidden = layer_norm(
+        &third_token.final_output,
+        final_norm_weight,
+        final_norm_bias,
+        LAYER_NORM_EPSILON,
+    )?;
+    let logits = matvec(head, &final_hidden)?;
+    let ranking = rank_top_two(
+        logits
+            .iter()
+            .copied()
+            .enumerate()
+            .map(|(token_id, logit)| RankedLogit { token_id, logit }),
+    )?;
+    let direct_ranking =
+        direct_bf16_head_top_two(head_tensor, &final_hidden, dimensions.hidden_size)?;
+    if ranking.first.token_id != direct_ranking.first.token_id
+        || ranking.second.token_id != direct_ranking.second.token_id
+    {
+        return Err(format!(
+            "observed-model LM-head ranking mismatch: production [{}, {}], direct [{}, {}]",
+            ranking.first.token_id,
+            ranking.second.token_id,
+            direct_ranking.first.token_id,
+            direct_ranking.second.token_id
+        ));
+    }
+    let direct_bf16_head_deviation = (ranking.first.logit - direct_ranking.first.logit)
+        .abs()
+        .max((ranking.second.logit - direct_ranking.second.logit).abs());
+    if direct_bf16_head_deviation > ORACLE_TOLERANCE {
+        return Err(format!(
+            "observed-model LM-head deviation {direct_bf16_head_deviation} exceeds {ORACLE_TOLERANCE}"
+        ));
+    }
+    Ok(ObservedModelPath {
+        second_token,
+        third_token,
+        final_hidden,
+        logits,
+        ranking,
+        direct_bf16_head_deviation,
+    })
+}
+
+fn replace_model_layer_zero_matrix(
+    mut second_token: ModelTokenExecution,
+    matrix: Vec<f32>,
+) -> Result<ModelTokenExecution, String> {
+    require_length(
+        &matrix,
+        OBSERVED_STATE_ELEMENT_COUNT,
+        "replacement model layer-zero matrix",
+    )?;
+    require_finite(&matrix, "replacement model layer-zero matrix")?;
+    second_token.execution.layers[LAYER_INDEX].matrix = matrix.clone();
+    second_token.execution.oracle_matrices[LAYER_INDEX] = matrix;
+    Ok(second_token)
+}
+
+fn validate_observed_layer_token(
+    token: &ModelTokenExecution,
+    expected: &ObservedLayerPathReceipt,
+    name: &str,
+) -> Result<(), String> {
+    require_numeric_identity(
+        &token.layer_zero_raw_output,
+        &expected.raw_wkv_output,
+        &format!("{name} raw WKV output"),
+    )?;
+    require_numeric_identity(
+        &token.layer_zero_post_state,
+        &expected.post_state,
+        &format!("{name} post-state"),
+    )?;
+    let layer_zero_output = token
+        .layer_outputs
+        .get(LAYER_INDEX)
+        .ok_or_else(|| format!("{name} is missing layer-zero output"))?;
+    require_numeric_identity(
+        layer_zero_output,
+        &expected.final_layer_output,
+        &format!("{name} final layer-zero output"),
+    )
+}
+
+fn validate_state_carry_token(
+    token: &ModelTokenExecution,
+    expected: &StateCarryPathReceipt,
+    name: &str,
+) -> Result<(), String> {
+    require_numeric_identity(
+        &token.layer_zero_pre_state,
+        &expected.pre_state,
+        &format!("{name} pre-state"),
+    )?;
+    require_numeric_identity(
+        &token.layer_zero_raw_output,
+        &expected.raw_wkv_output,
+        &format!("{name} raw WKV output"),
+    )?;
+    require_numeric_identity(
+        &token.layer_zero_post_state,
+        &expected.post_state,
+        &format!("{name} post-state"),
+    )?;
+    let layer_zero_output = token
+        .layer_outputs
+        .get(LAYER_INDEX)
+        .ok_or_else(|| format!("{name} is missing layer-zero output"))?;
+    require_numeric_identity(
+        layer_zero_output,
+        &expected.final_layer_output,
+        &format!("{name} final layer-zero output"),
+    )
+}
+
+fn require_numeric_identity(
+    values: &[f32],
+    expected: &NumericReceipt,
+    name: &str,
+) -> Result<(), String> {
+    let observed = numeric_receipt(values)?;
+    if observed.blake3 != expected.blake3 || observed.element_count != expected.element_count {
+        return Err(format!(
+            "{name} identity changed: expected {} elements with BLAKE3 {}, found {} elements with BLAKE3 {}",
+            expected.element_count, expected.blake3, observed.element_count, observed.blake3
+        ));
+    }
+    Ok(())
+}
+
+fn observed_model_path_receipt(
+    path: &ObservedModelPath,
+) -> Result<ObservedModelPathReceipt, String> {
+    let attention_states = path.third_token.execution.flattened_attention_previous();
+    let channel_states = path.third_token.execution.flattened_ffn_previous();
+    let matrix_states = path.third_token.execution.flattened_matrices();
+    let complete_recurrent_state = path.third_token.execution.flattened_complete_state();
+    let second_token_layer_zero_output = path
+        .second_token
+        .layer_outputs
+        .get(LAYER_INDEX)
+        .ok_or_else(|| "second token is missing layer-zero output".to_owned())?;
+    let greedy_margin = path.ranking.first.logit - path.ranking.second.logit;
+    if !greedy_margin.is_finite() || greedy_margin < ZERO_DEVIATION {
+        return Err(format!(
+            "invalid observed-model greedy margin {greedy_margin}"
+        ));
+    }
+    Ok(ObservedModelPathReceipt {
+        second_token_layer_zero_raw_output: numeric_receipt(
+            &path.second_token.layer_zero_raw_output,
+        )?,
+        second_token_layer_zero_post_state: numeric_receipt(
+            &path.second_token.layer_zero_post_state,
+        )?,
+        second_token_layer_zero_output: numeric_receipt(second_token_layer_zero_output)?,
+        third_token_layer_zero_pre_state: numeric_receipt(&path.third_token.layer_zero_pre_state)?,
+        third_token_layer_zero_raw_output: numeric_receipt(
+            &path.third_token.layer_zero_raw_output,
+        )?,
+        third_token_layer_zero_post_state: numeric_receipt(
+            &path.third_token.layer_zero_post_state,
+        )?,
+        third_token_layer_outputs: path
+            .third_token
+            .layer_outputs
+            .iter()
+            .map(|output| numeric_receipt(output))
+            .collect::<Result<Vec<_>, _>>()?,
+        final_layer_output: numeric_receipt(&path.third_token.final_output)?,
+        final_hidden: numeric_receipt(&path.final_hidden)?,
+        logits: numeric_receipt(&path.logits)?,
+        attention_states: numeric_receipt(&attention_states)?,
+        channel_states: numeric_receipt(&channel_states)?,
+        matrix_states: numeric_receipt(&matrix_states)?,
+        complete_recurrent_state: numeric_receipt(&complete_recurrent_state)?,
+        ranking: ObservedModelRankingReceipt {
+            generated_token_id: path.ranking.first.token_id,
+            generated_logit: path.ranking.first.logit,
+            runner_up_token_id: path.ranking.second.token_id,
+            runner_up_logit: path.ranking.second.logit,
+            greedy_margin,
+            direct_bf16_head_deviation: path.direct_bf16_head_deviation,
+        },
+    })
+}
+
+fn validate_observed_model_deviations(
+    deviations: &ObservedModelDeviationReceipt,
+) -> Result<(), String> {
+    let control_divergences = [
+        (
+            "reset-state logits",
+            deviations.observed_logits_vs_reset_state,
+        ),
+        (
+            "reset-state complete state",
+            deviations.observed_complete_state_vs_reset_state,
+        ),
+        (
+            "transposed-state logits",
+            deviations.observed_logits_vs_transposed_state,
+        ),
+        (
+            "transposed-state complete state",
+            deviations.observed_complete_state_vs_transposed_state,
+        ),
+    ];
+    for (name, divergence) in control_divergences {
+        if !divergence.is_finite() || divergence <= MODEL_CARRY_DIVERGENCE_FLOOR {
+            return Err(format!(
+                "{name} divergence {divergence} does not exceed {MODEL_CARRY_DIVERGENCE_FLOOR}"
+            ));
+        }
+    }
+    if deviations.observed_logits_vs_expected_bf16 >= deviations.observed_logits_vs_reset_state
+        || deviations.observed_logits_vs_expected_bf16
+            >= deviations.observed_logits_vs_transposed_state
+    {
+        return Err(
+            "observed logits are not closer to expected BF16 than to both controls".to_owned(),
+        );
+    }
+    if deviations.observed_complete_state_vs_expected_bf16
+        >= deviations.observed_complete_state_vs_reset_state
+        || deviations.observed_complete_state_vs_expected_bf16
+            >= deviations.observed_complete_state_vs_transposed_state
+    {
+        return Err(
+            "observed complete state is not closer to expected BF16 than to both controls"
+                .to_owned(),
+        );
+    }
+    Ok(())
+}
+
 fn run_state_carry_step(
     weights: &LayerWeights,
     embedding: &[f32],
@@ -1047,27 +1694,6 @@ fn transpose_head_matrices(state: &[f32], dimensions: Dimensions) -> Result<Vec<
     }
     require_finite(&transposed, "state-carry transposed state")?;
     Ok(transposed)
-}
-
-fn quantize_wkv_inputs(inputs: &WkvInputs) -> Result<WkvInputs, String> {
-    Ok(WkvInputs {
-        r: quantize_bf16_values(&inputs.r, "state-carry r")?,
-        w: quantize_bf16_values(&inputs.w, "state-carry w")?,
-        k: quantize_bf16_values(&inputs.k, "state-carry k")?,
-        v: quantize_bf16_values(&inputs.v, "state-carry v")?,
-        a: quantize_bf16_values(&inputs.a, "state-carry a")?,
-        b: quantize_bf16_values(&inputs.b, "state-carry b")?,
-    })
-}
-
-fn quantize_bf16_values(values: &[f32], name: &str) -> Result<Vec<f32>, String> {
-    require_finite(values, name)?;
-    let quantized = values
-        .iter()
-        .map(|value| bf16::from_f32(*value).to_f32())
-        .collect::<Vec<_>>();
-    require_finite(&quantized, name)?;
-    Ok(quantized)
 }
 
 fn state_carry_path_receipt(step: &StateCarryStep) -> Result<StateCarryPathReceipt, String> {
