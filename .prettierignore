@@ -1,3 +1,4 @@
 # Immutable external hardware evidence must remain byte-identical.
 pkgs/rwkv-layer-harness/fixtures/ttwkv7-device-2/*
 pkgs/rwkv-ttwkv7-persistent-evidence/fixtures/ttwkv7-persistent-device-3/**
+pkgs/rwkv-ttwkv7-persistent-passed-evidence/fixtures/ttwkv7-persistent-device-4/**

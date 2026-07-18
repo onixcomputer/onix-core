@@ -1,0 +1,468 @@
+- kernel:
+    watcher_kernel_id: 3
+    name: cq_dispatch_subordinate
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/cq_dispatch_subordinate/5032295584758471862/
+    source: tt_metal/impl/dispatch/kernels/cq_dispatch_subordinate.cpp
+    program_id: 0
+- kernel:
+    watcher_kernel_id: 4
+    name: cq_dispatch_subordinate_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/cq_dispatch_subordinate_compute/10872678939658309555/
+    source: tt_metal/impl/dispatch/kernels/cq_dispatch_subordinate_compute.cpp
+    program_id: 0
+- kernel:
+    watcher_kernel_id: 2
+    name: cq_dispatch
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/cq_dispatch/4872626685022631612/
+    source: tt_metal/impl/dispatch/kernels/cq_dispatch.cpp
+    program_id: 0
+- kernel:
+    watcher_kernel_id: 1
+    name: cq_prefetch
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/cq_prefetch/7724475146757851751/
+    source: tt_metal/impl/dispatch/kernels/cq_prefetch.cpp
+    program_id: 0
+- kernel:
+    watcher_kernel_id: 5
+    name: cq_realtime_profiler
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/cq_realtime_profiler/11797527242502228967/
+    source: tt_metal/impl/dispatch/kernels/cq_realtime_profiler.cpp
+    program_id: 1
+- kernel:
+    watcher_kernel_id: 6
+    name: cq_realtime_profiler_push
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/cq_realtime_profiler_push/6504663995342065373/
+    source: tt_metal/impl/dispatch/kernels/cq_realtime_profiler_push.cpp
+    program_id: 1
+- kernel:
+    watcher_kernel_id: 7
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 2
+- kernel:
+    watcher_kernel_id: 8
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 2
+- kernel:
+    watcher_kernel_id: 9
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 2
+- kernel:
+    watcher_kernel_id: 11
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 4
+- kernel:
+    watcher_kernel_id: 12
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 4
+- kernel:
+    watcher_kernel_id: 10
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 4
+- kernel:
+    watcher_kernel_id: 14
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 6
+- kernel:
+    watcher_kernel_id: 15
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 6
+- kernel:
+    watcher_kernel_id: 13
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 6
+- kernel:
+    watcher_kernel_id: 17
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 8
+- kernel:
+    watcher_kernel_id: 16
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 8
+- kernel:
+    watcher_kernel_id: 18
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 8
+- kernel:
+    watcher_kernel_id: 20
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 10
+- kernel:
+    watcher_kernel_id: 19
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 10
+- kernel:
+    watcher_kernel_id: 21
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 10
+- kernel:
+    watcher_kernel_id: 22
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 12
+- kernel:
+    watcher_kernel_id: 24
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 12
+- kernel:
+    watcher_kernel_id: 23
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 12
+- kernel:
+    watcher_kernel_id: 26
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 14
+- kernel:
+    watcher_kernel_id: 25
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 14
+- kernel:
+    watcher_kernel_id: 27
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 14
+- kernel:
+    watcher_kernel_id: 29
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 16
+- kernel:
+    watcher_kernel_id: 30
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 16
+- kernel:
+    watcher_kernel_id: 28
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 16
+- kernel:
+    watcher_kernel_id: 32
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 18
+- kernel:
+    watcher_kernel_id: 33
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 18
+- kernel:
+    watcher_kernel_id: 31
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 18
+- kernel:
+    watcher_kernel_id: 36
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 20
+- kernel:
+    watcher_kernel_id: 35
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 20
+- kernel:
+    watcher_kernel_id: 34
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 20
+- kernel:
+    watcher_kernel_id: 37
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 22
+- kernel:
+    watcher_kernel_id: 38
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 22
+- kernel:
+    watcher_kernel_id: 39
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 22
+- kernel:
+    watcher_kernel_id: 41
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 24
+- kernel:
+    watcher_kernel_id: 42
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 24
+- kernel:
+    watcher_kernel_id: 40
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 24
+- kernel:
+    watcher_kernel_id: 44
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 26
+- kernel:
+    watcher_kernel_id: 45
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 26
+- kernel:
+    watcher_kernel_id: 43
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 26
+- kernel:
+    watcher_kernel_id: 47
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 28
+- kernel:
+    watcher_kernel_id: 46
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 28
+- kernel:
+    watcher_kernel_id: 48
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 28
+- kernel:
+    watcher_kernel_id: 49
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 30
+- kernel:
+    watcher_kernel_id: 51
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 30
+- kernel:
+    watcher_kernel_id: 50
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 30
+- kernel:
+    watcher_kernel_id: 54
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 32
+- kernel:
+    watcher_kernel_id: 52
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 32
+- kernel:
+    watcher_kernel_id: 53
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 32
+- kernel:
+    watcher_kernel_id: 56
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 34
+- kernel:
+    watcher_kernel_id: 55
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 34
+- kernel:
+    watcher_kernel_id: 57
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 34
+- kernel:
+    watcher_kernel_id: 58
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 36
+- kernel:
+    watcher_kernel_id: 60
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 36
+- kernel:
+    watcher_kernel_id: 59
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 36
+- kernel:
+    watcher_kernel_id: 61
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 38
+- kernel:
+    watcher_kernel_id: 62
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 38
+- kernel:
+    watcher_kernel_id: 63
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 38
+- kernel:
+    watcher_kernel_id: 65
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 40
+- kernel:
+    watcher_kernel_id: 66
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 40
+- kernel:
+    watcher_kernel_id: 64
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 40
+- kernel:
+    watcher_kernel_id: 69
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 42
+- kernel:
+    watcher_kernel_id: 67
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 42
+- kernel:
+    watcher_kernel_id: 68
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 42
+- kernel:
+    watcher_kernel_id: 71
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 44
+- kernel:
+    watcher_kernel_id: 72
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 44
+- kernel:
+    watcher_kernel_id: 70
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 44
+- kernel:
+    watcher_kernel_id: 74
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 46
+- kernel:
+    watcher_kernel_id: 75
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 46
+- kernel:
+    watcher_kernel_id: 73
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 46
+- kernel:
+    watcher_kernel_id: 77
+    name: wkv7_writer
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_writer/4680862972673331215/
+    source: kernels/wkv7_writer.cpp
+    program_id: 48
+- kernel:
+    watcher_kernel_id: 78
+    name: wkv7_decodeL_compute
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_compute/4334116936902989630/
+    source: kernels/wkv7_decodeL_compute.cpp
+    program_id: 48
+- kernel:
+    watcher_kernel_id: 76
+    name: wkv7_decodeL_reader
+    path: /var/tmp/rwkv-ttwkv7-persistent-device-4/cache/tt-metal-cache6727537587126051373/kernels/wkv7_decodeL_reader/15651379702214478416/
+    source: kernels/wkv7_decodeL_reader.cpp
+    program_id: 48

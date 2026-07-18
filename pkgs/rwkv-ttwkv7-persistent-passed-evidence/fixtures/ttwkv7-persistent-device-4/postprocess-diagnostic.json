@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "target": "rwkv_ttwkv7_persistent_device_4_postprocess_diagnostic",
+  "classification_outcome": "passed",
+  "physical_process_exit_status": 0,
+  "artifact_validator_exit_status": 1,
+  "orchestration_exit_status": 1,
+  "pueue_task_exit_status": 1,
+  "first_failing_runbook_line": 286,
+  "stale_expected_field": "session_call_count",
+  "accepted_replacement_path": "core.session.call_count",
+  "accepted_replacement_value": 24,
+  "continuity_replacement_path": "core.session.same_layer_state_continuity_count",
+  "continuity_replacement_value": 12,
+  "rerun_authorized": false
+}
