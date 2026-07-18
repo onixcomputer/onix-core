@@ -59,6 +59,9 @@ let
     persistentDevice = rwkvTtwkv7PersistentDevice;
     inherit rwkvLayerHarness ttwkv7;
   };
+  rwkvTtwkv7PersistentPartialDiagnosticCheck =
+    pkgs.callPackage ../pkgs/rwkv-ttwkv7-persistent-evidence
+      { };
 in
 {
   packages = lib.optionalAttrs isSupportedSystem {
@@ -105,6 +108,8 @@ in
     rwkv-ttwkv7-persistent-dispatch-transport = rwkvTtwkv7PersistentDispatchTransportCheck;
     # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_persistent_metalium_dispatch]
     rwkv-ttwkv7-persistent-device = rwkvTtwkv7PersistentDeviceCheck;
+    # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_persistent_metalium_partial_diagnostic]
+    rwkv-ttwkv7-persistent-partial-diagnostic = rwkvTtwkv7PersistentPartialDiagnosticCheck;
     # r[verify onix.tenstorrent.native_runtime.ttwkv7.fast_iteration]
     ttwkv7-architectures = ttwkv7.passthru.architectureCheck;
     # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_host_layout]

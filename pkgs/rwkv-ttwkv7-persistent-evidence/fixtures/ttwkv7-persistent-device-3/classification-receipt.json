@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "plan_id": "9736c1b59a87d0af30a4b34087cdc56446cce69f6236accf6011b8eb5f165bf4",
+  "outcome": "partial_diagnostic",
+  "process_budget_exhausted": true,
+  "missing_artifact_roles": [
+    "core_receipt",
+    "host_manifest",
+    "host_receipt",
+    "server_summary"
+  ],
+  "missing_success_markers": [
+    "rwkv persistent physical ttWKV7 dispatch: PASS"
+  ],
+  "safety_issues": [],
+  "success_claim": null,
+  "non_claims": [
+    "No complete RWKV layer or model executes wholly on Tenstorrent devices.",
+    "No exact BF16 parity is established by a tolerance pass.",
+    "No general P150 compatibility is established.",
+    "No hardware execution is authorized by this plan artifact alone.",
+    "No serving, throughput, or latency claim is established.",
+    "Only ttWKV7 executes on the device; model composition remains on the CPU host.",
+    "Tasks 30 and 64 remain terminal and are not reusable."
+  ]
+}

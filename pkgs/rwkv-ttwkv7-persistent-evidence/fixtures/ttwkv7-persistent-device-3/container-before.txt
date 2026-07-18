@@ -1,0 +1,1 @@
+tt-inference-server-llama-3-1-8b-instruct-p150|Up 9 hours|127.0.0.1:8000->8000/tcp
