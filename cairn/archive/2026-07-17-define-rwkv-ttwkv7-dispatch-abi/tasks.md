@@ -8,4 +8,4 @@
 - [x] [serial] Add twelve-layer, two-token retained/reset/transposed fixtures and positive/negative unit tests r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_dispatch_abi]
 - [x] [serial] Package the fixed-invocation receipt and Nix regression check with source-surface rejection r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_dispatch_abi]
 - [x] [serial] Rebuild historical observed-model/state/layer and boundary checks in a clean detached worktree r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_dispatch_abi]
-- [ ] [serial] Sync, archive, commit both boundaries, and preserve the new-hardware-authorization blocker r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_dispatch_abi]
+- [x] [serial] Sync, archive, commit both boundaries, and preserve the new-hardware-authorization blocker r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_dispatch_abi]
