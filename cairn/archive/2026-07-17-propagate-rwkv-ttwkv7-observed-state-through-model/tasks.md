@@ -22,4 +22,4 @@
 ## 5. Validate and close
 
 - [x] [serial] Rebuild focused and historical checks in a clean detached worktree and record exact receipts, deviations, identities, and blockers r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_model_carry]
-- [ ] [serial] Sync the accepted requirement, archive the completed change, commit both boundaries, and preserve the hardware authorization blocker r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_model_carry]
+- [x] [serial] Sync the accepted requirement, archive the completed change, commit both boundaries, and preserve the hardware authorization blocker r[onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_observed_model_carry]
