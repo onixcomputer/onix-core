@@ -153,6 +153,39 @@ const MODEL_DISPATCH_NON_CLAIMS: [&str; 11] = [
     "No additional physical workload is executed by this replay.",
     "No new hardware execution is authorized by this replay.",
 ];
+const PERSISTENT_MODEL_DISPATCH_TARGET: &str = "rwkv_ttwkv7_persistent_observed_model_dispatch";
+const PERSISTENT_MODEL_DISPATCH_PRIOR_RECEIPT_BLAKE3: &str =
+    "81c3b5c9904d2469b89d3f6732609514996fbe910a0c9ff0c150fb6044832b5d";
+const PERSISTENT_MODEL_DISPATCH_TOKEN_COUNT: usize = 2;
+const PERSISTENT_MODEL_DISPATCH_TOTAL_TOKEN_COUNT: usize = 4;
+const PERSISTENT_MODEL_DISPATCH_FIRST_TOKEN_INDEX: usize = MODEL_DISPATCH_TOKEN_INDEX;
+const PERSISTENT_MODEL_DISPATCH_SECOND_TOKEN_INDEX: usize =
+    PERSISTENT_MODEL_DISPATCH_FIRST_TOKEN_INDEX + 1;
+const PERSISTENT_MODEL_DISPATCH_CALL_COUNT: usize =
+    MODEL_LAYER_COUNT * PERSISTENT_MODEL_DISPATCH_TOKEN_COUNT;
+const PERSISTENT_MODEL_DISPATCH_CONTINUITY_COUNT: usize = MODEL_LAYER_COUNT;
+const PERSISTENT_MODEL_DISPATCH_ORACLE_TOLERANCE: f32 = 5.0e-3;
+const PERSISTENT_MODEL_DISPATCH_RETAINED_DOMAIN: &[u8] =
+    b"rwkv-ttwkv7-persistent-model-dispatch-retained-v1";
+const PERSISTENT_MODEL_DISPATCH_RESET_DOMAIN: &[u8] =
+    b"rwkv-ttwkv7-persistent-model-dispatch-reset-v1";
+const PERSISTENT_MODEL_DISPATCH_TRANSPOSED_DOMAIN: &[u8] =
+    b"rwkv-ttwkv7-persistent-model-dispatch-transposed-v1";
+const PERSISTENT_MODEL_DISPATCH_NON_CLAIMS: [&str; 13] = [
+    "The terminal rwkv-lab session remains unsafe and is not reclassified.",
+    "Only the accepted layer-zero second-token WKV output and post-state came from physical execution.",
+    "The persistent session is a pure in-memory lifecycle contract, not an operating-system process.",
+    "All twenty-four third- and fourth-token WKV calls execute in the device-free CPU dispatcher.",
+    "No child process, socket, retry, backoff, reconnect, or persistent Metalium transport is established.",
+    "No Metalium device is opened or initialized.",
+    "No complete RWKV layer ran wholly on a Tenstorrent device.",
+    "No complete RWKV model ran wholly on Tenstorrent devices.",
+    "The selected continuation does not establish hardware-backed token generation.",
+    "No serving, throughput, or latency claim is established.",
+    "No additional physical workload is executed by this replay.",
+    "Tasks 30 and 64 remain terminal and are not reusable.",
+    "No new hardware execution is authorized by this replay.",
+];
 const MODEL_CARRY_NON_CLAIMS: [&str; 11] = [
     "The terminal rwkv-lab session remains unsafe and is not reclassified.",
     "Only the accepted layer-zero second-token WKV output and post-state came from physical execution.",
@@ -467,11 +500,132 @@ pub struct Ttwkv7ObservedModelDispatchReceipt {
     pub non_claims: Vec<&'static str>,
 }
 
+#[derive(Clone, Debug, Serialize)]
+pub struct PersistentModelSessionReceipt {
+    pub sequence_id: String,
+    pub first_token_index_zero_based: usize,
+    pub token_count: usize,
+    pub call_count: usize,
+    pub same_layer_state_continuity_count: usize,
+    pub request_frame_byte_count: usize,
+    pub response_frame_byte_count: usize,
+    pub ordered_request_blake3: Vec<String>,
+    pub ordered_response_blake3: Vec<String>,
+    pub transcript_blake3: String,
+    pub terminal_state: &'static str,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct PersistentModelTokenReceipt {
+    pub token_index_zero_based: usize,
+    pub input_token_id: usize,
+    pub layer_zero_pre_state: NumericReceipt,
+    pub raw_wkv_outputs: NumericReceipt,
+    pub matrix_post_states: NumericReceipt,
+    pub layer_outputs: Vec<NumericReceipt>,
+    pub final_layer_output: NumericReceipt,
+    pub final_hidden: NumericReceipt,
+    pub logits: NumericReceipt,
+    pub attention_states: NumericReceipt,
+    pub channel_states: NumericReceipt,
+    pub matrix_states: NumericReceipt,
+    pub complete_recurrent_state: NumericReceipt,
+    pub ranking: ObservedModelRankingReceipt,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct PersistentModelOraclePathReceipt {
+    pub tokens: Vec<PersistentModelTokenReceipt>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct PersistentModelDispatchPathReceipt {
+    pub session: PersistentModelSessionReceipt,
+    pub tokens: Vec<PersistentModelTokenReceipt>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct PersistentModelTokenDeviationReceipt {
+    pub raw_wkv_outputs: f32,
+    pub matrix_post_states: f32,
+    pub layer_outputs: f32,
+    pub final_layer_output: f32,
+    pub final_hidden: f32,
+    pub logits: f32,
+    pub complete_recurrent_state: f32,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct PersistentModelDispatchDeviationReceipt {
+    pub third_token_dispatched_vs_oracle: PersistentModelTokenDeviationReceipt,
+    pub fourth_token_dispatched_vs_oracle: PersistentModelTokenDeviationReceipt,
+    pub fourth_token_final_output_vs_reset: f32,
+    pub fourth_token_logits_vs_reset: f32,
+    pub fourth_token_complete_state_vs_reset: f32,
+    pub fourth_token_final_output_vs_transposed: f32,
+    pub fourth_token_logits_vs_transposed: f32,
+    pub fourth_token_complete_state_vs_transposed: f32,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct Ttwkv7PersistentObservedModelDispatchReceipt {
+    pub schema_version: u32,
+    pub target: &'static str,
+    pub model: ModelReceipt,
+    pub dimensions: Dimensions,
+    pub token_ids: [usize; PERSISTENT_MODEL_DISPATCH_TOTAL_TOKEN_COUNT],
+    pub dispatched_token_indices_zero_based: [usize; PERSISTENT_MODEL_DISPATCH_TOKEN_COUNT],
+    pub dispatch_call_count: usize,
+    pub physical_wkv_call_count: usize,
+    pub new_physical_wkv_call_count: usize,
+    pub prior_model_dispatch_receipt_blake3: String,
+    pub terminal_session_outcome: &'static str,
+    pub evidence_bundle_blake3: String,
+    pub physical_seed_attention_states: NumericReceipt,
+    pub physical_seed_channel_states: NumericReceipt,
+    pub physical_seed_matrix_states: NumericReceipt,
+    pub physical_seed_complete_recurrent_state: NumericReceipt,
+    pub selected_fourth_token_id: usize,
+    pub oracle_bf16: PersistentModelOraclePathReceipt,
+    pub dispatched_physical_seed: PersistentModelDispatchPathReceipt,
+    pub reset_all_matrix_states_control: PersistentModelDispatchPathReceipt,
+    pub transposed_all_matrix_states_control: PersistentModelDispatchPathReceipt,
+    pub maximum_absolute_deviations: PersistentModelDispatchDeviationReceipt,
+    pub oracle_tolerance: f32,
+    pub divergence_floor: f32,
+    pub non_claims: Vec<&'static str>,
+}
+
 struct RoutedModelToken {
     token: ModelTokenExecution,
     raw_outputs: Vec<Vec<f32>>,
     post_states: Vec<Vec<f32>>,
     dispatch_steps: Vec<super::dispatch_abi::CpuDispatchStep>,
+}
+
+struct CompletedPersistentModelToken {
+    token_index: usize,
+    input_token_id: usize,
+    routed: RoutedModelToken,
+    final_hidden: Vec<f32>,
+    logits: Vec<f32>,
+    ranking: TopTwo,
+    direct_bf16_head_deviation: f32,
+}
+
+struct PersistentModelPath {
+    tokens: Vec<CompletedPersistentModelToken>,
+    session: Option<super::dispatch_abi::PersistentDispatchSessionSummary>,
+}
+
+struct ModelDispatchSetup {
+    dimensions: Dimensions,
+    weights: Vec<LayerWeights>,
+    model_config_eos: Vec<f32>,
+    final_norm_weight: Vec<f32>,
+    final_norm_bias: Vec<f32>,
+    head: Matrix,
+    observed_second: ModelTokenExecution,
 }
 
 #[derive(Clone, Debug)]
@@ -1437,6 +1591,91 @@ pub fn run_ttwkv7_observed_model_carry_checkpoint(
     })
 }
 
+fn prepare_model_dispatch_setup(
+    tensors: &SafeTensors<'_>,
+    evidence: &Ttwkv7ObservedLayerEvidence<'_>,
+    expected_physical_seed: &ObservedModelPathReceipt,
+    name: &str,
+) -> Result<ModelDispatchSetup, String> {
+    let dimensions = Dimensions::reviewed();
+    let weights = (0..MODEL_LAYER_COUNT)
+        .map(|layer_index| load_layer(tensors, dimensions, layer_index))
+        .collect::<Result<Vec<_>, _>>()?;
+    validate_model_weights(&weights)?;
+    let embedding = tensors
+        .tensor("model.embeddings.weight")
+        .map_err(|error| format!("missing model.embeddings.weight: {error}"))?;
+    let model_config_bos = embedding_row(
+        &embedding,
+        MODEL_CONFIG_BOS_TOKEN_ID,
+        dimensions.hidden_size,
+    )?;
+    let model_config_eos = embedding_row(
+        &embedding,
+        MODEL_CONFIG_EOS_TOKEN_ID,
+        dimensions.hidden_size,
+    )?;
+    let final_norm_weight = vector(tensors, "model.norm.weight", dimensions.hidden_size)?;
+    let final_norm_bias = vector(tensors, "model.norm.bias", dimensions.hidden_size)?;
+    let head = matrix(
+        tensors,
+        "lm_head.weight",
+        VOCABULARY_SIZE,
+        dimensions.hidden_size,
+    )?;
+    let first_token = run_model_token_with_layer_zero_mode(
+        &weights,
+        &model_config_bos,
+        ModelExecutionState::zero(dimensions)?,
+        LayerZeroWkvMode::SourceFp32,
+    )?;
+    let observed_raw_output = decode_bf16_bytes(
+        evidence.observed_output_bf16,
+        &format!("{name} observed raw WKV output"),
+    )?;
+    let observed_post_state = decode_bf16_bytes(
+        evidence.observed_post_state_bf16,
+        &format!("{name} observed post-state"),
+    )?;
+    let observed_second = run_model_token_with_layer_zero_mode(
+        &weights,
+        &model_config_eos,
+        first_token.execution,
+        LayerZeroWkvMode::Observed {
+            raw_output: &observed_raw_output,
+            post_state: &observed_post_state,
+        },
+    )?;
+    require_numeric_identity(
+        &observed_second.layer_zero_raw_output,
+        &expected_physical_seed.second_token_layer_zero_raw_output,
+        &format!("{name} physical-seed raw output"),
+    )?;
+    require_numeric_identity(
+        &observed_second.layer_zero_post_state,
+        &expected_physical_seed.second_token_layer_zero_post_state,
+        &format!("{name} physical-seed post-state"),
+    )?;
+    let observed_second_layer_zero = observed_second
+        .layer_outputs
+        .get(LAYER_INDEX)
+        .ok_or_else(|| format!("{name} second token is missing layer-zero output"))?;
+    require_numeric_identity(
+        observed_second_layer_zero,
+        &expected_physical_seed.second_token_layer_zero_output,
+        &format!("{name} physical-seed layer-zero output"),
+    )?;
+    Ok(ModelDispatchSetup {
+        dimensions,
+        weights,
+        model_config_eos,
+        final_norm_weight,
+        final_norm_bias,
+        head,
+        observed_second,
+    })
+}
+
 // r[impl onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_model_dispatch]
 pub fn run_ttwkv7_observed_model_dispatch_checkpoint(
     checkpoint: &[u8],
@@ -1461,89 +1700,30 @@ pub fn run_ttwkv7_observed_model_dispatch_checkpoint(
 
     let tensors = SafeTensors::deserialize(checkpoint)
         .map_err(|error| format!("failed to decode safetensors checkpoint: {error}"))?;
-    let dimensions = Dimensions::reviewed();
-    let weights = (0..MODEL_LAYER_COUNT)
-        .map(|layer_index| load_layer(&tensors, dimensions, layer_index))
-        .collect::<Result<Vec<_>, _>>()?;
-    validate_model_weights(&weights)?;
-    let embedding = tensors
-        .tensor("model.embeddings.weight")
-        .map_err(|error| format!("missing model.embeddings.weight: {error}"))?;
-    let model_config_bos = embedding_row(
-        &embedding,
-        MODEL_CONFIG_BOS_TOKEN_ID,
-        dimensions.hidden_size,
+    let setup = prepare_model_dispatch_setup(
+        &tensors,
+        evidence,
+        &model_carry.observed_physical_seed,
+        "model-dispatch",
     )?;
-    let model_config_eos = embedding_row(
-        &embedding,
-        MODEL_CONFIG_EOS_TOKEN_ID,
-        dimensions.hidden_size,
-    )?;
-    let final_norm_weight = vector(&tensors, "model.norm.weight", dimensions.hidden_size)?;
-    let final_norm_bias = vector(&tensors, "model.norm.bias", dimensions.hidden_size)?;
     let head_tensor = tensors
         .tensor("lm_head.weight")
         .map_err(|error| format!("missing lm_head.weight: {error}"))?;
-    let head = matrix(
-        &tensors,
-        "lm_head.weight",
-        VOCABULARY_SIZE,
-        dimensions.hidden_size,
-    )?;
-
-    let first_token = run_model_token_with_layer_zero_mode(
-        &weights,
-        &model_config_bos,
-        ModelExecutionState::zero(dimensions)?,
-        LayerZeroWkvMode::SourceFp32,
-    )?;
-    let observed_raw_output = decode_bf16_bytes(
-        evidence.observed_output_bf16,
-        "model-dispatch observed raw WKV output",
-    )?;
-    let observed_post_state = decode_bf16_bytes(
-        evidence.observed_post_state_bf16,
-        "model-dispatch observed post-state",
-    )?;
-    let observed_second = run_model_token_with_layer_zero_mode(
-        &weights,
-        &model_config_eos,
-        first_token.execution,
-        LayerZeroWkvMode::Observed {
-            raw_output: &observed_raw_output,
-            post_state: &observed_post_state,
-        },
-    )?;
-    require_numeric_identity(
-        &observed_second.layer_zero_raw_output,
-        &model_carry
-            .observed_physical_seed
-            .second_token_layer_zero_raw_output,
-        "model-dispatch physical-seed raw output",
-    )?;
-    require_numeric_identity(
-        &observed_second.layer_zero_post_state,
-        &model_carry
-            .observed_physical_seed
-            .second_token_layer_zero_post_state,
-        "model-dispatch physical-seed post-state",
-    )?;
-    let observed_second_layer_zero = observed_second
-        .layer_outputs
-        .get(LAYER_INDEX)
-        .ok_or_else(|| "model-dispatch second token is missing layer-zero output".to_owned())?;
-    require_numeric_identity(
-        observed_second_layer_zero,
-        &model_carry
-            .observed_physical_seed
-            .second_token_layer_zero_output,
-        "model-dispatch physical-seed layer-zero output",
-    )?;
+    let ModelDispatchSetup {
+        dimensions,
+        weights,
+        model_config_eos,
+        final_norm_weight,
+        final_norm_bias,
+        head,
+        observed_second,
+    } = setup;
 
     let oracle_token = run_model_token_all_layers_bf16(
         &weights,
         &model_config_eos,
         observed_second.execution.clone(),
+        MODEL_DISPATCH_TOKEN_INDEX,
         ModelWkvRoute::Oracle,
     )?;
     let retained_sequence = super::dispatch_abi::derive_sequence_id(MODEL_DISPATCH_RETAINED_DOMAIN);
@@ -1551,7 +1731,11 @@ pub fn run_ttwkv7_observed_model_dispatch_checkpoint(
         &weights,
         &model_config_eos,
         observed_second.execution.clone(),
-        ModelWkvRoute::Dispatch(retained_sequence),
+        MODEL_DISPATCH_TOKEN_INDEX,
+        ModelWkvRoute::Dispatch {
+            sequence_id: retained_sequence,
+            call_offset: 0,
+        },
     )?;
     let reset_second = reset_all_model_matrices(observed_second.clone(), dimensions)?;
     let reset_sequence = super::dispatch_abi::derive_sequence_id(MODEL_DISPATCH_RESET_DOMAIN);
@@ -1559,7 +1743,11 @@ pub fn run_ttwkv7_observed_model_dispatch_checkpoint(
         &weights,
         &model_config_eos,
         reset_second.execution.clone(),
-        ModelWkvRoute::Dispatch(reset_sequence),
+        MODEL_DISPATCH_TOKEN_INDEX,
+        ModelWkvRoute::Dispatch {
+            sequence_id: reset_sequence,
+            call_offset: 0,
+        },
     )?;
     let transposed_second = transpose_all_model_matrices(observed_second.clone(), dimensions)?;
     validate_model_matrix_control(
@@ -1580,7 +1768,11 @@ pub fn run_ttwkv7_observed_model_dispatch_checkpoint(
         &weights,
         &model_config_eos,
         transposed_second.execution.clone(),
-        ModelWkvRoute::Dispatch(transposed_sequence),
+        MODEL_DISPATCH_TOKEN_INDEX,
+        ModelWkvRoute::Dispatch {
+            sequence_id: transposed_sequence,
+            call_offset: 0,
+        },
     )?;
 
     let raw_deviation = maximum_nested_deviation(
@@ -1742,17 +1934,21 @@ pub fn run_ttwkv7_observed_model_dispatch_checkpoint(
     })
 }
 
-#[derive(Clone, Copy)]
-enum ModelWkvRoute {
+enum ModelWkvRoute<'a> {
     Oracle,
-    Dispatch(super::dispatch_abi::DispatchSequenceId),
+    Dispatch {
+        sequence_id: super::dispatch_abi::DispatchSequenceId,
+        call_offset: usize,
+    },
+    Persistent(&'a mut super::dispatch_abi::PersistentCpuDispatchSession),
 }
 
 fn run_model_token_all_layers_bf16(
     weights: &[LayerWeights],
     embedding: &[f32],
     mut execution: ModelExecutionState,
-    route: ModelWkvRoute,
+    token_index: usize,
+    mut route: ModelWkvRoute<'_>,
 ) -> Result<RoutedModelToken, String> {
     validate_model_weights(weights)?;
     let dimensions = Dimensions::reviewed();
@@ -1791,7 +1987,7 @@ fn run_model_token_all_layers_bf16(
             layer_zero_pre_state = Some(execution.layers[layer_index].matrix.clone());
         }
 
-        let (raw_output, post_state, oracle_raw_output, oracle_post_state) = match route {
+        let (raw_output, post_state, oracle_raw_output, oracle_post_state) = match &mut route {
             ModelWkvRoute::Oracle => {
                 let consumed_inputs = quantize_wkv_inputs(&preparation.wkv_inputs)?;
                 let consumed_state = quantize_bf16_values(
@@ -1811,11 +2007,36 @@ fn run_model_token_all_layers_bf16(
                     oracle_state,
                 )
             }
-            ModelWkvRoute::Dispatch(sequence_id) => {
+            ModelWkvRoute::Dispatch {
+                sequence_id,
+                call_offset,
+            } => {
+                let call_ordinal = call_offset
+                    .checked_add(layer_index)
+                    .ok_or_else(|| "model-dispatch call ordinal overflow".to_owned())?;
                 let step = super::dispatch_abi::execute_cpu_dispatch_step(
-                    sequence_id,
+                    *sequence_id,
+                    call_ordinal,
+                    token_index,
                     layer_index,
-                    MODEL_DISPATCH_TOKEN_INDEX,
+                    &preparation.wkv_inputs,
+                    &execution.layers[layer_index].matrix,
+                )?;
+                let (oracle_state, oracle_output) =
+                    wkv_step_oracle(&step.consumed_pre_state, &step.consumed_inputs, dimensions)?;
+                let oracle_state =
+                    quantize_bf16_values(&oracle_state, "model-dispatch oracle post-state")?;
+                let oracle_output =
+                    quantize_bf16_values(&oracle_output, "model-dispatch oracle raw output")?;
+                let raw_output = step.raw_output.clone();
+                let post_state = step.post_state.clone();
+                dispatch_steps.push(step);
+                (raw_output, post_state, oracle_output, oracle_state)
+            }
+            ModelWkvRoute::Persistent(session) => {
+                let step = super::dispatch_abi::execute_persistent_cpu_dispatch_step(
+                    session,
+                    token_index,
                     layer_index,
                     &preparation.wkv_inputs,
                     &execution.layers[layer_index].matrix,
@@ -1879,7 +2100,9 @@ fn run_model_token_all_layers_bf16(
         ModelWkvRoute::Oracle if !dispatch_steps.is_empty() => {
             return Err("oracle route unexpectedly produced dispatch steps".to_owned());
         }
-        ModelWkvRoute::Dispatch(_) if dispatch_steps.len() != MODEL_DISPATCH_CALL_COUNT => {
+        ModelWkvRoute::Dispatch { .. } | ModelWkvRoute::Persistent(_)
+            if dispatch_steps.len() != MODEL_DISPATCH_CALL_COUNT =>
+        {
             return Err(format!(
                 "model dispatch requires {MODEL_DISPATCH_CALL_COUNT} steps, found {}",
                 dispatch_steps.len()
@@ -1904,6 +2127,641 @@ fn run_model_token_all_layers_bf16(
         raw_outputs,
         post_states,
         dispatch_steps,
+    })
+}
+
+enum PersistentModelRoute {
+    Oracle,
+    Dispatch(super::dispatch_abi::DispatchSequenceId),
+}
+
+fn complete_persistent_model_token(
+    token_index: usize,
+    input_token_id: usize,
+    routed: RoutedModelToken,
+    final_norm_weight: &[f32],
+    final_norm_bias: &[f32],
+    head: &Matrix,
+    head_tensor: &TensorView<'_>,
+) -> Result<CompletedPersistentModelToken, String> {
+    if routed.token.layer_outputs.len() != MODEL_LAYER_COUNT {
+        return Err(format!(
+            "persistent model token {token_index} requires {MODEL_LAYER_COUNT} layer outputs, found {}",
+            routed.token.layer_outputs.len()
+        ));
+    }
+    let dimensions = Dimensions::reviewed();
+    let final_hidden = layer_norm(
+        &routed.token.final_output,
+        final_norm_weight,
+        final_norm_bias,
+        LAYER_NORM_EPSILON,
+    )?;
+    let logits = matvec(head, &final_hidden)?;
+    let ranking = rank_top_two(
+        logits
+            .iter()
+            .copied()
+            .enumerate()
+            .map(|(token_id, logit)| RankedLogit { token_id, logit }),
+    )?;
+    let direct_ranking =
+        direct_bf16_head_top_two(head_tensor, &final_hidden, dimensions.hidden_size)?;
+    if ranking.first.token_id != direct_ranking.first.token_id
+        || ranking.second.token_id != direct_ranking.second.token_id
+    {
+        return Err(format!(
+            "persistent model token {token_index} LM-head ranking mismatch: production [{}, {}], direct [{}, {}]",
+            ranking.first.token_id,
+            ranking.second.token_id,
+            direct_ranking.first.token_id,
+            direct_ranking.second.token_id
+        ));
+    }
+    let direct_bf16_head_deviation = (ranking.first.logit - direct_ranking.first.logit)
+        .abs()
+        .max((ranking.second.logit - direct_ranking.second.logit).abs());
+    if direct_bf16_head_deviation > ORACLE_TOLERANCE {
+        return Err(format!(
+            "persistent model token {token_index} LM-head deviation {direct_bf16_head_deviation} exceeds {ORACLE_TOLERANCE}"
+        ));
+    }
+    Ok(CompletedPersistentModelToken {
+        token_index,
+        input_token_id,
+        routed,
+        final_hidden,
+        logits,
+        ranking,
+        direct_bf16_head_deviation,
+    })
+}
+
+fn run_persistent_model_path(
+    weights: &[LayerWeights],
+    first_embedding: &[f32],
+    continuation_embedding: &[f32],
+    seed: ModelTokenExecution,
+    route: PersistentModelRoute,
+    final_norm_weight: &[f32],
+    final_norm_bias: &[f32],
+    head: &Matrix,
+    head_tensor: &TensorView<'_>,
+) -> Result<PersistentModelPath, String> {
+    match route {
+        PersistentModelRoute::Oracle => {
+            let first = run_model_token_all_layers_bf16(
+                weights,
+                first_embedding,
+                seed.execution,
+                PERSISTENT_MODEL_DISPATCH_FIRST_TOKEN_INDEX,
+                ModelWkvRoute::Oracle,
+            )?;
+            let second_execution = first.token.execution.clone();
+            let first = complete_persistent_model_token(
+                PERSISTENT_MODEL_DISPATCH_FIRST_TOKEN_INDEX,
+                MODEL_CONFIG_EOS_TOKEN_ID,
+                first,
+                final_norm_weight,
+                final_norm_bias,
+                head,
+                head_tensor,
+            )?;
+            let second = run_model_token_all_layers_bf16(
+                weights,
+                continuation_embedding,
+                second_execution,
+                PERSISTENT_MODEL_DISPATCH_SECOND_TOKEN_INDEX,
+                ModelWkvRoute::Oracle,
+            )?;
+            let second = complete_persistent_model_token(
+                PERSISTENT_MODEL_DISPATCH_SECOND_TOKEN_INDEX,
+                MODEL_CONFIG_EOS_TOKEN_ID,
+                second,
+                final_norm_weight,
+                final_norm_bias,
+                head,
+                head_tensor,
+            )?;
+            Ok(PersistentModelPath {
+                tokens: vec![first, second],
+                session: None,
+            })
+        }
+        PersistentModelRoute::Dispatch(sequence_id) => {
+            let mut session = super::dispatch_abi::PersistentCpuDispatchSession::new(
+                sequence_id,
+                PERSISTENT_MODEL_DISPATCH_FIRST_TOKEN_INDEX,
+                PERSISTENT_MODEL_DISPATCH_TOKEN_COUNT,
+            )?;
+            let first = run_model_token_all_layers_bf16(
+                weights,
+                first_embedding,
+                seed.execution,
+                PERSISTENT_MODEL_DISPATCH_FIRST_TOKEN_INDEX,
+                ModelWkvRoute::Persistent(&mut session),
+            )?;
+            let second_execution = first.token.execution.clone();
+            let first = complete_persistent_model_token(
+                PERSISTENT_MODEL_DISPATCH_FIRST_TOKEN_INDEX,
+                MODEL_CONFIG_EOS_TOKEN_ID,
+                first,
+                final_norm_weight,
+                final_norm_bias,
+                head,
+                head_tensor,
+            )?;
+            let second = run_model_token_all_layers_bf16(
+                weights,
+                continuation_embedding,
+                second_execution,
+                PERSISTENT_MODEL_DISPATCH_SECOND_TOKEN_INDEX,
+                ModelWkvRoute::Persistent(&mut session),
+            )?;
+            let second = complete_persistent_model_token(
+                PERSISTENT_MODEL_DISPATCH_SECOND_TOKEN_INDEX,
+                MODEL_CONFIG_EOS_TOKEN_ID,
+                second,
+                final_norm_weight,
+                final_norm_bias,
+                head,
+                head_tensor,
+            )?;
+            let summary = session.close()?;
+            if summary.call_count != PERSISTENT_MODEL_DISPATCH_CALL_COUNT
+                || summary.same_layer_state_continuity_count
+                    != PERSISTENT_MODEL_DISPATCH_CONTINUITY_COUNT
+            {
+                return Err(format!(
+                    "persistent model session summary mismatch: calls={} continuity={}",
+                    summary.call_count, summary.same_layer_state_continuity_count
+                ));
+            }
+            Ok(PersistentModelPath {
+                tokens: vec![first, second],
+                session: Some(summary),
+            })
+        }
+    }
+}
+
+fn persistent_model_token_receipt(
+    token: &CompletedPersistentModelToken,
+) -> Result<PersistentModelTokenReceipt, String> {
+    let raw_wkv_outputs = token
+        .routed
+        .raw_outputs
+        .iter()
+        .flatten()
+        .copied()
+        .collect::<Vec<_>>();
+    let matrix_post_states = token
+        .routed
+        .post_states
+        .iter()
+        .flatten()
+        .copied()
+        .collect::<Vec<_>>();
+    let attention_states = token.routed.token.execution.flattened_attention_previous();
+    let channel_states = token.routed.token.execution.flattened_ffn_previous();
+    let matrix_states = token.routed.token.execution.flattened_matrices();
+    let complete_recurrent_state = token.routed.token.execution.flattened_complete_state();
+    let greedy_margin = token.ranking.first.logit - token.ranking.second.logit;
+    if !greedy_margin.is_finite() || greedy_margin < ZERO_DEVIATION {
+        return Err(format!(
+            "persistent model token {} has invalid greedy margin {greedy_margin}",
+            token.token_index
+        ));
+    }
+    Ok(PersistentModelTokenReceipt {
+        token_index_zero_based: token.token_index,
+        input_token_id: token.input_token_id,
+        layer_zero_pre_state: numeric_receipt(&token.routed.token.layer_zero_pre_state)?,
+        raw_wkv_outputs: numeric_receipt(&raw_wkv_outputs)?,
+        matrix_post_states: numeric_receipt(&matrix_post_states)?,
+        layer_outputs: token
+            .routed
+            .token
+            .layer_outputs
+            .iter()
+            .map(|values| numeric_receipt(values))
+            .collect::<Result<Vec<_>, _>>()?,
+        final_layer_output: numeric_receipt(&token.routed.token.final_output)?,
+        final_hidden: numeric_receipt(&token.final_hidden)?,
+        logits: numeric_receipt(&token.logits)?,
+        attention_states: numeric_receipt(&attention_states)?,
+        channel_states: numeric_receipt(&channel_states)?,
+        matrix_states: numeric_receipt(&matrix_states)?,
+        complete_recurrent_state: numeric_receipt(&complete_recurrent_state)?,
+        ranking: ObservedModelRankingReceipt {
+            generated_token_id: token.ranking.first.token_id,
+            generated_logit: token.ranking.first.logit,
+            runner_up_token_id: token.ranking.second.token_id,
+            runner_up_logit: token.ranking.second.logit,
+            greedy_margin,
+            direct_bf16_head_deviation: token.direct_bf16_head_deviation,
+        },
+    })
+}
+
+fn persistent_model_session_receipt(
+    summary: &super::dispatch_abi::PersistentDispatchSessionSummary,
+) -> PersistentModelSessionReceipt {
+    PersistentModelSessionReceipt {
+        sequence_id: summary.sequence_id.clone(),
+        first_token_index_zero_based: summary.first_token_index,
+        token_count: summary.token_count,
+        call_count: summary.call_count,
+        same_layer_state_continuity_count: summary.same_layer_state_continuity_count,
+        request_frame_byte_count: summary.request_frame_byte_count,
+        response_frame_byte_count: summary.response_frame_byte_count,
+        ordered_request_blake3: summary.ordered_request_blake3.clone(),
+        ordered_response_blake3: summary.ordered_response_blake3.clone(),
+        transcript_blake3: summary.transcript_blake3.clone(),
+        terminal_state: summary.terminal_state,
+    }
+}
+
+fn persistent_model_token_deviation(
+    dispatched: &CompletedPersistentModelToken,
+    oracle: &CompletedPersistentModelToken,
+) -> Result<PersistentModelTokenDeviationReceipt, String> {
+    Ok(PersistentModelTokenDeviationReceipt {
+        raw_wkv_outputs: maximum_nested_deviation(
+            &dispatched.routed.raw_outputs,
+            &oracle.routed.raw_outputs,
+            "persistent dispatched/oracle raw outputs",
+        )?,
+        matrix_post_states: maximum_nested_deviation(
+            &dispatched.routed.post_states,
+            &oracle.routed.post_states,
+            "persistent dispatched/oracle post-states",
+        )?,
+        layer_outputs: maximum_nested_deviation(
+            &dispatched.routed.token.layer_outputs,
+            &oracle.routed.token.layer_outputs,
+            "persistent dispatched/oracle layer outputs",
+        )?,
+        final_layer_output: max_abs_difference(
+            &dispatched.routed.token.final_output,
+            &oracle.routed.token.final_output,
+        )?,
+        final_hidden: max_abs_difference(&dispatched.final_hidden, &oracle.final_hidden)?,
+        logits: max_abs_difference(&dispatched.logits, &oracle.logits)?,
+        complete_recurrent_state: max_abs_difference(
+            &dispatched.routed.token.execution.flattened_complete_state(),
+            &oracle.routed.token.execution.flattened_complete_state(),
+        )?,
+    })
+}
+
+fn validate_persistent_model_deviations(
+    deviations: &PersistentModelDispatchDeviationReceipt,
+) -> Result<(), String> {
+    for (token_name, token) in [
+        ("third", &deviations.third_token_dispatched_vs_oracle),
+        ("fourth", &deviations.fourth_token_dispatched_vs_oracle),
+    ] {
+        for (name, deviation) in [
+            ("raw WKV output", token.raw_wkv_outputs),
+            ("matrix post-state", token.matrix_post_states),
+            ("layer output", token.layer_outputs),
+            ("final layer output", token.final_layer_output),
+            ("final hidden", token.final_hidden),
+            ("logits", token.logits),
+            ("complete recurrent state", token.complete_recurrent_state),
+        ] {
+            if !deviation.is_finite() || deviation > PERSISTENT_MODEL_DISPATCH_ORACLE_TOLERANCE {
+                return Err(format!(
+                    "persistent model {token_name}-token {name} deviation {deviation} exceeds {PERSISTENT_MODEL_DISPATCH_ORACLE_TOLERANCE}"
+                ));
+            }
+        }
+    }
+    for (name, divergence) in [
+        (
+            "reset fourth-token final output",
+            deviations.fourth_token_final_output_vs_reset,
+        ),
+        (
+            "reset fourth-token logits",
+            deviations.fourth_token_logits_vs_reset,
+        ),
+        (
+            "reset fourth-token complete state",
+            deviations.fourth_token_complete_state_vs_reset,
+        ),
+        (
+            "transposed fourth-token final output",
+            deviations.fourth_token_final_output_vs_transposed,
+        ),
+        (
+            "transposed fourth-token logits",
+            deviations.fourth_token_logits_vs_transposed,
+        ),
+        (
+            "transposed fourth-token complete state",
+            deviations.fourth_token_complete_state_vs_transposed,
+        ),
+    ] {
+        if !divergence.is_finite() || divergence <= MODEL_DISPATCH_DIVERGENCE_FLOOR {
+            return Err(format!(
+                "persistent model {name} divergence {divergence} does not exceed {MODEL_DISPATCH_DIVERGENCE_FLOOR}"
+            ));
+        }
+    }
+    Ok(())
+}
+
+// r[impl onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_persistent_model_dispatch]
+pub fn run_ttwkv7_persistent_observed_model_dispatch_checkpoint(
+    checkpoint: &[u8],
+    expected_model_blake3: &str,
+    evidence: &Ttwkv7ObservedLayerEvidence<'_>,
+) -> Result<Ttwkv7PersistentObservedModelDispatchReceipt, String> {
+    let prior =
+        run_ttwkv7_observed_model_dispatch_checkpoint(checkpoint, expected_model_blake3, evidence)?;
+    let prior_model_dispatch_receipt_blake3 = canonical_receipt_blake3(&prior)?;
+    if prior_model_dispatch_receipt_blake3 != PERSISTENT_MODEL_DISPATCH_PRIOR_RECEIPT_BLAKE3 {
+        return Err(format!(
+            "accepted model-dispatch receipt identity changed: expected {PERSISTENT_MODEL_DISPATCH_PRIOR_RECEIPT_BLAKE3}, found {prior_model_dispatch_receipt_blake3}"
+        ));
+    }
+    let tensors = SafeTensors::deserialize(checkpoint)
+        .map_err(|error| format!("failed to decode safetensors checkpoint: {error}"))?;
+    let setup = prepare_model_dispatch_setup(
+        &tensors,
+        evidence,
+        &prior.dispatched_physical_seed.model,
+        "persistent-model-dispatch",
+    )?;
+    let embedding = tensors
+        .tensor("model.embeddings.weight")
+        .map_err(|error| format!("missing model.embeddings.weight: {error}"))?;
+    let continuation_embedding = embedding_row(
+        &embedding,
+        MODEL_CONFIG_EOS_TOKEN_ID,
+        setup.dimensions.hidden_size,
+    )?;
+    let head_tensor = tensors
+        .tensor("lm_head.weight")
+        .map_err(|error| format!("missing lm_head.weight: {error}"))?;
+
+    let reset_seed = reset_all_model_matrices(setup.observed_second.clone(), setup.dimensions)?;
+    let transposed_seed =
+        transpose_all_model_matrices(setup.observed_second.clone(), setup.dimensions)?;
+    validate_model_matrix_control(
+        &setup.observed_second,
+        &reset_seed,
+        setup.dimensions,
+        ModelMatrixControl::Reset,
+    )?;
+    validate_model_matrix_control(
+        &setup.observed_second,
+        &transposed_seed,
+        setup.dimensions,
+        ModelMatrixControl::Transposed,
+    )?;
+
+    let oracle = run_persistent_model_path(
+        &setup.weights,
+        &setup.model_config_eos,
+        &continuation_embedding,
+        setup.observed_second.clone(),
+        PersistentModelRoute::Oracle,
+        &setup.final_norm_weight,
+        &setup.final_norm_bias,
+        &setup.head,
+        &head_tensor,
+    )?;
+    let dispatched = run_persistent_model_path(
+        &setup.weights,
+        &setup.model_config_eos,
+        &continuation_embedding,
+        setup.observed_second.clone(),
+        PersistentModelRoute::Dispatch(super::dispatch_abi::derive_sequence_id(
+            PERSISTENT_MODEL_DISPATCH_RETAINED_DOMAIN,
+        )),
+        &setup.final_norm_weight,
+        &setup.final_norm_bias,
+        &setup.head,
+        &head_tensor,
+    )?;
+    let reset = run_persistent_model_path(
+        &setup.weights,
+        &setup.model_config_eos,
+        &continuation_embedding,
+        reset_seed,
+        PersistentModelRoute::Dispatch(super::dispatch_abi::derive_sequence_id(
+            PERSISTENT_MODEL_DISPATCH_RESET_DOMAIN,
+        )),
+        &setup.final_norm_weight,
+        &setup.final_norm_bias,
+        &setup.head,
+        &head_tensor,
+    )?;
+    let transposed = run_persistent_model_path(
+        &setup.weights,
+        &setup.model_config_eos,
+        &continuation_embedding,
+        transposed_seed,
+        PersistentModelRoute::Dispatch(super::dispatch_abi::derive_sequence_id(
+            PERSISTENT_MODEL_DISPATCH_TRANSPOSED_DOMAIN,
+        )),
+        &setup.final_norm_weight,
+        &setup.final_norm_bias,
+        &setup.head,
+        &head_tensor,
+    )?;
+
+    for (name, path) in [
+        ("oracle", &oracle),
+        ("dispatched", &dispatched),
+        ("reset", &reset),
+        ("transposed", &transposed),
+    ] {
+        if path.tokens.len() != PERSISTENT_MODEL_DISPATCH_TOKEN_COUNT {
+            return Err(format!(
+                "persistent {name} path requires {PERSISTENT_MODEL_DISPATCH_TOKEN_COUNT} tokens, found {}",
+                path.tokens.len()
+            ));
+        }
+    }
+    let oracle_first = &oracle.tokens[0];
+    let oracle_second = &oracle.tokens[1];
+    let dispatched_first = &dispatched.tokens[0];
+    let dispatched_second = &dispatched.tokens[1];
+    let reset_second = &reset.tokens[1];
+    let transposed_second = &transposed.tokens[1];
+    let selected_fourth_token_id = oracle_first.ranking.first.token_id;
+    if selected_fourth_token_id != MODEL_CONFIG_EOS_TOKEN_ID {
+        return Err(format!(
+            "persistent oracle selected token {selected_fourth_token_id}, expected {MODEL_CONFIG_EOS_TOKEN_ID}"
+        ));
+    }
+    for (token_name, dispatched_token, oracle_token) in [
+        ("third", dispatched_first, oracle_first),
+        ("fourth", dispatched_second, oracle_second),
+    ] {
+        if dispatched_token.ranking.first.token_id != oracle_token.ranking.first.token_id
+            || dispatched_token.ranking.second.token_id != oracle_token.ranking.second.token_id
+        {
+            return Err(format!(
+                "persistent {token_name}-token top-two ranking [{}, {}] differs from oracle [{}, {}]",
+                dispatched_token.ranking.first.token_id,
+                dispatched_token.ranking.second.token_id,
+                oracle_token.ranking.first.token_id,
+                oracle_token.ranking.second.token_id
+            ));
+        }
+    }
+
+    let deviations = PersistentModelDispatchDeviationReceipt {
+        third_token_dispatched_vs_oracle: persistent_model_token_deviation(
+            dispatched_first,
+            oracle_first,
+        )?,
+        fourth_token_dispatched_vs_oracle: persistent_model_token_deviation(
+            dispatched_second,
+            oracle_second,
+        )?,
+        fourth_token_final_output_vs_reset: max_abs_difference(
+            &dispatched_second.routed.token.final_output,
+            &reset_second.routed.token.final_output,
+        )?,
+        fourth_token_logits_vs_reset: max_abs_difference(
+            &dispatched_second.logits,
+            &reset_second.logits,
+        )?,
+        fourth_token_complete_state_vs_reset: max_abs_difference(
+            &dispatched_second
+                .routed
+                .token
+                .execution
+                .flattened_complete_state(),
+            &reset_second
+                .routed
+                .token
+                .execution
+                .flattened_complete_state(),
+        )?,
+        fourth_token_final_output_vs_transposed: max_abs_difference(
+            &dispatched_second.routed.token.final_output,
+            &transposed_second.routed.token.final_output,
+        )?,
+        fourth_token_logits_vs_transposed: max_abs_difference(
+            &dispatched_second.logits,
+            &transposed_second.logits,
+        )?,
+        fourth_token_complete_state_vs_transposed: max_abs_difference(
+            &dispatched_second
+                .routed
+                .token
+                .execution
+                .flattened_complete_state(),
+            &transposed_second
+                .routed
+                .token
+                .execution
+                .flattened_complete_state(),
+        )?,
+    };
+    validate_persistent_model_deviations(&deviations)?;
+
+    let physical_seed_attention_states = setup
+        .observed_second
+        .execution
+        .flattened_attention_previous();
+    let physical_seed_channel_states = setup.observed_second.execution.flattened_ffn_previous();
+    let physical_seed_matrix_states = setup.observed_second.execution.flattened_matrices();
+    let physical_seed_complete_recurrent_state =
+        setup.observed_second.execution.flattened_complete_state();
+    let oracle_tokens = oracle
+        .tokens
+        .iter()
+        .map(persistent_model_token_receipt)
+        .collect::<Result<Vec<_>, _>>()?;
+    let dispatched_tokens = dispatched
+        .tokens
+        .iter()
+        .map(persistent_model_token_receipt)
+        .collect::<Result<Vec<_>, _>>()?;
+    let reset_tokens = reset
+        .tokens
+        .iter()
+        .map(persistent_model_token_receipt)
+        .collect::<Result<Vec<_>, _>>()?;
+    let transposed_tokens = transposed
+        .tokens
+        .iter()
+        .map(persistent_model_token_receipt)
+        .collect::<Result<Vec<_>, _>>()?;
+    let dispatched_session = persistent_model_session_receipt(
+        dispatched
+            .session
+            .as_ref()
+            .ok_or_else(|| "persistent dispatched path is missing session summary".to_owned())?,
+    );
+    let reset_session = persistent_model_session_receipt(
+        reset
+            .session
+            .as_ref()
+            .ok_or_else(|| "persistent reset path is missing session summary".to_owned())?,
+    );
+    let transposed_session = persistent_model_session_receipt(
+        transposed
+            .session
+            .as_ref()
+            .ok_or_else(|| "persistent transposed path is missing session summary".to_owned())?,
+    );
+
+    Ok(Ttwkv7PersistentObservedModelDispatchReceipt {
+        schema_version: RECEIPT_SCHEMA_VERSION,
+        target: PERSISTENT_MODEL_DISPATCH_TARGET,
+        model: prior.model,
+        dimensions: setup.dimensions,
+        token_ids: [
+            MODEL_CONFIG_BOS_TOKEN_ID,
+            MODEL_CONFIG_EOS_TOKEN_ID,
+            MODEL_CONFIG_EOS_TOKEN_ID,
+            selected_fourth_token_id,
+        ],
+        dispatched_token_indices_zero_based: [
+            PERSISTENT_MODEL_DISPATCH_FIRST_TOKEN_INDEX,
+            PERSISTENT_MODEL_DISPATCH_SECOND_TOKEN_INDEX,
+        ],
+        dispatch_call_count: PERSISTENT_MODEL_DISPATCH_CALL_COUNT,
+        physical_wkv_call_count: MODEL_CARRY_PHYSICAL_WKV_COUNT,
+        new_physical_wkv_call_count: 0,
+        prior_model_dispatch_receipt_blake3,
+        terminal_session_outcome: OBSERVED_SESSION_OUTCOME,
+        evidence_bundle_blake3: prior.evidence_bundle_blake3,
+        physical_seed_attention_states: numeric_receipt(&physical_seed_attention_states)?,
+        physical_seed_channel_states: numeric_receipt(&physical_seed_channel_states)?,
+        physical_seed_matrix_states: numeric_receipt(&physical_seed_matrix_states)?,
+        physical_seed_complete_recurrent_state: numeric_receipt(
+            &physical_seed_complete_recurrent_state,
+        )?,
+        selected_fourth_token_id,
+        oracle_bf16: PersistentModelOraclePathReceipt {
+            tokens: oracle_tokens,
+        },
+        dispatched_physical_seed: PersistentModelDispatchPathReceipt {
+            session: dispatched_session,
+            tokens: dispatched_tokens,
+        },
+        reset_all_matrix_states_control: PersistentModelDispatchPathReceipt {
+            session: reset_session,
+            tokens: reset_tokens,
+        },
+        transposed_all_matrix_states_control: PersistentModelDispatchPathReceipt {
+            session: transposed_session,
+            tokens: transposed_tokens,
+        },
+        maximum_absolute_deviations: deviations,
+        oracle_tolerance: PERSISTENT_MODEL_DISPATCH_ORACLE_TOLERANCE,
+        divergence_floor: MODEL_DISPATCH_DIVERGENCE_FLOOR,
+        non_claims: PERSISTENT_MODEL_DISPATCH_NON_CLAIMS.to_vec(),
     })
 }
 

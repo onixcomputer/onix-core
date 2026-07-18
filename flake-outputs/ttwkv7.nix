@@ -75,6 +75,8 @@ in
     rwkv-ttwkv7-dispatch-abi = rwkvLayerHarness.passthru.dispatchAbiCheck;
     # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_model_dispatch]
     rwkv-ttwkv7-model-dispatch = rwkvLayerHarness.passthru.modelDispatchCheck;
+    # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_persistent_model_dispatch]
+    rwkv-ttwkv7-persistent-model-dispatch = rwkvLayerHarness.passthru.persistentModelDispatchCheck;
     # r[verify onix.tenstorrent.native_runtime.ttwkv7.fast_iteration]
     ttwkv7-architectures = ttwkv7.passthru.architectureCheck;
     # r[verify onix.tenstorrent.native_runtime.rwkv_lab.ttwkv7_host_layout]

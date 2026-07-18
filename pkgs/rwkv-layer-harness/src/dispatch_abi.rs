@@ -108,6 +108,7 @@ struct DispatchReplay {
     final_state: Vec<f32>,
 }
 
+#[derive(Clone, Debug)]
 pub(super) struct CpuDispatchStep {
     pub consumed_inputs: WkvInputs,
     pub consumed_pre_state: Vec<f32>,
@@ -115,6 +116,68 @@ pub(super) struct CpuDispatchStep {
     pub post_state: Vec<f32>,
     pub request_frame: Vec<u8>,
     pub response_frame: Vec<u8>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum PersistentDispatchFault {
+    Timeout,
+    Interrupted,
+    InvalidTransition,
+    InvalidResponse,
+}
+
+impl PersistentDispatchFault {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Timeout => "timeout",
+            Self::Interrupted => "interrupted",
+            Self::InvalidTransition => "invalid_transition",
+            Self::InvalidResponse => "invalid_response",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum PersistentDispatchLifecycle {
+    Open,
+    Faulted(PersistentDispatchFault),
+    Closed,
+}
+
+#[derive(Clone, Debug)]
+struct PendingDispatchCall {
+    request: DispatchRequest,
+    request_frame: Vec<u8>,
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct PersistentDispatchSessionSummary {
+    pub sequence_id: String,
+    pub first_token_index: usize,
+    pub token_count: usize,
+    pub call_count: usize,
+    pub same_layer_state_continuity_count: usize,
+    pub request_frame_byte_count: usize,
+    pub response_frame_byte_count: usize,
+    pub ordered_request_blake3: Vec<String>,
+    pub ordered_response_blake3: Vec<String>,
+    pub transcript_blake3: String,
+    pub terminal_state: &'static str,
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct PersistentCpuDispatchSession {
+    sequence_id: DispatchSequenceId,
+    first_token_index: usize,
+    token_count: usize,
+    expected_call_count: usize,
+    expected_same_layer_state_continuity_count: usize,
+    next_call_ordinal: usize,
+    lifecycle: PersistentDispatchLifecycle,
+    pending: Option<PendingDispatchCall>,
+    last_post_states: Vec<Option<Vec<f32>>>,
+    accepted_steps: Vec<CpuDispatchStep>,
+    same_layer_state_continuity_count: usize,
 }
 
 pub(super) struct DispatchTranscriptSummary {
@@ -173,6 +236,232 @@ impl<'a> FrameCursor<'a> {
             ));
         }
         Ok(())
+    }
+}
+
+impl PersistentCpuDispatchSession {
+    pub(super) fn new(
+        sequence_id: DispatchSequenceId,
+        first_token_index: usize,
+        token_count: usize,
+    ) -> Result<Self, String> {
+        if token_count == 0 {
+            return Err("persistent dispatch session requires at least one token".to_owned());
+        }
+        let expected_call_count = token_count
+            .checked_mul(MODEL_LAYER_COUNT)
+            .ok_or_else(|| "persistent dispatch call count overflow".to_owned())?;
+        let expected_same_layer_state_continuity_count = (token_count - 1)
+            .checked_mul(MODEL_LAYER_COUNT)
+            .ok_or_else(|| "persistent dispatch continuity count overflow".to_owned())?;
+        first_token_index
+            .checked_add(token_count - 1)
+            .ok_or_else(|| "persistent dispatch token index overflow".to_owned())?;
+        Ok(Self {
+            sequence_id,
+            first_token_index,
+            token_count,
+            expected_call_count,
+            expected_same_layer_state_continuity_count,
+            next_call_ordinal: 0,
+            lifecycle: PersistentDispatchLifecycle::Open,
+            pending: None,
+            last_post_states: vec![None; MODEL_LAYER_COUNT],
+            accepted_steps: Vec::with_capacity(expected_call_count),
+            same_layer_state_continuity_count: 0,
+        })
+    }
+
+    pub(super) fn prepare(
+        &mut self,
+        token_index: usize,
+        layer_index: usize,
+        inputs: &WkvInputs,
+        pre_state: &[f32],
+    ) -> Result<Vec<u8>, String> {
+        self.require_open("prepare")?;
+        if self.pending.is_some() {
+            return self.fail_transition("persistent dispatch already has a pending request");
+        }
+        if self.next_call_ordinal >= self.expected_call_count {
+            return self.fail_transition("persistent dispatch received an extra request");
+        }
+        let expected_token = self
+            .first_token_index
+            .checked_add(self.next_call_ordinal / MODEL_LAYER_COUNT)
+            .ok_or_else(|| "persistent dispatch token index overflow".to_owned())?;
+        let expected_layer = self.next_call_ordinal % MODEL_LAYER_COUNT;
+        if token_index != expected_token || layer_index != expected_layer {
+            return self.fail_transition(&format!(
+                "persistent dispatch request order mismatch: expected token {expected_token} layer {expected_layer}, found token {token_index} layer {layer_index}"
+            ));
+        }
+        let request = DispatchRequest {
+            sequence_id: self.sequence_id,
+            call_ordinal: checked_u32(self.next_call_ordinal, "call ordinal")?,
+            token_ordinal: checked_u32(token_index, "token ordinal")?,
+            layer_ordinal: checked_u32(layer_index, "layer ordinal")?,
+            dimensions: Dimensions::reviewed(),
+            inputs: inputs.clone(),
+            pre_state: pre_state.to_vec(),
+        };
+        let request_frame = encode_request(&request)?;
+        let decoded_request = decode_request(&request_frame)?;
+        validate_request_ordinals(
+            &decoded_request,
+            self.sequence_id,
+            self.next_call_ordinal,
+            token_index,
+            layer_index,
+        )?;
+        if let Some(previous_post_state) = &self.last_post_states[layer_index] {
+            if decoded_request.pre_state != *previous_post_state {
+                return self.fail_transition(&format!(
+                    "persistent dispatch layer {layer_index} pre-state does not equal its prior accepted post-state"
+                ));
+            }
+            self.same_layer_state_continuity_count += 1;
+        }
+        self.pending = Some(PendingDispatchCall {
+            request: decoded_request,
+            request_frame: request_frame.clone(),
+        });
+        Ok(request_frame)
+    }
+
+    pub(super) fn accept(&mut self, response_frame: &[u8]) -> Result<CpuDispatchStep, String> {
+        self.require_open("accept")?;
+        let pending = match self.pending.as_ref() {
+            Some(pending) => pending,
+            None => {
+                return self.fail_response(
+                    "persistent dispatch received a response without a pending request",
+                );
+            }
+        };
+        let decoded_response = match decode_response(response_frame).and_then(|response| {
+            validate_response(&pending.request, &pending.request_frame, &response)?;
+            Ok(response)
+        }) {
+            Ok(response) => response,
+            Err(error) => {
+                return self.fail_response(&format!(
+                    "persistent dispatch rejected pending response: {error}"
+                ));
+            }
+        };
+        let pending = self
+            .pending
+            .take()
+            .ok_or_else(|| "persistent dispatch pending request disappeared".to_owned())?;
+        let step = CpuDispatchStep {
+            consumed_inputs: pending.request.inputs,
+            consumed_pre_state: pending.request.pre_state,
+            raw_output: decoded_response.raw_output,
+            post_state: decoded_response.post_state,
+            request_frame: pending.request_frame,
+            response_frame: response_frame.to_vec(),
+        };
+        let layer_index = self.next_call_ordinal % MODEL_LAYER_COUNT;
+        self.last_post_states[layer_index] = Some(step.post_state.clone());
+        self.accepted_steps.push(step.clone());
+        self.next_call_ordinal += 1;
+        Ok(step)
+    }
+
+    pub(super) fn fault(&mut self, fault: PersistentDispatchFault) -> Result<(), String> {
+        self.require_open("fault")?;
+        self.lifecycle = PersistentDispatchLifecycle::Faulted(fault);
+        Err(format!(
+            "persistent dispatch session entered terminal {} fault",
+            fault.name()
+        ))
+    }
+
+    pub(super) fn close(&mut self) -> Result<PersistentDispatchSessionSummary, String> {
+        self.require_open("close")?;
+        if self.pending.is_some() {
+            return self.fail_transition("persistent dispatch cannot close with a pending request");
+        }
+        if self.next_call_ordinal != self.expected_call_count {
+            return self.fail_transition(&format!(
+                "persistent dispatch cannot close after {} of {} calls",
+                self.next_call_ordinal, self.expected_call_count
+            ));
+        }
+        if self.last_post_states.iter().any(Option::is_none) {
+            return self
+                .fail_transition("persistent dispatch cannot close with missing layer state");
+        }
+        if self.same_layer_state_continuity_count != self.expected_same_layer_state_continuity_count
+        {
+            return self.fail_transition(&format!(
+                "persistent dispatch continuity mismatch: expected {}, found {}",
+                self.expected_same_layer_state_continuity_count,
+                self.same_layer_state_continuity_count
+            ));
+        }
+        let transcript = summarize_dispatch_steps(self.sequence_id, &self.accepted_steps)?;
+        if transcript.ordered_request_blake3.len() != self.expected_call_count
+            || transcript.ordered_response_blake3.len() != self.expected_call_count
+        {
+            return self.fail_transition("persistent dispatch transcript call count mismatch");
+        }
+        let unique_request_count = transcript
+            .ordered_request_blake3
+            .iter()
+            .collect::<std::collections::BTreeSet<_>>()
+            .len();
+        let unique_response_count = transcript
+            .ordered_response_blake3
+            .iter()
+            .collect::<std::collections::BTreeSet<_>>()
+            .len();
+        if unique_request_count != self.expected_call_count
+            || unique_response_count != self.expected_call_count
+        {
+            return self
+                .fail_transition("persistent dispatch transcript contains duplicate frames");
+        }
+        self.lifecycle = PersistentDispatchLifecycle::Closed;
+        Ok(PersistentDispatchSessionSummary {
+            sequence_id: transcript.sequence_id,
+            first_token_index: self.first_token_index,
+            token_count: self.token_count,
+            call_count: self.expected_call_count,
+            same_layer_state_continuity_count: self.same_layer_state_continuity_count,
+            request_frame_byte_count: transcript.request_frame_byte_count,
+            response_frame_byte_count: transcript.response_frame_byte_count,
+            ordered_request_blake3: transcript.ordered_request_blake3,
+            ordered_response_blake3: transcript.ordered_response_blake3,
+            transcript_blake3: transcript.transcript_blake3,
+            terminal_state: "closed",
+        })
+    }
+
+    fn require_open(&self, action: &str) -> Result<(), String> {
+        match self.lifecycle {
+            PersistentDispatchLifecycle::Open => Ok(()),
+            PersistentDispatchLifecycle::Faulted(fault) => Err(format!(
+                "persistent dispatch {action} rejected after terminal {} fault",
+                fault.name()
+            )),
+            PersistentDispatchLifecycle::Closed => Err(format!(
+                "persistent dispatch {action} rejected after clean close"
+            )),
+        }
+    }
+
+    fn fail_transition<T>(&mut self, message: &str) -> Result<T, String> {
+        self.lifecycle =
+            PersistentDispatchLifecycle::Faulted(PersistentDispatchFault::InvalidTransition);
+        Err(message.to_owned())
+    }
+
+    fn fail_response<T>(&mut self, message: &str) -> Result<T, String> {
+        self.lifecycle =
+            PersistentDispatchLifecycle::Faulted(PersistentDispatchFault::InvalidResponse);
+        Err(message.to_owned())
     }
 }
 
@@ -756,6 +1045,24 @@ pub(super) fn execute_cpu_dispatch_step(
     })
 }
 
+pub(super) fn emulate_cpu_response_frame(request_frame: &[u8]) -> Result<Vec<u8>, String> {
+    let request = decode_request(request_frame)?;
+    let response = emulate_cpu_response(&request, request_frame)?;
+    encode_response(&response)
+}
+
+pub(super) fn execute_persistent_cpu_dispatch_step(
+    session: &mut PersistentCpuDispatchSession,
+    token_index: usize,
+    layer_index: usize,
+    inputs: &WkvInputs,
+    pre_state: &[f32],
+) -> Result<CpuDispatchStep, String> {
+    let request_frame = session.prepare(token_index, layer_index, inputs, pre_state)?;
+    let response_frame = emulate_cpu_response_frame(&request_frame)?;
+    session.accept(&response_frame)
+}
+
 pub(super) fn summarize_dispatch_steps(
     sequence_id: DispatchSequenceId,
     steps: &[CpuDispatchStep],
@@ -827,11 +1134,57 @@ mod tests {
     const REQUEST_PAYLOAD_OFFSET: usize = HEAD_COUNT_OFFSET + FRAME_DIMENSION_COUNT * U32_WIDTH;
     const RESPONSE_PAYLOAD_OFFSET: usize = REQUEST_PAYLOAD_OFFSET + REQUEST_ID_WIDTH;
 
+    const PERSISTENT_FIRST_TOKEN_INDEX: usize = 2;
+    const PERSISTENT_TOKEN_COUNT: usize = 2;
+    const PERSISTENT_SINGLE_TOKEN_COUNT: usize = 1;
+    const PERSISTENT_CALL_COUNT: usize = MODEL_LAYER_COUNT * PERSISTENT_TOKEN_COUNT;
+    const PERSISTENT_SEQUENCE_DOMAIN: &[u8] = b"rwkv-ttwkv7-persistent-session-test-v1";
+
     fn first_request() -> DispatchRequest {
         let dimensions = Dimensions::reviewed();
         let state_count = dimensions.head_count * dimensions.head_size * dimensions.head_size;
         fixture_request(sequence_id(), 0, 0, 0, &vec![0.0; state_count], dimensions)
             .expect("fixture request must succeed")
+    }
+
+    fn persistent_fixture_inputs(token_index: usize, layer_index: usize) -> WkvInputs {
+        let dimensions = Dimensions::reviewed();
+        let state_count = dimensions.head_count * dimensions.head_size * dimensions.head_size;
+        fixture_request(
+            derive_sequence_id(PERSISTENT_SEQUENCE_DOMAIN),
+            0,
+            token_index,
+            layer_index,
+            &vec![0.0; state_count],
+            dimensions,
+        )
+        .expect("persistent fixture request must succeed")
+        .inputs
+    }
+
+    fn persistent_zero_states() -> Vec<Vec<f32>> {
+        let dimensions = Dimensions::reviewed();
+        let state_count = dimensions.head_count * dimensions.head_size * dimensions.head_size;
+        vec![vec![0.0; state_count]; MODEL_LAYER_COUNT]
+    }
+
+    fn execute_persistent_fixture_token(
+        session: &mut PersistentCpuDispatchSession,
+        token_index: usize,
+        states: &mut [Vec<f32>],
+    ) {
+        for (layer_index, state) in states.iter_mut().enumerate() {
+            let inputs = persistent_fixture_inputs(token_index, layer_index);
+            let step = execute_persistent_cpu_dispatch_step(
+                session,
+                token_index,
+                layer_index,
+                &inputs,
+                state,
+            )
+            .expect("persistent fixture step must succeed");
+            state.clone_from(&step.post_state);
+        }
     }
 
     #[test]
@@ -927,6 +1280,240 @@ mod tests {
         let mut changed_frame = frame;
         changed_frame[CALL_OFFSET] ^= 1;
         assert!(validate_response(&decoded, &changed_frame, &response).is_err());
+    }
+
+    #[test]
+    fn persistent_session_completes_two_tokens_with_same_layer_state_continuity() {
+        let sequence_id = derive_sequence_id(PERSISTENT_SEQUENCE_DOMAIN);
+        let mut session = PersistentCpuDispatchSession::new(
+            sequence_id,
+            PERSISTENT_FIRST_TOKEN_INDEX,
+            PERSISTENT_TOKEN_COUNT,
+        )
+        .expect("persistent session must open");
+        let mut states = persistent_zero_states();
+        execute_persistent_fixture_token(&mut session, PERSISTENT_FIRST_TOKEN_INDEX, &mut states);
+        execute_persistent_fixture_token(
+            &mut session,
+            PERSISTENT_FIRST_TOKEN_INDEX + 1,
+            &mut states,
+        );
+        let summary = session.close().expect("persistent session must close");
+        assert_eq!(summary.call_count, PERSISTENT_CALL_COUNT);
+        assert_eq!(summary.token_count, PERSISTENT_TOKEN_COUNT);
+        assert_eq!(summary.first_token_index, PERSISTENT_FIRST_TOKEN_INDEX);
+        assert_eq!(summary.same_layer_state_continuity_count, MODEL_LAYER_COUNT);
+        assert_eq!(summary.ordered_request_blake3.len(), PERSISTENT_CALL_COUNT);
+        assert_eq!(summary.ordered_response_blake3.len(), PERSISTENT_CALL_COUNT);
+        assert_eq!(summary.terminal_state, "closed");
+        let inputs = persistent_fixture_inputs(PERSISTENT_FIRST_TOKEN_INDEX, 0);
+        assert!(
+            session
+                .prepare(PERSISTENT_FIRST_TOKEN_INDEX, 0, &inputs, &states[0])
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn persistent_session_rejects_order_and_same_layer_state_drift() {
+        let sequence_id = derive_sequence_id(PERSISTENT_SEQUENCE_DOMAIN);
+        let mut wrong_order = PersistentCpuDispatchSession::new(
+            sequence_id,
+            PERSISTENT_FIRST_TOKEN_INDEX,
+            PERSISTENT_TOKEN_COUNT,
+        )
+        .expect("wrong-order session must open");
+        let states = persistent_zero_states();
+        let wrong_inputs = persistent_fixture_inputs(PERSISTENT_FIRST_TOKEN_INDEX, 1);
+        assert!(
+            wrong_order
+                .prepare(PERSISTENT_FIRST_TOKEN_INDEX, 1, &wrong_inputs, &states[1])
+                .is_err()
+        );
+        let first_inputs = persistent_fixture_inputs(PERSISTENT_FIRST_TOKEN_INDEX, 0);
+        assert!(
+            wrong_order
+                .prepare(PERSISTENT_FIRST_TOKEN_INDEX, 0, &first_inputs, &states[0])
+                .is_err()
+        );
+
+        let mut changed_state = PersistentCpuDispatchSession::new(
+            sequence_id,
+            PERSISTENT_FIRST_TOKEN_INDEX,
+            PERSISTENT_TOKEN_COUNT,
+        )
+        .expect("changed-state session must open");
+        let mut carried_states = persistent_zero_states();
+        execute_persistent_fixture_token(
+            &mut changed_state,
+            PERSISTENT_FIRST_TOKEN_INDEX,
+            &mut carried_states,
+        );
+        carried_states[0][0] += 1.0;
+        let next_inputs = persistent_fixture_inputs(PERSISTENT_FIRST_TOKEN_INDEX + 1, 0);
+        assert!(
+            changed_state
+                .prepare(
+                    PERSISTENT_FIRST_TOKEN_INDEX + 1,
+                    0,
+                    &next_inputs,
+                    &carried_states[0]
+                )
+                .is_err()
+        );
+        assert!(changed_state.close().is_err());
+    }
+
+    #[test]
+    fn persistent_session_rejects_stale_truncated_and_duplicate_responses() {
+        let sequence_id = derive_sequence_id(PERSISTENT_SEQUENCE_DOMAIN);
+        let states = persistent_zero_states();
+        let inputs = persistent_fixture_inputs(PERSISTENT_FIRST_TOKEN_INDEX, 0);
+
+        let mut stale = PersistentCpuDispatchSession::new(
+            sequence_id,
+            PERSISTENT_FIRST_TOKEN_INDEX,
+            PERSISTENT_TOKEN_COUNT,
+        )
+        .expect("stale-response session must open");
+        let request = stale
+            .prepare(PERSISTENT_FIRST_TOKEN_INDEX, 0, &inputs, &states[0])
+            .expect("stale-response request must prepare");
+        let mut stale_response =
+            emulate_cpu_response_frame(&request).expect("response emulation must succeed");
+        stale_response[CALL_OFFSET] ^= 1;
+        assert!(stale.accept(&stale_response).is_err());
+        assert!(stale.accept(&stale_response).is_err());
+
+        let mut truncated = PersistentCpuDispatchSession::new(
+            sequence_id,
+            PERSISTENT_FIRST_TOKEN_INDEX,
+            PERSISTENT_TOKEN_COUNT,
+        )
+        .expect("truncated-response session must open");
+        let request = truncated
+            .prepare(PERSISTENT_FIRST_TOKEN_INDEX, 0, &inputs, &states[0])
+            .expect("truncated-response request must prepare");
+        let response =
+            emulate_cpu_response_frame(&request).expect("response emulation must succeed");
+        assert!(truncated.accept(&response[..response.len() - 1]).is_err());
+        assert!(truncated.close().is_err());
+
+        let mut duplicate = PersistentCpuDispatchSession::new(
+            sequence_id,
+            PERSISTENT_FIRST_TOKEN_INDEX,
+            PERSISTENT_TOKEN_COUNT,
+        )
+        .expect("duplicate-response session must open");
+        let request = duplicate
+            .prepare(PERSISTENT_FIRST_TOKEN_INDEX, 0, &inputs, &states[0])
+            .expect("duplicate-response request must prepare");
+        let response =
+            emulate_cpu_response_frame(&request).expect("response emulation must succeed");
+        duplicate
+            .accept(&response)
+            .expect("first response must be accepted");
+        assert!(duplicate.accept(&response).is_err());
+        assert!(duplicate.close().is_err());
+    }
+
+    #[test]
+    fn persistent_session_rejects_parallel_pending_calls_and_extra_calls() {
+        let sequence_id = derive_sequence_id(PERSISTENT_SEQUENCE_DOMAIN);
+        let states = persistent_zero_states();
+        let inputs = persistent_fixture_inputs(PERSISTENT_FIRST_TOKEN_INDEX, 0);
+        let mut pending = PersistentCpuDispatchSession::new(
+            sequence_id,
+            PERSISTENT_FIRST_TOKEN_INDEX,
+            PERSISTENT_TOKEN_COUNT,
+        )
+        .expect("pending-call session must open");
+        pending
+            .prepare(PERSISTENT_FIRST_TOKEN_INDEX, 0, &inputs, &states[0])
+            .expect("first pending request must prepare");
+        assert!(
+            pending
+                .prepare(PERSISTENT_FIRST_TOKEN_INDEX, 0, &inputs, &states[0])
+                .is_err()
+        );
+        assert!(pending.close().is_err());
+
+        let mut extra = PersistentCpuDispatchSession::new(
+            sequence_id,
+            PERSISTENT_FIRST_TOKEN_INDEX,
+            PERSISTENT_SINGLE_TOKEN_COUNT,
+        )
+        .expect("extra-call session must open");
+        let mut carried_states = persistent_zero_states();
+        execute_persistent_fixture_token(
+            &mut extra,
+            PERSISTENT_FIRST_TOKEN_INDEX,
+            &mut carried_states,
+        );
+        let extra_inputs = persistent_fixture_inputs(PERSISTENT_FIRST_TOKEN_INDEX + 1, 0);
+        assert!(
+            extra
+                .prepare(
+                    PERSISTENT_FIRST_TOKEN_INDEX + 1,
+                    0,
+                    &extra_inputs,
+                    &carried_states[0]
+                )
+                .is_err()
+        );
+        assert!(extra.close().is_err());
+    }
+
+    #[test]
+    fn persistent_session_timeout_interruption_and_premature_close_are_terminal() {
+        let sequence_id = derive_sequence_id(PERSISTENT_SEQUENCE_DOMAIN);
+        let states = persistent_zero_states();
+        let inputs = persistent_fixture_inputs(PERSISTENT_FIRST_TOKEN_INDEX, 0);
+
+        let mut timed_out = PersistentCpuDispatchSession::new(
+            sequence_id,
+            PERSISTENT_FIRST_TOKEN_INDEX,
+            PERSISTENT_TOKEN_COUNT,
+        )
+        .expect("timeout session must open");
+        let request = timed_out
+            .prepare(PERSISTENT_FIRST_TOKEN_INDEX, 0, &inputs, &states[0])
+            .expect("timeout request must prepare");
+        let response =
+            emulate_cpu_response_frame(&request).expect("response emulation must succeed");
+        assert!(timed_out.fault(PersistentDispatchFault::Timeout).is_err());
+        assert!(timed_out.accept(&response).is_err());
+        assert!(timed_out.close().is_err());
+
+        let mut interrupted = PersistentCpuDispatchSession::new(
+            sequence_id,
+            PERSISTENT_FIRST_TOKEN_INDEX,
+            PERSISTENT_TOKEN_COUNT,
+        )
+        .expect("interrupted session must open");
+        assert!(
+            interrupted
+                .fault(PersistentDispatchFault::Interrupted)
+                .is_err()
+        );
+        assert!(
+            interrupted
+                .prepare(PERSISTENT_FIRST_TOKEN_INDEX, 0, &inputs, &states[0])
+                .is_err()
+        );
+
+        let mut premature_close = PersistentCpuDispatchSession::new(
+            sequence_id,
+            PERSISTENT_FIRST_TOKEN_INDEX,
+            PERSISTENT_TOKEN_COUNT,
+        )
+        .expect("premature-close session must open");
+        assert!(premature_close.close().is_err());
+        assert!(
+            premature_close
+                .prepare(PERSISTENT_FIRST_TOKEN_INDEX, 0, &inputs, &states[0])
+                .is_err()
+        );
     }
 
     #[test]

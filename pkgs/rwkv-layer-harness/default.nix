@@ -301,6 +301,46 @@ let
     "22.17935"
     "54.99176"
   ];
+  expectedPersistentModelDispatchReplayBlake3 = "31f3e1dea79fb152ddb7ae5cc9049b97b8b38ca2a187964ee9edac5f5d45feae";
+  expectedPersistentModelDispatchReceiptByteCount = 78154;
+  expectedPersistentModelDispatchSequenceIds = [
+    "44430cdb0e204cab653e913b781b40b0d1d9652f1f55b8ee49c0c937b014e35d"
+    "903b16ad4f679f93c77a42eaa578129ea514de839a7e4a1767ab3fb3906a1d25"
+    "77c9d1fa2737db58eee38cb73fcb6741dd00845bff08386338128359cdb5543e"
+  ];
+  expectedPersistentModelDispatchTranscripts = [
+    "1be98ce2f01f8d56b92251fe6015439cd59acb895996bb702c5b0849b2844334"
+    "d20f1192aeaef363f7fc331fd91484bfa404194a561ca6434c4d2468a4b9d1c7"
+    "140f9dfc8c8b8004c1060d1cd1752c87fdb514151c0a428c0a8ede7e4fbfbf07"
+  ];
+  expectedPersistentModelDispatchFourthTokenBlake3 = [
+    "e6069234ca935f70dcc8278876fb15cbacc0e374b52e6f33efa5482b5daba7bc"
+    "095cb6d828bc9aae298b4268ed3522079c7b230bc1fc53219072530058164807"
+    "c805e277fbe3106715b97c4c861f3b0ed2801d81b502260599c084f789072b5d"
+    "018f3f6602aed5f823ae895ae3c1ecff8d71d1656f77924a2f437b262b6d867f"
+    "9a1029744c3c1c9919e9661ad85d9800a35818ae19f3e53fdde3dfc1108ba89e"
+    "cd88264434876dfd530ea85b6239663c971744813d98e7144cb7f1722a01aa16"
+    "b94392b27c28769e830e80558753125e6f2f173aba2c67067e2ca6bb09427b3f"
+  ];
+  expectedPersistentModelDispatchOracleDeviations = [
+    "0.001953125"
+    "0.0009765625"
+    "0.0001604557"
+    "0.00035476685"
+    "0.00018692017"
+    "0.00048828125"
+    "0.000002861023"
+    "0.000011444092"
+    "0.0000104904175"
+  ];
+  expectedPersistentModelDispatchControlDivergences = [
+    "118.36631"
+    "14.686736"
+    "55.000004"
+    "21.618242"
+    "24.41396"
+    "54.99176"
+  ];
   observedOutputByteCount = 1536;
   observedPostStateByteCount = 98304;
   writerRawByteCount = 147456;
@@ -827,6 +867,124 @@ let
         test ! -e ${package}/share/rwkv-layer-harness/ttwkv7-device-2
         cp dispatch-first.json "$out/receipt.json"
       '';
+  persistentModelDispatchCheck =
+    runCommand "rwkv-ttwkv7-persistent-observed-model-dispatch"
+      {
+        nativeBuildInputs = [ b3sum ];
+      }
+      ''
+        set -euo pipefail
+        mkdir -p "$out"
+        replay=${package}/bin/rwkv-ttwkv7-persistent-model-dispatch
+        evidence=${observedEvidenceRoot}
+
+        "$replay" --evidence-root "$evidence" >persistent-first.json
+        "$replay" --evidence-root "$evidence" >persistent-second.json
+        cmp persistent-first.json persistent-second.json
+        test "$(b3sum persistent-first.json | cut -d' ' -f1)" = \
+          ${lib.escapeShellArg expectedPersistentModelDispatchReplayBlake3}
+        test "$(wc -c <persistent-first.json)" -eq \
+          ${toString expectedPersistentModelDispatchReceiptByteCount}
+        grep -F '"target": "rwkv_ttwkv7_persistent_observed_model_dispatch"' \
+          persistent-first.json
+        grep -F '"token_ids": [' persistent-first.json
+        grep -F '"dispatched_token_indices_zero_based": [' persistent-first.json
+        grep -F '"dispatch_call_count": 24' persistent-first.json
+        grep -F '"physical_wkv_call_count": 1' persistent-first.json
+        grep -F '"new_physical_wkv_call_count": 0' persistent-first.json
+        grep -F '"prior_model_dispatch_receipt_blake3": "${expectedModelDispatchReplayBlake3}"' \
+          persistent-first.json
+        grep -F '"terminal_session_outcome": "unsafe"' persistent-first.json
+        grep -F '"evidence_bundle_blake3": "${expectedObservedEvidenceBundleBlake3}"' \
+          persistent-first.json
+        grep -F '"selected_fourth_token_id": 2' persistent-first.json
+        test "$(grep -Fc '"call_count": 24' persistent-first.json)" -eq 3
+        test "$(grep -Fc '"same_layer_state_continuity_count": 12' \
+          persistent-first.json)" -eq 3
+        test "$(grep -Fc '"request_frame_byte_count": 107588' \
+          persistent-first.json)" -eq 3
+        test "$(grep -Fc '"response_frame_byte_count": 99940' \
+          persistent-first.json)" -eq 3
+        test "$(grep -Fc '"terminal_state": "closed"' persistent-first.json)" -eq 3
+        test "$(grep -Ec '^        "[0-9a-f]{64}"[, ]*$' persistent-first.json)" -eq 144
+        test "$(grep -Fc '"generated_token_id": 2' persistent-first.json)" -eq 4
+        test "$(grep -Fc '"runner_up_token_id": 33' persistent-first.json)" -eq 4
+        for expected in ${lib.escapeShellArgs expectedPersistentModelDispatchSequenceIds}; do
+          grep -F "\"sequence_id\": \"$expected\"" persistent-first.json
+        done
+        for expected in ${lib.escapeShellArgs expectedPersistentModelDispatchTranscripts}; do
+          grep -F "\"transcript_blake3\": \"$expected\"" persistent-first.json
+        done
+        for expected in ${lib.escapeShellArgs expectedModelDispatchSeedBlake3}; do
+          grep -F "\"blake3\": \"$expected\"" persistent-first.json
+        done
+        for expected in ${lib.escapeShellArgs expectedPersistentModelDispatchFourthTokenBlake3}; do
+          grep -F "\"blake3\": \"$expected\"" persistent-first.json
+        done
+        for expected in ${lib.escapeShellArgs expectedPersistentModelDispatchOracleDeviations}; do
+          grep -F ": $expected" persistent-first.json
+        done
+        for expected in ${lib.escapeShellArgs expectedPersistentModelDispatchControlDivergences}; do
+          grep -F ": $expected" persistent-first.json
+        done
+        grep -F '"oracle_tolerance": 0.005' persistent-first.json
+        grep -F 'The persistent session is a pure in-memory lifecycle contract, not an operating-system process.' \
+          persistent-first.json
+        grep -F 'No child process, socket, retry, backoff, reconnect, or persistent Metalium transport is established.' \
+          persistent-first.json
+        grep -F 'Tasks 30 and 64 remain terminal and are not reusable.' persistent-first.json
+        grep -F 'No new hardware execution is authorized by this replay.' persistent-first.json
+
+        expect_failure() {
+          expected_diagnostic="$1"
+          output_path="$2"
+          shift 2
+          if "$@" >"$output_path" 2>&1; then
+            echo "persistent model-dispatch negative command unexpectedly passed: $*" >&2
+            exit 1
+          fi
+          grep -F "$expected_diagnostic" "$output_path"
+        }
+        usage='usage: rwkv-ttwkv7-persistent-model-dispatch --evidence-root PATH'
+        expect_failure "$usage" missing-arguments.log "$replay"
+        expect_failure "$usage" extra-arguments.log \
+          "$replay" --evidence-root "$evidence" unexpected
+        expect_failure "$usage" reordered-arguments.log \
+          "$replay" "$evidence" --evidence-root
+
+        changed_root="$(mktemp -d)"
+        cp -R "$evidence/." "$changed_root/"
+        chmod -R u+w "$changed_root"
+        printf '\n' >>"$changed_root/classification-receipt.json"
+        expect_failure 'classification receipt BLAKE3 mismatch' \
+          changed-classification.log "$replay" --evidence-root "$changed_root"
+
+        rm -rf "$changed_root"
+        changed_root="$(mktemp -d)"
+        cp -R "$evidence/." "$changed_root/"
+        chmod -R u+w "$changed_root"
+        printf 'x' | dd of="$changed_root/observed-post-state.bf16" \
+          bs=1 seek=0 conv=notrunc status=none
+        expect_failure 'observed post-state BF16 BLAKE3 mismatch' \
+          changed-state.log "$replay" --evidence-root "$changed_root"
+
+        for required_test in \
+          persistent_session_completes_two_tokens_with_same_layer_state_continuity \
+          persistent_session_rejects_order_and_same_layer_state_drift \
+          persistent_session_rejects_stale_truncated_and_duplicate_responses \
+          persistent_session_rejects_parallel_pending_calls_and_extra_calls \
+          persistent_session_timeout_interruption_and_premature_close_are_terminal; do
+          grep -F "fn $required_test" ${./src/dispatch_abi.rs}
+        done
+        if grep -E 'std::process::Command|Command::new|UnixStream|TcpStream|MeshDevice::|EnqueueMeshWorkload|TT_VISIBLE_DEVICES' \
+          ${./src/dispatch_abi.rs} ${./src/observed_layer.rs} \
+          ${./src/bin/rwkv-ttwkv7-persistent-model-dispatch.rs}; then
+          echo "persistent model dispatch contains a process, socket, or device execution surface" >&2
+          exit 1
+        fi
+        test ! -e ${package}/share/rwkv-layer-harness/ttwkv7-device-2
+        cp persistent-first.json "$out/receipt.json"
+      '';
   dispatchAbiCheck =
     runCommand "rwkv-ttwkv7-dispatch-abi"
       {
@@ -1197,6 +1355,7 @@ let
         modelCarryCheck
         modelDispatchCheck
         observedLayerReplayCheck
+        persistentModelDispatchCheck
         stateCarryCheck
         generationConfig
         hfModelingSource

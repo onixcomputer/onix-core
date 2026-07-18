@@ -5,8 +5,10 @@ pub use dispatch_abi::{Ttwkv7DispatchAbiReceipt, run_ttwkv7_dispatch_abi_fixture
 pub use observed_layer::{
     Ttwkv7ObservedLayerEvidence, Ttwkv7ObservedLayerReplayReceipt, Ttwkv7ObservedModelCarryReceipt,
     Ttwkv7ObservedModelDispatchReceipt, Ttwkv7ObservedStateCarryReceipt,
-    run_ttwkv7_observed_layer_checkpoint, run_ttwkv7_observed_model_carry_checkpoint,
-    run_ttwkv7_observed_model_dispatch_checkpoint, run_ttwkv7_observed_state_carry_checkpoint,
+    Ttwkv7PersistentObservedModelDispatchReceipt, run_ttwkv7_observed_layer_checkpoint,
+    run_ttwkv7_observed_model_carry_checkpoint, run_ttwkv7_observed_model_dispatch_checkpoint,
+    run_ttwkv7_observed_state_carry_checkpoint,
+    run_ttwkv7_persistent_observed_model_dispatch_checkpoint,
 };
 
 use half::bf16;
