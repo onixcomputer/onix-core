@@ -42,6 +42,9 @@ let
   backupRetentionWeekly = 4;
   unboundedDailyRetention = 365;
   backupManifestAlgorithm = "blake3";
+  radiclePrivateBackupCredential = "radicle-node-private";
+  borgSshBackupCredential = "borg-ssh";
+  borgRepoKeyBackupCredential = "borg-repokey";
   identityGeneratorName = "radicle-node-radicle-forge-bootstrap";
   privateKeyFileName = "node-private-key";
   publicKeyFileName = "node-public-key";
@@ -592,12 +595,12 @@ let
   backupJob = fixtureConfig.services.borgbackup.jobs.${backupTargetHost} or null;
   backupService = fixtureConfig.systemd.services."borgbackup-job-${backupTargetHost}";
   backupGeneratorFiles = fixtureConfig.clan.core.vars.generators.borgbackup.files;
-  expectedBackupSecretBinds = [
-    privateKeyPath
-    publicKeyPath
-    backupGeneratorFiles."borgbackup.ssh".path
-    backupGeneratorFiles."borgbackup.repokey".path
+  expectedBackupCredentials = [
+    "${radiclePrivateBackupCredential}:${privateKeyPath}"
+    "${borgSshBackupCredential}:${backupGeneratorFiles."borgbackup.ssh".path}"
+    "${borgRepoKeyBackupCredential}:${backupGeneratorFiles."borgbackup.repokey".path}"
   ];
+  backupLoadedCredentials = lib.toList (backupService.serviceConfig.LoadCredential or [ ]);
   backupBindPaths = lib.toList (backupService.serviceConfig.BindReadOnlyPaths or [ ]);
   backupTargetRepo = desktopConfig.services.borgbackup.repos.${expectedHost} or null;
   backupTargetFileSystem = desktopConfig.fileSystems.${backupRepositoryPath} or null;
@@ -616,13 +619,16 @@ let
     && backupJob.encryption.mode == "repokey"
     && backupJob.prune.keep.daily == backupRetentionDaily
     && backupJob.prune.keep.weekly == backupRetentionWeekly
+    && lib.hasInfix "$CREDENTIALS_DIRECTORY/${borgSshBackupCredential}" backupJob.environment.BORG_RSH
+    && lib.hasInfix "$CREDENTIALS_DIRECTORY/${borgRepoKeyBackupCredential}" backupJob.encryption.passCommand
     && lib.hasInfix "StrictHostKeyChecking=yes" backupJob.environment.BORG_RSH
     && lib.hasInfix "HostKeyAlgorithms=ssh-ed25519" backupJob.environment.BORG_RSH
     && !(lib.hasInfix "accept-new" backupJob.environment.BORG_RSH)
     && lib.hasInfix "radicle-backup-prepare" backupJob.preHook
     && lib.hasInfix "radicle-backup-cleanup" backupJob.postHook
-    && lib.subtractLists expectedBackupSecretBinds backupBindPaths == [ ]
-    && lib.subtractLists backupBindPaths expectedBackupSecretBinds == [ ]
+    && lib.subtractLists expectedBackupCredentials backupLoadedCredentials == [ ]
+    && lib.subtractLists backupLoadedCredentials expectedBackupCredentials == [ ]
+    && backupBindPaths == [ ]
     && builtins.elem "/run/secrets" backupService.serviceConfig.InaccessiblePaths
     && backupService.serviceConfig.CapabilityBoundingSet == ""
     && backupService.serviceConfig.NoNewPrivileges

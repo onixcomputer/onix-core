@@ -18,6 +18,9 @@ let
   targetHostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEehqswjtdQwNb4o2/hV7Qg1HCZkpbLZDDbReDoPmf/p";
   privateKeyMode = "0400";
   publicKeyMode = "0444";
+  radiclePrivateCredential = "radicle-node-private";
+  borgSshCredential = "borg-ssh";
+  borgRepoKeyCredential = "borg-repokey";
   privateDirectoryMode = "0700";
   dailyRetention = 7;
   weeklyRetention = 4;
@@ -65,7 +68,7 @@ let
       rm -rf ${lib.escapeShellArg stagingRoot} ${lib.escapeShellArg manifestRoot}
       install -d -m ${privateDirectoryMode} ${lib.escapeShellArg stagingRoot}
       install -d -m ${privateDirectoryMode} ${lib.escapeShellArg manifestRoot}
-      install -m ${privateKeyMode} ${lib.escapeShellArg privateKeyPath} ${lib.escapeShellArg stagingRoot}/node-private-key
+      install -m ${privateKeyMode} "$CREDENTIALS_DIRECTORY/${radiclePrivateCredential}" ${lib.escapeShellArg stagingRoot}/node-private-key
       install -m ${publicKeyMode} ${lib.escapeShellArg publicKeyPath} ${lib.escapeShellArg stagingRoot}/node-public-key
 
       ssh-keygen -y -f ${lib.escapeShellArg stagingRoot}/node-private-key > ${lib.escapeShellArg stagingRoot}/derived-public-key
@@ -232,7 +235,7 @@ in
     environment.BORG_RSH = lib.mkForce (
       lib.concatStringsSep " " [
         "ssh"
-        "-i ${backupSshKeyPath}"
+        "-i $CREDENTIALS_DIRECTORY/${borgSshCredential}"
         "-o UserKnownHostsFile=/etc/ssh/radicle-backup-known-hosts"
         "-o StrictHostKeyChecking=yes"
         "-o HostKeyAlgorithms=ssh-ed25519"
@@ -240,6 +243,7 @@ in
         "-o PasswordAuthentication=no"
       ]
     );
+    encryption.passCommand = lib.mkForce ''cat "$CREDENTIALS_DIRECTORY/${borgRepoKeyCredential}"'';
     preHook = lib.getExe prepareBackup;
     postHook = lib.getExe cleanupBackup;
     prune.keep = lib.mkForce {
@@ -251,16 +255,15 @@ in
   };
 
   systemd.services.${backupUnitName}.serviceConfig = {
-    BindReadOnlyPaths = [
-      privateKeyPath
-      publicKeyPath
-      backupSshKeyPath
-      backupRepoKeyPath
-    ];
     CapabilityBoundingSet = "";
     ExecStartPre = lib.mkForce [ ];
     ExecStopPost = lib.mkForce [ ];
     InaccessiblePaths = [ "/run/secrets" ];
+    LoadCredential = [
+      "${radiclePrivateCredential}:${privateKeyPath}"
+      "${borgSshCredential}:${backupSshKeyPath}"
+      "${borgRepoKeyCredential}:${backupRepoKeyPath}"
+    ];
     LockPersonality = true;
     NoNewPrivileges = true;
     PrivateDevices = true;
