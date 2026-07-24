@@ -33,11 +33,12 @@ A newly generated identity was not activated because it would have changed the n
 - A controlled restart returned both units to `active` and preserved the same node ID, fingerprint, package version, external address, and default-block seeding policy.
 - The node process environment contained no variable names matching delegate, GitHub, Buildbot, Cloudflare, Vault, Matrix, cache, release, deployment, signing, token, or secret authority.
 - The `radicle` account could read zero of the host secret files observed under `/run/secrets`; systemd loaded only the dedicated node identity and retained the optional passphrase credential boundary.
+- Prometheus, node-exporter, and systemd-exporter were active. The systemd exporter reported `systemd_unit_state{name="radicle-node.service",state="active",type="service"} 1`, and the Prometheus query returned that series for Aspen1.
 
 ## Negative observations and bounded blockers
 
 - The first activation rejected a newly generated identity because it did not match the persisted fingerprint. This was the correct fail-closed behavior and led to recovery rather than state deletion or identity rotation.
 - The HTTP gateway is intentionally loopback-only. Stable DNS/TLS and a repository allowlist have not been admitted, so HTTPS exact-object acquisition has not passed.
 - The inherited 56 GiB store has not yet been classified against the public repository allowlist. It MUST NOT be exposed through a public explorer or a wildcard Git gateway; the exact-route proxy currently has no production RID or public origin.
-- Exact-object native acquisition from an independent Radicle client, exact-object HTTPS Git acquisition, unauthorized-repository behavior at the future proxy, writable-operation rejection, monitoring acceptance, off-host backup, clean restore, and key-loss recovery remain open.
+- Exact-object native acquisition from an independent Radicle client, exact-object HTTPS Git acquisition, unauthorized-repository behavior at the future proxy, writable-operation rejection, off-host backup, clean restore, and key-loss recovery remain open.
 - This observation does not prove high availability, a second failure domain, repository correctness, delegate authority, CI isolation beyond the observed unit boundary, release readiness, private-repository confidentiality, or complete recovery.

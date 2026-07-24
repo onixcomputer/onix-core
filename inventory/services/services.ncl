@@ -463,6 +463,7 @@ let radicle_http_port = 8080 in
         expectedNodeFingerprint = "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE",
         alias = "aspen1-radicle",
         failureDomain = "aspen-primary-site",
+        monitoringRequired = true,
         nodeListenAddress = radicle_node_address,
         nodeListenPort = radicle_node_port,
         nodeFirewallInterface = "tailscale0",

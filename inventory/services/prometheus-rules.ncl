@@ -98,6 +98,24 @@
               summary: "Systemd service failed on {{ $labels.instance }}"
               description: "Service {{ $labels.name }} is in failed state"
 
+          - alert: RadicleNodeNotActive
+            expr: systemd_unit_state{name="radicle-node.service",state="active"} != 1
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Radicle node is not active on {{ $labels.instance }}"
+              description: "The selective Radicle peer service left the active state"
+
+          - alert: RadicleHttpdNotActive
+            expr: systemd_unit_state{name="radicle-httpd.service",state="active"} != 1
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Radicle HTTP gateway is not active on {{ $labels.instance }}"
+              description: "The loopback Radicle HTTP gateway left the active state"
+
           - alert: SystemNotHealthy
             expr: node_systemd_system_running == 0
             for: 5m

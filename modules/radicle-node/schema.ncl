@@ -8,6 +8,7 @@ let default_http_port = 8080 in
     expectedNodeFingerprint = { type = "string", description = "Pinned SSH fingerprint of the recovered persistent Aspen1 node identity" },
     alias = { type = "string", description = "Public Radicle node alias" },
     failureDomain = { type = "string", description = "Explicit physical or administrative failure-domain label" },
+    monitoringRequired = { type = "bool", default = true, description = "Require Prometheus and the systemd exporter to observe both Radicle units" },
     nodeListenAddress = { type = "string", description = "Explicit non-wildcard address for native Radicle peer traffic" },
     nodeListenPort = { type = "port", default = default_node_port, description = "Native Radicle peer TCP port" },
     nodeFirewallInterface = { type = "string", description = "Single interface allowed to receive native Radicle peer traffic" },

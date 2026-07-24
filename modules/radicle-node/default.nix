@@ -61,6 +61,8 @@ in
               packageVersion = nodePackage.version;
               actualHost = config.networking.hostName;
             };
+            monitoringAvailable =
+              config.services.prometheus.enable && config.services.prometheus.exporters.systemd.enable;
             loweredConfig = mkNixosConfig {
               inherit
                 settings
@@ -74,10 +76,17 @@ in
           lib.mkMerge [
             loweredConfig
             {
-              assertions = map (message: {
-                assertion = false;
-                message = "radicle-node-${instanceName}: ${message}";
-              }) validationErrors;
+              assertions =
+                map (message: {
+                  assertion = false;
+                  message = "radicle-node-${instanceName}: ${message}";
+                }) validationErrors
+                ++ [
+                  {
+                    assertion = !settings.monitoringRequired || monitoringAvailable;
+                    message = "radicle-node-${instanceName}: Prometheus and the systemd exporter must monitor the Radicle units";
+                  }
+                ];
 
               clan.core.vars.generators.${generatorName} = {
                 files = {

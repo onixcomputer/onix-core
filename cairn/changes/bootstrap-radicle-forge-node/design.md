@@ -66,6 +66,12 @@ Completion means `aspen1`, deployed through `root@aspen1.local`, runs a persiste
 
 **Rationale:** The pilot needs compatibility with ordinary Git clients while keeping HTTP exposure, peer synchronization, and repository authority distinct.
 
+### Decision: Reuse Aspen1's Prometheus systemd monitoring path
+
+**Choice:** Typed policy requires both the Prometheus server and systemd exporter on the selected host. The shared rule set alerts when either `radicle-node.service` or `radicle-httpd.service` leaves the active state; no Radicle credential or additional public metrics listener is introduced.
+
+**Rationale:** Aspen1 already exports and scrapes `systemd_unit_state` through the tailnet monitoring path. Reusing that bounded observation avoids a parallel health daemon while making service regressions visible through the existing operations surface.
+
 ### Decision: Preserve the complete node state and prove restore
 
 **Choice:** Backup includes the Radicle storage and identity material required to recover the same node, repositories, signed refs, issues, patches, identities, and declared custom COB refs. The authoritative backup target must be outside Aspen1's failure domain; Aspen1's local Borg server or another same-host path cannot satisfy recovery. The operator shell creates a bounded backup, verifies a BLAKE3 manifest, restores into a clean test root or replacement unit, and compares declared identities before acceptance.

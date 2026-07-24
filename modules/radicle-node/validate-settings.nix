@@ -70,6 +70,7 @@ lib.concatLists [
   ) "expectedNodeFingerprint must preserve the recovered Aspen1 node identity")
   (rejectUnless (settings.alias != "") "alias must not be empty")
   (rejectUnless (settings.failureDomain != "") "failureDomain must not be empty")
+  (rejectUnless settings.monitoringRequired "monitoringRequired must remain enabled")
   (rejectUnless (
     !(isWildcard settings.nodeListenAddress)
   ) "nodeListenAddress must not be a wildcard address")

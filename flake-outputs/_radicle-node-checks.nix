@@ -47,6 +47,7 @@ let
     inherit expectedNodeFingerprint;
     alias = "aspen1-radicle";
     failureDomain = "aspen-primary-site";
+    monitoringRequired = true;
     nodeListenAddress = nodeAddress;
     nodeListenPort = nodePort;
     nodeFirewallInterface = nodeInterface;
@@ -165,6 +166,15 @@ let
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
       expected = "failureDomain must not be empty";
+    }
+    {
+      name = "monitoring-disabled";
+      settings = positiveSettings // {
+        monitoringRequired = false;
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "monitoringRequired must remain enabled";
     }
     {
       name = "wildcard-node-listener";
@@ -375,6 +385,14 @@ let
   globalFirewallPorts = fixtureConfig.networking.firewall.allowedTCPPorts;
   interfaceFirewallPorts =
     fixtureConfig.networking.firewall.interfaces.${nodeInterface}.allowedTCPPorts;
+  monitoringRules = lib.concatStringsSep "\n" fixtureConfig.services.prometheus.rules;
+  monitoringPolicyValid =
+    fixtureConfig.services.prometheus.enable
+    && fixtureConfig.services.prometheus.exporters.systemd.enable
+    && lib.hasInfix "alert: RadicleNodeNotActive" monitoringRules
+    && lib.hasInfix ''systemd_unit_state{name="radicle-node.service",state="active"} != 1'' monitoringRules
+    && lib.hasInfix "alert: RadicleHttpdNotActive" monitoringRules
+    && lib.hasInfix ''systemd_unit_state{name="radicle-httpd.service",state="active"} != 1'' monitoringRules;
 
   plugins = self.packages.x86_64-linux.wasm-plugins;
   wasm = import ../lib/wasm.nix { inherit plugins; };
@@ -385,6 +403,7 @@ let
     "expectedNodeFingerprint"
     "alias"
     "failureDomain"
+    "monitoringRequired"
     "nodeListenAddress"
     "nodeListenPort"
     "nodeFirewallInterface"
@@ -458,6 +477,10 @@ in
           ''}
           ${lib.optionalString (!httpsRoutePolicyValid) ''
             echo "HTTPS Git proxy routes do not fail closed around the admitted repository set" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!monitoringPolicyValid) ''
+            echo "Radicle units are not covered by the admitted systemd monitoring path" >&2
             exit 1
           ''}
           ${lib.optionalString (failedAssertions != [ ]) ''
