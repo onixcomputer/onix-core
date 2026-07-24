@@ -27,7 +27,7 @@ r[onix.radicle_node.package.rejected]
 
 ### Requirement: Typed bootstrap-node configuration
 
-r[onix.radicle_node.configuration] `onix-core` MUST validate the bootstrap machine, failure domain, package, state, seed, listener, HTTPS, monitoring, retention, backup, restore, and repository-admission facts through typed Nickel configuration before lowering them into Nix services.
+r[onix.radicle_node.configuration] `onix-core` MUST validate the bootstrap machine, failure domain, pinned node-identity fingerprint, package, state, seed, listener, HTTPS, monitoring, retention, backup, restore, and repository-admission facts through typed Nickel configuration before lowering them into Nix services.
 
 #### Scenario: Complete bootstrap configuration lowers deterministically
 
@@ -39,7 +39,7 @@ r[onix.radicle_node.configuration.valid]
 #### Scenario: Unsafe bootstrap configuration fails closed
 
 r[onix.radicle_node.configuration.invalid]
-- GIVEN configuration selects a host other than `aspen1`, omits its failure-domain fact, uses transient storage, exposes an undeclared wildcard listener, admits a private repository, requests forbidden authority, declares an unsafe endpoint, uses a same-host-only backup, or leaves storage or retention unbounded
+- GIVEN configuration selects a host other than `aspen1`, changes its recovered node-identity fingerprint, omits its failure-domain fact, uses transient storage, exposes an undeclared wildcard listener, admits a private repository, requests forbidden authority, declares an unsafe endpoint, uses a same-host-only backup, or leaves storage or retention unbounded
 - WHEN validation runs
 - THEN it MUST reject the configuration before producing deployable service inputs
 

@@ -10,6 +10,7 @@ let default_http_port = 8080 in
       {
         expectedHost = "aspen1",
         deploymentTarget = "root@aspen1.local",
+        expectedNodeFingerprint = "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE",
         alias = "aspen1-radicle",
         failureDomain = "aspen-primary-site",
         nodeListenAddress = "100.100.103.95",
@@ -30,6 +31,7 @@ let default_http_port = 8080 in
       {
         expectedHost = 1,
         deploymentTarget = false,
+        expectedNodeFingerprint = false,
         alias = [],
         failureDomain = 1,
         nodeListenAddress = 1,

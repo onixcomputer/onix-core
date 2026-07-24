@@ -18,6 +18,7 @@ let
   expectedHost = "aspen1";
   unexpectedHost = "aspen2";
   deploymentTarget = "root@aspen1.local";
+  expectedNodeFingerprint = "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE";
   nodeAddress = "100.100.103.95";
   nodePort = 8776;
   nodeInterface = "tailscale0";
@@ -39,6 +40,7 @@ let
   positiveSettings = {
     inherit deploymentTarget;
     inherit expectedHost;
+    inherit expectedNodeFingerprint;
     alias = "aspen1-radicle";
     failureDomain = "aspen-primary-site";
     nodeListenAddress = nodeAddress;
@@ -91,6 +93,15 @@ let
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
       expected = "deploymentTarget must remain ${deploymentTarget}";
+    }
+    {
+      name = "rotated-node-identity";
+      settings = positiveSettings // {
+        expectedNodeFingerprint = "SHA256:unexpected";
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "must preserve the recovered Aspen1 node identity";
     }
     {
       name = "missing-alias";
@@ -285,6 +296,7 @@ let
   schemaExpectedNegativeFields = [
     "expectedHost"
     "deploymentTarget"
+    "expectedNodeFingerprint"
     "alias"
     "failureDomain"
     "nodeListenAddress"
@@ -317,6 +329,15 @@ in
           test -x ${nodePackage}/bin/radicle-node
           test -x ${httpdPackage}/bin/radicle-httpd
           test -e ${fixtureConfig.services.radicle.configFile}
+
+          configured_fingerprint="$(ssh-keygen -lf ${publicKeyPath})"
+          case "$configured_fingerprint" in
+            *" ${expectedNodeFingerprint} "*) ;;
+            *)
+              echo "configured Radicle public key does not preserve the recovered Aspen1 identity" >&2
+              exit 1
+              ;;
+          esac
 
           ${lib.optionalString (nodePackage.version != reviewedNodeVersion) ''
             echo "radicle-node version changed without updating the reviewed package identity" >&2

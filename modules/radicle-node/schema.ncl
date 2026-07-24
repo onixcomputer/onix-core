@@ -5,6 +5,7 @@ let default_http_port = 8080 in
   default = {
     expectedHost = { type = "string", default = "aspen1", description = "Machine hostname admitted to run the bootstrap Radicle node" },
     deploymentTarget = { type = "string", default = "root@aspen1.local", description = "Reviewed Clan deployment target; not a public client endpoint" },
+    expectedNodeFingerprint = { type = "string", description = "Pinned SSH fingerprint of the recovered persistent Aspen1 node identity" },
     alias = { type = "string", description = "Public Radicle node alias" },
     failureDomain = { type = "string", description = "Explicit physical or administrative failure-domain label" },
     nodeListenAddress = { type = "string", description = "Explicit non-wildcard address for native Radicle peer traffic" },

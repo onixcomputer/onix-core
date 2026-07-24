@@ -10,6 +10,7 @@ let
   minimumNodeVersion = "1.9.1";
   expectedHost = "aspen1";
   expectedDeploymentTarget = "root@aspen1.local";
+  expectedNodeFingerprint = "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE";
   requiredSignedRefsFeature = "parent";
   httpsPort = 443;
 
@@ -54,6 +55,9 @@ lib.concatLists [
   (rejectUnless (
     settings.deploymentTarget == expectedDeploymentTarget
   ) "deploymentTarget must remain ${expectedDeploymentTarget}")
+  (rejectUnless (
+    settings.expectedNodeFingerprint == expectedNodeFingerprint
+  ) "expectedNodeFingerprint must preserve the recovered Aspen1 node identity")
   (rejectUnless (settings.alias != "") "alias must not be empty")
   (rejectUnless (settings.failureDomain != "") "failureDomain must not be empty")
   (rejectUnless (

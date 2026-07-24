@@ -8,7 +8,7 @@
 ## Phase 2: Initial node deployment
 
 - [x] [serial] Select `aspen1` as the bootstrap machine and preserve `root@aspen1.local` as its deployment target without treating mDNS as the public client endpoint. r[onix.radicle_node.hosting]
-- [x] [serial] Assign Aspen1 the least-authority Radicle service with a Clan-generated machine-scoped identity, dedicated user, persistent state, selective seeding, local-only HTTP, and no access to delegate, CI, deployment, release, canonical-ref, cache, artifact, Buildbot, Nix-signing, Cloudflare, Vaultwarden, Matrix, or other co-hosted credentials. r[onix.radicle_node.hosting]
+- [x] [serial] Assign Aspen1 the least-authority Radicle service with its recovered and fingerprint-pinned machine-scoped Clan identity, dedicated user, persistent state, selective seeding, local-only HTTP, and no access to delegate, CI, deployment, release, canonical-ref, cache, artifact, Buildbot, Nix-signing, Cloudflare, Vaultwarden, Matrix, or other co-hosted credentials. r[onix.radicle_node.hosting]
 - [ ] [serial] Deploy the node endpoint and read-only `radicle-httpd` behind the reviewed HTTPS proxy while keeping undeclared listeners and repositories inaccessible. r[onix.radicle_node.exposure]
 - [ ] [parallel] Verify service health, monitoring, restart continuity, exact-object native peer acquisition, and exact-object HTTPS Git acquisition from an independent client. r[onix.radicle_node.validation]
 - [ ] [parallel] Verify unauthorized repository enumeration, private repository admission, writable HTTP operations, wildcard exposure, delegate-key access, and CI-key access fail closed. r[onix.radicle_node.exposure]

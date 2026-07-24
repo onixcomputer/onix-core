@@ -460,6 +460,7 @@ let radicle_http_port = 8080 in
       roles.default.machines.aspen1.settings = {
         expectedHost = "aspen1",
         deploymentTarget = "root@aspen1.local",
+        expectedNodeFingerprint = "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE",
         alias = "aspen1-radicle",
         failureDomain = "aspen-primary-site",
         nodeListenAddress = radicle_node_address,

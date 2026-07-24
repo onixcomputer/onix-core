@@ -1,6 +1,6 @@
 ## Context
 
-The Radicle forge pilot currently has repository-local publication and consumption plans, but no Onix-managed node exists. `onix-core` is the repository that can select a real machine, install packages, persist service identity and storage, apply firewall and reverse-proxy policy, deploy through Clan, monitor the unit, and execute backup/restore operations. OnixOS can define portable forge intent and cross-repository acceptance, but it cannot supply evidence for a node that has not first been deployed here.
+The Radicle forge pilot currently has repository-local publication and consumption plans, but no accepted Onix-managed node exists. Live deployment discovery found that Aspen1 already holds a legacy Radicle node identity, 56 GiB of state, and 6,760 repository stores from an earlier Clan-managed deployment. `onix-core` is the repository that can preserve that state, install reviewed packages, bind the recovered service identity, apply firewall and reverse-proxy policy, deploy through Clan, monitor the unit, and execute backup/restore operations. OnixOS can define portable forge intent and cross-repository acceptance, but it cannot supply evidence for a node that has not first been admitted here.
 
 Completion means `aspen1`, deployed through `root@aspen1.local`, runs a persistent selective Radicle node and a seed-backed HTTPS Git endpoint, survives restart, rejects unsafe configuration, and emits a deterministic bootstrap receipt that downstream Cairns can verify. A local developer profile, transient `rad node start`, unencrypted ad hoc key copy, GitHub-backed proxy, browser-only page, or endpoint without exact-object acquisition is false completion.
 
@@ -48,11 +48,11 @@ Completion means `aspen1`, deployed through `root@aspen1.local`, runs a persiste
 
 **Rationale:** Source replication and transport availability do not require repository governance. Compromise of the first public seed must not authorize canonical history changes or privileged builds.
 
-### Decision: Generate a dedicated persistent node identity through Clan
+### Decision: Recover and pin Aspen1's existing persistent node identity through Clan
 
-**Choice:** The Aspen1 service instance owns one Clan generator that creates an unencrypted Ed25519 node keypair. Clan stores the private key as a machine-scoped encrypted secret and the uncommented public key as non-secret generated state. The NixOS Radicle module loads only that private key as a systemd credential, while the node and read-only HTTP daemon receive the public key through a read-only bind.
+**Choice:** The Aspen1 service instance owns one service-specific Clan generator boundary, but bootstrap deployment re-encrypts the historical Aspen1 Radicle private key into that current machine-scoped variable instead of rotating it. Typed policy pins public fingerprint `SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE`; a missing or different identity fails admission. The NixOS Radicle module loads only that private key as a systemd credential, while the node and read-only HTTP daemon receive the public key through a read-only bind.
 
-**Rationale:** A seed service must restart with the same node ID, but its identity must not be copied from a user, delegate, Buildbot, Nix-signing, deployment, or release key. Generated machine scope and service-specific paths make that separation executable and testable.
+**Rationale:** Live discovery found 56 GiB and 6,760 repository stores bound to the existing node fingerprint. Silent key replacement would strand that state and change peer identity. Recovering the earlier Clan-encrypted key preserves continuity while the service-specific variable, machine scope, and pinned fingerprint keep it separate from user, delegate, Buildbot, Nix-signing, deployment, and release authority.
 
 ### Decision: Start with public pilot content
 
@@ -80,7 +80,7 @@ Completion means `aspen1`, deployed through `root@aspen1.local`, runs a persiste
 
 ## Evidence Shape
 
-The deterministic bootstrap receipt records the policy identity, package source/version identity, selected machine `aspen1`, its declared failure-domain label, deployment target identity, node ID, admitted repository IDs, listener and HTTPS endpoint identities, forbidden-authority assertions, service/restart observations, exact probe Git object, off-host backup manifest identity, restore comparison, monitoring result, and explicit non-claims. Onix-owned receipt identities use BLAKE3; Git object IDs retain Git's interoperable algorithm.
+The deterministic bootstrap receipt records the policy identity, package source/version identity, selected machine `aspen1`, its declared failure-domain label, deployment target identity, pinned key fingerprint, node ID, admitted repository IDs, listener and HTTPS endpoint identities, forbidden-authority assertions, service/restart observations, exact probe Git object, off-host backup manifest identity, restore comparison, monitoring result, and explicit non-claims. Onix-owned receipt identities use BLAKE3; Git object IDs retain Git's interoperable algorithm.
 
 The receipt excludes private keys, credentials, raw environment values, private repository contents, and unbounded logs. Runtime collection is a thin shell over explicit commands and files; classification and receipt construction operate over bounded observations in a pure deterministic core.
 
@@ -94,5 +94,6 @@ Positive fixtures cover an admitted package assigned to `aspen1`, the `root@aspe
 - HTTPS introduces DNS, TLS, proxy, and gateway failure modes distinct from Radicle peer synchronization.
 - Aspen1 already hosts privileged services, so unit isolation and negative credential-access checks are acceptance conditions rather than best-effort hardening.
 - Persisting node identity improves continuity but increases the importance of state permissions and encrypted off-host backup handling.
+- Aspen1's legacy 56 GiB store predates this admission policy; public HTTPS MUST remain disabled until the proxy proves repository allowlisting and non-enumeration over that inherited state.
 - A public seed stores and serves admitted source bytes; replication does not prove source correctness, review acceptance, or release eligibility.
 - Downstream GitHub independence remains bounded to published Onix-owned repositories and does not remove GitHub-hosted third-party Nix or Cargo inputs.
