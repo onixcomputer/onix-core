@@ -1,9 +1,9 @@
 ## Phase 1: Typed package and service boundary
 
-- [ ] [serial] Pin and package the reviewed Radicle node and HTTP components at the named minimum version, recording source and closure identities. r[onix.radicle_node.package]
-- [ ] [serial] Add the typed Nickel bootstrap-node contract and deterministic Nix lowering for host selection, failure domain, storage, seeding, listeners, HTTPS, monitoring, retention, backup, and restore policy. r[onix.radicle_node.configuration]
-- [ ] [parallel] Add positive configuration fixtures and negative fixtures for old versions, weak signed-reference policy, missing host/failure-domain facts, unsafe listeners, private repository admission, transient storage, excessive privileges, malformed endpoints, and unbounded retention. r[onix.radicle_node.configuration]
-- [ ] [parallel] Add focused package and module evaluation checks that instantiate the production package, service, proxy, firewall, state-directory, and monitoring definitions. r[onix.radicle_node.validation]
+- [x] [serial] Pin and package the reviewed Radicle node and HTTP components at the named minimum version, recording source and closure identities. r[onix.radicle_node.package]
+- [x] [serial] Add the typed Nickel bootstrap-node contract and deterministic Nix lowering for host selection, failure domain, storage, selective seeding, native listeners, local-only HTTP, signed-reference acquisition policy, and later HTTPS activation. r[onix.radicle_node.configuration]
+- [x] [parallel] Add positive configuration fixtures and negative fixtures for old versions, weak signed-reference policy, missing host/failure-domain facts, unsafe listeners, port collisions, credential scope, malformed endpoints, invalid repository IDs, and duplicate repository IDs. r[onix.radicle_node.configuration]
+- [x] [parallel] Add focused package and module evaluation checks that instantiate the production package, Clan wrapper, generated Radicle config, interface-scoped firewall, private state directory, dedicated credential, and hardened node/HTTP services. r[onix.radicle_node.validation]
 
 ## Phase 2: Initial node deployment
 

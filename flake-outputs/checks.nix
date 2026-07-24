@@ -35,6 +35,7 @@ let
   homeManagerChecks = (import ./_home-manager-checks.nix) innerArgs;
   kacheNixRustChecks = (import ./_kache-nix-rust-checks.nix) innerArgs;
   meshLlmChecks = (import ./_mesh-llm-checks.nix) innerArgs;
+  radicleNodeChecks = (import ./_radicle-node-checks.nix) innerArgs;
 
   packageChecks = lib.mapAttrs' (n: lib.nameValuePair "package-${n}") self'.packages;
   devShellChecks = lib.mapAttrs' (n: lib.nameValuePair "devShell-${n}") self'.devShells;
@@ -53,6 +54,7 @@ in
     // (homeManagerChecks.checks or { })
     // (kacheNixRustChecks.checks or { })
     // (meshLlmChecks.checks or { })
+    // (radicleNodeChecks.checks or { })
     // packageChecks
     // devShellChecks;
 }

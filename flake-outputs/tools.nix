@@ -48,6 +48,8 @@ in
     llamacpp-rocm-rpc = pkgs.callPackage ../pkgs/llamacpp-rocm-rpc { };
     lemonade-server = pkgs.callPackage ../pkgs/lemonade { };
     mesh-llm = pkgs.callPackage ../pkgs/mesh-llm { };
+    inherit (pkgs) radicle-node;
+    inherit (pkgs) radicle-httpd;
   }
   // lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") {
     sone = pkgs.callPackage ../pkgs/sone { };

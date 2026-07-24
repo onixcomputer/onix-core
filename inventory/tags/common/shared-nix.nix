@@ -23,6 +23,8 @@ in
         llamacpp-rocm-rpc = self.packages.${pkgs.stdenv.hostPlatform.system}.llamacpp-rocm-rpc or null;
         lemonade-server = self.packages.${pkgs.stdenv.hostPlatform.system}.lemonade-server or null;
         mesh-llm = self.packages.${pkgs.stdenv.hostPlatform.system}.mesh-llm or null;
+        radicle-node = self.packages.${pkgs.stdenv.hostPlatform.system}.radicle-node or null;
+        radicle-httpd = self.packages.${pkgs.stdenv.hostPlatform.system}.radicle-httpd or null;
       }
       // lib.optionalAttrs (_prev ? pkgsi686Linux) {
         # OpenLDAP's syncreplication integration test is flaky in the Nix

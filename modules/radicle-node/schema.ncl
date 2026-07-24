@@ -1,0 +1,23 @@
+# r[impl onix.radicle_node.configuration]
+let default_node_port = 8776 in
+let default_http_port = 8080 in
+{
+  default = {
+    expectedHost = { type = "string", default = "aspen1", description = "Machine hostname admitted to run the bootstrap Radicle node" },
+    deploymentTarget = { type = "string", default = "root@aspen1.local", description = "Reviewed Clan deployment target; not a public client endpoint" },
+    alias = { type = "string", description = "Public Radicle node alias" },
+    failureDomain = { type = "string", description = "Explicit physical or administrative failure-domain label" },
+    publicKey = { type = "string", description = "Uncommented Ed25519 public key for the persistent node identity" },
+    privateKeyCredential = { type = "string", default = "onix.radicle.node.secret", description = "Systemd credential name containing only the Radicle node private key" },
+    nodeListenAddress = { type = "string", description = "Explicit non-wildcard address for native Radicle peer traffic" },
+    nodeListenPort = { type = "port", default = default_node_port, description = "Native Radicle peer TCP port" },
+    nodeFirewallInterface = { type = "string", description = "Single interface allowed to receive native Radicle peer traffic" },
+    externalAddress = { type = "nullable_string", default = null, description = "Optional advertised Radicle host and port; deployment hostname inference is forbidden" },
+    httpdEnabled = { type = "bool", default = true, description = "Enable the read-only Radicle HTTP gateway" },
+    httpListenAddress = { type = "string", default = "127.0.0.1", description = "Loopback address for the read-only Radicle HTTP gateway" },
+    httpListenPort = { type = "port", default = default_http_port, description = "Loopback Radicle HTTP gateway port" },
+    httpsServerName = { type = "nullable_string", default = null, description = "Optional public HTTPS origin; null keeps the gateway local-only" },
+    minimumSignedRefsFeature = { type = "enum", values = ["root", "parent"], default = "parent", description = "Minimum signed-reference feature required by acquisition probes" },
+    pinnedRepositories = { type = "array_string", default = [], description = "Public Radicle repository IDs pinned in explorer metadata; this does not authorize seeding or filter HTTP storage" },
+  },
+}

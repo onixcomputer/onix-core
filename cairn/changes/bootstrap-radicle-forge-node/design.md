@@ -24,6 +24,18 @@ Completion means `aspen1`, deployed through `root@aspen1.local`, runs a persiste
 
 **Rationale:** Admission logic remains deterministic and testable without network or root access. Deployment handles filesystem, secret, process, proxy, firewall, and machine effects without hiding policy in shell commands.
 
+### Decision: Reuse the pinned Nixpkgs Radicle package and service shell
+
+**Choice:** Export the flake-pinned Nixpkgs `radicle-node` `1.9.1` and `radicle-httpd` `0.25.0` packages, then lower Onix policy into the pinned NixOS `services.radicle` module. Keep Onix-owned validation and lowering in pure Nix functions and add only stricter interface-scoped firewall and systemd constraints around the upstream imperative service shell.
+
+**Rationale:** The pinned module already validates generated `config.json`, supplies the node key through a dedicated systemd credential, confines both daemons, persists complete Radicle state, and provides a namespace-correct `rad-system` operator wrapper. Reimplementing those mechanics would expand the trust surface without improving the bootstrap claim.
+
+### Decision: Treat signed-reference `parent` as acquisition policy
+
+**Choice:** Require `minimumSignedRefsFeature = "parent"` in the typed contract and later pass it to exact-object clone/sync probes. Do not claim it is a daemon configuration field; Radicle `1.9.1` implements the feature while the client acquisition command selects the minimum accepted level.
+
+**Rationale:** Conflating a client fetch constraint with node configuration would create a passing configuration check that never exercises replay protection at acquisition time.
+
 ### Decision: Admit Radicle `1.9.1` or later and signed-reference feature `parent`
 
 **Choice:** The package check rejects an older Radicle release or a configuration weaker than the named minimum signed-reference feature. Version and feature minima are named policy fields rather than scattered literals.
