@@ -40,6 +40,7 @@ let
     runtimeInputs = [
       backupManifest
       pkgs.coreutils
+      pkgs.diffutils
       pkgs.findutils
       pkgs.openssh
       pkgs.systemd
@@ -151,6 +152,7 @@ let
     runtimeInputs = [
       backupManifest
       pkgs.coreutils
+      pkgs.diffutils
       pkgs.jq
       pkgs.openssh
       pkgs.radicle-node
