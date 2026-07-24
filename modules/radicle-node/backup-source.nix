@@ -8,6 +8,7 @@ let
   backupJobName = "britton-desktop";
   backupUnitName = "borgbackup-job-${backupJobName}";
   stateRoot = "/var/lib/radicle";
+  sourceMount = "/run/radicle-backup-source";
   stagingRoot = "/run/radicle-backup-input";
   manifestRoot = "/run/radicle-backup-manifests";
   runtimeStateRoot = "/run/radicle-backup-state";
@@ -97,11 +98,11 @@ let
         printf 'manifest_algorithm=blake3\n'
       } > ${lib.escapeShellArg stagingRoot}/observations
 
-      find ${lib.escapeShellArg stateRoot}/storage -mindepth 1 -maxdepth 1 -type d -printf '%f\n' \
+      find ${lib.escapeShellArg sourceMount}/storage -mindepth 1 -maxdepth 1 -type d -printf '%f\n' \
         | LC_ALL=C sort > ${lib.escapeShellArg stagingRoot}/repository-directories
 
       ${backupManifest}/bin/radicle-backup-manifest create \
-        ${lib.escapeShellArg stateRoot} \
+        ${lib.escapeShellArg sourceMount} \
         ${lib.escapeShellArg stagingRoot}/radicle-state.b3m
       ${backupManifest}/bin/radicle-backup-manifest create \
         ${lib.escapeShellArg stagingRoot} \
@@ -177,7 +178,7 @@ let
         /run/current-system/sw/bin/borg-job-${backupJobName} extract "::$archive"
       )
 
-      restored_state=${lib.escapeShellArg restoreRoot}${stateRoot}
+      restored_state=${lib.escapeShellArg restoreRoot}${sourceMount}
       restored_staging=${lib.escapeShellArg restoreRoot}${stagingRoot}
       restored_manifests=${lib.escapeShellArg restoreRoot}${manifestRoot}
       ${backupManifest}/bin/radicle-backup-manifest verify \
@@ -228,7 +229,7 @@ in
 
   services.borgbackup.jobs.${backupJobName} = {
     paths = lib.mkForce [
-      stateRoot
+      sourceMount
       stagingRoot
       manifestRoot
     ];
@@ -257,10 +258,15 @@ in
   };
 
   systemd.services.${backupUnitName}.serviceConfig = {
-    CapabilityBoundingSet = "";
+    AmbientCapabilities = [ "CAP_DAC_READ_SEARCH" ];
+    BindReadOnlyPaths = [ "${stateRoot}:${sourceMount}" ];
+    CapabilityBoundingSet = [ "CAP_DAC_READ_SEARCH" ];
     ExecStartPre = lib.mkForce [ ];
     ExecStopPost = lib.mkForce [ ];
-    InaccessiblePaths = [ "/run/secrets" ];
+    InaccessiblePaths = [
+      "/run/secrets"
+      "/var/lib"
+    ];
     LoadCredential = [
       "${radiclePrivateCredential}:${privateKeyPath}"
       "${borgSshCredential}:${backupSshKeyPath}"

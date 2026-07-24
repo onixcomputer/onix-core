@@ -605,8 +605,9 @@ let
   backupTargetRepo = desktopConfig.services.borgbackup.repos.${expectedHost} or null;
   backupTargetFileSystem = desktopConfig.fileSystems.${backupRepositoryPath} or null;
   backupAuthorizedKeys = desktopConfig.users.users.borg.openssh.authorizedKeys.keys or [ ];
+  backupStateBind = "/var/lib/radicle:/run/radicle-backup-source";
   expectedBackupPaths = [
-    "/var/lib/radicle"
+    "/run/radicle-backup-source"
     "/run/radicle-backup-input"
     "/run/radicle-backup-manifests"
   ];
@@ -628,9 +629,11 @@ let
     && lib.hasInfix "radicle-backup-cleanup" backupJob.postHook
     && lib.subtractLists expectedBackupCredentials backupLoadedCredentials == [ ]
     && lib.subtractLists backupLoadedCredentials expectedBackupCredentials == [ ]
-    && backupBindPaths == [ ]
+    && backupBindPaths == [ backupStateBind ]
     && builtins.elem "/run/secrets" backupService.serviceConfig.InaccessiblePaths
-    && backupService.serviceConfig.CapabilityBoundingSet == ""
+    && builtins.elem "/var/lib" backupService.serviceConfig.InaccessiblePaths
+    && backupService.serviceConfig.AmbientCapabilities == [ "CAP_DAC_READ_SEARCH" ]
+    && backupService.serviceConfig.CapabilityBoundingSet == [ "CAP_DAC_READ_SEARCH" ]
     && backupService.serviceConfig.NoNewPrivileges
     && backupService.serviceConfig.PrivateDevices
     && backupService.serviceConfig.ProtectHome
