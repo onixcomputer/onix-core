@@ -17,7 +17,7 @@ A newly generated identity was not activated because it would have changed the n
 
 ## Activated closure
 
-- NixOS closure: `/nix/store/4ngxcy21xq7aqw5qm50zdi6ifbiyj2lc-nixos-system-aspen1-26.11.20260629.7a1a647`
+- NixOS closure: `/nix/store/9a64xdgdampmy044f1l347bmmjs0gwhp-nixos-system-aspen1-26.11.20260629.7a1a647`
 - Radicle node: `/nix/store/r2hjw60rdpb3faxa6xglywxl77rx9ql2-radicle-node-1.9.1`
 - Radicle HTTP daemon: `/nix/store/zjnwy6nnilq6f4jnsm1h4wjiapwi36va-radicle-httpd-0.25.0`
 - Deployment path: `root@aspen1.local`; this mDNS name is not a client endpoint.
@@ -34,6 +34,9 @@ A newly generated identity was not activated because it would have changed the n
 - The node process environment contained no variable names matching delegate, GitHub, Buildbot, Cloudflare, Vault, Matrix, cache, release, deployment, signing, token, or secret authority.
 - The `radicle` account could read zero of the host secret files observed under `/run/secrets`; systemd loaded only the dedicated node identity and retained the optional passphrase credential boundary.
 - Prometheus, node-exporter, and systemd-exporter were active. The systemd exporter reported `systemd_unit_state{name="radicle-node.service",state="active",type="service"} 1`, and the Prometheus query returned that series for Aspen1.
+- Prometheus loaded `RadicleNodeNotActive`, `RadicleHttpdNotActive`, and `RadiclePolicyReconcileFailed`. The reconciliation failure series was present with value zero.
+- `radicle-policy-reconcile.service` completed successfully with zero additions and removals, its timer was active, its network namespace admitted only `AF_UNIX`, `/run/secrets` was inaccessible, and the unit had no credential directives.
+- A bounded negative probe added the public Heartwood RID as an undeclared native seed policy, started reconciliation, and observed the policy removed. Cleanup and a second reconciliation left `rad seed` reporting no policies.
 
 ## Negative observations and bounded blockers
 
