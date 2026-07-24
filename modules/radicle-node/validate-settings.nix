@@ -13,6 +13,7 @@ let
   expectedNodeFingerprint = "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE";
   requiredSignedRefsFeature = "parent";
   httpsPort = 443;
+  canonicalRepositoryIdPattern = "rad:z[1-9A-HJ-NP-Za-km-z]+";
 
   rejectUnless = condition: message: lib.optional (!condition) message;
   isWildcard =
@@ -41,8 +42,17 @@ let
       && !(lib.hasPrefix "http://" settings.httpsServerName)
       && !(lib.hasPrefix "https://" settings.httpsServerName)
     );
-  validRepositoryIds = builtins.all (rid: lib.hasPrefix "rad:" rid) settings.pinnedRepositories;
+  isCanonicalRepositoryId = rid: builtins.match canonicalRepositoryIdPattern rid != null;
+  validRepositoryIds = builtins.all isCanonicalRepositoryId settings.pinnedRepositories;
   uniqueRepositoryIds = lib.unique settings.pinnedRepositories == settings.pinnedRepositories;
+  validHttpsGitRepositoryIds = builtins.all isCanonicalRepositoryId settings.httpsGitRepositories;
+  uniqueHttpsGitRepositoryIds =
+    lib.unique settings.httpsGitRepositories == settings.httpsGitRepositories;
+  validHttpsAdmission =
+    if settings.httpsServerName == null then
+      settings.httpsGitRepositories == [ ]
+    else
+      settings.httpsGitRepositories != [ ];
 in
 lib.concatLists [
   (rejectUnless (lib.versionAtLeast packageVersion minimumNodeVersion) "radicle-node package must be version ${minimumNodeVersion} or later")
@@ -82,9 +92,12 @@ lib.concatLists [
     settings.httpdEnabled || settings.httpsServerName == null
   ) "httpsServerName requires the read-only HTTP gateway")
   (rejectUnless validHttpsName "httpsServerName must be a public DNS name without scheme or .local suffix")
+  (rejectUnless validHttpsAdmission "public HTTPS requires a non-empty HTTPS Git repository allowlist, and an allowlist requires public HTTPS")
+  (rejectUnless validHttpsGitRepositoryIds "httpsGitRepositories must contain only canonical public rad:z repository IDs")
+  (rejectUnless uniqueHttpsGitRepositoryIds "httpsGitRepositories must not contain duplicate repository IDs")
   (rejectUnless (
     settings.minimumSignedRefsFeature == requiredSignedRefsFeature
   ) "minimumSignedRefsFeature must remain parent")
-  (rejectUnless validRepositoryIds "pinnedRepositories must contain only rad: repository IDs")
+  (rejectUnless validRepositoryIds "pinnedRepositories must contain only canonical rad:z repository IDs")
   (rejectUnless uniqueRepositoryIds "pinnedRepositories must not contain duplicate repository IDs")
 ]

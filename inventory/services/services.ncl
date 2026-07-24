@@ -471,6 +471,7 @@ let radicle_http_port = 8080 in
         httpListenAddress = "127.0.0.1",
         httpListenPort = radicle_http_port,
         httpsServerName = null,
+        httpsGitRepositories = [],
         minimumSignedRefsFeature = "parent",
         pinnedRepositories = [],
       },

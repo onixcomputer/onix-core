@@ -16,6 +16,7 @@ let default_http_port = 8080 in
     httpListenAddress = { type = "string", default = "127.0.0.1", description = "Loopback address for the read-only Radicle HTTP gateway" },
     httpListenPort = { type = "port", default = default_http_port, description = "Loopback Radicle HTTP gateway port" },
     httpsServerName = { type = "nullable_string", default = null, description = "Optional public HTTPS origin; null keeps the gateway local-only" },
+    httpsGitRepositories = { type = "array_string", default = [], description = "Canonical public Radicle repository IDs admitted to exact read-only HTTPS Git routes" },
     minimumSignedRefsFeature = { type = "enum", values = ["root", "parent"], default = "parent", description = "Minimum signed-reference feature required by acquisition probes" },
     pinnedRepositories = { type = "array_string", default = [], description = "Public Radicle repository IDs pinned in explorer metadata; this does not authorize seeding or filter HTTP storage" },
   },

@@ -13,6 +13,12 @@ let
   privateStateDirectoryMode = "0700";
   privateUmask = "0077";
   httpsEnabled = settings.httpdEnabled && settings.httpsServerName != null;
+  httpBackend = "http://${settings.httpListenAddress}:${toString settings.httpListenPort}";
+  mkHttpsGitLocations = import ./mk-https-git-locations.nix { inherit lib; };
+  httpsGitLocations = mkHttpsGitLocations {
+    backend = httpBackend;
+    repositoryIds = settings.httpsGitRepositories;
+  };
   nodeSettings = {
     inherit (settings) alias;
     relay = "always";
@@ -78,7 +84,14 @@ in
     };
   };
 
-  services.nginx.enable = lib.mkIf httpsEnabled true;
+  services.nginx = {
+    enable = lib.mkIf httpsEnabled true;
+    virtualHosts = lib.optionalAttrs httpsEnabled {
+      ${settings.httpsServerName}.locations = httpsGitLocations.repositories // {
+        "/" = lib.mkForce httpsGitLocations.default;
+      };
+    };
+  };
 
   networking.firewall = {
     allowedTCPPorts = lib.optionals httpsEnabled [ httpsPort ];

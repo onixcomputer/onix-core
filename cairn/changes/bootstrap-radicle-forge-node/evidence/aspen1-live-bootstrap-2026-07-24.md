@@ -13,7 +13,7 @@ This bounded observation records the first activation of the reviewed Radicle se
 - The current private and public halves both produced the persisted fingerprint before deployment.
 - The node resumed as `z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8`.
 
-A newly generated identity was not activated because it would have changed the node ID and stranded the inherited state. Public HTTPS remains disabled until inherited repository exposure is constrained by an accepted allowlist and non-enumeration boundary.
+A newly generated identity was not activated because it would have changed the node ID and stranded the inherited state. The module now lowers an accepted canonical RID allowlist into exact Git upload-pack routes with a default 404, but public HTTPS remains disabled until a real pilot RID and stable DNS/TLS name are admitted.
 
 ## Activated closure
 
@@ -38,6 +38,6 @@ A newly generated identity was not activated because it would have changed the n
 
 - The first activation rejected a newly generated identity because it did not match the persisted fingerprint. This was the correct fail-closed behavior and led to recovery rather than state deletion or identity rotation.
 - The HTTP gateway is intentionally loopback-only. Stable DNS/TLS and a repository allowlist have not been admitted, so HTTPS exact-object acquisition has not passed.
-- The inherited 56 GiB store has not yet been classified against the future public repository allowlist. It MUST NOT be exposed through a public explorer or Git gateway in its current form.
+- The inherited 56 GiB store has not yet been classified against the public repository allowlist. It MUST NOT be exposed through a public explorer or a wildcard Git gateway; the exact-route proxy currently has no production RID or public origin.
 - Exact-object native acquisition from an independent Radicle client, exact-object HTTPS Git acquisition, unauthorized-repository behavior at the future proxy, writable-operation rejection, monitoring acceptance, off-host backup, clean restore, and key-loss recovery remain open.
 - This observation does not prove high availability, a second failure domain, repository correctness, delegate authority, CI isolation beyond the observed unit boundary, release readiness, private-repository confidentiality, or complete recovery.

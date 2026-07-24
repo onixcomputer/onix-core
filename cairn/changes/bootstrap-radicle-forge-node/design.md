@@ -62,7 +62,7 @@ Completion means `aspen1`, deployed through `root@aspen1.local`, runs a persiste
 
 ### Decision: Expose ordinary Git through a read-only HTTPS boundary
 
-**Choice:** `radicle-httpd` reads local Radicle storage behind the repository's reviewed HTTPS proxy and DNS/TLS path. Direct service listeners remain bound to the declared private interface or loopback unless the typed policy explicitly admits a public protocol listener. Cargo and Nix use the HTTPS Git endpoint; native Radicle peers use the separately declared node endpoint.
+**Choice:** `radicle-httpd` reads local Radicle storage only on loopback. When typed policy supplies a public DNS name and a non-empty canonical RID allowlist, Nginx exposes exactly two smart-HTTP routes per admitted repository: GET `/<rid>.git/info/refs?service=git-upload-pack` and POST `/<rid>.git/git-upload-pack`. The default route returns 404, and `/api`, `/raw`, aliases, namespaces, enumeration, receive-pack, undeclared RIDs, extra queries, and other methods are not proxied. Direct service listeners remain bound to the declared private interface or loopback. Cargo and Nix use the HTTPS Git endpoint; native Radicle peers use the separately declared node endpoint.
 
 **Rationale:** The pilot needs compatibility with ordinary Git clients while keeping HTTP exposure, peer synchronization, and repository authority distinct.
 

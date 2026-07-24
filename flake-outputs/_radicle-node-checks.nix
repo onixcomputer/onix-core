@@ -25,6 +25,8 @@ let
   httpAddress = "127.0.0.1";
   httpPort = 8080;
   httpsPort = 443;
+  httpsServerName = "git.onix.example";
+  httpsBackend = "http://${httpAddress}:${toString httpPort}";
   identityGeneratorName = "radicle-node-radicle-forge-bootstrap";
   privateKeyFileName = "node-private-key";
   publicKeyFileName = "node-public-key";
@@ -36,6 +38,8 @@ let
   nodePackage = self.packages.${system}.radicle-node;
   httpdPackage = self.packages.${system}.radicle-httpd;
   validateSettings = import ../modules/radicle-node/validate-settings.nix { inherit lib; };
+  mkHttpsGitLocations = import ../modules/radicle-node/mk-https-git-locations.nix { inherit lib; };
+  mkNixosConfig = import ../modules/radicle-node/mk-nixos-config.nix { inherit lib; };
 
   positiveSettings = {
     inherit deploymentTarget;
@@ -51,6 +55,7 @@ let
     httpListenAddress = httpAddress;
     httpListenPort = httpPort;
     httpsServerName = null;
+    httpsGitRepositories = [ ];
     minimumSignedRefsFeature = "parent";
     pinnedRepositories = [ pinnedRepository ];
   };
@@ -60,6 +65,46 @@ let
     packageVersion = nodePackage.version;
     actualHost = expectedHost;
   };
+
+  httpsSettings = positiveSettings // {
+    inherit httpsServerName;
+    httpsGitRepositories = [ pinnedRepository ];
+  };
+  httpsModuleConfig = mkNixosConfig {
+    settings = httpsSettings;
+    inherit nodePackage httpdPackage;
+    privateKeyPath = "/run/credentials/radicle-node.service/dev.radicle.node.secret";
+    publicKeyPath = "/var/lib/radicle/keys/radicle.pub";
+  };
+  httpsGitLocations = mkHttpsGitLocations {
+    backend = httpsBackend;
+    repositoryIds = httpsSettings.httpsGitRepositories;
+  };
+  httpsRepositoryPath = lib.removePrefix "rad:" pinnedRepository;
+  infoRefsLocationName = "= /${httpsRepositoryPath}.git/info/refs";
+  uploadPackLocationName = "= /${httpsRepositoryPath}.git/git-upload-pack";
+  expectedHttpsLocationNames = [
+    infoRefsLocationName
+    uploadPackLocationName
+  ];
+  actualHttpsLocationNames = builtins.attrNames httpsGitLocations.repositories;
+  infoRefsLocation = httpsGitLocations.repositories.${infoRefsLocationName};
+  uploadPackLocation = httpsGitLocations.repositories.${uploadPackLocationName};
+  loweredHttpsLocations = httpsModuleConfig.services.nginx.virtualHosts.${httpsServerName}.locations;
+  loweredDefaultLocation = loweredHttpsLocations."/";
+  httpsRoutePolicyValid =
+    actualHttpsLocationNames == lib.sort builtins.lessThan expectedHttpsLocationNames
+    && httpsGitLocations.default.return == 404
+    && infoRefsLocation.proxyPass == httpsBackend
+    && uploadPackLocation.proxyPass == httpsBackend
+    && lib.hasInfix ''if ($args != "service=git-upload-pack")'' infoRefsLocation.extraConfig
+    && lib.hasInfix "limit_except GET" infoRefsLocation.extraConfig
+    && lib.hasInfix ''if ($args != "")'' uploadPackLocation.extraConfig
+    && lib.hasInfix "limit_except POST" uploadPackLocation.extraConfig
+    && builtins.hasAttr infoRefsLocationName loweredHttpsLocations
+    && builtins.hasAttr uploadPackLocationName loweredHttpsLocations
+    && loweredDefaultLocation._type == "override"
+    && loweredDefaultLocation.content.return == 404;
 
   negativeCases = [
     {
@@ -215,6 +260,47 @@ let
       expected = "public DNS name";
     }
     {
+      name = "https-without-allowlist";
+      settings = positiveSettings // {
+        inherit httpsServerName;
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "public HTTPS requires a non-empty HTTPS Git repository allowlist";
+    }
+    {
+      name = "allowlist-without-https";
+      settings = positiveSettings // {
+        httpsGitRepositories = [ pinnedRepository ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "an allowlist requires public HTTPS";
+    }
+    {
+      name = "invalid-https-rid";
+      settings = positiveSettings // {
+        inherit httpsServerName;
+        httpsGitRepositories = [ "rad:../host-secret" ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "only canonical public rad:z repository IDs";
+    }
+    {
+      name = "duplicate-https-rid";
+      settings = positiveSettings // {
+        inherit httpsServerName;
+        httpsGitRepositories = [
+          pinnedRepository
+          pinnedRepository
+        ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "httpsGitRepositories must not contain duplicate repository IDs";
+    }
+    {
       name = "weak-signed-refs";
       settings = positiveSettings // {
         minimumSignedRefsFeature = "root";
@@ -230,7 +316,7 @@ let
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "only rad: repository IDs";
+      expected = "only canonical rad:z repository IDs";
     }
     {
       name = "duplicate-rid";
@@ -307,6 +393,7 @@ let
     "httpListenAddress"
     "httpListenPort"
     "httpsServerName"
+    "httpsGitRepositories"
     "minimumSignedRefsFeature"
     "pinnedRepositories"
   ];
@@ -367,6 +454,10 @@ in
           ${lib.optionalString (missingSchemaNegativeFields != [ ]) ''
             echo "invalid Nickel Radicle settings missed expected fields" >&2
             printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" missingSchemaNegativeFields)} >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!httpsRoutePolicyValid) ''
+            echo "HTTPS Git proxy routes do not fail closed around the admitted repository set" >&2
             exit 1
           ''}
           ${lib.optionalString (failedAssertions != [ ]) ''
