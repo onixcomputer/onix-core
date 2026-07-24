@@ -1554,17 +1554,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1784910977,
-        "narHash": "sha256-odl0Y2C/dq89IBx0tg0CniccpwL0WWaofPRnmerA9mY=",
-        "owner": "OnixResearch",
-        "repo": "tenstorrent.nix",
-        "rev": "e38de0e9cdb822370147fa662ece98cde28f01d1",
-        "type": "github"
+        "lastModified": 1784912733,
+        "narHash": "sha256-i+30gsojomZBJ43k4PcXzL+aGsbhqRxGVA9zWAC/QjQ=",
+        "ref": "refs/heads/main",
+        "rev": "9bf6c0af81e0c188f07d709341ec385bfa07deda",
+        "revCount": 26,
+        "type": "git",
+        "url": "ssh://git@github.com/OnixResearch/tenstorrent.nix.git"
       },
       "original": {
-        "owner": "OnixResearch",
-        "repo": "tenstorrent.nix",
-        "type": "github"
+        "type": "git",
+        "url": "ssh://git@github.com/OnixResearch/tenstorrent.nix.git"
       }
     },
     "tigerstyle": {
