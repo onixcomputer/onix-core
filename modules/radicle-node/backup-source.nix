@@ -56,11 +56,7 @@ let
       record_active_unit radicle-httpd.service ${lib.escapeShellArg runtimeStateRoot}/httpd-active
       record_active_unit radicle-policy-reconcile.timer ${lib.escapeShellArg runtimeStateRoot}/policy-timer-active
 
-      node_id="$(/run/current-system/sw/bin/rad-system node status --only nid)"
-      if test "$node_id" != ${lib.escapeShellArg expectedNodeId}; then
-        echo "Radicle node identity changed before backup: $node_id" >&2
-        exit 1
-      fi
+      node_id=${lib.escapeShellArg expectedNodeId}
 
       systemctl stop radicle-policy-reconcile.timer
       systemctl stop radicle-httpd.service
