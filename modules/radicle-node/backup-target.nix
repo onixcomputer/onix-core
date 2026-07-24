@@ -9,7 +9,7 @@ let
   backupRoot = "/var/lib/radicle-backup";
   backupRepository = "${backupRoot}/aspen1";
   backupQuota = "256G";
-  backupDirectoryMode = "0700";
+  backupDirectoryMode = "0710";
   zfs = "${config.boot.zfs.package}/bin/zfs";
   findmnt = "${pkgs.util-linux}/bin/findmnt";
   repositoryConfig = config.services.borgbackup.repos.aspen1 or null;
@@ -44,6 +44,7 @@ in
         echo "Radicle backup root is not mounted from ${backupDataset}" >&2
         exit 1
       fi
+      chown root:borg ${lib.escapeShellArg backupRoot}
       chmod ${backupDirectoryMode} ${lib.escapeShellArg backupRoot}
     '';
   };

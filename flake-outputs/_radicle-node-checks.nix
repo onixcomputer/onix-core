@@ -639,6 +639,8 @@ let
     && builtins.length backupAuthorizedKeys == 1
     && lib.hasInfix "--restrict-to-repository" (builtins.head backupAuthorizedKeys)
     && lib.hasInfix "quota=${toString backupDatasetQuotaGiB}G" desktopConfig.system.activationScripts.radicle-backup-zfs-dataset.text
+    && lib.hasInfix "chown root:borg" desktopConfig.system.activationScripts.radicle-backup-zfs-dataset.text
+    && lib.hasInfix "chmod 0710" desktopConfig.system.activationScripts.radicle-backup-zfs-dataset.text
     && builtins.elem backupRepositoryPath desktopConfig.systemd.services.borgbackup-repo-aspen1.unitConfig.RequiresMountsFor;
   radicleServiceAbsent = config: !(builtins.hasAttr "radicle-node" config.systemd.services);
   identityGeneratorAbsent =
