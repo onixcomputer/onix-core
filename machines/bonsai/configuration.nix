@@ -76,7 +76,7 @@ in
     '';
     knownHosts.britton-desktop = {
       hostNames = [ "britton-desktop" ];
-      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIe2N5OW2IY12lTvJZOFnMxw74eA/UhWJvCAd9OhUpsE";
+      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFg0ioFt2lLWBUPzmXIfhHoqVHZiH3yFW3hDvKVrmrb+";
     };
   };
 

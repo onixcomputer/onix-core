@@ -55,6 +55,11 @@ let Positive =
   )
 in
 
+let TouchpadHostOverride = {
+  tap | doc "Override tap-to-click for one host" | Bool | optional,
+}
+in
+
 let calibration_matrix_length = 6 in
 let CalibrationMatrix =
   std.contract.from_validator (match {
@@ -83,6 +88,11 @@ in
     scrollFactor | doc "Touchpad scroll multiplier" | Positive = 0.85,
     tapButtonMap | doc "Touchpad tap button order" | TapButtonMap = "left-right-middle",
     middleEmulation | doc "Enable left+right middle-click emulation" | Bool = true,
+    hostOverrides | doc "Per-host touchpad overrides keyed by NixOS hostname" | { _ : TouchpadHostOverride } = {
+      aspen3 = {
+        tap = false,
+      },
+    },
   },
   mouse | doc "Mouse configuration" = {
     focusFollows | doc "Focus follows mouse" | Bool = true,

@@ -188,6 +188,10 @@ in
   time.timeZone = "America/New_York";
   time.hardwareClockInLocalTime = true; # Prevent time sync issues with Windows
 
+  users.users.brittonr.openssh.authorizedKeys.keys = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII6Mya4qU+UPAe2FUnR9L+s1Ny8MkZSA14X+aiGRJV/g id_bd"
+  ];
+
   nix.settings = {
     # Enable experimental features for uid-range support and Nix build cgroups.
     experimental-features = [

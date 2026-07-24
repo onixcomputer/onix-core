@@ -31,6 +31,7 @@ let
     "hfp_ag"
   ];
   ldacQualityMode = "hq";
+  touchpadTapToClick = false;
 in
 {
   imports = [
@@ -57,6 +58,9 @@ in
 
     # Enable Thunderbolt/USB4 authorization for user-security domains.
     hardware.bolt.enable = true;
+
+    # Keep aspen3's touchpad palm-safe outside Niri too.
+    libinput.touchpad.tapping = lib.mkForce touchpadTapToClick;
 
     # Windows Hello-style face authentication using the built-in IR camera.
     # Keep password fallback available; the IR stream is /dev/video2 on GZ302EAC.

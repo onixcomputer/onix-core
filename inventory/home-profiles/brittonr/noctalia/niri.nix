@@ -3,12 +3,23 @@
   pkgs,
   lib,
   config,
+  osConfig ? null,
   ...
 }:
 let
   # Access the current theme
   theme = config.theme.data;
   mon = config.monitors;
+  hostName = if osConfig == null then "" else osConfig.networking.hostName or "";
+
+  resolveTouchpadForHost =
+    touchpad: host:
+    let
+      hostOverride = if host == "" then { } else touchpad.hostOverrides.${host} or { };
+    in
+    touchpad // hostOverride;
+
+  effectiveTouchpad = resolveTouchpadForHost config.input.touchpad hostName;
 
   # Import niri keybindings from separate file
   niriBinds = import ./lib/niri-keybinds.nix {
@@ -51,12 +62,12 @@ let
                                   }
 
                                   touchpad {
-                                      ${if config.input.touchpad.tap then "tap" else ""}
+                                      ${if effectiveTouchpad.tap then "tap" else ""}
                                       ${
-                                        if config.input.touchpad.naturalScroll then "natural-scroll" else ""
+                                        if effectiveTouchpad.naturalScroll then "natural-scroll" else ""
                                       }
                                       ${
-                                        if config.input.touchpad.disableWhileTyping then
+                                        if effectiveTouchpad.disableWhileTyping then
                                           ''
                                             dwt  // disable while typing
                                             dwtp // disable while trackpointing''
@@ -65,14 +76,14 @@ let
                                       }
                                       drag true
                                       drag-lock
-                                      click-method "${config.input.touchpad.clickMethod}"
-                                      scroll-method "${config.input.touchpad.scrollMethod}"
-                                      scroll-factor ${toString config.input.touchpad.scrollFactor}
-                                      tap-button-map "${config.input.touchpad.tapButtonMap}"
-                                      accel-speed ${toString config.input.touchpad.accelSpeed}
-                                      accel-profile "${config.input.touchpad.accelProfile}"
+                                      click-method "${effectiveTouchpad.clickMethod}"
+                                      scroll-method "${effectiveTouchpad.scrollMethod}"
+                                      scroll-factor ${toString effectiveTouchpad.scrollFactor}
+                                      tap-button-map "${effectiveTouchpad.tapButtonMap}"
+                                      accel-speed ${toString effectiveTouchpad.accelSpeed}
+                                      accel-profile "${effectiveTouchpad.accelProfile}"
                                       ${
-                                        if config.input.touchpad.middleEmulation then "middle-emulation" else ""
+                                        if effectiveTouchpad.middleEmulation then "middle-emulation" else ""
                                       }
                                   }
 

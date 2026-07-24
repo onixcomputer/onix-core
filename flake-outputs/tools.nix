@@ -11,10 +11,21 @@ let
   sopsViz = (import ./_sops-viz.nix) { inherit pkgs; };
 
   buildbot-pr-check = pkgs.callPackage ../pkgs/buildbot-pr-check { };
+
+  wasmPluginsWithHostImports =
+    self.inputs.onix-wasm.packages.${pkgs.stdenv.hostPlatform.system}.wasm-plugins.overrideAttrs
+      (old: {
+        RUSTFLAGS = lib.concatStringsSep " " (
+          lib.filter (flag: flag != "") [
+            (old.RUSTFLAGS or "")
+            "-Clink-arg=--allow-undefined"
+          ]
+        );
+      });
 in
 {
   packages = {
-    inherit (self.inputs.onix-wasm.packages.${pkgs.stdenv.hostPlatform.system}) wasm-plugins;
+    wasm-plugins = wasmPluginsWithHostImports;
     nix-eval-warnings = pkgs.callPackage ../pkgs/nix-eval-warnings { };
     claude-md = pkgs.python3.pkgs.callPackage ../pkgs/claude-md { };
     hx-oil = pkgs.callPackage ../pkgs/hx-oil { };

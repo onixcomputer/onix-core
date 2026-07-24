@@ -1,4 +1,4 @@
-# Focused Home Manager migration checks.
+# Focused Home Manager and workstation input checks.
 {
   self,
   pkgs,
@@ -12,10 +12,20 @@ let
 
   desktopConfig = self.nixosConfigurations.britton-desktop.config;
   desktopHome = desktopConfig.home-manager.users.brittonr;
+  aspen3Config = self.nixosConfigurations.aspen3.config;
+  aspen3Home = aspen3Config.home-manager.users.brittonr;
   actualHomeStateVersion = desktopHome.home.stateVersion;
   actualSystemStateVersion = desktopConfig.system.stateVersion;
   neovimConfig = desktopHome.programs.neovim;
   cargoConfigSource = desktopHome.home.file.".cargo/config.toml".source;
+  wildcardGestureEdge = "*";
+  aspen3TouchpadTapOverride = aspen3Home.input.touchpad.hostOverrides.aspen3.tap or true;
+  aspen3SystemTouchpadTapping = aspen3Config.services.libinput.touchpad.tapping;
+  aspen3NiriInstallActivation = aspen3Home.home.activation.installNiriConfig.data;
+  aspen3NiriInstallActivationFile = pkgs.writeText "aspen3-install-niri-config" aspen3NiriInstallActivation;
+  aspen3WildcardMultiFingerBindings = lib.filter (
+    binding: binding.fingers > 1 && binding.edge == wildcardGestureEdge
+  ) aspen3Home.gestures.lisgd.bindings;
 
   boolString = value: if value then "true" else "false";
 
@@ -101,8 +111,29 @@ let
     }
   ];
 
+  palmAssertions = [
+    {
+      name = "positive: aspen3 host override disables Niri tap-to-click";
+      condition = aspen3TouchpadTapOverride == false;
+    }
+    {
+      name = "positive: aspen3 system libinput tapping is disabled";
+      condition = aspen3SystemTouchpadTapping == false;
+    }
+    {
+      name = "negative: aspen3 multi-finger touchscreen gestures do not use wildcard edges";
+      condition = aspen3WildcardMultiFingerBindings == [ ];
+    }
+    {
+      name = "negative: aspen3 system libinput tapping no longer preserves the inherited enabled default";
+      condition = aspen3SystemTouchpadTapping != true;
+    }
+  ];
+
   failedAssertions = lib.filter (assertion: !assertion.condition) assertions;
   failedNames = lib.concatMapStringsSep "; " (assertion: assertion.name) failedAssertions;
+  failedPalmAssertions = lib.filter (assertion: !assertion.condition) palmAssertions;
+  failedPalmNames = lib.concatMapStringsSep "; " (assertion: assertion.name) failedPalmAssertions;
   report = builtins.toFile "home-manager-2605-migration-report.txt" ''
     Home Manager 26.05 migration check
 
@@ -117,6 +148,19 @@ let
       assertion: "- ${assertion.name}: ${if assertion.condition then "PASS" else "FAIL"}"
     ) assertions}
   '';
+  palmReport = builtins.toFile "aspen3-input-palm-rejection-report.txt" ''
+    aspen3 input palm rejection check
+
+    Effective values:
+    - input.touchpad.hostOverrides.aspen3.tap = ${boolString aspen3TouchpadTapOverride}
+    - services.libinput.touchpad.tapping = ${boolString aspen3SystemTouchpadTapping}
+    - wildcard multi-finger lisgd binding count = ${toString (builtins.length aspen3WildcardMultiFingerBindings)}
+
+    Assertions:
+    ${lib.concatMapStringsSep "\n" (
+      assertion: "- ${assertion.name}: ${if assertion.condition then "PASS" else "FAIL"}"
+    ) palmAssertions}
+  '';
 in
 {
   checks = lib.optionalAttrs (system == "x86_64-linux") {
@@ -127,6 +171,35 @@ in
         ''
       else
         throw "home-manager-2605-migration failed: ${failedNames}";
+
+    aspen3-input-palm-rejection =
+      if failedPalmAssertions == [ ] then
+        pkgs.runCommand "aspen3-input-palm-rejection"
+          {
+            inherit palmReport;
+            niriActivation = aspen3NiriInstallActivationFile;
+          }
+          ''
+            set -eu
+
+            niri_config="$(${pkgs.gnused}/bin/sed -n 's|.*install .* \(/nix/store/[^ ]*-niri-config.kdl\) .*|\1|p' "$niriActivation")"
+            if [ -z "$niri_config" ]; then
+              echo "positive: aspen3 activation must install the generated Niri config" >&2
+              exit 1
+            fi
+            if ! ${pkgs.gnugrep}/bin/grep -Eq '^[[:space:]]*dwt([[:space:]]|$)' "$niri_config"; then
+              echo "positive: rendered aspen3 Niri config must keep disable-while-typing" >&2
+              exit 1
+            fi
+            if ${pkgs.gnugrep}/bin/grep -Eq '^[[:space:]]*tap([[:space:]]|$)' "$niri_config"; then
+              echo "negative: rendered aspen3 Niri config must not enable tap-to-click" >&2
+              exit 1
+            fi
+
+            cp "$palmReport" "$out"
+          ''
+      else
+        throw "aspen3-input-palm-rejection failed: ${failedPalmNames}";
 
     kache-wrapper-workspace-wrapper-bypass = kacheWrapperWorkspaceWrapperBypass;
   };

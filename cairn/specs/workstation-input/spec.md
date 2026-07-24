@@ -18,6 +18,7 @@ r[onix.aspen3.touch.niri.touchpad]
 - THEN the config includes a declared `scroll-factor`
 - AND the config includes a declared `tap-button-map`
 - AND the config includes middle-click emulation when enabled in typed input data
+- AND the resolved `aspen3` touchpad policy disables tap-to-click
 
 #### Scenario: Overview drag can switch workspaces
 
@@ -37,8 +38,9 @@ r[onix.aspen3.touch.lisgd.multifinger]
 - GIVEN typed `lisgd` gesture bindings are evaluated
 - WHEN the `lisgd-niri` wrapper is rendered
 - THEN the wrapper includes edge-constrained two-finger workspace gestures
-- AND the wrapper includes three-finger workspace gestures
-- AND the wrapper includes four-finger overview gestures
+- AND the wrapper includes edge-constrained three-finger workspace gestures
+- AND the wrapper includes edge-constrained four-finger overview gestures
+- AND no multi-finger touchscreen gesture uses the wildcard edge
 
 #### Scenario: Hosts without touchscreens exit cleanly
 

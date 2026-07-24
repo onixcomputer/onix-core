@@ -47,7 +47,6 @@ in
               gst_all_1.gst-plugins-good
               gst_all_1.gst-plugins-bad
               gst_all_1.gst-plugins-ugly
-              gst_all_1.gst-vaapi
             ]
           }"
       '';
@@ -87,6 +86,5 @@ in
     gst_all_1.gst-plugins-good
     gst_all_1.gst-plugins-bad # Contains nvcodec for NVIDIA hardware encoding
     gst_all_1.gst-plugins-ugly
-    gst_all_1.gst-vaapi # VAAPI support for hardware encoding
   ];
 }

@@ -139,7 +139,7 @@ in
       {
         fingers = 3,
         direction = "LR",
-        edge = "*",
+        edge = "L",
         distance = "M",
         actMode = "R",
         action = "focus-workspace-up",
@@ -148,7 +148,7 @@ in
       {
         fingers = 3,
         direction = "RL",
-        edge = "*",
+        edge = "R",
         distance = "M",
         actMode = "R",
         action = "focus-workspace-down",
@@ -157,7 +157,7 @@ in
       {
         fingers = 4,
         direction = "DU",
-        edge = "*",
+        edge = "B",
         distance = "M",
         actMode = "R",
         action = "toggle-overview",
@@ -166,7 +166,7 @@ in
       {
         fingers = 4,
         direction = "UD",
-        edge = "*",
+        edge = "T",
         distance = "M",
         actMode = "R",
         action = "toggle-overview",

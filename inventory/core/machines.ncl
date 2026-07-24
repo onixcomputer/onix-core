@@ -178,6 +178,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "backup",
         "syncthing",
         "amd-gpu",
+        "gaming",
       ],
       deploy.targetHost = "root@aspen3",
     },
