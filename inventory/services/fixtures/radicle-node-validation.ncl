@@ -2,6 +2,7 @@
 let sc = import "../settings-contracts.ncl" in
 let default_node_port = 8776 in
 let default_http_port = 8080 in
+let default_https_origin_port = 8081 in
 {
   positive =
     sc.validate_fields
@@ -22,7 +23,11 @@ let default_http_port = 8080 in
         httpdEnabled = true,
         httpListenAddress = "127.0.0.1",
         httpListenPort = default_http_port,
-        httpsServerName = null,
+        httpsEnabled = false,
+        httpsServerName = "git.onix.computer",
+        httpsTransport = "cloudflare-tunnel",
+        httpsOriginListenAddress = "127.0.0.1",
+        httpsOriginListenPort = default_https_origin_port,
         httpsGitRepositories = [],
         minimumSignedRefsFeature = "parent",
         pinnedRepositories = ["rad:z3gqcJUoA1n9HaHKufZs5FCSGazv5"],
@@ -46,7 +51,11 @@ let default_http_port = 8080 in
         httpdEnabled = "yes",
         httpListenAddress = 1,
         httpListenPort = "not-a-port",
+        httpsEnabled = "yes",
         httpsServerName = 1,
+        httpsTransport = "plaintext",
+        httpsOriginListenAddress = 1,
+        httpsOriginListenPort = "not-a-port",
         httpsGitRepositories = [1],
         minimumSignedRefsFeature = "leaf",
         pinnedRepositories = [1],

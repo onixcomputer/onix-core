@@ -42,6 +42,15 @@ let
       && !(lib.hasPrefix "http://" settings.httpsServerName)
       && !(lib.hasPrefix "https://" settings.httpsServerName)
     );
+  validHttpsTransport = builtins.elem settings.httpsTransport [
+    "direct-acme"
+    "cloudflare-tunnel"
+  ];
+  validHttpsOriginAddress = isLoopbackHttp settings.httpsOriginListenAddress;
+  httpsOriginPortIsDistinct =
+    settings.httpsOriginListenPort != settings.nodeListenPort
+    && settings.httpsOriginListenPort != settings.httpListenPort
+    && settings.httpsOriginListenPort != httpsPort;
   isCanonicalRepositoryId = rid: builtins.match canonicalRepositoryIdPattern rid != null;
   isSeeded = rid: builtins.elem rid settings.seedRepositories;
   validSeedRepositoryIds = builtins.all isCanonicalRepositoryId settings.seedRepositories;
@@ -54,10 +63,10 @@ let
     lib.unique settings.httpsGitRepositories == settings.httpsGitRepositories;
   httpsGitRepositoriesAreSeeded = builtins.all isSeeded settings.httpsGitRepositories;
   validHttpsAdmission =
-    if settings.httpsServerName == null then
-      settings.httpsGitRepositories == [ ]
+    if settings.httpsEnabled then
+      settings.httpsServerName != null && settings.httpsGitRepositories != [ ]
     else
-      settings.httpsGitRepositories != [ ];
+      settings.httpsGitRepositories == [ ];
 in
 lib.concatLists [
   (rejectUnless (lib.versionAtLeast packageVersion minimumNodeVersion) "radicle-node package must be version ${minimumNodeVersion} or later")
@@ -88,19 +97,22 @@ lib.concatLists [
   (rejectUnless (
     settings.nodeListenPort != settings.httpListenPort
   ) "nodeListenPort and httpListenPort must be distinct")
+  (rejectUnless httpsOriginPortIsDistinct "httpsOriginListenPort, HTTPS, native peer, and HTTP gateway ports must be distinct")
   (rejectUnless (
-    settings.httpsServerName == null
+    !settings.httpsEnabled
     || (settings.nodeListenPort != httpsPort && settings.httpListenPort != httpsPort)
   ) "HTTPS, native peer, and HTTP gateway ports must be distinct")
   (rejectUnless validExternalAddress "externalAddress must be null or a host:nodeListenPort Radicle address without a URL scheme")
   (rejectUnless (isLoopbackHttp settings.httpListenAddress) "httpListenAddress must remain loopback-only")
   (rejectUnless (
-    settings.httpdEnabled || settings.httpsServerName == null
-  ) "httpsServerName requires the read-only HTTP gateway")
+    settings.httpdEnabled || !settings.httpsEnabled
+  ) "httpsEnabled requires the read-only HTTP gateway")
   (rejectUnless validSeedRepositoryIds "seedRepositories must contain only canonical public rad:z repository IDs")
   (rejectUnless uniqueSeedRepositoryIds "seedRepositories must not contain duplicate repository IDs")
   (rejectUnless validHttpsName "httpsServerName must be a public DNS name without scheme or .local suffix")
-  (rejectUnless validHttpsAdmission "public HTTPS requires a non-empty HTTPS Git repository allowlist, and an allowlist requires public HTTPS")
+  (rejectUnless validHttpsTransport "httpsTransport must be direct-acme or cloudflare-tunnel")
+  (rejectUnless validHttpsOriginAddress "httpsOriginListenAddress must remain loopback-only")
+  (rejectUnless validHttpsAdmission "public HTTPS activation requires a server name and non-empty HTTPS Git repository allowlist, and an allowlist requires activation")
   (rejectUnless validHttpsGitRepositoryIds "httpsGitRepositories must contain only canonical public rad:z repository IDs")
   (rejectUnless uniqueHttpsGitRepositoryIds "httpsGitRepositories must not contain duplicate repository IDs")
   (rejectUnless httpsGitRepositoriesAreSeeded "httpsGitRepositories must be a subset of seedRepositories")

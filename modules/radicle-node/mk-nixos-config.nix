@@ -18,7 +18,10 @@ let
   policyInitialDelay = "2m";
   policyInterval = "5m";
   policyJitter = "30s";
-  httpsEnabled = settings.httpdEnabled && settings.httpsServerName != null;
+  publicHttpsEnabled =
+    settings.httpdEnabled && settings.httpsEnabled && settings.httpsServerName != null;
+  directAcmeHttps = publicHttpsEnabled && settings.httpsTransport == "direct-acme";
+  cloudflareTunnelHttps = publicHttpsEnabled && settings.httpsTransport == "cloudflare-tunnel";
   httpBackend = "http://${settings.httpListenAddress}:${toString settings.httpListenPort}";
   mkHttpsGitLocations = import ./mk-https-git-locations.nix { inherit lib; };
   httpsGitLocations = mkHttpsGitLocations {
@@ -93,21 +96,42 @@ in
       package = httpdPackage;
       listenAddress = settings.httpListenAddress;
       listenPort = settings.httpListenPort;
-      nginx = if httpsEnabled then { serverName = settings.httpsServerName; } else null;
+      nginx =
+        if directAcmeHttps then
+          {
+            enableACME = true;
+            forceSSL = true;
+            serverName = settings.httpsServerName;
+          }
+        else
+          null;
     };
   };
 
   services.nginx = {
-    enable = lib.mkIf httpsEnabled true;
-    virtualHosts = lib.optionalAttrs httpsEnabled {
-      ${settings.httpsServerName}.locations = httpsGitLocations.repositories // {
-        "/" = lib.mkForce httpsGitLocations.default;
+    enable = lib.mkIf publicHttpsEnabled true;
+    virtualHosts = lib.optionalAttrs publicHttpsEnabled {
+      ${settings.httpsServerName} = {
+        locations = httpsGitLocations.repositories // {
+          "/" = lib.mkForce httpsGitLocations.default;
+        };
+      }
+      // lib.optionalAttrs cloudflareTunnelHttps {
+        enableACME = false;
+        forceSSL = false;
+        listen = [
+          {
+            addr = settings.httpsOriginListenAddress;
+            port = settings.httpsOriginListenPort;
+            ssl = false;
+          }
+        ];
       };
     };
   };
 
   networking.firewall = {
-    allowedTCPPorts = lib.optionals httpsEnabled [ httpsPort ];
+    allowedTCPPorts = lib.optionals directAcmeHttps [ httpsPort ];
     interfaces.${settings.nodeFirewallInterface}.allowedTCPPorts = [ settings.nodeListenPort ];
   };
 

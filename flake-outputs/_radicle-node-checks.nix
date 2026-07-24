@@ -26,6 +26,9 @@ let
   httpPort = 8080;
   httpsPort = 443;
   httpsServerName = "git.onix.example";
+  httpsTransport = "cloudflare-tunnel";
+  httpsOriginAddress = "127.0.0.1";
+  httpsOriginPort = 8081;
   httpsBackend = "http://${httpAddress}:${toString httpPort}";
   identityGeneratorName = "radicle-node-radicle-forge-bootstrap";
   privateKeyFileName = "node-private-key";
@@ -61,7 +64,11 @@ let
     httpdEnabled = true;
     httpListenAddress = httpAddress;
     httpListenPort = httpPort;
-    httpsServerName = null;
+    httpsEnabled = false;
+    httpsServerName = "git.onix.computer";
+    inherit httpsTransport;
+    httpsOriginListenAddress = httpsOriginAddress;
+    httpsOriginListenPort = httpsOriginPort;
     httpsGitRepositories = [ ];
     minimumSignedRefsFeature = "parent";
     pinnedRepositories = [ pinnedRepository ];
@@ -74,6 +81,7 @@ let
   };
 
   httpsSettings = positiveSettings // {
+    httpsEnabled = true;
     inherit httpsServerName;
     httpsGitRepositories = [ pinnedRepository ];
   };
@@ -84,6 +92,38 @@ let
     publicKeyPath = "/var/lib/radicle/keys/radicle.pub";
     configFile = "/var/lib/radicle/config.json";
   };
+  directAcmeHttpsModuleConfig = mkNixosConfig {
+    settings = httpsSettings // {
+      httpsTransport = "direct-acme";
+    };
+    inherit nodePackage httpdPackage policyReconciler;
+    privateKeyPath = "/run/credentials/radicle-node.service/dev.radicle.node.secret";
+    publicKeyPath = "/var/lib/radicle/keys/radicle.pub";
+    configFile = "/var/lib/radicle/config.json";
+  };
+  mkHttpsTestSystem =
+    moduleConfig:
+    lib.nixosSystem {
+      inherit system;
+      modules = [
+        moduleConfig
+        {
+          networking.hostName = expectedHost;
+          system.stateVersion = "26.11";
+        }
+      ];
+    };
+  cloudflareHttpsTestConfig = (mkHttpsTestSystem httpsModuleConfig).config;
+  directAcmeHttpsTestConfig = (mkHttpsTestSystem directAcmeHttpsModuleConfig).config;
+  cloudflareHttpsVhost = cloudflareHttpsTestConfig.services.nginx.virtualHosts.${httpsServerName};
+  directAcmeHttpsVhost = directAcmeHttpsTestConfig.services.nginx.virtualHosts.${httpsServerName};
+  cloudflareNginxCommand = cloudflareHttpsTestConfig.systemd.services.nginx.serviceConfig.ExecStart;
+  directAcmeNginxCommand = directAcmeHttpsTestConfig.systemd.services.nginx.serviceConfig.ExecStart;
+  directAcmeHttpsPolicyValid =
+    directAcmeHttpsTestConfig.services.radicle.httpd.nginx.serverName == httpsServerName
+    && directAcmeHttpsVhost.enableACME
+    && directAcmeHttpsVhost.forceSSL
+    && builtins.elem httpsPort directAcmeHttpsTestConfig.networking.firewall.allowedTCPPorts;
   httpsGitLocations = mkHttpsGitLocations {
     backend = httpsBackend;
     repositoryIds = httpsSettings.httpsGitRepositories;
@@ -98,7 +138,10 @@ let
   actualHttpsLocationNames = builtins.attrNames httpsGitLocations.repositories;
   infoRefsLocation = httpsGitLocations.repositories.${infoRefsLocationName};
   uploadPackLocation = httpsGitLocations.repositories.${uploadPackLocationName};
-  loweredHttpsLocations = httpsModuleConfig.services.nginx.virtualHosts.${httpsServerName}.locations;
+  rawLoweredHttpsLocations =
+    httpsModuleConfig.services.nginx.virtualHosts.${httpsServerName}.locations;
+  rawLoweredDefaultLocation = rawLoweredHttpsLocations."/";
+  loweredHttpsLocations = cloudflareHttpsVhost.locations;
   loweredDefaultLocation = loweredHttpsLocations."/";
   httpsRoutePolicyValid =
     actualHttpsLocationNames == lib.sort builtins.lessThan expectedHttpsLocationNames
@@ -109,10 +152,19 @@ let
     && lib.hasInfix "limit_except GET" infoRefsLocation.extraConfig
     && lib.hasInfix ''if ($args != "")'' uploadPackLocation.extraConfig
     && lib.hasInfix "limit_except POST" uploadPackLocation.extraConfig
-    && builtins.hasAttr infoRefsLocationName loweredHttpsLocations
-    && builtins.hasAttr uploadPackLocationName loweredHttpsLocations
-    && loweredDefaultLocation._type == "override"
-    && loweredDefaultLocation.content.return == 404;
+    && builtins.hasAttr infoRefsLocationName rawLoweredHttpsLocations
+    && builtins.hasAttr uploadPackLocationName rawLoweredHttpsLocations
+    && rawLoweredDefaultLocation._type == "override"
+    && rawLoweredDefaultLocation.content.return == 404
+    && loweredDefaultLocation.return == 404
+    && cloudflareHttpsTestConfig.services.radicle.httpd.nginx == null
+    && cloudflareHttpsVhost.enableACME == false
+    && cloudflareHttpsVhost.forceSSL == false
+    && builtins.length cloudflareHttpsVhost.listen == 1
+    && (builtins.head cloudflareHttpsVhost.listen).addr == httpsOriginAddress
+    && (builtins.head cloudflareHttpsVhost.listen).port == httpsOriginPort
+    && (builtins.head cloudflareHttpsVhost.listen).ssl == false
+    && !(builtins.elem httpsPort cloudflareHttpsTestConfig.networking.firewall.allowedTCPPorts);
 
   negativeCases = [
     {
@@ -247,21 +299,62 @@ let
       expected = "httpListenAddress must remain loopback-only";
     }
     {
-      name = "https-without-httpd";
+      name = "invalid-https-transport";
       settings = positiveSettings // {
-        httpdEnabled = false;
-        httpsServerName = "code.onix.example";
+        httpsTransport = "plaintext";
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "httpsServerName requires the read-only HTTP gateway";
+      expected = "httpsTransport must be direct-acme or cloudflare-tunnel";
+    }
+    {
+      name = "wildcard-https-origin";
+      settings = positiveSettings // {
+        httpsOriginListenAddress = "0.0.0.0";
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "httpsOriginListenAddress must remain loopback-only";
+    }
+    {
+      name = "https-origin-port-collision";
+      settings = positiveSettings // {
+        httpsOriginListenPort = httpPort;
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "httpsOriginListenPort, HTTPS, native peer, and HTTP gateway ports must be distinct";
+    }
+    {
+      name = "https-without-httpd";
+      settings = positiveSettings // {
+        httpdEnabled = false;
+        httpsEnabled = true;
+        httpsGitRepositories = [ pinnedRepository ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "httpsEnabled requires the read-only HTTP gateway";
+    }
+    {
+      name = "https-without-server-name";
+      settings = positiveSettings // {
+        httpsEnabled = true;
+        httpsServerName = null;
+        httpsGitRepositories = [ pinnedRepository ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "public HTTPS activation requires a server name";
     }
     {
       name = "https-port-collision";
       settings = positiveSettings // {
         nodeListenPort = httpsPort;
         externalAddress = "${nodeAddress}:${toString httpsPort}";
+        httpsEnabled = true;
         httpsServerName = "code.onix.example";
+        httpsGitRepositories = [ pinnedRepository ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
@@ -300,11 +393,12 @@ let
     {
       name = "https-without-allowlist";
       settings = positiveSettings // {
+        httpsEnabled = true;
         inherit httpsServerName;
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "public HTTPS requires a non-empty HTTPS Git repository allowlist";
+      expected = "public HTTPS activation requires a server name and non-empty HTTPS Git repository allowlist";
     }
     {
       name = "allowlist-without-https";
@@ -313,11 +407,12 @@ let
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "an allowlist requires public HTTPS";
+      expected = "an allowlist requires activation";
     }
     {
       name = "invalid-https-rid";
       settings = positiveSettings // {
+        httpsEnabled = true;
         inherit httpsServerName;
         httpsGitRepositories = [ "rad:../host-secret" ];
       };
@@ -328,6 +423,7 @@ let
     {
       name = "duplicate-https-rid";
       settings = positiveSettings // {
+        httpsEnabled = true;
         inherit httpsServerName;
         httpsGitRepositories = [
           pinnedRepository
@@ -341,6 +437,7 @@ let
     {
       name = "https-repository-not-seeded";
       settings = positiveSettings // {
+        httpsEnabled = true;
         inherit httpsServerName;
         seedRepositories = [ ];
         httpsGitRepositories = [ pinnedRepository ];
@@ -472,7 +569,11 @@ let
     "httpdEnabled"
     "httpListenAddress"
     "httpListenPort"
+    "httpsEnabled"
     "httpsServerName"
+    "httpsTransport"
+    "httpsOriginListenAddress"
+    "httpsOriginListenPort"
     "httpsGitRepositories"
     "minimumSignedRefsFeature"
     "pinnedRepositories"
@@ -497,6 +598,8 @@ in
           test -x ${httpdPackage}/bin/radicle-httpd
           test -x ${policyReconciler}/bin/radicle-policy-reconciler
           test -e ${fixtureConfig.services.radicle.configFile}
+          test -n ${lib.escapeShellArg cloudflareNginxCommand}
+          test -n ${lib.escapeShellArg directAcmeNginxCommand}
 
           configured_fingerprint="$(ssh-keygen -lf ${publicKeyPath})"
           case "$configured_fingerprint" in
@@ -538,7 +641,31 @@ in
             exit 1
           ''}
           ${lib.optionalString (!httpsRoutePolicyValid) ''
-            echo "HTTPS Git proxy routes do not fail closed around the admitted repository set" >&2
+            echo "Cloudflare HTTPS Git proxy routes do not fail closed around the admitted repository set" >&2
+            printf '%s\n' ${
+              lib.escapeShellArg (
+                builtins.toJSON {
+                  inherit actualHttpsLocationNames expectedHttpsLocationNames;
+                  defaultReturn = loweredDefaultLocation.return or null;
+                  httpdNginx = cloudflareHttpsTestConfig.services.radicle.httpd.nginx;
+                  inherit (cloudflareHttpsVhost) enableACME forceSSL listen;
+                  firewallPorts = cloudflareHttpsTestConfig.networking.firewall.allowedTCPPorts;
+                }
+              )
+            } >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!directAcmeHttpsPolicyValid) ''
+            echo "direct-ACME HTTPS Git proxy transport does not activate its reviewed TLS boundary" >&2
+            printf '%s\n' ${
+              lib.escapeShellArg (
+                builtins.toJSON {
+                  httpdNginxServerName = directAcmeHttpsTestConfig.services.radicle.httpd.nginx.serverName;
+                  inherit (directAcmeHttpsVhost) enableACME forceSSL listen;
+                  firewallPorts = directAcmeHttpsTestConfig.networking.firewall.allowedTCPPorts;
+                }
+              )
+            } >&2
             exit 1
           ''}
           ${lib.optionalString (!monitoringPolicyValid) ''

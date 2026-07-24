@@ -46,6 +46,7 @@ let ornith_35b_bf16_model = "user.Ornith-1.0-35B-BF16" in
 let radicle_node_address = "100.100.103.95" in
 let radicle_node_port = 8776 in
 let radicle_http_port = 8080 in
+let radicle_https_origin_port = 8081 in
 {
   instances = {
 
@@ -472,7 +473,11 @@ let radicle_http_port = 8080 in
         httpdEnabled = true,
         httpListenAddress = "127.0.0.1",
         httpListenPort = radicle_http_port,
-        httpsServerName = null,
+        httpsEnabled = false,
+        httpsServerName = "git.onix.computer",
+        httpsTransport = "cloudflare-tunnel",
+        httpsOriginListenAddress = "127.0.0.1",
+        httpsOriginListenPort = radicle_https_origin_port,
         httpsGitRepositories = [],
         minimumSignedRefsFeature = "parent",
         pinnedRepositories = [],

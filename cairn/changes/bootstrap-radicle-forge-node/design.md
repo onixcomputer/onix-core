@@ -62,9 +62,9 @@ Completion means `aspen1`, deployed through `root@aspen1.local`, runs a persiste
 
 ### Decision: Expose ordinary Git through a read-only HTTPS boundary
 
-**Choice:** `radicle-httpd` reads local Radicle storage only on loopback. When typed policy supplies a public DNS name and a non-empty canonical RID allowlist, Nginx exposes exactly two smart-HTTP routes per admitted repository: GET `/<rid>.git/info/refs?service=git-upload-pack` and POST `/<rid>.git/git-upload-pack`. The default route returns 404, and `/api`, `/raw`, aliases, namespaces, enumeration, receive-pack, undeclared RIDs, extra queries, and other methods are not proxied. Direct service listeners remain bound to the declared private interface or loopback. Cargo and Nix use the HTTPS Git endpoint; native Radicle peers use the separately declared node endpoint.
+**Choice:** Use the reviewed public origin `git.onix.computer`. Cloudflare Tunnel terminates public TLS and connects only to a dedicated loopback Nginx origin; the Radicle module does not open Aspen1 port 443 in this mode. `radicle-httpd` reads local Radicle storage only on its separate loopback listener. When typed policy also supplies a non-empty canonical RID allowlist, Nginx exposes exactly two smart-HTTP routes per admitted repository: GET `/<rid>.git/info/refs?service=git-upload-pack` and POST `/<rid>.git/git-upload-pack`. The default route returns 404, and `/api`, `/raw`, aliases, namespaces, enumeration, receive-pack, undeclared RIDs, extra queries, and other methods are not proxied. Direct service listeners remain bound to the declared private interface or loopback. Cargo and Nix use the HTTPS Git endpoint; native Radicle peers use the separately declared node endpoint.
 
-**Rationale:** The pilot needs compatibility with ordinary Git clients while keeping HTTP exposure, peer synchronization, and repository authority distinct.
+**Rationale:** The pilot needs compatibility with ordinary Git clients while keeping HTTP exposure, peer synchronization, repository authority, and TLS termination distinct. A dedicated loopback origin prevents Aspen1's existing globally bound port-80 Nginx listener from becoming a plaintext bypass around Cloudflare. Typed transport policy retains a separately tested direct-ACME mode without conflating it with the selected Aspen1 ingress.
 
 ### Decision: Reuse Aspen1's Prometheus systemd monitoring path
 
@@ -97,7 +97,7 @@ Positive fixtures cover an admitted package assigned to `aspen1`, the `root@aspe
 ## Risks / Trade-offs
 
 - A single bootstrap host is an availability bottleneck until the independent second seed is deployed and accepted.
-- HTTPS introduces DNS, TLS, proxy, and gateway failure modes distinct from Radicle peer synchronization.
+- `git.onix.computer` depends on Cloudflare DNS and tunnel TLS termination; direct-ACME transport remains a tested fallback, not an active second endpoint.
 - Aspen1 already hosts privileged services, so unit isolation and negative credential-access checks are acceptance conditions rather than best-effort hardening.
 - Persisting node identity improves continuity but increases the importance of state permissions and encrypted off-host backup handling.
 - Aspen1's legacy 56 GiB store predates this admission policy; public HTTPS MUST remain disabled until the proxy proves repository allowlisting and non-enumeration over that inherited state.

@@ -1,6 +1,7 @@
 # r[impl onix.radicle_node.configuration]
 let default_node_port = 8776 in
 let default_http_port = 8080 in
+let default_https_origin_port = 8081 in
 {
   default = {
     expectedHost = { type = "string", default = "aspen1", description = "Machine hostname admitted to run the bootstrap Radicle node" },
@@ -17,7 +18,11 @@ let default_http_port = 8080 in
     httpdEnabled = { type = "bool", default = true, description = "Enable the read-only Radicle HTTP gateway" },
     httpListenAddress = { type = "string", default = "127.0.0.1", description = "Loopback address for the read-only Radicle HTTP gateway" },
     httpListenPort = { type = "port", default = default_http_port, description = "Loopback Radicle HTTP gateway port" },
-    httpsServerName = { type = "nullable_string", default = null, description = "Optional public HTTPS origin; null keeps the gateway local-only" },
+    httpsEnabled = { type = "bool", default = false, description = "Activate the admitted public Git endpoint only after a non-empty RID allowlist exists" },
+    httpsServerName = { type = "nullable_string", default = null, description = "Reviewed public HTTPS origin; may be selected before activation" },
+    httpsTransport = { type = "enum", values = ["direct-acme", "cloudflare-tunnel"], default = "cloudflare-tunnel", description = "Reviewed TLS and origin transport for the public Git endpoint" },
+    httpsOriginListenAddress = { type = "string", default = "127.0.0.1", description = "Loopback Nginx origin address used only by Cloudflare Tunnel" },
+    httpsOriginListenPort = { type = "port", default = default_https_origin_port, description = "Loopback Nginx origin port used only by Cloudflare Tunnel" },
     httpsGitRepositories = { type = "array_string", default = [], description = "Canonical public Radicle repository IDs admitted to exact read-only HTTPS Git routes" },
     minimumSignedRefsFeature = { type = "enum", values = ["root", "parent"], default = "parent", description = "Minimum signed-reference feature required by acquisition probes" },
     pinnedRepositories = { type = "array_string", default = [], description = "Public Radicle repository IDs pinned in explorer metadata; this does not authorize seeding or filter HTTP storage" },
