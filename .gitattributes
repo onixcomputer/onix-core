@@ -1,13 +1,2 @@
 # Unified diffs require one context marker on otherwise blank lines.
 *.patch whitespace=-blank-at-eol
-
-# Preserve immutable external hardware logs byte-for-byte.
-pkgs/rwkv-layer-harness/fixtures/ttwkv7-device-2/diagnostic.log binary
-pkgs/rwkv-ttwkv7-persistent-evidence/fixtures/ttwkv7-persistent-device-3/diagnostic.log binary
-pkgs/rwkv-ttwkv7-persistent-evidence/fixtures/ttwkv7-persistent-device-3/server-stderr.log binary
-pkgs/rwkv-ttwkv7-persistent-evidence/fixtures/ttwkv7-persistent-device-3/transcript.bin binary
-pkgs/rwkv-ttwkv7-persistent-passed-evidence/fixtures/ttwkv7-persistent-device-4/artifact/server-stderr.log binary
-pkgs/rwkv-ttwkv7-persistent-passed-evidence/fixtures/ttwkv7-persistent-device-4/artifact/server-stdout.log binary
-pkgs/rwkv-ttwkv7-persistent-passed-evidence/fixtures/ttwkv7-persistent-device-4/artifact/transcript.bin binary
-pkgs/rwkv-ttwkv7-persistent-passed-evidence/fixtures/ttwkv7-persistent-device-4/diagnostic.log binary
-pkgs/rwkv-ttwkv7-persistent-passed-evidence/fixtures/ttwkv7-persistent-device-4/pueue-task.log binary

@@ -140,7 +140,7 @@
       };
     };
     tenstorrent-nix = {
-      url = "github:RossComputerGuy/tenstorrent.nix";
+      url = "github:OnixResearch/tenstorrent.nix";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         flake-parts.follows = "flake-parts";

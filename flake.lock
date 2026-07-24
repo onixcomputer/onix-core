@@ -1554,15 +1554,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1783921960,
-        "narHash": "sha256-YsBUgN+oq6A7hNFujFSGzh5htmPnU6I7LIu+hwwt5AQ=",
-        "owner": "RossComputerGuy",
+        "lastModified": 1784910977,
+        "narHash": "sha256-odl0Y2C/dq89IBx0tg0CniccpwL0WWaofPRnmerA9mY=",
+        "owner": "OnixResearch",
         "repo": "tenstorrent.nix",
-        "rev": "3c4dcbb9f8de30ae0d43177c8bc25f12170ddd94",
+        "rev": "e38de0e9cdb822370147fa662ece98cde28f01d1",
         "type": "github"
       },
       "original": {
-        "owner": "RossComputerGuy",
+        "owner": "OnixResearch",
         "repo": "tenstorrent.nix",
         "type": "github"
       }

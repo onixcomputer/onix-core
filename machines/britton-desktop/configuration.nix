@@ -83,7 +83,7 @@ let
   ttBenchmarkSuccessMarker = "/run/${ttBenchmarkServiceName}-last-run-succeeded";
   ttBenchmarkInspectorPort = 50061;
   ttBenchmarkStateDirectoryMode = "0755";
-  ttBenchmarkCore = pkgs.callPackage ../../pkgs/tt-vibethinker-bench { };
+  ttBenchmarkCore = tenstorrentPackages.tt-vibethinker-bench;
   ttBenchmarkOrchestrator = pkgs.writeShellApplication {
     name = "tt-vibethinker-benchmark-orchestrator";
     runtimeInputs = [
@@ -170,12 +170,7 @@ let
       cat ${lib.escapeShellArg ttBenchmarkLatestSummary}
     '';
   };
-  ttWkv7OwnerControl = pkgs.callPackage ../../pkgs/ttwkv7-owner-control {
-    commandName = ttWkv7OwnerControlCommandName;
-    ownerUnit = p150LlamaUnitName;
-    devicePath = p150LlamaDevicePath;
-    systemd = config.systemd.package;
-  };
+  ttWkv7OwnerControl = tenstorrentPackages.ttwkv7-owner-control;
 in
 {
   networking = {

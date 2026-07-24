@@ -159,9 +159,6 @@ let
         "*/facter.json"
         "inventory.json"
 
-        # immutable external evidence
-        "pkgs/rwkv-layer-harness/fixtures/ttwkv7-device-2/*"
-
       ];
 
       formatter = {

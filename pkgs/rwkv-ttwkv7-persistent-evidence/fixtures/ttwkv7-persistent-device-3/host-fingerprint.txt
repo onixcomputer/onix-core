@@ -1,2 +1,0 @@
-expected=SHA256:DOOddCNRRRqCVbueQZovbR8Q//NwYeeMCaznz+GqxQE
-observed=SHA256:DOOddCNRRRqCVbueQZovbR8Q//NwYeeMCaznz+GqxQE

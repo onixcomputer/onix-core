@@ -78,10 +78,7 @@ let
   metal = mkTenstorrentPackageAlias "tt-metal" "tt-metal";
   llamaCppMetalium = mkTenstorrentPackageAlias "llama-cpp-metalium" "llama-cpp-metalium";
   # r[impl onix.tenstorrent.native_runtime.ttwkv7.host]
-  ttwkv7 = pkgs.callPackage ../../../pkgs/ttwkv7 {
-    inherit (tenstorrentPackagesBase) enchantum tt-logger;
-    tt-metal = metal;
-  };
+  inherit (tenstorrentPackagesBase) ttwkv7;
   # r[impl onix.tenstorrent.native_runtime.p150x2_mesh]
   metaliumRoot = "${metal}/libexec/tt-metalium";
   meshDescriptorFilename = "p150_x2_mesh_graph_descriptor.textproto";
