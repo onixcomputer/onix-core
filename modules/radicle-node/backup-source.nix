@@ -7,6 +7,7 @@
 let
   backupJobName = "britton-desktop";
   backupUnitName = "borgbackup-job-${backupJobName}";
+  backupCredentialDirectory = "/run/credentials/${backupUnitName}.service";
   stateRoot = "/var/lib/radicle";
   sourceMount = "/run/radicle-backup-source";
   stagingRoot = "/run/radicle-backup-input";
@@ -35,6 +36,42 @@ let
   knownHosts = pkgs.writeText "radicle-backup-known-hosts" ''
     ${targetAddress} ${targetHostKey}
   '';
+  backupRsh = lib.concatStringsSep " " [
+    "ssh"
+    "-i ${backupCredentialDirectory}/${borgSshCredential}"
+    "-o UserKnownHostsFile=/etc/ssh/radicle-backup-known-hosts"
+    "-o StrictHostKeyChecking=yes"
+    "-o HostKeyAlgorithms=ssh-ed25519"
+    "-o IdentitiesOnly=yes"
+    "-o PasswordAuthentication=no"
+  ];
+  backupPassCommand = ''cat "${backupCredentialDirectory}/${borgRepoKeyCredential}"'';
+  restoreRsh = lib.concatStringsSep " " [
+    "ssh"
+    "-i ${backupSshKeyPath}"
+    "-o UserKnownHostsFile=/etc/ssh/radicle-backup-known-hosts"
+    "-o StrictHostKeyChecking=yes"
+    "-o HostKeyAlgorithms=ssh-ed25519"
+    "-o IdentitiesOnly=yes"
+    "-o PasswordAuthentication=no"
+  ];
+
+  repositoryPreflight = pkgs.writeShellApplication {
+    name = "radicle-backup-repository-preflight";
+    runtimeInputs = [
+      config.services.borgbackup.package
+      pkgs.openssh
+    ];
+    text = ''
+      export BORG_REPO=${lib.escapeShellArg "borg@${targetAddress}:."}
+      export BORG_RSH=${lib.escapeShellArg backupRsh}
+      export BORG_PASSCOMMAND=${lib.escapeShellArg backupPassCommand}
+      if ! borg list >/dev/null 2>&1; then
+        borg init --encryption repokey
+      fi
+      borg list >/dev/null
+    '';
+  };
 
   prepareBackup = pkgs.writeShellApplication {
     name = "radicle-backup-prepare";
@@ -70,7 +107,7 @@ let
       rm -rf ${lib.escapeShellArg stagingRoot} ${lib.escapeShellArg manifestRoot}
       install -d -m ${privateDirectoryMode} ${lib.escapeShellArg stagingRoot}
       install -d -m ${privateDirectoryMode} ${lib.escapeShellArg manifestRoot}
-      install -m ${privateKeyMode} "$CREDENTIALS_DIRECTORY/${radiclePrivateCredential}" ${lib.escapeShellArg stagingRoot}/node-private-key
+      install -m ${privateKeyMode} ${lib.escapeShellArg "${backupCredentialDirectory}/${radiclePrivateCredential}"} ${lib.escapeShellArg stagingRoot}/node-private-key
       install -m ${publicKeyMode} ${lib.escapeShellArg publicKeyPath} ${lib.escapeShellArg stagingRoot}/node-public-key
 
       ssh-keygen -y -f ${lib.escapeShellArg stagingRoot}/node-private-key > ${lib.escapeShellArg stagingRoot}/derived-public-key
@@ -152,6 +189,7 @@ let
     name = "radicle-backup-restore-verify";
     runtimeInputs = [
       backupManifest
+      config.services.borgbackup.package
       pkgs.coreutils
       pkgs.diffutils
       pkgs.jq
@@ -164,8 +202,10 @@ let
       }
       trap cleanup_restore EXIT
 
-      archive="$(/run/current-system/sw/bin/borg-job-${backupJobName} list --json \
-        | jq -er '.archives | max_by(.time) | .name')"
+      export BORG_REPO=${lib.escapeShellArg "borg@${targetAddress}:."}
+      export BORG_RSH=${lib.escapeShellArg restoreRsh}
+      export BORG_PASSCOMMAND=${lib.escapeShellArg "cat ${backupRepoKeyPath}"}
+      archive="$(borg list --json | jq -er '.archives | max_by(.time) | .name')"
       if test -z "$archive"; then
         echo "no Radicle backup archive exists" >&2
         exit 1
@@ -175,7 +215,7 @@ let
       install -d -m ${privateDirectoryMode} ${lib.escapeShellArg restoreRoot}
       (
         cd ${lib.escapeShellArg restoreRoot}
-        /run/current-system/sw/bin/borg-job-${backupJobName} extract "::$archive"
+        borg extract "::$archive"
       )
 
       restored_state=${lib.escapeShellArg restoreRoot}${sourceMount}
@@ -235,18 +275,8 @@ in
     ];
     exclude = lib.mkForce [ ];
     compression = lib.mkForce "auto,lz4";
-    environment.BORG_RSH = lib.mkForce (
-      lib.concatStringsSep " " [
-        "ssh"
-        "-i $CREDENTIALS_DIRECTORY/${borgSshCredential}"
-        "-o UserKnownHostsFile=/etc/ssh/radicle-backup-known-hosts"
-        "-o StrictHostKeyChecking=yes"
-        "-o HostKeyAlgorithms=ssh-ed25519"
-        "-o IdentitiesOnly=yes"
-        "-o PasswordAuthentication=no"
-      ]
-    );
-    encryption.passCommand = lib.mkForce ''cat "$CREDENTIALS_DIRECTORY/${borgRepoKeyCredential}"'';
+    environment.BORG_RSH = lib.mkForce backupRsh;
+    encryption.passCommand = lib.mkForce backupPassCommand;
     preHook = lib.getExe prepareBackup;
     postHook = lib.getExe cleanupBackup;
     prune.keep = lib.mkForce {
@@ -261,7 +291,7 @@ in
     AmbientCapabilities = [ "CAP_DAC_READ_SEARCH" ];
     BindReadOnlyPaths = [ "${stateRoot}:${sourceMount}" ];
     CapabilityBoundingSet = [ "CAP_DAC_READ_SEARCH" ];
-    ExecStartPre = lib.mkForce [ ];
+    ExecStartPre = lib.mkForce [ (lib.getExe repositoryPreflight) ];
     ExecStopPost = lib.mkForce [ ];
     InaccessiblePaths = [
       "/run/secrets"

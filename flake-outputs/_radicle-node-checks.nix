@@ -45,6 +45,8 @@ let
   radiclePrivateBackupCredential = "radicle-node-private";
   borgSshBackupCredential = "borg-ssh";
   borgRepoKeyBackupCredential = "borg-repokey";
+  backupUnitName = "borgbackup-job-${backupTargetHost}";
+  backupCredentialDirectory = "/run/credentials/${backupUnitName}.service";
   identityGeneratorName = "radicle-node-radicle-forge-bootstrap";
   privateKeyFileName = "node-private-key";
   publicKeyFileName = "node-public-key";
@@ -620,8 +622,8 @@ let
     && backupJob.encryption.mode == "repokey"
     && backupJob.prune.keep.daily == backupRetentionDaily
     && backupJob.prune.keep.weekly == backupRetentionWeekly
-    && lib.hasInfix "$CREDENTIALS_DIRECTORY/${borgSshBackupCredential}" backupJob.environment.BORG_RSH
-    && lib.hasInfix "$CREDENTIALS_DIRECTORY/${borgRepoKeyBackupCredential}" backupJob.encryption.passCommand
+    && lib.hasInfix "${backupCredentialDirectory}/${borgSshBackupCredential}" backupJob.environment.BORG_RSH
+    && lib.hasInfix "${backupCredentialDirectory}/${borgRepoKeyBackupCredential}" backupJob.encryption.passCommand
     && lib.hasInfix "StrictHostKeyChecking=yes" backupJob.environment.BORG_RSH
     && lib.hasInfix "HostKeyAlgorithms=ssh-ed25519" backupJob.environment.BORG_RSH
     && !(lib.hasInfix "accept-new" backupJob.environment.BORG_RSH)
@@ -637,7 +639,11 @@ let
     && backupService.serviceConfig.NoNewPrivileges
     && backupService.serviceConfig.PrivateDevices
     && backupService.serviceConfig.ProtectHome
-    && backupService.serviceConfig.ProtectSystem == "strict";
+    && backupService.serviceConfig.ProtectSystem == "strict"
+    && builtins.length backupService.serviceConfig.ExecStartPre == 1
+    && lib.hasInfix "radicle-backup-repository-preflight" (
+      builtins.head backupService.serviceConfig.ExecStartPre
+    );
   backupTargetPolicyValid =
     backupTargetRepo != null
     && backupTargetRepo.path == backupRepository
