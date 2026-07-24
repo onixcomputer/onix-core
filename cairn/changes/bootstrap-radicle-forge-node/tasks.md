@@ -1,0 +1,20 @@
+## Phase 1: Typed package and service boundary
+
+- [ ] [serial] Pin and package the reviewed Radicle node and HTTP components at the named minimum version, recording source and closure identities. r[onix.radicle_node.package]
+- [ ] [serial] Add the typed Nickel bootstrap-node contract and deterministic Nix lowering for host selection, failure domain, storage, seeding, listeners, HTTPS, monitoring, retention, backup, and restore policy. r[onix.radicle_node.configuration]
+- [ ] [parallel] Add positive configuration fixtures and negative fixtures for old versions, weak signed-reference policy, missing host/failure-domain facts, unsafe listeners, private repository admission, transient storage, excessive privileges, malformed endpoints, and unbounded retention. r[onix.radicle_node.configuration]
+- [ ] [parallel] Add focused package and module evaluation checks that instantiate the production package, service, proxy, firewall, state-directory, and monitoring definitions. r[onix.radicle_node.validation]
+
+## Phase 2: Initial node deployment
+
+- [ ] [serial] Select the bootstrap machine and assign the least-authority Radicle service with dedicated user, persistent state, explicit public repository allowlist, and no delegate, CI, deployment, release, canonical-ref, cache, or artifact credentials. r[onix.radicle_node.hosting]
+- [ ] [serial] Deploy the node endpoint and read-only `radicle-httpd` behind the reviewed HTTPS proxy while keeping undeclared listeners and repositories inaccessible. r[onix.radicle_node.exposure]
+- [ ] [parallel] Verify service health, monitoring, restart continuity, exact-object native peer acquisition, and exact-object HTTPS Git acquisition from an independent client. r[onix.radicle_node.validation]
+- [ ] [parallel] Verify unauthorized repository enumeration, private repository admission, writable HTTP operations, wildcard exposure, delegate-key access, and CI-key access fail closed. r[onix.radicle_node.exposure]
+
+## Phase 3: Persistence and prerequisite evidence
+
+- [ ] [serial] Back up the complete declared Radicle storage and node identity under bounded retention, emit a BLAKE3 manifest, and restore it into a clean root or replacement service. r[onix.radicle_node.recovery]
+- [ ] [parallel] Compare node ID, repository IDs, exact Git objects, signed refs, issues, patches, identities, and declared custom COB refs after restore; reject incomplete, tampered, permission-unsafe, or identity-changing backups. r[onix.radicle_node.recovery]
+- [ ] [serial] Emit the redaction-safe bootstrap receipt and document startup, monitoring, backup, restore, incident, rollback, package upgrade, and key-loss procedures with explicit single-node and confidentiality non-claims. r[onix.radicle_node.bootstrap]
+- [ ] [serial] Run focused Nickel, Nix module, selected-machine, service, Cairn, and flake validation; sync and archive only after downstream consumers can verify the bootstrap receipt. r[onix.radicle_node.bootstrap]

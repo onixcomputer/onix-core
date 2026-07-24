@@ -1,0 +1,73 @@
+## Context
+
+The Radicle forge pilot currently has repository-local publication and consumption plans, but no Onix-managed node exists. `onix-core` is the repository that can select a real machine, install packages, persist service identity and storage, apply firewall and reverse-proxy policy, deploy through Clan, monitor the unit, and execute backup/restore operations. OnixOS can define portable forge intent and cross-repository acceptance, but it cannot supply evidence for a node that has not first been deployed here.
+
+Completion means a reviewed `onix-core` machine runs a persistent selective Radicle node and a seed-backed HTTPS Git endpoint, survives restart, rejects unsafe configuration, and emits a deterministic bootstrap receipt that downstream Cairns can verify. A local developer profile, transient `rad node start`, unencrypted ad hoc key copy, GitHub-backed proxy, browser-only page, or endpoint without exact-object acquisition is false completion.
+
+## Decisions
+
+### Decision: Bootstrap concrete infrastructure before forge orchestration
+
+**Choice:** `onix-core` packages and deploys the first Radicle node. OnixOS consumes its accepted receipt before admitting catalog entries, additional seed placement, CI, or pilot publication.
+
+**Rationale:** The dependency order must begin with an operational source and synchronization boundary. Otherwise downstream plans can validate strings while no service can publish, seed, clone, monitor, or restore a repository.
+
+### Decision: Use typed configuration with a thin deployment shell
+
+**Choice:** A Nickel contract validates explicit package version, selected machine, failure-domain label, persistent state path, node mode, seed allowlist, listener policy, HTTPS origin, storage bound, retention policy, backup target, and monitoring settings. Nix lowers validated facts into a service module; Clan deployment and runtime probes remain the imperative shell.
+
+**Rationale:** Admission logic remains deterministic and testable without network or root access. Deployment handles filesystem, secret, process, proxy, firewall, and machine effects without hiding policy in shell commands.
+
+### Decision: Admit Radicle `1.9.1` or later and signed-reference feature `parent`
+
+**Choice:** The package check rejects an older Radicle release or a configuration weaker than the named minimum signed-reference feature. Version and feature minima are named policy fields rather than scattered literals.
+
+**Rationale:** The pilot must not deploy below the reviewed replay-protection baseline. Recording the admitted package identity makes later upgrades and incident review explicit.
+
+### Decision: Give the node no repository governance authority
+
+**Choice:** The service receives only its own persistent Radicle node identity and storage permissions. Repository delegate keys, offline recovery authority, CI credentials, deployment credentials, release signing keys, canonical-ref authority, cache administration, and artifact-storage administration are forbidden from the unit and its state directory.
+
+**Rationale:** Source replication and transport availability do not require repository governance. Compromise of the first public seed must not authorize canonical history changes or privileged builds.
+
+### Decision: Start with public pilot content
+
+**Choice:** The bootstrap endpoint admits only explicitly selected public probe or pilot repositories. Private repository hosting remains disabled until enumeration, authorization, storage-operator visibility, and backup confidentiality have separate accepted evidence.
+
+**Rationale:** Radicle selective replication is not encryption at rest, and node operators can read replicated private content. Public bootstrap content proves transport without creating a false confidentiality claim.
+
+### Decision: Expose ordinary Git through a read-only HTTPS boundary
+
+**Choice:** `radicle-httpd` reads local Radicle storage behind the repository's reviewed HTTPS proxy and DNS/TLS path. Direct service listeners remain bound to the declared private interface or loopback unless the typed policy explicitly admits a public protocol listener. Cargo and Nix use the HTTPS Git endpoint; native Radicle peers use the separately declared node endpoint.
+
+**Rationale:** The pilot needs compatibility with ordinary Git clients while keeping HTTP exposure, peer synchronization, and repository authority distinct.
+
+### Decision: Preserve the complete node state and prove restore
+
+**Choice:** Backup includes the Radicle storage and identity material required to recover the same node, repositories, signed refs, issues, patches, identities, and declared custom COB refs. The operator shell creates a bounded backup, verifies a BLAKE3 manifest, restores into a clean test root or replacement unit, and compares declared identities before acceptance.
+
+**Rationale:** Branch-only Git backups omit collaboration and identity refs. A backup procedure without a clean restore observation is not recovery evidence.
+
+### Decision: One bootstrap node is a prerequisite, not availability completion
+
+**Choice:** The bootstrap receipt states that exactly the selected initial node was observed. It cannot satisfy the later independent-seed count, single-seed-outage, cross-failure-domain, or production-readiness gates.
+
+**Rationale:** The first node unblocks publication and integration. Treating it as highly available would erase the main acceptance condition of the wider pilot.
+
+## Evidence Shape
+
+The deterministic bootstrap receipt records the policy identity, package source/version identity, selected machine and failure-domain label, node ID, admitted repository IDs, listener and HTTPS endpoint identities, forbidden-authority assertions, service/restart observations, exact probe Git object, backup manifest identity, restore comparison, monitoring result, and explicit non-claims. Onix-owned receipt identities use BLAKE3; Git object IDs retain Git's interoperable algorithm.
+
+The receipt excludes private keys, credentials, raw environment values, private repository contents, and unbounded logs. Runtime collection is a thin shell over explicit commands and files; classification and receipt construction operate over bounded observations in a pure deterministic core.
+
+## Positive and Negative Validation
+
+Positive fixtures cover an admitted package, one selected bootstrap host, persistent state, explicit listeners, public repository allowlisting, HTTPS exact-object acquisition, restart continuity, monitoring, backup verification, and clean restore. Negative fixtures cover an old package, weak signed-reference feature, missing host or failure domain, wildcard exposure without admission, private repository admission, transient storage, writable HTTP behavior, delegate or CI credential injection, unbounded retention, malformed endpoint, incomplete backup, tampered BLAKE3 manifest, changed node/repository identity after restore, and receipt secret leakage.
+
+## Risks / Trade-offs
+
+- A single bootstrap host is an availability bottleneck until the independent second seed is deployed and accepted.
+- HTTPS introduces DNS, TLS, proxy, and gateway failure modes distinct from Radicle peer synchronization.
+- Persisting node identity improves continuity but increases the importance of state permissions and encrypted backup handling.
+- A public seed stores and serves admitted source bytes; replication does not prove source correctness, review acceptance, or release eligibility.
+- Downstream GitHub independence remains bounded to published Onix-owned repositories and does not remove GitHub-hosted third-party Nix or Cargo inputs.
