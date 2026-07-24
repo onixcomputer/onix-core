@@ -11,7 +11,6 @@
   ...
 }:
 let
-  fixtureStateVersion = "26.05";
   privateStateDirectoryMode = "0700";
   reviewedNodeVersion = "1.9.1";
   reviewedHttpdVersion = "0.25.0";
@@ -25,9 +24,11 @@ let
   httpAddress = "127.0.0.1";
   httpPort = 8080;
   httpsPort = 443;
-  fakePublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBgFMhajUng+Rjj/sCFXI9PzG8BQjru2n7JgUVF1Kbv5";
-  nodeCredential = "onix.radicle.node.secret";
-  importedNodeCredential = "${nodeCredential}:dev.radicle.node.secret";
+  identityGeneratorName = "radicle-node-radicle-forge-bootstrap";
+  privateKeyFileName = "node-private-key";
+  publicKeyFileName = "node-public-key";
+  generatedPrivateKeyMode = "400";
+  generatedPublicKeyMode = "444";
   optionalPassphraseCredential = "dev.radicle.node.passphrase";
   pinnedRepository = "rad:z3gqcJUoA1n9HaHKufZs5FCSGazv5";
 
@@ -39,9 +40,7 @@ let
     inherit deploymentTarget;
     inherit expectedHost;
     alias = "aspen1-radicle";
-    failureDomain = "aspen1-primary";
-    publicKey = fakePublicKey;
-    privateKeyCredential = nodeCredential;
+    failureDomain = "aspen-primary-site";
     nodeListenAddress = nodeAddress;
     nodeListenPort = nodePort;
     nodeFirewallInterface = nodeInterface;
@@ -110,24 +109,6 @@ let
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
       expected = "failureDomain must not be empty";
-    }
-    {
-      name = "commented-public-key";
-      settings = positiveSettings // {
-        publicKey = "${fakePublicKey} unsafe-comment";
-      };
-      packageVersion = nodePackage.version;
-      actualHost = expectedHost;
-      expected = "one uncommented ssh-ed25519 public key";
-    }
-    {
-      name = "unsafe-credential-name";
-      settings = positiveSettings // {
-        privateKeyCredential = "/run/secrets/buildbot";
-      };
-      packageVersion = nodePackage.version;
-      actualHost = expectedHost;
-      expected = "must use the onix.radicle namespace";
     }
     {
       name = "wildcard-node-listener";
@@ -264,46 +245,36 @@ let
     !(lib.any (error: lib.hasInfix case.expected error) errors)
   ) negativeCases;
 
-  radicleSchema = wasm.evalNickelFile ../modules/radicle-node/schema.ncl;
-  clanService = (import ../modules/radicle-node { schema = radicleSchema; }) { inherit lib; };
-  clanInstance = clanService.roles.default.perInstance {
-    instanceName = "bootstrap-fixture";
-    extendSettings = _defaults: positiveSettings;
-  };
-
-  fixtureConfig =
-    (lib.nixosSystem {
-      inherit system;
-      modules = [
-        clanInstance.nixosModule
-        {
-          boot.loader.grub.devices = [ "/dev/vda" ];
-          fileSystems."/" = {
-            device = "/dev/vda";
-            fsType = "ext4";
-          };
-          networking.hostName = expectedHost;
-          nixpkgs.hostPlatform = system;
-          system.stateVersion = fixtureStateVersion;
-        }
-      ];
-    }).config;
+  fixtureConfig = self.nixosConfigurations.${expectedHost}.config;
+  aspen2Config = self.nixosConfigurations.aspen2.config;
+  aspen3Config = self.nixosConfigurations.aspen3.config;
+  radicleServiceAbsent = config: !(builtins.hasAttr "radicle-node" config.systemd.services);
+  identityGeneratorAbsent =
+    config: !(builtins.hasAttr identityGeneratorName config.clan.core.vars.generators);
 
   failedAssertions = builtins.filter (assertion: !assertion.assertion) fixtureConfig.assertions;
   nodeService = fixtureConfig.systemd.services.radicle-node;
   httpdService = fixtureConfig.systemd.services.radicle-httpd;
   nodeCommand = nodeService.serviceConfig.ExecStart;
   httpdCommand = httpdService.serviceConfig.ExecStart;
-  nodeCredentials = lib.toList (nodeService.serviceConfig.ImportCredential or [ ]);
+  identityGenerator = fixtureConfig.clan.core.vars.generators.${identityGeneratorName};
+  privateKeyFile = identityGenerator.files.${privateKeyFileName};
+  publicKeyFile = identityGenerator.files.${publicKeyFileName};
+  privateKeyPath = privateKeyFile.path;
+  publicKeyPath = publicKeyFile.path;
+  loadedPrivateKeyCredential = "dev.radicle.node.secret:${privateKeyPath}";
+  expectedPublicKeyBind = "${publicKeyPath}:/var/lib/radicle/keys/radicle.pub";
+  nodeImportedCredentials = lib.toList (nodeService.serviceConfig.ImportCredential or [ ]);
   nodeLoadedCredentials = lib.toList (nodeService.serviceConfig.LoadCredential or [ ]);
   httpdImportedCredentials = lib.toList (httpdService.serviceConfig.ImportCredential or [ ]);
   httpdLoadedCredentials = lib.toList (httpdService.serviceConfig.LoadCredential or [ ]);
-  unexpectedNodeCredentials = lib.subtractLists [
-    importedNodeCredential
-    optionalPassphraseCredential
-  ] nodeCredentials;
+  unexpectedNodeImports = lib.subtractLists [ optionalPassphraseCredential ] nodeImportedCredentials;
+  unexpectedNodeLoads = lib.subtractLists [ loadedPrivateKeyCredential ] nodeLoadedCredentials;
   nodeBindPaths = lib.toList (nodeService.serviceConfig.BindReadOnlyPaths or [ ]);
   httpdBindPaths = lib.toList (httpdService.serviceConfig.BindReadOnlyPaths or [ ]);
+  unexpectedSecretBindPaths = builtins.filter (
+    path: lib.hasInfix "/run/secrets" path && path != expectedPublicKeyBind
+  ) (nodeBindPaths ++ httpdBindPaths);
   globalFirewallPorts = fixtureConfig.networking.firewall.allowedTCPPorts;
   interfaceFirewallPorts =
     fixtureConfig.networking.firewall.interfaces.${nodeInterface}.allowedTCPPorts;
@@ -316,8 +287,6 @@ let
     "deploymentTarget"
     "alias"
     "failureDomain"
-    "publicKey"
-    "privateKeyCredential"
     "nodeListenAddress"
     "nodeListenPort"
     "nodeFirewallInterface"
@@ -336,7 +305,13 @@ in
 {
   checks = lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
     radicle-node-policy =
-      pkgs.runCommand "radicle-node-policy" { nativeBuildInputs = [ pkgs.coreutils ]; }
+      pkgs.runCommand "radicle-node-policy"
+        {
+          nativeBuildInputs = [
+            pkgs.coreutils
+            pkgs.openssh
+          ];
+        }
         ''
           test -x ${nodePackage}/bin/rad
           test -x ${nodePackage}/bin/radicle-node
@@ -390,29 +365,75 @@ in
               exit 1
             ''
           }
-          ${lib.optionalString (!(builtins.elem importedNodeCredential nodeCredentials)) ''
-            echo "Radicle node does not import its dedicated private-key credential" >&2
+          ${lib.optionalString (!(builtins.elem optionalPassphraseCredential nodeImportedCredentials)) ''
+            echo "Radicle node lost the optional passphrase credential boundary" >&2
             exit 1
           ''}
-          ${lib.optionalString (unexpectedNodeCredentials != [ ]) ''
-            echo "Radicle node imports credentials outside its dedicated identity" >&2
+          ${lib.optionalString (unexpectedNodeImports != [ ]) ''
+            echo "Radicle node imports credentials outside its identity boundary" >&2
             exit 1
           ''}
-          ${lib.optionalString (nodeLoadedCredentials != [ ]) ''
-            echo "Radicle node loads an undeclared host credential path" >&2
+          ${lib.optionalString (!(builtins.elem loadedPrivateKeyCredential nodeLoadedCredentials)) ''
+            echo "Radicle node does not load the generated private key" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (unexpectedNodeLoads != [ ]) ''
+            echo "Radicle node loads credentials outside its generated identity" >&2
             exit 1
           ''}
           ${lib.optionalString (httpdImportedCredentials != [ ] || httpdLoadedCredentials != [ ]) ''
             echo "Radicle HTTP daemon receives credentials" >&2
             exit 1
           ''}
+          ${lib.optionalString (unexpectedSecretBindPaths != [ ]) ''
+            echo "Radicle services bind a secret path other than the generated public key" >&2
+            exit 1
+          ''}
           ${lib.optionalString
-            (lib.any (path: lib.hasInfix "/run/secrets" path) (nodeBindPaths ++ httpdBindPaths))
+            (
+              !(
+                builtins.elem expectedPublicKeyBind nodeBindPaths
+                && builtins.elem expectedPublicKeyBind httpdBindPaths
+              )
+            )
             ''
-              echo "Radicle services can bind Aspen1's shared secret directory" >&2
+              echo "Radicle services do not share the generated public identity" >&2
               exit 1
             ''
           }
+          ${lib.optionalString (fixtureConfig.services.radicle.publicKey != publicKeyPath) ''
+            echo "Radicle service does not consume the generated public identity" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!(radicleServiceAbsent aspen2Config && radicleServiceAbsent aspen3Config)) ''
+            echo "Radicle bootstrap service escaped Aspen1" >&2
+            exit 1
+          ''}
+          ${lib.optionalString
+            (!(identityGeneratorAbsent aspen2Config && identityGeneratorAbsent aspen3Config))
+            ''
+              echo "Radicle identity material escaped Aspen1" >&2
+              exit 1
+            ''
+          }
+          ${lib.optionalString
+            (!(privateKeyFile.secret && privateKeyFile.deploy && !publicKeyFile.secret && publicKeyFile.deploy))
+            ''
+              echo "Radicle identity generator has unsafe secret/public deployment metadata" >&2
+              exit 1
+            ''
+          }
+
+          generator_out="$TMPDIR/generated-radicle-identity"
+          mkdir -p "$generator_out"
+          (
+            export out="$generator_out"
+            ${identityGenerator.script}
+          )
+          test "$(stat -c '%a' "$generator_out/${privateKeyFileName}")" = ${generatedPrivateKeyMode}
+          test "$(stat -c '%a' "$generator_out/${publicKeyFileName}")" = ${generatedPublicKeyMode}
+          ssh-keygen -y -f "$generator_out/${privateKeyFileName}" > "$TMPDIR/derived-public-key"
+          cmp "$generator_out/${publicKeyFileName}" "$TMPDIR/derived-public-key"
           ${lib.optionalString (builtins.elem nodePort globalFirewallPorts) ''
             echo "Radicle peer port is globally exposed" >&2
             exit 1
@@ -435,13 +456,10 @@ in
             echo "Radicle bootstrap node is not configured as a relay" >&2
             exit 1
           ''}
-          ${lib.optionalString
-            (fixtureConfig.services.radicle.settings.web.pinned.repositories != [ pinnedRepository ])
-            ''
-              echo "Radicle HTTP explorer pinned metadata drifted" >&2
-              exit 1
-            ''
-          }
+          ${lib.optionalString (fixtureConfig.services.radicle.settings.web.pinned.repositories != [ ]) ''
+            echo "Radicle HTTP explorer pinned metadata drifted" >&2
+            exit 1
+          ''}
           ${lib.optionalString
             (nodeService.serviceConfig.User != "radicle" || httpdService.serviceConfig.User != "radicle")
             ''

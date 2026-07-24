@@ -43,6 +43,9 @@ let ornith_9b_q8_model = "user.Ornith-1.0-9B-Q8_0" in
 let ornith_35b_q4_model = "user.Ornith-1.0-35B-Q4_K_M" in
 let ornith_35b_q8_model = "user.Ornith-1.0-35B-Q8_0" in
 let ornith_35b_bf16_model = "user.Ornith-1.0-35B-BF16" in
+let radicle_node_address = "100.100.103.95" in
+let radicle_node_port = 8776 in
+let radicle_http_port = 8080 in
 {
   instances = {
 
@@ -448,6 +451,27 @@ let ornith_35b_bf16_model = "user.Ornith-1.0-35B-BF16" in
         enableTraceCapture = true,
         autoStart = true,
         extraArgs = [],
+      },
+    },
+
+    # r[impl onix.radicle_node.hosting]
+    "radicle-forge-bootstrap" = {
+      module = { name = "radicle-node", input = "self" },
+      roles.default.machines.aspen1.settings = {
+        expectedHost = "aspen1",
+        deploymentTarget = "root@aspen1.local",
+        alias = "aspen1-radicle",
+        failureDomain = "aspen-primary-site",
+        nodeListenAddress = radicle_node_address,
+        nodeListenPort = radicle_node_port,
+        nodeFirewallInterface = "tailscale0",
+        externalAddress = "%{radicle_node_address}:%{radicle_node_port}",
+        httpdEnabled = true,
+        httpListenAddress = "127.0.0.1",
+        httpListenPort = radicle_http_port,
+        httpsServerName = null,
+        minimumSignedRefsFeature = "parent",
+        pinnedRepositories = [],
       },
     },
 

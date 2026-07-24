@@ -7,8 +7,6 @@ let default_http_port = 8080 in
     deploymentTarget = { type = "string", default = "root@aspen1.local", description = "Reviewed Clan deployment target; not a public client endpoint" },
     alias = { type = "string", description = "Public Radicle node alias" },
     failureDomain = { type = "string", description = "Explicit physical or administrative failure-domain label" },
-    publicKey = { type = "string", description = "Uncommented Ed25519 public key for the persistent node identity" },
-    privateKeyCredential = { type = "string", default = "onix.radicle.node.secret", description = "Systemd credential name containing only the Radicle node private key" },
     nodeListenAddress = { type = "string", description = "Explicit non-wildcard address for native Radicle peer traffic" },
     nodeListenPort = { type = "port", default = default_node_port, description = "Native Radicle peer TCP port" },
     nodeFirewallInterface = { type = "string", description = "Single interface allowed to receive native Radicle peer traffic" },

@@ -5,6 +5,8 @@
   settings,
   nodePackage,
   httpdPackage,
+  privateKeyPath,
+  publicKeyPath,
 }:
 let
   httpsPort = 443;
@@ -44,15 +46,15 @@ let
     RestrictSUIDSGID = true;
     StateDirectoryMode = lib.mkForce privateStateDirectoryMode;
     SystemCallArchitectures = "native";
-    UMask = privateUmask;
+    UMask = lib.mkForce privateUmask;
   };
 in
 {
   services.radicle = {
     enable = true;
     package = nodePackage;
-    privateKey = settings.privateKeyCredential;
-    inherit (settings) publicKey;
+    privateKey = privateKeyPath;
+    publicKey = publicKeyPath;
     checkConfig = true;
 
     node = {

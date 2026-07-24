@@ -11,7 +11,6 @@ let
   expectedHost = "aspen1";
   expectedDeploymentTarget = "root@aspen1.local";
   requiredSignedRefsFeature = "parent";
-  credentialNamespace = "onix.radicle.";
   httpsPort = 443;
 
   rejectUnless = condition: message: lib.optional (!condition) message;
@@ -24,17 +23,6 @@ let
     ];
   isLoopback = address: address == "::1" || lib.hasPrefix "127." address;
   isLoopbackHttp = address: address == "::1" || address == "127.0.0.1";
-  publicKeyParts = lib.splitString " " settings.publicKey;
-  validPublicKey =
-    builtins.length publicKeyParts == 2
-    && builtins.elemAt publicKeyParts 0 == "ssh-ed25519"
-    && lib.hasPrefix "AAAA" (builtins.elemAt publicKeyParts 1)
-    && !(lib.hasInfix "\n" settings.publicKey)
-    && !(lib.hasInfix "\r" settings.publicKey);
-  validCredentialName =
-    lib.hasPrefix credentialNamespace settings.privateKeyCredential
-    && !(lib.hasInfix "/" settings.privateKeyCredential)
-    && !(lib.hasInfix ":" settings.privateKeyCredential);
   validExternalAddress =
     settings.externalAddress == null
     || (
@@ -68,8 +56,6 @@ lib.concatLists [
   ) "deploymentTarget must remain ${expectedDeploymentTarget}")
   (rejectUnless (settings.alias != "") "alias must not be empty")
   (rejectUnless (settings.failureDomain != "") "failureDomain must not be empty")
-  (rejectUnless validPublicKey "publicKey must be one uncommented ssh-ed25519 public key")
-  (rejectUnless validCredentialName "privateKeyCredential must use the onix.radicle namespace without path or mapping syntax")
   (rejectUnless (
     !(isWildcard settings.nodeListenAddress)
   ) "nodeListenAddress must not be a wildcard address")

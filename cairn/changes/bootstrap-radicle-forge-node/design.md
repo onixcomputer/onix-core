@@ -48,6 +48,12 @@ Completion means `aspen1`, deployed through `root@aspen1.local`, runs a persiste
 
 **Rationale:** Source replication and transport availability do not require repository governance. Compromise of the first public seed must not authorize canonical history changes or privileged builds.
 
+### Decision: Generate a dedicated persistent node identity through Clan
+
+**Choice:** The Aspen1 service instance owns one Clan generator that creates an unencrypted Ed25519 node keypair. Clan stores the private key as a machine-scoped encrypted secret and the uncommented public key as non-secret generated state. The NixOS Radicle module loads only that private key as a systemd credential, while the node and read-only HTTP daemon receive the public key through a read-only bind.
+
+**Rationale:** A seed service must restart with the same node ID, but its identity must not be copied from a user, delegate, Buildbot, Nix-signing, deployment, or release key. Generated machine scope and service-specific paths make that separation executable and testable.
+
 ### Decision: Start with public pilot content
 
 **Choice:** The bootstrap endpoint admits only explicitly selected public probe or pilot repositories. Private repository hosting remains disabled until enumeration, authorization, storage-operator visibility, and backup confidentiality have separate accepted evidence.
