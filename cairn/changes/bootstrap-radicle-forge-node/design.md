@@ -74,9 +74,9 @@ Completion means `aspen1`, deployed through `root@aspen1.local`, runs a persiste
 
 ### Decision: Preserve the complete node state and prove restore
 
-**Choice:** Backup includes the Radicle storage and identity material required to recover the same node, repositories, signed refs, issues, patches, identities, and declared custom COB refs. The authoritative backup target must be outside Aspen1's failure domain; Aspen1's local Borg server or another same-host path cannot satisfy recovery. The operator shell creates a bounded backup, verifies a BLAKE3 manifest, restores into a clean test root or replacement unit, and compares declared identities before acceptance.
+**Choice:** Back up Aspen1 to a dedicated encrypted Borg repository on `britton-desktop`, declared as the separate `britton-desktop-workstation` failure domain. Store only ciphertext on a dedicated `datapool/radicle-backup` ZFS dataset with a 256 GiB dataset and Borg quota. The source job pins the desktop's reviewed Ed25519 host key, uses a repository-specific restricted SSH key, and retains seven daily plus four weekly archives. It quiesces the Radicle units, stages the Clan-managed node key only inside `/run`, records every state file, directory, symlink, permission, owner, and content hash in deterministic BLAKE3 manifests, and always removes the plaintext staging area before restarting the units. A Rust verifier restores the encrypted archive into a clean test root, rejects extra, missing, mutated, identity-changing, or permission-changing entries, and independently compares the recovered node key and node ID.
 
-**Rationale:** Branch-only Git backups omit collaboration and identity refs. A backup procedure without a clean restore observation is not recovery evidence.
+**Rationale:** Branch-only Git backups omit collaboration and identity refs. Aspen1's existing Borg server is inside the source failure domain and cannot satisfy recovery. The desktop's 4 TB ZFS datapool has bounded independent storage while Borg repokey encryption keeps the destination operator boundary from becoming Radicle identity authority. A backup procedure without a clean restore observation is not recovery evidence.
 
 ### Decision: One bootstrap node is a prerequisite, not availability completion
 
@@ -100,6 +100,7 @@ Positive fixtures cover an admitted package assigned to `aspen1`, the `root@aspe
 - `git.onix.computer` depends on Cloudflare DNS and tunnel TLS termination; direct-ACME transport remains a tested fallback, not an active second endpoint.
 - Aspen1 already hosts privileged services, so unit isolation and negative credential-access checks are acceptance conditions rather than best-effort hardening.
 - Persisting node identity improves continuity but increases the importance of state permissions and encrypted off-host backup handling.
+- `britton-desktop-workstation` is an independent machine and storage device, but geographic, building-power, and disaster-site independence remain non-claims until separately evidenced.
 - Aspen1's legacy 56 GiB store predates this admission policy; public HTTPS MUST remain disabled until the proxy proves repository allowlisting and non-enumeration over that inherited state.
 - A public seed stores and serves admitted source bytes; replication does not prove source correctness, review acceptance, or release eligibility.
 - Downstream GitHub independence remains bounded to published Onix-owned repositories and does not remove GitHub-hosted third-party Nix or Cargo inputs.

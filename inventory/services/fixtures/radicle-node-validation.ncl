@@ -3,6 +3,9 @@ let sc = import "../settings-contracts.ncl" in
 let default_node_port = 8776 in
 let default_http_port = 8080 in
 let default_https_origin_port = 8081 in
+let default_backup_quota_gib = 256 in
+let default_backup_retention_daily = 7 in
+let default_backup_retention_weekly = 4 in
 {
   positive =
     sc.validate_fields
@@ -29,6 +32,16 @@ let default_https_origin_port = 8081 in
         httpsOriginListenAddress = "127.0.0.1",
         httpsOriginListenPort = default_https_origin_port,
         httpsGitRepositories = [],
+        backupEnabled = true,
+        backupTargetHost = "britton-desktop",
+        backupTargetAddress = "100.110.43.11",
+        backupTargetFailureDomain = "britton-desktop-workstation",
+        backupRepositoryPath = "/var/lib/radicle-backup",
+        backupDataset = "datapool/radicle-backup",
+        backupDatasetQuotaGiB = default_backup_quota_gib,
+        backupRetentionDaily = default_backup_retention_daily,
+        backupRetentionWeekly = default_backup_retention_weekly,
+        backupManifestAlgorithm = "blake3",
         minimumSignedRefsFeature = "parent",
         pinnedRepositories = ["rad:z3gqcJUoA1n9HaHKufZs5FCSGazv5"],
       },
@@ -57,6 +70,16 @@ let default_https_origin_port = 8081 in
         httpsOriginListenAddress = 1,
         httpsOriginListenPort = "not-a-port",
         httpsGitRepositories = [1],
+        backupEnabled = "yes",
+        backupTargetHost = 1,
+        backupTargetAddress = 1,
+        backupTargetFailureDomain = 1,
+        backupRepositoryPath = 1,
+        backupDataset = 1,
+        backupDatasetQuotaGiB = "unbounded",
+        backupRetentionDaily = "forever",
+        backupRetentionWeekly = "forever",
+        backupManifestAlgorithm = "sha256",
         minimumSignedRefsFeature = "leaf",
         pinnedRepositories = [1],
       },

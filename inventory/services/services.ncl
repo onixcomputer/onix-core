@@ -47,6 +47,15 @@ let radicle_node_address = "100.100.103.95" in
 let radicle_node_port = 8776 in
 let radicle_http_port = 8080 in
 let radicle_https_origin_port = 8081 in
+let radicle_backup_target_host = "britton-desktop" in
+let radicle_backup_target_address = "100.110.43.11" in
+let radicle_backup_target_failure_domain = "britton-desktop-workstation" in
+let radicle_backup_repository_path = "/var/lib/radicle-backup" in
+let radicle_backup_dataset = "datapool/radicle-backup" in
+let radicle_backup_dataset_quota_gib = 256 in
+let radicle_backup_retention_daily = 7 in
+let radicle_backup_retention_weekly = 4 in
+let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
 {
   instances = {
 
@@ -479,8 +488,29 @@ let radicle_https_origin_port = 8081 in
         httpsOriginListenAddress = "127.0.0.1",
         httpsOriginListenPort = radicle_https_origin_port,
         httpsGitRepositories = [],
+        backupEnabled = true,
+        backupTargetHost = radicle_backup_target_host,
+        backupTargetAddress = radicle_backup_target_address,
+        backupTargetFailureDomain = radicle_backup_target_failure_domain,
+        backupRepositoryPath = radicle_backup_repository_path,
+        backupDataset = radicle_backup_dataset,
+        backupDatasetQuotaGiB = radicle_backup_dataset_quota_gib,
+        backupRetentionDaily = radicle_backup_retention_daily,
+        backupRetentionWeekly = radicle_backup_retention_weekly,
+        backupManifestAlgorithm = "blake3",
         minimumSignedRefsFeature = "parent",
         pinnedRepositories = [],
+      },
+    },
+
+    "radicle-forge-backup" = {
+      module = { name = "borgbackup", input = "clan-core" },
+      roles = {
+        server.machines."%{radicle_backup_target_host}".settings = {
+          address = radicle_backup_target_address,
+          directory = radicle_backup_repository_path,
+        },
+        client.machines.aspen1.settings.startAt = radicle_backup_schedule,
       },
     },
 

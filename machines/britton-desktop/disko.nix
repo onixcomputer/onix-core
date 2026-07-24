@@ -1,3 +1,7 @@
+let
+  radicleBackupQuota = "256G";
+  radicleBackupRecordSize = "1M";
+in
 {
   boot.loader.grub = {
     enable = true;
@@ -31,6 +35,18 @@
               "defaults"
               # The activation script creates this optional cache dataset on
               # already-installed hosts; a missing cache dataset must not block boot.
+              "nofail"
+            ];
+          };
+          radicle-backup = {
+            type = "zfs_fs";
+            mountpoint = "/var/lib/radicle-backup";
+            options = {
+              quota = radicleBackupQuota;
+              recordsize = radicleBackupRecordSize;
+            };
+            mountOptions = [
+              "defaults"
               "nofail"
             ];
           };

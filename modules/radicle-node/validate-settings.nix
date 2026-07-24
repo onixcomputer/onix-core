@@ -12,6 +12,18 @@ let
   expectedDeploymentTarget = "root@aspen1.local";
   expectedNodeFingerprint = "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE";
   requiredSignedRefsFeature = "parent";
+  expectedBackupTargetHost = "britton-desktop";
+  expectedBackupTargetAddress = "100.110.43.11";
+  expectedBackupTargetFailureDomain = "britton-desktop-workstation";
+  expectedBackupRepositoryPath = "/var/lib/radicle-backup";
+  expectedBackupDataset = "datapool/radicle-backup";
+  requiredBackupManifestAlgorithm = "blake3";
+  minimumBackupQuotaGiB = 128;
+  maximumBackupQuotaGiB = 1024;
+  minimumDailyRetention = 1;
+  maximumDailyRetention = 31;
+  minimumWeeklyRetention = 1;
+  maximumWeeklyRetention = 8;
   httpsPort = 443;
   canonicalRepositoryIdPattern = "rad:z[1-9A-HJ-NP-Za-km-z]+";
 
@@ -67,6 +79,45 @@ let
       settings.httpsServerName != null && settings.httpsGitRepositories != [ ]
     else
       settings.httpsGitRepositories == [ ];
+  backupFactsPresent =
+    settings.backupTargetHost != null
+    && settings.backupTargetAddress != null
+    && settings.backupTargetFailureDomain != null
+    && settings.backupRepositoryPath != null
+    && settings.backupDataset != null;
+  backupFactsAbsent =
+    settings.backupTargetHost == null
+    && settings.backupTargetAddress == null
+    && settings.backupTargetFailureDomain == null
+    && settings.backupRepositoryPath == null
+    && settings.backupDataset == null;
+  backupTargetIsReviewed =
+    settings.backupTargetHost == expectedBackupTargetHost
+    && settings.backupTargetAddress == expectedBackupTargetAddress
+    && settings.backupTargetFailureDomain == expectedBackupTargetFailureDomain
+    && settings.backupRepositoryPath == expectedBackupRepositoryPath
+    && settings.backupDataset == expectedBackupDataset;
+  backupLeavesSourceFailureDomain =
+    settings.backupTargetHost != settings.expectedHost
+    && settings.backupTargetFailureDomain != settings.failureDomain;
+  validBackupQuota =
+    settings.backupDatasetQuotaGiB >= minimumBackupQuotaGiB
+    && settings.backupDatasetQuotaGiB <= maximumBackupQuotaGiB;
+  validBackupRetention =
+    settings.backupRetentionDaily >= minimumDailyRetention
+    && settings.backupRetentionDaily <= maximumDailyRetention
+    && settings.backupRetentionWeekly >= minimumWeeklyRetention
+    && settings.backupRetentionWeekly <= maximumWeeklyRetention;
+  validBackupAdmission =
+    if settings.backupEnabled then
+      backupFactsPresent
+      && backupTargetIsReviewed
+      && backupLeavesSourceFailureDomain
+      && validBackupQuota
+      && validBackupRetention
+      && settings.backupManifestAlgorithm == requiredBackupManifestAlgorithm
+    else
+      backupFactsAbsent;
 in
 lib.concatLists [
   (rejectUnless (lib.versionAtLeast packageVersion minimumNodeVersion) "radicle-node package must be version ${minimumNodeVersion} or later")
@@ -116,6 +167,21 @@ lib.concatLists [
   (rejectUnless validHttpsGitRepositoryIds "httpsGitRepositories must contain only canonical public rad:z repository IDs")
   (rejectUnless uniqueHttpsGitRepositoryIds "httpsGitRepositories must not contain duplicate repository IDs")
   (rejectUnless httpsGitRepositoriesAreSeeded "httpsGitRepositories must be a subset of seedRepositories")
+  (rejectUnless (!settings.backupEnabled || backupFactsPresent)
+    "enabled backup requires complete target host, address, failure-domain, repository, and dataset facts"
+  )
+  (rejectUnless (
+    !settings.backupEnabled || backupTargetIsReviewed
+  ) "backup target must remain the reviewed britton-desktop dataset and address")
+  (rejectUnless (
+    !settings.backupEnabled || backupLeavesSourceFailureDomain
+  ) "backup target host and failure domain must differ from the Radicle source")
+  (rejectUnless validBackupQuota "backupDatasetQuotaGiB must remain between 128 and 1024 GiB")
+  (rejectUnless validBackupRetention "backup retention must remain positive and bounded")
+  (rejectUnless (
+    settings.backupManifestAlgorithm == requiredBackupManifestAlgorithm
+  ) "backupManifestAlgorithm must remain blake3")
+  (rejectUnless validBackupAdmission "backup activation and complete reviewed target facts must agree")
   (rejectUnless (
     settings.minimumSignedRefsFeature == requiredSignedRefsFeature
   ) "minimumSignedRefsFeature must remain parent")

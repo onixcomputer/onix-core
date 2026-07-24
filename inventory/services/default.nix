@@ -16,6 +16,7 @@ let
   # Thin stubs that add Nix-only extraModules paths.
   nixStubs = [
     (import ./borgbackup.nix)
+    (import ./radicle-backup.nix)
     (import ./matrix-synapse.nix)
   ];
 in

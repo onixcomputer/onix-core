@@ -30,6 +30,18 @@ let
   httpsOriginAddress = "127.0.0.1";
   httpsOriginPort = 8081;
   httpsBackend = "http://${httpAddress}:${toString httpPort}";
+  backupTargetHost = "britton-desktop";
+  backupTargetAddress = "100.110.43.11";
+  backupTargetFailureDomain = "britton-desktop-workstation";
+  backupRepositoryPath = "/var/lib/radicle-backup";
+  backupRepository = "${backupRepositoryPath}/${expectedHost}";
+  backupDataset = "datapool/radicle-backup";
+  backupDatasetQuotaGiB = 256;
+  undersizedBackupQuotaGiB = 64;
+  backupRetentionDaily = 7;
+  backupRetentionWeekly = 4;
+  unboundedDailyRetention = 365;
+  backupManifestAlgorithm = "blake3";
   identityGeneratorName = "radicle-node-radicle-forge-bootstrap";
   privateKeyFileName = "node-private-key";
   publicKeyFileName = "node-public-key";
@@ -45,6 +57,7 @@ let
   nodePackage = self.packages.${system}.radicle-node;
   httpdPackage = self.packages.${system}.radicle-httpd;
   policyReconciler = import ../modules/radicle-node/policy-reconciler.nix { inherit pkgs; };
+  backupManifest = import ../modules/radicle-node/backup-manifest.nix { inherit pkgs; };
   validateSettings = import ../modules/radicle-node/validate-settings.nix { inherit lib; };
   mkHttpsGitLocations = import ../modules/radicle-node/mk-https-git-locations.nix { inherit lib; };
   mkNixosConfig = import ../modules/radicle-node/mk-nixos-config.nix { inherit lib; };
@@ -70,6 +83,18 @@ let
     httpsOriginListenAddress = httpsOriginAddress;
     httpsOriginListenPort = httpsOriginPort;
     httpsGitRepositories = [ ];
+    backupEnabled = true;
+    inherit
+      backupTargetHost
+      backupTargetAddress
+      backupTargetFailureDomain
+      backupRepositoryPath
+      backupDataset
+      backupDatasetQuotaGiB
+      backupRetentionDaily
+      backupRetentionWeekly
+      backupManifestAlgorithm
+      ;
     minimumSignedRefsFeature = "parent";
     pinnedRepositories = [ pinnedRepository ];
   };
@@ -447,6 +472,69 @@ let
       expected = "httpsGitRepositories must be a subset of seedRepositories";
     }
     {
+      name = "backup-disabled-with-target-facts";
+      settings = positiveSettings // {
+        backupEnabled = false;
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "backup activation and complete reviewed target facts must agree";
+    }
+    {
+      name = "backup-missing-target";
+      settings = positiveSettings // {
+        backupTargetHost = null;
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "enabled backup requires complete target host";
+    }
+    {
+      name = "backup-target-not-reviewed";
+      settings = positiveSettings // {
+        backupTargetHost = "aspen2";
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "backup target must remain the reviewed britton-desktop dataset and address";
+    }
+    {
+      name = "backup-same-failure-domain";
+      settings = positiveSettings // {
+        backupTargetFailureDomain = "aspen-primary-site";
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "backup target host and failure domain must differ";
+    }
+    {
+      name = "backup-quota-too-small";
+      settings = positiveSettings // {
+        backupDatasetQuotaGiB = undersizedBackupQuotaGiB;
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "backupDatasetQuotaGiB must remain between 128 and 1024 GiB";
+    }
+    {
+      name = "backup-retention-unbounded";
+      settings = positiveSettings // {
+        backupRetentionDaily = unboundedDailyRetention;
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "backup retention must remain positive and bounded";
+    }
+    {
+      name = "backup-wrong-manifest-algorithm";
+      settings = positiveSettings // {
+        backupManifestAlgorithm = "sha256";
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "backupManifestAlgorithm must remain blake3";
+    }
+    {
       name = "pinned-repository-not-seeded";
       settings = positiveSettings // {
         seedRepositories = [ ];
@@ -500,6 +588,58 @@ let
   fixtureConfig = self.nixosConfigurations.${expectedHost}.config;
   aspen2Config = self.nixosConfigurations.aspen2.config;
   aspen3Config = self.nixosConfigurations.aspen3.config;
+  desktopConfig = self.nixosConfigurations.${backupTargetHost}.config;
+  backupJob = fixtureConfig.services.borgbackup.jobs.${backupTargetHost} or null;
+  backupService = fixtureConfig.systemd.services."borgbackup-job-${backupTargetHost}";
+  backupGeneratorFiles = fixtureConfig.clan.core.vars.generators.borgbackup.files;
+  expectedBackupSecretBinds = [
+    privateKeyPath
+    publicKeyPath
+    backupGeneratorFiles."borgbackup.ssh".path
+    backupGeneratorFiles."borgbackup.repokey".path
+  ];
+  backupBindPaths = lib.toList (backupService.serviceConfig.BindReadOnlyPaths or [ ]);
+  backupTargetRepo = desktopConfig.services.borgbackup.repos.${expectedHost} or null;
+  backupTargetFileSystem = desktopConfig.fileSystems.${backupRepositoryPath} or null;
+  backupAuthorizedKeys = desktopConfig.users.users.borg.openssh.authorizedKeys.keys or [ ];
+  expectedBackupPaths = [
+    "/var/lib/radicle"
+    "/run/radicle-backup-input"
+    "/run/radicle-backup-manifests"
+  ];
+  backupSourcePolicyValid =
+    backupJob != null
+    && backupJob.paths == expectedBackupPaths
+    && backupJob.exclude == [ ]
+    && backupJob.repo == "borg@${backupTargetAddress}:."
+    && backupJob.compression == "auto,lz4"
+    && backupJob.encryption.mode == "repokey"
+    && backupJob.prune.keep.daily == backupRetentionDaily
+    && backupJob.prune.keep.weekly == backupRetentionWeekly
+    && lib.hasInfix "StrictHostKeyChecking=yes" backupJob.environment.BORG_RSH
+    && lib.hasInfix "HostKeyAlgorithms=ssh-ed25519" backupJob.environment.BORG_RSH
+    && !(lib.hasInfix "accept-new" backupJob.environment.BORG_RSH)
+    && lib.hasInfix "radicle-backup-prepare" backupJob.preHook
+    && lib.hasInfix "radicle-backup-cleanup" backupJob.postHook
+    && lib.subtractLists expectedBackupSecretBinds backupBindPaths == [ ]
+    && lib.subtractLists backupBindPaths expectedBackupSecretBinds == [ ]
+    && builtins.elem "/run/secrets" backupService.serviceConfig.InaccessiblePaths
+    && backupService.serviceConfig.CapabilityBoundingSet == ""
+    && backupService.serviceConfig.NoNewPrivileges
+    && backupService.serviceConfig.PrivateDevices
+    && backupService.serviceConfig.ProtectHome
+    && backupService.serviceConfig.ProtectSystem == "strict";
+  backupTargetPolicyValid =
+    backupTargetRepo != null
+    && backupTargetRepo.path == backupRepository
+    && backupTargetRepo.quota == "${toString backupDatasetQuotaGiB}G"
+    && !backupTargetRepo.allowSubRepos
+    && backupTargetFileSystem != null
+    && backupTargetFileSystem.device == backupDataset
+    && builtins.length backupAuthorizedKeys == 1
+    && lib.hasInfix "--restrict-to-repository" (builtins.head backupAuthorizedKeys)
+    && lib.hasInfix "quota=${toString backupDatasetQuotaGiB}G" desktopConfig.system.activationScripts.radicle-backup-zfs-dataset.text
+    && builtins.elem backupRepositoryPath desktopConfig.systemd.services.borgbackup-repo-aspen1.unitConfig.RequiresMountsFor;
   radicleServiceAbsent = config: !(builtins.hasAttr "radicle-node" config.systemd.services);
   identityGeneratorAbsent =
     config: !(builtins.hasAttr identityGeneratorName config.clan.core.vars.generators);
@@ -575,6 +715,16 @@ let
     "httpsOriginListenAddress"
     "httpsOriginListenPort"
     "httpsGitRepositories"
+    "backupEnabled"
+    "backupTargetHost"
+    "backupTargetAddress"
+    "backupTargetFailureDomain"
+    "backupRepositoryPath"
+    "backupDataset"
+    "backupDatasetQuotaGiB"
+    "backupRetentionDaily"
+    "backupRetentionWeekly"
+    "backupManifestAlgorithm"
     "minimumSignedRefsFeature"
     "pinnedRepositories"
   ];
@@ -597,6 +747,7 @@ in
           test -x ${nodePackage}/bin/radicle-node
           test -x ${httpdPackage}/bin/radicle-httpd
           test -x ${policyReconciler}/bin/radicle-policy-reconciler
+          test -x ${backupManifest}/bin/radicle-backup-manifest
           test -e ${fixtureConfig.services.radicle.configFile}
           test -n ${lib.escapeShellArg cloudflareNginxCommand}
           test -n ${lib.escapeShellArg directAcmeNginxCommand}
@@ -666,6 +817,14 @@ in
                 }
               )
             } >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!backupSourcePolicyValid) ''
+            echo "Radicle backup source is not bounded to the reviewed encrypted job" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!backupTargetPolicyValid) ''
+            echo "Radicle backup target is not bounded to the reviewed dataset and restricted repository" >&2
             exit 1
           ''}
           ${lib.optionalString (!monitoringPolicyValid) ''
@@ -792,12 +951,27 @@ in
               exit 1
             ''
           }
-          ${lib.optionalString (!(radicleServiceAbsent aspen2Config && radicleServiceAbsent aspen3Config)) ''
-            echo "Radicle bootstrap service escaped Aspen1" >&2
-            exit 1
-          ''}
           ${lib.optionalString
-            (!(identityGeneratorAbsent aspen2Config && identityGeneratorAbsent aspen3Config))
+            (
+              !(
+                radicleServiceAbsent aspen2Config
+                && radicleServiceAbsent aspen3Config
+                && radicleServiceAbsent desktopConfig
+              )
+            )
+            ''
+              echo "Radicle bootstrap service escaped Aspen1" >&2
+              exit 1
+            ''
+          }
+          ${lib.optionalString
+            (
+              !(
+                identityGeneratorAbsent aspen2Config
+                && identityGeneratorAbsent aspen3Config
+                && identityGeneratorAbsent desktopConfig
+              )
+            )
             ''
               echo "Radicle identity material escaped Aspen1" >&2
               exit 1
