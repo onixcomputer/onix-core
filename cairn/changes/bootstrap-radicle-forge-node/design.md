@@ -56,9 +56,9 @@ Completion means `aspen1`, deployed through `root@aspen1.local`, runs a persiste
 
 ### Decision: Start with public pilot content
 
-**Choice:** The bootstrap endpoint admits only explicitly selected public probe or pilot repositories. Private repository hosting remains disabled until enumeration, authorization, storage-operator visibility, and backup confidentiality have separate accepted evidence.
+**Choice:** The bootstrap endpoint admits only explicitly selected public probe or pilot repositories. A tested Rust reconciler reads the pinned Radicle CLI's complete seeding-policy table, computes additions and removals in a pure deterministic core, removes undeclared policies before adding declared policies, and verifies the final set exactly. A hardened periodic oneshot receives no credentials or network access beyond the node's Unix control socket. Private repository hosting remains disabled until enumeration, authorization, storage-operator visibility, and backup confidentiality have separate accepted evidence.
 
-**Rationale:** Radicle selective replication is not encryption at rest, and node operators can read replicated private content. Public bootstrap content proves transport without creating a false confidentiality claim.
+**Rationale:** A default-block daemon configuration is insufficient if a manual or stale per-repository allow policy can survive. Exact reconciliation makes typed admission authoritative. Radicle selective replication is not encryption at rest, and node operators can read replicated private content. Public bootstrap content proves transport without creating a false confidentiality claim.
 
 ### Decision: Expose ordinary Git through a read-only HTTPS boundary
 

@@ -43,11 +43,16 @@ let
       && !(lib.hasPrefix "https://" settings.httpsServerName)
     );
   isCanonicalRepositoryId = rid: builtins.match canonicalRepositoryIdPattern rid != null;
+  isSeeded = rid: builtins.elem rid settings.seedRepositories;
+  validSeedRepositoryIds = builtins.all isCanonicalRepositoryId settings.seedRepositories;
+  uniqueSeedRepositoryIds = lib.unique settings.seedRepositories == settings.seedRepositories;
   validRepositoryIds = builtins.all isCanonicalRepositoryId settings.pinnedRepositories;
   uniqueRepositoryIds = lib.unique settings.pinnedRepositories == settings.pinnedRepositories;
+  pinnedRepositoriesAreSeeded = builtins.all isSeeded settings.pinnedRepositories;
   validHttpsGitRepositoryIds = builtins.all isCanonicalRepositoryId settings.httpsGitRepositories;
   uniqueHttpsGitRepositoryIds =
     lib.unique settings.httpsGitRepositories == settings.httpsGitRepositories;
+  httpsGitRepositoriesAreSeeded = builtins.all isSeeded settings.httpsGitRepositories;
   validHttpsAdmission =
     if settings.httpsServerName == null then
       settings.httpsGitRepositories == [ ]
@@ -92,13 +97,17 @@ lib.concatLists [
   (rejectUnless (
     settings.httpdEnabled || settings.httpsServerName == null
   ) "httpsServerName requires the read-only HTTP gateway")
+  (rejectUnless validSeedRepositoryIds "seedRepositories must contain only canonical public rad:z repository IDs")
+  (rejectUnless uniqueSeedRepositoryIds "seedRepositories must not contain duplicate repository IDs")
   (rejectUnless validHttpsName "httpsServerName must be a public DNS name without scheme or .local suffix")
   (rejectUnless validHttpsAdmission "public HTTPS requires a non-empty HTTPS Git repository allowlist, and an allowlist requires public HTTPS")
   (rejectUnless validHttpsGitRepositoryIds "httpsGitRepositories must contain only canonical public rad:z repository IDs")
   (rejectUnless uniqueHttpsGitRepositoryIds "httpsGitRepositories must not contain duplicate repository IDs")
+  (rejectUnless httpsGitRepositoriesAreSeeded "httpsGitRepositories must be a subset of seedRepositories")
   (rejectUnless (
     settings.minimumSignedRefsFeature == requiredSignedRefsFeature
   ) "minimumSignedRefsFeature must remain parent")
   (rejectUnless validRepositoryIds "pinnedRepositories must contain only canonical rad:z repository IDs")
   (rejectUnless uniqueRepositoryIds "pinnedRepositories must not contain duplicate repository IDs")
+  (rejectUnless pinnedRepositoriesAreSeeded "pinnedRepositories must be a subset of seedRepositories")
 ]

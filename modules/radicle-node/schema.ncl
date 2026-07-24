@@ -13,6 +13,7 @@ let default_http_port = 8080 in
     nodeListenPort = { type = "port", default = default_node_port, description = "Native Radicle peer TCP port" },
     nodeFirewallInterface = { type = "string", description = "Single interface allowed to receive native Radicle peer traffic" },
     externalAddress = { type = "nullable_string", default = null, description = "Optional advertised Radicle host and port; deployment hostname inference is forbidden" },
+    seedRepositories = { type = "array_string", default = [], description = "Canonical public Radicle repository IDs admitted by the native seeding-policy reconciler" },
     httpdEnabled = { type = "bool", default = true, description = "Enable the read-only Radicle HTTP gateway" },
     httpListenAddress = { type = "string", default = "127.0.0.1", description = "Loopback address for the read-only Radicle HTTP gateway" },
     httpListenPort = { type = "port", default = default_http_port, description = "Loopback Radicle HTTP gateway port" },

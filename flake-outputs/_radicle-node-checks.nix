@@ -30,6 +30,10 @@ let
   identityGeneratorName = "radicle-node-radicle-forge-bootstrap";
   privateKeyFileName = "node-private-key";
   publicKeyFileName = "node-public-key";
+  policyServiceName = "radicle-policy-reconcile";
+  policyInitialDelay = "2m";
+  policyInterval = "5m";
+  policyJitter = "30s";
   generatedPrivateKeyMode = "400";
   generatedPublicKeyMode = "444";
   optionalPassphraseCredential = "dev.radicle.node.passphrase";
@@ -37,6 +41,7 @@ let
 
   nodePackage = self.packages.${system}.radicle-node;
   httpdPackage = self.packages.${system}.radicle-httpd;
+  policyReconciler = import ../modules/radicle-node/policy-reconciler.nix { inherit pkgs; };
   validateSettings = import ../modules/radicle-node/validate-settings.nix { inherit lib; };
   mkHttpsGitLocations = import ../modules/radicle-node/mk-https-git-locations.nix { inherit lib; };
   mkNixosConfig = import ../modules/radicle-node/mk-nixos-config.nix { inherit lib; };
@@ -52,6 +57,7 @@ let
     nodeListenPort = nodePort;
     nodeFirewallInterface = nodeInterface;
     externalAddress = "${nodeAddress}:${toString nodePort}";
+    seedRepositories = [ pinnedRepository ];
     httpdEnabled = true;
     httpListenAddress = httpAddress;
     httpListenPort = httpPort;
@@ -73,9 +79,10 @@ let
   };
   httpsModuleConfig = mkNixosConfig {
     settings = httpsSettings;
-    inherit nodePackage httpdPackage;
+    inherit nodePackage httpdPackage policyReconciler;
     privateKeyPath = "/run/credentials/radicle-node.service/dev.radicle.node.secret";
     publicKeyPath = "/var/lib/radicle/keys/radicle.pub";
+    configFile = "/var/lib/radicle/config.json";
   };
   httpsGitLocations = mkHttpsGitLocations {
     backend = httpsBackend;
@@ -270,6 +277,27 @@ let
       expected = "public DNS name";
     }
     {
+      name = "invalid-seed-rid";
+      settings = positiveSettings // {
+        seedRepositories = [ "rad:../host-secret" ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "seedRepositories must contain only canonical public rad:z repository IDs";
+    }
+    {
+      name = "duplicate-seed-rid";
+      settings = positiveSettings // {
+        seedRepositories = [
+          pinnedRepository
+          pinnedRepository
+        ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "seedRepositories must not contain duplicate repository IDs";
+    }
+    {
       name = "https-without-allowlist";
       settings = positiveSettings // {
         inherit httpsServerName;
@@ -309,6 +337,26 @@ let
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
       expected = "httpsGitRepositories must not contain duplicate repository IDs";
+    }
+    {
+      name = "https-repository-not-seeded";
+      settings = positiveSettings // {
+        inherit httpsServerName;
+        seedRepositories = [ ];
+        httpsGitRepositories = [ pinnedRepository ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "httpsGitRepositories must be a subset of seedRepositories";
+    }
+    {
+      name = "pinned-repository-not-seeded";
+      settings = positiveSettings // {
+        seedRepositories = [ ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "pinnedRepositories must be a subset of seedRepositories";
     }
     {
       name = "weak-signed-refs";
@@ -362,8 +410,13 @@ let
   failedAssertions = builtins.filter (assertion: !assertion.assertion) fixtureConfig.assertions;
   nodeService = fixtureConfig.systemd.services.radicle-node;
   httpdService = fixtureConfig.systemd.services.radicle-httpd;
+  policyService = fixtureConfig.systemd.services.${policyServiceName};
+  policyTimer = fixtureConfig.systemd.timers.${policyServiceName};
   nodeCommand = nodeService.serviceConfig.ExecStart;
   httpdCommand = httpdService.serviceConfig.ExecStart;
+  policyCommand = builtins.unsafeDiscardStringContext policyService.serviceConfig.ExecStart;
+  policyReconcilerCommandPath = builtins.unsafeDiscardStringContext "${policyReconciler}/bin/radicle-policy-reconciler";
+  nodeRadCommandPath = builtins.unsafeDiscardStringContext "${nodePackage}/bin/rad";
   identityGenerator = fixtureConfig.clan.core.vars.generators.${identityGeneratorName};
   privateKeyFile = identityGenerator.files.${privateKeyFileName};
   publicKeyFile = identityGenerator.files.${publicKeyFileName};
@@ -375,13 +428,18 @@ let
   nodeLoadedCredentials = lib.toList (nodeService.serviceConfig.LoadCredential or [ ]);
   httpdImportedCredentials = lib.toList (httpdService.serviceConfig.ImportCredential or [ ]);
   httpdLoadedCredentials = lib.toList (httpdService.serviceConfig.LoadCredential or [ ]);
+  policyImportedCredentials = lib.toList (policyService.serviceConfig.ImportCredential or [ ]);
+  policyLoadedCredentials = lib.toList (policyService.serviceConfig.LoadCredential or [ ]);
   unexpectedNodeImports = lib.subtractLists [ optionalPassphraseCredential ] nodeImportedCredentials;
   unexpectedNodeLoads = lib.subtractLists [ loadedPrivateKeyCredential ] nodeLoadedCredentials;
   nodeBindPaths = lib.toList (nodeService.serviceConfig.BindReadOnlyPaths or [ ]);
   httpdBindPaths = lib.toList (httpdService.serviceConfig.BindReadOnlyPaths or [ ]);
+  policyBindPaths = lib.toList (policyService.serviceConfig.BindReadOnlyPaths or [ ]);
+  expectedPolicyConfigBind = "${fixtureConfig.services.radicle.configFile}:/var/lib/radicle/config.json";
+  expectedPolicyPublicKeyBind = "${publicKeyPath}:/var/lib/radicle/keys/radicle.pub";
   unexpectedSecretBindPaths = builtins.filter (
     path: lib.hasInfix "/run/secrets" path && path != expectedPublicKeyBind
-  ) (nodeBindPaths ++ httpdBindPaths);
+  ) (nodeBindPaths ++ httpdBindPaths ++ policyBindPaths);
   globalFirewallPorts = fixtureConfig.networking.firewall.allowedTCPPorts;
   interfaceFirewallPorts =
     fixtureConfig.networking.firewall.interfaces.${nodeInterface}.allowedTCPPorts;
@@ -392,7 +450,9 @@ let
     && lib.hasInfix "alert: RadicleNodeNotActive" monitoringRules
     && lib.hasInfix ''systemd_unit_state{name="radicle-node.service",state="active"} != 1'' monitoringRules
     && lib.hasInfix "alert: RadicleHttpdNotActive" monitoringRules
-    && lib.hasInfix ''systemd_unit_state{name="radicle-httpd.service",state="active"} != 1'' monitoringRules;
+    && lib.hasInfix ''systemd_unit_state{name="radicle-httpd.service",state="active"} != 1'' monitoringRules
+    && lib.hasInfix "alert: RadiclePolicyReconcileFailed" monitoringRules
+    && lib.hasInfix ''systemd_unit_state{name="radicle-policy-reconcile.service",state="failed"} == 1'' monitoringRules;
 
   plugins = self.packages.x86_64-linux.wasm-plugins;
   wasm = import ../lib/wasm.nix { inherit plugins; };
@@ -408,6 +468,7 @@ let
     "nodeListenPort"
     "nodeFirewallInterface"
     "externalAddress"
+    "seedRepositories"
     "httpdEnabled"
     "httpListenAddress"
     "httpListenPort"
@@ -434,6 +495,7 @@ in
           test -x ${nodePackage}/bin/rad
           test -x ${nodePackage}/bin/radicle-node
           test -x ${httpdPackage}/bin/radicle-httpd
+          test -x ${policyReconciler}/bin/radicle-policy-reconciler
           test -e ${fixtureConfig.services.radicle.configFile}
 
           configured_fingerprint="$(ssh-keygen -lf ${publicKeyPath})"
@@ -520,6 +582,10 @@ in
             echo "Radicle HTTP daemon receives credentials" >&2
             exit 1
           ''}
+          ${lib.optionalString (policyImportedCredentials != [ ] || policyLoadedCredentials != [ ]) ''
+            echo "Radicle policy reconciler receives credentials" >&2
+            exit 1
+          ''}
           ${lib.optionalString (unexpectedSecretBindPaths != [ ]) ''
             echo "Radicle services bind a secret path other than the generated public key" >&2
             exit 1
@@ -540,6 +606,65 @@ in
             echo "Radicle service does not consume the generated public identity" >&2
             exit 1
           ''}
+          ${lib.optionalString
+            (
+              !(
+                builtins.elem expectedPolicyConfigBind policyBindPaths
+                && builtins.elem expectedPolicyPublicKeyBind policyBindPaths
+              )
+            )
+            ''
+              echo "Radicle policy reconciler cannot read the bounded public profile" >&2
+              exit 1
+            ''
+          }
+          ${lib.optionalString (!(lib.hasInfix policyReconcilerCommandPath policyCommand)) ''
+            echo "Radicle policy service does not execute the reviewed reconciler" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!(lib.hasInfix nodeRadCommandPath policyCommand)) ''
+            echo "Radicle policy service does not use the reviewed Radicle CLI" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (lib.hasInfix pinnedRepository policyCommand) ''
+            echo "Radicle production policy unexpectedly admits a repository" >&2
+            exit 1
+          ''}
+          ${lib.optionalString
+            (
+              !policyService.serviceConfig.PrivateNetwork
+              || !(builtins.elem "/run/secrets" policyService.serviceConfig.InaccessiblePaths)
+            )
+            ''
+              echo "Radicle policy reconciler can reach the network or host secrets" >&2
+              exit 1
+            ''
+          }
+          ${lib.optionalString
+            (
+              !(
+                builtins.elem "radicle-node.service" policyService.requires
+                && builtins.elem "radicle-httpd.service" policyService.requiredBy
+                && builtins.elem "radicle-httpd.service" policyService.before
+              )
+            )
+            ''
+              echo "Radicle policy reconciliation is not ordered before HTTP service" >&2
+              exit 1
+            ''
+          }
+          ${lib.optionalString
+            (
+              policyTimer.timerConfig.OnBootSec != policyInitialDelay
+              || policyTimer.timerConfig.OnUnitActiveSec != policyInterval
+              || policyTimer.timerConfig.RandomizedDelaySec != policyJitter
+              || policyTimer.timerConfig.Unit != "${policyServiceName}.service"
+            )
+            ''
+              echo "Radicle policy reconciliation timer drifted" >&2
+              exit 1
+            ''
+          }
           ${lib.optionalString (!(radicleServiceAbsent aspen2Config && radicleServiceAbsent aspen3Config)) ''
             echo "Radicle bootstrap service escaped Aspen1" >&2
             exit 1
@@ -596,7 +721,11 @@ in
             exit 1
           ''}
           ${lib.optionalString
-            (nodeService.serviceConfig.User != "radicle" || httpdService.serviceConfig.User != "radicle")
+            (
+              nodeService.serviceConfig.User != "radicle"
+              || httpdService.serviceConfig.User != "radicle"
+              || policyService.serviceConfig.User != "radicle"
+            )
             ''
               echo "Radicle services do not use the dedicated unprivileged account" >&2
               exit 1

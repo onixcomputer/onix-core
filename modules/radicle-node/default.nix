@@ -53,9 +53,11 @@ in
             settings = extendSettings (ms.mkDefaults schema.default);
             nodePackage = pkgs.radicle-node;
             httpdPackage = pkgs.radicle-httpd;
+            policyReconciler = import ./policy-reconciler.nix { inherit pkgs; };
             identityFiles = config.clan.core.vars.generators.${generatorName}.files;
             privateKeyPath = identityFiles.${privateKeyFileName}.path;
             publicKeyPath = identityFiles.${publicKeyFileName}.path;
+            configFile = config.services.radicle.configFile;
             validationErrors = validateSettings {
               inherit settings;
               packageVersion = nodePackage.version;
@@ -68,8 +70,10 @@ in
                 settings
                 nodePackage
                 httpdPackage
+                policyReconciler
                 privateKeyPath
                 publicKeyPath
+                configFile
                 ;
             };
           in

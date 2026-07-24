@@ -468,6 +468,7 @@ let radicle_http_port = 8080 in
         nodeListenPort = radicle_node_port,
         nodeFirewallInterface = "tailscale0",
         externalAddress = "%{radicle_node_address}:%{radicle_node_port}",
+        seedRepositories = [],
         httpdEnabled = true,
         httpListenAddress = "127.0.0.1",
         httpListenPort = radicle_http_port,

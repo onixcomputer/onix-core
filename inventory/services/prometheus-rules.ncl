@@ -116,6 +116,15 @@
               summary: "Radicle HTTP gateway is not active on {{ $labels.instance }}"
               description: "The loopback Radicle HTTP gateway left the active state"
 
+          - alert: RadiclePolicyReconcileFailed
+            expr: systemd_unit_state{name="radicle-policy-reconcile.service",state="failed"} == 1
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Radicle seeding policy reconciliation failed on {{ $labels.instance }}"
+              description: "The node may not match the typed repository admission set"
+
           - alert: SystemNotHealthy
             expr: node_systemd_system_running == 0
             for: 5m
