@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Bootstrap the first persistent, least-authority Radicle node and seed-backed HTTPS Git endpoint in Onix-managed infrastructure before repository publication or consumer cutover.
+Bootstrap the first persistent, least-authority Radicle node on `aspen1` and expose a seed-backed HTTPS Git endpoint before repository publication or consumer cutover.
 
 ## ADDED Requirements
 
@@ -32,28 +32,29 @@ r[onix.radicle_node.configuration] `onix-core` MUST validate the bootstrap machi
 #### Scenario: Complete bootstrap configuration lowers deterministically
 
 r[onix.radicle_node.configuration.valid]
-- GIVEN one explicit bootstrap host, persistent state, bounded storage and retention, safe listeners, an HTTPS origin, monitoring, backup policy, and an allowlist containing only admitted public repositories
+- GIVEN `aspen1` is the explicit bootstrap host with deployment target `root@aspen1.local`, persistent state, bounded storage and retention, safe listeners, an HTTPS origin, monitoring, off-host backup policy, and an allowlist containing only admitted public repositories
 - WHEN the Nickel configuration is validated and exported
 - THEN it MUST produce deterministic inputs for the production node, HTTP, proxy, firewall, backup, and monitoring modules
 
 #### Scenario: Unsafe bootstrap configuration fails closed
 
 r[onix.radicle_node.configuration.invalid]
-- GIVEN configuration omits a host or failure-domain fact, uses transient storage, exposes an undeclared wildcard listener, admits a private repository, requests forbidden authority, declares an unsafe endpoint, or leaves storage or retention unbounded
+- GIVEN configuration selects a host other than `aspen1`, omits its failure-domain fact, uses transient storage, exposes an undeclared wildcard listener, admits a private repository, requests forbidden authority, declares an unsafe endpoint, uses a same-host-only backup, or leaves storage or retention unbounded
 - WHEN validation runs
 - THEN it MUST reject the configuration before producing deployable service inputs
 
 ### Requirement: Least-authority persistent node
 
-r[onix.radicle_node.hosting] `onix-core` MUST run the bootstrap Radicle node as a dedicated unprivileged service with persistent state and MUST NOT provide repository delegate, offline recovery, CI, deployment, release-signing, canonical-ref, cache-administration, or artifact-administration authority to that service.
+r[onix.radicle_node.hosting] `onix-core` MUST run the bootstrap Radicle node on `aspen1` as a dedicated unprivileged service with persistent state and MUST NOT provide access to repository delegate, offline recovery, CI, deployment, release-signing, canonical-ref, cache-administration, artifact-administration, or unrelated co-hosted service authority.
 
 #### Scenario: Node survives restart without authority expansion
 
 r[onix.radicle_node.hosting.restart]
-- GIVEN the deployed node has an admitted node identity, repository set, and persistent state directory
+- GIVEN the node deployed to `root@aspen1.local` has an admitted node identity, repository set, and persistent state directory
 - WHEN the service or selected machine restarts
 - THEN the same node and admitted repository identities MUST return healthy
 - AND no forbidden credential or governance capability may be present in the unit, environment, or state directory
+- AND the unit MUST remain unable to read Aspen1's Buildbot, Nix-signing, Cloudflare, Vaultwarden, Matrix, or other unrelated service credentials
 
 #### Scenario: Privileged material is injected
 
@@ -82,7 +83,7 @@ r[onix.radicle_node.exposure.denied]
 
 ### Requirement: Complete backup and clean restore
 
-r[onix.radicle_node.recovery] `onix-core` MUST back up and restore the complete declared Radicle state required for node identity, repository objects, signed refs, issues, patches, identities, and declared custom COB refs, and MUST bind the bounded backup to a BLAKE3 manifest.
+r[onix.radicle_node.recovery] `onix-core` MUST back up the complete declared Radicle state required for node identity, repository objects, signed refs, issues, patches, identities, and declared custom COB refs to a target outside Aspen1's failure domain, and MUST bind the bounded backup to a BLAKE3 manifest.
 
 #### Scenario: Clean restore preserves declared identities
 

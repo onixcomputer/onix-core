@@ -2,7 +2,7 @@
 
 The Radicle forge pilot currently has repository-local publication and consumption plans, but no Onix-managed node exists. `onix-core` is the repository that can select a real machine, install packages, persist service identity and storage, apply firewall and reverse-proxy policy, deploy through Clan, monitor the unit, and execute backup/restore operations. OnixOS can define portable forge intent and cross-repository acceptance, but it cannot supply evidence for a node that has not first been deployed here.
 
-Completion means a reviewed `onix-core` machine runs a persistent selective Radicle node and a seed-backed HTTPS Git endpoint, survives restart, rejects unsafe configuration, and emits a deterministic bootstrap receipt that downstream Cairns can verify. A local developer profile, transient `rad node start`, unencrypted ad hoc key copy, GitHub-backed proxy, browser-only page, or endpoint without exact-object acquisition is false completion.
+Completion means `aspen1`, deployed through `root@aspen1.local`, runs a persistent selective Radicle node and a seed-backed HTTPS Git endpoint, survives restart, rejects unsafe configuration, and emits a deterministic bootstrap receipt that downstream Cairns can verify. A local developer profile, transient `rad node start`, unencrypted ad hoc key copy, GitHub-backed proxy, browser-only page, or endpoint without exact-object acquisition is false completion.
 
 ## Decisions
 
@@ -11,6 +11,12 @@ Completion means a reviewed `onix-core` machine runs a persistent selective Radi
 **Choice:** `onix-core` packages and deploys the first Radicle node. OnixOS consumes its accepted receipt before admitting catalog entries, additional seed placement, CI, or pilot publication.
 
 **Rationale:** The dependency order must begin with an operational source and synchronization boundary. Otherwise downstream plans can validate strings while no service can publish, seed, clone, monitor, or restore a repository.
+
+### Decision: Aspen1 is the bootstrap host
+
+**Choice:** Assign the initial node to the existing `x86_64-linux` machine `aspen1` and use `root@aspen1.local` for Clan deployment and local runtime probes. Listener addresses and the stable HTTPS origin remain explicit typed policy rather than being inferred from the deployment hostname.
+
+**Rationale:** Aspen1 is already a managed always-on server with persistent storage, monitoring, HTTPS proxy infrastructure, and a reviewed deployment path. Keeping deployment identity separate from client endpoints avoids treating mDNS as public service discovery.
 
 ### Decision: Use typed configuration with a thin deployment shell
 
@@ -26,7 +32,7 @@ Completion means a reviewed `onix-core` machine runs a persistent selective Radi
 
 ### Decision: Give the node no repository governance authority
 
-**Choice:** The service receives only its own persistent Radicle node identity and storage permissions. Repository delegate keys, offline recovery authority, CI credentials, deployment credentials, release signing keys, canonical-ref authority, cache administration, and artifact-storage administration are forbidden from the unit and its state directory.
+**Choice:** The service receives only its own persistent Radicle node identity and storage permissions. Repository delegate keys, offline recovery authority, CI credentials, deployment credentials, release signing keys, canonical-ref authority, cache administration, and artifact-storage administration are forbidden from the unit and its state directory. Systemd hardening must also prevent access to Aspen1's existing Buildbot, Nix-signing, Cloudflare, Vaultwarden, Matrix, and other co-hosted service credentials.
 
 **Rationale:** Source replication and transport availability do not require repository governance. Compromise of the first public seed must not authorize canonical history changes or privileged builds.
 
@@ -44,7 +50,7 @@ Completion means a reviewed `onix-core` machine runs a persistent selective Radi
 
 ### Decision: Preserve the complete node state and prove restore
 
-**Choice:** Backup includes the Radicle storage and identity material required to recover the same node, repositories, signed refs, issues, patches, identities, and declared custom COB refs. The operator shell creates a bounded backup, verifies a BLAKE3 manifest, restores into a clean test root or replacement unit, and compares declared identities before acceptance.
+**Choice:** Backup includes the Radicle storage and identity material required to recover the same node, repositories, signed refs, issues, patches, identities, and declared custom COB refs. The authoritative backup target must be outside Aspen1's failure domain; Aspen1's local Borg server or another same-host path cannot satisfy recovery. The operator shell creates a bounded backup, verifies a BLAKE3 manifest, restores into a clean test root or replacement unit, and compares declared identities before acceptance.
 
 **Rationale:** Branch-only Git backups omit collaboration and identity refs. A backup procedure without a clean restore observation is not recovery evidence.
 
@@ -56,18 +62,19 @@ Completion means a reviewed `onix-core` machine runs a persistent selective Radi
 
 ## Evidence Shape
 
-The deterministic bootstrap receipt records the policy identity, package source/version identity, selected machine and failure-domain label, node ID, admitted repository IDs, listener and HTTPS endpoint identities, forbidden-authority assertions, service/restart observations, exact probe Git object, backup manifest identity, restore comparison, monitoring result, and explicit non-claims. Onix-owned receipt identities use BLAKE3; Git object IDs retain Git's interoperable algorithm.
+The deterministic bootstrap receipt records the policy identity, package source/version identity, selected machine `aspen1`, its declared failure-domain label, deployment target identity, node ID, admitted repository IDs, listener and HTTPS endpoint identities, forbidden-authority assertions, service/restart observations, exact probe Git object, off-host backup manifest identity, restore comparison, monitoring result, and explicit non-claims. Onix-owned receipt identities use BLAKE3; Git object IDs retain Git's interoperable algorithm.
 
 The receipt excludes private keys, credentials, raw environment values, private repository contents, and unbounded logs. Runtime collection is a thin shell over explicit commands and files; classification and receipt construction operate over bounded observations in a pure deterministic core.
 
 ## Positive and Negative Validation
 
-Positive fixtures cover an admitted package, one selected bootstrap host, persistent state, explicit listeners, public repository allowlisting, HTTPS exact-object acquisition, restart continuity, monitoring, backup verification, and clean restore. Negative fixtures cover an old package, weak signed-reference feature, missing host or failure domain, wildcard exposure without admission, private repository admission, transient storage, writable HTTP behavior, delegate or CI credential injection, unbounded retention, malformed endpoint, incomplete backup, tampered BLAKE3 manifest, changed node/repository identity after restore, and receipt secret leakage.
+Positive fixtures cover an admitted package assigned to `aspen1`, the `root@aspen1.local` deployment path, persistent state, explicit listeners, public repository allowlisting, HTTPS exact-object acquisition, restart continuity, monitoring, off-host backup verification, and clean restore. Negative fixtures cover an old package, weak signed-reference feature, missing host or failure domain, wildcard exposure without admission, private repository admission, transient storage, writable HTTP behavior, delegate or CI credential injection, unbounded retention, malformed endpoint, incomplete backup, tampered BLAKE3 manifest, changed node/repository identity after restore, and receipt secret leakage.
 
 ## Risks / Trade-offs
 
 - A single bootstrap host is an availability bottleneck until the independent second seed is deployed and accepted.
 - HTTPS introduces DNS, TLS, proxy, and gateway failure modes distinct from Radicle peer synchronization.
-- Persisting node identity improves continuity but increases the importance of state permissions and encrypted backup handling.
+- Aspen1 already hosts privileged services, so unit isolation and negative credential-access checks are acceptance conditions rather than best-effort hardening.
+- Persisting node identity improves continuity but increases the importance of state permissions and encrypted off-host backup handling.
 - A public seed stores and serves admitted source bytes; replication does not prove source correctness, review acceptance, or release eligibility.
 - Downstream GitHub independence remains bounded to published Onix-owned repositories and does not remove GitHub-hosted third-party Nix or Cargo inputs.
