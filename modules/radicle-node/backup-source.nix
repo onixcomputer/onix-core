@@ -8,6 +8,8 @@ let
   backupJobName = "britton-desktop";
   backupUnitName = "borgbackup-job-${backupJobName}";
   backupCredentialDirectory = "/run/credentials/${backupUnitName}.service";
+  borgRuntimeDirectoryName = "radicle-backup-borg";
+  borgRuntimeRoot = "/run/${borgRuntimeDirectoryName}";
   stateRoot = "/var/lib/radicle";
   sourceMount = "/run/radicle-backup-source";
   stagingRoot = "/run/radicle-backup-input";
@@ -275,7 +277,14 @@ in
     ];
     exclude = lib.mkForce [ ];
     compression = lib.mkForce "auto,lz4";
-    environment.BORG_RSH = lib.mkForce backupRsh;
+    environment = {
+      BORG_BASE_DIR = borgRuntimeRoot;
+      BORG_CACHE_DIR = "${borgRuntimeRoot}/cache";
+      BORG_CONFIG_DIR = "${borgRuntimeRoot}/config";
+      BORG_KEYS_DIR = "${borgRuntimeRoot}/keys";
+      BORG_RSH = lib.mkForce backupRsh;
+      BORG_SECURITY_DIR = "${borgRuntimeRoot}/security";
+    };
     encryption.passCommand = lib.mkForce backupPassCommand;
     preHook = lib.getExe prepareBackup;
     postHook = lib.getExe cleanupBackup;
@@ -322,6 +331,8 @@ in
     RestrictNamespaces = true;
     RestrictRealtime = true;
     RestrictSUIDSGID = true;
+    RuntimeDirectory = borgRuntimeDirectoryName;
+    RuntimeDirectoryMode = privateDirectoryMode;
     UMask = "0077";
   };
 }

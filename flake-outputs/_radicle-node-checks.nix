@@ -47,6 +47,7 @@ let
   borgRepoKeyBackupCredential = "borg-repokey";
   backupUnitName = "borgbackup-job-${backupTargetHost}";
   backupCredentialDirectory = "/run/credentials/${backupUnitName}.service";
+  backupBorgRuntimeRoot = "/run/radicle-backup-borg";
   identityGeneratorName = "radicle-node-radicle-forge-bootstrap";
   privateKeyFileName = "node-private-key";
   publicKeyFileName = "node-public-key";
@@ -620,6 +621,10 @@ let
     && backupJob.repo == "borg@${backupTargetAddress}:."
     && backupJob.compression == "auto,lz4"
     && backupJob.encryption.mode == "repokey"
+    && backupJob.environment.BORG_BASE_DIR == backupBorgRuntimeRoot
+    && backupJob.environment.BORG_CACHE_DIR == "${backupBorgRuntimeRoot}/cache"
+    && backupJob.environment.BORG_CONFIG_DIR == "${backupBorgRuntimeRoot}/config"
+    && backupJob.environment.BORG_SECURITY_DIR == "${backupBorgRuntimeRoot}/security"
     && backupJob.prune.keep.daily == backupRetentionDaily
     && backupJob.prune.keep.weekly == backupRetentionWeekly
     && lib.hasInfix "${backupCredentialDirectory}/${borgSshBackupCredential}" backupJob.environment.BORG_RSH
@@ -640,6 +645,8 @@ let
     && backupService.serviceConfig.PrivateDevices
     && backupService.serviceConfig.ProtectHome
     && backupService.serviceConfig.ProtectSystem == "strict"
+    && backupService.serviceConfig.RuntimeDirectory == "radicle-backup-borg"
+    && backupService.serviceConfig.RuntimeDirectoryMode == "0700"
     && builtins.length backupService.serviceConfig.ExecStartPre == 1
     && lib.hasInfix "radicle-backup-repository-preflight" (
       builtins.head backupService.serviceConfig.ExecStartPre
