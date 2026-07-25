@@ -39,8 +39,11 @@ secrets, home, cache-signing, or deployment access. It may use the network only
 to hydrate the exact locked inputs and canonical check closure of the fixed
 reviewed Bounded Exec source into the runner's local store. Both services use an immutable process-local Nix profile that trusts the runner
 only for its private `local?root=` store. They deny namespace creation, host
-system features such as `uid-range`, and cache-signing credentials; the
-untrusted runner remains offline and is not trusted by the host Nix daemon.
+system features such as `uid-range`, and cache-signing credentials. Before job
+execution, the hydrator copies the runner runtime closure into the private store;
+systemd then binds only that private store at `/nix/store` for the runner and
+makes the host daemon socket inaccessible. The untrusted runner remains offline
+and is not trusted by the host Nix daemon.
 
 The runner's process, output, memory, CPU, task, artifact, and wall-clock bounds
 are enforced by both `bounded-exec` at exact revision

@@ -168,6 +168,16 @@ in
                 };
               }
             );
+            runnerRuntimePaths = [
+              runnerPackage
+              runnerConfig
+              isolatedNixConfig
+              pkgs.gitMinimal
+              pkgs.gnutar
+              pkgs.nix
+              pkgs.openssh
+              nodePackage
+            ];
             commonHardening = {
               CapabilityBoundingSet = "";
               LockPersonality = true;
@@ -245,6 +255,7 @@ in
                 "/root"
                 "/home"
                 "/etc/ssh"
+                "/nix/var/nix/daemon-socket"
               ];
               PrivateNetwork = true;
               RestrictAddressFamilies = [ "AF_UNIX" ];
@@ -293,6 +304,11 @@ in
                 set -eu
                 install -d -m ${privateDirectoryMode} ${hydratorHome} ${runnerCache} ${localStoreRoot}
                 store_uri=${lib.escapeShellArg "local?root=${localStoreRoot}"}
+                ${pkgs.nix}/bin/nix \
+                  --no-sandbox \
+                  copy \
+                  --to "$store_uri" \
+                  ${lib.escapeShellArgs (map toString runnerRuntimePaths)}
                 ${pkgs.nix}/bin/nix \
                   --no-sandbox \
                   flake archive \
@@ -562,15 +578,12 @@ in
                   requires = [ "radicle-ci-input-hydrator.service" ];
                   unitConfig.OnSuccess = [ "radicle-ci-publisher.service" ];
                   serviceConfig = offlineHardening // {
+                    BindPaths = [ "${localStoreRoot}/nix/store:/nix/store" ];
                     CPUQuota = "${toString settings.cpuQuotaPercent}%";
                     ExecStart = "${runnerPackage}/bin/radicle-ci-runner run-next ${runnerConfig}";
                     Group = runnerUser;
                     MemoryMax = settings.memoryMaxBytes;
-                    ReadOnlyPaths = [
-                      runnerConfig
-                      "/nix/store"
-                      "/nix/var/nix/daemon-socket/socket"
-                    ];
+                    ReadOnlyPaths = [ runnerConfig ];
                     ReadWritePaths = [
                       exchangeState
                       runnerState

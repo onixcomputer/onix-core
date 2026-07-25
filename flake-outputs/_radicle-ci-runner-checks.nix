@@ -43,6 +43,7 @@ let
   runnerCommand = runnerService.serviceConfig.ExecStart;
   runnerConfigPath = lib.last (lib.splitString " " runnerCommand);
   runnerReadOnly = lib.toList (runnerService.serviceConfig.ReadOnlyPaths or [ ]);
+  runnerBindPaths = lib.toList (runnerService.serviceConfig.BindPaths or [ ]);
   runnerReadWrite = lib.toList (runnerService.serviceConfig.ReadWritePaths or [ ]);
   runnerInaccessible = lib.toList (runnerService.serviceConfig.InaccessiblePaths or [ ]);
   botAllowedAddresses = lib.toList (nodeService.serviceConfig.IPAddressAllow or [ ]);
@@ -126,9 +127,11 @@ let
     && builtins.elem "/run/secrets" runnerInaccessible
     && builtins.elem "/var/lib/radicle" runnerInaccessible
     && builtins.elem botState runnerInaccessible
+    && builtins.elem "/nix/var/nix/daemon-socket" runnerInaccessible
     && builtins.elem exchangeState runnerReadWrite
     && builtins.elem runnerState runnerReadWrite
-    && builtins.elem "/nix/store" runnerReadOnly
+    && builtins.elem "${runnerState}/local-store/nix/store:/nix/store" runnerBindPaths
+    && !(builtins.elem "/nix/store" runnerReadOnly)
     && nodeService.serviceConfig.IPAddressDeny == "any"
     && publisherService.serviceConfig.IPAddressDeny == "any"
     && builtins.elem productionSeedCidr botAllowedAddresses
@@ -166,6 +169,7 @@ in
                   runnerCredentialInputs
                   runnerInaccessible
                   runnerReadOnly
+                  runnerBindPaths
                   runnerReadWrite
                   botAllowedAddresses
                   publisherAllowedAddresses
