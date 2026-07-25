@@ -1,0 +1,147 @@
+{
+  "authority_boundary": {
+    "allowed_credentials": ["machine-scoped-radicle-node-key"],
+    "forbidden_authorities": [
+      "repository-delegate",
+      "canonical-ref",
+      "ci",
+      "deployment",
+      "release-signing",
+      "cache-write",
+      "artifact-administration",
+      "backup",
+      "cloudflare",
+      "github",
+      "nix-signing",
+      "user-radicle-profile"
+    ],
+    "forbidden_authorities_absent": true,
+    "home_protected": true,
+    "node_capability_bounding_set_empty": true,
+    "secret_tree_inaccessible": true,
+    "service_role": "native-public-replication-only",
+    "verifier_capability_bounding_set_empty": true
+  },
+  "availability": {
+    "client_boundary": "dynamic-user-desktop-only-egress",
+    "client_egress_allowlist": ["100.110.43.11/32"],
+    "commit": "29dac88ecded94457572db3fdfaaaab95fa91525",
+    "distinct_failure_domains": [
+      "aspen-primary-site",
+      "britton-desktop-workstation"
+    ],
+    "operator_node_stopped": true,
+    "persistent_seed_count": 2,
+    "primary_fallback_blocked": true,
+    "primary_node_restored": true,
+    "primary_node_stopped": true,
+    "public_fallback_blocked": true,
+    "signed_refs_feature": "parent",
+    "source_archive_blake3": "4fbbf8f0749262469f00748e04c775180488dba800303f139172656d25931927"
+  },
+  "evidence": [
+    "cairn/changes/deploy-radicle-secondary-seed/evidence/britton-desktop-live-replica-2026-07-25.md",
+    "docs/radicle-secondary-seed.md",
+    "evidence/radicle/bootstrap-v1.json"
+  ],
+  "identity": {
+    "distinct_from_primary": true,
+    "key_custody": "clan-encrypted-machine-variable",
+    "node_id": "z6MkkQCj5EczNiVzDzCkX9ewHNJ7NDEXSKbuRiS1x7o72yeG",
+    "ssh_fingerprint": "SHA256:JHQTPqoMr4kLqBsrAPSRNXUuzETiHAoiKBM/VWftmEg",
+    "startup_verification": "private-public-pair-and-pinned-fingerprint"
+  },
+  "machine": {
+    "address": "100.110.43.11",
+    "deployment_target": "root@100.110.43.11",
+    "failure_domain": "britton-desktop-workstation",
+    "host": "britton-desktop",
+    "independent_machine_and_storage": true,
+    "primary_failure_domain": "aspen-primary-site",
+    "system_closure": "/nix/store/p6p9sm4c1ghfwczcyzykvbzsb8q6kg3b-nixos-system-britton-desktop-26.11.20260629.7a1a647"
+  },
+  "monitoring": {
+    "node_metric": "present",
+    "policy_metric": "present",
+    "prometheus": "active",
+    "systemd_exporter": "active"
+  },
+  "network": {
+    "firewall_interface": "tailscale0",
+    "http_enabled": false,
+    "https_enabled": false,
+    "native_address": "100.110.43.11:8776",
+    "public_ingress_enabled": false,
+    "wildcard_listener": false
+  },
+  "non_claims": [
+    "second-public-https-origin",
+    "automatic-https-failover",
+    "geographic-or-building-power-independence",
+    "host-root-isolation",
+    "private-repository-confidentiality",
+    "secondary-seed-destructive-restore",
+    "repository-source-correctness",
+    "patch-review-correctness",
+    "ci-correctness",
+    "canonical-ref-enforcement-by-seed",
+    "release-readiness",
+    "whole-stack-github-independence"
+  ],
+  "observed_date": "2026-07-25",
+  "package": {
+    "identity_verifier_store_path": "/nix/store/i0ah82cdjqpch0fjwi37m4vlfnpvc0rk-radicle-replica-identity-verify",
+    "node_store_path": "/nix/store/r2hjw60rdpb3faxa6xglywxl77rx9ql2-radicle-node-1.9.1",
+    "node_version": "1.9.1",
+    "reconciler_store_path": "/nix/store/9zqa4y0vlh39qfca4rz6a9vn85l75nrl-radicle-policy-reconciler"
+  },
+  "policy": {
+    "check": "checks.x86_64-linux.radicle-seed-replica",
+    "minimum_node_version": "1.9.1",
+    "minimum_signed_refs_feature": "parent",
+    "source_revision": "3855bd216beb12c910a4c5e7c5920d4de34ea06e"
+  },
+  "receipt_type": "onix.radicle.replica.v1",
+  "recovery": {
+    "destructive_restore_exercised": false,
+    "machine_key_encrypted_at_rest": true,
+    "primary_full_restore_receipt": "onix.radicle.bootstrap.v1",
+    "state_reconstructible_from_primary": true
+  },
+  "rejection_probes": {
+    "https_missing_revision": "rejected",
+    "https_missing_revision_status": 500,
+    "native_missing_object": "rejected",
+    "native_undeclared_rid": "rejected",
+    "secret_access": "blocked",
+    "storage_access": "blocked"
+  },
+  "repository": {
+    "default_branch": "main",
+    "expected_commit": "29dac88ecded94457572db3fdfaaaab95fa91525",
+    "object_type": "commit",
+    "observed_commit": "29dac88ecded94457572db3fdfaaaab95fa91525",
+    "rid": "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+    "source_archive_blake3": "4fbbf8f0749262469f00748e04c775180488dba800303f139172656d25931927",
+    "visibility": "public"
+  },
+  "schema_version": 1,
+  "services": {
+    "identity_verifier": "verified-before-each-observed-start",
+    "node": "active-and-enabled",
+    "policy_timer": "active-and-enabled",
+    "reconciled_repository_count": 1,
+    "restart_continuity": "verified"
+  },
+  "state": {
+    "dataset": "datapool/radicle-seed",
+    "directory": "/var/lib/radicle",
+    "migration_checksum_comparison": "verified",
+    "migration_cleanup": "verified",
+    "migration_source_records": 52,
+    "migration_target_records": 52,
+    "quota_bytes": 68719476736,
+    "recordsize_bytes": 131072
+  },
+  "status": "accepted"
+}

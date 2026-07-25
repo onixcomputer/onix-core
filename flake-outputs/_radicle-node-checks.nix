@@ -1119,19 +1119,10 @@ in
               exit 1
             ''
           }
-          ${lib.optionalString
-            (
-              !(
-                radicleServiceAbsent aspen2Config
-                && radicleServiceAbsent aspen3Config
-                && radicleServiceAbsent desktopConfig
-              )
-            )
-            ''
-              echo "Radicle bootstrap service escaped Aspen1" >&2
-              exit 1
-            ''
-          }
+          ${lib.optionalString (!(radicleServiceAbsent aspen2Config && radicleServiceAbsent aspen3Config)) ''
+            echo "Radicle bootstrap service escaped Aspen1 onto an undeclared host" >&2
+            exit 1
+          ''}
           ${lib.optionalString
             (
               !(
