@@ -66,7 +66,16 @@ in
             timerInitialDelay = "2m";
             timerJitter = "15s";
             privateDirectoryMode = "0700";
-            exchangeDirectoryMode = "0770";
+            exchangeDirectoryMode = "2770";
+            exchangeQueueNames = [
+              "incoming"
+              "processing"
+              "outbox"
+              "published"
+              "rejected"
+              "ledger"
+              "staging"
+            ];
             privateUmask = "0077";
             exchangeUmask = "0007";
             botConfig = pkgs.writeText "radicle-ci-bot-config.json" (
@@ -342,7 +351,10 @@ in
                 "d ${exchangeState} ${exchangeDirectoryMode} ${botUser} ${exchangeGroup} - -"
                 "d ${runnerState} ${privateDirectoryMode} ${runnerUser} ${runnerUser} - -"
                 "d ${artifactState} ${exchangeDirectoryMode} ${runnerUser} ${exchangeGroup} - -"
-              ];
+              ]
+              ++ builtins.map (
+                name: "d ${exchangeState}/${name} ${exchangeDirectoryMode} ${botUser} ${exchangeGroup} - -"
+              ) exchangeQueueNames;
 
               services = {
                 radicle-ci-identity = {
