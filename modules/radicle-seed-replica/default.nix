@@ -12,9 +12,12 @@ let
   publicKeyFileName = "node-public-key";
   privateKeyMode = "0400";
   publicKeyMode = "0444";
+  privateUmask = "0077";
+  privateCredentialName = "dev.radicle.node.secret";
   loopbackAddress = "127.0.0.1";
   disabledHttpPort = 8080;
   disabledHttpsOriginPort = 8081;
+  identityVerificationServiceName = "radicle-replica-identity-verify";
   mkGeneratorName = instanceName: "${generatorPrefix}${instanceName}";
 in
 {
@@ -99,8 +102,42 @@ in
             identityVerifierCommand = lib.escapeShellArgs [
               "${identityVerifier}/bin/radicle-replica-identity-verify"
               settings.expectedNodeFingerprint
-              "/var/lib/radicle/keys/radicle.pub"
+              publicKeyPath
             ];
+            identityVerifierHardening = {
+              AmbientCapabilities = [ ];
+              CapabilityBoundingSet = [ ];
+              ExecStart = identityVerifierCommand;
+              Group = "radicle";
+              InaccessiblePaths = [ "/run/secrets" ];
+              LoadCredential = [ "${privateCredentialName}:${privateKeyPath}" ];
+              LockPersonality = true;
+              MemoryDenyWriteExecute = true;
+              NoNewPrivileges = true;
+              PrivateDevices = true;
+              PrivateNetwork = true;
+              PrivateTmp = true;
+              ProtectClock = true;
+              ProtectControlGroups = true;
+              ProtectHome = true;
+              ProtectHostname = true;
+              ProtectKernelLogs = true;
+              ProtectKernelModules = true;
+              ProtectKernelTunables = true;
+              ProtectProc = "invisible";
+              ProtectSystem = "strict";
+              RemoveIPC = true;
+              RestrictAddressFamilies = [ "AF_UNIX" ];
+              RestrictNamespaces = true;
+              RestrictRealtime = true;
+              RestrictSUIDSGID = true;
+              SystemCallArchitectures = "native";
+              SystemCallErrorNumber = "EPERM";
+              SystemCallFilter = [ "@system-service" ];
+              Type = "oneshot";
+              UMask = privateUmask;
+              User = "radicle";
+            };
           in
           lib.mkMerge [
             loweredConfig
@@ -119,8 +156,14 @@ in
 
               systemd.services = {
                 radicle-node = {
+                  after = [ "${identityVerificationServiceName}.service" ];
+                  requires = [ "${identityVerificationServiceName}.service" ];
                   unitConfig.RequiresMountsFor = [ settings.stateDirectory ];
-                  serviceConfig.ExecStartPre = [ identityVerifierCommand ];
+                };
+                ${identityVerificationServiceName} = {
+                  description = "Verify the pinned Radicle replica identity before node start";
+                  before = [ "radicle-node.service" ];
+                  serviceConfig = identityVerifierHardening;
                 };
                 radicle-policy-reconcile.unitConfig.RequiresMountsFor = [ settings.stateDirectory ];
               };
