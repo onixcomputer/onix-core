@@ -35,6 +35,7 @@ let
   homeManagerChecks = (import ./_home-manager-checks.nix) innerArgs;
   kacheNixRustChecks = (import ./_kache-nix-rust-checks.nix) innerArgs;
   meshLlmChecks = (import ./_mesh-llm-checks.nix) innerArgs;
+  radicleCiRunnerChecks = (import ./_radicle-ci-runner-checks.nix) innerArgs;
   radicleNodeChecks = (import ./_radicle-node-checks.nix) innerArgs;
   radicleSeedReplicaChecks = (import ./_radicle-seed-replica-checks.nix) innerArgs;
 
@@ -55,6 +56,7 @@ in
     // (homeManagerChecks.checks or { })
     // (kacheNixRustChecks.checks or { })
     // (meshLlmChecks.checks or { })
+    // (radicleCiRunnerChecks.checks or { })
     // (radicleNodeChecks.checks or { })
     // (radicleSeedReplicaChecks.checks or { })
     // packageChecks

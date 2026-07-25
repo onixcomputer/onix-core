@@ -47,6 +47,7 @@ let
     "sglang-diffusion" = import ./sglang-diffusion (schemaArgs ./sglang-diffusion);
     "lemonade" = import ./lemonade (schemaArgs ./lemonade);
     "mesh-llm" = import ./mesh-llm (schemaArgs ./mesh-llm);
+    "radicle-ci-runner" = import ./radicle-ci-runner (schemaArgs ./radicle-ci-runner);
     "radicle-node" = import ./radicle-node (schemaArgs ./radicle-node);
     "radicle-seed-replica" = import ./radicle-seed-replica (schemaArgs ./radicle-seed-replica);
     "cloud-hypervisor-vm" = import ./cloud-hypervisor-vm (schemaArgs ./cloud-hypervisor-vm);

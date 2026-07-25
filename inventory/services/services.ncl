@@ -51,6 +51,18 @@ let radicle_replica_node_fingerprint = "SHA256:JHQTPqoMr4kLqBsrAPSRNXUuzETiHAoiK
 let radicle_http_port = 8080 in
 let radicle_https_origin_port = 8081 in
 let radicle_pilot_rid = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo" in
+let radicle_production_seed_node_id = "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8" in
+let radicle_reviewed_commit = "29dac88ecded94457572db3fdfaaaab95fa91525" in
+let radicle_ci_policy_blake3 = "091e57f4409f79db14465ccc26e730bf1181209fe45c28d7dd1259393e93f740" in
+let radicle_ci_bot_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHwhn4nbFZOQxnyj+fRvABe+jU9IOVWY/bPx1PxA3utr" in
+let radicle_ci_bot_node_id = "z6MknopLULJensBT5KGkC8h9KaHTNY5muZ9UffqroErX7Rni" in
+let radicle_ci_bot_fingerprint = "SHA256:U4XxEymH9bpdWtN3Yl7ugkOn+Io1OrQ6H2UjkZC9Rg0" in
+let radicle_delegates = [
+  "did:key:z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx",
+  "did:key:z6MkjCqx5ksRqcDeNeuEnz53udbUHebRLHhddCxecWJu9koE",
+  "did:key:z6MkmkA6sEzzMffaWqKEKJcDh8LjAzgrJLrTNi971KN3X6sh",
+]
+in
 let radicle_backup_target_host = "britton-desktop" in
 let radicle_backup_target_address = "100.110.43.11" in
 let radicle_backup_target_failure_domain = "britton-desktop-workstation" in
@@ -505,6 +517,29 @@ let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
         backupManifestAlgorithm = "blake3",
         minimumSignedRefsFeature = "parent",
         pinnedRepositories = [],
+      },
+    },
+
+    # r[impl onix.radicle_ci.configuration]
+    "radicle-forge-ci" = {
+      module = { name = "radicle-ci-runner", input = "self" },
+      roles.default.machines.aspen1.settings = {
+        expectedHost = "aspen1",
+        deploymentTarget = "root@aspen1.local",
+        rid = radicle_pilot_rid,
+        signedRefsFeature = "parent",
+        productionSeedNodeId = radicle_production_seed_node_id,
+        productionSeedAddress = "%{radicle_node_address}:%{radicle_node_port}",
+        reviewedCommit = radicle_reviewed_commit,
+        policyBlake3 = radicle_ci_policy_blake3,
+        expectedBotPublicKey = radicle_ci_bot_public_key,
+        expectedBotNodeId = radicle_ci_bot_node_id,
+        expectedBotFingerprint = radicle_ci_bot_fingerprint,
+        delegates = radicle_delegates,
+        cargoTomlBlake3 = "20ff51e3f2c5f9b230e05b797b5dbb1029e738d5f84d25cecce02d49c2d3427e",
+        cargoLockBlake3 = "79c9e70b6cd874aad8e55beb6b4242b47efc24ab344cad4ad1c42a4c3b31cd60",
+        flakeNixBlake3 = "ef1b58422af1f9918554d7a0f78c6c657eded6ac64545e4c6fb3c6e1d7ba9e86",
+        flakeLockBlake3 = "8f16f066737c44b0447f9bd86b89dca822183909d90563c097765f098e5abae4",
       },
     },
 

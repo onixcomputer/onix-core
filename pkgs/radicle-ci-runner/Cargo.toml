@@ -1,0 +1,23 @@
+[package]
+name = "radicle-ci-runner"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "AGPL-3.0-or-later"
+publish = false
+
+[dependencies]
+blake3 = "1.8.2"
+bounded-exec = { git = "https://git.onix.computer/z2CpqLFpdP36fZXYUK5ZNWxMibpCo.git", rev = "29dac88ecded94457572db3fdfaaaab95fa91525" }
+radicle = "=0.24.0"
+radicle-oid = "=0.2.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+module_name_repetitions = "allow"

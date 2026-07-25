@@ -1,0 +1,71 @@
+{
+  "artifacts": {
+    "external_store": "artifact://radicle-ci",
+    "namespace": "bounded-exec-pilot"
+  },
+  "command": {
+    "arguments": [
+      "build",
+      "--no-link",
+      "--no-update-lock-file",
+      "--option",
+      "allow-import-from-derivation",
+      "false",
+      "--option",
+      "restrict-eval",
+      "true",
+      ".#checks.x86_64-linux.cargo-test"
+    ],
+    "clear_environment": true,
+    "program": "nix"
+  },
+  "credentials": {
+    "canonical_branch": [],
+    "canonical_tag": [],
+    "patch": []
+  },
+  "effects": {
+    "cache_write": false,
+    "canonical_ref_mutation": false,
+    "deployment": false,
+    "import_from_derivation": false,
+    "lockfile_update": false,
+    "network": false,
+    "seed_policy_mutation": false
+  },
+  "limits": {
+    "artifact_max_bytes": 67108864,
+    "cpu_quota_percent": 200,
+    "max_parallel_jobs": 2,
+    "memory_max_bytes": 8589934592,
+    "stderr_max_bytes": 1048576,
+    "stdout_max_bytes": 1048576,
+    "timeout_ms": 900000
+  },
+  "non_claims": [
+    "ci-result-does-not-prove-source-correctness",
+    "ci-result-does-not-prove-nix-correctness",
+    "ci-result-does-not-prove-host-sandboxing",
+    "ci-result-does-not-prove-canonical-ref-authority",
+    "ci-result-does-not-prove-release-readiness",
+    "artifact-publication-does-not-prove-remote-durability",
+    "status-publication-does-not-prove-merge-eligibility"
+  ],
+  "policy_id": "bounded-exec-pilot-ci",
+  "repository": {
+    "default_branch": "main",
+    "rid": "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+    "signed_refs_feature": "parent"
+  },
+  "schema": "onixos.radicle-ci-policy.v1",
+  "status": {
+    "authority": "job-status-only",
+    "namespace": "onix/ci/v1",
+    "publisher": "radicle-job-status"
+  },
+  "triggers": {
+    "canonical_branch": true,
+    "canonical_tag": true,
+    "patch": true
+  }
+}

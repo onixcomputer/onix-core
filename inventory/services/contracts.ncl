@@ -40,6 +40,7 @@ let self_modules = [
   "ollama",
   "open-notebook",
   "prometheus",
+  "radicle-ci-runner",
   "radicle-node",
   "radicle-seed-replica",
   "sglang-diffusion",
