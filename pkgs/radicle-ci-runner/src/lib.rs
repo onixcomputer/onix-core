@@ -672,8 +672,8 @@ mod tests {
             command_program: "/nix/store/nix/bin/nix".to_string(),
             command_arguments: vec!["build".to_string(), "--no-update-lock-file".to_string()],
             allowed_input_uris: vec![
-                "github:NixOS/nixpkgs/61b7c44c4073f0b827768aff0049561b5110ea5a".to_string(),
-                "github:oxalica/rust-overlay/3c38e1e1ba9c8d7030f7b5a801398ea7d8a6fdc0".to_string(),
+                "github:NixOS/nixpkgs/61b7c44c4073f0b827768aff0049561b5110ea5a?narHash=sha256-12KrbMiWLcf8m7pCvAtZh1ZrgF85ZXDXvfR/fWTKy84%3D".to_string(),
+                "github:oxalica/rust-overlay/3c38e1e1ba9c8d7030f7b5a801398ea7d8a6fdc0?narHash=sha256-OstzLWL5t7Xe14xEC6GIMJCp0PrYNTSA0El7GG2av88%3D".to_string(),
             ],
             git_program: "/nix/store/git/bin/git".to_string(),
             nix_program: "/nix/store/nix/bin/nix".to_string(),

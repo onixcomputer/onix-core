@@ -131,8 +131,8 @@ in
                   ".#checks.x86_64-linux.cargo-test"
                 ];
                 allowed_input_uris = [
-                  "github:NixOS/nixpkgs/61b7c44c4073f0b827768aff0049561b5110ea5a"
-                  "github:oxalica/rust-overlay/3c38e1e1ba9c8d7030f7b5a801398ea7d8a6fdc0"
+                  "github:NixOS/nixpkgs/61b7c44c4073f0b827768aff0049561b5110ea5a?narHash=sha256-12KrbMiWLcf8m7pCvAtZh1ZrgF85ZXDXvfR/fWTKy84%3D"
+                  "github:oxalica/rust-overlay/3c38e1e1ba9c8d7030f7b5a801398ea7d8a6fdc0?narHash=sha256-OstzLWL5t7Xe14xEC6GIMJCp0PrYNTSA0El7GG2av88%3D"
                 ];
                 git_program = "${pkgs.gitMinimal}/bin/git";
                 nix_program = "${pkgs.nix}/bin/nix";
