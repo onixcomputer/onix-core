@@ -581,6 +581,7 @@ in
                   unitConfig.OnSuccess = [ "radicle-ci-publisher.service" ];
                   serviceConfig = offlineHardening // {
                     BindPaths = [ "${localStoreRoot}/nix/store:/nix/store" ];
+                    BindReadOnlyPaths = [ "${pkgs.bashInteractive}/bin/sh:/bin/sh" ];
                     CPUQuota = "${toString settings.cpuQuotaPercent}%";
                     ExecStart = "${runnerPackage}/bin/radicle-ci-runner run-next ${runnerConfig}";
                     Group = runnerUser;
@@ -592,6 +593,7 @@ in
                       artifactState
                     ];
                     TasksMax = runnerTasksMax;
+                    TemporaryFileSystem = "/bin:ro";
                     TimeoutStartSec = "${toString settings.timeoutMs}ms";
                     Type = "oneshot";
                     UMask = exchangeUmask;

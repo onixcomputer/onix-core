@@ -44,6 +44,8 @@ let
   runnerConfigPath = lib.last (lib.splitString " " runnerCommand);
   runnerReadOnly = lib.toList (runnerService.serviceConfig.ReadOnlyPaths or [ ]);
   runnerBindPaths = lib.toList (runnerService.serviceConfig.BindPaths or [ ]);
+  runnerBindReadOnlyPaths = lib.toList (runnerService.serviceConfig.BindReadOnlyPaths or [ ]);
+  runnerTemporaryFileSystems = lib.toList (runnerService.serviceConfig.TemporaryFileSystem or [ ]);
   runnerReadWrite = lib.toList (runnerService.serviceConfig.ReadWritePaths or [ ]);
   runnerInaccessible = lib.toList (runnerService.serviceConfig.InaccessiblePaths or [ ]);
   botAllowedAddresses = lib.toList (nodeService.serviceConfig.IPAddressAllow or [ ]);
@@ -131,6 +133,8 @@ let
     && builtins.elem exchangeState runnerReadWrite
     && builtins.elem runnerState runnerReadWrite
     && builtins.elem "${runnerState}/local-store/nix/store:/nix/store" runnerBindPaths
+    && builtins.any (path: lib.hasSuffix "/bin/sh:/bin/sh" path) runnerBindReadOnlyPaths
+    && builtins.elem "/bin:ro" runnerTemporaryFileSystems
     && !(builtins.elem "/nix/store" runnerReadOnly)
     && nodeService.serviceConfig.IPAddressDeny == "any"
     && publisherService.serviceConfig.IPAddressDeny == "any"
@@ -170,6 +174,8 @@ in
                   runnerInaccessible
                   runnerReadOnly
                   runnerBindPaths
+                  runnerBindReadOnlyPaths
+                  runnerTemporaryFileSystems
                   runnerReadWrite
                   botAllowedAddresses
                   publisherAllowedAddresses
