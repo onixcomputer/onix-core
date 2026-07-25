@@ -68,9 +68,19 @@ let
       export BORG_REPO=${lib.escapeShellArg "borg@${targetAddress}:."}
       export BORG_RSH=${lib.escapeShellArg backupRsh}
       export BORG_PASSCOMMAND=${lib.escapeShellArg backupPassCommand}
-      if ! borg list >/dev/null 2>&1; then
-        borg init --encryption repokey
+      if borg list >/dev/null 2>&1; then
+        exit 0
       fi
+
+      probe_root=${lib.escapeShellArg "${borgRuntimeRoot}/preflight"}
+      mkdir -p "$probe_root"
+      if borg create ::radicle-backup-preflight "$probe_root"; then
+        borg list >/dev/null
+        exit 0
+      fi
+
+      borg init --encryption repokey
+      borg create ::radicle-backup-preflight "$probe_root"
       borg list >/dev/null
     '';
   };
