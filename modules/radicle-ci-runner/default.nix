@@ -211,12 +211,11 @@ in
               ];
               text = ''
                 set -eu
-                install -d -m ${privateDirectoryMode} -o ${botUser} -g ${botUser} ${botState}/keys
-                install -m ${privateKeyMode} -o ${botUser} -g ${botUser} ${lib.escapeShellArg privateKeyPath} ${botState}/keys/radicle
-                install -m ${publicKeyMode} -o ${botUser} -g ${botUser} ${lib.escapeShellArg publicKeyPath} ${botState}/keys/radicle.pub
-                install -m ${publicKeyMode} -o ${botUser} -g ${botUser} ${botConfig} ${botState}/config.json
+                install -d -m ${privateDirectoryMode} ${botState}/keys
+                install -m ${privateKeyMode} "$CREDENTIALS_DIRECTORY/radicle-ci-private" ${botState}/keys/radicle
+                install -m ${publicKeyMode} "$CREDENTIALS_DIRECTORY/radicle-ci-public" ${botState}/keys/radicle.pub
+                install -m ${publicKeyMode} ${botConfig} ${botState}/config.json
                 touch ${botState}/.gitconfig
-                chown ${botUser}:${botUser} ${botState}/.gitconfig
 
                 derived_public="$(ssh-keygen -y -f ${botState}/keys/radicle)"
                 expected_public=${lib.escapeShellArg settings.expectedBotPublicKey}
@@ -352,16 +351,24 @@ in
                   before = [ "radicle-ci-node.service" ];
                   serviceConfig = commonHardening // {
                     ExecStart = "${identitySetup}/bin/radicle-ci-identity-setup";
+                    Group = botUser;
                     InaccessiblePaths = [
+                      "/run/secrets"
                       "/var/lib/radicle"
                       "-/var/lib/harmonia"
                       "/home"
+                    ];
+                    LoadCredential = [
+                      "radicle-ci-private:${privateKeyPath}"
+                      "radicle-ci-public:${publicKeyPath}"
                     ];
                     PrivateNetwork = true;
                     ReadWritePaths = [ botState ];
                     RemainAfterExit = true;
                     Type = "oneshot";
                     UMask = privateUmask;
+                    User = botUser;
+                    WorkingDirectory = botState;
                   };
                 };
 
