@@ -34,6 +34,7 @@ let schemas = {
   "open-notebook" = import "../../modules/open-notebook/schema.ncl",
   "prometheus" = import "../../modules/prometheus/schema.ncl",
   "radicle-node" = import "../../modules/radicle-node/schema.ncl",
+  "radicle-seed-replica" = import "../../modules/radicle-seed-replica/schema.ncl",
   "sglang-diffusion" = import "../../modules/sglang-diffusion/schema.ncl",
   "speaches" = import "../../modules/speaches/schema.ncl",
   "static-server" = import "../../modules/static-server/schema.ncl",

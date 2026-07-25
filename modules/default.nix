@@ -48,6 +48,7 @@ let
     "lemonade" = import ./lemonade (schemaArgs ./lemonade);
     "mesh-llm" = import ./mesh-llm (schemaArgs ./mesh-llm);
     "radicle-node" = import ./radicle-node (schemaArgs ./radicle-node);
+    "radicle-seed-replica" = import ./radicle-seed-replica (schemaArgs ./radicle-seed-replica);
     "cloud-hypervisor-vm" = import ./cloud-hypervisor-vm (schemaArgs ./cloud-hypervisor-vm);
     "llm-agents" = import ./llm-agents (schemaArgs ./llm-agents);
     "home-manager-profiles" = import ./home-manager-profiles (schemaArgs ./home-manager-profiles);

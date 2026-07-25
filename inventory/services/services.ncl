@@ -44,7 +44,10 @@ let ornith_35b_q4_model = "user.Ornith-1.0-35B-Q4_K_M" in
 let ornith_35b_q8_model = "user.Ornith-1.0-35B-Q8_0" in
 let ornith_35b_bf16_model = "user.Ornith-1.0-35B-BF16" in
 let radicle_node_address = "100.100.103.95" in
+let radicle_replica_address = "100.110.43.11" in
 let radicle_node_port = 8776 in
+let radicle_replica_state_quota_gib = 64 in
+let radicle_replica_node_fingerprint = "SHA256:JHQTPqoMr4kLqBsrAPSRNXUuzETiHAoiKBM/VWftmEg" in
 let radicle_http_port = 8080 in
 let radicle_https_origin_port = 8081 in
 let radicle_pilot_rid = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo" in
@@ -502,6 +505,28 @@ let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
         backupManifestAlgorithm = "blake3",
         minimumSignedRefsFeature = "parent",
         pinnedRepositories = [],
+      },
+    },
+
+    # r[impl onix.radicle_replica.deployment]
+    "radicle-forge-secondary-seed" = {
+      module = { name = "radicle-seed-replica", input = "self" },
+      roles.default.machines.britton-desktop.settings = {
+        expectedHost = "britton-desktop",
+        deploymentTarget = "root@%{radicle_replica_address}",
+        expectedNodeFingerprint = radicle_replica_node_fingerprint,
+        alias = "britton-desktop-radicle",
+        failureDomain = "britton-desktop-workstation",
+        monitoringRequired = true,
+        nodeListenAddress = radicle_replica_address,
+        nodeListenPort = radicle_node_port,
+        nodeFirewallInterface = "tailscale0",
+        externalAddress = "%{radicle_replica_address}:%{radicle_node_port}",
+        seedRepositories = [radicle_pilot_rid],
+        stateDirectory = "/var/lib/radicle",
+        stateDataset = "datapool/radicle-seed",
+        stateQuotaGiB = radicle_replica_state_quota_gib,
+        minimumSignedRefsFeature = "parent",
       },
     },
 

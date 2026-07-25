@@ -41,6 +41,7 @@ let self_modules = [
   "open-notebook",
   "prometheus",
   "radicle-node",
+  "radicle-seed-replica",
   "sglang-diffusion",
   "speaches",
   "static-server",

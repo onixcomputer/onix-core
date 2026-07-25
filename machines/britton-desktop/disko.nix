@@ -1,6 +1,8 @@
 let
   radicleBackupQuota = "256G";
   radicleBackupRecordSize = "1M";
+  radicleSeedQuota = "64G";
+  radicleSeedRecordSize = "128K";
 in
 {
   boot.loader.grub = {
@@ -44,6 +46,18 @@ in
             options = {
               quota = radicleBackupQuota;
               recordsize = radicleBackupRecordSize;
+            };
+            mountOptions = [
+              "defaults"
+              "nofail"
+            ];
+          };
+          radicle-seed = {
+            type = "zfs_fs";
+            mountpoint = "/var/lib/radicle";
+            options = {
+              quota = radicleSeedQuota;
+              recordsize = radicleSeedRecordSize;
             };
             mountOptions = [
               "defaults"
