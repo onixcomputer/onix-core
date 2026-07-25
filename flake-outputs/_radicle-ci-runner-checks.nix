@@ -34,6 +34,7 @@ let
   scannerService = fixtureConfig.systemd.services.radicle-ci-scan;
   runnerService = fixtureConfig.systemd.services.radicle-ci-runner;
   publisherService = fixtureConfig.systemd.services.radicle-ci-publisher;
+  probeService = fixtureConfig.systemd.services.radicle-ci-isolation-probe;
   nodeService = fixtureConfig.systemd.services.radicle-ci-node;
   syncService = fixtureConfig.systemd.services.radicle-ci-sync;
   identityGenerator = fixtureConfig.clan.core.vars.generators.${expectedIdentityGenerator};
@@ -91,6 +92,7 @@ let
         "radicle-ci-sync"
         "radicle-ci-scan"
         "radicle-ci-runner"
+        "radicle-ci-isolation-probe"
         "radicle-ci-publisher"
       ];
   modulePolicyValid =
@@ -100,6 +102,8 @@ let
     && scannerService.serviceConfig.User == botUser
     && runnerService.serviceConfig.User == runnerUser
     && publisherService.serviceConfig.User == botUser
+    && probeService.serviceConfig.User == runnerUser
+    && probeService.serviceConfig.PrivateNetwork
     && runnerService.serviceConfig.PrivateNetwork
     && runnerService.serviceConfig.MemoryMax == acceptedMemoryBytes
     && runnerService.serviceConfig.CPUQuota == acceptedCpuQuota

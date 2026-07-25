@@ -61,6 +61,7 @@ systemctl status radicle-ci-sync.service radicle-ci-scan.service
 systemctl status radicle-ci-runner.service radicle-ci-publisher.service
 journalctl -u 'radicle-ci-*' --since today
 
+systemctl start radicle-ci-isolation-probe.service
 systemctl start radicle-ci-sync.service
 find /var/lib/radicle-ci-exchange -maxdepth 2 -type f -print
 find /var/lib/radicle-ci-artifacts -maxdepth 2 -type f -print

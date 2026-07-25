@@ -6,8 +6,10 @@ use std::env;
 use std::ffi::OsString;
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write as _};
+use std::net::{SocketAddr, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::time::Duration;
 
 use bounded_exec::{
     CommandSpec, Disposition, EnvironmentMode, ExecutionLimits, Input, OutcomePolicy, RunRequest,
@@ -38,6 +40,7 @@ const GIT_POLL_INTERVAL_MS: u64 = 25;
 const GIT_TEARDOWN_TIMEOUT_MS: u64 = 5_000;
 const STATUS_TIMEOUT_MS: u64 = 120_000;
 const STATUS_OUTPUT_MAX_BYTES: usize = 1_048_576;
+const PROBE_NETWORK_TIMEOUT_MS: u64 = 250;
 const EMPTY_INPUT_MAX_BYTES: usize = 1;
 const FILE_MODE_READ_ONLY: u32 = 0o440;
 const SOURCE_FILE_MODE_READ_ONLY: u32 = 0o440;
@@ -70,7 +73,7 @@ fn run() -> Result<(), ShellError> {
     let arguments = env::args().collect::<Vec<_>>();
     if arguments.len() != EXPECTED_ARGUMENT_COUNT {
         return Err(shell_error(
-            "usage: radicle-ci-runner <scan|run-next|publish-next|validate-config> CONFIG.json",
+            "usage: radicle-ci-runner <scan|run-next|publish-next|probe-isolation|validate-config> CONFIG.json",
         ));
     }
     let config: RunnerConfigV1 = read_json(Path::new(&arguments[CONFIG_PATH_INDEX]))?;
@@ -79,12 +82,78 @@ fn run() -> Result<(), ShellError> {
         "scan" => scan(&config),
         "run-next" => run_next(&config),
         "publish-next" => publish_next(&config),
+        "probe-isolation" => probe_isolation(&config),
         "validate-config" => {
             println!("configuration_result=accepted");
             Ok(())
         }
         _ => Err(shell_error("unknown subcommand")),
     }
+}
+
+fn probe_isolation(config: &RunnerConfigV1) -> Result<(), ShellError> {
+    let protected_paths = [
+        "/run/secrets",
+        "/var/lib/radicle",
+        config.bot_state_path.as_str(),
+        "/root",
+        "/home",
+        "/etc/ssh",
+    ];
+    for path in protected_paths {
+        match fs::metadata(path) {
+            Err(error) if error.kind() == io::ErrorKind::PermissionDenied => {}
+            Err(error) => {
+                return Err(shell_error(format!(
+                    "isolation probe did not receive permission denial for {path}: {error}"
+                )));
+            }
+            Ok(_) => {
+                return Err(shell_error(format!(
+                    "isolation probe unexpectedly accessed {path}"
+                )));
+            }
+        }
+    }
+
+    let control = Path::new(&config.runner_state_path).join("isolation-positive-control");
+    let mut control_file = OpenOptions::new()
+        .create_new(true)
+        .write(true)
+        .open(&control)
+        .map_err(|error| shell_io("runner-state positive control was not writable", error))?;
+    control_file
+        .write_all(b"runner-state-write-allowed\n")
+        .map_err(|error| shell_io("failed to write isolation positive control", error))?;
+    drop(control_file);
+    fs::remove_file(&control)
+        .map_err(|error| shell_io("failed to remove isolation positive control", error))?;
+
+    let address = config
+        .production_seed_address
+        .parse::<SocketAddr>()
+        .map_err(|_| shell_error("production seed address is not a socket address"))?;
+    if TcpStream::connect_timeout(&address, Duration::from_millis(PROBE_NETWORK_TIMEOUT_MS)).is_ok()
+    {
+        return Err(shell_error(
+            "isolation probe unexpectedly reached the production seed",
+        ));
+    }
+
+    let receipt = IsolationProbeReceipt {
+        schema: "onix.radicle-ci-isolation-probe.v1",
+        runner_state_write: "allowed",
+        protected_path_access: "denied",
+        production_seed_network: "denied",
+        canonical_ref_mutation: "unavailable-with-production-storage-denied",
+        seed_policy_mutation: "unavailable-with-production-storage-denied",
+        cache_write: "unavailable-with-protect-system-strict",
+        deployment_and_secret_access: "unavailable-with-run-secrets-denied",
+    };
+    let json = serde_json::to_string(&receipt)
+        .map_err(|_| shell_error("failed to serialize isolation probe receipt"))?;
+    println!("{json}");
+    Ok(())
 }
 
 fn scan(config: &RunnerConfigV1) -> Result<(), ShellError> {
@@ -507,6 +576,18 @@ fn publish_result_to_outbox(
             .map_err(|error| shell_io("failed to replace pending result", error))?;
     }
     fs::rename(&temporary, &outbox).map_err(|error| shell_io("failed to publish job result", error))
+}
+
+#[derive(Serialize)]
+struct IsolationProbeReceipt<'a> {
+    schema: &'a str,
+    runner_state_write: &'a str,
+    protected_path_access: &'a str,
+    production_seed_network: &'a str,
+    canonical_ref_mutation: &'a str,
+    seed_policy_mutation: &'a str,
+    cache_write: &'a str,
+    deployment_and_secret_access: &'a str,
 }
 
 #[derive(Serialize)]

@@ -161,7 +161,7 @@ in
               InaccessiblePaths = [
                 "/run/secrets"
                 "/var/lib/radicle"
-                "/var/lib/harmonia"
+                "-/var/lib/harmonia"
                 "/root"
                 "/home"
               ];
@@ -179,7 +179,7 @@ in
               InaccessiblePaths = [
                 "/run/secrets"
                 "/var/lib/radicle"
-                "/var/lib/harmonia"
+                "-/var/lib/harmonia"
                 "/root"
                 "/home"
                 "/etc/ssh"
@@ -193,7 +193,7 @@ in
                 "/run/secrets"
                 "/var/lib/radicle"
                 botState
-                "/var/lib/harmonia"
+                "-/var/lib/harmonia"
                 "/root"
                 "/home"
                 "/etc/ssh"
@@ -354,7 +354,7 @@ in
                     ExecStart = "${identitySetup}/bin/radicle-ci-identity-setup";
                     InaccessiblePaths = [
                       "/var/lib/radicle"
-                      "/var/lib/harmonia"
+                      "-/var/lib/harmonia"
                       "/home"
                     ];
                     PrivateNetwork = true;
@@ -459,6 +459,26 @@ in
                     TasksMax = runnerTasksMax;
                     Type = "oneshot";
                     UMask = exchangeUmask;
+                    User = runnerUser;
+                    WorkingDirectory = runnerState;
+                  };
+                };
+
+                radicle-ci-isolation-probe = {
+                  description = "Probe the credentialless runner authority boundary";
+                  serviceConfig = offlineHardening // {
+                    CPUQuota = "${toString settings.cpuQuotaPercent}%";
+                    ExecStart = "${runnerPackage}/bin/radicle-ci-runner probe-isolation ${runnerConfig}";
+                    Group = runnerUser;
+                    MemoryMax = settings.memoryMaxBytes;
+                    ReadOnlyPaths = [
+                      runnerConfig
+                      "/nix/store"
+                    ];
+                    ReadWritePaths = [ runnerState ];
+                    TasksMax = runnerTasksMax;
+                    Type = "oneshot";
+                    UMask = privateUmask;
                     User = runnerUser;
                     WorkingDirectory = runnerState;
                   };
