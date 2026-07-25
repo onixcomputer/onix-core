@@ -415,6 +415,7 @@ fn materialize_source(
         .join("work")
         .join(&event.job_id);
     if work.exists() {
+        make_runner_tree_removable(&work)?;
         fs::remove_dir_all(&work)
             .map_err(|error| shell_io("failed to reset job workdir", error))?;
     }
@@ -800,6 +801,27 @@ fn extract_archive(
     Ok(())
 }
 
+fn make_runner_tree_removable(path: &Path) -> Result<(), ShellError> {
+    let metadata = fs::symlink_metadata(path)
+        .map_err(|error| shell_io("failed to inspect prior runner work", error))?;
+    if metadata.file_type().is_symlink() || metadata.is_file() {
+        return Ok(());
+    }
+    if !metadata.is_dir() {
+        return Err(shell_error(
+            "prior runner work contains an unsupported filesystem object",
+        ));
+    }
+    set_mode(path, DIRECTORY_MODE_PRIVATE)?;
+    let entries = fs::read_dir(path)
+        .map_err(|error| shell_io("failed to traverse prior runner work", error))?;
+    for entry in entries {
+        let entry = entry.map_err(|error| shell_io("failed to read prior runner work", error))?;
+        make_runner_tree_removable(&entry.path())?;
+    }
+    Ok(())
+}
+
 fn make_source_read_only(path: &Path) -> Result<(), ShellError> {
     let metadata = fs::symlink_metadata(path)
         .map_err(|error| shell_io("failed to inspect materialized source", error))?;
@@ -1073,6 +1095,17 @@ mod tests {
             & REQUESTED_MODE;
         assert_eq!(mode, EXISTING_MODE);
         fs::remove_dir_all(path).expect("remove fixture directory");
+    }
+
+    #[test]
+    fn prior_read_only_work_can_be_reopened_for_owned_cleanup() {
+        let path = test_path("read-only-retry");
+        let nested = path.join("nested");
+        fs::create_dir_all(&nested).expect("create read-only fixture");
+        fs::write(nested.join("source"), b"fixture").expect("write source fixture");
+        make_source_read_only(&path).expect("make fixture read-only");
+        make_runner_tree_removable(&path).expect("reopen owned fixture");
+        fs::remove_dir_all(path).expect("remove reopened fixture");
     }
 
     #[test]
