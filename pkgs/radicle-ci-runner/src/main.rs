@@ -967,8 +967,13 @@ fn directory_names(path: &Path) -> Result<Vec<String>, ShellError> {
 }
 
 fn create_directory(path: &Path, mode: u32) -> Result<(), ShellError> {
+    let existed = path.exists();
     fs::create_dir_all(path).map_err(|error| shell_io("failed to create directory", error))?;
-    set_mode(path, mode)
+    if existed {
+        Ok(())
+    } else {
+        set_mode(path, mode)
+    }
 }
 
 fn set_mode(path: &Path, mode: u32) -> Result<(), ShellError> {
@@ -1028,4 +1033,41 @@ fn shell_io(context: &str, error: io::Error) -> ShellError {
 
 fn shell_error(message: impl Into<String>) -> ShellError {
     ShellError(message.into())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const EXISTING_MODE: u32 = 0o700;
+    const REQUESTED_MODE: u32 = 0o770;
+
+    #[test]
+    fn existing_shared_directory_keeps_its_owner_selected_mode() {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        let path = test_path("existing-directory");
+        fs::create_dir_all(&path).expect("create fixture directory");
+        set_mode(&path, EXISTING_MODE).expect("set fixture mode");
+        create_directory(&path, REQUESTED_MODE).expect("reuse existing directory");
+        let mode = fs::metadata(&path)
+            .expect("read fixture mode")
+            .permissions()
+            .mode()
+            & REQUESTED_MODE;
+        assert_eq!(mode, EXISTING_MODE);
+        fs::remove_dir_all(path).expect("remove fixture directory");
+    }
+
+    #[test]
+    fn directory_creation_rejects_an_existing_file() {
+        let path = test_path("existing-file");
+        fs::write(&path, b"not-a-directory").expect("create fixture file");
+        assert!(create_directory(&path, REQUESTED_MODE).is_err());
+        fs::remove_file(path).expect("remove fixture file");
+    }
+
+    fn test_path(label: &str) -> PathBuf {
+        env::temp_dir().join(format!("radicle-ci-runner-{label}-{}", std::process::id()))
+    }
 }
