@@ -23,6 +23,9 @@ let
   exchangeState = "/var/lib/radicle-ci-exchange";
   runnerState = "/var/lib/radicle-ci-runner";
   botState = "/var/lib/radicle-ci-bot";
+  botControlSocket = "${botState}/node/control.sock";
+  nodeReadinessAttempts = 60;
+  nodeReadinessDelaySeconds = 1;
   acceptedTimeoutMs = 900000;
   acceptedMemoryBytes = 8589934592;
   acceptedCpuQuota = "200%";
@@ -40,6 +43,7 @@ let
   nodeService = fixtureConfig.systemd.services.radicle-ci-node;
   syncService = fixtureConfig.systemd.services.radicle-ci-sync;
   identityGenerator = fixtureConfig.clan.core.vars.generators.${expectedIdentityGenerator};
+  syncCommand = syncService.serviceConfig.ExecStart;
   runnerCommand = runnerService.serviceConfig.ExecStart;
   runnerConfigPath = lib.last (lib.splitString " " runnerCommand);
   runnerReadOnly = lib.toList (runnerService.serviceConfig.ReadOnlyPaths or [ ]);
@@ -211,6 +215,11 @@ in
 
         grep -Fq ${lib.escapeShellArg reviewedCommit} ${../pkgs/radicle-ci-runner/Cargo.lock}
         grep -Fq 'git+https://git.onix.computer/z2CpqLFpdP36fZXYUK5ZNWxMibpCo.git' ${../pkgs/radicle-ci-runner/Cargo.lock}
+
+        grep -Fq ${lib.escapeShellArg botControlSocket} ${syncCommand}
+        grep -Fq ${lib.escapeShellArg "attempts_remaining=${toString nodeReadinessAttempts}"} ${syncCommand}
+        grep -Fq ${lib.escapeShellArg "sleep ${toString nodeReadinessDelaySeconds}"} ${syncCommand}
+        grep -Fq 'if test "$attempts_remaining" -eq 0' ${syncCommand}
 
         touch "$out"
       '';

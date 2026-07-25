@@ -42,6 +42,7 @@ in
             exchangeGroup = "radicle-ci-exchange";
             botState = "/var/lib/radicle-ci-bot";
             botStorage = "${botState}/storage";
+            botControlSocket = "${botState}/node/control.sock";
             exchangeState = "/var/lib/radicle-ci-exchange";
             runnerState = "/var/lib/radicle-ci-runner";
             artifactState = "/var/lib/radicle-ci-artifacts";
@@ -65,6 +66,8 @@ in
             acceptedTimeoutMs = 900000;
             productionSeedHost = builtins.head (lib.splitString ":" settings.productionSeedAddress);
             serviceStartTimeout = "2m";
+            nodeReadinessAttempts = 60;
+            nodeReadinessDelaySeconds = 1;
             serviceRestartDelay = "10s";
             timerInitialDelay = "2m";
             timerJitter = "15s";
@@ -329,11 +332,21 @@ in
             syncCommand = pkgs.writeShellApplication {
               name = "radicle-ci-sync";
               runtimeInputs = [
+                pkgs.coreutils
                 nodePackage
                 policyReconciler
               ];
               text = ''
                 set -eu
+                attempts_remaining=${toString nodeReadinessAttempts}
+                while ! test -S ${lib.escapeShellArg botControlSocket}; do
+                  if test "$attempts_remaining" -eq 0; then
+                    echo "Radicle CI node control socket did not become ready: ${botControlSocket}" >&2
+                    exit 1
+                  fi
+                  attempts_remaining=$((attempts_remaining - 1))
+                  sleep ${toString nodeReadinessDelaySeconds}
+                done
                 ${policyReconciler}/bin/radicle-policy-reconciler ${nodePackage}/bin/rad ${lib.escapeShellArg settings.rid}
                 ${nodePackage}/bin/rad sync --fetch --seed ${lib.escapeShellArg settings.productionSeedNodeId} --signed-refs-feature-level ${lib.escapeShellArg settings.signedRefsFeature} ${lib.escapeShellArg settings.rid}
               '';
