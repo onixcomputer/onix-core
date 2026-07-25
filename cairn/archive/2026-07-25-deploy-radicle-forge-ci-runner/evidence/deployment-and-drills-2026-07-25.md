@@ -7,6 +7,7 @@
 - Runner: `/nix/store/kcv5lb5ddxrc7kawra0yx8l38m780dm8-radicle-ci-runner-0.1.0`.
 - Sync shell: `/nix/store/dwx9gffp8vp4fqvs32nl5ggpb5ir5vzb-radicle-ci-sync`.
 - Portable policy BLAKE3: `091e57f4409f79db14465ccc26e730bf1181209fe45c28d7dd1259393e93f740`.
+- Final deployment receipt BLAKE3: `d0a62eb441237aeb327774328aac5f1fe32005322911a72ee5f7ad4ce5fb7c3e`.
 - Bounded Exec revision: `29dac88ecded94457572db3fdfaaaab95fa91525`.
 - Bot node ID: `z6MknopLULJensBT5KGkC8h9KaHTNY5muZ9UffqroErX7Rni`.
 - Bot fingerprint: `SHA256:U4XxEymH9bpdWtN3Yl7ugkOn+Io1OrQ6H2UjkZC9Rg0`.
