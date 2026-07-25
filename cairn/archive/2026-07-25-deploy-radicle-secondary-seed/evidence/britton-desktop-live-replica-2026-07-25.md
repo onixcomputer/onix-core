@@ -8,6 +8,7 @@
 - Primary failure domain: `aspen-primary-site`
 - Accepted system closure: `/nix/store/p6p9sm4c1ghfwczcyzykvbzsb8q6kg3b-nixos-system-britton-desktop-26.11.20260629.7a1a647`
 - Policy revision: `3855bd216beb12c910a4c5e7c5920d4de34ea06e`
+- OnixOS acceptance revision: `39aba12`
 - Replica receipt BLAKE3: `c53a296c5bd277ba032ffa35574634690c9a9debc76eaa68fa51cdd77a527e24`
 
 The focused `radicle-seed-replica` check and the full `britton-desktop` NixOS build passed before the accepted deployment. Clan generated a distinct machine-scoped key as encrypted per-machine state; the public fingerprint was pinned before activation.

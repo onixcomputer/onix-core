@@ -12,4 +12,4 @@
 
 - [x] [serial] Stop Aspen1's native node and prove an egress-confined independent client acquires the exact pilot object from the desktop replica without public-seed or GitHub fallback, then restore Aspen1. r[onix.radicle_replica.availability]
 - [x] [parallel] Prove undeclared RID, missing object, wildcard listener, HTTP exposure, and write/authority attempts fail closed. r[onix.radicle_replica.availability]
-- [ ] [serial] Emit the deterministic redaction-safe deployment receipt, pass focused Nix/Cairn validation, and archive only after OnixOS verifies the receipt. r[onix.radicle_replica.evidence]
+- [x] [serial] Emit the deterministic redaction-safe deployment receipt, pass focused Nix/Cairn validation, and archive only after OnixOS verifies the receipt. r[onix.radicle_replica.evidence]
