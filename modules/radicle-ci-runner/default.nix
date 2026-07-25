@@ -245,7 +245,7 @@ in
               text = ''
                 set -eu
                 ${policyReconciler}/bin/radicle-policy-reconciler ${nodePackage}/bin/rad ${lib.escapeShellArg settings.rid}
-                ${nodePackage}/bin/rad sync --seed ${lib.escapeShellArg productionSeed} ${lib.escapeShellArg settings.rid}
+                ${nodePackage}/bin/rad sync --fetch --seed ${lib.escapeShellArg settings.productionSeedNodeId} --signed-refs-feature-level ${lib.escapeShellArg settings.signedRefsFeature} ${lib.escapeShellArg settings.rid}
               '';
             };
           in
@@ -358,6 +358,7 @@ in
                       "/home"
                     ];
                     PrivateNetwork = true;
+                    ReadWritePaths = [ botState ];
                     RemainAfterExit = true;
                     Type = "oneshot";
                     UMask = privateUmask;
