@@ -33,6 +33,7 @@ let
   identityFiles = config.clan.core.vars.generators.radicle-node-radicle-forge-bootstrap.files;
   privateKeyPath = identityFiles.node-private-key.path;
   publicKeyPath = identityFiles.node-public-key.path;
+  nodeConfigPath = config.services.radicle.configFile;
   backupSshKeyPath = config.clan.core.vars.generators.borgbackup.files."borgbackup.ssh".path;
   backupRepoKeyPath = config.clan.core.vars.generators.borgbackup.files."borgbackup.repokey".path;
   backupManifest = import ./backup-manifest.nix { inherit pkgs; };
@@ -122,6 +123,7 @@ let
       install -d -m ${privateDirectoryMode} ${lib.escapeShellArg manifestRoot}
       install -m ${privateKeyMode} ${lib.escapeShellArg "${backupCredentialDirectory}/${radiclePrivateCredential}"} ${lib.escapeShellArg stagingRoot}/node-private-key
       install -m ${publicKeyMode} ${lib.escapeShellArg publicKeyPath} ${lib.escapeShellArg stagingRoot}/node-public-key
+      install -m ${publicKeyMode} ${lib.escapeShellArg nodeConfigPath} ${lib.escapeShellArg stagingRoot}/node-config.json
 
       ssh-keygen -y -f ${lib.escapeShellArg stagingRoot}/node-private-key > ${lib.escapeShellArg stagingRoot}/derived-public-key
       if ! cmp ${lib.escapeShellArg stagingRoot}/derived-public-key ${lib.escapeShellArg stagingRoot}/node-public-key; then
@@ -264,6 +266,7 @@ let
 
       install -m ${privateKeyMode} "$restored_staging/node-private-key" "$restored_state/keys/radicle"
       install -m ${publicKeyMode} "$restored_staging/node-public-key" "$restored_state/keys/radicle.pub"
+      install -m ${publicKeyMode} "$restored_staging/node-config.json" "$restored_state/config.json"
       touch "$restored_state/.gitconfig"
       restored_node_id="$(HOME="$restored_state" RAD_HOME="$restored_state" rad self --nid 2>/dev/null)"
       if test "$restored_node_id" != ${lib.escapeShellArg expectedNodeId}; then
