@@ -737,6 +737,97 @@ let
   plugins = self.packages.x86_64-linux.wasm-plugins;
   wasm = import ../lib/wasm.nix { inherit plugins; };
   schemaValidation = wasm.evalNickelFile ../inventory/services/fixtures/radicle-node-validation.ncl;
+  bootstrapReceiptSource = ../evidence/radicle/bootstrap-v1.ncl;
+  bootstrapReceiptJsonPath = ../evidence/radicle/bootstrap-v1.json;
+  bootstrapReceiptHashPath = ../evidence/radicle/bootstrap-v1.blake3;
+  bootstrapReceipt = wasm.evalNickelFile bootstrapReceiptSource;
+  bootstrapReceiptJson = builtins.fromJSON (builtins.readFile bootstrapReceiptJsonPath);
+  bootstrapReceiptExpectedHash = lib.removeSuffix "\n" (builtins.readFile bootstrapReceiptHashPath);
+  bootstrapReceiptSchemaVersion = 1;
+  bootstrapReceiptType = "onix.radicle.bootstrap.v1";
+  bootstrapReceiptStatus = "accepted";
+  notFoundStatus = 404;
+  expectedBootstrapReceiptFields = lib.sort lib.lessThan [
+    "acquisition"
+    "authority_boundary"
+    "endpoints"
+    "evidence"
+    "identity"
+    "machine"
+    "monitoring"
+    "non_claims"
+    "observed_date"
+    "packages"
+    "policy"
+    "receipt_type"
+    "recovery"
+    "rejection_probes"
+    "repositories"
+    "schema_version"
+    "services"
+    "status"
+  ];
+  bootstrapReceiptIsAccepted =
+    receipt:
+    builtins.attrNames receipt == expectedBootstrapReceiptFields
+    && receipt.schema_version == bootstrapReceiptSchemaVersion
+    && receipt.receipt_type == bootstrapReceiptType
+    && receipt.status == bootstrapReceiptStatus
+    && receipt.policy.minimum_node_version == reviewedNodeVersion
+    && receipt.policy.minimum_signed_refs_feature == "parent"
+    && receipt.packages.node.version == reviewedNodeVersion
+    && receipt.packages.httpd.version == reviewedHttpdVersion
+    && receipt.machine.host == expectedHost
+    && receipt.machine.deployment_target == deploymentTarget
+    && receipt.identity.node_id == "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8"
+    && receipt.identity.ssh_fingerprint == expectedNodeFingerprint
+    &&
+      receipt.repositories == [
+        {
+          rid = productionPilotRepository;
+          visibility = "public";
+          expected_commit = "29dac88ecded94457572db3fdfaaaab95fa91525";
+          observed_commit = "29dac88ecded94457572db3fdfaaaab95fa91525";
+          source_archive_blake3 = "4fbbf8f0749262469f00748e04c775180488dba800303f139172656d25931927";
+        }
+      ]
+    && receipt.acquisition.native.result == "verified"
+    && receipt.acquisition.native.signed_refs_feature == "parent"
+    && receipt.acquisition.https_git.result == "verified"
+    && receipt.endpoints.https_git.upload_pack_only
+    && receipt.rejection_probes.native_undeclared_rid == "rejected"
+    && receipt.rejection_probes.https_undeclared_rid_status == notFoundStatus
+    && receipt.rejection_probes.https_receive_pack_status == notFoundStatus
+    && receipt.rejection_probes.https_write == "rejected"
+    && receipt.services.reconciled_repository_count == 1
+    && receipt.authority_boundary.allowed_credentials == [ "machine-scoped-radicle-node-key" ]
+    && receipt.authority_boundary.host_secrets_masked
+    && receipt.authority_boundary.home_protected
+    && receipt.authority_boundary.capability_bounding_set_empty
+    && receipt.recovery.result == "verified"
+    && receipt.recovery.restored_node_id == receipt.identity.node_id
+    && receipt.recovery.restored_fingerprint == receipt.identity.ssh_fingerprint
+    && builtins.elem "independent-seed-availability" receipt.non_claims
+    && builtins.elem "single-seed-outage-survival" receipt.non_claims
+    && builtins.elem "private-repository-confidentiality" receipt.non_claims;
+  invalidBootstrapReceipts = [
+    (bootstrapReceipt // { status = "rejected"; })
+    (
+      bootstrapReceipt
+      // {
+        repositories = map (
+          repository: repository // { observed_commit = "0000000000000000000000000000000000000000"; }
+        ) bootstrapReceipt.repositories;
+      }
+    )
+    (bootstrapReceipt // { non_claims = [ ]; })
+    (bootstrapReceipt // { private_key = "must-not-be-accepted"; })
+  ];
+  invalidBootstrapReceiptsAccepted = builtins.filter bootstrapReceiptIsAccepted invalidBootstrapReceipts;
+  bootstrapReceiptPolicyValid =
+    bootstrapReceipt == bootstrapReceiptJson
+    && bootstrapReceiptIsAccepted bootstrapReceipt
+    && invalidBootstrapReceiptsAccepted == [ ];
   schemaExpectedNegativeFields = [
     "expectedHost"
     "deploymentTarget"
@@ -781,7 +872,9 @@ in
       pkgs.runCommand "radicle-node-policy"
         {
           nativeBuildInputs = [
+            pkgs.b3sum
             pkgs.coreutils
+            pkgs.nickel
             pkgs.openssh
           ];
         }
@@ -794,6 +887,15 @@ in
           test -e ${fixtureConfig.services.radicle.configFile}
           test -n ${lib.escapeShellArg cloudflareNginxCommand}
           test -n ${lib.escapeShellArg directAcmeNginxCommand}
+
+          nickel export --format json ${bootstrapReceiptSource} > "$TMPDIR/bootstrap-v1.json"
+          test -s "$TMPDIR/bootstrap-v1.json"
+          test "$(b3sum ${bootstrapReceiptJsonPath} | cut -d ' ' -f 1)" = ${lib.escapeShellArg bootstrapReceiptExpectedHash}
+
+          ${lib.optionalString (!bootstrapReceiptPolicyValid) ''
+            echo "typed Radicle bootstrap receipt or its negative fixtures failed semantic validation" >&2
+            exit 1
+          ''}
 
           configured_fingerprint="$(ssh-keygen -lf ${publicKeyPath})"
           case "$configured_fingerprint" in

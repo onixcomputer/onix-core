@@ -1,0 +1,153 @@
+{
+  "acquisition": {
+    "https_git": {
+      "commit": "29dac88ecded94457572db3fdfaaaab95fa91525",
+      "result": "verified",
+      "source_archive_blake3": "4fbbf8f0749262469f00748e04c775180488dba800303f139172656d25931927"
+    },
+    "native": {
+      "client_boundary": "dynamic-user-aspen-only-egress",
+      "commit": "29dac88ecded94457572db3fdfaaaab95fa91525",
+      "result": "verified",
+      "signed_refs_feature": "parent"
+    }
+  },
+  "authority_boundary": {
+    "allowed_credentials": ["machine-scoped-radicle-node-key"],
+    "capability_bounding_set_empty": true,
+    "forbidden_authorities": [
+      "repository-delegate",
+      "canonical-ref",
+      "ci",
+      "deployment",
+      "release-signing",
+      "cache-write",
+      "artifact-administration",
+      "cloudflare",
+      "github",
+      "buildbot",
+      "nix-signing",
+      "vaultwarden",
+      "matrix"
+    ],
+    "home_protected": true,
+    "host_secrets_masked": true,
+    "service_role": "replication-and-read-only-transport"
+  },
+  "endpoints": {
+    "httpd": {
+      "address": "127.0.0.1:8080",
+      "publicly_routable": false
+    },
+    "https_git": {
+      "origin": "127.0.0.1:8081",
+      "tls_termination": "cloudflare-tunnel",
+      "upload_pack_only": true,
+      "url": "https://git.onix.computer/z2CpqLFpdP36fZXYUK5ZNWxMibpCo.git"
+    },
+    "native": {
+      "address": "100.100.103.95:8776",
+      "firewall_interface": "tailscale0",
+      "wildcard_listener": false
+    }
+  },
+  "evidence": [
+    "cairn/changes/bootstrap-radicle-forge-node/evidence/aspen1-live-bootstrap-2026-07-24.md",
+    "docs/radicle-forge-bootstrap.md"
+  ],
+  "identity": {
+    "continuity": "recovered-and-pinned",
+    "node_id": "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8",
+    "ssh_fingerprint": "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE"
+  },
+  "machine": {
+    "deployment_target": "root@aspen1.local",
+    "failure_domain": "aspen-primary-site",
+    "host": "aspen1",
+    "system_closure": "/nix/store/mn97i50mk7damrfih2k76ih5f6mz8nxw-nixos-system-aspen1-26.11.20260629.7a1a647"
+  },
+  "monitoring": {
+    "httpd_alert": "loaded",
+    "node_alert": "loaded",
+    "policy_alert": "loaded-and-clear",
+    "systemd_exporter": "verified"
+  },
+  "non_claims": [
+    "independent-seed-availability",
+    "single-seed-outage-survival",
+    "private-repository-confidentiality",
+    "repository-source-correctness",
+    "patch-review-correctness",
+    "ci-isolation-beyond-observed-service-boundary",
+    "canonical-ref-enforcement",
+    "release-readiness",
+    "whole-stack-github-independence",
+    "geographic-or-building-power-independence"
+  ],
+  "observed_date": "2026-07-25",
+  "packages": {
+    "httpd": {
+      "store_path": "/nix/store/zjnwy6nnilq6f4jnsm1h4wjiapwi36va-radicle-httpd-0.25.0",
+      "version": "0.25.0"
+    },
+    "node": {
+      "store_path": "/nix/store/r2hjw60rdpb3faxa6xglywxl77rx9ql2-radicle-node-1.9.1",
+      "version": "1.9.1"
+    }
+  },
+  "policy": {
+    "check": "checks.x86_64-linux.radicle-node-policy",
+    "minimum_node_version": "1.9.1",
+    "minimum_signed_refs_feature": "parent",
+    "source_revision": "2b104f11"
+  },
+  "receipt_type": "onix.radicle.bootstrap.v1",
+  "recovery": {
+    "accepted_archive": "aspen1-britton-desktop-2026-07-24T20:48:20",
+    "encryption": "borg-repokey",
+    "plaintext_cleanup": "verified",
+    "recovery_input_bytes": 72341285,
+    "recovery_input_manifest_blake3": "f24d9e0a56109ae71570e8b8c4116448e340053380f72dd5f91d25ff071d2610",
+    "recovery_input_record_count": 6,
+    "repository_id": "8d87c9acca56a9dfac56f152c98bd5dec748260ca5d7ba4bfe9fba95c1916921",
+    "restored_fingerprint": "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE",
+    "restored_node_id": "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8",
+    "restored_repository_count": 6760,
+    "result": "verified",
+    "state_bytes": 57970493900,
+    "state_manifest_blake3": "480aa43cba75d5b1176b65df9a0f69c4a11ba8b36b426210914bc45ccdcadde0",
+    "state_record_count": 303134,
+    "target_failure_domain": "britton-desktop-workstation",
+    "target_host": "britton-desktop"
+  },
+  "rejection_probes": {
+    "https_api_status": 404,
+    "https_missing_revision": "rejected",
+    "https_receive_pack_status": 404,
+    "https_root_status": 404,
+    "https_undeclared_rid_status": 404,
+    "https_write": "rejected",
+    "native_undeclared_rid": "rejected"
+  },
+  "repositories": [
+    {
+      "expected_commit": "29dac88ecded94457572db3fdfaaaab95fa91525",
+      "observed_commit": "29dac88ecded94457572db3fdfaaaab95fa91525",
+      "rid": "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+      "source_archive_blake3": "4fbbf8f0749262469f00748e04c775180488dba800303f139172656d25931927",
+      "visibility": "public"
+    }
+  ],
+  "schema_version": 1,
+  "services": {
+    "backup_timer": "active",
+    "cloudflare_tunnel": "active",
+    "httpd": "active",
+    "nginx": "active",
+    "node": "active",
+    "policy_timer": "active",
+    "reconciled_repository_count": 1,
+    "restart_continuity": "verified"
+  },
+  "status": "accepted"
+}
