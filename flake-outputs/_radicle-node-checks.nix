@@ -59,6 +59,9 @@ let
   generatedPublicKeyMode = "444";
   optionalPassphraseCredential = "dev.radicle.node.passphrase";
   pinnedRepository = "rad:z3gqcJUoA1n9HaHKufZs5FCSGazv5";
+  productionPilotRepository = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo";
+  productionHttpsServerName = "git.onix.computer";
+  productionCloudflareTunnelName = "aspen1-services";
 
   nodePackage = self.packages.${system}.radicle-node;
   httpdPackage = self.packages.${system}.radicle-httpd;
@@ -680,6 +683,18 @@ let
   nodeCommand = nodeService.serviceConfig.ExecStart;
   httpdCommand = httpdService.serviceConfig.ExecStart;
   policyCommand = builtins.unsafeDiscardStringContext policyService.serviceConfig.ExecStart;
+  productionHttpsVhost = fixtureConfig.services.nginx.virtualHosts.${productionHttpsServerName};
+  productionHttpsLocations = productionHttpsVhost.locations;
+  productionHttpsRepositoryPath = lib.removePrefix "rad:" productionPilotRepository;
+  productionInfoRefsLocationName = "= /${productionHttpsRepositoryPath}.git/info/refs";
+  productionUploadPackLocationName = "= /${productionHttpsRepositoryPath}.git/git-upload-pack";
+  productionExpectedLocationNames = lib.sort builtins.lessThan [
+    "/"
+    productionInfoRefsLocationName
+    productionUploadPackLocationName
+  ];
+  productionCloudflareTunnel =
+    fixtureConfig.services.cloudflared.tunnels.${productionCloudflareTunnelName};
   policyReconcilerCommandPath = builtins.unsafeDiscardStringContext "${policyReconciler}/bin/radicle-policy-reconciler";
   nodeRadCommandPath = builtins.unsafeDiscardStringContext "${nodePackage}/bin/rad";
   identityGenerator = fixtureConfig.clan.core.vars.generators.${identityGeneratorName};
@@ -940,10 +955,33 @@ in
             echo "Radicle policy service does not use the reviewed Radicle CLI" >&2
             exit 1
           ''}
-          ${lib.optionalString (lib.hasInfix pinnedRepository policyCommand) ''
-            echo "Radicle production policy unexpectedly admits a repository" >&2
-            exit 1
-          ''}
+          ${lib.optionalString
+            (
+              !(lib.hasInfix productionPilotRepository policyCommand)
+              || lib.hasInfix pinnedRepository policyCommand
+            )
+            ''
+              echo "Radicle production policy does not admit exactly the reviewed pilot repository" >&2
+              exit 1
+            ''
+          }
+          ${lib.optionalString
+            (
+              builtins.attrNames productionHttpsLocations != productionExpectedLocationNames
+              || productionHttpsLocations."/".return != 404
+              || builtins.length productionHttpsVhost.listen != 1
+              || (builtins.head productionHttpsVhost.listen).addr != httpsOriginAddress
+              || (builtins.head productionHttpsVhost.listen).port != httpsOriginPort
+              || (builtins.head productionHttpsVhost.listen).ssl
+              ||
+                productionCloudflareTunnel.ingress.${productionHttpsServerName}
+                != "http://${httpsOriginAddress}:${toString httpsOriginPort}"
+            )
+            ''
+              echo "Radicle production HTTPS policy is not the exact Cloudflare-only pilot route" >&2
+              exit 1
+            ''
+          }
           ${lib.optionalString
             (
               !policyService.serviceConfig.PrivateNetwork

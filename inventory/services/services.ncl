@@ -47,6 +47,7 @@ let radicle_node_address = "100.100.103.95" in
 let radicle_node_port = 8776 in
 let radicle_http_port = 8080 in
 let radicle_https_origin_port = 8081 in
+let radicle_pilot_rid = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo" in
 let radicle_backup_target_host = "britton-desktop" in
 let radicle_backup_target_address = "100.110.43.11" in
 let radicle_backup_target_failure_domain = "britton-desktop-workstation" in
@@ -172,6 +173,7 @@ let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
             "buildbot.blr.dev" = "http://localhost:80",
             "matrix.onix.computer" = "http://localhost:80",
             "onix.computer" = "http://localhost:80",
+            "git.onix.computer" = "http://127.0.0.1:%{radicle_https_origin_port}",
           },
         },
       },
@@ -478,16 +480,16 @@ let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
         nodeListenPort = radicle_node_port,
         nodeFirewallInterface = "tailscale0",
         externalAddress = "%{radicle_node_address}:%{radicle_node_port}",
-        seedRepositories = [],
+        seedRepositories = [radicle_pilot_rid],
         httpdEnabled = true,
         httpListenAddress = "127.0.0.1",
         httpListenPort = radicle_http_port,
-        httpsEnabled = false,
+        httpsEnabled = true,
         httpsServerName = "git.onix.computer",
         httpsTransport = "cloudflare-tunnel",
         httpsOriginListenAddress = "127.0.0.1",
         httpsOriginListenPort = radicle_https_origin_port,
-        httpsGitRepositories = [],
+        httpsGitRepositories = [radicle_pilot_rid],
         backupEnabled = true,
         backupTargetHost = radicle_backup_target_host,
         backupTargetAddress = radicle_backup_target_address,
