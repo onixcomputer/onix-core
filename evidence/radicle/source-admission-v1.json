@@ -1,0 +1,103 @@
+{
+  "authority_boundary": {
+    "artifact_auth_ci_enabled": false,
+    "ci_rids": ["rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo"],
+    "desktop_native_only": true,
+    "seed_allowed_credentials": ["machine-scoped-radicle-node-key"],
+    "seed_forbidden_authorities_absent": true
+  },
+  "evidence": [
+    "cairn/changes/admit-artifact-auth-radicle-source/evidence/deployment-and-probes-2026-07-25.md",
+    "evidence/radicle/source-admission-v1.json",
+    "artifact-auth:evidence/radicle/publication-v1.json",
+    "valence:evidence/radicle/artifact-auth-cutover-v1.json"
+  ],
+  "governance": {
+    "approval_threshold": 2,
+    "delegates": [
+      "did:key:z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx",
+      "did:key:z6MkjCqx5ksRqcDeNeuEnz53udbUHebRLHhddCxecWJu9koE",
+      "did:key:z6MkmkA6sEzzMffaWqKEKJcDh8LjAzgrJLrTNi971KN3X6sh"
+    ],
+    "identity_revision": "c22900ae6b7b5637aa0e378fe00503cf02c6d1bf",
+    "identity_root": "e95f12e9791861f072e9a60f7d0d75f08428d721",
+    "offline_delegate": "did:key:z6MkmkA6sEzzMffaWqKEKJcDh8LjAzgrJLrTNi971KN3X6sh",
+    "public_bundle_blake3": "7f96561a705151266e83641bdc53cf692518f0e5507f10acc3074c45d6ebca5f",
+    "signed_main_delegates": [
+      "did:key:z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx",
+      "did:key:z6MkjCqx5ksRqcDeNeuEnz53udbUHebRLHhddCxecWJu9koE"
+    ]
+  },
+  "https": {
+    "commit": "799459346d5416fbd7b9f55840a7371441b55afa",
+    "public_origin_count": 1,
+    "receive_pack_status": 404,
+    "root_status": 404,
+    "source_archive_blake3": "246a7cad91e7e8a158e22da21f3bff3e61aa0431a58936b5a739178bc62064c7",
+    "unknown_rid_status": 404,
+    "url": "https://git.onix.computer/z4JGYYW7WsesXUq7MXVdx16Fawu2f.git"
+  },
+  "non_claims": [
+    "artifact-auth-source-correctness",
+    "valence-behavior-correctness",
+    "live-delegate-replacement",
+    "third-delegate-live-convergence",
+    "private-repository-confidentiality",
+    "automatic-https-failover",
+    "geographic-or-building-power-independence",
+    "protocol-enforced-mandatory-ci",
+    "release-readiness",
+    "whole-stack-github-independence"
+  ],
+  "observed_date": "2026-07-25",
+  "policy": {
+    "ci_rids": ["rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo"],
+    "repositories": [
+      {
+        "name": "bounded-exec",
+        "reviewed_commit": "29dac88ecded94457572db3fdfaaaab95fa91525",
+        "rid": "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+        "source_archive_blake3": "4fbbf8f0749262469f00748e04c775180488dba800303f139172656d25931927"
+      },
+      {
+        "name": "artifact-auth",
+        "reviewed_commit": "799459346d5416fbd7b9f55840a7371441b55afa",
+        "rid": "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
+        "source_archive_blake3": "246a7cad91e7e8a158e22da21f3bff3e61aa0431a58936b5a739178bc62064c7"
+      }
+    ],
+    "signed_refs_feature": "parent",
+    "source_revision": "a3f5a18b36a0c874c1fce0d47acee19932f4d931"
+  },
+  "primary": {
+    "client_nid": "z6MkkQEGLf4NPLDzwguTX7LWQYxQvWnbjFvh2mECYHzuPPvb",
+    "commit": "799459346d5416fbd7b9f55840a7371441b55afa",
+    "host": "aspen1",
+    "isolated_egress": "blocked",
+    "node_fingerprint": "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE",
+    "node_id": "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8",
+    "reconciled_repository_count": 2,
+    "secret_access": "blocked",
+    "source_archive_blake3": "246a7cad91e7e8a158e22da21f3bff3e61aa0431a58936b5a739178bc62064c7",
+    "storage_access": "blocked",
+    "system_closure": "/nix/store/0j4sb2mnmmy6skiy89hy83p9lsn6rdwq-nixos-system-aspen1-26.11.20260629.7a1a647",
+    "undeclared_rid": "rejected"
+  },
+  "receipt_type": "onix.radicle-source-admission.v1",
+  "replica": {
+    "client_nid": "z6Mku6MfTxgiBW2gtDpAJqk6Cf6FStVbNx4JrcyDjb9bUTqQ",
+    "commit": "799459346d5416fbd7b9f55840a7371441b55afa",
+    "host": "britton-desktop",
+    "isolated_egress": "blocked",
+    "node_fingerprint": "SHA256:JHQTPqoMr4kLqBsrAPSRNXUuzETiHAoiKBM/VWftmEg",
+    "node_id": "z6MkkQCj5EczNiVzDzCkX9ewHNJ7NDEXSKbuRiS1x7o72yeG",
+    "reconciled_repository_count": 2,
+    "secret_access": "blocked",
+    "source_archive_blake3": "246a7cad91e7e8a158e22da21f3bff3e61aa0431a58936b5a739178bc62064c7",
+    "storage_access": "blocked",
+    "system_closure": "/nix/store/a2md0l6n2g56xcg44v93xalyc6zcaxp1-nixos-system-britton-desktop-26.11.20260629.7a1a647",
+    "undeclared_rid": "rejected"
+  },
+  "schema_version": 1,
+  "status": "accepted"
+}

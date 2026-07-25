@@ -38,6 +38,7 @@ let
   radicleCiRunnerChecks = (import ./_radicle-ci-runner-checks.nix) innerArgs;
   radicleNodeChecks = (import ./_radicle-node-checks.nix) innerArgs;
   radicleSeedReplicaChecks = (import ./_radicle-seed-replica-checks.nix) innerArgs;
+  radicleSourceAdmissionChecks = (import ./_radicle-source-admission-checks.nix) innerArgs;
 
   packageChecks = lib.mapAttrs' (n: lib.nameValuePair "package-${n}") self'.packages;
   devShellChecks = lib.mapAttrs' (n: lib.nameValuePair "devShell-${n}") self'.devShells;
@@ -59,6 +60,7 @@ in
     // (radicleCiRunnerChecks.checks or { })
     // (radicleNodeChecks.checks or { })
     // (radicleSeedReplicaChecks.checks or { })
+    // (radicleSourceAdmissionChecks.checks or { })
     // packageChecks
     // devShellChecks;
 }
