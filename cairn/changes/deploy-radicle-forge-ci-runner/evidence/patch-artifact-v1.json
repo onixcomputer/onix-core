@@ -1,0 +1,7 @@
+{
+  "schema": "onix.radicle-ci-artifact.v1",
+  "job_id": "ffaaabbb76f5d54c48dc5c847bbf2ee9cd1513e70af3a29867be212c3be77a90",
+  "object_oid": "1baa4f552ae55923b025d99d08073286158836be",
+  "stdout_blake3": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "stderr_blake3": "801e18b709e2f90ec961f11f09c1ab58fe9a66ac986fd28ca944e93d6076a387"
+}

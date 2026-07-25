@@ -1,0 +1,20 @@
+{
+  "schema": "onix.radicle-ci-event.v1",
+  "job_id": "9c090732a5248912f7e42c6c26889804545df382d31a5955584c3ddf839cc4ac",
+  "policy_blake3": "091e57f4409f79db14465ccc26e730bf1181209fe45c28d7dd1259393e93f740",
+  "rid": "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+  "trigger": "canonical_branch",
+  "reference": "refs/heads/main",
+  "object_oid": "1baa4f552ae55923b025d99d08073286158836be",
+  "patch_id": null,
+  "revision_id": null,
+  "signed_refs_feature": "parent",
+  "source_archive_blake3": "705919adac9805963d8d4b25f3d3f6cf19a325d3a17b80b367e59dea40d56f68",
+  "locks": {
+    "cargo_toml_blake3": "20ff51e3f2c5f9b230e05b797b5dbb1029e738d5f84d25cecce02d49c2d3427e",
+    "cargo_lock_blake3": "79c9e70b6cd874aad8e55beb6b4242b47efc24ab344cad4ad1c42a4c3b31cd60",
+    "flake_nix_blake3": "ef1b58422af1f9918554d7a0f78c6c657eded6ac64545e4c6fb3c6e1d7ba9e86",
+    "flake_lock_blake3": "8f16f066737c44b0447f9bd86b89dca822183909d90563c097765f098e5abae4"
+  },
+  "claim_scope": "exact-object-bounded-ci-input"
+}

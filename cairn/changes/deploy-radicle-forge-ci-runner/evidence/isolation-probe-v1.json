@@ -1,0 +1,10 @@
+{
+  "schema": "onix.radicle-ci-isolation-probe.v1",
+  "runner_state_write": "allowed",
+  "protected_path_access": "denied",
+  "production_seed_network": "denied",
+  "canonical_ref_mutation": "unavailable-with-production-storage-denied",
+  "seed_policy_mutation": "unavailable-with-production-storage-denied",
+  "cache_write": "unavailable-with-protect-system-strict",
+  "deployment_and_secret_access": "unavailable-with-run-secrets-denied"
+}

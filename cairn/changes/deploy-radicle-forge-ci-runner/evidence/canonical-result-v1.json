@@ -1,0 +1,31 @@
+{
+  "schema": "onix.radicle-ci-result.v1",
+  "job_id": "9c090732a5248912f7e42c6c26889804545df382d31a5955584c3ddf839cc4ac",
+  "rid": "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+  "trigger": "canonical_branch",
+  "object_oid": "1baa4f552ae55923b025d99d08073286158836be",
+  "patch_id": null,
+  "revision_id": null,
+  "disposition": "succeeded",
+  "exit_code": 0,
+  "stdout_observed_bytes": 0,
+  "stdout_retained_bytes": 0,
+  "stdout_blake3": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "stderr_observed_bytes": 0,
+  "stderr_retained_bytes": 0,
+  "stderr_blake3": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "artifact_bytes": 359,
+  "artifact_blake3": "2633b4fa836e3ab876ab379a53fbb0bdd2d50779fb045caf30582b5eccf25249",
+  "status_authority": "non-delegate-patch-comment-only",
+  "claim_scope": "bounded-ci-observation",
+  "non_claims": [
+    "ci-result-does-not-prove-source-correctness",
+    "ci-result-does-not-prove-nix-correctness",
+    "ci-result-does-not-prove-host-sandboxing",
+    "ci-result-does-not-prove-canonical-ref-authority",
+    "ci-result-does-not-prove-release-readiness",
+    "artifact-publication-does-not-prove-remote-durability",
+    "status-publication-does-not-prove-merge-eligibility",
+    "bot-replication-does-not-grant-production-seed-policy-authority"
+  ]
+}

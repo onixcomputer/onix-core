@@ -1,0 +1,31 @@
+{
+  "schema": "onix.radicle-ci-result.v1",
+  "job_id": "ffaaabbb76f5d54c48dc5c847bbf2ee9cd1513e70af3a29867be212c3be77a90",
+  "rid": "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+  "trigger": "patch",
+  "object_oid": "1baa4f552ae55923b025d99d08073286158836be",
+  "patch_id": "fd413bad04e5a622fbc27da67588eea4a8c7e814",
+  "revision_id": "fd413bad04e5a622fbc27da67588eea4a8c7e814",
+  "disposition": "succeeded",
+  "exit_code": 0,
+  "stdout_observed_bytes": 0,
+  "stdout_retained_bytes": 0,
+  "stdout_blake3": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+  "stderr_observed_bytes": 193,
+  "stderr_retained_bytes": 193,
+  "stderr_blake3": "801e18b709e2f90ec961f11f09c1ab58fe9a66ac986fd28ca944e93d6076a387",
+  "artifact_bytes": 552,
+  "artifact_blake3": "9046a67eee06c634ded25cc938acc6f076693e056a0a6fe42be9e026e06560cb",
+  "status_authority": "non-delegate-patch-comment-only",
+  "claim_scope": "bounded-ci-observation",
+  "non_claims": [
+    "ci-result-does-not-prove-source-correctness",
+    "ci-result-does-not-prove-nix-correctness",
+    "ci-result-does-not-prove-host-sandboxing",
+    "ci-result-does-not-prove-canonical-ref-authority",
+    "ci-result-does-not-prove-release-readiness",
+    "artifact-publication-does-not-prove-remote-durability",
+    "status-publication-does-not-prove-merge-eligibility",
+    "bot-replication-does-not-grant-production-seed-policy-authority"
+  ]
+}

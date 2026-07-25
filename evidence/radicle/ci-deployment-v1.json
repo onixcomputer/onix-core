@@ -1,0 +1,193 @@
+{
+  "authority_boundary": {
+    "bot_role": "single-rid-fetch-and-own-namespace-status",
+    "forbidden_authorities": [
+      "repository-delegate",
+      "canonical-ref",
+      "merge",
+      "release",
+      "deployment",
+      "production-seed-policy",
+      "cache-write",
+      "artifact-administration",
+      "backup",
+      "cloudflare",
+      "user-profile",
+      "secret",
+      "network"
+    ],
+    "runner_credentials": "none",
+    "runner_memory_max_bytes": 8589934592,
+    "runner_private_network": true,
+    "runner_protect_system": "strict",
+    "runner_role": "credentialless-exact-object-offline-observer",
+    "runner_tasks_max": 256
+  },
+  "bot_identity": {
+    "alias": "aspen1-ci-bot",
+    "delegate": false,
+    "fingerprint": "SHA256:U4XxEymH9bpdWtN3Yl7ugkOn+Io1OrQ6H2UjkZC9Rg0",
+    "key_pair_verification": "verified-before-node-start",
+    "node_id": "z6MknopLULJensBT5KGkC8h9KaHTNY5muZ9UffqroErX7Rni",
+    "policy": "default-block-with-only-the-pilot-rid-allowed",
+    "production_seed_node_id": "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8"
+  },
+  "evidence": [
+    "cairn/changes/deploy-radicle-forge-ci-runner/evidence/deployment-and-drills-2026-07-25.md",
+    "cairn/changes/deploy-radicle-forge-ci-runner/evidence/patch-event-v1.json",
+    "cairn/changes/deploy-radicle-forge-ci-runner/evidence/patch-result-v1.json",
+    "cairn/changes/deploy-radicle-forge-ci-runner/evidence/patch-artifact-v1.json",
+    "cairn/changes/deploy-radicle-forge-ci-runner/evidence/canonical-event-v1.json",
+    "cairn/changes/deploy-radicle-forge-ci-runner/evidence/canonical-result-v1.json",
+    "cairn/changes/deploy-radicle-forge-ci-runner/evidence/isolation-probe-v1.json",
+    "cairn/changes/deploy-radicle-forge-ci-runner/evidence/bounds-probe-v1.json",
+    "docs/radicle-forge-ci.md"
+  ],
+  "evidence_hashes": {
+    "bounds_probe_json": "67404cfad743ffcb7dd2201e3c1ad285ac189a586eafd3dccec0ebb226dd598c",
+    "isolation_probe_json": "19b010f00b44ca1db89ea93983d8b35b3be2f7e5c276c8b9416d687f5b7dbbb5",
+    "patch_artifact_json": "747e1be814f6d0a16f7640d0df2890e2e07b416c726fb3b04558249f13b34ae5"
+  },
+  "governance": {
+    "author_main_signature": "50f5b7ea617606a00f2d1982febdbe2a7b9a1d23",
+    "convergence": "two-of-three-on-aspen-desktop-and-public-https",
+    "delegate_count": 3,
+    "review": "accepted-independently-before-merge",
+    "review_operation": "71ee3f83fbb4fa436aee07f311dd7519ee177cde",
+    "reviewer_main_signature": "a6de9e2918e6e4c863d7cdf42b18e312fb65fdec",
+    "reviewer_node_id": "z6MkjCqx5ksRqcDeNeuEnz53udbUHebRLHhddCxecWJu9koE",
+    "third_delegate_main": "29dac88ecded94457572db3fdfaaaab95fa91525",
+    "threshold": 2
+  },
+  "jobs": {
+    "bounded_status_operations": 5,
+    "canonical": {
+      "artifact_blake3": "2633b4fa836e3ab876ab379a53fbb0bdd2d50779fb045caf30582b5eccf25249",
+      "disposition": "succeeded",
+      "event_blake3": "38080e0b11fc0b58b11e4bae79822d03a64eda17947c84af2237fcf6e851ef8a",
+      "job_id": "9c090732a5248912f7e42c6c26889804545df382d31a5955584c3ddf839cc4ac",
+      "object_oid": "1baa4f552ae55923b025d99d08073286158836be",
+      "result_blake3": "790e3a4cb3044757cf7373839f558accb7b3ab28087ad96d75d5abe382328e42",
+      "trigger": "canonical_branch"
+    },
+    "final_success_comments": 1,
+    "patch": {
+      "artifact_blake3": "9046a67eee06c634ded25cc938acc6f076693e056a0a6fe42be9e026e06560cb",
+      "disposition": "succeeded",
+      "event_blake3": "25fb18faa9dc7c3fc773994a127b2c15f3c10cae8defc4ab6173273751d70b72",
+      "job_id": "ffaaabbb76f5d54c48dc5c847bbf2ee9cd1513e70af3a29867be212c3be77a90",
+      "object_oid": "1baa4f552ae55923b025d99d08073286158836be",
+      "result_blake3": "f458e88b37a9dff3543b60e58154d45ea1cfd715df0662689942748c7945dc3c",
+      "trigger": "patch"
+    },
+    "status_authority": "non-delegate-patch-comment-only",
+    "status_operation": "53db765918597276cca4364310d3c622aa85c600"
+  },
+  "machine": {
+    "deployment_target": "root@aspen1.local",
+    "host": "aspen1",
+    "system_closure": "/nix/store/icv59w4s3wzlqfg1m26j2wp7x84xb6vl-nixos-system-aspen1-26.11.20260629.7a1a647"
+  },
+  "monitoring": {
+    "alert": "RadicleCiUnitFailed-loaded",
+    "ci_node": "active",
+    "ci_sync_timer": "active",
+    "prometheus": "active",
+    "systemd_exporter": "active"
+  },
+  "non_claims": [
+    "source-correctness",
+    "nix-correctness",
+    "host-sandbox-correctness",
+    "artifact-durability",
+    "mandatory-ci-merge-enforcement",
+    "private-repository-confidentiality",
+    "automatic-failover",
+    "release-readiness",
+    "whole-stack-github-independence",
+    "live-delegate-replacement",
+    "geographic-or-building-power-independence"
+  ],
+  "observed_date": "2026-07-25",
+  "package": {
+    "runner_store_path": "/nix/store/kcv5lb5ddxrc7kawra0yx8l38m780dm8-radicle-ci-runner-0.1.0",
+    "sync_store_path": "/nix/store/dwx9gffp8vp4fqvs32nl5ggpb5ir5vzb-radicle-ci-sync"
+  },
+  "policy": {
+    "allowed_input_uris": [
+      "github:NixOS/nixpkgs/61b7c44c4073f0b827768aff0049561b5110ea5a?narHash=sha256-12KrbMiWLcf8m7pCvAtZh1ZrgF85ZXDXvfR/fWTKy84%3D",
+      "github:oxalica/rust-overlay/3c38e1e1ba9c8d7030f7b5a801398ea7d8a6fdc0?narHash=sha256-OstzLWL5t7Xe14xEC6GIMJCp0PrYNTSA0El7GG2av88%3D"
+    ],
+    "command": [
+      "nix",
+      "build",
+      "--no-link",
+      "--no-update-lock-file",
+      "--option",
+      "allow-import-from-derivation",
+      "false",
+      "--option",
+      "restrict-eval",
+      "true",
+      ".#checks.x86_64-linux.cargo-test"
+    ],
+    "focused_checks": [
+      "radicle-ci-runner package tests",
+      "radicle-ci-runner Clippy with warnings denied",
+      "checks.x86_64-linux.radicle-ci-runner-policy",
+      "positive and negative Nickel fixture validation",
+      "deployed isolation probe",
+      "deployed timeout and output-flood probe",
+      "restart deduplication drill"
+    ],
+    "policy_blake3": "091e57f4409f79db14465ccc26e730bf1181209fe45c28d7dd1259393e93f740",
+    "reviewed_bounded_exec_revision": "29dac88ecded94457572db3fdfaaaab95fa91525",
+    "signed_refs_feature": "parent",
+    "source_revision": "fbd6c6c98b713dec3e6480097ba3fef9251725a8"
+  },
+  "probes": {
+    "bounds_blake3": "51d251ee90e5b34213d43f8c930a1591579dec1d5d2b38f91f8f4fda2af6aca0",
+    "bounds_schema": "onix.radicle-ci-bounds-probe.v1",
+    "cache_write": "unavailable-with-protect-system-strict",
+    "canonical_ref_mutation": "unavailable-with-production-storage-denied",
+    "deployment_and_secret_access": "unavailable-with-run-secrets-denied",
+    "isolation_blake3": "f0d5ce42f5d3ff96ba6529ae7a7cbbf446843fddb49db1b4d843a15dbd4710bb",
+    "isolation_schema": "onix.radicle-ci-isolation-probe.v1",
+    "output_flood": "output_limit_exceeded-and-truncated",
+    "output_limit_bytes": 1024,
+    "output_observed_bytes": 2048,
+    "production_seed_network": "denied",
+    "protected_path_access": "denied",
+    "seed_policy_mutation": "unavailable-with-production-storage-denied",
+    "timeout": "timed_out-and-torn-down"
+  },
+  "receipt_type": "onix.radicle-ci-deployment.v1",
+  "repository": {
+    "aspen_main": "1baa4f552ae55923b025d99d08073286158836be",
+    "canonical_main": "1baa4f552ae55923b025d99d08073286158836be",
+    "desktop_main": "1baa4f552ae55923b025d99d08073286158836be",
+    "object_oid": "1baa4f552ae55923b025d99d08073286158836be",
+    "patch_id": "fd413bad04e5a622fbc27da67588eea4a8c7e814",
+    "public_git_url": "https://git.onix.computer/z2CpqLFpdP36fZXYUK5ZNWxMibpCo.git",
+    "reviewed_commit": "29dac88ecded94457572db3fdfaaaab95fa91525",
+    "revision_id": "fd413bad04e5a622fbc27da67588eea4a8c7e814",
+    "rid": "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+    "source_archive_blake3": "705919adac9805963d8d4b25f3d3f6cf19a325d3a17b80b367e59dea40d56f68"
+  },
+  "restart": {
+    "comments_after": 5,
+    "comments_before": 5,
+    "deduplication": "verified",
+    "ledger_entries_after": 3,
+    "ledger_entries_before": 3,
+    "publisher": "success-idle",
+    "race_repair_revision": "45c99c864a4610ae7f84cdb79e87fcafe779f92f",
+    "result_mtime_after": 1785009233,
+    "result_mtime_before": 1785009233,
+    "runner": "success-idle",
+    "scan": "success",
+    "sync": "success"
+  },
+  "schema_version": 1,
+  "status": "accepted"
+}

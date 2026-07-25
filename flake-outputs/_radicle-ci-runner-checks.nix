@@ -101,6 +101,71 @@ let
     field: !(lib.any (error: lib.hasInfix field error) schemaValidation.negative)
   ) schemaExpectedNegativeFields;
   schemaValidationValid = schemaValidation.positive == [ ] && missingSchemaNegativeFields == [ ];
+  deploymentReceiptSource = ../evidence/radicle/ci-deployment-v1.ncl;
+  deploymentReceiptJsonPath = ../evidence/radicle/ci-deployment-v1.json;
+  deploymentReceiptHashPath = ../evidence/radicle/ci-deployment-v1.blake3;
+  deploymentReceipt = wasm.evalNickelFile deploymentReceiptSource;
+  deploymentReceiptJson = builtins.fromJSON (builtins.readFile deploymentReceiptJsonPath);
+  deploymentReceiptExpectedHash = lib.removeSuffix "\n" (builtins.readFile deploymentReceiptHashPath);
+  patchEventPath = ../cairn/changes/deploy-radicle-forge-ci-runner/evidence/patch-event-v1.json;
+  patchResultPath = ../cairn/changes/deploy-radicle-forge-ci-runner/evidence/patch-result-v1.json;
+  patchArtifactPath = ../cairn/changes/deploy-radicle-forge-ci-runner/evidence/patch-artifact-v1.json;
+  canonicalEventPath = ../cairn/changes/deploy-radicle-forge-ci-runner/evidence/canonical-event-v1.json;
+  canonicalResultPath = ../cairn/changes/deploy-radicle-forge-ci-runner/evidence/canonical-result-v1.json;
+  isolationProbePath = ../cairn/changes/deploy-radicle-forge-ci-runner/evidence/isolation-probe-v1.json;
+  boundsProbePath = ../cairn/changes/deploy-radicle-forge-ci-runner/evidence/bounds-probe-v1.json;
+  patchEvent = builtins.fromJSON (builtins.readFile patchEventPath);
+  patchResult = builtins.fromJSON (builtins.readFile patchResultPath);
+  patchArtifact = builtins.fromJSON (builtins.readFile patchArtifactPath);
+  canonicalEvent = builtins.fromJSON (builtins.readFile canonicalEventPath);
+  canonicalResult = builtins.fromJSON (builtins.readFile canonicalResultPath);
+  isolationProbe = builtins.fromJSON (builtins.readFile isolationProbePath);
+  boundsProbe = builtins.fromJSON (builtins.readFile boundsProbePath);
+  receiptAccepted =
+    receipt:
+    receipt.schema_version == 1
+    && receipt.receipt_type == "onix.radicle-ci-deployment.v1"
+    && receipt.status == "accepted"
+    && receipt.policy.policy_blake3 == policyBlake3
+    && receipt.policy.reviewed_bounded_exec_revision == reviewedCommit
+    && receipt.bot_identity.node_id == botNodeId
+    && receipt.bot_identity.delegate == false
+    && receipt.repository.rid == pilotRid
+    && receipt.repository.object_oid == patchEvent.object_oid
+    && receipt.repository.object_oid == patchResult.object_oid
+    && receipt.repository.object_oid == patchArtifact.object_oid
+    && receipt.repository.object_oid == canonicalEvent.object_oid
+    && receipt.repository.object_oid == canonicalResult.object_oid
+    && receipt.jobs.patch.job_id == patchEvent.job_id
+    && receipt.jobs.patch.job_id == patchResult.job_id
+    && receipt.jobs.patch.job_id == patchArtifact.job_id
+    && receipt.jobs.patch.disposition == patchResult.disposition
+    && receipt.jobs.patch.artifact_blake3 == patchResult.artifact_blake3
+    && patchArtifact.stdout_blake3 == patchResult.stdout_blake3
+    && patchArtifact.stderr_blake3 == patchResult.stderr_blake3
+    && receipt.jobs.canonical.job_id == canonicalEvent.job_id
+    && receipt.jobs.canonical.job_id == canonicalResult.job_id
+    && receipt.jobs.canonical.disposition == canonicalResult.disposition
+    && receipt.jobs.canonical.artifact_blake3 == canonicalResult.artifact_blake3
+    && receipt.probes.isolation_schema == isolationProbe.schema
+    && receipt.probes.protected_path_access == isolationProbe.protected_path_access
+    && receipt.probes.production_seed_network == isolationProbe.production_seed_network
+    && receipt.probes.bounds_schema == boundsProbe.schema
+    && receipt.probes.timeout == boundsProbe.timeout
+    && receipt.probes.output_flood == boundsProbe.output_flood
+    && receipt.probes.output_limit_bytes == boundsProbe.output_limit_bytes
+    && receipt.probes.output_observed_bytes == boundsProbe.output_observed_bytes
+    && receipt.restart.result_mtime_before == receipt.restart.result_mtime_after
+    && receipt.restart.comments_before == receipt.restart.comments_after
+    && receipt.restart.ledger_entries_before == receipt.restart.ledger_entries_after
+    && receipt.restart.deduplication == "verified"
+    && builtins.elem "mandatory-ci-merge-enforcement" receipt.non_claims
+    && builtins.elem "private-repository-confidentiality" receipt.non_claims
+    && builtins.elem "release-readiness" receipt.non_claims;
+  deploymentReceiptPositiveValid =
+    deploymentReceipt == deploymentReceiptJson && receiptAccepted deploymentReceiptJson;
+  deploymentReceiptNegativeValid =
+    !(receiptAccepted (deploymentReceiptJson // { status = "rejected"; }));
   servicesAbsentFromUnexpectedHost =
     builtins.all (name: !(builtins.hasAttr name unexpectedConfig.systemd.services))
       [
@@ -117,6 +182,8 @@ let
     failedAssertions == [ ]
     && servicesAbsentFromUnexpectedHost
     && schemaValidationValid
+    && deploymentReceiptPositiveValid
+    && deploymentReceiptNegativeValid
     && scannerService.serviceConfig.User == botUser
     && hydratorService.serviceConfig.User == runnerUser
     && hydratorCredentialInputs == [ ]
@@ -184,6 +251,8 @@ in
                   servicesAbsentFromUnexpectedHost
                   schemaValidationValid
                   missingSchemaNegativeFields
+                  deploymentReceiptPositiveValid
+                  deploymentReceiptNegativeValid
                   hydratorCredentialInputs
                   runnerCredentialInputs
                   boundsProbeCredentialInputs
@@ -204,6 +273,15 @@ in
 
         actual_policy_hash="$(b3sum ${../modules/radicle-ci-runner/ci-policy-v1.json} | cut -d ' ' -f1)"
         test "$actual_policy_hash" = ${lib.escapeShellArg policyBlake3}
+        actual_receipt_hash="$(b3sum ${deploymentReceiptJsonPath} | cut -d ' ' -f1)"
+        test "$actual_receipt_hash" = ${lib.escapeShellArg deploymentReceiptExpectedHash}
+        test "$(b3sum ${patchEventPath} | cut -d ' ' -f1)" = ${lib.escapeShellArg deploymentReceiptJson.jobs.patch.event_blake3}
+        test "$(b3sum ${patchResultPath} | cut -d ' ' -f1)" = ${lib.escapeShellArg deploymentReceiptJson.jobs.patch.result_blake3}
+        test "$(b3sum ${patchArtifactPath} | cut -d ' ' -f1)" = ${lib.escapeShellArg deploymentReceiptJson.evidence_hashes.patch_artifact_json}
+        test "$(b3sum ${canonicalEventPath} | cut -d ' ' -f1)" = ${lib.escapeShellArg deploymentReceiptJson.jobs.canonical.event_blake3}
+        test "$(b3sum ${canonicalResultPath} | cut -d ' ' -f1)" = ${lib.escapeShellArg deploymentReceiptJson.jobs.canonical.result_blake3}
+        test "$(b3sum ${isolationProbePath} | cut -d ' ' -f1)" = ${lib.escapeShellArg deploymentReceiptJson.evidence_hashes.isolation_probe_json}
+        test "$(b3sum ${boundsProbePath} | cut -d ' ' -f1)" = ${lib.escapeShellArg deploymentReceiptJson.evidence_hashes.bounds_probe_json}
 
         radicle-ci-runner validate-config ${runnerConfigPath}
         test "$(jq -r .rid ${runnerConfigPath})" = ${lib.escapeShellArg pilotRid}

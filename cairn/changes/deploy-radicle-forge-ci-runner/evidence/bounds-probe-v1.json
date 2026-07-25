@@ -1,0 +1,9 @@
+{
+  "schema": "onix.radicle-ci-bounds-probe.v1",
+  "timeout": "timed_out-and-torn-down",
+  "output_flood": "output_limit_exceeded-and-truncated",
+  "output_limit_bytes": 1024,
+  "output_observed_bytes": 2048,
+  "network": "not-requested-private-network-service-boundary",
+  "credentials": "none"
+}
