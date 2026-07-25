@@ -2,7 +2,7 @@
 
 ## Scope
 
-This bounded observation records the first activation of the reviewed Radicle service on Aspen1. It is deployment evidence, not the final deterministic bootstrap receipt.
+This bounded observation records the first activation and clean recovery of the reviewed Radicle service on Aspen1. It is deployment and recovery evidence, not the final deterministic bootstrap receipt.
 
 ## Preserved state and identity
 
@@ -38,10 +38,24 @@ A newly generated identity was not activated because it would have changed the n
 - `radicle-policy-reconcile.service` completed successfully with zero additions and removals, its timer was active, its network namespace admitted only `AF_UNIX`, `/run/secrets` was inaccessible, and the unit had no credential directives.
 - A bounded negative probe added the public Heartwood RID as an undeclared native seed policy, started reconciliation, and observed the policy removed. Cleanup and a second reconciliation left `rad seed` reporting no policies.
 
+## Off-host encrypted backup and clean recovery
+
+- `britton-desktop`, declared as the separate `britton-desktop-workstation` failure domain, now hosts only the dedicated Borg repository at `/var/lib/radicle-backup/aspen1` on ZFS dataset `datapool/radicle-backup`.
+- The dataset and Borg server quota are 256 GiB. The live dataset used 48.9 GiB with 207 GiB available after the accepted archive. `/var/lib/radicle-backup` was `0710 root:borg`; the repository was `0700 borg:borg`.
+- The destination Borg repository ID is `8d87c9acca56a9dfac56f152c98bd5dec748260ca5d7ba4bfe9fba95c1916921`. `borg info` reported `Encrypted: Yes (repokey)`. Aspen1 uses a repository-specific SSH key, a pinned Ed25519 host key, strict host-key checking, `--restrict-to-repository`, no subrepositories, and seven daily plus four weekly archives.
+- The desktop has no Radicle node service, no readable Borg-user host secrets, and no delegate, deployment, release, signing, cache-write, canonical-ref, or CI authority. Its accepted closure was `/nix/store/xvdn34kpi18jw4gpyi5rkaihhzy5p6hj-nixos-system-britton-desktop-26.11.20260629.7a1a647`.
+- Aspen1's backup job receives exactly the Radicle private key, Borg SSH key, and Borg repokey passphrase through its private systemd credential directory. It masks `/run/secrets` and all of `/var/lib`, exposes only `/var/lib/radicle` through a read-only bind alias, and retains only `CAP_DAC_READ_SEARCH`. `ProtectHome`, `ProtectSystem=strict`, `PrivateDevices`, and `NoNewPrivileges` remained active.
+- The accepted archive is `aspen1-britton-desktop-2026-07-24T20:48:20`. Its complete Radicle-state manifest is BLAKE3 `480aa43cba75d5b1176b65df9a0f69c4a11ba8b36b426210914bc45ccdcadde0`, covering 303,134 records and 57,970,493,900 bytes. Its staged recovery-input manifest is BLAKE3 `f24d9e0a56109ae71570e8b8c4116448e340053380f72dd5f91d25ff071d2610`, covering six records and 72,341,285 bytes.
+- The archive reported 58.04 GB original size, 57.62 GB compressed size, and 23.72 MB new deduplicated data relative to the preceding full archive. The incremental run completed with status zero in 3 minutes 21 seconds.
+- `radicle-backup-restore-verify` extracted that archive into a clean root, regenerated and byte-compared both manifests, recovered node ID `z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8`, recovered fingerprint `SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE`, found all 6,760 repository directories, printed `restore_result=verified`, and exited zero.
+- The complete manifest compares every persisted path, file and symlink byte, mode, UID, and GID. That byte-exact state comparison covers stored repository IDs, Git objects and refs, signed refs, identity refs, issue and patch COB data, and any declared custom COB refs without promoting them to semantic-validity claims.
+- Positive and negative Rust tests cover deterministic component ordering, non-UTF-8 names, content and permission mutation, extra files, malformed hashes, and traversal. The live restore first exposed and rejected an invalid raw-byte ordering assumption; the corrected component-order fixture passed before the accepted restore.
+- After backup and restore, all Radicle services and the policy timer were active, plaintext staging and the clean restore root were absent, and the recurring backup timer was enabled and active. Aspen1's accepted recovery closure was `/nix/store/4g55sgg0h7w2izpsajh7xyjnjlx6j8jq-nixos-system-aspen1-26.11.20260629.7a1a647`.
+
 ## Negative observations and bounded blockers
 
 - The first activation rejected a newly generated identity because it did not match the persisted fingerprint. This was the correct fail-closed behavior and led to recovery rather than state deletion or identity rotation.
 - The HTTP gateway is intentionally loopback-only. Stable DNS/TLS and a repository allowlist have not been admitted, so HTTPS exact-object acquisition has not passed.
 - The inherited 56 GiB store has not yet been classified against the public repository allowlist. It MUST NOT be exposed through a public explorer or a wildcard Git gateway; the exact-route proxy currently has no production RID or public origin.
-- Exact-object native acquisition from an independent Radicle client, exact-object HTTPS Git acquisition, unauthorized-repository behavior at the future proxy, writable-operation rejection, off-host backup, clean restore, and key-loss recovery remain open.
+- Exact-object native acquisition from an independent Radicle client, exact-object HTTPS Git acquisition, unauthorized-repository behavior at the future proxy, and writable-operation rejection remain open. Off-host encrypted backup, clean restore, and Radicle node identity key recovery passed; per-pilot RID semantic probes remain blocked until a real pilot RID is admitted.
 - This observation does not prove high availability, a second failure domain, repository correctness, delegate authority, CI isolation beyond the observed unit boundary, release readiness, private-repository confidentiality, or complete recovery.
