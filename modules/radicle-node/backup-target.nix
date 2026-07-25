@@ -10,6 +10,7 @@ let
   backupRepository = "${backupRoot}/aspen1";
   backupQuota = "256G";
   backupDirectoryMode = "0710";
+  backupRepositoryMode = "0700";
   zfs = "${config.boot.zfs.package}/bin/zfs";
   findmnt = "${pkgs.util-linux}/bin/findmnt";
   repositoryConfig = config.services.borgbackup.repos.aspen1 or null;
@@ -51,6 +52,14 @@ in
 
   systemd.services.borgbackup-repo-aspen1 = {
     after = [ "zfs-mount.service" ];
+    script = lib.mkForce ''
+      install -d \
+        -m ${backupRepositoryMode} \
+        -o ${repositoryConfig.user} \
+        -g ${repositoryConfig.group} \
+        ${lib.escapeShellArg backupRepository}
+    '';
+    serviceConfig.UMask = "0077";
     unitConfig.RequiresMountsFor = [ backupRoot ];
   };
 }

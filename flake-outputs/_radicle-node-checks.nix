@@ -606,6 +606,7 @@ let
   backupLoadedCredentials = lib.toList (backupService.serviceConfig.LoadCredential or [ ]);
   backupBindPaths = lib.toList (backupService.serviceConfig.BindReadOnlyPaths or [ ]);
   backupTargetRepo = desktopConfig.services.borgbackup.repos.${expectedHost} or null;
+  backupTargetRepoService = desktopConfig.systemd.services.borgbackup-repo-aspen1;
   backupTargetFileSystem = desktopConfig.fileSystems.${backupRepositoryPath} or null;
   backupAuthorizedKeys = desktopConfig.users.users.borg.openssh.authorizedKeys.keys or [ ];
   backupStateBind = "/var/lib/radicle:/run/radicle-backup-source";
@@ -663,7 +664,10 @@ let
     && lib.hasInfix "quota=${toString backupDatasetQuotaGiB}G" desktopConfig.system.activationScripts.radicle-backup-zfs-dataset.text
     && lib.hasInfix "chown root:borg" desktopConfig.system.activationScripts.radicle-backup-zfs-dataset.text
     && lib.hasInfix "chmod 0710" desktopConfig.system.activationScripts.radicle-backup-zfs-dataset.text
-    && builtins.elem backupRepositoryPath desktopConfig.systemd.services.borgbackup-repo-aspen1.unitConfig.RequiresMountsFor;
+    && lib.hasInfix "-m 0700" backupTargetRepoService.script
+    && lib.hasInfix "-o borg" backupTargetRepoService.script
+    && backupTargetRepoService.serviceConfig.UMask == "0077"
+    && builtins.elem backupRepositoryPath backupTargetRepoService.unitConfig.RequiresMountsFor;
   radicleServiceAbsent = config: !(builtins.hasAttr "radicle-node" config.systemd.services);
   identityGeneratorAbsent =
     config: !(builtins.hasAttr identityGeneratorName config.clan.core.vars.generators);
