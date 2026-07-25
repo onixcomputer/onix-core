@@ -307,6 +307,7 @@ in
                 ${pkgs.nix}/bin/nix \
                   --no-sandbox \
                   copy \
+                  --no-check-sigs \
                   --to "$store_uri" \
                   ${lib.escapeShellArgs (map toString runnerRuntimePaths)}
                 ${pkgs.nix}/bin/nix \
