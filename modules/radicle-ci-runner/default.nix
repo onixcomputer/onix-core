@@ -284,7 +284,9 @@ in
                 set -eu
                 install -d -m ${privateDirectoryMode} ${hydratorHome} ${runnerCache} ${localStoreRoot}
                 store_uri=${lib.escapeShellArg "local?root=${localStoreRoot}"}
-                ${pkgs.nix}/bin/nix flake archive \
+                ${pkgs.nix}/bin/nix \
+                  --no-sandbox \
+                  flake archive \
                   --no-update-lock-file \
                   --to "$store_uri" \
                   ${pilotSource}
