@@ -37,6 +37,9 @@ let
   policyReconciler = import ../modules/radicle-node/policy-reconciler.nix { inherit pkgs; };
   validateSettings = import ../modules/radicle-seed-replica/validate-settings.nix { inherit lib; };
   mkNixosConfig = import ../modules/radicle-node/mk-nixos-config.nix { inherit lib; };
+  mkIdentityVerifierService =
+    import ../modules/radicle-seed-replica/mk-identity-verifier-service.nix
+      { inherit lib; };
 
   positiveSettings = {
     inherit
@@ -287,6 +290,28 @@ let
   };
   nativeOnlyPolicyValid = builtins.all lib.id (builtins.attrValues nativeOnlyObservations);
 
+  identityVerifierService = mkIdentityVerifierService {
+    identityVerifier = "/identity-verifier";
+    expectedFingerprint = expectedNodeFingerprint;
+    publicKeyPath = "/public-key";
+    privateKeyPath = "/private-key";
+  };
+  identityVerifierServiceObservations = {
+    capabilityBoundingSetEmpty = identityVerifierService.serviceConfig.CapabilityBoundingSet == "";
+    privateNetworkEnabled = identityVerifierService.serviceConfig.PrivateNetwork;
+    homeProtected = identityVerifierService.serviceConfig.ProtectHome;
+    privilegeEscalationDenied = identityVerifierService.serviceConfig.NoNewPrivileges;
+    addressFamiliesLocalOnly =
+      identityVerifierService.serviceConfig.RestrictAddressFamilies == [ "AF_UNIX" ];
+    credentialExact =
+      identityVerifierService.serviceConfig.LoadCredential == [
+        "${privateCredentialName}:/private-key"
+      ];
+  };
+  identityVerifierServicePolicyValid = builtins.all lib.id (
+    builtins.attrValues identityVerifierServiceObservations
+  );
+
   plugins = self.packages.${system}.wasm-plugins;
   wasm = import ../lib/wasm.nix { inherit plugins; };
   schemaValidation = wasm.evalNickelFile ../inventory/services/fixtures/radicle-seed-replica-validation.ncl;
@@ -325,6 +350,8 @@ in
         "native-only replica lowering failed: ${builtins.toJSON nativeOnlyObservations}";
       assert lib.assertMsg schemaValidationValid
         "replica Nickel contract missed fields: ${builtins.toJSON missingSchemaNegativeFields}";
+      assert lib.assertMsg identityVerifierServicePolicyValid
+        "replica identity verifier hardening failed: ${builtins.toJSON identityVerifierServiceObservations}";
       pkgs.runCommand "radicle-seed-replica-check" { } ''
         test -e ${identityVerifierTests}
         printf '%s\n' \
@@ -332,6 +359,7 @@ in
           'negative_validation=passed' \
           'native_only_policy=passed' \
           'nickel_contract=passed' \
+          'identity_verifier_service_policy=passed' \
           'identity_verifier_tests=passed' \
           > "$out"
       '';

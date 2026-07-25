@@ -6,14 +6,13 @@ let
   mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
   validateSettings = import ./validate-settings.nix { inherit lib; };
   mkNixosConfig = import ../radicle-node/mk-nixos-config.nix { inherit lib; };
+  mkIdentityVerifierService = import ./mk-identity-verifier-service.nix { inherit lib; };
 
   generatorPrefix = "radicle-seed-replica-";
   privateKeyFileName = "node-private-key";
   publicKeyFileName = "node-public-key";
   privateKeyMode = "0400";
   publicKeyMode = "0444";
-  privateUmask = "0077";
-  privateCredentialName = "dev.radicle.node.secret";
   loopbackAddress = "127.0.0.1";
   disabledHttpPort = 8080;
   disabledHttpsOriginPort = 8081;
@@ -99,44 +98,13 @@ in
                 configFile
                 ;
             };
-            identityVerifierCommand = lib.escapeShellArgs [
-              "${identityVerifier}/bin/radicle-replica-identity-verify"
-              settings.expectedNodeFingerprint
-              publicKeyPath
-            ];
-            identityVerifierHardening = {
-              AmbientCapabilities = [ ];
-              CapabilityBoundingSet = [ ];
-              ExecStart = identityVerifierCommand;
-              Group = "radicle";
-              InaccessiblePaths = [ "/run/secrets" ];
-              LoadCredential = [ "${privateCredentialName}:${privateKeyPath}" ];
-              LockPersonality = true;
-              MemoryDenyWriteExecute = true;
-              NoNewPrivileges = true;
-              PrivateDevices = true;
-              PrivateNetwork = true;
-              PrivateTmp = true;
-              ProtectClock = true;
-              ProtectControlGroups = true;
-              ProtectHome = true;
-              ProtectHostname = true;
-              ProtectKernelLogs = true;
-              ProtectKernelModules = true;
-              ProtectKernelTunables = true;
-              ProtectProc = "invisible";
-              ProtectSystem = "strict";
-              RemoveIPC = true;
-              RestrictAddressFamilies = [ "AF_UNIX" ];
-              RestrictNamespaces = true;
-              RestrictRealtime = true;
-              RestrictSUIDSGID = true;
-              SystemCallArchitectures = "native";
-              SystemCallErrorNumber = "EPERM";
-              SystemCallFilter = [ "@system-service" ];
-              Type = "oneshot";
-              UMask = privateUmask;
-              User = "radicle";
+            identityVerifierService = mkIdentityVerifierService {
+              inherit
+                identityVerifier
+                publicKeyPath
+                privateKeyPath
+                ;
+              expectedFingerprint = settings.expectedNodeFingerprint;
             };
           in
           lib.mkMerge [
@@ -160,11 +128,7 @@ in
                   requires = [ "${identityVerificationServiceName}.service" ];
                   unitConfig.RequiresMountsFor = [ settings.stateDirectory ];
                 };
-                ${identityVerificationServiceName} = {
-                  description = "Verify the pinned Radicle replica identity before node start";
-                  before = [ "radicle-node.service" ];
-                  serviceConfig = identityVerifierHardening;
-                };
+                ${identityVerificationServiceName} = identityVerifierService;
                 radicle-policy-reconcile.unitConfig.RequiresMountsFor = [ settings.stateDirectory ];
               };
 
