@@ -457,6 +457,8 @@ fn execute_nix_job(
     ];
     let store_uri = format!("local?root={}", config.local_store_root);
     let archive_arguments = vec![
+        OsString::from("--store"),
+        OsString::from(&store_uri),
         OsString::from("--offline"),
         OsString::from("--option"),
         OsString::from("substituters"),
