@@ -74,6 +74,7 @@ pub struct RunnerConfigV1 {
     pub allowed_input_uris: Vec<String>,
     pub git_program: String,
     pub nix_program: String,
+    pub nix_conf_dir: String,
     pub tar_program: String,
     pub rad_program: String,
     pub ssh_program: String,
@@ -278,6 +279,7 @@ pub fn validate_config(config: &RunnerConfigV1) -> Result<(), Diagnostic> {
     for path in [
         &config.storage_path,
         &config.bot_state_path,
+        &config.nix_conf_dir,
         &config.exchange_path,
         &config.runner_state_path,
         &config.artifact_path,
@@ -677,6 +679,7 @@ mod tests {
             ],
             git_program: "/nix/store/git/bin/git".to_string(),
             nix_program: "/nix/store/nix/bin/nix".to_string(),
+            nix_conf_dir: "/nix/store/radicle-ci-nix-conf".to_string(),
             tar_program: "/nix/store/tar/bin/tar".to_string(),
             rad_program: "/nix/store/radicle/bin/rad".to_string(),
             ssh_program: "/nix/store/openssh/bin/ssh".to_string(),

@@ -98,6 +98,14 @@ in
                 web.pinned.repositories = [ ];
               }
             );
+            isolatedNixConfig = pkgs.writeTextDir "nix.conf" ''
+              experimental-features = nix-command flakes
+              accept-flake-config = false
+              trusted-users = ${runnerUser}
+              sandbox = false
+              system-features =
+              secret-key-files =
+            '';
             runnerConfig = pkgs.writeText "radicle-ci-runner-config.json" (
               builtins.toJSON {
                 schema = "onix.radicle-ci-runner.v1";
@@ -136,6 +144,7 @@ in
                 ];
                 git_program = "${pkgs.gitMinimal}/bin/git";
                 nix_program = "${pkgs.nix}/bin/nix";
+                nix_conf_dir = isolatedNixConfig;
                 tar_program = "${pkgs.gnutar}/bin/tar";
                 rad_program = "${nodePackage}/bin/rad";
                 ssh_program = "${pkgs.openssh}/bin/ssh";
@@ -526,6 +535,7 @@ in
                       system-features =
                       secret-key-files =
                     '';
+                    NIX_CONF_DIR = isolatedNixConfig;
                   };
                   serviceConfig = hydratorHardening // {
                     CPUQuota = "${toString settings.cpuQuotaPercent}%";

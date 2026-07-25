@@ -193,6 +193,11 @@ in
         test "$(jq -r '.allowed_input_uris | index("github:oxalica/rust-overlay/3c38e1e1ba9c8d7030f7b5a801398ea7d8a6fdc0?narHash=sha256-OstzLWL5t7Xe14xEC6GIMJCp0PrYNTSA0El7GG2av88%3D") != null' ${runnerConfigPath})" = true
         test "$(jq -r .limits.timeout_ms ${runnerConfigPath})" = ${toString acceptedTimeoutMs}
         test "$(jq -r '.delegates | index("did:key:${botNodeId}") == null' ${runnerConfigPath})" = true
+        nix_conf_dir="$(jq -r .nix_conf_dir ${runnerConfigPath})"
+        test -f "$nix_conf_dir/nix.conf"
+        grep -Fqx 'trusted-users = ${runnerUser}' "$nix_conf_dir/nix.conf"
+        grep -Fqx 'system-features =' "$nix_conf_dir/nix.conf"
+        grep -Fqx 'secret-key-files =' "$nix_conf_dir/nix.conf"
 
         grep -Fq ${lib.escapeShellArg reviewedCommit} ${../pkgs/radicle-ci-runner/Cargo.lock}
         grep -Fq 'git+https://git.onix.computer/z2CpqLFpdP36fZXYUK5ZNWxMibpCo.git' ${../pkgs/radicle-ci-runner/Cargo.lock}

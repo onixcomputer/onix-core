@@ -450,6 +450,10 @@ fn execute_nix_job(
                 .into_os_string(),
         ),
         (OsString::from("NIX_CONFIG"), OsString::from(nix_config)),
+        (
+            OsString::from("NIX_CONF_DIR"),
+            OsString::from(&config.nix_conf_dir),
+        ),
     ];
     let store_uri = format!("local?root={}", config.local_store_root);
     let archive_arguments = vec![
