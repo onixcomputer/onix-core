@@ -172,6 +172,7 @@ in
               runnerPackage
               runnerConfig
               isolatedNixConfig
+              pkgs.bashInteractive
               pkgs.gitMinimal
               pkgs.gnutar
               pkgs.nix
