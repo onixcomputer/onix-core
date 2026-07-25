@@ -36,8 +36,8 @@ and no substituters.
 `radicle-ci-input-hydrator` is a separate reviewed preparer. It has no Radicle
 identity, credentials, event/archive input, production storage, bot state,
 secrets, home, cache-signing, or deployment access. It may use the network only
-to hydrate the exact locked inputs of the fixed reviewed Bounded Exec source
-into the runner's local store. The untrusted runner remains offline.
+to hydrate the exact locked inputs and canonical check closure of the fixed
+reviewed Bounded Exec source into the runner's local store. The untrusted runner remains offline.
 
 The runner's process, output, memory, CPU, task, artifact, and wall-clock bounds
 are enforced by both `bounded-exec` at exact revision

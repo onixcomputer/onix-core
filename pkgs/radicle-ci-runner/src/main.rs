@@ -439,7 +439,7 @@ fn execute_nix_job(
 ) -> Result<bounded_exec::ExecutionOutput, ShellError> {
     let allowed_input_uris = config.allowed_input_uris.join(" ");
     let nix_config = format!(
-        "experimental-features = nix-command flakes\naccept-flake-config = false\nsubstituters =\nconnect-timeout = 1\nallowed-uris = {allowed_input_uris}\n"
+        "experimental-features = nix-command flakes\naccept-flake-config = false\nsandbox = false\nsubstituters =\nconnect-timeout = 1\nallowed-uris = {allowed_input_uris}\n"
     );
     let environment = vec![
         (OsString::from("HOME"), home.as_os_str().to_os_string()),

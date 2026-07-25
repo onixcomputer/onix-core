@@ -283,10 +283,18 @@ in
               text = ''
                 set -eu
                 install -d -m ${privateDirectoryMode} ${hydratorHome} ${runnerCache} ${localStoreRoot}
-                exec ${pkgs.nix}/bin/nix flake archive \
+                store_uri=${lib.escapeShellArg "local?root=${localStoreRoot}"}
+                ${pkgs.nix}/bin/nix flake archive \
                   --no-update-lock-file \
-                  --to ${lib.escapeShellArg "local?root=${localStoreRoot}"} \
+                  --to "$store_uri" \
                   ${pilotSource}
+                exec ${pkgs.nix}/bin/nix \
+                  --store "$store_uri" \
+                  --option sandbox false \
+                  build \
+                  --no-link \
+                  --no-update-lock-file \
+                  ${pilotSource}#checks.x86_64-linux.cargo-test
               '';
             };
             syncCommand = pkgs.writeShellApplication {
@@ -515,8 +523,10 @@ in
                     '';
                   };
                   serviceConfig = hydratorHardening // {
+                    CPUQuota = "${toString settings.cpuQuotaPercent}%";
                     ExecStart = "${hydrateInputsCommand}/bin/radicle-ci-hydrate-inputs";
                     Group = runnerUser;
+                    MemoryMax = settings.memoryMaxBytes;
                     ReadOnlyPaths = [ pilotSource ];
                     ReadWritePaths = [ runnerState ];
                     RemainAfterExit = true;
