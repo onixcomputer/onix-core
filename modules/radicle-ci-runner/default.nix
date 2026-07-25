@@ -475,8 +475,8 @@ in
                       runnerState
                       artifactState
                     ];
-                    RuntimeMaxSec = "${toString settings.timeoutMs}ms";
                     TasksMax = runnerTasksMax;
+                    TimeoutStartSec = "${toString settings.timeoutMs}ms";
                     Type = "oneshot";
                     UMask = exchangeUmask;
                     User = runnerUser;

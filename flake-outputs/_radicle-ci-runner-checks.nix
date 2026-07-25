@@ -107,7 +107,7 @@ let
     && runnerService.serviceConfig.PrivateNetwork
     && runnerService.serviceConfig.MemoryMax == acceptedMemoryBytes
     && runnerService.serviceConfig.CPUQuota == acceptedCpuQuota
-    && runnerService.serviceConfig.RuntimeMaxSec == "${toString acceptedTimeoutMs}ms"
+    && runnerService.serviceConfig.TimeoutStartSec == "${toString acceptedTimeoutMs}ms"
     && runnerCredentialInputs == [ ]
     && builtins.elem "/run/secrets" runnerInaccessible
     && builtins.elem "/var/lib/radicle" runnerInaccessible
