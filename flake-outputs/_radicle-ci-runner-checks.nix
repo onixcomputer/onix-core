@@ -112,11 +112,13 @@ let
     && builtins.elem "/var/lib/radicle" hydratorService.serviceConfig.InaccessiblePaths
     && builtins.elem botState hydratorService.serviceConfig.InaccessiblePaths
     && !(hydratorService.serviceConfig.PrivateNetwork or false)
+    && !(hydratorService.serviceConfig.RestrictNamespaces or false)
     && runnerService.serviceConfig.User == runnerUser
     && publisherService.serviceConfig.User == botUser
     && probeService.serviceConfig.User == runnerUser
     && probeService.serviceConfig.PrivateNetwork
     && runnerService.serviceConfig.PrivateNetwork
+    && runnerService.serviceConfig.RestrictNamespaces
     && runnerService.serviceConfig.MemoryMax == acceptedMemoryBytes
     && runnerService.serviceConfig.CPUQuota == acceptedCpuQuota
     && runnerService.serviceConfig.TimeoutStartSec == "${toString acceptedTimeoutMs}ms"

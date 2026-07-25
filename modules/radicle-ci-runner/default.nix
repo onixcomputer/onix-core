@@ -290,7 +290,6 @@ in
                   ${pilotSource}
                 exec ${pkgs.nix}/bin/nix \
                   --store "$store_uri" \
-                  --option sandbox false \
                   build \
                   --no-link \
                   --no-update-lock-file \
@@ -520,7 +519,6 @@ in
                     NIX_CONFIG = ''
                       experimental-features = nix-command flakes
                       accept-flake-config = false
-                      sandbox = false
                     '';
                   };
                   serviceConfig = hydratorHardening // {
@@ -531,6 +529,7 @@ in
                     ReadOnlyPaths = [ pilotSource ];
                     ReadWritePaths = [ runnerState ];
                     RemainAfterExit = true;
+                    RestrictNamespaces = false;
                     TimeoutStartSec = inputHydrationTimeout;
                     Type = "oneshot";
                     UMask = privateUmask;
