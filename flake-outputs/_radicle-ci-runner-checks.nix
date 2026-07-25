@@ -40,6 +40,7 @@ let
   runnerService = fixtureConfig.systemd.services.radicle-ci-runner;
   publisherService = fixtureConfig.systemd.services.radicle-ci-publisher;
   probeService = fixtureConfig.systemd.services.radicle-ci-isolation-probe;
+  boundsProbeService = fixtureConfig.systemd.services.radicle-ci-bounds-probe;
   nodeService = fixtureConfig.systemd.services.radicle-ci-node;
   syncService = fixtureConfig.systemd.services.radicle-ci-sync;
   identityGenerator = fixtureConfig.clan.core.vars.generators.${expectedIdentityGenerator};
@@ -60,6 +61,9 @@ let
   runnerCredentialInputs =
     lib.toList (runnerService.serviceConfig.LoadCredential or [ ])
     ++ lib.toList (runnerService.serviceConfig.ImportCredential or [ ]);
+  boundsProbeCredentialInputs =
+    lib.toList (boundsProbeService.serviceConfig.LoadCredential or [ ])
+    ++ lib.toList (boundsProbeService.serviceConfig.ImportCredential or [ ]);
   runnerPackage = self.packages.${system}.radicle-ci-runner;
   plugins = self.packages.${system}.wasm-plugins;
   wasm = import ../lib/wasm.nix { inherit plugins; };
@@ -106,6 +110,7 @@ let
         "radicle-ci-input-hydrator"
         "radicle-ci-runner"
         "radicle-ci-isolation-probe"
+        "radicle-ci-bounds-probe"
         "radicle-ci-publisher"
       ];
   modulePolicyValid =
@@ -124,6 +129,12 @@ let
     && publisherService.serviceConfig.User == botUser
     && probeService.serviceConfig.User == runnerUser
     && probeService.serviceConfig.PrivateNetwork
+    && boundsProbeService.serviceConfig.User == runnerUser
+    && boundsProbeService.serviceConfig.PrivateNetwork
+    && boundsProbeCredentialInputs == [ ]
+    && builtins.elem "${runnerState}/local-store/nix/store:/nix/store" (
+      lib.toList boundsProbeService.serviceConfig.BindPaths
+    )
     && runnerService.serviceConfig.PrivateNetwork
     && runnerService.serviceConfig.RestrictNamespaces
     && runnerService.serviceConfig.MemoryMax == acceptedMemoryBytes
@@ -175,6 +186,7 @@ in
                   missingSchemaNegativeFields
                   hydratorCredentialInputs
                   runnerCredentialInputs
+                  boundsProbeCredentialInputs
                   runnerInaccessible
                   runnerReadOnly
                   runnerBindPaths

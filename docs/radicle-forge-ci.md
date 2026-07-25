@@ -63,6 +63,8 @@ are enforced by both `bounded-exec` at exact revision
    materializes source read-only, and runs one bounded job.
 7. `radicle-ci-publisher.service` moves accepted results to the durable
    published queue and comments on the exact patch revision under the bot DID.
+8. Operator-invoked isolation and bounds probes exercise forbidden authority,
+   timeout teardown, and output-flood truncation under the deployed runner boundary.
 
 The deterministic job ID and durable ledger suppress duplicate execution after
 restart. A failed status publication leaves the result in the outbox for retry.
@@ -77,6 +79,7 @@ systemctl status radicle-ci-runner.service radicle-ci-publisher.service
 journalctl -u 'radicle-ci-*' --since today
 
 systemctl start radicle-ci-isolation-probe.service
+systemctl start radicle-ci-bounds-probe.service
 systemctl start radicle-ci-sync.service
 find /var/lib/radicle-ci-exchange -maxdepth 2 -type f -print
 find /var/lib/radicle-ci-artifacts -maxdepth 2 -type f -print

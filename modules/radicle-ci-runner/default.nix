@@ -635,6 +635,23 @@ in
                   };
                 };
 
+                radicle-ci-bounds-probe = {
+                  description = "Probe deployed timeout and output-flood enforcement";
+                  serviceConfig = offlineHardening // {
+                    BindPaths = [ "${localStoreRoot}/nix/store:/nix/store" ];
+                    CPUQuota = "${toString settings.cpuQuotaPercent}%";
+                    ExecStart = "${runnerPackage}/bin/radicle-ci-runner probe-bounds ${runnerConfig}";
+                    Group = runnerUser;
+                    MemoryMax = settings.memoryMaxBytes;
+                    ReadOnlyPaths = [ runnerConfig ];
+                    TasksMax = runnerTasksMax;
+                    Type = "oneshot";
+                    UMask = privateUmask;
+                    User = runnerUser;
+                    WorkingDirectory = runnerState;
+                  };
+                };
+
                 radicle-ci-publisher = {
                   description = "Publish bounded CI status under the non-delegate bot identity";
                   after = [ "radicle-ci-runner.service" ];

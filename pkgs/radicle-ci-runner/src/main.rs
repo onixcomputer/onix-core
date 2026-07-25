@@ -30,10 +30,20 @@ use serde::de::DeserializeOwned;
 // r[impl onix.radicle_ci.execution]
 
 const EXPECTED_ARGUMENT_COUNT: usize = 3;
+const INTERNAL_PROBE_ARGUMENT_COUNT: usize = 2;
 const SUBCOMMAND_INDEX: usize = 1;
 const CONFIG_PATH_INDEX: usize = 2;
 const EXIT_FAILURE: u8 = 1;
 const LOCK_FILE_COUNT: usize = 4;
+const TIMEOUT_PROBE_CHILD: &str = "__timeout-probe-child";
+const OUTPUT_PROBE_CHILD: &str = "__output-probe-child";
+const PROBE_CHILD_SLEEP_MS: u64 = 1_000;
+const PROBE_TIMEOUT_MS: u64 = 10;
+const PROBE_EXECUTION_TIMEOUT_MS: u64 = 1_000;
+const PROBE_OUTPUT_MAX_BYTES: usize = 1_024;
+const PROBE_GENERATED_OUTPUT_BYTES: usize = 2_048;
+const PROBE_POLL_INTERVAL_MS: u64 = 1;
+const PROBE_TEARDOWN_TIMEOUT_MS: u64 = 100;
 const GIT_COMMAND_TIMEOUT_MS: u64 = 120_000;
 const GIT_OUTPUT_MAX_BYTES: usize = 16 * 1_048_576;
 const GIT_POLL_INTERVAL_MS: u64 = 25;
@@ -71,9 +81,25 @@ fn main() -> ExitCode {
 
 fn run() -> Result<(), ShellError> {
     let arguments = env::args().collect::<Vec<_>>();
+    if arguments.len() == INTERNAL_PROBE_ARGUMENT_COUNT {
+        match arguments[SUBCOMMAND_INDEX].as_str() {
+            TIMEOUT_PROBE_CHILD => {
+                std::thread::sleep(Duration::from_millis(PROBE_CHILD_SLEEP_MS));
+                return Ok(());
+            }
+            OUTPUT_PROBE_CHILD => {
+                let bytes = vec![b'x'; PROBE_GENERATED_OUTPUT_BYTES];
+                io::stdout()
+                    .write_all(&bytes)
+                    .map_err(|error| shell_io("output probe child failed", error))?;
+                return Ok(());
+            }
+            _ => {}
+        }
+    }
     if arguments.len() != EXPECTED_ARGUMENT_COUNT {
         return Err(shell_error(
-            "usage: radicle-ci-runner <scan|run-next|publish-next|probe-isolation|validate-config> CONFIG.json",
+            "usage: radicle-ci-runner <scan|run-next|publish-next|probe-isolation|probe-bounds|validate-config> CONFIG.json",
         ));
     }
     let config: RunnerConfigV1 = read_json(Path::new(&arguments[CONFIG_PATH_INDEX]))?;
@@ -83,12 +109,60 @@ fn run() -> Result<(), ShellError> {
         "run-next" => run_next(&config),
         "publish-next" => publish_next(&config),
         "probe-isolation" => probe_isolation(&config),
+        "probe-bounds" => probe_bounds(),
         "validate-config" => {
             println!("configuration_result=accepted");
             Ok(())
         }
         _ => Err(shell_error("unknown subcommand")),
     }
+}
+
+fn probe_bounds() -> Result<(), ShellError> {
+    let executable = env::current_exe()
+        .map_err(|error| shell_io("failed to resolve bounds probe executable", error))?;
+    let timeout = run_bounded(
+        &executable,
+        vec![OsString::from(TIMEOUT_PROBE_CHILD)],
+        Path::new("/"),
+        Vec::new(),
+        probe_limits(PROBE_TIMEOUT_MS, PROBE_OUTPUT_MAX_BYTES),
+    )?;
+    if timeout.disposition != Disposition::TimedOut {
+        return Err(shell_error("bounds probe did not observe timeout teardown"));
+    }
+
+    let output_flood = run_bounded(
+        &executable,
+        vec![OsString::from(OUTPUT_PROBE_CHILD)],
+        Path::new("/"),
+        Vec::new(),
+        probe_limits(PROBE_EXECUTION_TIMEOUT_MS, PROBE_OUTPUT_MAX_BYTES),
+    )?;
+    if !matches!(
+        output_flood.disposition,
+        Disposition::OutputLimitExceeded(_)
+    ) || !output_flood.stdout.truncated
+        || output_flood.stdout.observed_bytes <= PROBE_OUTPUT_MAX_BYTES
+    {
+        return Err(shell_error(
+            "bounds probe did not observe a bounded stdout flood",
+        ));
+    }
+
+    let receipt = BoundsProbeReceipt {
+        schema: "onix.radicle-ci-bounds-probe.v1",
+        timeout: "timed_out-and-torn-down",
+        output_flood: "output_limit_exceeded-and-truncated",
+        output_limit_bytes: PROBE_OUTPUT_MAX_BYTES,
+        output_observed_bytes: output_flood.stdout.observed_bytes,
+        network: "not-requested-private-network-service-boundary",
+        credentials: "none",
+    };
+    let json = serde_json::to_string(&receipt)
+        .map_err(|_| shell_error("failed to serialize bounds probe receipt"))?;
+    println!("{json}");
+    Ok(())
 }
 
 fn probe_isolation(config: &RunnerConfigV1) -> Result<(), ShellError> {
@@ -587,6 +661,17 @@ fn publish_result_to_outbox(
 }
 
 #[derive(Serialize)]
+struct BoundsProbeReceipt<'a> {
+    schema: &'a str,
+    timeout: &'a str,
+    output_flood: &'a str,
+    output_limit_bytes: usize,
+    output_observed_bytes: usize,
+    network: &'a str,
+    credentials: &'a str,
+}
+
+#[derive(Serialize)]
 struct IsolationProbeReceipt<'a> {
     schema: &'a str,
     runner_state_write: &'a str,
@@ -909,6 +994,17 @@ const fn status_limits() -> ExecutionLimits {
     }
 }
 
+const fn probe_limits(timeout_ms: u64, output_max_bytes: usize) -> ExecutionLimits {
+    ExecutionLimits {
+        timeout_ms,
+        stdin_max_bytes: EMPTY_INPUT_MAX_BYTES,
+        stdout_max_bytes: output_max_bytes,
+        stderr_max_bytes: output_max_bytes,
+        poll_interval_ms: PROBE_POLL_INTERVAL_MS,
+        teardown_timeout_ms: PROBE_TEARDOWN_TIMEOUT_MS,
+    }
+}
+
 const fn map_disposition(disposition: Disposition) -> RunnerDisposition {
     match disposition {
         Disposition::Succeeded => RunnerDisposition::Succeeded,
@@ -1119,6 +1215,19 @@ mod tests {
         fs::write(&path, b"not-a-directory").expect("create fixture file");
         assert!(create_directory(&path, REQUESTED_MODE).is_err());
         fs::remove_file(path).expect("remove fixture file");
+    }
+
+    #[test]
+    fn bounds_probe_children_exceed_their_named_limits() {
+        let timeout = probe_limits(PROBE_TIMEOUT_MS, PROBE_OUTPUT_MAX_BYTES);
+        let output = probe_limits(PROBE_EXECUTION_TIMEOUT_MS, PROBE_OUTPUT_MAX_BYTES);
+
+        assert!(timeout.timeout_ms < PROBE_CHILD_SLEEP_MS);
+        assert!(output.timeout_ms > timeout.timeout_ms);
+        assert!(PROBE_GENERATED_OUTPUT_BYTES > output.stdout_max_bytes);
+        assert_eq!(output.stderr_max_bytes, PROBE_OUTPUT_MAX_BYTES);
+        assert_eq!(output.poll_interval_ms, PROBE_POLL_INTERVAL_MS);
+        assert_eq!(output.teardown_timeout_ms, PROBE_TEARDOWN_TIMEOUT_MS);
     }
 
     fn test_path(label: &str) -> PathBuf {
