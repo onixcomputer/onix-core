@@ -967,13 +967,27 @@ fn directory_names(path: &Path) -> Result<Vec<String>, ShellError> {
 }
 
 fn create_directory(path: &Path, mode: u32) -> Result<(), ShellError> {
-    let existed = path.exists();
-    fs::create_dir_all(path).map_err(|error| shell_io("failed to create directory", error))?;
-    if existed {
-        Ok(())
-    } else {
-        set_mode(path, mode)
+    if path.exists() {
+        return path
+            .is_dir()
+            .then_some(())
+            .ok_or_else(|| shell_error("directory path is occupied by a non-directory"));
     }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::DirBuilderExt as _;
+
+        let mut builder = fs::DirBuilder::new();
+        builder.recursive(true).mode(mode);
+        builder
+            .create(path)
+            .map_err(|error| shell_io("failed to create directory", error))?;
+    }
+    #[cfg(not(unix))]
+    {
+        fs::create_dir_all(path).map_err(|error| shell_io("failed to create directory", error))?;
+    }
+    Ok(())
 }
 
 fn set_mode(path: &Path, mode: u32) -> Result<(), ShellError> {
