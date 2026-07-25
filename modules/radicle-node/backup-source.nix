@@ -16,6 +16,7 @@ let
   manifestRoot = "/run/radicle-backup-manifests";
   runtimeStateRoot = "/run/radicle-backup-state";
   restoreRoot = "/var/lib/radicle-restore-check";
+  restoreBorgRuntimeRoot = "/run/radicle-backup-restore-borg";
   expectedNodeId = "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8";
   expectedNodeFingerprint = "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE";
   targetAddress = "100.110.43.11";
@@ -210,10 +211,20 @@ let
     ];
     text = ''
       cleanup_restore() {
-        rm -rf ${lib.escapeShellArg restoreRoot}
+        rm -rf \
+          ${lib.escapeShellArg restoreRoot} \
+          ${lib.escapeShellArg restoreBorgRuntimeRoot}
       }
       trap cleanup_restore EXIT
+      cleanup_restore
+      install -d -m ${privateDirectoryMode} ${lib.escapeShellArg restoreBorgRuntimeRoot}
 
+      export BORG_BASE_DIR=${lib.escapeShellArg restoreBorgRuntimeRoot}
+      export BORG_CACHE_DIR=${lib.escapeShellArg "${restoreBorgRuntimeRoot}/cache"}
+      export BORG_CONFIG_DIR=${lib.escapeShellArg "${restoreBorgRuntimeRoot}/config"}
+      export BORG_KEYS_DIR=${lib.escapeShellArg "${restoreBorgRuntimeRoot}/keys"}
+      export BORG_SECURITY_DIR=${lib.escapeShellArg "${restoreBorgRuntimeRoot}/security"}
+      export BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
       export BORG_REPO=${lib.escapeShellArg "borg@${targetAddress}:."}
       export BORG_RSH=${lib.escapeShellArg restoreRsh}
       export BORG_PASSCOMMAND=${lib.escapeShellArg "cat ${backupRepoKeyPath}"}
@@ -223,7 +234,7 @@ let
         exit 1
       fi
 
-      cleanup_restore
+      rm -rf ${lib.escapeShellArg restoreRoot}
       install -d -m ${privateDirectoryMode} ${lib.escapeShellArg restoreRoot}
       (
         cd ${lib.escapeShellArg restoreRoot}

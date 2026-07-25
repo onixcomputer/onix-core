@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::fs::{self, File, Metadata, OpenOptions};
@@ -357,9 +358,9 @@ fn validate_manifest_format(manifest: &Path) -> Result<ManifestStats, String> {
         let record = parse_record(&line)?;
         let path_bytes = record.relative_path.as_os_str().as_bytes();
         if let Some(previous) = &previous_path
-            && previous.as_slice() >= path_bytes
+            && compare_relative_path_bytes(previous, path_bytes) != Ordering::Less
         {
-            return Err("manifest paths are not strictly ordered".to_owned());
+            return Err("manifest paths are not in deterministic component order".to_owned());
         }
         previous_path = Some(path_bytes.to_vec());
         stats.records = stats
@@ -372,6 +373,24 @@ fn validate_manifest_format(manifest: &Path) -> Result<ManifestStats, String> {
             .ok_or_else(|| "manifest byte count overflow".to_owned())?;
     }
     Ok(stats)
+}
+
+fn compare_relative_path_bytes(left: &[u8], right: &[u8]) -> Ordering {
+    let mut left_components = left.split(|byte| *byte == b'/');
+    let mut right_components = right.split(|byte| *byte == b'/');
+    loop {
+        match (left_components.next(), right_components.next()) {
+            (None, None) => return Ordering::Equal,
+            (None, Some(_)) => return Ordering::Less,
+            (Some(_), None) => return Ordering::Greater,
+            (Some(left_component), Some(right_component)) => {
+                let ordering = left_component.cmp(right_component);
+                if ordering != Ordering::Equal {
+                    return ordering;
+                }
+            }
+        }
+    }
 }
 
 fn parse_record(line: &str) -> Result<ManifestRecord, String> {
@@ -594,6 +613,37 @@ mod tests {
         let permissions = fs::Permissions::from_mode(MUTATED_FILE_MODE);
         fs::set_permissions(source.join("one"), permissions).expect("mutate permissions");
         assert!(verify_manifest(&source, &manifest).is_err());
+        fs::remove_dir_all(root).expect("remove test root");
+    }
+
+    #[test]
+    fn component_order_accepts_depth_first_descendants_and_rejects_reordering() {
+        let root = test_root("component-order");
+        reset(&root);
+        let source = root.join("source");
+        fs::create_dir_all(source.join("repo")).expect("create nested source");
+        fs::write(source.join("repo/object"), b"nested").expect("write nested file");
+        fs::write(source.join("repo.index"), b"sibling").expect("write sibling file");
+        let manifest = root.join("manifest.b3m");
+
+        create_manifest_atomic(&source, &manifest).expect("create component-ordered manifest");
+        verify_manifest(&source, &manifest).expect("verify component-ordered manifest");
+
+        let text = fs::read_to_string(&manifest).expect("read component-ordered manifest");
+        let mut lines = text.lines().map(str::to_owned).collect::<Vec<_>>();
+        let descendant_path = hex_encode(b"repo/object");
+        let sibling_path = hex_encode(b"repo.index");
+        let descendant_position = lines
+            .iter()
+            .position(|line| line.ends_with(&descendant_path))
+            .expect("find descendant record");
+        let sibling_position = lines
+            .iter()
+            .position(|line| line.ends_with(&sibling_path))
+            .expect("find sibling record");
+        lines.swap(descendant_position, sibling_position);
+        fs::write(&manifest, format!("{}\n", lines.join("\n"))).expect("write reordered manifest");
+        assert!(validate_manifest_format(&manifest).is_err());
         fs::remove_dir_all(root).expect("remove test root");
     }
 
