@@ -46,6 +46,8 @@ in
             runnerState = "/var/lib/radicle-ci-runner";
             artifactState = "/var/lib/radicle-ci-artifacts";
             localStoreRoot = "${runnerState}/local-store";
+            runnerCache = "${runnerState}/cache";
+            hydratorHome = "${runnerState}/hydrator-home";
             botListenAddress = "127.0.0.1";
             botAlias = "aspen1-ci-bot";
             runnerPackage = pkgs.callPackage ../../pkgs/radicle-ci-runner { };
@@ -57,6 +59,7 @@ in
             productionSeed = "${settings.productionSeedNodeId}@${settings.productionSeedAddress}";
             acceptedPolicyBlake3 = lib.removeSuffix "\n" (builtins.readFile ./ci-policy-v1.blake3);
             runnerTasksMax = 256;
+            inputHydrationTimeout = "10m";
             stdinMaxBytes = 1;
             acceptedMaxParallelJobs = 2;
             acceptedTimeoutMs = 900000;
@@ -78,6 +81,12 @@ in
             ];
             privateUmask = "0077";
             exchangeUmask = "0007";
+            pilotSource = pkgs.fetchgit {
+              name = "bounded-exec-ci-source-${settings.reviewedCommit}";
+              url = "https://git.onix.computer/z2CpqLFpdP36fZXYUK5ZNWxMibpCo.git";
+              rev = settings.reviewedCommit;
+              hash = "sha256-BVmqyUYyoNpY6LfOABxwPO3DY88ZtXeKNg3TPoGCcL0=";
+            };
             botConfig = pkgs.writeText "radicle-ci-bot-config.json" (
               builtins.toJSON {
                 node = {
@@ -197,6 +206,23 @@ in
               RestrictAddressFamilies = [ "AF_UNIX" ];
               SocketBindDeny = "any";
             };
+            hydratorHardening = commonHardening // {
+              InaccessiblePaths = [
+                "/run/secrets"
+                "/var/lib/radicle"
+                botState
+                "-/var/lib/harmonia"
+                "/root"
+                "/home"
+                "/etc/ssh"
+              ];
+              RestrictAddressFamilies = [
+                "AF_INET"
+                "AF_INET6"
+                "AF_UNIX"
+              ];
+              SocketBindDeny = "any";
+            };
             offlineHardening = commonHardening // {
               InaccessiblePaths = [
                 "/run/secrets"
@@ -242,6 +268,21 @@ in
                   echo "generated CI bot node ID does not match the pinned node ID" >&2
                   exit 1
                 fi
+              '';
+            };
+            hydrateInputsCommand = pkgs.writeShellApplication {
+              name = "radicle-ci-hydrate-inputs";
+              runtimeInputs = [
+                pkgs.coreutils
+                pkgs.nix
+              ];
+              text = ''
+                set -eu
+                install -d -m ${privateDirectoryMode} ${hydratorHome} ${runnerCache} ${localStoreRoot}
+                exec ${pkgs.nix}/bin/nix flake archive \
+                  --no-update-lock-file \
+                  --to ${lib.escapeShellArg "local?root=${localStoreRoot}"} \
+                  ${pilotSource}
               '';
             };
             syncCommand = pkgs.writeShellApplication {
@@ -456,9 +497,40 @@ in
                   };
                 };
 
+                radicle-ci-input-hydrator = {
+                  description = "Hydrate the reviewed immutable CI flake inputs";
+                  wantedBy = [ "multi-user.target" ];
+                  after = [ "network-online.target" ];
+                  wants = [ "network-online.target" ];
+                  environment = {
+                    HOME = hydratorHome;
+                    XDG_CACHE_HOME = runnerCache;
+                    NIX_CONFIG = ''
+                      experimental-features = nix-command flakes
+                      accept-flake-config = false
+                    '';
+                  };
+                  serviceConfig = hydratorHardening // {
+                    ExecStart = "${hydrateInputsCommand}/bin/radicle-ci-hydrate-inputs";
+                    Group = runnerUser;
+                    ReadOnlyPaths = [ pilotSource ];
+                    ReadWritePaths = [ runnerState ];
+                    RemainAfterExit = true;
+                    TimeoutStartSec = inputHydrationTimeout;
+                    Type = "oneshot";
+                    UMask = privateUmask;
+                    User = runnerUser;
+                    WorkingDirectory = runnerState;
+                  };
+                };
+
                 radicle-ci-runner = {
                   description = "Execute one credentialless exact-object bounded Nix job";
-                  after = [ "radicle-ci-scan.service" ];
+                  after = [
+                    "radicle-ci-input-hydrator.service"
+                    "radicle-ci-scan.service"
+                  ];
+                  requires = [ "radicle-ci-input-hydrator.service" ];
                   unitConfig.OnSuccess = [ "radicle-ci-publisher.service" ];
                   serviceConfig = offlineHardening // {
                     CPUQuota = "${toString settings.cpuQuotaPercent}%";

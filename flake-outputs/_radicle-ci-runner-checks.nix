@@ -32,6 +32,7 @@ let
   unexpectedConfig = self.nixosConfigurations.${unexpectedHost}.config;
   failedAssertions = builtins.filter (assertion: !assertion.assertion) fixtureConfig.assertions;
   scannerService = fixtureConfig.systemd.services.radicle-ci-scan;
+  hydratorService = fixtureConfig.systemd.services.radicle-ci-input-hydrator;
   runnerService = fixtureConfig.systemd.services.radicle-ci-runner;
   publisherService = fixtureConfig.systemd.services.radicle-ci-publisher;
   probeService = fixtureConfig.systemd.services.radicle-ci-isolation-probe;
@@ -45,6 +46,9 @@ let
   runnerInaccessible = lib.toList (runnerService.serviceConfig.InaccessiblePaths or [ ]);
   botAllowedAddresses = lib.toList (nodeService.serviceConfig.IPAddressAllow or [ ]);
   publisherAllowedAddresses = lib.toList (publisherService.serviceConfig.IPAddressAllow or [ ]);
+  hydratorCredentialInputs =
+    lib.toList (hydratorService.serviceConfig.LoadCredential or [ ])
+    ++ lib.toList (hydratorService.serviceConfig.ImportCredential or [ ]);
   runnerCredentialInputs =
     lib.toList (runnerService.serviceConfig.LoadCredential or [ ])
     ++ lib.toList (runnerService.serviceConfig.ImportCredential or [ ]);
@@ -91,6 +95,7 @@ let
         "radicle-ci-node"
         "radicle-ci-sync"
         "radicle-ci-scan"
+        "radicle-ci-input-hydrator"
         "radicle-ci-runner"
         "radicle-ci-isolation-probe"
         "radicle-ci-publisher"
@@ -100,6 +105,12 @@ let
     && servicesAbsentFromUnexpectedHost
     && schemaValidationValid
     && scannerService.serviceConfig.User == botUser
+    && hydratorService.serviceConfig.User == runnerUser
+    && hydratorCredentialInputs == [ ]
+    && builtins.elem "/run/secrets" hydratorService.serviceConfig.InaccessiblePaths
+    && builtins.elem "/var/lib/radicle" hydratorService.serviceConfig.InaccessiblePaths
+    && builtins.elem botState hydratorService.serviceConfig.InaccessiblePaths
+    && !(hydratorService.serviceConfig.PrivateNetwork or false)
     && runnerService.serviceConfig.User == runnerUser
     && publisherService.serviceConfig.User == botUser
     && probeService.serviceConfig.User == runnerUser
@@ -148,6 +159,7 @@ in
                   servicesAbsentFromUnexpectedHost
                   schemaValidationValid
                   missingSchemaNegativeFields
+                  hydratorCredentialInputs
                   runnerCredentialInputs
                   runnerInaccessible
                   runnerReadOnly

@@ -33,6 +33,12 @@ deployment material, or release credentials. `PrivateNetwork=true` removes job
 networking. Jobs build against a per-runner local Nix store with offline mode
 and no substituters.
 
+`radicle-ci-input-hydrator` is a separate reviewed preparer. It has no Radicle
+identity, credentials, event/archive input, production storage, bot state,
+secrets, home, cache-signing, or deployment access. It may use the network only
+to hydrate the exact locked inputs of the fixed reviewed Bounded Exec source
+into the runner's local store. The untrusted runner remains offline.
+
 The runner's process, output, memory, CPU, task, artifact, and wall-clock bounds
 are enforced by both `bounded-exec` at exact revision
 `29dac88ecded94457572db3fdfaaaab95fa91525` and systemd.
@@ -43,11 +49,13 @@ are enforced by both `bounded-exec` at exact revision
 2. `radicle-ci-sync.timer` starts `radicle-ci-sync.service`.
 3. The sync reconciles the bot's fail-closed policy to the pilot RID and fetches
    only from the pinned production seed.
-4. `radicle-ci-scan.service` reads the bot's local storage, verifies delegates
+4. `radicle-ci-input-hydrator.service` prepares only the immutable reviewed
+   flake's locked inputs and remains active after successful hydration.
+5. `radicle-ci-scan.service` reads the bot's local storage, verifies delegates
    and lock identities, and atomically exports an exact Git object plus event.
-5. `radicle-ci-runner.service` verifies the BLAKE3-bound event and archive,
+6. `radicle-ci-runner.service` verifies the BLAKE3-bound event and archive,
    materializes source read-only, and runs one bounded job.
-6. `radicle-ci-publisher.service` moves accepted results to the durable
+7. `radicle-ci-publisher.service` moves accepted results to the durable
    published queue and comments on the exact patch revision under the bot DID.
 
 The deterministic job ID and durable ledger suppress duplicate execution after
@@ -57,6 +65,7 @@ restart. A failed status publication leaves the result in the outbox for retry.
 
 ```text
 systemctl status radicle-ci-node.service radicle-ci-sync.timer
+systemctl status radicle-ci-input-hydrator.service
 systemctl status radicle-ci-sync.service radicle-ci-scan.service
 systemctl status radicle-ci-runner.service radicle-ci-publisher.service
 journalctl -u 'radicle-ci-*' --since today

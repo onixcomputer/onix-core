@@ -440,7 +440,9 @@ fn execute_nix_job(
         (OsString::from("HOME"), home.as_os_str().to_os_string()),
         (
             OsString::from("XDG_CACHE_HOME"),
-            home.join("cache").into_os_string(),
+            Path::new(&config.runner_state_path)
+                .join("cache")
+                .into_os_string(),
         ),
         (
             OsString::from("NIX_CONFIG"),
