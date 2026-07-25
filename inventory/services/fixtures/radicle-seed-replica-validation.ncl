@@ -19,7 +19,10 @@ let default_storage_quota_gib = 64 in
         nodeListenPort = default_node_port,
         nodeFirewallInterface = "tailscale0",
         externalAddress = "100.110.43.11:8776",
-        seedRepositories = ["rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo"],
+        seedRepositories = [
+          "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+          "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
+        ],
         stateDirectory = "/var/lib/radicle",
         stateDataset = "datapool/radicle-seed",
         stateQuotaGiB = default_storage_quota_gib,

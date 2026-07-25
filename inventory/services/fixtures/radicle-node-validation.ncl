@@ -22,7 +22,10 @@ let default_backup_retention_weekly = 4 in
         nodeListenPort = default_node_port,
         nodeFirewallInterface = "tailscale0",
         externalAddress = "100.100.103.95:8776",
-        seedRepositories = ["rad:z3gqcJUoA1n9HaHKufZs5FCSGazv5"],
+        seedRepositories = [
+          "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+          "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
+        ],
         httpdEnabled = true,
         httpListenAddress = "127.0.0.1",
         httpListenPort = default_http_port,
@@ -43,7 +46,7 @@ let default_backup_retention_weekly = 4 in
         backupRetentionWeekly = default_backup_retention_weekly,
         backupManifestAlgorithm = "blake3",
         minimumSignedRefsFeature = "parent",
-        pinnedRepositories = ["rad:z3gqcJUoA1n9HaHKufZs5FCSGazv5"],
+        pinnedRepositories = ["rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo"],
       },
   negative =
     sc.validate_fields

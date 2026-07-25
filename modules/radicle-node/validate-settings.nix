@@ -25,6 +25,12 @@ let
   minimumWeeklyRetention = 1;
   maximumWeeklyRetention = 8;
   httpsPort = 443;
+  boundedExecRepository = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo";
+  artifactAuthRepository = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
+  governedRepositories = [
+    boundedExecRepository
+    artifactAuthRepository
+  ];
   canonicalRepositoryIdPattern = "rad:z[1-9A-HJ-NP-Za-km-z]+";
 
   rejectUnless = condition: message: lib.optional (!condition) message;
@@ -67,6 +73,7 @@ let
   isSeeded = rid: builtins.elem rid settings.seedRepositories;
   validSeedRepositoryIds = builtins.all isCanonicalRepositoryId settings.seedRepositories;
   uniqueSeedRepositoryIds = lib.unique settings.seedRepositories == settings.seedRepositories;
+  seedRepositoriesAreGoverned = settings.seedRepositories == governedRepositories;
   validRepositoryIds = builtins.all isCanonicalRepositoryId settings.pinnedRepositories;
   uniqueRepositoryIds = lib.unique settings.pinnedRepositories == settings.pinnedRepositories;
   pinnedRepositoriesAreSeeded = builtins.all isSeeded settings.pinnedRepositories;
@@ -74,6 +81,8 @@ let
   uniqueHttpsGitRepositoryIds =
     lib.unique settings.httpsGitRepositories == settings.httpsGitRepositories;
   httpsGitRepositoriesAreSeeded = builtins.all isSeeded settings.httpsGitRepositories;
+  httpsGitRepositoriesAreGoverned =
+    !settings.httpsEnabled || settings.httpsGitRepositories == governedRepositories;
   validHttpsAdmission =
     if settings.httpsEnabled then
       settings.httpsServerName != null && settings.httpsGitRepositories != [ ]
@@ -160,6 +169,7 @@ lib.concatLists [
   ) "httpsEnabled requires the read-only HTTP gateway")
   (rejectUnless validSeedRepositoryIds "seedRepositories must contain only canonical public rad:z repository IDs")
   (rejectUnless uniqueSeedRepositoryIds "seedRepositories must not contain duplicate repository IDs")
+  (rejectUnless seedRepositoriesAreGoverned "seedRepositories must contain exactly the governed Bounded Exec and artifact-auth RIDs")
   (rejectUnless validHttpsName "httpsServerName must be a public DNS name without scheme or .local suffix")
   (rejectUnless validHttpsTransport "httpsTransport must be direct-acme or cloudflare-tunnel")
   (rejectUnless validHttpsOriginAddress "httpsOriginListenAddress must remain loopback-only")
@@ -167,6 +177,7 @@ lib.concatLists [
   (rejectUnless validHttpsGitRepositoryIds "httpsGitRepositories must contain only canonical public rad:z repository IDs")
   (rejectUnless uniqueHttpsGitRepositoryIds "httpsGitRepositories must not contain duplicate repository IDs")
   (rejectUnless httpsGitRepositoriesAreSeeded "httpsGitRepositories must be a subset of seedRepositories")
+  (rejectUnless httpsGitRepositoriesAreGoverned "enabled HTTPS Git must expose exactly the governed Bounded Exec and artifact-auth RIDs")
   (rejectUnless (!settings.backupEnabled || backupFactsPresent)
     "enabled backup requires complete target host, address, failure-domain, repository, and dataset facts"
   )

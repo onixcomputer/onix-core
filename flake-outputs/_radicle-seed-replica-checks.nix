@@ -26,6 +26,11 @@ let
   expectedNodeFingerprint = "SHA256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
   bootstrapNodeFingerprint = "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE";
   pilotRepository = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo";
+  artifactAuthRepository = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
+  governedRepositories = [
+    pilotRepository
+    artifactAuthRepository
+  ];
   expectedCommit = "29dac88ecded94457572db3fdfaaaab95fa91525";
   absentObject = "1111111111111111111111111111111111111111";
   inheritedRepository = "rad:z3gqcJUoA1n9HaHKufZs5FCSGazv5";
@@ -59,7 +64,7 @@ let
     nodeListenPort = nodePort;
     nodeFirewallInterface = nodeInterface;
     externalAddress = "${nodeAddress}:${toString nodePort}";
-    seedRepositories = [ pilotRepository ];
+    seedRepositories = governedRepositories;
     minimumSignedRefsFeature = "parent";
   };
 
@@ -179,13 +184,31 @@ let
       expected = "must not contain duplicates";
     }
     {
-      name = "undeclared-rid";
+      name = "missing-bounded-exec-rid";
       settings = positiveSettings // {
-        seedRepositories = [ inheritedRepository ];
+        seedRepositories = [ artifactAuthRepository ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec pilot RID";
+      expected = "exactly the governed Bounded Exec and artifact-auth RIDs";
+    }
+    {
+      name = "missing-artifact-auth-rid";
+      settings = positiveSettings // {
+        seedRepositories = [ pilotRepository ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec and artifact-auth RIDs";
+    }
+    {
+      name = "undeclared-third-rid";
+      settings = positiveSettings // {
+        seedRepositories = governedRepositories ++ [ inheritedRepository ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec and artifact-auth RIDs";
     }
     {
       name = "wrong-state-directory";

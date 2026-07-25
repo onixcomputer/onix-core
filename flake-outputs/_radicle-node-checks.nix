@@ -58,8 +58,14 @@ let
   generatedPrivateKeyMode = "400";
   generatedPublicKeyMode = "444";
   optionalPassphraseCredential = "dev.radicle.node.passphrase";
-  pinnedRepository = "rad:z3gqcJUoA1n9HaHKufZs5FCSGazv5";
+  unmanagedRepository = "rad:z3gqcJUoA1n9HaHKufZs5FCSGazv5";
   productionPilotRepository = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo";
+  artifactAuthRepository = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
+  productionRepositories = [
+    productionPilotRepository
+    artifactAuthRepository
+  ];
+  pinnedRepository = productionPilotRepository;
   productionHttpsServerName = "git.onix.computer";
   productionCloudflareTunnelName = "aspen1-services";
 
@@ -82,7 +88,7 @@ let
     nodeListenPort = nodePort;
     nodeFirewallInterface = nodeInterface;
     externalAddress = "${nodeAddress}:${toString nodePort}";
-    seedRepositories = [ pinnedRepository ];
+    seedRepositories = productionRepositories;
     httpdEnabled = true;
     httpListenAddress = httpAddress;
     httpListenPort = httpPort;
@@ -117,7 +123,7 @@ let
   httpsSettings = positiveSettings // {
     httpsEnabled = true;
     inherit httpsServerName;
-    httpsGitRepositories = [ pinnedRepository ];
+    httpsGitRepositories = productionRepositories;
   };
   httpsModuleConfig = mkNixosConfig {
     settings = httpsSettings;
@@ -165,10 +171,16 @@ let
   httpsRepositoryPath = lib.removePrefix "rad:" pinnedRepository;
   infoRefsLocationName = "= /${httpsRepositoryPath}.git/info/refs";
   uploadPackLocationName = "= /${httpsRepositoryPath}.git/git-upload-pack";
-  expectedHttpsLocationNames = [
-    infoRefsLocationName
-    uploadPackLocationName
-  ];
+  expectedHttpsLocationNames = lib.concatMap (
+    repository:
+    let
+      repositoryPath = lib.removePrefix "rad:" repository;
+    in
+    [
+      "= /${repositoryPath}.git/info/refs"
+      "= /${repositoryPath}.git/git-upload-pack"
+    ]
+  ) productionRepositories;
   actualHttpsLocationNames = builtins.attrNames httpsGitLocations.repositories;
   infoRefsLocation = httpsGitLocations.repositories.${infoRefsLocationName};
   uploadPackLocation = httpsGitLocations.repositories.${uploadPackLocationName};
@@ -413,11 +425,39 @@ let
       expected = "seedRepositories must contain only canonical public rad:z repository IDs";
     }
     {
+      name = "missing-bounded-exec-seed-rid";
+      settings = positiveSettings // {
+        seedRepositories = [ artifactAuthRepository ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec and artifact-auth RIDs";
+    }
+    {
+      name = "missing-artifact-auth-seed-rid";
+      settings = positiveSettings // {
+        seedRepositories = [ productionPilotRepository ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec and artifact-auth RIDs";
+    }
+    {
+      name = "unknown-third-seed-rid";
+      settings = positiveSettings // {
+        seedRepositories = productionRepositories ++ [ unmanagedRepository ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec and artifact-auth RIDs";
+    }
+    {
       name = "duplicate-seed-rid";
       settings = positiveSettings // {
         seedRepositories = [
-          pinnedRepository
-          pinnedRepository
+          productionPilotRepository
+          productionPilotRepository
+          artifactAuthRepository
         ];
       };
       packageVersion = nodePackage.version;
@@ -467,6 +507,34 @@ let
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
       expected = "httpsGitRepositories must not contain duplicate repository IDs";
+    }
+    {
+      name = "https-missing-bounded-exec-rid";
+      settings = httpsSettings // {
+        httpsGitRepositories = [ artifactAuthRepository ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec and artifact-auth RIDs";
+    }
+    {
+      name = "https-missing-artifact-auth-rid";
+      settings = httpsSettings // {
+        httpsGitRepositories = [ productionPilotRepository ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec and artifact-auth RIDs";
+    }
+    {
+      name = "https-unknown-third-rid";
+      settings = httpsSettings // {
+        seedRepositories = productionRepositories ++ [ unmanagedRepository ];
+        httpsGitRepositories = productionRepositories ++ [ unmanagedRepository ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec and artifact-auth RIDs";
     }
     {
       name = "https-repository-not-seeded";
@@ -685,18 +753,30 @@ let
   policyCommand = builtins.unsafeDiscardStringContext policyService.serviceConfig.ExecStart;
   productionHttpsVhost = fixtureConfig.services.nginx.virtualHosts.${productionHttpsServerName};
   productionHttpsLocations = productionHttpsVhost.locations;
-  productionHttpsRepositoryPath = lib.removePrefix "rad:" productionPilotRepository;
-  productionInfoRefsLocationName = "= /${productionHttpsRepositoryPath}.git/info/refs";
-  productionUploadPackLocationName = "= /${productionHttpsRepositoryPath}.git/git-upload-pack";
-  productionExpectedLocationNames = lib.sort builtins.lessThan [
-    "/"
-    productionInfoRefsLocationName
-    productionUploadPackLocationName
-  ];
+  productionExpectedLocationNames = lib.sort builtins.lessThan (
+    [ "/" ]
+    ++ lib.concatMap (
+      repository:
+      let
+        repositoryPath = lib.removePrefix "rad:" repository;
+      in
+      [
+        "= /${repositoryPath}.git/info/refs"
+        "= /${repositoryPath}.git/git-upload-pack"
+      ]
+    ) productionRepositories
+  );
   productionCloudflareTunnel =
     fixtureConfig.services.cloudflared.tunnels.${productionCloudflareTunnelName};
   policyReconcilerCommandPath = builtins.unsafeDiscardStringContext "${policyReconciler}/bin/radicle-policy-reconciler";
   nodeRadCommandPath = builtins.unsafeDiscardStringContext "${nodePackage}/bin/rad";
+  expectedProductionPolicyCommand = lib.escapeShellArgs (
+    [
+      policyReconcilerCommandPath
+      nodeRadCommandPath
+    ]
+    ++ productionRepositories
+  );
   identityGenerator = fixtureConfig.clan.core.vars.generators.${identityGeneratorName};
   privateKeyFile = identityGenerator.files.${privateKeyFileName};
   publicKeyFile = identityGenerator.files.${publicKeyFileName};
@@ -1057,16 +1137,10 @@ in
             echo "Radicle policy service does not use the reviewed Radicle CLI" >&2
             exit 1
           ''}
-          ${lib.optionalString
-            (
-              !(lib.hasInfix productionPilotRepository policyCommand)
-              || lib.hasInfix pinnedRepository policyCommand
-            )
-            ''
-              echo "Radicle production policy does not admit exactly the reviewed pilot repository" >&2
-              exit 1
-            ''
-          }
+          ${lib.optionalString (policyCommand != expectedProductionPolicyCommand) ''
+            echo "Radicle production policy does not admit exactly the two governed source repositories" >&2
+            exit 1
+          ''}
           ${lib.optionalString
             (
               builtins.attrNames productionHttpsLocations != productionExpectedLocationNames

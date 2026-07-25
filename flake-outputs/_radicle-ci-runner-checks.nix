@@ -12,6 +12,7 @@ let
   expectedHost = "aspen1";
   unexpectedHost = "aspen2";
   pilotRid = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo";
+  artifactAuthRid = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
   reviewedCommit = "29dac88ecded94457572db3fdfaaaab95fa91525";
   policyBlake3 = "091e57f4409f79db14465ccc26e730bf1181209fe45c28d7dd1259393e93f740";
   botNodeId = "z6MknopLULJensBT5KGkC8h9KaHTNY5muZ9UffqroErX7Rni";
@@ -286,6 +287,8 @@ in
 
         radicle-ci-runner validate-config ${runnerConfigPath}
         test "$(jq -r .rid ${runnerConfigPath})" = ${lib.escapeShellArg pilotRid}
+        ! grep -Fq ${lib.escapeShellArg artifactAuthRid} ${runnerConfigPath}
+        ! grep -Fq ${lib.escapeShellArg artifactAuthRid} ${../modules/radicle-ci-runner/ci-policy-v1.json}
         test "$(jq -r .reviewed_commit ${runnerConfigPath})" = ${lib.escapeShellArg reviewedCommit}
         test "$(jq -r .policy_blake3 ${runnerConfigPath})" = ${lib.escapeShellArg policyBlake3}
         test "$(jq -r .bot_node_id ${runnerConfigPath})" = ${lib.escapeShellArg botNodeId}

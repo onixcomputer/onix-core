@@ -20,7 +20,12 @@ let
   maximumFingerprintPadding = 2;
   requiredSignedRefsFeature = "parent";
   bootstrapNodeFingerprint = "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE";
-  pilotRepository = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo";
+  boundedExecRepository = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo";
+  artifactAuthRepository = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
+  governedRepositories = [
+    boundedExecRepository
+    artifactAuthRepository
+  ];
   canonicalRepositoryIdPattern = "rad:z[1-9A-HJ-NP-Za-km-z]+";
   fingerprintPattern = "SHA256:[A-Za-z0-9+/]+={0,${toString maximumFingerprintPadding}}";
 
@@ -59,8 +64,8 @@ lib.concatLists [
   (rejectUnless validRepositoryIds "secondary Radicle seed repositories must be canonical public rad:z IDs")
   (rejectUnless uniqueRepositoryIds "secondary Radicle seed repositories must not contain duplicates")
   (rejectUnless (
-    settings.seedRepositories == [ pilotRepository ]
-  ) "secondary Radicle seed must admit exactly the governed Bounded Exec pilot RID")
+    settings.seedRepositories == governedRepositories
+  ) "secondary Radicle seed must admit exactly the governed Bounded Exec and artifact-auth RIDs")
   (rejectUnless (
     settings.stateDirectory == expectedStateDirectory
   ) "secondary Radicle seed stateDirectory must remain ${expectedStateDirectory}")
