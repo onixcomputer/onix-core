@@ -520,6 +520,7 @@ in
                     NIX_CONFIG = ''
                       experimental-features = nix-command flakes
                       accept-flake-config = false
+                      sandbox = false
                     '';
                   };
                   serviceConfig = hydratorHardening // {
