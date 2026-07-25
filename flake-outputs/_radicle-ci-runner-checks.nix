@@ -112,7 +112,7 @@ let
     && builtins.elem "/var/lib/radicle" hydratorService.serviceConfig.InaccessiblePaths
     && builtins.elem botState hydratorService.serviceConfig.InaccessiblePaths
     && !(hydratorService.serviceConfig.PrivateNetwork or false)
-    && !(hydratorService.serviceConfig.RestrictNamespaces or false)
+    && hydratorService.serviceConfig.RestrictNamespaces
     && runnerService.serviceConfig.User == runnerUser
     && publisherService.serviceConfig.User == botUser
     && probeService.serviceConfig.User == runnerUser
