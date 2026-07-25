@@ -101,7 +101,7 @@ fn probe_isolation(config: &RunnerConfigV1) -> Result<(), ShellError> {
         "/etc/ssh",
     ];
     for path in protected_paths {
-        match fs::metadata(path) {
+        match fs::read_dir(path) {
             Err(error) if error.kind() == io::ErrorKind::PermissionDenied => {}
             Err(error) => {
                 return Err(shell_error(format!(
