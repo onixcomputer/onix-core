@@ -130,6 +130,10 @@ in
                   "true"
                   ".#checks.x86_64-linux.cargo-test"
                 ];
+                allowed_input_uris = [
+                  "github:NixOS/nixpkgs/61b7c44c4073f0b827768aff0049561b5110ea5a"
+                  "github:oxalica/rust-overlay/3c38e1e1ba9c8d7030f7b5a801398ea7d8a6fdc0"
+                ];
                 git_program = "${pkgs.gitMinimal}/bin/git";
                 nix_program = "${pkgs.nix}/bin/nix";
                 tar_program = "${pkgs.gnutar}/bin/tar";

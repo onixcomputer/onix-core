@@ -19,6 +19,7 @@ pub const BLAKE3_HEX_LENGTH: usize = 64;
 pub const GIT_OID_HEX_LENGTH: usize = 40;
 pub const MAX_TEXT_BYTES: usize = 1_024;
 pub const MAX_ARGUMENT_COUNT: usize = 64;
+pub const MAX_ALLOWED_INPUT_URIS: usize = 4;
 pub const MAX_DELEGATE_COUNT: usize = 16;
 pub const MAX_TIMEOUT_MS: u64 = 3_600_000;
 pub const MAX_OUTPUT_BYTES: usize = 16 * 1_048_576;
@@ -70,6 +71,7 @@ pub struct RunnerConfigV1 {
     pub expected_locks: LockIdentityV1,
     pub command_program: String,
     pub command_arguments: Vec<String>,
+    pub allowed_input_uris: Vec<String>,
     pub git_program: String,
     pub nix_program: String,
     pub tar_program: String,
@@ -258,6 +260,19 @@ pub fn validate_config(config: &RunnerConfigV1) -> Result<(), Diagnostic> {
         return Err(diagnostic(
             "ci-config-command",
             "runner command or executable path is invalid",
+        ));
+    }
+    if config.allowed_input_uris.is_empty()
+        || config.allowed_input_uris.len() > MAX_ALLOWED_INPUT_URIS
+        || config.allowed_input_uris.iter().any(|uri| {
+            !uri.starts_with("github:")
+                || uri.len() > MAX_TEXT_BYTES
+                || uri.chars().any(char::is_whitespace)
+        })
+    {
+        return Err(diagnostic(
+            "ci-config-input-uris",
+            "restricted evaluation input URI allowlist is invalid",
         ));
     }
     for path in [
@@ -656,6 +671,10 @@ mod tests {
             expected_locks: locks(),
             command_program: "/nix/store/nix/bin/nix".to_string(),
             command_arguments: vec!["build".to_string(), "--no-update-lock-file".to_string()],
+            allowed_input_uris: vec![
+                "github:NixOS/nixpkgs/61b7c44c4073f0b827768aff0049561b5110ea5a".to_string(),
+                "github:oxalica/rust-overlay/3c38e1e1ba9c8d7030f7b5a801398ea7d8a6fdc0".to_string(),
+            ],
             git_program: "/nix/store/git/bin/git".to_string(),
             nix_program: "/nix/store/nix/bin/nix".to_string(),
             tar_program: "/nix/store/tar/bin/tar".to_string(),
@@ -841,6 +860,12 @@ mod tests {
         assert_eq!(
             validate_config(&weakened).unwrap_err().code,
             "ci-config-command"
+        );
+        weakened = config();
+        weakened.allowed_input_uris = vec!["https://unbounded.example/input".to_string()];
+        assert_eq!(
+            validate_config(&weakened).unwrap_err().code,
+            "ci-config-input-uris"
         );
 
         let config = config();

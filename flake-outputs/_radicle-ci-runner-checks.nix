@@ -26,6 +26,7 @@ let
   acceptedTimeoutMs = 900000;
   acceptedMemoryBytes = 8589934592;
   acceptedCpuQuota = "200%";
+  expectedAllowedInputUris = 2;
   expectedIdentityGenerator = "radicle-ci-bot-radicle-forge-ci";
 
   fixtureConfig = self.nixosConfigurations.${expectedHost}.config;
@@ -185,6 +186,9 @@ in
         test "$(jq -r .production_seed_node_id ${runnerConfigPath})" = ${lib.escapeShellArg productionSeedNodeId}
         test "$(jq -r '.command_arguments | index("--no-update-lock-file") != null' ${runnerConfigPath})" = true
         test "$(jq -r '.command_arguments | index(".#checks.x86_64-linux.cargo-test") != null' ${runnerConfigPath})" = true
+        test "$(jq -r '.allowed_input_uris | length' ${runnerConfigPath})" = ${toString expectedAllowedInputUris}
+        test "$(jq -r '.allowed_input_uris | index("github:NixOS/nixpkgs/61b7c44c4073f0b827768aff0049561b5110ea5a") != null' ${runnerConfigPath})" = true
+        test "$(jq -r '.allowed_input_uris | index("github:oxalica/rust-overlay/3c38e1e1ba9c8d7030f7b5a801398ea7d8a6fdc0") != null' ${runnerConfigPath})" = true
         test "$(jq -r .limits.timeout_ms ${runnerConfigPath})" = ${toString acceptedTimeoutMs}
         test "$(jq -r '.delegates | index("did:key:${botNodeId}") == null' ${runnerConfigPath})" = true
 

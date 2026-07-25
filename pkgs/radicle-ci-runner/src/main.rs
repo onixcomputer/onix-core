@@ -437,6 +437,10 @@ fn execute_nix_job(
     source: &Path,
     home: &Path,
 ) -> Result<bounded_exec::ExecutionOutput, ShellError> {
+    let allowed_input_uris = config.allowed_input_uris.join(" ");
+    let nix_config = format!(
+        "experimental-features = nix-command flakes\naccept-flake-config = false\nsubstituters =\nconnect-timeout = 1\nallowed-uris = {allowed_input_uris}\n"
+    );
     let environment = vec![
         (OsString::from("HOME"), home.as_os_str().to_os_string()),
         (
@@ -445,12 +449,7 @@ fn execute_nix_job(
                 .join("cache")
                 .into_os_string(),
         ),
-        (
-            OsString::from("NIX_CONFIG"),
-            OsString::from(
-                "experimental-features = nix-command flakes\naccept-flake-config = false\nsubstituters =\nconnect-timeout = 1\n",
-            ),
-        ),
+        (OsString::from("NIX_CONFIG"), OsString::from(nix_config)),
     ];
     let store_uri = format!("local?root={}", config.local_store_root);
     let archive_arguments = vec![
