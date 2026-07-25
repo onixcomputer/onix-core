@@ -15,6 +15,8 @@ let
   artifactAuthCommit = "799459346d5416fbd7b9f55840a7371441b55afa";
   artifactAuthBlake3 = "246a7cad91e7e8a158e22da21f3bff3e61aa0431a58936b5a739178bc62064c7";
   policyRevision = "a3f5a18b36a0c874c1fce0d47acee19932f4d931";
+  artifactAuthPublicationRevision = "b5d26329d2f568e9602f53acc2b6c167e30c1cb5";
+  artifactAuthPublicationBlake3 = "e58a3de4d6b3b32a547c3cfe5c3e829292cda73891c7776f214f5d4edce10b1c";
   receiptSchemaVersion = 1;
   repositoryCount = 2;
   delegateCount = 3;
@@ -85,6 +87,11 @@ let
     && candidate.policy.signed_refs_feature == "parent"
     && candidate.policy.repositories == expectedRepositories
     && candidate.policy.ci_rids == [ boundedExecRid ]
+    && candidate.publication.repository == "artifact-auth"
+    && candidate.publication.revision == artifactAuthPublicationRevision
+    && candidate.publication.receipt_type == "artifact-auth.radicle-publication.v1"
+    && candidate.publication.receipt_blake3 == artifactAuthPublicationBlake3
+    && candidate.publication.status == "accepted"
     && builtins.length candidate.governance.delegates == delegateCount
     && candidate.governance.delegates == expectedDelegates
     && candidate.governance.approval_threshold == approvalThreshold
@@ -120,6 +127,14 @@ let
     && builtins.all (path: !(lib.hasPrefix "/" path)) candidate.evidence;
   negativeReceipts = [
     (receipt // { status = "rejected"; })
+    (
+      receipt
+      // {
+        publication = receipt.publication // {
+          receipt_blake3 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        };
+      }
+    )
     (
       receipt
       // {

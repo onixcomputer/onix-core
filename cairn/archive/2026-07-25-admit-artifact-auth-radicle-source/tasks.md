@@ -1,6 +1,6 @@
-- [ ] [serial] Bind the accepted artifact-auth RID, reviewed commit, publication receipt, and exact two-repository policy. r[onix.radicle_source_admission.policy]
+- [x] [serial] Bind the accepted artifact-auth RID, reviewed commit, publication receipt, and exact two-repository policy. r[onix.radicle_source_admission.policy]
 - [x] [serial] Derive primary seed, pinned, HTTPS, and replica allowlists from one typed repository set. r[onix.radicle_source_admission.derivation]
 - [x] [parallel] Add positive two-RID and negative missing/unknown/duplicate/mismatch/CI-widening checks. r[onix.radicle_source_admission.validation]
 - [x] [serial] Import signed public repository state and deploy Aspen plus the desktop replica. r[onix.radicle_source_admission.deployment]
 - [x] [serial] Verify both reviewed objects through each seed and public HTTPS while CI remains single-RID. r[onix.radicle_source_admission.probes]
-- [ ] [serial] Emit typed BLAKE3 admission evidence, sync the accepted spec, and archive at the bounded claim boundary. r[onix.radicle_source_admission.evidence]
+- [x] [serial] Emit typed BLAKE3 admission evidence, sync the accepted spec, and archive at the bounded claim boundary. r[onix.radicle_source_admission.evidence]

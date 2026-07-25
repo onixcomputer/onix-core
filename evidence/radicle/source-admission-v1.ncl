@@ -11,6 +11,14 @@ let SourceAdmissionReceipt = {
       repositories | Array { name | String, rid | String, reviewed_commit | String, source_archive_blake3 | String },
       ci_rids | Array String,
     },
+  publication
+    | {
+      repository | String,
+      revision | String,
+      receipt_type | String,
+      receipt_blake3 | String,
+      status | String,
+    },
   governance
     | {
       identity_revision | String,
@@ -108,6 +116,13 @@ let receipt | SourceAdmissionReceipt = {
     ],
     ci_rids = [bounded_exec_rid],
   },
+  publication = {
+    repository = "artifact-auth",
+    revision = "b5d26329d2f568e9602f53acc2b6c167e30c1cb5",
+    receipt_type = "artifact-auth.radicle-publication.v1",
+    receipt_blake3 = "e58a3de4d6b3b32a547c3cfe5c3e829292cda73891c7776f214f5d4edce10b1c",
+    status = "accepted",
+  },
   governance = {
     identity_revision = "c22900ae6b7b5637aa0e378fe00503cf02c6d1bf",
     identity_root = "e95f12e9791861f072e9a60f7d0d75f08428d721",
@@ -174,7 +189,7 @@ let receipt | SourceAdmissionReceipt = {
     "whole-stack-github-independence",
   ],
   evidence = [
-    "cairn/changes/admit-artifact-auth-radicle-source/evidence/deployment-and-probes-2026-07-25.md",
+    "cairn/archive/2026-07-25-admit-artifact-auth-radicle-source/evidence/deployment-and-probes-2026-07-25.md",
     "evidence/radicle/source-admission-v1.json",
     "artifact-auth:evidence/radicle/publication-v1.json",
     "valence:evidence/radicle/artifact-auth-cutover-v1.json",

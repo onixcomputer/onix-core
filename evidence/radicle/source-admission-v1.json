@@ -7,7 +7,7 @@
     "seed_forbidden_authorities_absent": true
   },
   "evidence": [
-    "cairn/changes/admit-artifact-auth-radicle-source/evidence/deployment-and-probes-2026-07-25.md",
+    "cairn/archive/2026-07-25-admit-artifact-auth-radicle-source/evidence/deployment-and-probes-2026-07-25.md",
     "evidence/radicle/source-admission-v1.json",
     "artifact-auth:evidence/radicle/publication-v1.json",
     "valence:evidence/radicle/artifact-auth-cutover-v1.json"
@@ -82,6 +82,13 @@
     "storage_access": "blocked",
     "system_closure": "/nix/store/0j4sb2mnmmy6skiy89hy83p9lsn6rdwq-nixos-system-aspen1-26.11.20260629.7a1a647",
     "undeclared_rid": "rejected"
+  },
+  "publication": {
+    "receipt_blake3": "e58a3de4d6b3b32a547c3cfe5c3e829292cda73891c7776f214f5d4edce10b1c",
+    "receipt_type": "artifact-auth.radicle-publication.v1",
+    "repository": "artifact-auth",
+    "revision": "b5d26329d2f568e9602f53acc2b6c167e30c1cb5",
+    "status": "accepted"
   },
   "receipt_type": "onix.radicle-source-admission.v1",
   "replica": {

@@ -8,6 +8,7 @@
 - Accepted identity revision: `c22900ae6b7b5637aa0e378fe00503cf02c6d1bf`
 - Author and Bonsai signed `main`; Pine remained offline. Two signatures satisfy the configured two-of-three threshold.
 - Verified public bundle BLAKE3: `7f96561a705151266e83641bdc53cf692518f0e5507f10acc3074c45d6ebca5f`
+- Accepted publication revision: `b5d26329d2f568e9602f53acc2b6c167e30c1cb5`; receipt BLAKE3: `e58a3de4d6b3b32a547c3cfe5c3e829292cda73891c7776f214f5d4edce10b1c`.
 
 ## Deployment
 
