@@ -15,14 +15,16 @@ The pilot repository is a non-secret fixture. It proves the selected Radicle 1.9
 | Delegate | `did:key:z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx` |
 | Authorized client | `did:key:z6MkwGV7ypRii8RjoSotmUbuKU4MwGQf3iw8AdhuJkkyD4wd` |
 | Denied client | `did:key:z6MksVCc4QAvmZrZXX2MWoGwo9XqDUbiFjsjDZuRZrbgEu6h` |
+| Evidence receipt | `evidence/radicle/private-pilot-v1.json` |
+| Receipt BLAKE3 | `f831c1c24e507455b2b5a585da3b5ac3682f7ac2322ed63127ec40eae8c8ea57` |
 
 The private identity privacy set contains only the Aspen node, the desktop replica, and the isolated authorized client. Delegate access is inherent to repository governance. The denied client is absent.
 
 ## Admission boundary
 
-`seedRepositories` remains the exact public Bounded Exec and artifact-auth set. `privateSeedRepositories` is a separate exact set containing only the private pilot RID. The policy reconciler combines both sets only for native Radicle seeding.
+`seedRepositories` remains the exact public Bounded Exec, artifact-auth, and execution-graph set. `privateSeedRepositories` is a separate exact set containing only the private pilot RID. The policy reconciler combines both sets only for native Radicle seeding.
 
-The public HTTP explorer receives no private pin. Nginx and `git.onix.computer` are generated only from `httpsGitRepositories`, which remains the exact two-public-RID set. The CI policy remains scoped only to Bounded Exec.
+The public HTTP explorer receives no private pin. Nginx and `git.onix.computer` are generated only from `httpsGitRepositories`, which remains the exact three-public-RID set. The CI policy remains scoped only to Bounded Exec.
 
 Every admitted seed retains only its machine-scoped Radicle node key and repository storage. Private admission does not grant delegate, canonical-ref, CI, deployment, release-signing, cache-write, backup administration, Cloudflare, user-profile, or secret authority.
 

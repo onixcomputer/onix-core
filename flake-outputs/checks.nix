@@ -37,6 +37,7 @@ let
   meshLlmChecks = (import ./_mesh-llm-checks.nix) innerArgs;
   radicleCiRunnerChecks = (import ./_radicle-ci-runner-checks.nix) innerArgs;
   radicleNodeChecks = (import ./_radicle-node-checks.nix) innerArgs;
+  radiclePrivatePilotChecks = (import ./_radicle-private-pilot-checks.nix) innerArgs;
   radicleSeedReplicaChecks = (import ./_radicle-seed-replica-checks.nix) innerArgs;
   radicleSourceAdmissionChecks = (import ./_radicle-source-admission-checks.nix) innerArgs;
 
@@ -59,6 +60,7 @@ in
     // (meshLlmChecks.checks or { })
     // (radicleCiRunnerChecks.checks or { })
     // (radicleNodeChecks.checks or { })
+    // (radiclePrivatePilotChecks.checks or { })
     // (radicleSeedReplicaChecks.checks or { })
     // (radicleSourceAdmissionChecks.checks or { })
     // packageChecks

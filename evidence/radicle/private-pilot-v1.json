@@ -1,0 +1,154 @@
+{
+  "authority_boundary": {
+    "desktop_native_only": true,
+    "private_ci_absent": true,
+    "private_https_absent": true,
+    "runtime_override_removed": true,
+    "seed_allowed_credentials": ["machine-scoped-radicle-node-key"],
+    "seed_forbidden_authorities_absent": true
+  },
+  "authorized_acquisitions": [
+    {
+      "client_did": "did:key:z6MkwGV7ypRii8RjoSotmUbuKU4MwGQf3iw8AdhuJkkyD4wd",
+      "commit": "ff4ff027817465b1bb04251a8a98db42cc610b0c",
+      "direct_seed_only": true,
+      "fresh_profile": true,
+      "seed_node_id": "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8",
+      "source_archive_blake3": "514904bdcf5f23b0813c567efbc8b6732248de94482037a58011bfff3fc26853"
+    },
+    {
+      "client_did": "did:key:z6MkwGV7ypRii8RjoSotmUbuKU4MwGQf3iw8AdhuJkkyD4wd",
+      "commit": "ff4ff027817465b1bb04251a8a98db42cc610b0c",
+      "direct_seed_only": true,
+      "fresh_profile": true,
+      "seed_node_id": "z6MkkQCj5EczNiVzDzCkX9ewHNJ7NDEXSKbuRiS1x7o72yeG",
+      "source_archive_blake3": "514904bdcf5f23b0813c567efbc8b6732248de94482037a58011bfff3fc26853"
+    }
+  ],
+  "backup": {
+    "archive": "aspen1-britton-desktop-2026-07-25T22:22:31",
+    "encrypted": true,
+    "recovery_bytes": 72363700,
+    "recovery_manifest_blake3": "f07e19303e8880b01b2baac97cf11f2f207030fdbe64224d6d26e6a940e3dddd",
+    "recovery_records": 6,
+    "source_failure_domain": "aspen-primary-site",
+    "state_bytes": 57970684391,
+    "state_manifest_blake3": "915134d3d2245cf6b823558fa32abc04c04346ee05c635eae28600f78920bff1",
+    "state_records": 303242,
+    "target_failure_domain": "britton-desktop-workstation"
+  },
+  "denied_acquisitions": [
+    {
+      "checkout_absent": true,
+      "client_did": "did:key:z6MksVCc4QAvmZrZXX2MWoGwo9XqDUbiFjsjDZuRZrbgEu6h",
+      "clone_rejected": true,
+      "fresh_profile": true,
+      "inventory_private_rid_absent": true,
+      "seed_node_id": "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8"
+    },
+    {
+      "checkout_absent": true,
+      "client_did": "did:key:z6MksVCc4QAvmZrZXX2MWoGwo9XqDUbiFjsjDZuRZrbgEu6h",
+      "clone_rejected": true,
+      "fresh_profile": true,
+      "inventory_private_rid_absent": true,
+      "seed_node_id": "z6MkkQCj5EczNiVzDzCkX9ewHNJ7NDEXSKbuRiS1x7o72yeG"
+    }
+  ],
+  "evidence": [
+    "cairn/changes/pilot-private-radicle-source/evidence/private-publication-and-recovery-2026-07-25.md",
+    "docs/radicle-private-pilot.md",
+    "evidence/radicle/private-pilot-v1.json"
+  ],
+  "https": {
+    "private_receive_pack_status": 404,
+    "private_upload_pack_status": 404,
+    "public_upload_pack_status": 200
+  },
+  "non_claims": [
+    "production-secret-confidentiality",
+    "global-metadata-secrecy",
+    "traffic-analysis-resistance",
+    "anonymity",
+    "multi-delegate-private-governance",
+    "secure-deletion",
+    "automatic-failover",
+    "geographic-independence",
+    "source-correctness",
+    "protocol-enforced-ci",
+    "release-readiness",
+    "whole-fleet-migration-readiness"
+  ],
+  "observed_date": "2026-07-25",
+  "policy": {
+    "ci_rids": ["rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo"],
+    "https_rids": [
+      "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+      "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
+      "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a"
+    ],
+    "implementation_revision": "956cc432ad990c346326718d3a94c512e9020427",
+    "private_rids": ["rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg"],
+    "public_rids": [
+      "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+      "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
+      "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a"
+    ],
+    "signed_refs_feature": "parent"
+  },
+  "primary": {
+    "commit": "ff4ff027817465b1bb04251a8a98db42cc610b0c",
+    "delegate_sigrefs": "fc566eae3a5954df30d9499e0f85fe1b45a34d46",
+    "host": "aspen1",
+    "identity_revision": "7fe3c9bd6a2d01a8317acb44ba386988375898da",
+    "node_fingerprint": "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE",
+    "node_id": "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8",
+    "reconciled_repository_count": 4,
+    "source_archive_blake3": "514904bdcf5f23b0813c567efbc8b6732248de94482037a58011bfff3fc26853",
+    "system_closure": "/nix/store/kjsrz3h86rk6503wk3xdq1rq3wckh8ly-nixos-system-aspen1-26.11.20260629.7a1a647"
+  },
+  "publication": {
+    "allowed_peers": [
+      "did:key:z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8",
+      "did:key:z6MkkQCj5EczNiVzDzCkX9ewHNJ7NDEXSKbuRiS1x7o72yeG",
+      "did:key:z6MkwGV7ypRii8RjoSotmUbuKU4MwGQf3iw8AdhuJkkyD4wd"
+    ],
+    "approval_threshold": 1,
+    "delegate": "did:key:z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx",
+    "delegate_sigrefs": "fc566eae3a5954df30d9499e0f85fe1b45a34d46",
+    "denied_peer": "did:key:z6MksVCc4QAvmZrZXX2MWoGwo9XqDUbiFjsjDZuRZrbgEu6h",
+    "identity_blake3": "a080d88d7b9cd58bf08130308c487b968863191caafea7f7f0e973471a2ed3b2",
+    "identity_revision": "7fe3c9bd6a2d01a8317acb44ba386988375898da",
+    "identity_root": "bf5e168201192881cf34e9ff7f7c39ee42dc7d62",
+    "non_secret_fixture": true,
+    "reviewed_commit": "ff4ff027817465b1bb04251a8a98db42cc610b0c",
+    "rid": "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg",
+    "source_archive_blake3": "514904bdcf5f23b0813c567efbc8b6732248de94482037a58011bfff3fc26853",
+    "visibility": "private"
+  },
+  "receipt_type": "onix.radicle-private-pilot.v1",
+  "recovery": {
+    "cleanup_verified": true,
+    "node_fingerprint": "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE",
+    "node_id": "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8",
+    "private_commit": "ff4ff027817465b1bb04251a8a98db42cc610b0c",
+    "private_identity_revision": "7fe3c9bd6a2d01a8317acb44ba386988375898da",
+    "private_sigrefs": "fc566eae3a5954df30d9499e0f85fe1b45a34d46",
+    "private_source_blake3": "514904bdcf5f23b0813c567efbc8b6732248de94482037a58011bfff3fc26853",
+    "repository_count": 6763,
+    "result": "verified"
+  },
+  "replica": {
+    "commit": "ff4ff027817465b1bb04251a8a98db42cc610b0c",
+    "delegate_sigrefs": "fc566eae3a5954df30d9499e0f85fe1b45a34d46",
+    "host": "britton-desktop",
+    "identity_revision": "7fe3c9bd6a2d01a8317acb44ba386988375898da",
+    "node_fingerprint": "SHA256:JHQTPqoMr4kLqBsrAPSRNXUuzETiHAoiKBM/VWftmEg",
+    "node_id": "z6MkkQCj5EczNiVzDzCkX9ewHNJ7NDEXSKbuRiS1x7o72yeG",
+    "reconciled_repository_count": 4,
+    "source_archive_blake3": "514904bdcf5f23b0813c567efbc8b6732248de94482037a58011bfff3fc26853",
+    "system_closure": "/nix/store/lvsf8gfpcbg4h6psk283n41x1vc0r4iq-nixos-system-britton-desktop-26.11.20260629.7a1a647"
+  },
+  "schema_version": 1,
+  "status": "accepted"
+}

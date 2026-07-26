@@ -11,7 +11,7 @@ The public Radicle source pilot proves selective native and HTTPS source serving
 
 ## Success Criteria
 
-- Both seed policy reconcilers report the exact two public RIDs plus one private pilot RID.
+- Both seed policy reconcilers report the exact three reviewed public RIDs plus one private pilot RID.
 - Fresh authorized clients independently reproduce commit `ff4ff027817465b1bb04251a8a98db42cc610b0c` and source BLAKE3 `514904bdcf5f23b0813c567efbc8b6732248de94482037a58011bfff3fc26853` from each seed.
 - Fresh unauthorized clients do not observe the private RID in seed inventory and cannot acquire it.
 - Public HTTPS returns `404` for private upload-pack and receive-pack while existing public upload-pack remains healthy.

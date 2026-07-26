@@ -15,7 +15,8 @@ The repository identity document owns peer authorization. Machine modules do not
 Public native repositories remain:
 
 - `rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo`;
-- `rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f`.
+- `rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f`;
+- `rad:z2oYsb9jGTyp68BKYhzpivY1eK58a`.
 
 The private native set contains only `rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg`. The sets must be canonical, unique, exact, and disjoint. HTTPS remains exactly the public set. Explorer pins remain a subset of the public set. CI remains only Bounded Exec.
 
