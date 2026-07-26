@@ -7,7 +7,7 @@
 ## Phase 2: Runtime evidence
 
 - [x] [serial] Stage the public source on both live seeds while preserving separately managed private policy. r[onix.radicle_source_admission.deployment]
-- [ ] [serial] Verify exact native and HTTPS acquisition, write rejection, source digest, and controlled single-seed behavior. r[onix.radicle_source_admission.probes]
+- [x] [serial] Verify exact native and HTTPS acquisition, write rejection, source digest, and controlled single-seed behavior. r[onix.radicle_source_admission.probes]
 
 ## Phase 3: Acceptance
 
