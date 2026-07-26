@@ -63,6 +63,10 @@ let
   artifactAuthRepository = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
   executionGraphRepository = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a";
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
+  privatePilotCommit = "ff4ff027817465b1bb04251a8a98db42cc610b0c";
+  privatePilotIdentityRevision = "7fe3c9bd6a2d01a8317acb44ba386988375898da";
+  privatePilotSigrefs = "fc566eae3a5954df30d9499e0f85fe1b45a34d46";
+  privatePilotSourceBlake3 = "514904bdcf5f23b0813c567efbc8b6732248de94482037a58011bfff3fc26853";
   productionRepositories = [
     productionPilotRepository
     artifactAuthRepository
@@ -776,6 +780,16 @@ let
     "/run/radicle-backup-input"
     "/run/radicle-backup-manifests"
   ];
+  restoreVerifierSource = builtins.readFile ../modules/radicle-node/backup-source.nix;
+  privateRecoveryProbeValid = builtins.all (fragment: lib.hasInfix fragment restoreVerifierSource) [
+    (lib.removePrefix "rad:" privatePilotRepository)
+    privatePilotCommit
+    privatePilotIdentityRevision
+    privatePilotSigrefs
+    privatePilotSourceBlake3
+    "private_commit=%s"
+    "private_source_blake3=%s"
+  ];
   backupSourcePolicyValid =
     backupJob != null
     && backupJob.paths == expectedBackupPaths
@@ -1138,6 +1152,10 @@ in
           ''}
           ${lib.optionalString (!backupSourcePolicyValid) ''
             echo "Radicle backup source is not bounded to the reviewed encrypted job" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!privateRecoveryProbeValid) ''
+            echo "Radicle restore verifier does not bind the private pilot identity and source" >&2
             exit 1
           ''}
           ${lib.optionalString (!backupTargetPolicyValid) ''

@@ -19,6 +19,12 @@ let
   restoreBorgRuntimeRoot = "/run/radicle-backup-restore-borg";
   expectedNodeId = "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8";
   expectedNodeFingerprint = "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE";
+  privatePilotStorageDirectory = "z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
+  privatePilotDelegate = "z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
+  expectedPrivatePilotCommit = "ff4ff027817465b1bb04251a8a98db42cc610b0c";
+  expectedPrivatePilotIdentityRevision = "7fe3c9bd6a2d01a8317acb44ba386988375898da";
+  expectedPrivatePilotSigrefs = "fc566eae3a5954df30d9499e0f85fe1b45a34d46";
+  expectedPrivatePilotSourceBlake3 = "514904bdcf5f23b0813c567efbc8b6732248de94482037a58011bfff3fc26853";
   targetAddress = "100.110.43.11";
   targetHostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEehqswjtdQwNb4o2/hV7Qg1HCZkpbLZDDbReDoPmf/p";
   privateKeyMode = "0400";
@@ -205,8 +211,10 @@ let
     runtimeInputs = [
       backupManifest
       config.services.borgbackup.package
+      pkgs.b3sum
       pkgs.coreutils
       pkgs.diffutils
+      pkgs.gitMinimal
       pkgs.jq
       pkgs.openssh
       pkgs.radicle-node
@@ -281,10 +289,41 @@ let
         exit 1
       fi
 
+      restored_private_repository="$restored_state/storage/${privatePilotStorageDirectory}"
+      if ! test -d "$restored_private_repository"; then
+        echo "restored private pilot repository is absent" >&2
+        exit 1
+      fi
+      restored_private_commit="$(git -c safe.directory="$restored_private_repository" -C "$restored_private_repository" rev-parse refs/heads/main)"
+      restored_private_delegate_commit="$(git -c safe.directory="$restored_private_repository" -C "$restored_private_repository" rev-parse refs/namespaces/${privatePilotDelegate}/refs/heads/main)"
+      restored_private_identity="$(git -c safe.directory="$restored_private_repository" -C "$restored_private_repository" rev-parse refs/rad/id)"
+      restored_private_sigrefs="$(git -c safe.directory="$restored_private_repository" -C "$restored_private_repository" rev-parse refs/namespaces/${privatePilotDelegate}/refs/rad/sigrefs)"
+      if test "$restored_private_commit" != ${lib.escapeShellArg expectedPrivatePilotCommit} \
+        || test "$restored_private_delegate_commit" != ${lib.escapeShellArg expectedPrivatePilotCommit} \
+        || test "$restored_private_identity" != ${lib.escapeShellArg expectedPrivatePilotIdentityRevision} \
+        || test "$restored_private_sigrefs" != ${lib.escapeShellArg expectedPrivatePilotSigrefs}; then
+        echo "restored private pilot identity, signed refs, or commit changed" >&2
+        exit 1
+      fi
+      restored_private_source_blake3="$(
+        git -c safe.directory="$restored_private_repository" -C "$restored_private_repository" \
+          archive --format=tar refs/heads/main \
+          | b3sum \
+          | cut -d ' ' -f 1
+      )"
+      if test "$restored_private_source_blake3" != ${lib.escapeShellArg expectedPrivatePilotSourceBlake3}; then
+        echo "restored private pilot source identity changed" >&2
+        exit 1
+      fi
+
       printf 'archive=%s\n' "$archive"
       printf 'node_id=%s\n' "$restored_node_id"
       printf 'node_fingerprint=%s\n' ${lib.escapeShellArg expectedNodeFingerprint}
       printf 'repository_count=%s\n' "$actual_repository_count"
+      printf 'private_commit=%s\n' "$restored_private_commit"
+      printf 'private_identity_revision=%s\n' "$restored_private_identity"
+      printf 'private_sigrefs=%s\n' "$restored_private_sigrefs"
+      printf 'private_source_blake3=%s\n' "$restored_private_source_blake3"
       printf 'restore_result=verified\n'
     '';
   };
