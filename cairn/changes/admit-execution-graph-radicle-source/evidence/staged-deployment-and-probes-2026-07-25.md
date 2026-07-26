@@ -50,12 +50,12 @@ Cleanup traps restarted both services. Both nodes and staged policy timers were 
 
 ## Portable policy
 
-Revision `156a1388` adds the public RID to the shared primary, HTTPS, and replica source list. Focused node, replica, and source-admission checks passed.
+Revision `156a138828bbc9bca1317755c81c29c08174a06d` adds the public RID to the shared primary, HTTPS, and replica source list. Focused node, replica, and source-admission checks passed.
 
 The branch is local and is not deployed. The live stage preserves a separately managed private RID that is absent from the public source repository.
 
 ## Blockers and non-claims
 
-Producer delegate quorum is incomplete. OnixOS catalog revision `8e0af63` remains pending.
+Producer delegate quorum is incomplete. OnixOS catalog revision `8e0af634998c34e171b2e9771e7a496a9df98186` remains pending.
 
 This evidence does not prove durable deployment, canonical publication, accepted governance, consumer cutover, graph correctness, release readiness, or whole-stack GitHub independence.
