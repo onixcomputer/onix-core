@@ -1280,6 +1280,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "qcheck"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b439bd4242da51d62d18c95e6a6add749346756b0d1a587dfd0cc22fa6b5f3f0"
+dependencies = [
+ "rand",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1319,6 +1328,7 @@ dependencies = [
  "libc",
  "log",
  "nonempty",
+ "qcheck",
  "radicle-cob",
  "radicle-core",
  "radicle-crypto",
@@ -1331,6 +1341,7 @@ dependencies = [
  "serde_json",
  "siphasher",
  "sqlite",
+ "tempfile",
  "thiserror 2.0.19",
  "uds_windows",
  "unicode-normalization",
@@ -1377,6 +1388,7 @@ checksum = "656cf8f177c04702ac4b4702e622c75a370da0634f925c56c10cab5cadf7487f"
 dependencies = [
  "git2",
  "multibase",
+ "qcheck",
  "radicle-crypto",
  "radicle-oid",
  "schemars",
@@ -1394,8 +1406,10 @@ dependencies = [
  "amplify",
  "cyphernet",
  "ec25519",
+ "fastrand",
  "git-ref-format-core",
  "multibase",
+ "qcheck",
  "serde",
  "signature 2.2.0",
  "sqlite",
@@ -1449,6 +1463,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e60c3fab5115369bee5b757dab3ba9b93825236d3edde230742becb36ba0930a"
 dependencies = [
  "git2",
+ "qcheck",
  "serde",
 ]
 

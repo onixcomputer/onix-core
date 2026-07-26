@@ -538,6 +538,7 @@ let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
         productionSeedAddress = "%{radicle_node_address}:%{radicle_node_port}",
         reviewedCommit = radicle_reviewed_commit,
         policyBlake3 = radicle_ci_policy_blake3,
+        checkName = "onix/ci/v1",
         expectedBotPublicKey = radicle_ci_bot_public_key,
         expectedBotNodeId = radicle_ci_bot_node_id,
         expectedBotFingerprint = radicle_ci_bot_fingerprint,

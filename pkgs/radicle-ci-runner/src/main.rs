@@ -2,12 +2,14 @@
 
 #![forbid(unsafe_code)]
 
+use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 use std::env;
 use std::ffi::OsString;
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write as _};
 use std::net::{SocketAddr, TcpStream};
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::process::ExitCode;
 use std::time::Duration;
 
@@ -15,15 +17,22 @@ use bounded_exec::{
     CommandSpec, Disposition, EnvironmentMode, ExecutionLimits, Input, OutcomePolicy, RunRequest,
     TerminationScope,
 };
+use radicle::cob::ObjectId;
 use radicle::cob::patch::Patches;
+use radicle::cob::patch::RevisionId;
+use radicle::cob::patch::Verdict;
 use radicle::cob::store::access::ReadOnly;
+use radicle::identity::Did;
 use radicle::prelude::*;
 use radicle::storage::git::Repository;
 use radicle_ci_runner::{
-    AdmittedEventV1, CandidateV1, JobResultV1, LockIdentityV1, ObservationV1, RunnerConfigV1,
-    RunnerDisposition, TriggerClass, admit_candidate, classify_observation, validate_config,
-    validate_event, validate_result,
+    AdmittedEventV1, CandidateV1, ForgeGuardPolicyV1, GuardDecisionV1, GuardReportV1, JobResultV1,
+    LiveGuardObservationV1, LockIdentityV1, ObservationV1, RunnerConfigV1, RunnerDisposition,
+    TriggerClass, ValenceAdmissionReceiptV1, admit_candidate, build_signed_status,
+    classify_observation, evaluate_canonical_guard, parse_signed_status, render_signed_status,
+    validate_config, validate_event, validate_result,
 };
+use serde::Deserialize;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 
@@ -57,6 +66,8 @@ const SOURCE_FILE_MODE_READ_ONLY: u32 = 0o440;
 const SOURCE_DIRECTORY_MODE_READ_ONLY: u32 = 0o550;
 const DIRECTORY_MODE_PRIVATE: u32 = 0o700;
 const DIRECTORY_MODE_EXCHANGE: u32 = 0o770;
+const GUARD_RECEIPT_SCHEMA: &str = "onix.radicle-forge-guard-execution.v1";
+const GUARD_REFLOG_MESSAGE: &str = "guarded Radicle CI canonical compare-and-swap";
 
 #[derive(Debug)]
 struct ShellError(String);
@@ -97,6 +108,9 @@ fn run() -> Result<(), ShellError> {
             _ => {}
         }
     }
+    if arguments.get(SUBCOMMAND_INDEX).map(String::as_str) == Some("guard") {
+        return guard_command(&arguments[(SUBCOMMAND_INDEX + 1)..]);
+    }
     if arguments.len() != EXPECTED_ARGUMENT_COUNT {
         return Err(shell_error(
             "usage: radicle-ci-runner <scan|run-next|publish-next|probe-isolation|probe-bounds|validate-config> CONFIG.json",
@@ -116,6 +130,396 @@ fn run() -> Result<(), ShellError> {
         }
         _ => Err(shell_error("unknown subcommand")),
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct GuardExecutionReceiptV1 {
+    schema: String,
+    receipt_blake3: String,
+    executed: bool,
+    report: GuardReportV1,
+    observed_after_oid: String,
+    non_claims: Vec<String>,
+}
+
+struct GuardFlagSet {
+    values: BTreeMap<String, String>,
+    switches: BTreeSet<String>,
+}
+
+impl GuardFlagSet {
+    fn parse(arguments: &[String]) -> Result<Self, ShellError> {
+        let mut values = BTreeMap::new();
+        let mut switches = BTreeSet::new();
+        let mut index = 0;
+        while index < arguments.len() {
+            let argument = &arguments[index];
+            let name = argument
+                .strip_prefix("--")
+                .ok_or_else(|| shell_error(format!("guard expected a flag, found {argument:?}")))?;
+            if name == "execute" {
+                if !switches.insert(name.to_owned()) {
+                    return Err(shell_error("guard received duplicate --execute"));
+                }
+                index += 1;
+                continue;
+            }
+            let value_index = index + 1;
+            let value = arguments
+                .get(value_index)
+                .ok_or_else(|| shell_error(format!("guard flag --{name} lacks a value")))?;
+            if value.starts_with("--") || values.insert(name.to_owned(), value.clone()).is_some() {
+                return Err(shell_error(format!(
+                    "guard flag --{name} is invalid or duplicated"
+                )));
+            }
+            index += 2;
+        }
+        let required = [
+            "repository",
+            "policy",
+            "event",
+            "result",
+            "receipt",
+            "output-root",
+            "output",
+        ];
+        for name in values.keys() {
+            if !required.contains(&name.as_str()) {
+                return Err(shell_error(format!("guard received unknown flag --{name}")));
+            }
+        }
+        for name in required {
+            if !values.contains_key(name) {
+                return Err(shell_error(format!("guard requires --{name}")));
+            }
+        }
+        Ok(Self { values, switches })
+    }
+
+    fn value(&self, name: &str) -> Result<&str, ShellError> {
+        self.values
+            .get(name)
+            .map(String::as_str)
+            .ok_or_else(|| shell_error(format!("guard requires --{name}")))
+    }
+
+    fn execute(&self) -> bool {
+        self.switches.contains("execute")
+    }
+}
+
+// r[impl onix.radicle_ci.canonical_guard.shell]
+// r[impl onix.radicle_ci.canonical_guard.authority]
+fn guard_command(arguments: &[String]) -> Result<(), ShellError> {
+    let flags = GuardFlagSet::parse(arguments)?;
+    let policy: ForgeGuardPolicyV1 = read_json(Path::new(flags.value("policy")?))?;
+    let event: AdmittedEventV1 = read_json(Path::new(flags.value("event")?))?;
+    let result: JobResultV1 = read_json(Path::new(flags.value("result")?))?;
+    let valence: ValenceAdmissionReceiptV1 = read_json(Path::new(flags.value("receipt")?))?;
+    let repository = open_guard_repository(Path::new(flags.value("repository")?), &policy.rid)?;
+    let live = materialize_live_guard_observation(&repository, &policy, &event)?;
+    let report = evaluate_canonical_guard(&policy, &event, &result, &valence, &live);
+    let output = guard_output_path(flags.value("output-root")?, flags.value("output")?)?;
+    if !report.admitted {
+        let receipt = guard_execution_receipt(false, report, live.current_canonical_oid.clone())?;
+        write_guard_json(&output, &receipt)?;
+        return Err(shell_error(
+            "canonical guard denied the supplied exact-revision facts",
+        ));
+    }
+    let decision = report
+        .decision
+        .as_ref()
+        .ok_or_else(|| shell_error("admitted guard report lacks a decision"))?;
+    let observed_after_oid = if flags.execute() {
+        execute_guard_compare_and_swap(&repository, decision)?
+    } else {
+        live.current_canonical_oid.clone()
+    };
+    let receipt = guard_execution_receipt(flags.execute(), report, observed_after_oid)?;
+    write_guard_json(&output, &receipt)?;
+    println!("guard_result=admitted");
+    println!("guard_executed={}", flags.execute());
+    println!("guard_receipt={}", output.display());
+    Ok(())
+}
+
+fn open_guard_repository(path: &Path, expected_rid: &str) -> Result<Repository, ShellError> {
+    let rid = expected_rid
+        .parse::<RepoId>()
+        .map_err(|_| shell_error("guard policy RID is invalid"))?;
+    let repository = Repository::open(path, rid).map_err(|error| {
+        shell_error(format!("failed to open selected guard repository: {error}"))
+    })?;
+    if repository.id.to_string() != expected_rid {
+        return Err(shell_error(
+            "selected guard repository RID does not match policy",
+        ));
+    }
+    Ok(repository)
+}
+
+fn materialize_live_guard_observation(
+    repository: &Repository,
+    policy: &ForgeGuardPolicyV1,
+    event: &AdmittedEventV1,
+) -> Result<LiveGuardObservationV1, ShellError> {
+    let patch_id_text = event
+        .patch_id
+        .as_deref()
+        .ok_or_else(|| shell_error("guard event lacks a patch ID"))?;
+    let revision_id_text = event
+        .revision_id
+        .as_deref()
+        .ok_or_else(|| shell_error("guard event lacks a revision ID"))?;
+    let patch_id = patch_id_text
+        .parse::<ObjectId>()
+        .map_err(|_| shell_error("guard patch ID is invalid"))?;
+    let revision_entry = revision_id_text
+        .parse::<radicle::cob::EntryId>()
+        .map_err(|_| shell_error("guard revision ID is invalid"))?;
+    let revision_id = RevisionId::from(revision_entry);
+    let patches = Patches::open(repository, ReadOnly)
+        .map_err(|error| shell_error(format!("failed to open guard patch store: {error}")))?;
+    let patch = patches
+        .get(&patch_id)
+        .map_err(|error| shell_error(format!("failed to evaluate guard patch: {error}")))?
+        .ok_or_else(|| shell_error("guard patch does not exist"))?;
+    let revision = patch
+        .revision(&revision_id)
+        .ok_or_else(|| shell_error("guard patch revision does not exist"))?;
+
+    let mut statuses = Vec::new();
+    for (_, comment) in revision.discussion().comments() {
+        let author_did = Did::from(comment.author()).to_string();
+        if author_did != policy.bot_did
+            || !comment.body().starts_with(radicle_ci_runner::STATUS_MARKER)
+        {
+            continue;
+        }
+        let status = parse_signed_status(comment.body())
+            .map_err(|error| shell_error(format!("bot signed status is invalid: {error}")))?;
+        if status.job_id == event.job_id {
+            statuses.push((author_did, status));
+        }
+    }
+    if statuses.len() != 1 {
+        return Err(shell_error(
+            "guard requires exactly one matching bot signed status",
+        ));
+    }
+    let (status_author_did, status) = statuses
+        .pop()
+        .ok_or_else(|| shell_error("matching bot signed status disappeared"))?;
+
+    let mut approving_delegates = revision
+        .reviews()
+        .filter_map(|(author, review)| {
+            if review.verdict() != Some(Verdict::Accept) {
+                return None;
+            }
+            let did = Did::from(*author).to_string();
+            policy.delegates.contains(&did).then_some(did)
+        })
+        .collect::<Vec<_>>();
+    approving_delegates.sort();
+    approving_delegates.dedup();
+
+    let current = repository
+        .backend
+        .refname_to_id(&policy.target_ref)
+        .map_err(|error| shell_error(format!("failed to read current canonical ref: {error}")))?;
+    let candidate_oid = revision.head();
+    let candidate = candidate_oid.into();
+    let candidate_present = repository.backend.find_commit(candidate).is_ok();
+    let candidate_is_descendant = candidate_present
+        && repository
+            .backend
+            .graph_descendant_of(candidate, current)
+            .map_err(|error| shell_error(format!("failed to evaluate guard ancestry: {error}")))?;
+    let signing_delegates = materialize_signing_delegates(repository, policy, candidate_oid)?;
+
+    Ok(LiveGuardObservationV1 {
+        rid: repository.id.to_string(),
+        patch_id: patch_id_text.to_owned(),
+        revision_id: revision_id_text.to_owned(),
+        base_oid: revision.base().to_string(),
+        candidate_oid: revision.head().to_string(),
+        target_ref: policy.target_ref.clone(),
+        current_canonical_oid: current.to_string(),
+        candidate_present,
+        candidate_is_descendant,
+        canonical_observation_current: true,
+        evaluator_verified: true,
+        signed_refs_feature: policy.signed_refs_feature.clone(),
+        status_author_did,
+        status,
+        approving_delegates,
+        signing_delegates,
+    })
+}
+
+fn materialize_signing_delegates(
+    repository: &Repository,
+    policy: &ForgeGuardPolicyV1,
+    candidate_oid: radicle::git::Oid,
+) -> Result<Vec<String>, ShellError> {
+    let mut signing_delegates = Vec::new();
+    for delegate in &policy.delegates {
+        let node_id_text = delegate
+            .strip_prefix("did:key:")
+            .ok_or_else(|| shell_error("guard delegate DID is invalid"))?;
+        let node_id = node_id_text
+            .parse::<NodeId>()
+            .map_err(|_| shell_error("guard delegate node ID is invalid"))?;
+        let Some(signed) =
+            radicle::storage::refs::SignedRefs::load(node_id, repository).map_err(|error| {
+                shell_error(format!("failed to verify delegate signed refs: {error}"))
+            })?
+        else {
+            continue;
+        };
+        if signed.feature_level() == radicle::storage::refs::FeatureLevel::Parent
+            && signed
+                .refs()
+                .get(&radicle::git::fmt::qualified!("refs/heads/main"))
+                == Some(candidate_oid)
+        {
+            signing_delegates.push(delegate.clone());
+        }
+    }
+    signing_delegates.sort();
+    signing_delegates.dedup();
+    Ok(signing_delegates)
+}
+
+fn execute_guard_compare_and_swap(
+    repository: &Repository,
+    decision: &GuardDecisionV1,
+) -> Result<String, ShellError> {
+    let observed = repository
+        .backend
+        .refname_to_id(&decision.target_ref)
+        .map_err(|error| {
+            shell_error(format!(
+                "failed to reread canonical ref before compare-and-swap: {error}"
+            ))
+        })?;
+    if observed.to_string() != decision.expected_old_oid {
+        return Err(shell_error("canonical ref changed after guard admission"));
+    }
+    let candidate = decision
+        .candidate_oid
+        .parse::<radicle::git::Oid>()
+        .map_err(|_| shell_error("guard candidate OID is invalid"))?;
+    repository
+        .backend
+        .find_commit(candidate.into())
+        .map_err(|_| shell_error("guard candidate commit disappeared"))?;
+    repository
+        .backend
+        .reference_matching(
+            &decision.target_ref,
+            candidate.into(),
+            true,
+            observed,
+            GUARD_REFLOG_MESSAGE,
+        )
+        .map_err(|error| {
+            shell_error(format!("atomic canonical compare-and-swap failed: {error}"))
+        })?;
+    let after = repository
+        .backend
+        .refname_to_id(&decision.target_ref)
+        .map_err(|error| {
+            shell_error(format!(
+                "failed to verify canonical ref after compare-and-swap: {error}"
+            ))
+        })?;
+    if after.to_string() != decision.candidate_oid {
+        return Err(shell_error(
+            "canonical ref does not equal the admitted candidate after compare-and-swap",
+        ));
+    }
+    Ok(after.to_string())
+}
+
+fn guard_execution_receipt(
+    executed: bool,
+    report: GuardReportV1,
+    observed_after_oid: String,
+) -> Result<GuardExecutionReceiptV1, ShellError> {
+    let non_claims = vec![
+        radicle_ci_runner::GUARD_PROTOCOL_NON_CLAIM.to_owned(),
+        radicle_ci_runner::GUARD_AUTHORITY_NON_CLAIM.to_owned(),
+        radicle_ci_runner::GUARD_EXECUTION_NON_CLAIM.to_owned(),
+    ];
+    let bytes = serde_json::to_vec(&(
+        GUARD_RECEIPT_SCHEMA,
+        executed,
+        &report,
+        &observed_after_oid,
+        &non_claims,
+    ))
+    .map_err(|_| shell_error("failed to serialize guard execution identity"))?;
+    Ok(GuardExecutionReceiptV1 {
+        schema: GUARD_RECEIPT_SCHEMA.to_owned(),
+        receipt_blake3: blake3::hash(&bytes).to_hex().to_string(),
+        executed,
+        report,
+        observed_after_oid,
+        non_claims,
+    })
+}
+
+fn guard_output_path(root: &str, output: &str) -> Result<PathBuf, ShellError> {
+    let root = Path::new(root);
+    if !root.is_dir() {
+        return Err(shell_error(
+            "guard output root must be an existing directory",
+        ));
+    }
+    let relative = Path::new(output);
+    if relative.is_absolute()
+        || relative
+            .components()
+            .any(|component| !matches!(component, Component::Normal(_)))
+    {
+        return Err(shell_error("guard output must be one relative file name"));
+    }
+    let canonical_root = root
+        .canonicalize()
+        .map_err(|error| shell_io("failed to resolve guard output root", error))?;
+    let path = root.join(relative);
+    let parent = path
+        .parent()
+        .ok_or_else(|| shell_error("guard output path has no parent"))?
+        .canonicalize()
+        .map_err(|error| shell_io("failed to resolve guard output parent", error))?;
+    if parent != canonical_root {
+        return Err(shell_error("guard output escaped its selected root"));
+    }
+    Ok(path)
+}
+
+fn write_guard_json(path: &Path, value: &impl Serialize) -> Result<(), ShellError> {
+    let mut bytes = serde_json::to_vec_pretty(value)
+        .map_err(|_| shell_error("failed to serialize guard output"))?;
+    bytes.push(b'\n');
+    let mut output = OpenOptions::new()
+        .create_new(true)
+        .write(true)
+        .open(path)
+        .map_err(|error| shell_io("failed to create guard output", error))?;
+    output
+        .write_all(&bytes)
+        .map_err(|error| shell_io("failed to write guard output", error))?;
+    output
+        .sync_all()
+        .map_err(|error| shell_io("failed to sync guard output", error))?;
+    set_mode(path, FILE_MODE_READ_ONLY)
 }
 
 fn probe_bounds() -> Result<(), ShellError> {
@@ -324,7 +728,10 @@ fn publish_next(config: &RunnerConfigV1) -> Result<(), ShellError> {
             .revision_id
             .as_deref()
             .ok_or_else(|| shell_error("patch status lacks revision ID"))?;
-        let message = status_message(&result);
+        let status = build_signed_status(config, &event, &result)
+            .map_err(|error| shell_error(error.to_string()))?;
+        let message =
+            render_signed_status(&status).map_err(|error| shell_error(error.to_string()))?;
         let arguments = [
             "patch",
             "comment",
@@ -1031,13 +1438,6 @@ fn executable_path_environment(config: &RunnerConfigV1) -> Result<OsString, Shel
         .map_err(|_| shell_error("configured executable search path is invalid"))
 }
 
-fn status_message(result: &JobResultV1) -> String {
-    format!(
-        "Onix CI `{}` for `{}`: **{:?}**. Artifact BLAKE3 `{}`. Scope: bounded observation only; this is not merge or release approval.",
-        result.job_id, result.object_oid, result.disposition, result.artifact_blake3
-    )
-}
-
 fn directory_artifact_bytes(
     stdout: &[u8],
     stderr: &[u8],
@@ -1180,6 +1580,82 @@ mod tests {
 
     const EXISTING_MODE: u32 = 0o700;
     const REQUESTED_MODE: u32 = 0o770;
+    const STATUS_POLICY: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    const STATUS_JOB: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+    const STATUS_PATCH: &str = "1111111111111111111111111111111111111111";
+    const STATUS_REVISION: &str = "2222222222222222222222222222222222222222";
+    const STATUS_OBJECT: &str = "4444444444444444444444444444444444444444";
+    const STATUS_IDENTITY: &str =
+        "0c4a529cd8c5c1bb4d5bf441b054b8ffa3f1c3eda3c7e1978470edca12cc478e";
+
+    fn fixture_status() -> radicle_ci_runner::SignedStatusV1 {
+        radicle_ci_runner::SignedStatusV1 {
+            schema: radicle_ci_runner::STATUS_SCHEMA.to_owned(),
+            status_blake3: STATUS_IDENTITY.to_owned(),
+            policy_blake3: STATUS_POLICY.to_owned(),
+            rid: "rad:zFixture".to_owned(),
+            patch_id: STATUS_PATCH.to_owned(),
+            revision_id: STATUS_REVISION.to_owned(),
+            check_name: "onix/ci/v1".to_owned(),
+            job_id: STATUS_JOB.to_owned(),
+            object_oid: STATUS_OBJECT.to_owned(),
+            disposition: RunnerDisposition::Succeeded,
+            artifact_blake3: STATUS_POLICY.to_owned(),
+            event_blake3: STATUS_POLICY.to_owned(),
+            result_blake3: STATUS_POLICY.to_owned(),
+            claim_scope: radicle_ci_runner::STATUS_CLAIM_SCOPE.to_owned(),
+            non_claim: radicle_ci_runner::STATUS_NON_CLAIM.to_owned(),
+        }
+    }
+
+    fn fixture_policy(rid: String, bot_did: String) -> ForgeGuardPolicyV1 {
+        ForgeGuardPolicyV1 {
+            schema: radicle_ci_runner::GUARD_POLICY_SCHEMA.to_owned(),
+            status_schema: radicle_ci_runner::STATUS_SCHEMA.to_owned(),
+            admission_schema: radicle_ci_runner::VALENCE_ADMISSION_SCHEMA.to_owned(),
+            event_schema: radicle_ci_runner::EVENT_SCHEMA.to_owned(),
+            result_schema: radicle_ci_runner::RESULT_SCHEMA.to_owned(),
+            rid,
+            ci_policy_blake3: STATUS_POLICY.to_owned(),
+            valence_revision: "e822bdf5395d6e1a77786c538ac0aaa13ef8c165".to_owned(),
+            bot_did: bot_did.clone(),
+            delegates: vec![bot_did],
+            threshold: 1,
+            required_check: "onix/ci/v1".to_owned(),
+            target_ref: radicle_ci_runner::CANONICAL_TARGET_REF.to_owned(),
+            signed_refs_feature: radicle_ci_runner::REQUIRED_SIGNED_REFS_FEATURE.to_owned(),
+            admission_non_claims: Vec::new(),
+            required_non_claims: Vec::new(),
+        }
+    }
+
+    fn fixture_event(
+        rid: String,
+        patch_id: String,
+        revision_id: String,
+        object_oid: String,
+    ) -> AdmittedEventV1 {
+        AdmittedEventV1 {
+            schema: radicle_ci_runner::EVENT_SCHEMA.to_owned(),
+            job_id: STATUS_JOB.to_owned(),
+            policy_blake3: STATUS_POLICY.to_owned(),
+            rid,
+            trigger: TriggerClass::Patch,
+            reference: format!("refs/cobs/xyz.radicle.patch/{patch_id}"),
+            object_oid,
+            patch_id: Some(patch_id),
+            revision_id: Some(revision_id),
+            signed_refs_feature: radicle_ci_runner::REQUIRED_SIGNED_REFS_FEATURE.to_owned(),
+            source_archive_blake3: STATUS_POLICY.to_owned(),
+            locks: LockIdentityV1 {
+                cargo_toml_blake3: STATUS_POLICY.to_owned(),
+                cargo_lock_blake3: STATUS_POLICY.to_owned(),
+                flake_nix_blake3: STATUS_POLICY.to_owned(),
+                flake_lock_blake3: STATUS_POLICY.to_owned(),
+            },
+            claim_scope: "exact-object-bounded-ci-input".to_owned(),
+        }
+    }
 
     #[test]
     fn existing_shared_directory_keeps_its_owner_selected_mode() {
@@ -1215,6 +1691,172 @@ mod tests {
         fs::write(&path, b"not-a-directory").expect("create fixture file");
         assert!(create_directory(&path, REQUESTED_MODE).is_err());
         fs::remove_file(path).expect("remove fixture file");
+    }
+
+    #[test]
+    fn guard_flags_and_output_paths_fail_closed() {
+        let arguments = [
+            "--repository",
+            "/repository",
+            "--policy",
+            "policy.json",
+            "--event",
+            "event.json",
+            "--result",
+            "result.json",
+            "--receipt",
+            "receipt.json",
+            "--output-root",
+            "/output",
+            "--output",
+            "guard.json",
+        ]
+        .into_iter()
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+        assert!(GuardFlagSet::parse(&arguments).is_ok());
+        let mut duplicate = arguments.clone();
+        duplicate.extend(["--output".to_owned(), "other.json".to_owned()]);
+        assert!(GuardFlagSet::parse(&duplicate).is_err());
+
+        let root = test_path("guard-output");
+        fs::create_dir_all(&root).expect("guard output root");
+        assert!(guard_output_path(root.to_str().expect("root"), "guard.json").is_ok());
+        assert!(guard_output_path(root.to_str().expect("root"), "../escape.json").is_err());
+        fs::remove_dir_all(root).expect("remove guard output root");
+    }
+
+    #[test]
+    fn atomic_guard_compare_and_swap_rejects_stale_expected_old() {
+        let fixture = radicle::test::setup::NodeWithRepo::default();
+        let (_, initial) = fixture.repo.head().expect("canonical head");
+        fixture
+            .repo
+            .backend
+            .reference(
+                radicle_ci_runner::CANONICAL_TARGET_REF,
+                initial.into(),
+                true,
+                "guard fixture canonical ref",
+            )
+            .expect("fixture main");
+        let checkout = fixture.repo.checkout();
+        let candidate = checkout.branch_with([("GUARD", b"candidate")]);
+        let decision = GuardDecisionV1 {
+            schema: radicle_ci_runner::GUARD_DECISION_SCHEMA.to_owned(),
+            decision_blake3: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                .to_owned(),
+            ci_policy_blake3: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                .to_owned(),
+            valence_revision: "e822bdf5395d6e1a77786c538ac0aaa13ef8c165".to_owned(),
+            rid: fixture.repo.id.to_string(),
+            patch_id: "1111111111111111111111111111111111111111".to_owned(),
+            revision_id: "2222222222222222222222222222222222222222".to_owned(),
+            target_ref: radicle_ci_runner::CANONICAL_TARGET_REF.to_owned(),
+            expected_old_oid: initial.to_string(),
+            candidate_oid: candidate.oid.to_string(),
+            job_id: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".to_owned(),
+            event_blake3: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                .to_owned(),
+            result_blake3: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                .to_owned(),
+            status_blake3: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                .to_owned(),
+            valence_receipt_blake3:
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_owned(),
+            approving_delegates: Vec::new(),
+            signing_delegates: Vec::new(),
+            threshold: 1,
+            claim_scope: radicle_ci_runner::GUARD_CLAIM_SCOPE.to_owned(),
+            required_non_claims: Vec::new(),
+        };
+        assert_eq!(
+            execute_guard_compare_and_swap(&fixture.repo, &decision)
+                .expect("guard compare-and-swap"),
+            candidate.oid.to_string()
+        );
+        assert!(execute_guard_compare_and_swap(&fixture.repo, &decision).is_err());
+    }
+
+    #[test]
+    fn live_materialization_reads_evaluator_verified_status_and_review() {
+        let fixture = radicle::test::setup::NodeWithRepo::default();
+        let checkout = fixture.repo.checkout();
+        let branch = checkout.branch_with([("STATUS", b"candidate")]);
+        fixture
+            .repo
+            .backend
+            .reference(
+                radicle_ci_runner::CANONICAL_TARGET_REF,
+                branch.base.into(),
+                true,
+                "guard materialization fixture canonical ref",
+            )
+            .expect("fixture main");
+        let mut patches = radicle::cob::patch::Cache::no_cache(&*fixture.repo, &fixture.signer)
+            .expect("patch cache");
+        let mut patch = patches
+            .create(
+                radicle::cob::Title::new("Guard fixture").expect("title"),
+                "Guard materialization fixture",
+                radicle::cob::patch::MergeTarget::Delegates,
+                branch.base,
+                branch.oid,
+                &[],
+            )
+            .expect("patch");
+        let patch_id = patch.id;
+        let revision_id = patch.latest().0;
+        let bot_did = Did::from(*fixture.signer.public_key()).to_string();
+        let status = fixture_status();
+        let message = render_signed_status(&status).expect("status message");
+        patch
+            .comment(revision_id, message, None, None, [])
+            .expect("status comment");
+        patch
+            .review(
+                revision_id,
+                Some(Verdict::Accept),
+                Some("Guard fixture approval".to_owned()),
+                Vec::new(),
+            )
+            .expect("review");
+        drop(patch);
+        let signer_id = *fixture.signer.public_key();
+        let signed = radicle::storage::refs::SignedRefs::load(signer_id, &*fixture.repo)
+            .expect("load fixture signed refs")
+            .expect("fixture signed refs");
+        let mut refs = signed.refs().clone();
+        refs.insert(
+            radicle::git::fmt::qualified!("refs/heads/main").to_ref_string(),
+            branch.oid,
+        );
+        refs.force_save(
+            signer_id,
+            radicle::storage::refs::sigrefs::git::Committer::from_env_or_now(&signer_id),
+            &*fixture.repo,
+            &fixture.signer,
+        )
+        .expect("sign fixture main");
+
+        let policy = fixture_policy(fixture.repo.id.to_string(), bot_did.clone());
+        let event = fixture_event(
+            fixture.repo.id.to_string(),
+            patch_id.to_string(),
+            revision_id.to_string(),
+            branch.oid.to_string(),
+        );
+        let observed = materialize_live_guard_observation(&fixture.repo, &policy, &event)
+            .expect("live guard observation");
+        assert!(observed.evaluator_verified);
+        assert_eq!(observed.status_author_did, bot_did);
+        assert_eq!(observed.status.job_id, STATUS_JOB);
+        assert_eq!(
+            observed.approving_delegates,
+            vec![observed.status_author_did.clone()]
+        );
+        assert_eq!(observed.signing_delegates, vec![observed.status_author_did]);
+        assert!(observed.candidate_is_descendant);
     }
 
     #[test]

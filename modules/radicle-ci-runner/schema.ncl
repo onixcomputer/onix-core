@@ -1,4 +1,5 @@
 let default_bot_port = 18776 in
+let default_check_name = "onix/ci/v1" in
 let default_timeout_ms = 900000 in
 let default_output_max_bytes = 1048576 in
 let default_artifact_max_bytes = 67108864 in
@@ -17,6 +18,7 @@ let default_teardown_timeout_ms = 5000 in
     productionSeedAddress = { type = "string", description = "Pinned production seed native address" },
     reviewedCommit = { type = "string", description = "Reviewed source revision preserved by the pilot" },
     policyBlake3 = { type = "string", description = "BLAKE3 identity of the accepted portable CI policy" },
+    checkName = { type = "string", default = default_check_name, description = "Exact machine-readable signed status check name" },
     expectedBotPublicKey = { type = "string", description = "Pinned generated CI bot Ed25519 public key" },
     expectedBotNodeId = { type = "string", description = "Pinned generated CI bot node ID" },
     expectedBotFingerprint = { type = "string", description = "Pinned generated CI bot SHA-256 fingerprint" },

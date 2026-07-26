@@ -59,6 +59,7 @@ in
             publicKeyPath = identityFiles.${publicKeyFileName}.path;
             productionSeed = "${settings.productionSeedNodeId}@${settings.productionSeedAddress}";
             acceptedPolicyBlake3 = lib.removeSuffix "\n" (builtins.readFile ./ci-policy-v1.blake3);
+            acceptedCheckName = "onix/ci/v1";
             runnerTasksMax = 256;
             inputHydrationTimeout = "10m";
             stdinMaxBytes = 1;
@@ -119,6 +120,7 @@ in
                 production_seed_node_id = settings.productionSeedNodeId;
                 production_seed_address = settings.productionSeedAddress;
                 policy_blake3 = settings.policyBlake3;
+                check_name = settings.checkName;
                 bot_public_key = settings.expectedBotPublicKey;
                 bot_node_id = settings.expectedBotNodeId;
                 bot_fingerprint = settings.expectedBotFingerprint;
@@ -361,6 +363,10 @@ in
               {
                 assertion = settings.policyBlake3 == acceptedPolicyBlake3;
                 message = "radicle-ci-${instanceName}: portable policy BLAKE3 drifted";
+              }
+              {
+                assertion = settings.checkName == acceptedCheckName;
+                message = "radicle-ci-${instanceName}: signed status check name drifted";
               }
               {
                 assertion = settings.expectedBotNodeId != settings.productionSeedNodeId;

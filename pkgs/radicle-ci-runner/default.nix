@@ -2,6 +2,7 @@
   lib,
   rustPlatform,
   pkg-config,
+  git,
   openssl,
   sqlite,
 }:
@@ -18,7 +19,10 @@ rustPlatform.buildRustPackage {
     };
   };
 
-  nativeBuildInputs = [ pkg-config ];
+  nativeBuildInputs = [
+    git
+    pkg-config
+  ];
   buildInputs = [
     openssl
     sqlite

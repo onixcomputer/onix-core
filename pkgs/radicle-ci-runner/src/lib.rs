@@ -7,11 +7,33 @@
 
 use serde::{Deserialize, Serialize};
 
+mod guard;
+
+pub use guard::ADMISSION_CI_NON_CLAIM;
+pub use guard::ADMISSION_MIGRATION_NON_CLAIM;
+pub use guard::ADMISSION_REVIEW_NON_CLAIM;
+pub use guard::CANONICAL_TARGET_REF;
+pub use guard::GUARD_AUTHORITY_NON_CLAIM;
+pub use guard::GUARD_CLAIM_SCOPE;
+pub use guard::GUARD_EXECUTION_NON_CLAIM;
+pub use guard::GUARD_PROTOCOL_NON_CLAIM;
+pub use guard::STATUS_CLAIM_SCOPE;
+pub use guard::STATUS_NON_CLAIM;
+pub use guard::build_signed_status;
+pub use guard::evaluate_canonical_guard;
+pub use guard::parse_signed_status;
+pub use guard::render_signed_status;
+
 // r[impl onix.radicle_ci.admission]
 
 pub const CONFIG_SCHEMA: &str = "onix.radicle-ci-runner.v1";
 pub const EVENT_SCHEMA: &str = "onix.radicle-ci-event.v1";
 pub const RESULT_SCHEMA: &str = "onix.radicle-ci-result.v1";
+pub const STATUS_SCHEMA: &str = "onix.radicle-ci-status.v1";
+pub const STATUS_MARKER: &str = "<!-- onix-radicle-ci-status:v1 -->";
+pub const GUARD_POLICY_SCHEMA: &str = "onix.radicle-forge-guard.v1";
+pub const GUARD_DECISION_SCHEMA: &str = "onix.radicle-forge-guard-decision.v1";
+pub const VALENCE_ADMISSION_SCHEMA: &str = "valence.radicle-forge-operations.ci-admission.v1";
 pub const RECEIPT_SCHEMA: &str = "onix.radicle-ci-deployment.v1";
 pub const REQUIRED_SIGNED_REFS_FEATURE: &str = "parent";
 pub const JOB_ID_DOMAIN: &str = "onix/radicle-ci/job/v1";
@@ -64,6 +86,7 @@ pub struct RunnerConfigV1 {
     pub production_seed_address: String,
     pub reviewed_commit: String,
     pub policy_blake3: String,
+    pub check_name: String,
     pub bot_public_key: String,
     pub bot_node_id: String,
     pub bot_fingerprint: String,
@@ -180,6 +203,132 @@ pub struct JobResultV1 {
     pub non_claims: Vec<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SignedStatusV1 {
+    pub schema: String,
+    pub status_blake3: String,
+    pub policy_blake3: String,
+    pub rid: String,
+    pub patch_id: String,
+    pub revision_id: String,
+    pub check_name: String,
+    pub job_id: String,
+    pub object_oid: String,
+    pub disposition: RunnerDisposition,
+    pub artifact_blake3: String,
+    pub event_blake3: String,
+    pub result_blake3: String,
+    pub claim_scope: String,
+    pub non_claim: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ForgeGuardPolicyV1 {
+    pub schema: String,
+    pub status_schema: String,
+    pub admission_schema: String,
+    pub event_schema: String,
+    pub result_schema: String,
+    pub rid: String,
+    pub ci_policy_blake3: String,
+    pub valence_revision: String,
+    pub bot_did: String,
+    pub delegates: Vec<String>,
+    pub threshold: usize,
+    pub required_check: String,
+    pub target_ref: String,
+    pub signed_refs_feature: String,
+    pub admission_non_claims: Vec<String>,
+    pub required_non_claims: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ValenceAdmissionReceiptV1 {
+    pub schema: String,
+    pub receipt_blake3: String,
+    pub policy_blake3: String,
+    pub rid: String,
+    pub patch_id: String,
+    pub revision_id: String,
+    pub current_canonical_oid: String,
+    pub candidate_oid: String,
+    pub job_id: String,
+    pub event_blake3: String,
+    pub result_blake3: String,
+    pub bot_did: String,
+    pub approving_delegates: Vec<String>,
+    pub threshold: usize,
+    pub disposition: String,
+    pub claim_scope: String,
+    pub required_non_claims: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[allow(clippy::struct_excessive_bools)]
+pub struct LiveGuardObservationV1 {
+    pub rid: String,
+    pub patch_id: String,
+    pub revision_id: String,
+    pub base_oid: String,
+    pub candidate_oid: String,
+    pub target_ref: String,
+    pub current_canonical_oid: String,
+    pub candidate_present: bool,
+    pub candidate_is_descendant: bool,
+    pub canonical_observation_current: bool,
+    pub evaluator_verified: bool,
+    pub signed_refs_feature: String,
+    pub status_author_did: String,
+    pub status: SignedStatusV1,
+    pub approving_delegates: Vec<String>,
+    pub signing_delegates: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GuardIssue {
+    pub code: String,
+    pub path: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GuardDecisionV1 {
+    pub schema: String,
+    pub decision_blake3: String,
+    pub ci_policy_blake3: String,
+    pub valence_revision: String,
+    pub rid: String,
+    pub patch_id: String,
+    pub revision_id: String,
+    pub target_ref: String,
+    pub expected_old_oid: String,
+    pub candidate_oid: String,
+    pub job_id: String,
+    pub event_blake3: String,
+    pub result_blake3: String,
+    pub status_blake3: String,
+    pub valence_receipt_blake3: String,
+    pub approving_delegates: Vec<String>,
+    pub signing_delegates: Vec<String>,
+    pub threshold: usize,
+    pub claim_scope: String,
+    pub required_non_claims: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GuardReportV1 {
+    pub schema: String,
+    pub admitted: bool,
+    pub issues: Vec<GuardIssue>,
+    pub decision: Option<GuardDecisionV1>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Diagnostic {
     pub code: &'static str,
@@ -210,6 +359,7 @@ pub fn validate_config(config: &RunnerConfigV1) -> Result<(), Diagnostic> {
     }
     if !git_oid(&config.reviewed_commit)
         || !blake3_digest(&config.policy_blake3)
+        || !one_line(&config.check_name)
         || !config
             .production_seed
             .starts_with(&config.production_seed_node_id)
@@ -599,6 +749,13 @@ fn derive_job_id(
     Ok(blake3::hash(&facts).to_hex().to_string())
 }
 
+fn one_line(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= MAX_TEXT_BYTES
+        && !value.contains('\0')
+        && !value.chars().any(char::is_control)
+}
+
 fn absolute_path(value: &str) -> bool {
     value.starts_with('/') && value.len() <= MAX_TEXT_BYTES && !value.contains('\0')
 }
@@ -664,6 +821,7 @@ mod tests {
             production_seed_address: "100.100.103.95:8776".to_string(),
             reviewed_commit: OID.to_string(),
             policy_blake3: DIGEST_A.to_string(),
+            check_name: "onix/ci/v1".to_string(),
             bot_public_key:
                 "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
                     .to_string(),

@@ -1,0 +1,30 @@
+{
+  "admission_non_claims": [
+    "migration records normalized source metadata and observed native COB state; it does not prove source export completeness, source actor authenticity, original signature or timestamp preservation, or semantic equivalence",
+    "imported review metadata is recorded attribution only and does not create Radicle approval, merge eligibility, delegate authority, or canonical-ref authority",
+    "CI admission is bounded input for an external guarded compare-and-swap; it is not protocol-enforced mandatory CI, bypass-proof delegate behavior, canonical mutation, CI correctness, or release readiness"
+  ],
+  "admission_schema": "valence.radicle-forge-operations.ci-admission.v1",
+  "bot_did": "did:key:z6MknopLULJensBT5KGkC8h9KaHTNY5muZ9UffqroErX7Rni",
+  "ci_policy_blake3": "091e57f4409f79db14465ccc26e730bf1181209fe45c28d7dd1259393e93f740",
+  "delegates": [
+    "did:key:z6MkjCqx5ksRqcDeNeuEnz53udbUHebRLHhddCxecWJu9koE",
+    "did:key:z6MkmkA6sEzzMffaWqKEKJcDh8LjAzgrJLrTNi971KN3X6sh",
+    "did:key:z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx"
+  ],
+  "event_schema": "onix.radicle-ci-event.v1",
+  "required_check": "onix/ci/v1",
+  "required_non_claims": [
+    "guard admission does not provide Radicle protocol-enforced mandatory CI, bypass-proof delegate behavior, or merge semantics",
+    "guard execution does not grant canonical authority to the CI bot, credentialless runner, seeds, or Valence",
+    "guard execution receipt does not prove CI correctness, seed convergence, replication, release readiness, or post-update durability"
+  ],
+  "result_schema": "onix.radicle-ci-result.v1",
+  "rid": "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+  "schema": "onix.radicle-forge-guard.v1",
+  "signed_refs_feature": "parent",
+  "status_schema": "onix.radicle-ci-status.v1",
+  "target_ref": "refs/heads/main",
+  "threshold": 2,
+  "valence_revision": "e822bdf5395d6e1a77786c538ac0aaa13ef8c165"
+}

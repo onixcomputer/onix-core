@@ -15,6 +15,7 @@ let
   artifactAuthRid = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
   reviewedCommit = "29dac88ecded94457572db3fdfaaaab95fa91525";
   policyBlake3 = "091e57f4409f79db14465ccc26e730bf1181209fe45c28d7dd1259393e93f740";
+  checkName = "onix/ci/v1";
   botNodeId = "z6MknopLULJensBT5KGkC8h9KaHTNY5muZ9UffqroErX7Rni";
   productionSeedNodeId = "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8";
   productionSeedAddress = "100.100.103.95:8776";
@@ -32,6 +33,7 @@ let
   acceptedCpuQuota = "200%";
   expectedAllowedInputUris = 2;
   expectedIdentityGenerator = "radicle-ci-bot-radicle-forge-ci";
+  guardPolicyDir = ../modules/radicle-forge-guard;
 
   fixtureConfig = self.nixosConfigurations.${expectedHost}.config;
   unexpectedConfig = self.nixosConfigurations.${unexpectedHost}.config;
@@ -46,7 +48,9 @@ let
   syncService = fixtureConfig.systemd.services.radicle-ci-sync;
   identityGenerator = fixtureConfig.clan.core.vars.generators.${expectedIdentityGenerator};
   syncCommand = syncService.serviceConfig.ExecStart;
+  scannerCommand = scannerService.serviceConfig.ExecStart;
   runnerCommand = runnerService.serviceConfig.ExecStart;
+  publisherCommand = publisherService.serviceConfig.ExecStart;
   runnerConfigPath = lib.last (lib.splitString " " runnerCommand);
   runnerReadOnly = lib.toList (runnerService.serviceConfig.ReadOnlyPaths or [ ]);
   runnerBindPaths = lib.toList (runnerService.serviceConfig.BindPaths or [ ]);
@@ -78,6 +82,7 @@ let
     "productionSeedAddress"
     "reviewedCommit"
     "policyBlake3"
+    "checkName"
     "expectedBotPublicKey"
     "expectedBotNodeId"
     "expectedBotFingerprint"
@@ -225,6 +230,12 @@ let
     && builtins.elem productionSeedCidr botAllowedAddresses
     && builtins.elem productionSeedCidr publisherAllowedAddresses
     && lib.hasInfix "radicle-ci-sync" syncService.serviceConfig.ExecStart
+    && !(lib.hasInfix " guard " syncCommand)
+    && !(lib.hasInfix " guard " scannerCommand)
+    && !(lib.hasInfix " guard " runnerCommand)
+    && !(lib.hasInfix " guard " publisherCommand)
+    && builtins.elem "/var/lib/radicle" scannerService.serviceConfig.InaccessiblePaths
+    && builtins.elem "/var/lib/radicle" runnerService.serviceConfig.InaccessiblePaths
     && identityGenerator.files.node-private-key.secret
     && !identityGenerator.files.node-public-key.secret
     && identityGenerator.files.node-public-key.mode == "0400";
@@ -237,6 +248,7 @@ in
           pkgs.b3sum
           pkgs.coreutils
           pkgs.jq
+          pkgs.nickel
           runnerPackage
         ];
       }
@@ -273,6 +285,19 @@ in
           exit 1
         ''}
 
+        nickel typecheck ${guardPolicyDir}/profile.ncl
+        nickel export --format json ${guardPolicyDir}/profile.ncl > "$TMPDIR/guard-policy.json"
+        cmp "$TMPDIR/guard-policy.json" ${guardPolicyDir}/generated/profile.json
+        for fixture in ${guardPolicyDir}/fixtures/pass/*.ncl; do
+          nickel export "$fixture" >/dev/null
+        done
+        for fixture in ${guardPolicyDir}/fixtures/fail/*.ncl; do
+          if nickel export "$fixture" >/dev/null 2>"$TMPDIR/guard-policy-error.log"; then
+            echo "expected canonical guard policy fixture to fail: $fixture" >&2
+            exit 1
+          fi
+        done
+
         actual_policy_hash="$(b3sum ${../modules/radicle-ci-runner/ci-policy-v1.json} | cut -d ' ' -f1)"
         test "$actual_policy_hash" = ${lib.escapeShellArg policyBlake3}
         actual_receipt_hash="$(b3sum ${deploymentReceiptJsonPath} | cut -d ' ' -f1)"
@@ -291,6 +316,7 @@ in
         ! grep -Fq ${lib.escapeShellArg artifactAuthRid} ${../modules/radicle-ci-runner/ci-policy-v1.json}
         test "$(jq -r .reviewed_commit ${runnerConfigPath})" = ${lib.escapeShellArg reviewedCommit}
         test "$(jq -r .policy_blake3 ${runnerConfigPath})" = ${lib.escapeShellArg policyBlake3}
+        test "$(jq -r .check_name ${runnerConfigPath})" = ${lib.escapeShellArg checkName}
         test "$(jq -r .bot_node_id ${runnerConfigPath})" = ${lib.escapeShellArg botNodeId}
         test "$(jq -r .production_seed_address ${runnerConfigPath})" = ${lib.escapeShellArg productionSeedAddress}
         test "$(jq -r .production_seed_node_id ${runnerConfigPath})" = ${lib.escapeShellArg productionSeedNodeId}
