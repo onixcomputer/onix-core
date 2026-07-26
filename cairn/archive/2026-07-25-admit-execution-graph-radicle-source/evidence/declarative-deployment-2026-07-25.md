@@ -4,19 +4,19 @@ Observed: 2026-07-25
 
 ## Scope
 
-This record supersedes only the runtime-deployment limits in `staged-deployment-and-probes-2026-07-25.md`.
+This record supersedes the runtime-deployment and producer-governance limits in `staged-deployment-and-probes-2026-07-25.md`.
 
-It does not supersede the governance, catalog, consumer, correctness, or release blockers.
+It does not grant portable catalog, consumer, correctness, or release authority.
 
 ## Current host generations
 
 Aspen current system:
 
-`/nix/store/d4awq19c4wr91la292zpxgligyy40xxn-nixos-system-aspen1-26.11.20260629.7a1a647`
+`/nix/store/kjsrz3h86rk6503wk3xdq1rq3wckh8ly-nixos-system-aspen1-26.11.20260629.7a1a647`
 
 Desktop current system:
 
-`/nix/store/vgz9q9in8wlgxqw74mjh1l73yl32rvr4-nixos-system-britton-desktop-26.11.20260629.7a1a647`
+`/nix/store/ka4bn1i15a5izsjh6jpqzy1mxpqsq54s-nixos-system-britton-desktop-26.11.20260629.7a1a647`
 
 Both hosts have earlier system generations available for rollback.
 
@@ -63,10 +63,12 @@ The endpoint remained available after the system switch:
 - Desktop-only outage acquisition: passed
 - Undeclared RID, receive-pack, wrong-service, root, and missing-object probes: rejected
 
-## Authority blocker
+## Producer governance acceptance
 
-The producer identity still has one delegate and threshold one. The accepted target remains three delegates and threshold two.
+Producer publication revision `fffc6968f6e1` emits receipt BLAKE3 `5573a000f71f1992ed3aa6ddb1197aca29b2b551ef58643b5bd930bef78270cf`.
 
-OnixOS catalog revision `8e0af634998c34e171b2e9771e7a496a9df98186` remains pending.
+Identity revision `d407356b5fd5465c62aca4d7d6c61156947cbac1` names Author, Bonsai, and Pine with threshold two and release-tag threshold two. All three signed `main` at the reviewed commit with feature `parent`. Aspen and desktop contain the exact identity plus delegate namespace and sigrefs objects.
 
-This deployment proves only observed host configuration and source service. It does not grant producer governance, catalog authority, consumer cutover, graph correctness, release readiness, or whole-stack GitHub independence.
+OnixOS catalog promotion remains downstream of this source admission.
+
+This deployment proves only observed host configuration, source service, and linkage to the accepted producer receipt. It does not grant portable catalog authority, consumer cutover, graph correctness, release readiness, or whole-stack GitHub independence.

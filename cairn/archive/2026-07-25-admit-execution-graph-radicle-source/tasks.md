@@ -11,4 +11,4 @@
 
 ## Phase 3: Acceptance
 
-- [ ] [serial] Bind producer governance evidence, emit typed BLAKE3 admission evidence, sync the accepted specification, and archive. r[onix.radicle_source_admission.evidence]
+- [x] [serial] Bind producer governance evidence, emit typed BLAKE3 admission evidence, sync the accepted specification, and archive. r[onix.radicle_source_admission.evidence]
