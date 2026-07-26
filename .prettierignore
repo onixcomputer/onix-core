@@ -1,4 +1,5 @@
-# Immutable external hardware evidence must remain byte-identical.
+# Immutable external hardware and generated upstream evidence must remain byte-identical.
+modules/grafana/email-templates/*.html
 pkgs/rwkv-layer-harness/fixtures/ttwkv7-device-2/*
 pkgs/rwkv-ttwkv7-persistent-evidence/fixtures/ttwkv7-persistent-device-3/**
 pkgs/rwkv-ttwkv7-persistent-passed-evidence/fixtures/ttwkv7-persistent-device-4/**

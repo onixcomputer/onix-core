@@ -5,6 +5,7 @@
 ## References
 - [BlinkDL/RWKV-LM](https://github.com/BlinkDL/RWKV-LM) — pinned official RWKV-7 model, byte-tokenizer, and PyTorch recurrence equations used by the real-weight, stateful-decode, bounded-prompt, and CPU equation-reference harnesses.
 - [fla-org/flash-linear-attention](https://github.com/fla-org/flash-linear-attention) — pinned v0.3.0 checkpoint naming, cross-layer value mixing, recurrent cache, model normalization, and untied language-model head wiring used to decode and independently compare the Hugging Face model format.
+- [Grafana](https://github.com/grafana/grafana) — upstream Grafana 13.0.3 generated email assets retained to repair the package's missing runtime templates.
 - [ki-editor/ki-editor](https://github.com/ki-editor/ki-editor) — upstream flake used for the Ki editor package.
 - [kunobi-ninja/kache](https://github.com/kunobi-ninja/kache) — upstream Rust/C/C++ build cache used for the desktop kache pilot.
 - [kyuz0/amd-strix-halo-vllm-toolboxes](https://github.com/kyuz0/amd-strix-halo-vllm-toolboxes) — upstream Strix Halo RDMA/vLLM toolbox guide used for the `rdma-cluster` tag.

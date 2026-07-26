@@ -31,6 +31,7 @@ let
   moduleChecks = (import ./_module-checks.nix) innerArgs;
   builderChecks = (import ./_builder-checks.nix) innerArgs;
   colorChecks = (import ./_color-checks.nix) { inherit self pkgs; };
+  grafanaChecks = (import ./_grafana-checks.nix) innerArgs;
   helixChecks = (import ./_helix-checks.nix) innerArgs;
   homeManagerChecks = (import ./_home-manager-checks.nix) innerArgs;
   kacheNixRustChecks = (import ./_kache-nix-rust-checks.nix) innerArgs;
@@ -54,6 +55,7 @@ in
     // (moduleChecks.checks or { })
     // builderChecks
     // colorChecks.checks
+    // (grafanaChecks.checks or { })
     // (helixChecks.checks or { })
     // (homeManagerChecks.checks or { })
     // (kacheNixRustChecks.checks or { })

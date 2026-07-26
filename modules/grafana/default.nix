@@ -143,9 +143,14 @@ in
   perMachine = _: {
     nixosModule =
       { pkgs, ... }:
+      let
+        grafanaPackage = import ./package.nix { inherit lib pkgs; };
+      in
       {
-        # Ensure grafana package is available
-        environment.systemPackages = [ pkgs.grafana ];
+        services.grafana.package = grafanaPackage;
+
+        # Ensure the repaired Grafana package is available.
+        environment.systemPackages = [ grafanaPackage ];
 
         # Create vars generator for Grafana secrets
         clan.core.vars.generators.grafana = {

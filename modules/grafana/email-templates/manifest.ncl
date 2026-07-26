@@ -1,0 +1,48 @@
+let EmailTemplate = {
+  name | String,
+  blake3 | String,
+}
+in
+let Manifest = {
+  schema_version | Number,
+  upstream
+    | {
+      project | String,
+      version | String,
+      license | String,
+      source | String,
+    },
+  files | Array EmailTemplate,
+}
+in
+let manifest | Manifest = {
+  schema_version = 1,
+  upstream = {
+    project = "Grafana",
+    version = "13.0.3",
+    license = "AGPL-3.0-or-later",
+    source = "generated public/emails assets from the reviewed Grafana 13.0.3 package output",
+  },
+  files = [
+    { name = "alert_notification_example.html", blake3 = "10d4de12bb8036f4849fe1b26df863f599531c25c9f9cd8989b1ed4546714925" },
+    { name = "alert_notification.html", blake3 = "9cd02142c3e75fde7ec7fa71f24ca0f0b2a77511e08d6968ff06a68e769e9314" },
+    { name = "alert_notification.txt", blake3 = "034f7bb6b8102516102c16582e31d65c546ec1a75c94274979d8ffe37ebaeb1b" },
+    { name = "invited_to_org.html", blake3 = "5b966df7fab9a2a184c0af3937c9947ce0e45749950b7ba075a8f84d1a6dd22d" },
+    { name = "invited_to_org.txt", blake3 = "6e41dcf19cb3e0c4aac2b03099441745d46ae654af7b0001a409fb4d89d4c2d8" },
+    { name = "new_user_invite.html", blake3 = "ee810048011a537ad35a4f95511e2bd44f27d0b20d9a8a2e83fccbf8bc4bf2ab" },
+    { name = "new_user_invite.txt", blake3 = "a00b6318325520491150a92c974a67be8f20578f4d04f592baec7c86fd5ad91c" },
+    { name = "ng_alert_notification.html", blake3 = "33b3260443e1527682c2e680fbf01dba5177b48d1a7e2ff82d7e63364eb97426" },
+    { name = "ng_alert_notification.txt", blake3 = "43b6b3a9d52dceadca6c059152999bf1d58f43b44baa2418d9ce68f1cb6e26a9" },
+    { name = "README.md", blake3 = "58653b51b09d29dd30341d3920e825372d782a9c81ae915c6886e77707578e55" },
+    { name = "reset_password.html", blake3 = "72a97b22f4cd9392f1cd3e5de61ce704f3cdccba89e5187e0f8e1e452816b578" },
+    { name = "reset_password.txt", blake3 = "d97b64164f13139d45a9ba2c990a294654afd0fd3bbfd6b328117f36605ac59e" },
+    { name = "signup_started.html", blake3 = "45b880b2c95549b26da6b97fd681f70d0cb7d82408b2b8f1c13253a115be8f64" },
+    { name = "signup_started.txt", blake3 = "bb117959aaa34ee11c7569002c5aa51d148a22f33908067de1ad4c4272acab5b" },
+    { name = "verify_email.html", blake3 = "57e8f557116a064e6f894f033f3bc64f5c2b55910ab9af1d07f2f8dbbe89cefc" },
+    { name = "verify_email.txt", blake3 = "457b954f769d19275cc58504cc11553181fb2995bbfda9cd05311f0dca5e4375" },
+    { name = "welcome_on_signup.html", blake3 = "7cbc2b42308f9a7c2e7fa838c8668b8ef84e0ba2cb96b4f897c9caf18dd25ba5" },
+    { name = "welcome_on_signup.txt", blake3 = "682cddc7f6245229690c2d8f9a3238007be1499da3b6210a68abf097d71dcd75" },
+  ],
+}
+in
+manifest
