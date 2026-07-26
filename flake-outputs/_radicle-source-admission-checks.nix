@@ -15,7 +15,7 @@ let
   artifactAuthCommit = "799459346d5416fbd7b9f55840a7371441b55afa";
   artifactAuthBlake3 = "246a7cad91e7e8a158e22da21f3bff3e61aa0431a58936b5a739178bc62064c7";
   policyRevision = "a3f5a18b36a0c874c1fce0d47acee19932f4d931";
-  artifactAuthPublicationRevision = "b5d26329d2f568e9602f53acc2b6c167e30c1cb5";
+  artifactAuthPublicationRevision = "e41340bec587b6d049b5cc518ec7db925dde84be";
   artifactAuthPublicationBlake3 = "e58a3de4d6b3b32a547c3cfe5c3e829292cda73891c7776f214f5d4edce10b1c";
   receiptSchemaVersion = 1;
   repositoryCount = 2;

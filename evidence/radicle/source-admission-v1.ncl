@@ -118,7 +118,7 @@ let receipt | SourceAdmissionReceipt = {
   },
   publication = {
     repository = "artifact-auth",
-    revision = "b5d26329d2f568e9602f53acc2b6c167e30c1cb5",
+    revision = "e41340bec587b6d049b5cc518ec7db925dde84be",
     receipt_type = "artifact-auth.radicle-publication.v1",
     receipt_blake3 = "e58a3de4d6b3b32a547c3cfe5c3e829292cda73891c7776f214f5d4edce10b1c",
     status = "accepted",
