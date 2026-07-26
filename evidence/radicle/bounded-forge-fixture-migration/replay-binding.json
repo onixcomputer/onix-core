@@ -1,0 +1,32 @@
+{
+  "schema": "valence.radicle-forge-operations.binding.v1",
+  "receipt_blake3": "536c2f4af3f671669f3614e9481ba72a04339ab96ac0b3e9fec1a7038f5a24bf",
+  "profile_blake3": "1ca1407a5aa4e3fa0d503bcbb02cb8e45363cabddabee6e6cbeb1a3bdbe1d19d",
+  "source_batch_blake3": "586b0fecb003d2ee35e21b7af61658d1b1bb34f60e0da5f7a33cf74293fefb60",
+  "plan_blake3": "9d2e52a2f69f9df32610450e9689d19bd239e2643b3b34e631845332c970ff74",
+  "repository_rid": "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+  "importer_did": "did:key:z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx",
+  "records": [
+    {
+      "source_key": "github:OnixResearch/bounded-exec:issue:1",
+      "source_record_blake3": "3588369eaeda47ee3fdfcb81178407047011f48b7c482aba735541ad613268cc",
+      "target_type": "xyz.radicle.issue",
+      "target_object_id": "d9f9c0ad2da34c8cdd95ec0ad2f741de7361c76d",
+      "entry_oids": ["d9f9c0ad2da34c8cdd95ec0ad2f741de7361c76d"],
+      "observed_state_blake3": "d4276833c225d3dd50debd3e034dc89b638287505da6ac9e33811c16e552c2f7"
+    },
+    {
+      "source_key": "github:OnixResearch/bounded-exec:pull_request:2",
+      "source_record_blake3": "930e2c5ad012946249f97811ed7a72d2bc4ab34b74cef015516ca1341d91ad7e",
+      "target_type": "xyz.radicle.patch",
+      "target_object_id": "86c2607da3e4960e173f4de56f776a291574c5e1",
+      "entry_oids": ["86c2607da3e4960e173f4de56f776a291574c5e1"],
+      "observed_state_blake3": "71d1ddfc4bdbc7c34b2938af170919467abb6509ea30f79ccc6a25799e43f882"
+    }
+  ],
+  "required_non_claims": [
+    "migration records normalized source metadata and observed native COB state; it does not prove source export completeness, source actor authenticity, original signature or timestamp preservation, or semantic equivalence",
+    "imported review metadata is recorded attribution only and does not create Radicle approval, merge eligibility, delegate authority, or canonical-ref authority",
+    "CI admission is bounded input for an external guarded compare-and-swap; it is not protocol-enforced mandatory CI, bypass-proof delegate behavior, canonical mutation, CI correctness, or release readiness"
+  ]
+}
