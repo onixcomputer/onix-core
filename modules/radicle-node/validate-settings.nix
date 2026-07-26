@@ -27,9 +27,11 @@ let
   httpsPort = 443;
   boundedExecRepository = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo";
   artifactAuthRepository = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
+  executionGraphRepository = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a";
   governedRepositories = [
     boundedExecRepository
     artifactAuthRepository
+    executionGraphRepository
   ];
   canonicalRepositoryIdPattern = "rad:z[1-9A-HJ-NP-Za-km-z]+";
 
@@ -169,7 +171,7 @@ lib.concatLists [
   ) "httpsEnabled requires the read-only HTTP gateway")
   (rejectUnless validSeedRepositoryIds "seedRepositories must contain only canonical public rad:z repository IDs")
   (rejectUnless uniqueSeedRepositoryIds "seedRepositories must not contain duplicate repository IDs")
-  (rejectUnless seedRepositoriesAreGoverned "seedRepositories must contain exactly the governed Bounded Exec and artifact-auth RIDs")
+  (rejectUnless seedRepositoriesAreGoverned "seedRepositories must contain exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs")
   (rejectUnless validHttpsName "httpsServerName must be a public DNS name without scheme or .local suffix")
   (rejectUnless validHttpsTransport "httpsTransport must be direct-acme or cloudflare-tunnel")
   (rejectUnless validHttpsOriginAddress "httpsOriginListenAddress must remain loopback-only")
@@ -177,7 +179,7 @@ lib.concatLists [
   (rejectUnless validHttpsGitRepositoryIds "httpsGitRepositories must contain only canonical public rad:z repository IDs")
   (rejectUnless uniqueHttpsGitRepositoryIds "httpsGitRepositories must not contain duplicate repository IDs")
   (rejectUnless httpsGitRepositoriesAreSeeded "httpsGitRepositories must be a subset of seedRepositories")
-  (rejectUnless httpsGitRepositoriesAreGoverned "enabled HTTPS Git must expose exactly the governed Bounded Exec and artifact-auth RIDs")
+  (rejectUnless httpsGitRepositoriesAreGoverned "enabled HTTPS Git must expose exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs")
   (rejectUnless (!settings.backupEnabled || backupFactsPresent)
     "enabled backup requires complete target host, address, failure-domain, repository, and dataset facts"
   )

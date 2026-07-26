@@ -22,9 +22,11 @@ let
   bootstrapNodeFingerprint = "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE";
   boundedExecRepository = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo";
   artifactAuthRepository = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
+  executionGraphRepository = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a";
   governedRepositories = [
     boundedExecRepository
     artifactAuthRepository
+    executionGraphRepository
   ];
   canonicalRepositoryIdPattern = "rad:z[1-9A-HJ-NP-Za-km-z]+";
   fingerprintPattern = "SHA256:[A-Za-z0-9+/]+={0,${toString maximumFingerprintPadding}}";
@@ -65,7 +67,7 @@ lib.concatLists [
   (rejectUnless uniqueRepositoryIds "secondary Radicle seed repositories must not contain duplicates")
   (rejectUnless (
     settings.seedRepositories == governedRepositories
-  ) "secondary Radicle seed must admit exactly the governed Bounded Exec and artifact-auth RIDs")
+  ) "secondary Radicle seed must admit exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs")
   (rejectUnless (
     settings.stateDirectory == expectedStateDirectory
   ) "secondary Radicle seed stateDirectory must remain ${expectedStateDirectory}")

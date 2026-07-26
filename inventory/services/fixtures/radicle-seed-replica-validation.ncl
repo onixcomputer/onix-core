@@ -22,6 +22,7 @@ let default_storage_quota_gib = 64 in
         seedRepositories = [
           "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
           "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
+          "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a",
         ],
         stateDirectory = "/var/lib/radicle",
         stateDataset = "datapool/radicle-seed",

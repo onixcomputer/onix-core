@@ -27,9 +27,11 @@ let
   bootstrapNodeFingerprint = "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE";
   pilotRepository = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo";
   artifactAuthRepository = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
+  executionGraphRepository = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a";
   governedRepositories = [
     pilotRepository
     artifactAuthRepository
+    executionGraphRepository
   ];
   expectedCommit = "29dac88ecded94457572db3fdfaaaab95fa91525";
   absentObject = "1111111111111111111111111111111111111111";
@@ -186,29 +188,47 @@ let
     {
       name = "missing-bounded-exec-rid";
       settings = positiveSettings // {
-        seedRepositories = [ artifactAuthRepository ];
+        seedRepositories = [
+          artifactAuthRepository
+          executionGraphRepository
+        ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec and artifact-auth RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
     }
     {
       name = "missing-artifact-auth-rid";
       settings = positiveSettings // {
-        seedRepositories = [ pilotRepository ];
+        seedRepositories = [
+          pilotRepository
+          executionGraphRepository
+        ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec and artifact-auth RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
     }
     {
-      name = "undeclared-third-rid";
+      name = "missing-execution-graph-rid";
+      settings = positiveSettings // {
+        seedRepositories = [
+          pilotRepository
+          artifactAuthRepository
+        ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
+    }
+    {
+      name = "undeclared-fourth-rid";
       settings = positiveSettings // {
         seedRepositories = governedRepositories ++ [ inheritedRepository ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec and artifact-auth RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
     }
     {
       name = "wrong-state-directory";

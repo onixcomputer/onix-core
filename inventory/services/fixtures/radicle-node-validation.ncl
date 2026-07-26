@@ -25,6 +25,7 @@ let default_backup_retention_weekly = 4 in
         seedRepositories = [
           "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
           "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
+          "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a",
         ],
         httpdEnabled = true,
         httpListenAddress = "127.0.0.1",

@@ -61,9 +61,11 @@ let
   unmanagedRepository = "rad:z3gqcJUoA1n9HaHKufZs5FCSGazv5";
   productionPilotRepository = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo";
   artifactAuthRepository = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
+  executionGraphRepository = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a";
   productionRepositories = [
     productionPilotRepository
     artifactAuthRepository
+    executionGraphRepository
   ];
   pinnedRepository = productionPilotRepository;
   productionHttpsServerName = "git.onix.computer";
@@ -427,29 +429,47 @@ let
     {
       name = "missing-bounded-exec-seed-rid";
       settings = positiveSettings // {
-        seedRepositories = [ artifactAuthRepository ];
+        seedRepositories = [
+          artifactAuthRepository
+          executionGraphRepository
+        ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec and artifact-auth RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
     }
     {
       name = "missing-artifact-auth-seed-rid";
       settings = positiveSettings // {
-        seedRepositories = [ productionPilotRepository ];
+        seedRepositories = [
+          productionPilotRepository
+          executionGraphRepository
+        ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec and artifact-auth RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
     }
     {
-      name = "unknown-third-seed-rid";
+      name = "missing-execution-graph-seed-rid";
+      settings = positiveSettings // {
+        seedRepositories = [
+          productionPilotRepository
+          artifactAuthRepository
+        ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
+    }
+    {
+      name = "unknown-fourth-seed-rid";
       settings = positiveSettings // {
         seedRepositories = productionRepositories ++ [ unmanagedRepository ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec and artifact-auth RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
     }
     {
       name = "duplicate-seed-rid";
@@ -458,6 +478,7 @@ let
           productionPilotRepository
           productionPilotRepository
           artifactAuthRepository
+          executionGraphRepository
         ];
       };
       packageVersion = nodePackage.version;
@@ -511,30 +532,48 @@ let
     {
       name = "https-missing-bounded-exec-rid";
       settings = httpsSettings // {
-        httpsGitRepositories = [ artifactAuthRepository ];
+        httpsGitRepositories = [
+          artifactAuthRepository
+          executionGraphRepository
+        ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec and artifact-auth RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
     }
     {
       name = "https-missing-artifact-auth-rid";
       settings = httpsSettings // {
-        httpsGitRepositories = [ productionPilotRepository ];
+        httpsGitRepositories = [
+          productionPilotRepository
+          executionGraphRepository
+        ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec and artifact-auth RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
     }
     {
-      name = "https-unknown-third-rid";
+      name = "https-missing-execution-graph-rid";
+      settings = httpsSettings // {
+        httpsGitRepositories = [
+          productionPilotRepository
+          artifactAuthRepository
+        ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
+    }
+    {
+      name = "https-unknown-fourth-rid";
       settings = httpsSettings // {
         seedRepositories = productionRepositories ++ [ unmanagedRepository ];
         httpsGitRepositories = productionRepositories ++ [ unmanagedRepository ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec and artifact-auth RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
     }
     {
       name = "https-repository-not-seeded";
