@@ -113,7 +113,7 @@ fn run() -> Result<(), ShellError> {
     }
     if arguments.len() != EXPECTED_ARGUMENT_COUNT {
         return Err(shell_error(
-            "usage: radicle-ci-runner <scan|run-next|publish-next|probe-isolation|probe-bounds|validate-config> CONFIG.json",
+            "usage: radicle-ci-runner <scan|run-next|publish-next|probe-isolation|probe-bounds|validate-config> CONFIG.json | radicle-ci-runner guard --repository REPO --policy POLICY --event EVENT --result RESULT --receipt RECEIPT --output-root ROOT --output FILE [--execute]",
         ));
     }
     let config: RunnerConfigV1 = read_json(Path::new(&arguments[CONFIG_PATH_INDEX]))?;

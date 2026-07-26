@@ -52,7 +52,7 @@ The command does not write delegate namespace refs or `refs/rad/sigrefs`, publis
 The publisher writes the status to the exact patch revision:
 
 ```text
-<!-- onix-radicle-ci-status:v1 -->
+onix-radicle-ci-status:v1
 {"schema":"onix.radicle-ci-status.v1",...}
 ```
 

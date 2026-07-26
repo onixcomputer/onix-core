@@ -604,6 +604,7 @@ mod tests {
     const BOT: &str = "did:key:z6Mbotbotbotbotbotbotbotbotbotbotbotbotbotbotbotbot";
     const DELEGATE_A: &str = "did:key:z6MdelegateAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
     const DELEGATE_B: &str = "did:key:z6MdelegateBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
+    const STRIPPED_HTML_MARKER: &str = "<!-- onix-radicle-ci-status:v1 -->";
 
     fn locks() -> LockIdentityV1 {
         LockIdentityV1 {
@@ -723,6 +724,30 @@ mod tests {
         }
     }
 
+    fn radicle_cli_strip_editor_comments(input: &str) -> String {
+        let ends_with_newline = input.ends_with('\n');
+        let mut is_comment = false;
+        let mut output = String::new();
+        for line in input.lines() {
+            if is_comment {
+                if line.ends_with("-->") {
+                    is_comment = false;
+                }
+                continue;
+            }
+            if line.starts_with("<!--") {
+                is_comment = true;
+                continue;
+            }
+            output.push_str(line);
+            output.push('\n');
+        }
+        if !ends_with_newline {
+            output.pop();
+        }
+        output
+    }
+
     fn facts() -> (
         AdmittedEventV1,
         JobResultV1,
@@ -815,6 +840,22 @@ mod tests {
         let failed_status =
             build_signed_status(&runner_config(), &event, &failed).expect("bounded failed status");
         assert_eq!(failed_status.disposition, RunnerDisposition::TimedOut);
+    }
+
+    #[test]
+    fn visible_status_marker_survives_radicle_comment_sanitization() {
+        let (_, _, status, _, _) = facts();
+        let rendered = render_signed_status(&status).expect("rendered status");
+        assert!(!STATUS_MARKER.starts_with("<!--"));
+        assert_eq!(radicle_cli_strip_editor_comments(&rendered), rendered);
+        assert_eq!(parse_signed_status(&rendered), Ok(status));
+
+        let stripped = rendered.replacen(STATUS_MARKER, STRIPPED_HTML_MARKER, 1);
+        assert!(radicle_cli_strip_editor_comments(&stripped).is_empty());
+        assert_eq!(
+            parse_signed_status(&stripped).unwrap_err().code,
+            "ci-status-marker"
+        );
     }
 
     #[test]
