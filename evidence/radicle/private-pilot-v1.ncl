@@ -186,7 +186,7 @@ let receipt | PrivatePilotReceipt = {
     host = "britton-desktop",
     node_id = desktop_node_id,
     node_fingerprint = "SHA256:JHQTPqoMr4kLqBsrAPSRNXUuzETiHAoiKBM/VWftmEg",
-    system_closure = "/nix/store/lvsf8gfpcbg4h6psk283n41x1vc0r4iq-nixos-system-britton-desktop-26.11.20260629.7a1a647",
+    system_closure = "/nix/store/ka4bn1i15a5izsjh6jpqzy1mxpqsq54s-nixos-system-britton-desktop-26.11.20260629.7a1a647",
     reconciled_repository_count = native_repository_count,
     identity_revision = private_identity_revision_value,
     delegate_sigrefs = private_sigrefs_value,
@@ -280,7 +280,7 @@ let receipt | PrivatePilotReceipt = {
     "whole-fleet-migration-readiness",
   ],
   evidence = [
-    "cairn/changes/pilot-private-radicle-source/evidence/private-publication-and-recovery-2026-07-25.md",
+    "cairn/archive/2026-07-25-pilot-private-radicle-source/evidence/private-publication-and-recovery-2026-07-25.md",
     "docs/radicle-private-pilot.md",
     "evidence/radicle/private-pilot-v1.json",
   ],

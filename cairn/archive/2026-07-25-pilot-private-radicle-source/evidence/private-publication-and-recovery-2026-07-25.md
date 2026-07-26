@@ -17,7 +17,7 @@ The repository is a non-secret fixture. The explicit privacy set contains Aspen 
 The checked implementation revision is `956cc432ad990c346326718d3a94c512e9020427`, rebased over the separately reviewed execution-graph public-source admission.
 
 - final Aspen closure: `/nix/store/kjsrz3h86rk6503wk3xdq1rq3wckh8ly-nixos-system-aspen1-26.11.20260629.7a1a647`;
-- final desktop closure: `/nix/store/lvsf8gfpcbg4h6psk283n41x1vc0r4iq-nixos-system-britton-desktop-26.11.20260629.7a1a647`;
+- final desktop closure: `/nix/store/ka4bn1i15a5izsjh6jpqzy1mxpqsq54s-nixos-system-britton-desktop-26.11.20260629.7a1a647`;
 - both base units lower exactly three public RIDs plus the private fixture;
 - HTTPS remains exactly the three public RIDs and CI remains Bounded Exec only;
 - the final base policy replaces temporary execution-graph runtime overrides with one declarative four-RID native set.
@@ -66,12 +66,12 @@ Clean-root restore verified repository count `6763`, Aspen node ID and fingerpri
 
 ## Validation and claim boundary
 
-Focused primary and replica checks passed with positive and negative fixtures for missing, malformed, duplicated, overlapping, unknown, and HTTPS-widened private sets. Both reviewed host closures built. The enhanced restore verifier is statically bound to the private identity/source and passed live semantic recovery. Typed receipt BLAKE3 is `f831c1c24e507455b2b5a585da3b5ac3682f7ac2322ed63127ec40eae8c8ea57`.
+Focused primary and replica checks passed with positive and negative fixtures for missing, malformed, duplicated, overlapping, unknown, and HTTPS-widened private sets. Both reviewed host closures built. The enhanced restore verifier is statically bound to the private identity/source and passed live semantic recovery. Typed receipt BLAKE3 is `966a76b31d40bf4eaa6d530b7e2b2f18ba457341ff126d799e7316213979e8a0`.
 
 ## Integration gate
 
-The private mechanism and live evidence are complete, but repository integration remains deliberately open. The branch is layered over staged execution-graph public admission whose producer change still records an incomplete delegate quorum. Merging or archiving this private change first would publish that unaccepted public source transitively. Task V5 therefore remains open and no private-pilot push is permitted until execution graph is either accepted with its producer governance or removed from the branch.
+The transitive execution-graph blocker is resolved. Producer receipt BLAKE3 `5573a000f71f1992ed3aa6ddb1197aca29b2b551ef58643b5bd930bef78270cf` records three delegates, threshold two, and converged `parent` sigrefs. Onix Core admission receipt BLAKE3 `f69725f837567bcb2a86fa4b0b6f9a5bfa413b34c78cb3b8bd35f07707e9ed61` archives the exact public-source policy before this private change.
 
-A broad `nix flake check -L` reached the existing aarch64-under-QEMU `nix-wasm-plugins` build and was stopped after more than 30 minutes in an active `nickel-lang-parser` build script; no deterministic failure was observed. Focused positive/negative policy checks, the private receipt check, and both x86_64 host closure builds passed.
+The broad `nix flake check -L` rail is intentionally skipped for this closeout at operator direction. Its earlier attempt reached the existing aarch64-under-QEMU `nix-wasm-plugins` build and was stopped after more than 30 minutes in an active `nickel-lang-parser` build script; no deterministic failure was observed. Focused positive/negative policy checks, the private receipt check, both x86_64 host closure builds, live reconciliation, private HTTPS exclusion, recovery, and Cairn gates are the acceptance evidence used here.
 
 This evidence does not prove production-secret confidentiality, global metadata secrecy, anonymity, traffic-analysis resistance, multi-delegate private governance, secure deletion, automatic failover, geographic independence, source correctness, protocol-enforced CI, release readiness, or whole-fleet migration readiness.

@@ -56,7 +56,7 @@
     }
   ],
   "evidence": [
-    "cairn/changes/pilot-private-radicle-source/evidence/private-publication-and-recovery-2026-07-25.md",
+    "cairn/archive/2026-07-25-pilot-private-radicle-source/evidence/private-publication-and-recovery-2026-07-25.md",
     "docs/radicle-private-pilot.md",
     "evidence/radicle/private-pilot-v1.json"
   ],
@@ -147,7 +147,7 @@
     "node_id": "z6MkkQCj5EczNiVzDzCkX9ewHNJ7NDEXSKbuRiS1x7o72yeG",
     "reconciled_repository_count": 4,
     "source_archive_blake3": "514904bdcf5f23b0813c567efbc8b6732248de94482037a58011bfff3fc26853",
-    "system_closure": "/nix/store/lvsf8gfpcbg4h6psk283n41x1vc0r4iq-nixos-system-britton-desktop-26.11.20260629.7a1a647"
+    "system_closure": "/nix/store/ka4bn1i15a5izsjh6jpqzy1mxpqsq54s-nixos-system-britton-desktop-26.11.20260629.7a1a647"
   },
   "schema_version": 1,
   "status": "accepted"

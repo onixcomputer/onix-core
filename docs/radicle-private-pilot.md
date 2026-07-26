@@ -16,7 +16,7 @@ The pilot repository is a non-secret fixture. It proves the selected Radicle 1.9
 | Authorized client | `did:key:z6MkwGV7ypRii8RjoSotmUbuKU4MwGQf3iw8AdhuJkkyD4wd` |
 | Denied client | `did:key:z6MksVCc4QAvmZrZXX2MWoGwo9XqDUbiFjsjDZuRZrbgEu6h` |
 | Evidence receipt | `evidence/radicle/private-pilot-v1.json` |
-| Receipt BLAKE3 | `f831c1c24e507455b2b5a585da3b5ac3682f7ac2322ed63127ec40eae8c8ea57` |
+| Receipt BLAKE3 | `966a76b31d40bf4eaa6d530b7e2b2f18ba457341ff126d799e7316213979e8a0` |
 
 The private identity privacy set contains only the Aspen node, the desktop replica, and the isolated authorized client. Delegate access is inherent to repository governance. The denied client is absent.
 
