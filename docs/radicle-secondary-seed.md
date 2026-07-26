@@ -1,6 +1,6 @@
 # Radicle secondary seed operations
 
-`britton-desktop` runs the native-only secondary seed for the governed Bounded Exec pilot. Aspen1 remains the primary native seed and the only public read-only HTTPS Git origin.
+`britton-desktop` runs the native-only secondary seed for the exact governed public set and one private pilot fixture. Aspen1 remains the primary native seed and the only public read-only HTTPS Git origin; the private RID has no HTTPS route.
 
 ## Accepted identity and policy
 
@@ -121,4 +121,4 @@ The desktop also hosts Aspen1's encrypted Borg target, but that backup authority
 
 ## Non-claims
 
-Two native seeds do not establish a second public HTTPS origin, automatic HTTPS failover, geographic/building-power independence, host-root isolation, private confidentiality, source correctness, CI correctness, canonical-ref enforcement by seeds, or release readiness.
+Two native seeds do not establish a second public HTTPS origin, automatic HTTPS failover, geographic/building-power independence, host-root isolation, confidentiality for production secrets, global metadata secrecy, source correctness, CI correctness, canonical-ref enforcement by seeds, or release readiness. Private-pilot observations are bounded to the non-secret fixture, tested identities, direct acquisition path, and Radicle 1.9.1.

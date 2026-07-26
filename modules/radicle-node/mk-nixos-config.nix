@@ -34,6 +34,7 @@ let
       "${nodePackage}/bin/rad"
     ]
     ++ settings.seedRepositories
+    ++ settings.privateSeedRepositories
   );
   nodeSettings = {
     inherit (settings) alias;

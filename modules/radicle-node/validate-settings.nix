@@ -33,6 +33,8 @@ let
     artifactAuthRepository
     executionGraphRepository
   ];
+  privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
+  governedPrivateRepositories = [ privatePilotRepository ];
   canonicalRepositoryIdPattern = "rad:z[1-9A-HJ-NP-Za-km-z]+";
 
   rejectUnless = condition: message: lib.optional (!condition) message;
@@ -72,17 +74,25 @@ let
     && settings.httpsOriginListenPort != settings.httpListenPort
     && settings.httpsOriginListenPort != httpsPort;
   isCanonicalRepositoryId = rid: builtins.match canonicalRepositoryIdPattern rid != null;
-  isSeeded = rid: builtins.elem rid settings.seedRepositories;
+  isPubliclySeeded = rid: builtins.elem rid settings.seedRepositories;
   validSeedRepositoryIds = builtins.all isCanonicalRepositoryId settings.seedRepositories;
   uniqueSeedRepositoryIds = lib.unique settings.seedRepositories == settings.seedRepositories;
   seedRepositoriesAreGoverned = settings.seedRepositories == governedRepositories;
+  validPrivateSeedRepositoryIds = builtins.all isCanonicalRepositoryId settings.privateSeedRepositories;
+  uniquePrivateSeedRepositoryIds =
+    lib.unique settings.privateSeedRepositories == settings.privateSeedRepositories;
+  privateSeedRepositoriesAreGoverned =
+    settings.privateSeedRepositories == governedPrivateRepositories;
+  seedRepositoryClassesAreDisjoint = builtins.all (
+    rid: !(builtins.elem rid settings.seedRepositories)
+  ) settings.privateSeedRepositories;
   validRepositoryIds = builtins.all isCanonicalRepositoryId settings.pinnedRepositories;
   uniqueRepositoryIds = lib.unique settings.pinnedRepositories == settings.pinnedRepositories;
-  pinnedRepositoriesAreSeeded = builtins.all isSeeded settings.pinnedRepositories;
+  pinnedRepositoriesAreSeeded = builtins.all isPubliclySeeded settings.pinnedRepositories;
   validHttpsGitRepositoryIds = builtins.all isCanonicalRepositoryId settings.httpsGitRepositories;
   uniqueHttpsGitRepositoryIds =
     lib.unique settings.httpsGitRepositories == settings.httpsGitRepositories;
-  httpsGitRepositoriesAreSeeded = builtins.all isSeeded settings.httpsGitRepositories;
+  httpsGitRepositoriesAreSeeded = builtins.all isPubliclySeeded settings.httpsGitRepositories;
   httpsGitRepositoriesAreGoverned =
     !settings.httpsEnabled || settings.httpsGitRepositories == governedRepositories;
   validHttpsAdmission =
@@ -171,7 +181,11 @@ lib.concatLists [
   ) "httpsEnabled requires the read-only HTTP gateway")
   (rejectUnless validSeedRepositoryIds "seedRepositories must contain only canonical public rad:z repository IDs")
   (rejectUnless uniqueSeedRepositoryIds "seedRepositories must not contain duplicate repository IDs")
-  (rejectUnless seedRepositoriesAreGoverned "seedRepositories must contain exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs")
+  (rejectUnless seedRepositoriesAreGoverned "seedRepositories must contain exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs in the public set")
+  (rejectUnless validPrivateSeedRepositoryIds "privateSeedRepositories must contain only canonical rad:z repository IDs")
+  (rejectUnless uniquePrivateSeedRepositoryIds "privateSeedRepositories must not contain duplicate repository IDs")
+  (rejectUnless privateSeedRepositoriesAreGoverned "privateSeedRepositories must contain exactly the reviewed private pilot RID")
+  (rejectUnless seedRepositoryClassesAreDisjoint "public and private seed repository sets must be disjoint")
   (rejectUnless validHttpsName "httpsServerName must be a public DNS name without scheme or .local suffix")
   (rejectUnless validHttpsTransport "httpsTransport must be direct-acme or cloudflare-tunnel")
   (rejectUnless validHttpsOriginAddress "httpsOriginListenAddress must remain loopback-only")

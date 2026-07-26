@@ -62,11 +62,13 @@ let
   productionPilotRepository = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo";
   artifactAuthRepository = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
   executionGraphRepository = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a";
+  privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   productionRepositories = [
     productionPilotRepository
     artifactAuthRepository
     executionGraphRepository
   ];
+  privateRepositories = [ privatePilotRepository ];
   pinnedRepository = productionPilotRepository;
   productionHttpsServerName = "git.onix.computer";
   productionCloudflareTunnelName = "aspen1-services";
@@ -91,6 +93,7 @@ let
     nodeFirewallInterface = nodeInterface;
     externalAddress = "${nodeAddress}:${toString nodePort}";
     seedRepositories = productionRepositories;
+    privateSeedRepositories = privateRepositories;
     httpdEnabled = true;
     httpListenAddress = httpAddress;
     httpListenPort = httpPort;
@@ -486,6 +489,45 @@ let
       expected = "seedRepositories must not contain duplicate repository IDs";
     }
     {
+      name = "missing-private-pilot-rid";
+      settings = positiveSettings // {
+        privateSeedRepositories = [ ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "privateSeedRepositories must contain exactly the reviewed private pilot RID";
+    }
+    {
+      name = "malformed-private-pilot-rid";
+      settings = positiveSettings // {
+        privateSeedRepositories = [ "rad:../private" ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "privateSeedRepositories must contain only canonical rad:z repository IDs";
+    }
+    {
+      name = "duplicate-private-pilot-rid";
+      settings = positiveSettings // {
+        privateSeedRepositories = [
+          privatePilotRepository
+          privatePilotRepository
+        ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "privateSeedRepositories must not contain duplicate repository IDs";
+    }
+    {
+      name = "private-pilot-rid-in-public-set";
+      settings = positiveSettings // {
+        seedRepositories = productionRepositories ++ [ privatePilotRepository ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "public and private seed repository sets must be disjoint";
+    }
+    {
       name = "https-without-allowlist";
       settings = positiveSettings // {
         httpsEnabled = true;
@@ -574,6 +616,15 @@ let
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
       expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
+    }
+    {
+      name = "private-pilot-rid-exposed-over-https";
+      settings = httpsSettings // {
+        httpsGitRepositories = productionRepositories ++ privateRepositories;
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "httpsGitRepositories must be a subset of seedRepositories";
     }
     {
       name = "https-repository-not-seeded";
@@ -815,6 +866,7 @@ let
       nodeRadCommandPath
     ]
     ++ productionRepositories
+    ++ privateRepositories
   );
   identityGenerator = fixtureConfig.clan.core.vars.generators.${identityGeneratorName};
   privateKeyFile = identityGenerator.files.${privateKeyFileName};
@@ -959,6 +1011,7 @@ let
     "nodeFirewallInterface"
     "externalAddress"
     "seedRepositories"
+    "privateSeedRepositories"
     "httpdEnabled"
     "httpListenAddress"
     "httpListenPort"

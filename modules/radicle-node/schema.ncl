@@ -15,6 +15,7 @@ let default_https_origin_port = 8081 in
     nodeFirewallInterface = { type = "string", description = "Single interface allowed to receive native Radicle peer traffic" },
     externalAddress = { type = "nullable_string", default = null, description = "Optional advertised Radicle host and port; deployment hostname inference is forbidden" },
     seedRepositories = { type = "array_string", default = [], description = "Canonical public Radicle repository IDs admitted by the native seeding-policy reconciler" },
+    privateSeedRepositories = { type = "array_string", default = [], description = "Canonical private Radicle repository IDs admitted only to native seeding and excluded from public HTTP/HTTPS routes" },
     httpdEnabled = { type = "bool", default = true, description = "Enable the read-only Radicle HTTP gateway" },
     httpListenAddress = { type = "string", default = "127.0.0.1", description = "Loopback address for the read-only Radicle HTTP gateway" },
     httpListenPort = { type = "port", default = default_http_port, description = "Loopback Radicle HTTP gateway port" },

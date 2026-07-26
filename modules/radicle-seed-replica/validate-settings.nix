@@ -28,14 +28,21 @@ let
     artifactAuthRepository
     executionGraphRepository
   ];
+  privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
+  governedPrivateRepositories = [ privatePilotRepository ];
   canonicalRepositoryIdPattern = "rad:z[1-9A-HJ-NP-Za-km-z]+";
   fingerprintPattern = "SHA256:[A-Za-z0-9+/]+={0,${toString maximumFingerprintPadding}}";
 
   rejectUnless = condition: message: lib.optional (!condition) message;
-  validRepositoryIds = builtins.all (
-    rid: builtins.match canonicalRepositoryIdPattern rid != null
-  ) settings.seedRepositories;
+  isCanonicalRepositoryId = rid: builtins.match canonicalRepositoryIdPattern rid != null;
+  validRepositoryIds = builtins.all isCanonicalRepositoryId settings.seedRepositories;
   uniqueRepositoryIds = lib.unique settings.seedRepositories == settings.seedRepositories;
+  validPrivateRepositoryIds = builtins.all isCanonicalRepositoryId settings.privateSeedRepositories;
+  uniquePrivateRepositoryIds =
+    lib.unique settings.privateSeedRepositories == settings.privateSeedRepositories;
+  privateRepositoryClassesAreDisjoint = builtins.all (
+    rid: !(builtins.elem rid settings.seedRepositories)
+  ) settings.privateSeedRepositories;
   validFingerprint = builtins.match fingerprintPattern settings.expectedNodeFingerprint != null;
 in
 lib.concatLists [
@@ -65,9 +72,15 @@ lib.concatLists [
   ) "secondary Radicle seed externalAddress must match its reviewed listener")
   (rejectUnless validRepositoryIds "secondary Radicle seed repositories must be canonical public rad:z IDs")
   (rejectUnless uniqueRepositoryIds "secondary Radicle seed repositories must not contain duplicates")
+  (rejectUnless (settings.seedRepositories == governedRepositories)
+    "secondary Radicle seed must admit exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs in the public set"
+  )
+  (rejectUnless validPrivateRepositoryIds "secondary Radicle private seed repositories must be canonical rad:z IDs")
+  (rejectUnless uniquePrivateRepositoryIds "secondary Radicle private seed repositories must not contain duplicates")
   (rejectUnless (
-    settings.seedRepositories == governedRepositories
-  ) "secondary Radicle seed must admit exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs")
+    settings.privateSeedRepositories == governedPrivateRepositories
+  ) "secondary Radicle seed must admit exactly the reviewed private pilot RID")
+  (rejectUnless privateRepositoryClassesAreDisjoint "secondary Radicle public and private repository sets must be disjoint")
   (rejectUnless (
     settings.stateDirectory == expectedStateDirectory
   ) "secondary Radicle seed stateDirectory must remain ${expectedStateDirectory}")

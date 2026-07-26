@@ -4,9 +4,9 @@ This runbook operates the single accepted Aspen1 bootstrap seed. Its canonical m
 
 ## Claim boundary
 
-Aspen1 replicates explicitly admitted public repositories and provides read-only HTTPS Git upload-pack access. The Radicle services have only the machine-scoped node key and repository storage. They do not receive delegate, canonical-ref, CI, deployment, release-signing, cache-write, artifact-administration, Cloudflare, GitHub, Buildbot, Nix-signing, Vaultwarden, or Matrix authority.
+Aspen1 replicates the exact admitted public set plus one native-only private pilot fixture and provides read-only HTTPS Git upload-pack access only for the public set. The Radicle services have only the machine-scoped node key and repository storage. They do not receive delegate, canonical-ref, CI, deployment, release-signing, cache-write, artifact-administration, Cloudflare, GitHub, Buildbot, Nix-signing, Vaultwarden, or Matrix authority. See `docs/radicle-private-pilot.md` for the private fixture and its bounded acceptance evidence.
 
-This bootstrap does **not** prove independent-seed availability, single-seed-outage survival, private-repository confidentiality, source correctness, review correctness, CI isolation beyond the observed service boundary, canonical-ref enforcement, release readiness, whole-stack GitHub independence, or geographic/building-power independence.
+This bootstrap does **not** prove confidentiality for production secrets, global metadata secrecy, traffic-analysis resistance, independent-seed availability, single-seed-outage survival, source correctness, review correctness, CI isolation beyond the observed service boundary, canonical-ref enforcement, release readiness, whole-stack GitHub independence, or geographic/building-power independence.
 
 ## Deploy and start
 

@@ -33,6 +33,8 @@ let
     artifactAuthRepository
     executionGraphRepository
   ];
+  privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
+  privateRepositories = [ privatePilotRepository ];
   expectedCommit = "29dac88ecded94457572db3fdfaaaab95fa91525";
   absentObject = "1111111111111111111111111111111111111111";
   inheritedRepository = "rad:z3gqcJUoA1n9HaHKufZs5FCSGazv5";
@@ -67,6 +69,7 @@ let
     nodeFirewallInterface = nodeInterface;
     externalAddress = "${nodeAddress}:${toString nodePort}";
     seedRepositories = governedRepositories;
+    privateSeedRepositories = privateRepositories;
     minimumSignedRefsFeature = "parent";
   };
 
@@ -231,6 +234,45 @@ let
       expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
     }
     {
+      name = "missing-private-pilot-rid";
+      settings = positiveSettings // {
+        privateSeedRepositories = [ ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the reviewed private pilot RID";
+    }
+    {
+      name = "malformed-private-pilot-rid";
+      settings = positiveSettings // {
+        privateSeedRepositories = [ "not-a-rid" ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "private seed repositories must be canonical rad:z IDs";
+    }
+    {
+      name = "duplicate-private-pilot-rid";
+      settings = positiveSettings // {
+        privateSeedRepositories = [
+          privatePilotRepository
+          privatePilotRepository
+        ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "private seed repositories must not contain duplicates";
+    }
+    {
+      name = "private-pilot-rid-in-public-set";
+      settings = positiveSettings // {
+        seedRepositories = governedRepositories ++ privateRepositories;
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "public and private repository sets must be disjoint";
+    }
+    {
       name = "wrong-state-directory";
       settings = positiveSettings // {
         stateDirectory = "/var/lib/radicle-shared";
@@ -302,6 +344,7 @@ let
         nodeListenPort
         nodeFirewallInterface
         seedRepositories
+        privateSeedRepositories
         ;
       httpdEnabled = false;
       httpListenAddress = loopbackAddress;
