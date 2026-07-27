@@ -1,0 +1,5 @@
+used	52607270912
+available	222270636032
+quota	274877906944
+710 root borg /var/lib/radicle-backup
+700 borg borg /var/lib/radicle-backup/aspen1

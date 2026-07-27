@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly RESTORE_ROOT=/var/lib/radicle-forge-metadata-restore-check
+readonly BORG_RUNTIME_ROOT=/run/radicle-forge-metadata-restore-borg
+readonly PRIVATE_DIRECTORY_MODE=0700
+readonly PRIVATE_KEY_MODE=0400
+readonly PUBLIC_FILE_MODE=0444
+readonly REPOSITORY_RID=rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo
+readonly REPOSITORY_DIRECTORY=z2CpqLFpdP36fZXYUK5ZNWxMibpCo
+readonly IMPORTER_NID=z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx
+readonly EXPECTED_NODE_ID=z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8
+readonly EXPECTED_CANONICAL=1baa4f552ae55923b025d99d08073286158836be
+readonly ISSUE_ID=d9f9c0ad2da34c8cdd95ec0ad2f741de7361c76d
+readonly ISSUE_REF_OID=de02d0257d181fc61662fa8e028b2296c5b30f8f
+readonly PATCH_ID=86c2607da3e4960e173f4de56f776a291574c5e1
+readonly PATCH_REF_OID=97309eba9aed4ddb77934a4a49efd8c840e3be26
+readonly EXPECTED_SIGREFS=d13faa9620a139c0eedc15eb4565e35934858c1c
+readonly EXPECTED_BASE=29dac88ecded94457572db3fdfaaaab95fa91525
+readonly RESTORE_COMMAND=radicle-backup-restore-verify
+
+cleanup() {
+  rm -rf "$RESTORE_ROOT" "$BORG_RUNTIME_ROOT"
+}
+trap cleanup EXIT
+cleanup
+
+restore_wrapper="$(readlink -f "$(command -v "$RESTORE_COMMAND")")"
+eval "$(grep -m1 '^export PATH=' "$restore_wrapper")"
+eval "$(grep -m1 '^export BORG_RSH=' "$restore_wrapper")"
+eval "$(grep -m1 '^export BORG_PASSCOMMAND=' "$restore_wrapper")"
+
+install -d -m "$PRIVATE_DIRECTORY_MODE" "$BORG_RUNTIME_ROOT"
+export BORG_BASE_DIR="$BORG_RUNTIME_ROOT"
+export BORG_CACHE_DIR="$BORG_RUNTIME_ROOT/cache"
+export BORG_CONFIG_DIR="$BORG_RUNTIME_ROOT/config"
+export BORG_KEYS_DIR="$BORG_RUNTIME_ROOT/keys"
+export BORG_SECURITY_DIR="$BORG_RUNTIME_ROOT/security"
+export BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
+export BORG_REPO=borg@100.110.43.11:.
+
+archive="$(borg list --json | jq -er '.archives | max_by(.time) | .name')"
+install -d -m "$PRIVATE_DIRECTORY_MODE" "$RESTORE_ROOT"
+(
+  cd "$RESTORE_ROOT"
+  borg extract "::$archive"
+)
+
+restored_state="$RESTORE_ROOT/run/radicle-backup-source"
+restored_staging="$RESTORE_ROOT/run/radicle-backup-input"
+restored_repository="$restored_state/storage/$REPOSITORY_DIRECTORY"
+
+install -m "$PRIVATE_KEY_MODE" "$restored_staging/node-private-key" "$restored_state/keys/radicle"
+install -m "$PUBLIC_FILE_MODE" "$restored_staging/node-public-key" "$restored_state/keys/radicle.pub"
+install -m "$PUBLIC_FILE_MODE" "$restored_staging/node-config.json" "$restored_state/config.json"
+touch "$restored_state/.gitconfig"
+git config --file "$restored_state/.gitconfig" --add safe.directory "$restored_repository"
+
+restored_node_id="$(HOME="$restored_state" RAD_HOME="$restored_state" rad self --nid 2>/dev/null)"
+test "$restored_node_id" = "$EXPECTED_NODE_ID"
+
+git_ref() {
+  git -c safe.directory="$restored_repository" --git-dir="$restored_repository" rev-parse "$1"
+}
+
+canonical="$(git_ref refs/heads/main)"
+issue_ref="$(git_ref "refs/namespaces/$IMPORTER_NID/refs/cobs/xyz.radicle.issue/$ISSUE_ID")"
+patch_ref="$(git_ref "refs/namespaces/$IMPORTER_NID/refs/cobs/xyz.radicle.patch/$PATCH_ID")"
+sigrefs="$(git_ref "refs/namespaces/$IMPORTER_NID/refs/rad/sigrefs")"
+test "$canonical" = "$EXPECTED_CANONICAL"
+test "$issue_ref" = "$ISSUE_REF_OID"
+test "$patch_ref" = "$PATCH_REF_OID"
+test "$sigrefs" = "$EXPECTED_SIGREFS"
+
+HOME="$restored_state" RAD_HOME="$restored_state" rad issue cache --no-announce --repo "$REPOSITORY_RID" "$ISSUE_ID" >/dev/null
+HOME="$restored_state" RAD_HOME="$restored_state" rad patch cache --no-announce --repo "$REPOSITORY_RID" "$PATCH_ID" >/dev/null
+HOME="$restored_state" RAD_HOME="$restored_state" rad issue show --no-announce --repo "$REPOSITORY_RID" "$ISSUE_ID" > "$RESTORE_ROOT/issue.txt"
+HOME="$restored_state" RAD_HOME="$restored_state" rad patch show --verbose --no-announce --repo "$REPOSITORY_RID" "$PATCH_ID" > "$RESTORE_ROOT/patch.txt"
+
+grep -F "Status  closed (solved)" "$RESTORE_ROOT/issue.txt" >/dev/null
+grep -F "source-key: github:OnixResearch/bounded-exec:issue:1" "$RESTORE_ROOT/issue.txt" >/dev/null
+grep -F "Fixture issue comment." "$RESTORE_ROOT/issue.txt" >/dev/null
+grep -F "Head     $EXPECTED_CANONICAL" "$RESTORE_ROOT/patch.txt" >/dev/null
+grep -F "Base     $EXPECTED_BASE" "$RESTORE_ROOT/patch.txt" >/dev/null
+grep -F "Status   archived" "$RESTORE_ROOT/patch.txt" >/dev/null
+grep -F "source-key: github:OnixResearch/bounded-exec:pull_request:2" "$RESTORE_ROOT/patch.txt" >/dev/null
+grep -F "source-event-kind: review" "$RESTORE_ROOT/patch.txt" >/dev/null
+grep -F "source-review-state: approved" "$RESTORE_ROOT/patch.txt" >/dev/null
+
+printf 'archive=%s\n' "$archive"
+printf 'node_id=%s\n' "$restored_node_id"
+printf 'canonical_main=%s\n' "$canonical"
+printf 'issue_ref=%s\n' "$issue_ref"
+printf 'issue_status=closed-solved\n'
+printf 'patch_ref=%s\n' "$patch_ref"
+printf 'patch_status=archived\n'
+printf 'imported_review=attribution-only\n'
+printf 'sigrefs=%s\n' "$sigrefs"
+printf 'signed_refs_feature=parent\n'
+printf 'semantic_restore_result=verified\n'

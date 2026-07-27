@@ -1,0 +1,9 @@
+repository_id=8d87c9acca56a9dfac56f152c98bd5dec748260ca5d7ba4bfe9fba95c1916921
+encryption_mode=repokey
+latest_archive=aspen1-britton-desktop-2026-07-26T20:45:35
+latest_archive_start=2026-07-26T20:47:14.000000
+latest_archive_end=2026-07-26T20:49:18.000000
+original_size=58043234790
+compressed_size=57621907995
+deduplicated_size=31356547
+file_count=177963
