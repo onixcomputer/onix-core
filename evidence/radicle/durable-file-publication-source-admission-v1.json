@@ -1,0 +1,82 @@
+{
+  "authority_boundary": {
+    "capability_bounding_set_empty": true,
+    "delegate_credentials_absent": true,
+    "no_new_privileges": true,
+    "protect_home": true,
+    "seed_credentials": [
+      "machine-scoped-radicle-node-key"
+    ]
+  },
+  "deployment": {
+    "aspen_closure": "/nix/store/j2mvzq86wwdrgna1972av3cm868rq9ni-nixos-system-aspen1-26.11.20260629.7a1a647",
+    "desktop_bootstrap_transport": "private-ssh-checksum-verified",
+    "desktop_closure": "/nix/store/8zr3fdh5sf16d8bxjpgkgc4cg1m9snid-nixos-system-britton-desktop-26.11.20260629.7a1a647",
+    "native_desired_count": 5,
+    "public_https_count": 4,
+    "runtime_overrides": "absent"
+  },
+  "evidence": [
+    "cairn/archive/2026-07-27-admit-durable-file-publication-radicle-source/evidence/declarative-deployment-2026-07-27.md",
+    "durable-file-publication:cairn/archive/2026-07-27-establish-durable-file-publication/evidence/validation.md"
+  ],
+  "governance": {
+    "delegates": [
+      "did:key:z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx"
+    ],
+    "identity_revision": "8d6d95454c09449708e687b51e80c787750e75e3",
+    "publisher_sigrefs": "8aa111383236ef76578edb18dbc5410395a42763",
+    "signed_refs_feature": "parent",
+    "threshold": 1
+  },
+  "non_claims": [
+    "library-correctness",
+    "consumer-correctness",
+    "release-readiness",
+    "seed-delegate-authority",
+    "automatic-https-failover",
+    "radicle-only-replica-bootstrap",
+    "permanent-network-availability",
+    "retention-or-deletion-authority"
+  ],
+  "observed_date": "2026-07-27",
+  "policy": {
+    "ci_rids": [
+      "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo"
+    ],
+    "https_rids": [
+      "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+      "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
+      "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a",
+      "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM"
+    ],
+    "implementation_revision": "8211b290622d7e8aa7f07198b125cd9169f59f0c",
+    "private_rids": [
+      "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg"
+    ],
+    "public_rids": [
+      "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+      "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
+      "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a",
+      "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM"
+    ]
+  },
+  "probes": {
+    "aspen_native": "verified",
+    "desktop_native": "verified",
+    "https": "verified",
+    "missing_object": "rejected",
+    "receive_pack": "rejected",
+    "unknown_rid": "rejected",
+    "wrong_service": "rejected"
+  },
+  "receipt_type": "onix.radicle-durable-file-publication-source-admission.v1",
+  "repository": {
+    "cairn_archive_receipt_blake3": "3a11ed34c922a32678f4e5e72bd9ea48b3e3d0eba35edf0c821c27f5a7920fe4",
+    "reviewed_commit": "951c27f59003cea9bfdb40ed4d89653d50fada1f",
+    "rid": "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM",
+    "source_archive_blake3": "2c1d8b5adc8d7384f48a6f8336165e38c3eb196337ebbd66707e157a64b63210"
+  },
+  "schema_version": 1,
+  "status": "accepted"
+}
