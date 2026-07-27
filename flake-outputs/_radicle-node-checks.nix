@@ -3,6 +3,7 @@
 # r[verify onix.radicle_node.hosting]
 # r[verify onix.radicle_node.exposure]
 # r[verify onix.radicle_node.validation]
+# r[verify onix.radicle_source_admission.validation]
 {
   self,
   pkgs,
@@ -62,6 +63,7 @@ let
   productionPilotRepository = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo";
   artifactAuthRepository = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
   executionGraphRepository = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a";
+  durableFilePublicationRepository = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM";
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   privatePilotCommit = "ff4ff027817465b1bb04251a8a98db42cc610b0c";
   privatePilotIdentityRevision = "7fe3c9bd6a2d01a8317acb44ba386988375898da";
@@ -71,6 +73,7 @@ let
     productionPilotRepository
     artifactAuthRepository
     executionGraphRepository
+    durableFilePublicationRepository
   ];
   privateRepositories = [ privatePilotRepository ];
   pinnedRepository = productionPilotRepository;
@@ -439,11 +442,12 @@ let
         seedRepositories = [
           artifactAuthRepository
           executionGraphRepository
+          durableFilePublicationRepository
         ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and durable-file-publication RIDs";
     }
     {
       name = "missing-artifact-auth-seed-rid";
@@ -451,11 +455,12 @@ let
         seedRepositories = [
           productionPilotRepository
           executionGraphRepository
+          durableFilePublicationRepository
         ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and durable-file-publication RIDs";
     }
     {
       name = "missing-execution-graph-seed-rid";
@@ -463,20 +468,34 @@ let
         seedRepositories = [
           productionPilotRepository
           artifactAuthRepository
+          durableFilePublicationRepository
         ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and durable-file-publication RIDs";
     }
     {
-      name = "unknown-fourth-seed-rid";
+      name = "missing-durable-file-publication-seed-rid";
+      settings = positiveSettings // {
+        seedRepositories = [
+          productionPilotRepository
+          artifactAuthRepository
+          executionGraphRepository
+        ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and durable-file-publication RIDs";
+    }
+    {
+      name = "unknown-fifth-seed-rid";
       settings = positiveSettings // {
         seedRepositories = productionRepositories ++ [ unmanagedRepository ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and durable-file-publication RIDs";
     }
     {
       name = "duplicate-seed-rid";
@@ -486,6 +505,7 @@ let
           productionPilotRepository
           artifactAuthRepository
           executionGraphRepository
+          durableFilePublicationRepository
         ];
       };
       packageVersion = nodePackage.version;
@@ -581,11 +601,12 @@ let
         httpsGitRepositories = [
           artifactAuthRepository
           executionGraphRepository
+          durableFilePublicationRepository
         ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and durable-file-publication RIDs";
     }
     {
       name = "https-missing-artifact-auth-rid";
@@ -593,11 +614,12 @@ let
         httpsGitRepositories = [
           productionPilotRepository
           executionGraphRepository
+          durableFilePublicationRepository
         ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and durable-file-publication RIDs";
     }
     {
       name = "https-missing-execution-graph-rid";
@@ -605,21 +627,35 @@ let
         httpsGitRepositories = [
           productionPilotRepository
           artifactAuthRepository
+          durableFilePublicationRepository
         ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and durable-file-publication RIDs";
     }
     {
-      name = "https-unknown-fourth-rid";
+      name = "https-missing-durable-file-publication-rid";
+      settings = httpsSettings // {
+        httpsGitRepositories = [
+          productionPilotRepository
+          artifactAuthRepository
+          executionGraphRepository
+        ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and durable-file-publication RIDs";
+    }
+    {
+      name = "https-unknown-fifth-rid";
       settings = httpsSettings // {
         seedRepositories = productionRepositories ++ [ unmanagedRepository ];
         httpsGitRepositories = productionRepositories ++ [ unmanagedRepository ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and durable-file-publication RIDs";
     }
     {
       name = "private-pilot-rid-exposed-over-https";
