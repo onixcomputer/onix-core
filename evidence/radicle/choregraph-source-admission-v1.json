@@ -1,0 +1,72 @@
+{
+  "deployment": {
+    "aspen_closure": "/nix/store/ia697wglrzfc40hx6qv1sz18sv2d4w4m-nixos-system-aspen1-26.11.20260629.7a1a647",
+    "desktop_closure": "/nix/store/2wdnwhb1pbg4pix0hyzmk0gbafcq4f3l-nixos-system-britton-desktop-26.11.20260629.7a1a647",
+    "native_public_count": 4,
+    "public_https_count": 4,
+    "runtime_overrides": "absent"
+  },
+  "evidence": [
+    "cairn/changes/admit-choregraph-radicle-source/evidence/deployment-and-probes-2026-07-27.md",
+    "choregraph:evidence/release/publication-candidate.ncl"
+  ],
+  "non_claims": [
+    "choregraph-correctness",
+    "consumer-correctness",
+    "release-eligibility",
+    "seed-delegate-authority",
+    "indefinite-availability",
+    "whole-stack-correctness"
+  ],
+  "observed_date": "2026-07-27",
+  "policy": {
+    "ci_rids": ["rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo"],
+    "https_rids": [
+      "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+      "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
+      "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a",
+      "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF"
+    ],
+    "implementation_revision": "1a6446874d7bbe83f01bad13e9855f85423dd7e6",
+    "private_rids": ["rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg"],
+    "public_rids": [
+      "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+      "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
+      "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a",
+      "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF"
+    ]
+  },
+  "probes": {
+    "archive": "verified",
+    "aspen_native": "verified",
+    "desktop_native": "verified",
+    "endpoint_root": "rejected-404",
+    "git_fsck": "verified",
+    "https": "verified",
+    "independent_replica": "paintedlife-verified",
+    "receive_pack": "rejected-404",
+    "unknown_rid": "rejected-404",
+    "wrong_service": "rejected-404"
+  },
+  "producer": {
+    "author_sigrefs": "70148d3d6d0f5d5995fc7c4b78002189701748b5",
+    "delegates": ["did:key:z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx"],
+    "identity_revision": "fce6d85cbe015b49ddab43db66884f550e66153e",
+    "publication_authority": "operator-authorized",
+    "signed_refs_feature": "parent",
+    "threshold": 1
+  },
+  "receipt_type": "onix.radicle-choregraph-source-admission.v1",
+  "repository": {
+    "candidate_blake3": "e4b5cd7bd77d78c20cf8b96cd0c038144028d2287000757c8ab68f5f5dfdff1a",
+    "https_url": "https://git.onix.computer/zL2ncTUeASVYwcoGkEXv9JKgGbAF.git",
+    "license": "AGPL-3.0-or-later",
+    "release_bundle_blake3": "a2ac1336679542fa9573b356daddc18266fdda8147ddbe28f85aa37d135030d9",
+    "reviewed_commit": "fc47c5f4ecbb7b4341af690fa42199f25d57f54c",
+    "rid": "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF",
+    "source_archive_blake3": "dcb1faf95a7487145496ce986ae1639908600ace5bd77c4d96a37a530a7538a5",
+    "source_archive_bytes": 1781760
+  },
+  "schema_version": 1,
+  "status": "accepted"
+}
