@@ -163,9 +163,9 @@ in
       -- Wezterm auto-reloads when dofile'd paths change on disk.
       local noctalia_ok, noctalia_colors = pcall(dofile, wezterm.home_dir .. '/.config/wezterm/noctalia-colors.lua')
       if noctalia_ok and noctalia_colors then
-        config.colors = noctalia_colors
+        config['colors'] = noctalia_colors
       else
-        config.colors = dofile(wezterm.home_dir .. '/.config/wezterm/colors.lua')
+        config['colors'] = dofile(wezterm.home_dir .. '/.config/wezterm/colors.lua')
       end
 
       -- Keybindings
