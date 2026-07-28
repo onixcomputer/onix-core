@@ -2,7 +2,9 @@
 
 ## MODIFIED Requirements
 
-### Requirement: Exact governed source policy r[onix.radicle_source_admission.policy]
+### Requirement: Exact governed source policy
+
+r[onix.radicle_source_admission.policy]
 
 Production Radicle public-source policy MUST admit exactly Bounded Exec, `artifact-auth`, `execution-graph`, and `durable-file-publication`. Each entry MUST bind its reviewed commit and publication evidence.
 
@@ -18,7 +20,9 @@ Production Radicle public-source policy MUST admit exactly Bounded Exec, `artifa
 - WHEN policy validation runs
 - THEN validation MUST fail.
 
-### Requirement: Single-source derivation r[onix.radicle_source_admission.derivation]
+### Requirement: Single-source derivation
+
+r[onix.radicle_source_admission.derivation]
 
 Aspen1 native seeding, Aspen1 public HTTPS, and britton-desktop native seeding MUST derive from one typed ordered production set. CI MUST keep its separate Bounded Exec-only RID.
 
@@ -34,7 +38,9 @@ Aspen1 native seeding, Aspen1 public HTTPS, and britton-desktop native seeding M
 - WHEN CI settings are evaluated
 - THEN CI MUST still admit only the Bounded Exec RID.
 
-### Requirement: Positive and negative multi-source validation r[onix.radicle_source_admission.validation]
+### Requirement: Positive and negative multi-source validation
+
+r[onix.radicle_source_admission.validation]
 
 Repository checks MUST cover the exact four-RID configuration. They MUST reject every missing source, unknown addition, duplicate, malformed ID, serving-role mismatch, CI widening, weak governance fact, and missing non-claim.
 
@@ -50,7 +56,9 @@ Repository checks MUST cover the exact four-RID configuration. They MUST reject 
 - WHEN validation runs
 - THEN it MUST fail with deterministic diagnostics.
 
-### Requirement: Independent two-seed deployment r[onix.radicle_source_admission.deployment]
+### Requirement: Independent two-seed deployment
+
+r[onix.radicle_source_admission.deployment]
 
 Aspen1 and britton-desktop MUST reconcile all admitted public repositories while preserving distinct identities, state roots, network exposure, private-source separation, and authority boundaries.
 
@@ -66,7 +74,9 @@ Aspen1 and britton-desktop MUST reconcile all admitted public repositories while
 - WHEN seed service capabilities are inspected
 - THEN no delegate, signing, CI, release, deployment, backup-administration, or canonical-reference authority MUST be added.
 
-### Requirement: Exact endpoint probes r[onix.radicle_source_admission.probes]
+### Requirement: Exact endpoint probes
+
+r[onix.radicle_source_admission.probes]
 
 Operators MUST verify the reviewed `durable-file-publication` commit through Aspen native transport, desktop native transport, and Aspen public HTTPS. They MUST confirm undeclared-RID and write rejection.
 
@@ -82,7 +92,9 @@ Operators MUST verify the reviewed `durable-file-publication` commit through Asp
 - WHEN native policy or HTTPS admission is queried
 - THEN the request MUST remain rejected.
 
-### Requirement: Typed admission evidence r[onix.radicle_source_admission.evidence]
+### Requirement: Typed admission evidence
+
+r[onix.radicle_source_admission.evidence]
 
 Onix Core MUST emit typed Nickel and JSON evidence with a BLAKE3 sidecar. Evidence MUST bind policy, identities, deployment, endpoint probes, producer governance, negative observations, runtime-override absence, and non-claims.
 

@@ -14,5 +14,5 @@
 ## Phase 3: Acceptance
 
 - [x] [serial] Emit typed Nickel and deterministic JSON/BLAKE3 admission evidence with explicit non-claims. r[onix.radicle_source_admission.evidence]
-- [ ] [serial] Run focused Nickel, Nix, Cairn, traceability, and repository validation. r[onix.radicle_source_admission.validation]
-- [ ] [serial] Synchronize the accepted specification and archive the completed change only after deployment evidence passes. r[onix.radicle_source_admission.evidence]
+- [x] [serial] Run focused Nickel, Nix, Cairn, traceability, and repository validation. r[onix.radicle_source_admission.validation]
+- [x] [serial] Synchronize the accepted specification and archive the completed change only after deployment evidence passes. r[onix.radicle_source_admission.evidence]
