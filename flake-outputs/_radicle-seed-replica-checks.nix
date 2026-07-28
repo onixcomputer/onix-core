@@ -28,10 +28,12 @@ let
   pilotRepository = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo";
   artifactAuthRepository = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
   executionGraphRepository = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a";
+  choregraphRepository = "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF";
   governedRepositories = [
     pilotRepository
     artifactAuthRepository
     executionGraphRepository
+    choregraphRepository
   ];
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   privateRepositories = [ privatePilotRepository ];
@@ -194,11 +196,12 @@ let
         seedRepositories = [
           artifactAuthRepository
           executionGraphRepository
+          choregraphRepository
         ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs";
     }
     {
       name = "missing-artifact-auth-rid";
@@ -206,11 +209,12 @@ let
         seedRepositories = [
           pilotRepository
           executionGraphRepository
+          choregraphRepository
         ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs";
     }
     {
       name = "missing-execution-graph-rid";
@@ -218,20 +222,34 @@ let
         seedRepositories = [
           pilotRepository
           artifactAuthRepository
+          choregraphRepository
         ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs";
     }
     {
-      name = "undeclared-fourth-rid";
+      name = "missing-choregraph-rid";
+      settings = positiveSettings // {
+        seedRepositories = [
+          pilotRepository
+          artifactAuthRepository
+          executionGraphRepository
+        ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs";
+    }
+    {
+      name = "undeclared-fifth-rid";
       settings = positiveSettings // {
         seedRepositories = governedRepositories ++ [ inheritedRepository ];
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs";
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs";
     }
     {
       name = "missing-private-pilot-rid";

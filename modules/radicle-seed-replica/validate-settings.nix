@@ -23,10 +23,12 @@ let
   boundedExecRepository = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo";
   artifactAuthRepository = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
   executionGraphRepository = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a";
+  choregraphRepository = "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF";
   governedRepositories = [
     boundedExecRepository
     artifactAuthRepository
     executionGraphRepository
+    choregraphRepository
   ];
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   governedPrivateRepositories = [ privatePilotRepository ];
@@ -73,7 +75,7 @@ lib.concatLists [
   (rejectUnless validRepositoryIds "secondary Radicle seed repositories must be canonical public rad:z IDs")
   (rejectUnless uniqueRepositoryIds "secondary Radicle seed repositories must not contain duplicates")
   (rejectUnless (settings.seedRepositories == governedRepositories)
-    "secondary Radicle seed must admit exactly the governed Bounded Exec, artifact-auth, and execution-graph RIDs in the public set"
+    "secondary Radicle seed must admit exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs in the public set"
   )
   (rejectUnless validPrivateRepositoryIds "secondary Radicle private seed repositories must be canonical rad:z IDs")
   (rejectUnless uniquePrivateRepositoryIds "secondary Radicle private seed repositories must not contain duplicates")

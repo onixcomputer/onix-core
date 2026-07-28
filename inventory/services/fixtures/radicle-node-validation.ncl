@@ -26,6 +26,7 @@ let default_backup_retention_weekly = 4 in
           "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
           "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
           "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a",
+          "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF",
         ],
         privateSeedRepositories = ["rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg"],
         httpdEnabled = true,
