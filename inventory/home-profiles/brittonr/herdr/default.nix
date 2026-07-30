@@ -12,7 +12,10 @@ let
     type = binding.actionType;
   };
 
-  pluginCommands = map mkPluginCommand profileData.plugins.jjWorkspace.commands;
+  # r[impl onix.britton-desktop.herdr.pueue.bindings]
+  pluginCommands = map mkPluginCommand (
+    profileData.plugins.jjWorkspace.commands ++ profileData.plugins.pueueDashboard.commands
+  );
   herdrConfig = profileData.config // {
     keys = profileData.config.keys // {
       command = pluginCommands;

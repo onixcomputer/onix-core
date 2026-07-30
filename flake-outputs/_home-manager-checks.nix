@@ -18,6 +18,24 @@ let
   actualSystemStateVersion = desktopConfig.system.stateVersion;
   neovimConfig = desktopHome.programs.neovim;
   cargoConfigSource = desktopHome.home.file.".cargo/config.toml".source;
+  minimumPueueHerdrVersion = "0.7.4";
+  pueuePopupActionId = "dev.herdr.pueue.open-dashboard";
+  pueueSplitActionId = "dev.herdr.pueue.open-dashboard-split";
+  pueuePopupKey = "prefix+p";
+  pueueSplitKey = "prefix+shift+p";
+  invalidPueueActionId = "dev.herdr.pueue.invalid";
+  pueuePluginLinkSource = "/home/brittonr/git/herdr-plugin-pueue";
+  herdrPackage = lib.findFirst (
+    package: (package.pname or null) == "herdr"
+  ) null desktopConfig.environment.systemPackages;
+  herdrPackageVersion = if herdrPackage == null then "missing" else herdrPackage.version;
+  hasCompatibleHerdrPackage =
+    herdrPackage != null && lib.versionAtLeast herdrPackageVersion minimumPueueHerdrVersion;
+  herdrConfigSource = desktopHome.xdg.configFile."herdr/config.toml".source;
+  activationScripts = lib.mapAttrsToList (_name: entry: entry.data or "") desktopHome.home.activation;
+  hasHerdrPluginActivationMutation = lib.any (
+    script: lib.hasInfix "herdr plugin link" script || lib.hasInfix "herdr plugin install" script
+  ) activationScripts;
   wildcardGestureEdge = "*";
   aspen3TouchpadTapOverride = aspen3Home.input.touchpad.hostOverrides.aspen3.tap or true;
   aspen3SystemTouchpadTapping = aspen3Config.services.libinput.touchpad.tapping;
@@ -78,6 +96,52 @@ let
     fi
 
     touch $out
+  '';
+
+  # Positive and negative coverage for
+  # r[verify onix.britton-desktop.herdr.pueue.version],
+  # r[verify onix.britton-desktop.herdr.pueue.bindings],
+  # r[verify onix.britton-desktop.herdr.pueue.ownership], and
+  # r[verify onix.britton-desktop.herdr.pueue.validation].
+  herdrPueueDashboard = pkgs.runCommand "herdr-pueue-dashboard" { } ''
+    set -eu
+
+    ${lib.optionalString (!hasCompatibleHerdrPackage) ''
+      echo "positive: Herdr ${herdrPackageVersion} must be at least ${minimumPueueHerdrVersion}" >&2
+      exit 1
+    ''}
+
+    herdr_config=${herdrConfigSource}
+    if ! ${pkgs.gnugrep}/bin/grep -Fq '${pueuePopupActionId}' "$herdr_config"; then
+      echo "positive: rendered Herdr config must contain the Pueue popup action" >&2
+      exit 1
+    fi
+    if ! ${pkgs.gnugrep}/bin/grep -Fq '${pueueSplitActionId}' "$herdr_config"; then
+      echo "positive: rendered Herdr config must contain the Pueue split action" >&2
+      exit 1
+    fi
+    if ! ${pkgs.gnugrep}/bin/grep -Fq 'key = "${pueuePopupKey}"' "$herdr_config"; then
+      echo "positive: rendered Herdr config must contain the Pueue popup key" >&2
+      exit 1
+    fi
+    if ! ${pkgs.gnugrep}/bin/grep -Fq 'key = "${pueueSplitKey}"' "$herdr_config"; then
+      echo "positive: rendered Herdr config must contain the Pueue split key" >&2
+      exit 1
+    fi
+    if ${pkgs.gnugrep}/bin/grep -Fq '${invalidPueueActionId}' "$herdr_config"; then
+      echo "negative: rendered Herdr config must reject invalid Pueue actions" >&2
+      exit 1
+    fi
+    if ${pkgs.gnugrep}/bin/grep -Fq '${pueuePluginLinkSource}' "$herdr_config"; then
+      echo "negative: runtime plugin link sources must not enter Herdr config" >&2
+      exit 1
+    fi
+    ${lib.optionalString hasHerdrPluginActivationMutation ''
+      echo "negative: Home Manager activation must not mutate Herdr plugin state" >&2
+      exit 1
+    ''}
+
+    touch "$out"
   '';
 
   assertions = [
@@ -202,5 +266,6 @@ in
         throw "aspen3-input-palm-rejection failed: ${failedPalmNames}";
 
     kache-wrapper-workspace-wrapper-bypass = kacheWrapperWorkspaceWrapperBypass;
+    herdr-pueue-dashboard = herdrPueueDashboard;
   };
 }

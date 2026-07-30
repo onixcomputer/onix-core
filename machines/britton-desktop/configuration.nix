@@ -477,6 +477,8 @@ in
     ttWkv7OwnerControl
     self.packages.${pkgs.stdenv.hostPlatform.system}.opendeck
     self.packages.${pkgs.stdenv.hostPlatform.system}.ttsim
+    # Keep Herdr on the accepted llm-agents provider.
+    # r[impl onix.britton-desktop.herdr.pueue.version]
     inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr
   ];
 

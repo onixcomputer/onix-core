@@ -167,6 +167,11 @@ in
           newTab | Key,
           remove | Key,
         },
+      pueueDashboard
+        | {
+          popup | Key,
+          split | Key,
+        },
     }
     = {
       # Bare Alt is not valid in Herdr 0.7.0, so combine shared secondary
@@ -176,6 +181,11 @@ in
         new = "a",
         newTab = "shift+a",
         remove = "d",
+      },
+      # r[impl onix.britton-desktop.herdr.pueue.bindings]
+      pueueDashboard = {
+        popup = "p",
+        split = "shift+p",
       },
     },
 

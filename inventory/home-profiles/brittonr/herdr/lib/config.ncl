@@ -57,6 +57,11 @@ in
           installSource | NonEmpty,
           commands | Array PluginCommand,
         },
+      pueueDashboard
+        | {
+          linkSource | NonEmpty,
+          commands | Array PluginCommand,
+        },
     }
     = {
       jjWorkspace = {
@@ -79,6 +84,26 @@ in
             actionType = "plugin_action",
             command = "nathanflurry.jj-workspace.remove",
             description = "remove jj workspace",
+          },
+        ],
+      },
+      # This path is data only. Home Manager does not mutate Herdr plugin state.
+      # r[impl onix.britton-desktop.herdr.pueue.bindings]
+      # r[impl onix.britton-desktop.herdr.pueue.ownership]
+      pueueDashboard = {
+        linkSource = "/home/brittonr/git/herdr-plugin-pueue",
+        commands = [
+          {
+            key = prefixed keymap.herdr.pueueDashboard.popup,
+            actionType = "plugin_action",
+            command = "dev.herdr.pueue.open-dashboard",
+            description = "open Pueue dashboard popup",
+          },
+          {
+            key = prefixed keymap.herdr.pueueDashboard.split,
+            actionType = "plugin_action",
+            command = "dev.herdr.pueue.open-dashboard-split",
+            description = "open Pueue dashboard split",
           },
         ],
       },
