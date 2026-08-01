@@ -94,6 +94,26 @@ r[onix.radicle_replica.validation.focused]
 - THEN both reviewed host configurations MUST pass
 - AND unknown hosts, mismatched host facts, and duplicate seed identities MUST fail with expected diagnostics
 
+### Requirement: Interactive desktop nodes remain isolated
+
+r[onix.radicle_replica.desktop_isolation] `aspen3` MUST keep Radicle Desktop state, control sockets, and listeners separate from the managed seed service.
+
+#### Scenario: Desktop uses a separate user profile
+
+r[onix.radicle_replica.desktop_isolation.profile]
+- GIVEN `aspen3` runs the managed seed and Radicle Desktop
+- WHEN the user starts Radicle Desktop or its user node
+- THEN the user processes MUST use `/home/brittonr/.radicle` and its control socket
+- AND the user processes MUST NOT use `/var/lib/radicle` or the managed seed control socket
+
+#### Scenario: User listener overrides are rejected
+
+r[onix.radicle_replica.desktop_isolation.listener]
+- GIVEN the managed seed listens on its reviewed tailnet address at port `8776`
+- WHEN the user starts `radicle-node` through the desktop profile
+- THEN the wrapper MUST use an operating-system-selected loopback port
+- AND explicit `--listen` arguments MUST fail before node execution
+
 ### Requirement: Seed identities remain distinct
 
 r[onix.radicle_replica.identity_distinct] Each persistent Radicle seed MUST use a different machine-scoped node identity.

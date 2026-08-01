@@ -32,6 +32,15 @@ let
   ];
   ldacQualityMode = "hq";
   touchpadTapToClick = false;
+  # r[impl onix.radicle_replica.desktop_isolation]
+  radicleDesktopHome = "/home/brittonr/.radicle";
+  radicleDesktopSocket = "${radicleDesktopHome}/node/control.sock";
+  radicleDesktopNodeListenAddress = "127.0.0.1:0";
+  radicleDesktopPackage = import ../../modules/radicle-desktop/package.nix { inherit pkgs lib; } {
+    desktopHome = radicleDesktopHome;
+    desktopSocket = radicleDesktopSocket;
+    nodeListenAddress = radicleDesktopNodeListenAddress;
+  };
 in
 {
   imports = [
@@ -152,10 +161,16 @@ in
       libwacom
       pwvucontrol
       qpwgraph
+      radicleDesktopPackage
       rnote
       wev
       xournalpp
     ];
+
+    home.sessionVariables = {
+      RAD_HOME = radicleDesktopHome;
+      RAD_SOCKET = radicleDesktopSocket;
+    };
 
     programs.mpv.config."volume-max" = lib.mkForce mpvVolumeMaxPercent;
   };

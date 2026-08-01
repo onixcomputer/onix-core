@@ -1,6 +1,7 @@
 # r[verify onix.radicle_replica.configuration]
 # r[verify onix.radicle_replica.validation]
 # r[verify onix.radicle_replica.authority]
+# r[verify onix.radicle_replica.desktop_isolation]
 {
   self,
   pkgs,
@@ -48,9 +49,85 @@ let
   loopbackAddress = "127.0.0.1";
   disabledHttpPort = 8080;
   disabledHttpsOriginPort = 8081;
+  desktopRadicleHome = "/home/brittonr/.radicle";
+  desktopRadicleSocket = "${desktopRadicleHome}/node/control.sock";
+  desktopNodeListenAddress = "${loopbackAddress}:0";
+  systemRadicleHome = stateDirectory;
+  systemRadicleSocket = "${systemRadicleHome}/node/control.sock";
+  unsafeWildcardListenAddress = "0.0.0.0:${toString nodePort}";
 
   nodePackage = self.packages.${system}.radicle-node;
   httpdPackage = self.packages.${system}.radicle-httpd;
+  mkRadicleDesktopPackage = import ../modules/radicle-desktop/package.nix { inherit pkgs lib; };
+  fakeDesktopPackage = pkgs.writeShellScriptBin "radicle-desktop" ''
+    printf 'RAD_HOME=%s\nRAD_SOCKET=%s\n' "$RAD_HOME" "$RAD_SOCKET"
+  '';
+  fakeNodePackage = pkgs.writeShellScriptBin "radicle-node" ''
+    printf 'RAD_HOME=%s\nRAD_SOCKET=%s\n' "$RAD_HOME" "$RAD_SOCKET"
+    for argument in "$@"; do
+      printf 'ARG=%s\n' "$argument"
+    done
+  '';
+  radicleDesktopWrapperFixture = mkRadicleDesktopPackage {
+    desktopHome = desktopRadicleHome;
+    desktopSocket = desktopRadicleSocket;
+    nodeListenAddress = desktopNodeListenAddress;
+    desktopPackage = fakeDesktopPackage;
+    nodePackage = fakeNodePackage;
+  };
+  inherit (radicleDesktopWrapperFixture) managedListenDiagnostic;
+  radicleDesktopWrapperTests =
+    pkgs.runCommand "radicle-desktop-wrapper-tests"
+      {
+        nativeBuildInputs = [ pkgs.gnugrep ];
+      }
+      ''
+        expected_desktop="$(printf 'RAD_HOME=%s\nRAD_SOCKET=%s\n' \
+          ${lib.escapeShellArg desktopRadicleHome} \
+          ${lib.escapeShellArg desktopRadicleSocket})"
+        actual_desktop="$(
+          RAD_HOME=${lib.escapeShellArg systemRadicleHome} \
+          RAD_SOCKET=${lib.escapeShellArg systemRadicleSocket} \
+          ${radicleDesktopWrapperFixture}/bin/radicle-desktop
+        )"
+        test "$actual_desktop" = "$expected_desktop"
+
+        expected_node="$(printf 'RAD_HOME=%s\nRAD_SOCKET=%s\nARG=%s\nARG=%s\nARG=%s\n' \
+          ${lib.escapeShellArg desktopRadicleHome} \
+          ${lib.escapeShellArg desktopRadicleSocket} \
+          '--listen' \
+          ${lib.escapeShellArg desktopNodeListenAddress} \
+          '--force')"
+        actual_node="$(
+          RAD_HOME=${lib.escapeShellArg systemRadicleHome} \
+          RAD_SOCKET=${lib.escapeShellArg systemRadicleSocket} \
+          ${radicleDesktopWrapperFixture}/bin/radicle-node --force
+        )"
+        test "$actual_node" = "$expected_node"
+
+        if ${radicleDesktopWrapperFixture}/bin/radicle-node \
+          --listen ${lib.escapeShellArg unsafeWildcardListenAddress} \
+          > separate-listen.out 2> separate-listen.err; then
+          echo "negative: a separate --listen argument was accepted" >&2
+          exit 1
+        fi
+        grep -Fqx ${lib.escapeShellArg managedListenDiagnostic} separate-listen.err
+
+        if ${radicleDesktopWrapperFixture}/bin/radicle-node \
+          ${lib.escapeShellArg "--listen=${unsafeWildcardListenAddress}"} \
+          > joined-listen.out 2> joined-listen.err; then
+          echo "negative: a joined --listen argument was accepted" >&2
+          exit 1
+        fi
+        grep -Fqx ${lib.escapeShellArg managedListenDiagnostic} joined-listen.err
+
+        grep -Fq 'let listen = if !options.listen.is_empty() {' \
+          ${nodePackage.src}/crates/radicle-node/src/main.rs
+        grep -Fq 'options.listen.clone()' \
+          ${nodePackage.src}/crates/radicle-node/src/main.rs
+
+        touch "$out"
+      '';
   policyReconciler = import ../modules/radicle-node/policy-reconciler.nix { inherit pkgs; };
   validateSettings = import ../modules/radicle-seed-replica/validate-settings.nix { inherit lib; };
   mkNixosConfig = import ../modules/radicle-node/mk-nixos-config.nix { inherit lib; };
@@ -510,6 +587,32 @@ let
     };
   desktopConfig = self.nixosConfigurations.${expectedHost}.config;
   aspen3Config = self.nixosConfigurations.${aspen3Host}.config;
+  aspen3Home = aspen3Config.home-manager.users.brittonr;
+  aspen3RadicleDesktopPackages = lib.filter (
+    package: package.onixRadicleDesktop or false
+  ) aspen3Home.home.packages;
+  aspen3RadicleDesktopPackageCountExact = builtins.length aspen3RadicleDesktopPackages == 1;
+  aspen3RadicleDesktopPackage =
+    if aspen3RadicleDesktopPackageCountExact then builtins.head aspen3RadicleDesktopPackages else null;
+  radicleDesktopCoexistenceObservations = {
+    packageCountExact = aspen3RadicleDesktopPackageCountExact;
+    packageHomeExact =
+      aspen3RadicleDesktopPackageCountExact
+      && aspen3RadicleDesktopPackage.desktopHome == desktopRadicleHome;
+    packageSocketExact =
+      aspen3RadicleDesktopPackageCountExact
+      && aspen3RadicleDesktopPackage.desktopSocket == desktopRadicleSocket;
+    packageListenerIsLoopbackEphemeral =
+      aspen3RadicleDesktopPackageCountExact
+      && aspen3RadicleDesktopPackage.nodeListenAddress == desktopNodeListenAddress;
+    sessionHomeExact = aspen3Home.home.sessionVariables.RAD_HOME == desktopRadicleHome;
+    sessionSocketExact = aspen3Home.home.sessionVariables.RAD_SOCKET == desktopRadicleSocket;
+    systemAndUserHomesDistinct = systemRadicleHome != desktopRadicleHome;
+    systemAndUserSocketsDistinct = systemRadicleSocket != desktopRadicleSocket;
+  };
+  radicleDesktopCoexistencePolicyValid = builtins.all lib.id (
+    builtins.attrValues radicleDesktopCoexistenceObservations
+  );
   productionReplicaObservations = {
     ${expectedHost} = mkProductionReplicaObservations {
       config = desktopConfig;
@@ -863,6 +966,8 @@ in
         "production replica policy failed: ${builtins.toJSON productionReplicaObservations}";
       assert lib.assertMsg productionSeedFingerprintsUnique
         "persistent Radicle seed fingerprints must remain unique";
+      assert lib.assertMsg radicleDesktopCoexistencePolicyValid
+        "aspen3 Radicle Desktop isolation failed: ${builtins.toJSON radicleDesktopCoexistenceObservations}";
       assert lib.assertMsg (
         replicaReceipt == replicaReceiptJson
       ) "replica Nickel receipt and exported JSON differ";
@@ -880,6 +985,7 @@ in
             actual_receipt_hash="$(b3sum ${replicaReceiptJsonPath} | cut -d ' ' -f 1)"
             test "$actual_receipt_hash" = ${lib.escapeShellArg replicaReceiptExpectedHash}
             test -e ${identityVerifierTests}
+            test -e ${radicleDesktopWrapperTests}
           printf '%s\n' \
             'positive_validation=passed' \
             'negative_validation=passed' \
@@ -890,6 +996,8 @@ in
             'automatic_restart_bypass_negative_case=passed' \
             'production_replica_policy=passed' \
             'production_seed_identity_uniqueness=passed' \
+            'radicle_desktop_coexistence=passed' \
+            'radicle_desktop_wrapper_tests=passed' \
             'replica_receipt=passed' \
             'replica_receipt_negative_cases=passed' \
             'replica_receipt_blake3=${replicaReceiptExpectedHash}' \

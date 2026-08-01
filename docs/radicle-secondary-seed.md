@@ -60,6 +60,16 @@ Accept these results:
 
 The replica node uses `Restart=no`. The persistent policy timer starts a failed node through a new identity-verification transaction.
 
+## Radicle Desktop coexistence
+
+On `aspen3`, Radicle Desktop uses `/home/brittonr/.radicle` and its user control socket.
+
+The user `radicle-node` wrapper uses `127.0.0.1:0`. The operating system selects an unused loopback port.
+
+The wrapper rejects explicit `--listen` arguments. Thus, the user node cannot claim the managed seed listener.
+
+The system service uses its own package path. Therefore, the user wrapper does not change the managed replica.
+
 ## Policy and storage
 
 Start policy reconciliation after an admission change:
