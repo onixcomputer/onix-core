@@ -22,8 +22,8 @@ let
   privatePilotStorageDirectory = "z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   privatePilotDelegate = "z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
   expectedPrivatePilotCommit = "ff4ff027817465b1bb04251a8a98db42cc610b0c";
-  expectedPrivatePilotIdentityRevision = "7fe3c9bd6a2d01a8317acb44ba386988375898da";
-  expectedPrivatePilotSigrefs = "fc566eae3a5954df30d9499e0f85fe1b45a34d46";
+  expectedPrivatePilotIdentityRevision = "cb3f6273f35ff437e58f15332d48f25b06c4b9cc";
+  expectedPrivatePilotSigrefs = "ad1b6d032b69a4b81910b2fc98f8707b9ff268fb";
   expectedPrivatePilotSourceBlake3 = "514904bdcf5f23b0813c567efbc8b6732248de94482037a58011bfff3fc26853";
   targetAddress = "100.110.43.11";
   targetHostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEehqswjtdQwNb4o2/hV7Qg1HCZkpbLZDDbReDoPmf/p";

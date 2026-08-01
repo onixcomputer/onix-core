@@ -1,124 +1,137 @@
-# Radicle secondary seed operations
+# Radicle replica operations
 
-`britton-desktop` runs the native-only secondary seed for the exact governed public set and one private pilot fixture. Aspen1 remains the primary native seed and the only public read-only HTTPS Git origin; the private RID has no HTTPS route.
+Aspen1 is the primary native seed and the only public HTTPS Git origin. Two native-only replicas run on `britton-desktop` and `aspen3`.
 
-## Accepted identity and policy
+All three nodes seed these exact repository sets:
 
-| Fact | Accepted value |
-|---|---|
-| RID | `rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo` |
-| Commit | `29dac88ecded94457572db3fdfaaaab95fa91525` |
-| Node ID | `z6MkkQCj5EczNiVzDzCkX9ewHNJ7NDEXSKbuRiS1x7o72yeG` |
-| Fingerprint | `SHA256:JHQTPqoMr4kLqBsrAPSRNXUuzETiHAoiKBM/VWftmEg` |
-| Native address | `100.110.43.11:8776` on `tailscale0` |
-| State | `datapool/radicle-seed` mounted at `/var/lib/radicle` |
-| Quota | 64 GiB |
-| Signed refs | minimum feature `parent` |
-| Receipt | `evidence/radicle/secondary-seed-v1.json` |
+- four governed public RIDs
+- one non-secret private pilot RID
 
-The service has no HTTP, public ingress, delegate, CI, deployment, release, canonical-ref, cache-write, artifact, backup, or signing authority.
+The replicas have no HTTP, public ingress, delegate, CI, deployment, release, canonical-ref, cache-write, artifact, backup, or signing authority.
 
-## Health check
+## Accepted replica identities
 
-Use the pinned tailnet address and strict host-key checking:
+| Fact | `britton-desktop` | `aspen3` |
+|---|---|---|
+| Node ID | `z6MkkQCj5EczNiVzDzCkX9ewHNJ7NDEXSKbuRiS1x7o72yeG` | `z6MkoHdimfedLwXjNZhxfAadc8H3rW2TMjpn7ATMNcRWieWh` |
+| Fingerprint | `SHA256:JHQTPqoMr4kLqBsrAPSRNXUuzETiHAoiKBM/VWftmEg` | `SHA256:TEuGqHuV/3kGZzGiqUGCkCYG8ITfhV3TvJUjddv8fb0` |
+| Native address | `100.110.43.11:8776` | `100.108.13.4:8776` |
+| Interface | `tailscale0` | `tailscale0` |
+| Dataset | `datapool/radicle-seed` | `zroot/radicle-seed` |
+| State path | `/var/lib/radicle` | `/var/lib/radicle` |
+| Quota | `64G` | `64G` |
+| Failure domain | `britton-desktop-workstation` | `aspen3-mobile-workstation` |
+
+The original desktop acceptance receipt remains at `evidence/radicle/secondary-seed-v1.json`.
+
+## Health checks
+
+Check the desktop replica:
 
 ```bash
 ssh -o StrictHostKeyChecking=yes root@100.110.43.11 '
   systemctl is-active radicle-node.service radicle-policy-reconcile.timer
-  systemctl show radicle-replica-identity-verify.service \
-    -p Result -p ExecMainStatus -p CapabilityBoundingSet \
-    -p PrivateNetwork -p ProtectHome -p NoNewPrivileges
   ss -H -ltn "sport = :8776"
   zfs get quota,recordsize,used,available datapool/radicle-seed
 '
 ```
 
-Expected boundaries:
-
-- node and policy timer are active;
-- the last verifier result is successful;
-- the verifier and node capability bounding sets are empty;
-- the listener is exactly `100.110.43.11:8776`;
-- no `radicle-httpd.service` exists;
-- the dataset quota remains 64 GiB.
-
-## Inspect the exact object
-
-Root Git requires a one-command safe-directory override because the repository belongs to the `radicle` service user:
+Check the `aspen3` replica:
 
 ```bash
-ssh -o StrictHostKeyChecking=yes root@100.110.43.11 '
-  repository=/var/lib/radicle/storage/z2CpqLFpdP36fZXYUK5ZNWxMibpCo
-  git -c safe.directory="$repository" -C "$repository" rev-parse refs/heads/main
-  git -c safe.directory="$repository" -C "$repository" \
-    cat-file -t 29dac88ecded94457572db3fdfaaaab95fa91525
+ssh -o StrictHostKeyChecking=yes root@aspen3 '
+  systemctl is-active radicle-node.service radicle-policy-reconcile.timer
+  systemctl show radicle-replica-identity-verify.service \
+    -p Result -p ExecMainStatus -p CapabilityBoundingSet \
+    -p PrivateNetwork -p ProtectHome -p NoNewPrivileges
+  systemctl show radicle-node.service -p Restart -p CapabilityBoundingSet
+  ss -H -ltn "sport = :8776"
+  zfs get quota,recordsize,used,available zroot/radicle-seed
 '
 ```
 
-Expected output is the accepted commit followed by `commit`.
+Accept these results:
 
-The seeding database is authoritative only through `radicle-policy-reconcile.service`. Do not run `rad seed` under root's default profile. To inspect the policy, use a temporary least-authority query profile or inspect the reconciler journal:
+1. The node and policy timer are active.
+2. The verifier result is successful.
+3. The capability sets are empty.
+4. The listener uses only the reviewed tailnet address.
+5. `radicle-httpd.service` has load state `not-found`.
+
+The replica node uses `Restart=no`. The persistent policy timer starts a failed node through a new identity-verification transaction.
+
+## Policy and storage
+
+Start policy reconciliation after an admission change:
 
 ```bash
-ssh -o StrictHostKeyChecking=yes root@100.110.43.11 \
-  'journalctl -u radicle-policy-reconcile.service --since today --no-pager'
+ssh -o StrictHostKeyChecking=yes root@aspen3 \
+  'systemctl start radicle-policy-reconcile.service && journalctl -u radicle-policy-reconcile.service -n 20 --no-pager'
 ```
 
-Expected steady state is `removed=0, added=0, desired=1`.
+The steady-state result is `removed=0, added=0, desired=5`.
+
+List the exact storage set:
+
+```bash
+ssh -o StrictHostKeyChecking=yes root@aspen3 \
+  'find /var/lib/radicle/storage -mindepth 1 -maxdepth 1 -type d -printf "%f\n" | sort'
+```
+
+Expected RIDs:
+
+```text
+z2CpqLFpdP36fZXYUK5ZNWxMibpCo
+z2oYsb9jGTyp68BKYhzpivY1eK58a
+z3t9ykR1HfG9UkyKoQQg5ikkzrTxg
+z4JGYYW7WsesXUq7MXVdx16Fawu2f
+zL2ncTUeASVYwcoGkEXv9JKgGbAF
+```
+
+Do not run `rad seed` under the root profile. The policy reconciler owns the seeding database.
 
 ## Restart
 
+Restart a replica through systemd:
+
 ```bash
-ssh -o StrictHostKeyChecking=yes root@100.110.43.11 '
+ssh -o StrictHostKeyChecking=yes root@aspen3 '
   systemctl restart radicle-node.service
   systemctl start radicle-policy-reconcile.service
   systemctl is-active radicle-node.service radicle-policy-reconcile.timer
 '
 ```
 
-Every observed node start must be preceded by a successful `radicle-replica-identity-verify.service` run. A fingerprint or private/public mismatch must leave the node inactive; never bypass the verifier.
+A successful restart reruns `radicle-replica-identity-verify.service`. A fingerprint or key-pair mismatch keeps the node inactive.
 
 ## Deploy
 
-From the `onix-core` repository:
-
-```bash
-NIX_CONFIG=$'min-free = 0\nmax-free = 0' \
-  nix develop -c clan machines update britton-desktop \
-    --target-host root@100.110.43.11 \
-    --host-key-check strict
-```
-
-Build the focused check and machine closure before deployment:
+Build the focused check and the target closure:
 
 ```bash
 nix build .#checks.x86_64-linux.radicle-seed-replica -L --no-link
-nix build .#nixosConfigurations.britton-desktop.config.system.build.toplevel -L --no-link
+nix build .#nixosConfigurations.aspen3.config.system.build.toplevel -L --no-link
 ```
 
-If the key generator has intentionally changed, regenerate only the reviewed machine generator, then update and review the pinned public fingerprint before deployment. Never copy an operator or delegate profile into the service.
+Deploy `aspen3`:
 
-## Outage drill safeguards
+```bash
+NIX_CONFIG=$'min-free = 0\nmax-free = 0' \
+  nix develop -c clan machines update aspen3 \
+    --target-host root@aspen3 \
+    --host-key-check strict
+```
 
-A valid independent-seed drill must:
-
-1. stop transient operator nodes;
-2. stop Aspen1's native node and verify it inactive;
-3. run a fresh client with egress allowed only to `100.110.43.11/32`;
-4. block the client from `/var/lib/radicle`, `/run/secrets`, and user homes;
-5. require signed-reference feature `parent`;
-6. verify the exact commit and source-archive BLAKE3;
-7. reject an undeclared RID and missing object;
-8. restore Aspen1 in a trap, then verify its node and policy timer active.
-
-A normal `rad clone --seed` is insufficient because peer discovery can silently fall back to public seeds and mutate the client's local seeding policy.
+If a replica key changes, regenerate only that machine generator. Then pin and review the new public fingerprint before deployment.
 
 ## Recovery boundary
 
-The replica key is encrypted in Clan per-machine variables. Repository state is disposable replication state and can be rebuilt from the accepted primary repository. Aspen1's full encrypted recovery exercise remains the stack's destructive restore evidence; no destructive restore of this secondary dataset has been claimed.
+Clan encrypts each replica key as a per-machine variable. Repository state is disposable replication state and can be rebuilt from another accepted seed.
 
-The desktop also hosts Aspen1's encrypted Borg target, but that backup authority is not mounted or credentialed into the Radicle replica services.
+The Aspen1 stack retains encrypted backup and destructive-restore evidence. Replica services receive no backup credentials or backup mounts.
 
 ## Non-claims
 
-Two native seeds do not establish a second public HTTPS origin, automatic HTTPS failover, geographic/building-power independence, host-root isolation, confidentiality for production secrets, global metadata secrecy, source correctness, CI correctness, canonical-ref enforcement by seeds, or release readiness. Private-pilot observations are bounded to the non-secret fixture, tested identities, direct acquisition path, and Radicle 1.9.1.
+Three native seeds do not establish another public HTTPS origin, automatic failover, geographic independence, or building-power independence.
+
+This deployment also does not prove host-root isolation, private-secret safety, global metadata secrecy, source correctness, CI correctness, or release readiness.

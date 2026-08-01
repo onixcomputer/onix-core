@@ -7,6 +7,8 @@ let
   grubConfigurationLimit = 10;
   primaryPartitionPriority = 1;
   zfsAshift = "12";
+  radicleSeedQuota = "64G";
+  radicleSeedRecordSize = "128K";
 in
 {
   boot.loader.grub = {
@@ -83,6 +85,18 @@ in
             mountpoint = "legacy";
             "com.sun:auto-snapshot" = "true";
           };
+        };
+        radicle-seed = {
+          type = "zfs_fs";
+          mountpoint = "/var/lib/radicle";
+          options = {
+            quota = radicleSeedQuota;
+            recordsize = radicleSeedRecordSize;
+          };
+          mountOptions = [
+            "defaults"
+            "nofail"
+          ];
         };
       };
     };

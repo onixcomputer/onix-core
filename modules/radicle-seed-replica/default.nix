@@ -124,9 +124,14 @@ in
                 ];
 
               systemd.services = {
+                # r[impl onix.radicle_replica.deployment]
                 radicle-node = {
                   after = [ "${identityVerificationServiceName}.service" ];
                   requires = [ "${identityVerificationServiceName}.service" ];
+                  # Disable internal restarts because systemd does not replay
+                  # prerequisite units for Restart=. The persistent policy
+                  # timer starts a failed node through a new verified transaction.
+                  serviceConfig.Restart = lib.mkForce "no";
                   unitConfig.RequiresMountsFor = [ settings.stateDirectory ];
                 };
                 ${identityVerificationServiceName} = identityVerifierService;

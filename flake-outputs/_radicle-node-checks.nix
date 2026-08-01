@@ -65,8 +65,8 @@ let
   choregraphRepository = "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF";
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   privatePilotCommit = "ff4ff027817465b1bb04251a8a98db42cc610b0c";
-  privatePilotIdentityRevision = "7fe3c9bd6a2d01a8317acb44ba386988375898da";
-  privatePilotSigrefs = "fc566eae3a5954df30d9499e0f85fe1b45a34d46";
+  privatePilotIdentityRevision = "cb3f6273f35ff437e58f15332d48f25b06c4b9cc";
+  privatePilotSigrefs = "ad1b6d032b69a4b81910b2fc98f8707b9ff268fb";
   privatePilotSourceBlake3 = "514904bdcf5f23b0813c567efbc8b6732248de94482037a58011bfff3fc26853";
   productionRepositories = [
     productionPilotRepository
@@ -1338,8 +1338,8 @@ in
               exit 1
             ''
           }
-          ${lib.optionalString (!(radicleServiceAbsent aspen2Config && radicleServiceAbsent aspen3Config)) ''
-            echo "Radicle bootstrap service escaped Aspen1 onto an undeclared host" >&2
+          ${lib.optionalString (!(radicleServiceAbsent aspen2Config)) ''
+            echo "Radicle bootstrap service escaped Aspen1 onto undeclared Aspen2" >&2
             exit 1
           ''}
           ${lib.optionalString

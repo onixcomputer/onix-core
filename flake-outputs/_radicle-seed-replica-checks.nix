@@ -12,18 +12,22 @@ let
   reviewedNodeVersion = "1.9.1";
   rustEdition = "2021";
   rejectedNodeVersion = "1.9.0";
+  reviewedHosts = import ../modules/radicle-seed-replica/reviewed-hosts.nix;
   expectedHost = "britton-desktop";
+  aspen3Host = "aspen3";
   unexpectedHost = "aspen1";
-  deploymentTarget = "root@100.110.43.11";
-  nodeAddress = "100.110.43.11";
+  desktopHostFacts = reviewedHosts.${expectedHost};
+  aspen3HostFacts = reviewedHosts.${aspen3Host};
+  inherit (desktopHostFacts) deploymentTarget;
+  inherit (desktopHostFacts) nodeAddress;
   nodePort = 8776;
   wrongNodePort = 8777;
   nodeInterface = "tailscale0";
   stateDirectory = "/var/lib/radicle";
-  stateDataset = "datapool/radicle-seed";
+  inherit (desktopHostFacts) stateDataset;
   stateQuotaGiB = 64;
   oversizedStateQuotaGiB = 65;
-  expectedNodeFingerprint = "SHA256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+  expectedNodeFingerprint = desktopHostFacts.nodeFingerprint;
   bootstrapNodeFingerprint = "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE";
   pilotRepository = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo";
   artifactAuthRepository = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
@@ -54,32 +58,39 @@ let
     import ../modules/radicle-seed-replica/mk-identity-verifier-service.nix
       { inherit lib; };
 
-  positiveSettings = {
-    inherit
-      expectedHost
-      deploymentTarget
-      expectedNodeFingerprint
-      stateDirectory
-      stateDataset
-      stateQuotaGiB
-      ;
-    alias = "britton-desktop-radicle";
-    failureDomain = "britton-desktop-workstation";
-    monitoringRequired = true;
-    nodeListenAddress = nodeAddress;
-    nodeListenPort = nodePort;
-    nodeFirewallInterface = nodeInterface;
-    externalAddress = "${nodeAddress}:${toString nodePort}";
-    seedRepositories = governedRepositories;
-    privateSeedRepositories = privateRepositories;
-    minimumSignedRefsFeature = "parent";
-  };
+  mkPositiveSettings =
+    hostName:
+    let
+      hostFacts = reviewedHosts.${hostName};
+    in
+    {
+      expectedHost = hostName;
+      inherit (hostFacts) deploymentTarget;
+      expectedNodeFingerprint = hostFacts.nodeFingerprint;
+      alias = "${hostName}-radicle";
+      inherit (hostFacts) failureDomain;
+      monitoringRequired = true;
+      nodeListenAddress = hostFacts.nodeAddress;
+      nodeListenPort = nodePort;
+      nodeFirewallInterface = nodeInterface;
+      externalAddress = "${hostFacts.nodeAddress}:${toString nodePort}";
+      seedRepositories = governedRepositories;
+      privateSeedRepositories = privateRepositories;
+      inherit stateDirectory stateQuotaGiB;
+      inherit (hostFacts) stateDataset;
+      minimumSignedRefsFeature = "parent";
+    };
+
+  positiveSettings = mkPositiveSettings expectedHost;
+  aspen3PositiveSettings = mkPositiveSettings aspen3Host;
 
   validate =
     settings: packageVersion: actualHost:
     validateSettings { inherit settings packageVersion actualHost; };
 
-  positiveValidationErrors = validate positiveSettings nodePackage.version expectedHost;
+  positiveValidationErrors =
+    validate positiveSettings nodePackage.version expectedHost
+    ++ validate aspen3PositiveSettings nodePackage.version aspen3Host;
   negativeCases = [
     {
       name = "old-package";
@@ -95,7 +106,7 @@ let
       };
       packageVersion = nodePackage.version;
       actualHost = unexpectedHost;
-      expected = "only on britton-desktop";
+      expected = "only on a reviewed host";
     }
     {
       name = "wrong-target";
@@ -104,7 +115,7 @@ let
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = deploymentTarget;
+      expected = "deploymentTarget must match the reviewed host";
     }
     {
       name = "primary-failure-domain";
@@ -113,7 +124,7 @@ let
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "reviewed desktop failure domain";
+      expected = "failureDomain must match the reviewed host";
     }
     {
       name = "missing-alias";
@@ -140,7 +151,7 @@ let
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = nodeAddress;
+      expected = "nodeListenAddress must match the reviewed host";
     }
     {
       name = "wrong-port";
@@ -306,7 +317,7 @@ let
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = stateDataset;
+      expected = "stateDataset must match the reviewed host";
     }
     {
       name = "oversized-quota";
@@ -344,11 +355,26 @@ let
       actualHost = expectedHost;
       expected = "must not reuse the Aspen1 node identity";
     }
+    {
+      name = "duplicate-reviewed-replica-fingerprint";
+      settings = aspen3PositiveSettings;
+      packageVersion = nodePackage.version;
+      actualHost = aspen3Host;
+      reviewedHosts = reviewedHosts // {
+        ${aspen3Host} = aspen3HostFacts // {
+          nodeFingerprint = expectedNodeFingerprint;
+        };
+      };
+      expected = "seed fingerprints must remain unique";
+    }
   ];
   negativeCasesValid = builtins.all (
     case:
     let
-      errors = validate case.settings case.packageVersion case.actualHost;
+      errors = validateSettings {
+        inherit (case) settings packageVersion actualHost;
+        reviewedHosts = case.reviewedHosts or reviewedHosts;
+      };
     in
     errors != [ ] && builtins.any (error: lib.hasInfix case.expected error) errors
   ) negativeCases;
@@ -417,6 +443,94 @@ let
   identityVerifierServicePolicyValid = builtins.all lib.id (
     builtins.attrValues identityVerifierServiceObservations
   );
+
+  # r[verify onix.radicle_replica.deployment]
+  # r[verify onix.radicle_replica.identity_distinct]
+  replicaIdentityVerificationServiceName = "radicle-replica-identity-verify";
+  desktopReplicaInstanceName = "radicle-forge-secondary-seed";
+  aspen3ReplicaInstanceName = "radicle-forge-aspen3-seed";
+  mkReplicaGeneratorName = instanceName: "radicle-seed-replica-${instanceName}";
+  expectedProductionPolicyCommand = lib.escapeShellArgs (
+    [
+      "${policyReconciler}/bin/radicle-policy-reconciler"
+      "${nodePackage}/bin/rad"
+    ]
+    ++ governedRepositories
+    ++ privateRepositories
+  );
+  restartPolicyPreservesVerification = service: service.serviceConfig.Restart == "no";
+  automaticRestartBypassRejected =
+    !(restartPolicyPreservesVerification { serviceConfig.Restart = "on-failure"; });
+  mkProductionReplicaObservations =
+    {
+      config,
+      hostName,
+      instanceName,
+    }:
+    let
+      hostFacts = reviewedHosts.${hostName};
+      generatorName = mkReplicaGeneratorName instanceName;
+      nodeService = config.systemd.services.radicle-node;
+      identityService = config.systemd.services.${replicaIdentityVerificationServiceName};
+      policyService = config.systemd.services.radicle-policy-reconcile;
+      policyTimer = config.systemd.timers.radicle-policy-reconcile;
+      failedAssertions = builtins.filter (assertion: !assertion.assertion) config.assertions;
+    in
+    {
+      assertionsPass = failedAssertions == [ ];
+      generatorPresent = builtins.hasAttr generatorName config.clan.core.vars.generators;
+      nodeAliasExact = config.services.radicle.settings.node.alias == "${hostName}-radicle";
+      nodeListenerExact =
+        config.services.radicle.node.listenAddress == hostFacts.nodeAddress
+        && config.services.radicle.node.listenPort == nodePort;
+      advertisedAddressExact =
+        config.services.radicle.settings.node.externalAddresses
+        == [ "${hostFacts.nodeAddress}:${toString nodePort}" ];
+      defaultBlock = config.services.radicle.settings.node.seedingPolicy.default == "block";
+      nativeFirewallPresent =
+        builtins.elem nodePort
+          config.networking.firewall.interfaces.${nodeInterface}.allowedTCPPorts;
+      httpDisabled = !config.services.radicle.httpd.enable;
+      httpUnitAbsent = !(builtins.hasAttr "radicle-httpd" config.systemd.services);
+      stateDatasetExact = config.fileSystems.${stateDirectory}.device == hostFacts.stateDataset;
+      stateMountRequired = builtins.elem stateDirectory nodeService.unitConfig.RequiresMountsFor;
+      identityOrdered =
+        builtins.elem "${replicaIdentityVerificationServiceName}.service" nodeService.after
+        && builtins.elem "${replicaIdentityVerificationServiceName}.service" nodeService.requires;
+      verifiedRestartRecovery =
+        restartPolicyPreservesVerification nodeService
+        && builtins.elem "radicle-node.service" policyService.requires
+        && policyTimer.timerConfig.Persistent;
+      identityFingerprintPinned = lib.hasInfix hostFacts.nodeFingerprint identityService.serviceConfig.ExecStart;
+      policyExact =
+        builtins.unsafeDiscardStringContext policyService.serviceConfig.ExecStart
+        == builtins.unsafeDiscardStringContext expectedProductionPolicyCommand;
+      monitoringPresent =
+        config.services.prometheus.enable && config.services.prometheus.exporters.systemd.enable;
+    };
+  desktopConfig = self.nixosConfigurations.${expectedHost}.config;
+  aspen3Config = self.nixosConfigurations.${aspen3Host}.config;
+  productionReplicaObservations = {
+    ${expectedHost} = mkProductionReplicaObservations {
+      config = desktopConfig;
+      hostName = expectedHost;
+      instanceName = desktopReplicaInstanceName;
+    };
+    ${aspen3Host} = mkProductionReplicaObservations {
+      config = aspen3Config;
+      hostName = aspen3Host;
+      instanceName = aspen3ReplicaInstanceName;
+    };
+  };
+  productionReplicaPolicyValid = builtins.all lib.id (
+    lib.concatMap builtins.attrValues (builtins.attrValues productionReplicaObservations)
+  );
+  productionSeedFingerprints = [
+    bootstrapNodeFingerprint
+  ]
+  ++ map (hostName: reviewedHosts.${hostName}.nodeFingerprint) (builtins.attrNames reviewedHosts);
+  productionSeedFingerprintsUnique =
+    lib.unique productionSeedFingerprints == productionSeedFingerprints;
 
   plugins = self.packages.${system}.wasm-plugins;
   wasm = import ../lib/wasm.nix { inherit plugins; };
@@ -743,6 +857,12 @@ in
         "replica Nickel contract missed fields: ${builtins.toJSON missingSchemaNegativeFields}";
       assert lib.assertMsg identityVerifierServicePolicyValid
         "replica identity verifier hardening failed: ${builtins.toJSON identityVerifierServiceObservations}";
+      assert lib.assertMsg automaticRestartBypassRejected
+        "replica automatic-restart bypass negative fixture did not fail";
+      assert lib.assertMsg productionReplicaPolicyValid
+        "production replica policy failed: ${builtins.toJSON productionReplicaObservations}";
+      assert lib.assertMsg productionSeedFingerprintsUnique
+        "persistent Radicle seed fingerprints must remain unique";
       assert lib.assertMsg (
         replicaReceipt == replicaReceiptJson
       ) "replica Nickel receipt and exported JSON differ";
@@ -767,6 +887,9 @@ in
             'nickel_contract=passed' \
             'identity_verifier_service_policy=passed' \
             'identity_verifier_tests=passed' \
+            'automatic_restart_bypass_negative_case=passed' \
+            'production_replica_policy=passed' \
+            'production_seed_identity_uniqueness=passed' \
             'replica_receipt=passed' \
             'replica_receipt_negative_cases=passed' \
             'replica_receipt_blake3=${replicaReceiptExpectedHash}' \

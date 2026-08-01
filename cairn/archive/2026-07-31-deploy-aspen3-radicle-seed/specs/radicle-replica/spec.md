@@ -1,10 +1,4 @@
-# Radicle Replica Specification
-
-## Purpose
-
-Defines the `radicle-replica` capability.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Replica configuration is typed and bounded
 
@@ -38,38 +32,6 @@ r[onix.radicle_replica.deployment.identity]
 - THEN it MUST verify the public fingerprint before node execution
 - AND a mismatch MUST prevent service activation without deleting state
 
-### Requirement: Seed service has no privileged forge authority
-
-r[onix.radicle_replica.authority] The replica service MUST receive only its machine-scoped Radicle node key and public repository storage permissions.
-
-#### Scenario: Service authority is inspected
-
-r[onix.radicle_replica.authority.inspected]
-- GIVEN the deployed service process and systemd unit
-- WHEN credential, environment, mount, home, capability, and secret-path boundaries are inspected
-- THEN delegate, CI, deployment, release, canonical-ref, cache-write, artifact, backup, Cloudflare, and user-profile authority MUST be absent from the service
-- AND host-root compromise resistance MUST remain an explicit non-claim
-
-### Requirement: Independent native availability is observed
-
-r[onix.radicle_replica.availability] The replica MUST provide the exact reviewed pilot Git object to an independent native client while Aspen1's native node is unavailable.
-
-#### Scenario: Desktop replica survives Aspen1 node outage
-
-r[onix.radicle_replica.availability.outage]
-- GIVEN both seeds store the exact pilot RID and Aspen1's native node is stopped
-- WHEN a fresh client with egress restricted to the desktop replica clones using signed-reference feature `parent`
-- THEN it MUST resolve commit `29dac88ecded94457572db3fdfaaaab95fa91525`
-- AND source archive BLAKE3 MUST match the reviewed publication source
-- AND Aspen1 MUST be restored before the drill ends
-
-#### Scenario: Undeclared native repository is rejected
-
-r[onix.radicle_replica.availability.rejection]
-- GIVEN the client can reach only the desktop replica
-- WHEN it requests an undeclared inherited or public RID
-- THEN acquisition MUST fail without public-seed or GitHub fallback
-
 ### Requirement: Replica evidence is deterministic and redaction-safe
 
 r[onix.radicle_replica.evidence] `onix-core` MUST record redaction-safe evidence for each accepted replica deployment and bind durable receipts with BLAKE3 when issued.
@@ -93,6 +55,8 @@ r[onix.radicle_replica.validation.focused]
 - WHEN focused Nix and Cairn checks run
 - THEN both reviewed host configurations MUST pass
 - AND unknown hosts, mismatched host facts, and duplicate seed identities MUST fail with expected diagnostics
+
+## ADDED Requirements
 
 ### Requirement: Seed identities remain distinct
 
