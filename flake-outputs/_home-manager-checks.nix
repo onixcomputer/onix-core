@@ -14,6 +14,8 @@ let
   desktopHome = desktopConfig.home-manager.users.brittonr;
   aspen3Config = self.nixosConfigurations.aspen3.config;
   aspen3Home = aspen3Config.home-manager.users.brittonr;
+  aspen1Config = self.nixosConfigurations.aspen1.config;
+  aspen1Home = aspen1Config.home-manager.users.brittonr;
   actualHomeStateVersion = desktopHome.home.stateVersion;
   actualSystemStateVersion = desktopConfig.system.stateVersion;
   neovimConfig = desktopHome.programs.neovim;
@@ -25,6 +27,16 @@ let
   pueueSplitKey = "prefix+shift+p";
   invalidPueueActionId = "dev.herdr.pueue.invalid";
   pueuePluginLinkSource = "/home/brittonr/git/herdr-plugin-pueue";
+  cairnPackageName = "cairn";
+  invalidCairnPackageName = "cairn-bogus";
+  packageName = package: package.pname or (package.name or "");
+  hasHomePackageNamed =
+    expectedName: home: lib.any (package: packageName package == expectedName) home.home.packages;
+  brittonrDevHomes = {
+    desktop = desktopHome;
+    laptop = aspen3Home;
+    server = aspen1Home;
+  };
   herdrPackage = lib.findFirst (
     package: (package.pname or null) == "herdr"
   ) null desktopConfig.environment.systemPackages;
@@ -194,10 +206,27 @@ let
     }
   ];
 
+  cairnDevToolAssertions = lib.concatLists (
+    lib.mapAttrsToList (role: home: [
+      {
+        name = "positive: brittonr ${role} dev profile installs ${cairnPackageName}";
+        condition = hasHomePackageNamed cairnPackageName home;
+      }
+      {
+        name = "negative: brittonr ${role} dev profile excludes ${invalidCairnPackageName}";
+        condition = !hasHomePackageNamed invalidCairnPackageName home;
+      }
+    ]) brittonrDevHomes
+  );
+
   failedAssertions = lib.filter (assertion: !assertion.condition) assertions;
   failedNames = lib.concatMapStringsSep "; " (assertion: assertion.name) failedAssertions;
   failedPalmAssertions = lib.filter (assertion: !assertion.condition) palmAssertions;
   failedPalmNames = lib.concatMapStringsSep "; " (assertion: assertion.name) failedPalmAssertions;
+  failedCairnDevToolAssertions = lib.filter (assertion: !assertion.condition) cairnDevToolAssertions;
+  failedCairnDevToolNames = lib.concatMapStringsSep "; " (
+    assertion: assertion.name
+  ) failedCairnDevToolAssertions;
   report = builtins.toFile "home-manager-2605-migration-report.txt" ''
     Home Manager 26.05 migration check
 
@@ -225,6 +254,14 @@ let
       assertion: "- ${assertion.name}: ${if assertion.condition then "PASS" else "FAIL"}"
     ) palmAssertions}
   '';
+  cairnDevToolReport = builtins.toFile "brittonr-cairn-dev-tool-report.txt" ''
+    brittonr Cairn dev tool check
+
+    Assertions:
+    ${lib.concatMapStringsSep "\n" (
+      assertion: "- ${assertion.name}: ${if assertion.condition then "PASS" else "FAIL"}"
+    ) cairnDevToolAssertions}
+  '';
 in
 {
   checks = lib.optionalAttrs (system == "x86_64-linux") {
@@ -235,6 +272,14 @@ in
         ''
       else
         throw "home-manager-2605-migration failed: ${failedNames}";
+
+    brittonr-cairn-dev-tool =
+      if failedCairnDevToolAssertions == [ ] then
+        pkgs.runCommand "brittonr-cairn-dev-tool" { inherit cairnDevToolReport; } ''
+          cp "$cairnDevToolReport" "$out"
+        ''
+      else
+        throw "brittonr-cairn-dev-tool failed: ${failedCairnDevToolNames}";
 
     aspen3-input-palm-rejection =
       if failedPalmAssertions == [ ] then

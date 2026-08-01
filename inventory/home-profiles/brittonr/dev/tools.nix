@@ -7,6 +7,21 @@ let
   nixdelta = inputs.nixdelta.packages.${pkgs.stdenv.hostPlatform.system}.default;
   kiEditor = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.ki-editor;
   mercuryCli = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.mercury-cli;
+  cairnUpstream = inputs.cairn.packages.${pkgs.stdenv.hostPlatform.system}.cairn;
+  cairnCargoDeps = pkgs.rustPlatform.importCargoLock {
+    lockFile = "${inputs.cairn}/Cargo.lock";
+    # Fixed-output sources let remote hosts evaluate Cairn without GitHub credentials.
+    outputHashes = {
+      "artifact-auth-core-0.1.0" = "sha256-2cM912L2YXVnVX9LquwhAPKyjPP/z/oFQRe7Qq9bHHE=";
+      "artifact-auth-ed25519-0.1.0" = "sha256-2cM912L2YXVnVX9LquwhAPKyjPP/z/oFQRe7Qq9bHHE=";
+      "nickel-export-core-0.1.0" = "sha256-dV4+/jghpJ89F5DHprdjxyru8kllMAurS2DsBGn/ibA=";
+      "rat-canvas-0.1.0" = "sha256-WHMtm38pQirmjZ/5Ua0unGhj4pIDaEixXG1pBUYWmTQ=";
+      "rat-nodegraph-0.1.0" = "sha256-WHMtm38pQirmjZ/5Ua0unGhj4pIDaEixXG1pBUYWmTQ=";
+    };
+  };
+  cairn = cairnUpstream.overrideAttrs (_old: {
+    cargoDeps = cairnCargoDeps;
+  });
   tigerstylePkgs = inputs.tigerstyle.packages.${pkgs.stdenv.hostPlatform.system};
   tigerstyleStandards = tigerstylePkgs.tigerstyle-standards or tigerstylePkgs.slotcar-standards;
 in
@@ -61,6 +76,7 @@ in
     tuicr
 
     # AI/dev tooling
+    cairn
     tracey
 
     # Iroh P2P tools

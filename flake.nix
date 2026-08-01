@@ -162,6 +162,10 @@
       url = "git+ssh://git@github.com/brittonr/pi.git";
       flake = false;
     };
+    cairn = {
+      url = "git+ssh://git@github.com/OnixResearch/cairn.git";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
