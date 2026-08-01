@@ -126,6 +126,14 @@ let
         grep -Fq 'options.listen.clone()' \
           ${nodePackage.src}/crates/radicle-node/src/main.rs
 
+        desktop_startup=${pkgs.radicle-desktop.src}/crates/radicle-tauri/src/commands/startup.rs
+        grep -Fq 'let profile = radicle::Profile::load()?;' "$desktop_startup"
+        grep -Fq 'let node = Node::new(profile.home().socket_from_env());' "$desktop_startup"
+        if grep -R -F 'Command::new("radicle-node")' ${pkgs.radicle-desktop.src}/crates; then
+          echo "negative: Radicle Desktop starts radicle-node outside the Onix wrapper" >&2
+          exit 1
+        fi
+
         touch "$out"
       '';
   policyReconciler = import ../modules/radicle-node/policy-reconciler.nix { inherit pkgs; };
