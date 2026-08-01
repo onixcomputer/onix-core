@@ -70,7 +70,7 @@ The wrapper rejects explicit `--listen` arguments. Thus, the user node cannot cl
 
 The system manager also denies TCP port `8776` on the desktop user's slice. This kernel filter covers raw Nix-store binaries and all session descendants.
 
-The filter applies when the user slice starts. Restart the user session after the first deployment of this guard.
+The system manager loads the static filter for the active slice and all future user sessions.
 
 The system service uses its own package path. Therefore, the user wrapper does not change the managed replica.
 
