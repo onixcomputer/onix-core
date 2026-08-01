@@ -29,7 +29,9 @@ let
   pueuePluginLinkSource = "/home/brittonr/git/herdr-plugin-pueue";
   cairnPackageName = "cairn";
   invalidCairnPackageName = "cairn-bogus";
-  packageName = package: package.pname or (package.name or "");
+  octetPackageName = "cargo-octet";
+  invalidOctetPackageName = "cargo-octet-bogus";
+  packageName = package: package.pname or (lib.getName package);
   hasHomePackageNamed =
     expectedName: home: lib.any (package: packageName package == expectedName) home.home.packages;
   brittonrDevHomes = {
@@ -206,18 +208,22 @@ let
     }
   ];
 
-  cairnDevToolAssertions = lib.concatLists (
-    lib.mapAttrsToList (role: home: [
-      {
-        name = "positive: brittonr ${role} dev profile installs ${cairnPackageName}";
-        condition = hasHomePackageNamed cairnPackageName home;
-      }
-      {
-        name = "negative: brittonr ${role} dev profile excludes ${invalidCairnPackageName}";
-        condition = !hasHomePackageNamed invalidCairnPackageName home;
-      }
-    ]) brittonrDevHomes
-  );
+  devToolAssertionsFor =
+    expectedName: invalidName:
+    lib.concatLists (
+      lib.mapAttrsToList (role: home: [
+        {
+          name = "positive: brittonr ${role} dev profile installs ${expectedName}";
+          condition = hasHomePackageNamed expectedName home;
+        }
+        {
+          name = "negative: brittonr ${role} dev profile excludes ${invalidName}";
+          condition = !hasHomePackageNamed invalidName home;
+        }
+      ]) brittonrDevHomes
+    );
+  cairnDevToolAssertions = devToolAssertionsFor cairnPackageName invalidCairnPackageName;
+  octetDevToolAssertions = devToolAssertionsFor octetPackageName invalidOctetPackageName;
 
   failedAssertions = lib.filter (assertion: !assertion.condition) assertions;
   failedNames = lib.concatMapStringsSep "; " (assertion: assertion.name) failedAssertions;
@@ -227,6 +233,10 @@ let
   failedCairnDevToolNames = lib.concatMapStringsSep "; " (
     assertion: assertion.name
   ) failedCairnDevToolAssertions;
+  failedOctetDevToolAssertions = lib.filter (assertion: !assertion.condition) octetDevToolAssertions;
+  failedOctetDevToolNames = lib.concatMapStringsSep "; " (
+    assertion: assertion.name
+  ) failedOctetDevToolAssertions;
   report = builtins.toFile "home-manager-2605-migration-report.txt" ''
     Home Manager 26.05 migration check
 
@@ -262,6 +272,14 @@ let
       assertion: "- ${assertion.name}: ${if assertion.condition then "PASS" else "FAIL"}"
     ) cairnDevToolAssertions}
   '';
+  octetDevToolReport = builtins.toFile "brittonr-octet-dev-tool-report.txt" ''
+    brittonr Octet dev tool check
+
+    Assertions:
+    ${lib.concatMapStringsSep "\n" (
+      assertion: "- ${assertion.name}: ${if assertion.condition then "PASS" else "FAIL"}"
+    ) octetDevToolAssertions}
+  '';
 in
 {
   checks = lib.optionalAttrs (system == "x86_64-linux") {
@@ -280,6 +298,14 @@ in
         ''
       else
         throw "brittonr-cairn-dev-tool failed: ${failedCairnDevToolNames}";
+
+    brittonr-octet-dev-tool =
+      if failedOctetDevToolAssertions == [ ] then
+        pkgs.runCommand "brittonr-octet-dev-tool" { inherit octetDevToolReport; } ''
+          cp "$octetDevToolReport" "$out"
+        ''
+      else
+        throw "brittonr-octet-dev-tool failed: ${failedOctetDevToolNames}";
 
     aspen3-input-palm-rejection =
       if failedPalmAssertions == [ ] then

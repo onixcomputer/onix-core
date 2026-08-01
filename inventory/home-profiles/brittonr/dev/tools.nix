@@ -22,8 +22,8 @@ let
   cairn = cairnUpstream.overrideAttrs (_old: {
     cargoDeps = cairnCargoDeps;
   });
-  tigerstylePkgs = inputs.tigerstyle.packages.${pkgs.stdenv.hostPlatform.system};
-  tigerstyleStandards = tigerstylePkgs.tigerstyle-standards or tigerstylePkgs.slotcar-standards;
+  octetPkgs = inputs.tigerstyle.packages.${pkgs.stdenv.hostPlatform.system};
+  octetStandards = octetPkgs.octet-standards;
 in
 {
   home.packages = with pkgs; [
@@ -87,7 +87,7 @@ in
     nixdelta
     kiEditor
     mercuryCli
-    tigerstylePkgs.cargo-tigerstyle
-    tigerstyleStandards
+    octetPkgs.cargo-octet
+    octetStandards
   ];
 }
