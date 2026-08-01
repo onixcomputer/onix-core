@@ -595,7 +595,11 @@ let
     };
   desktopConfig = self.nixosConfigurations.${expectedHost}.config;
   aspen3Config = self.nixosConfigurations.${aspen3Host}.config;
-  aspen3Home = aspen3Config.home-manager.users.brittonr;
+  aspen3DesktopUserName = "brittonr";
+  aspen3DesktopUserUid = aspen3Config.users.users.${aspen3DesktopUserName}.uid;
+  aspen3DesktopUserSliceName = "user-${toString aspen3DesktopUserUid}";
+  expectedDesktopUserSliceBindRule = "tcp:${toString nodePort}";
+  aspen3Home = aspen3Config.home-manager.users.${aspen3DesktopUserName};
   aspen3RadicleDesktopPackages = lib.filter (
     package: package.onixRadicleDesktop or false
   ) aspen3Home.home.packages;
@@ -617,10 +621,20 @@ let
     sessionSocketExact = aspen3Home.home.sessionVariables.RAD_SOCKET == desktopRadicleSocket;
     systemAndUserHomesDistinct = systemRadicleHome != desktopRadicleHome;
     systemAndUserSocketsDistinct = systemRadicleSocket != desktopRadicleSocket;
+    userSliceBindGuardExact =
+      aspen3Config.systemd.slices.${aspen3DesktopUserSliceName}.sliceConfig.SocketBindDeny
+      == expectedDesktopUserSliceBindRule;
   };
-  radicleDesktopCoexistencePolicyValid = builtins.all lib.id (
-    builtins.attrValues radicleDesktopCoexistenceObservations
-  );
+  desktopCoexistencePolicyValid =
+    observations: builtins.all lib.id (builtins.attrValues observations);
+  radicleDesktopCoexistencePolicyValid = desktopCoexistencePolicyValid radicleDesktopCoexistenceObservations;
+  missingUserSliceBindGuardRejected =
+    !desktopCoexistencePolicyValid (
+      radicleDesktopCoexistenceObservations
+      // {
+        userSliceBindGuardExact = false;
+      }
+    );
   productionReplicaObservations = {
     ${expectedHost} = mkProductionReplicaObservations {
       config = desktopConfig;
@@ -976,6 +990,8 @@ in
         "persistent Radicle seed fingerprints must remain unique";
       assert lib.assertMsg radicleDesktopCoexistencePolicyValid
         "aspen3 Radicle Desktop isolation failed: ${builtins.toJSON radicleDesktopCoexistenceObservations}";
+      assert lib.assertMsg missingUserSliceBindGuardRejected
+        "missing desktop user-slice bind guard negative fixture did not fail";
       assert lib.assertMsg (
         replicaReceipt == replicaReceiptJson
       ) "replica Nickel receipt and exported JSON differ";
@@ -1005,6 +1021,7 @@ in
             'production_replica_policy=passed' \
             'production_seed_identity_uniqueness=passed' \
             'radicle_desktop_coexistence=passed' \
+            'radicle_desktop_missing_bind_guard_negative_case=passed' \
             'radicle_desktop_wrapper_tests=passed' \
             'replica_receipt=passed' \
             'replica_receipt_negative_cases=passed' \

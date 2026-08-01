@@ -114,6 +114,14 @@ r[onix.radicle_replica.desktop_isolation.listener]
 - THEN the wrapper MUST use an operating-system-selected loopback port
 - AND explicit `--listen` arguments MUST fail before node execution
 
+#### Scenario: Raw binaries cannot claim the managed port
+
+r[onix.radicle_replica.desktop_isolation.bind_guard]
+- GIVEN a process runs in the desktop user's system-managed slice
+- WHEN the process tries to bind TCP port `8776`
+- THEN the kernel bind filter MUST reject the request
+- AND the filter MUST apply before the user session starts
+
 ### Requirement: Seed identities remain distinct
 
 r[onix.radicle_replica.identity_distinct] Each persistent Radicle seed MUST use a different machine-scoped node identity.

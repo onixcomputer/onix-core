@@ -68,6 +68,10 @@ The user `radicle-node` wrapper uses `127.0.0.1:0`. The operating system selects
 
 The wrapper rejects explicit `--listen` arguments. Thus, the user node cannot claim the managed seed listener.
 
+The system manager also denies TCP port `8776` on the desktop user's slice. This kernel filter covers raw Nix-store binaries and all session descendants.
+
+The filter applies when the user slice starts. Restart the user session after the first deployment of this guard.
+
 The system service uses its own package path. Therefore, the user wrapper does not change the managed replica.
 
 ## Policy and storage

@@ -1,4 +1,5 @@
 {
+  config,
   inputs,
   lib,
   pkgs,
@@ -33,7 +34,12 @@ let
   ldacQualityMode = "hq";
   touchpadTapToClick = false;
   # r[impl onix.radicle_replica.desktop_isolation]
-  radicleDesktopHome = "/home/brittonr/.radicle";
+  radicleDesktopUserName = "brittonr";
+  radicleDesktopUserUid = config.users.users.${radicleDesktopUserName}.uid;
+  radicleDesktopUserSliceName = "user-${toString radicleDesktopUserUid}";
+  radicleManagedNodePort = config.services.radicle.node.listenPort;
+  radicleManagedNodeBindRule = "tcp:${toString radicleManagedNodePort}";
+  radicleDesktopHome = "/home/${radicleDesktopUserName}/.radicle";
   radicleDesktopSocket = "${radicleDesktopHome}/node/control.sock";
   radicleDesktopNodeListenAddress = "127.0.0.1:0";
   radicleDesktopPackage = import ../../modules/radicle-desktop/package.nix { inherit pkgs lib; } {
@@ -136,6 +142,9 @@ in
 
   users.groups.${c0sdGroup}.members = [ "brittonr" ];
   users.users.brittonr.extraGroups = [ renderGroup ];
+
+  systemd.slices.${radicleDesktopUserSliceName}.sliceConfig.SocketBindDeny =
+    radicleManagedNodeBindRule;
 
   systemd.services.c0sd-sysfs-perms = {
     description = "Allow c0sd group to soft-cycle SD host controller";
