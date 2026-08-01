@@ -15,37 +15,84 @@ let
   proxyActivationContextSize = 512;
 
   machineConfig = name: self.nixosConfigurations.${name}.config;
-  aspen1 = machineConfig "aspen1";
-  desktop = machineConfig "britton-desktop";
-  aspen2 = machineConfig "aspen2";
-  aspen3 = machineConfig "aspen3";
+  mkNode =
+    {
+      label,
+      machineName,
+      meshAddress,
+      backendUnit,
+    }:
+    let
+      config = machineConfig machineName;
+      service = config.systemd.services.${serviceName};
+    in
+    {
+      inherit
+        label
+        meshAddress
+        backendUnit
+        config
+        service
+        ;
+      command = service.serviceConfig.ExecStart;
+      credentials = service.serviceConfig.LoadCredential or [ ];
+    };
 
-  aspenService = aspen1.systemd.services.${serviceName};
-  desktopService = desktop.systemd.services.${serviceName};
-  aspenCommand = aspenService.serviceConfig.ExecStart;
-  desktopCommand = desktopService.serviceConfig.ExecStart;
-  desktopCredentials = desktopService.serviceConfig.LoadCredential;
+  aspen1Node = mkNode {
+    label = "Aspen1";
+    machineName = "aspen1";
+    meshAddress = "100.100.103.95";
+    backendUnit = "lemonade.service";
+  };
+  aspen2Node = mkNode {
+    label = "Aspen2";
+    machineName = "aspen2";
+    meshAddress = "100.125.64.121";
+    backendUnit = "lemonade.service";
+  };
+  aspen3Node = mkNode {
+    label = "Aspen3";
+    machineName = "aspen3";
+    meshAddress = "100.108.13.4";
+    backendUnit = "lemonade.service";
+  };
+  desktopNode = mkNode {
+    label = "Desktop";
+    machineName = "britton-desktop";
+    meshAddress = "100.110.43.11";
+    backendUnit = "llamacpp-server-vibethinker-britton-desktop.service";
+  };
+  joinerNodes = [
+    aspen2Node
+    aspen3Node
+    desktopNode
+  ];
+  meshNodes = [ aspen1Node ] ++ joinerNodes;
+  desktopCommand = desktopNode.command;
 
+  usesDedicatedUser = node: node.service.serviceConfig.User == "mesh-llm";
   hasPrivateLaunchFlags =
-    command:
-    lib.hasInfix "--mesh-discovery-mode mdns" command
-    && lib.hasInfix "--headless" command
-    && !(lib.hasInfix "--publish" command)
-    && !(lib.hasInfix "--auto" command)
-    && !(lib.hasInfix "--listen-all" command);
+    node:
+    lib.hasInfix "--mesh-discovery-mode mdns" node.command
+    && lib.hasInfix "--headless" node.command
+    && !(lib.hasInfix "--publish" node.command)
+    && !(lib.hasInfix "--auto" node.command)
+    && !(lib.hasInfix "--listen-all" node.command);
+  selectsMeshAddress = node: lib.hasInfix node.meshAddress node.command;
   hasPluginAwareProxyActivation =
-    command:
-    lib.hasInfix "--model ${proxyActivationModel}" command
-    && lib.hasInfix "--ctx-size ${toString proxyActivationContextSize}" command;
-
-  hasJoinCredential = lib.any (credential: lib.hasPrefix "join-token:" credential) desktopCredentials;
+    node:
+    lib.hasInfix "--model ${proxyActivationModel}" node.command
+    && lib.hasInfix "--ctx-size ${toString proxyActivationContextSize}" node.command;
+  deniesHostDevices = node: node.service.serviceConfig.PrivateDevices;
+  ordersAfterBackend = node: builtins.elem node.backendUnit node.service.after;
+  hasJoinCredential =
+    node: lib.any (credential: lib.hasPrefix "join-token:" credential) node.credentials;
+  hasJoinGenerator = node: builtins.hasAttr generatorName node.config.clan.core.vars.generators;
   tcpIsPrivate =
-    config:
-    !(builtins.elem apiPort config.networking.firewall.allowedTCPPorts)
-    && !(builtins.elem consolePort config.networking.firewall.allowedTCPPorts);
-  udpIsOpen = config: builtins.elem meshPort config.networking.firewall.allowedUDPPorts;
-  serviceAbsent = config: !(builtins.hasAttr serviceName config.systemd.services);
-  generatorAbsent = config: !(builtins.hasAttr generatorName config.clan.core.vars.generators);
+    node:
+    !(builtins.elem apiPort node.config.networking.firewall.allowedTCPPorts)
+    && !(builtins.elem consolePort node.config.networking.firewall.allowedTCPPorts);
+  udpIsOpen = node: builtins.elem meshPort node.config.networking.firewall.allowedUDPPorts;
 
   meshPackage = self.packages.${pkgs.stdenv.hostPlatform.system}.mesh-llm;
 in
@@ -57,62 +104,66 @@ in
           test -x ${meshPackage}/bin/mesh-llm
           test -x ${meshPackage}/bin/openai-endpoint
           test -f ${meshPackage}/share/mesh-llm/plugins/openai-endpoint/plugin.toml
+          grep -F -- '--mesh-discovery-mode mdns' ${aspen2Node.command}
+          grep -F -- '--headless' ${aspen2Node.command}
+          grep -F -- '--bind-ip ${aspen2Node.meshAddress}' ${aspen2Node.command}
+          grep -F -- '--model ${proxyActivationModel}' ${aspen2Node.command}
+          grep -F -- '--ctx-size ${toString proxyActivationContextSize}' ${aspen2Node.command}
+
+          grep -F -- '--mesh-discovery-mode mdns' ${aspen3Node.command}
+          grep -F -- '--headless' ${aspen3Node.command}
+          grep -F -- '--bind-ip ${aspen3Node.meshAddress}' ${aspen3Node.command}
+          grep -F -- '--model ${proxyActivationModel}' ${aspen3Node.command}
+          grep -F -- '--ctx-size ${toString proxyActivationContextSize}' ${aspen3Node.command}
+
+          grep -F -- '--mesh-discovery-mode mdns' ${desktopCommand}
+          grep -F -- '--headless' ${desktopCommand}
+          grep -F -- '--bind-ip ${desktopNode.meshAddress}' ${desktopCommand}
           grep -F -- '--model ${proxyActivationModel}' ${desktopCommand}
           grep -F -- '--ctx-size ${toString proxyActivationContextSize}' ${desktopCommand}
 
-          ${lib.optionalString (aspenService.serviceConfig.User != "mesh-llm") ''
-            echo "Aspen1 Mesh-LLM service must use the dedicated unprivileged user" >&2
+          ${lib.optionalString (!(lib.all usesDedicatedUser meshNodes)) ''
+            echo "Mesh-LLM services must use the dedicated unprivileged user" >&2
             exit 1
           ''}
-          ${lib.optionalString (desktopService.serviceConfig.User != "mesh-llm") ''
-            echo "Desktop Mesh-LLM service must use the dedicated unprivileged user" >&2
+          ${lib.optionalString (!(hasPrivateLaunchFlags aspen1Node)) ''
+            echo "Aspen1 Mesh-LLM launch command must enforce private headless discovery" >&2
             exit 1
           ''}
-          ${lib.optionalString (!hasPrivateLaunchFlags aspenCommand) ''
-            echo "Aspen1 launch command does not enforce private headless discovery" >&2
+          ${lib.optionalString (!(selectsMeshAddress aspen1Node)) ''
+            echo "Aspen1 Mesh-LLM launch command must select its Tailscale address" >&2
             exit 1
           ''}
-          ${lib.optionalString (!(lib.hasInfix "100.100.103.95" aspenCommand)) ''
-            echo "Aspen1 launch command does not select its Tailscale address" >&2
-            exit 1
-          ''}
-          ${lib.optionalString (!(hasPluginAwareProxyActivation aspenCommand)) ''
+          ${lib.optionalString (!(hasPluginAwareProxyActivation aspen1Node)) ''
             echo "Mesh-LLM v0.72.2 sidecars must activate the plugin-aware proxy with a bounded CPU model" >&2
             exit 1
           ''}
-          ${lib.optionalString
-            (!(aspenService.serviceConfig.PrivateDevices && desktopService.serviceConfig.PrivateDevices))
-            ''
-              echo "Mesh-LLM sidecars must not receive host GPU devices" >&2
-              exit 1
-            ''
-          }
-          ${lib.optionalString (!hasJoinCredential) ''
-            echo "Desktop Mesh-LLM service does not load the join credential" >&2
+          ${lib.optionalString (!(lib.all deniesHostDevices meshNodes)) ''
+            echo "Mesh-LLM sidecars must not receive host GPU devices" >&2
             exit 1
           ''}
-          ${lib.optionalString (!(builtins.hasAttr generatorName desktop.clan.core.vars.generators)) ''
-            echo "Desktop Mesh-LLM join credential generator is absent" >&2
+          ${lib.optionalString (!(lib.all ordersAfterBackend meshNodes)) ''
+            echo "Mesh-LLM sidecars must start after their local inference backends" >&2
             exit 1
           ''}
-          ${lib.optionalString (!generatorAbsent aspen1) ''
+          ${lib.optionalString (!(lib.all hasJoinCredential joinerNodes)) ''
+            echo "Mesh-LLM joiners must load the join credential" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!(lib.all hasJoinGenerator joinerNodes)) ''
+            echo "Mesh-LLM join credential generators are absent" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (hasJoinGenerator aspen1Node) ''
             echo "Aspen1 seed must not require a join credential generator" >&2
             exit 1
           ''}
-          ${lib.optionalString (!(tcpIsPrivate aspen1 && tcpIsPrivate desktop)) ''
+          ${lib.optionalString (!(lib.all tcpIsPrivate meshNodes)) ''
             echo "Mesh-LLM HTTP ports must remain absent from global firewall allowances" >&2
             exit 1
           ''}
-          ${lib.optionalString (!(udpIsOpen aspen1 && udpIsOpen desktop)) ''
+          ${lib.optionalString (!(lib.all udpIsOpen meshNodes)) ''
             echo "Selected Mesh-LLM nodes must open the private mesh UDP port" >&2
-            exit 1
-          ''}
-          ${lib.optionalString (!(serviceAbsent aspen2 && serviceAbsent aspen3)) ''
-            echo "Aspen2 and Aspen3 must not receive Mesh-LLM sidecars" >&2
-            exit 1
-          ''}
-          ${lib.optionalString (!(generatorAbsent aspen2 && generatorAbsent aspen3)) ''
-            echo "Aspen2 and Aspen3 must not receive Mesh-LLM credentials" >&2
             exit 1
           ''}
 

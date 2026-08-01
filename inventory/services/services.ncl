@@ -46,6 +46,11 @@ let ornith_35b_bf16_model = "user.Ornith-1.0-35B-BF16" in
 let radicle_node_address = "100.100.103.95" in
 let radicle_desktop_replica_address = "100.110.43.11" in
 let radicle_aspen3_replica_address = "100.108.13.4" in
+let mesh_openai_endpoint_url = "http://127.0.0.1:13305/v1" in
+let mesh_aspen1_address = radicle_node_address in
+let mesh_aspen2_address = "100.125.64.121" in
+let mesh_aspen3_address = radicle_aspen3_replica_address in
+let mesh_desktop_address = radicle_desktop_replica_address in
 let radicle_node_port = 8776 in
 let radicle_replica_state_quota_gib = 64 in
 let radicle_desktop_replica_node_fingerprint = "SHA256:JHQTPqoMr4kLqBsrAPSRNXUuzETiHAoiKBM/VWftmEg" in
@@ -616,14 +621,26 @@ let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
       roles.default.machines = {
         aspen1.settings = {
           mode = "seed",
-          endpointUrl = "http://127.0.0.1:13305/v1",
-          meshBindAddress = "100.100.103.95",
+          endpointUrl = mesh_openai_endpoint_url,
+          meshBindAddress = mesh_aspen1_address,
+          backendUnit = "lemonade.service",
+        },
+        aspen2.settings = {
+          mode = "joiner",
+          endpointUrl = mesh_openai_endpoint_url,
+          meshBindAddress = mesh_aspen2_address,
+          backendUnit = "lemonade.service",
+        },
+        aspen3.settings = {
+          mode = "joiner",
+          endpointUrl = mesh_openai_endpoint_url,
+          meshBindAddress = mesh_aspen3_address,
           backendUnit = "lemonade.service",
         },
         britton-desktop.settings = {
           mode = "joiner",
-          endpointUrl = "http://127.0.0.1:13305/v1",
-          meshBindAddress = "100.110.43.11",
+          endpointUrl = mesh_openai_endpoint_url,
+          meshBindAddress = mesh_desktop_address,
           backendUnit = "llamacpp-server-vibethinker-britton-desktop.service",
         },
       },
