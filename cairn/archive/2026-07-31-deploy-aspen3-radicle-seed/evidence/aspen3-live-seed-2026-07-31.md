@@ -1,5 +1,25 @@
 # Aspen3 live Radicle seed evidence — 2026-07-31
 
+<!--
+r[verify onix.radicle_private_pilot.admission]
+r[verify onix.radicle_private_pilot.admission.scenario.fail_closed]
+r[verify onix.radicle_private_pilot.publication]
+r[verify onix.radicle_private_pilot.publication.scenario.private]
+r[verify onix.radicle_private_pilot.replication]
+r[verify onix.radicle_private_pilot.replication.scenario.exact]
+r[verify onix.radicle_replica.configuration]
+r[verify onix.radicle_replica.configuration.accepted]
+r[verify onix.radicle_replica.configuration.rejected]
+r[verify onix.radicle_replica.deployment]
+r[verify onix.radicle_replica.deployment.identity]
+r[verify onix.radicle_replica.evidence]
+r[verify onix.radicle_replica.evidence.accepted]
+r[verify onix.radicle_replica.identity_distinct]
+r[verify onix.radicle_replica.identity_distinct.production]
+r[verify onix.radicle_replica.validation]
+r[verify onix.radicle_replica.validation.focused]
+-->
+
 ## Accepted deployment
 
 - Managed host: `aspen3`
