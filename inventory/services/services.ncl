@@ -385,20 +385,42 @@ let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
       },
     },
 
-    "lemonade-aspen1" = {
-      module = { name = "lemonade", input = "self" },
-      roles.default.machines.aspen1.settings = {
-        backend = "rocm",
-        customModels = {
-          "Ornith-1.0-9B-Q8_0" = ornith_9b_q8,
-          "Ornith-1.0-35B-Q4_K_M" = ornith_35b_q4,
-          "Ornith-1.0-35B-BF16" = ornith_35b_bf16,
-        },
-        models = ["kokoro-v1", ornith_9b_q8_model, ornith_35b_q4_model, ornith_35b_bf16_model],
-        contextSize = 131072,
-        globalTimeout = 0,
-        clusterRpcClient = true,
-        extraArgs = "--no-mmap -fa on --cache-type-k q8_0 --cache-type-v q8_0 -b 4096",
+    # r[impl onix.aspen1.deepseek.serving]
+    # r[impl onix.aspen1.deepseek.exclusivity]
+    # DeepSeek-V4-Flash-0731 needs ~114 GiB resident on aspen1, so the
+    # Lemonade service (Ornith + kokoro) is removed from this host.
+    "deepseek-v4-flash-aspen1" = {
+      module = { name = "llamacpp-server", input = "self" },
+      roles.server.machines.aspen1.settings = {
+        backend = "rocm-dspark",
+        host = "0.0.0.0",
+        port = 13305,
+        modelRepo = "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+        modelFile = "UD-IQ3_XXS/DeepSeek-V4-Flash-0731-UD-IQ3_XXS-00001-of-00004.gguf",
+        extraModelFiles = [
+          "UD-IQ3_XXS/DeepSeek-V4-Flash-0731-UD-IQ3_XXS-00002-of-00004.gguf",
+          "UD-IQ3_XXS/DeepSeek-V4-Flash-0731-UD-IQ3_XXS-00003-of-00004.gguf",
+          "UD-IQ3_XXS/DeepSeek-V4-Flash-0731-UD-IQ3_XXS-00004-of-00004.gguf",
+        ],
+        draftModelRepo = "alessandrobologna/DeepSeek-V4-Flash-0731-DSpark-Drafter-GGUF",
+        draftModelFile = "DeepSeek-V4-Flash-0731-DSpark-Drafter-MXFP4-Q8_0.gguf",
+        modelAlias = "DeepSeek-V4-Flash-0731",
+        contextSize = 8192,
+        parallelSlots = 1,
+        cacheTypeK = "q8_0",
+        cacheTypeV = "q8_0",
+        flashAttention = true,
+        noMmap = false,
+        extraArgs = [
+          "-ngld", "all",
+          "--fit", "off",
+          "--spec-type", "draft-dspark",
+          "--spec-draft-n-max", "3",
+          "-ctkd", "q8_0",
+          "-ctvd", "q8_0",
+          "--load-mode", "dio",
+          "--no-ui",
+        ],
       },
     },
 
@@ -623,7 +645,7 @@ let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
           mode = "seed",
           endpointUrl = mesh_openai_endpoint_url,
           meshBindAddress = mesh_aspen1_address,
-          backendUnit = "lemonade.service",
+          backendUnit = "llamacpp-server-deepseek-v4-flash-aspen1.service",
         },
         aspen2.settings = {
           mode = "joiner",

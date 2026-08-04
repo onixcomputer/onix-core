@@ -41,6 +41,10 @@ in
               modelRepo
               modelFile
               modelRevision
+              extraModelFiles
+              draftModelRepo
+              draftModelFile
+              draftModelRevision
               modelAlias
               gpuLayers
               metaliumDeviceId
@@ -68,6 +72,21 @@ in
             modelsDir = "${stateDir}/models";
             modelPath = "${modelsDir}/${modelFile}";
             modelUrl = "https://huggingface.co/${modelRepo}/resolve/${modelRevision}/${modelFile}";
+            draftModelPath = "${modelsDir}/${draftModelFile}";
+            draftModelUrl = "https://huggingface.co/${draftModelRepo}/resolve/${draftModelRevision}/${draftModelFile}";
+            hasDraftModel = draftModelFile != "";
+
+            # r[impl onix.aspen1.deepseek.module]
+            # Pure download plan: every file the pull service must fetch,
+            # including GGUF shards that live in a subdirectory of the repo.
+            modelDownloads =
+              [ { file = modelFile; url = modelUrl; } ]
+              ++ map (file: {
+                inherit file;
+                url = "https://huggingface.co/${modelRepo}/resolve/${modelRevision}/${file}";
+              }) extraModelFiles
+              ++ lib.optional hasDraftModel { file = draftModelFile; url = draftModelUrl; };
+            requiredModelFiles = map (download: "${modelsDir}/${download.file}") modelDownloads;
             metaliumCacheDir = "${stateDir}/cache";
             metaliumLogsDir = "${stateDir}/tt-metal-logs";
 
@@ -118,6 +137,8 @@ in
                 metaliumPackage
               else if selectedBackend == "rocm" then
                 pkgs.llamacpp-rocm-rpc
+              else if selectedBackend == "rocm-dspark" then
+                pkgs.llamacpp-rocm-dspark
               else
                 pkgs.llama-cpp.override {
                   cudaSupport = selectedBackend == "cuda";
@@ -159,6 +180,10 @@ in
               "--gpu-layers"
               (toString effectiveGpuLayers)
             ]
+            ++ optionalArgs hasDraftModel [
+              "--model-draft"
+              draftModelPath
+            ]
             ++ optionalArgs flashAttention [
               "--flash-attn"
               "on"
@@ -189,34 +214,50 @@ in
                 set -euo pipefail
 
                 model_dir=${lib.escapeShellArg modelsDir}
-                model_path=${lib.escapeShellArg modelPath}
-                partial_path="''${model_path}${partialSuffix}"
-                model_url=${lib.escapeShellArg modelUrl}
-
                 mkdir -p "$model_dir"
 
-                if [ -f "$model_path" ]; then
-                  echo "Model already present: ${modelFile}"
-                  exit 0
-                fi
+                download_file() {
+                  local file="$1"
+                  local url="$2"
+                  local target="''${model_dir}/''${file}"
+                  local partial="''${target}${partialSuffix}"
 
-                echo "Downloading model: ${modelRepo}/${modelFile}"
-                echo "URL: $model_url"
+                  if [ -f "$target" ]; then
+                    echo "Model file already present: ''${file}"
+                    return 0
+                  fi
 
-                curl \
-                  --fail \
-                  --location \
-                  --retry ${toString curlRetryCount} \
-                  --retry-delay ${toString curlRetryDelaySeconds} \
-                  --continue-at - \
-                  --output "$partial_path" \
-                  "$model_url"
+                  echo "Downloading model file: ''${file}"
+                  echo "URL: ''${url}"
+                  mkdir -p "$(dirname "$target")"
 
-                chmod ${modelFileMode} "$partial_path"
-                mv "$partial_path" "$model_path"
-                echo "Download complete: ${modelFile}"
+                  curl \
+                    --fail \
+                    --location \
+                    --retry ${toString curlRetryCount} \
+                    --retry-delay ${toString curlRetryDelaySeconds} \
+                    --continue-at - \
+                    --output "$partial" \
+                    "$url"
+
+                  chmod ${modelFileMode} "$partial"
+                  mv "$partial" "$target"
+                  echo "Download complete: ''${file}"
+                }
+
+                ${lib.concatMapStringsSep "\n" (
+                  download: "download_file ${lib.escapeShellArg download.file} ${lib.escapeShellArg download.url}"
+                ) modelDownloads}
               '';
             };
+
+            # r[verify onix.aspen1.deepseek.module]
+            # Every required file must exist before the server starts; a
+            # missing shard or draft file blocks startup instead of
+            # crashing llama-server mid-load.
+            checkModelFiles = pkgs.writeShellScript "${serviceName}-check-models" (
+              lib.concatMapStringsSep "\n" (path: "test -f ${lib.escapeShellArg path}") requiredModelFiles
+            );
           in
           {
             assertions = [
@@ -227,6 +268,10 @@ in
               {
                 assertion = modelFile != "";
                 message = "llamacpp-server ${instanceName}: modelFile must not be empty";
+              }
+              {
+                assertion = (draftModelFile != "") == (draftModelRepo != "");
+                message = "llamacpp-server ${instanceName}: draftModelRepo and draftModelFile must be set together";
               }
               {
                 assertion = contextSize > 0;
@@ -317,7 +362,7 @@ in
                   wantedBy = lib.mkIf autoStart [ "multi-user.target" ];
 
                   serviceConfig = {
-                    ExecCondition = "${pkgs.coreutils}/bin/test -f ${modelPath}";
+                    ExecCondition = "${checkModelFiles}";
                     ExecStart = lib.escapeShellArgs serverArgs;
                     Restart = "on-failure";
                     RestartSec = serverRestartDelay;
