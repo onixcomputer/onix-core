@@ -7,7 +7,7 @@ Source: github.com/darnoq99/deepseek-v4-flash-0731-strix-halo (verified on Ryzen
 Verified configuration:
 
 - Main model: `unsloth/DeepSeek-V4-Flash-0731-GGUF`, `UD-IQ3_XXS`, 4 shards (~104 GB). SHA-256 values in the guide match the current HF LFS objects.
-- Drafter: `alessandrobologna/DeepSeek-V4-Flash-0731-DSpark-Drafter-GGUF`, file `DeepSeek-V4-Flash-0731-DSpark-Drafter-MXFP4-Q8_0.gguf` (~10.9 GB).
+- Drafter: `alessandrobologna/DeepSeek-V4-Flash-0731-DSpark-Drafter-GGUF`, file `DeepSeek-V4-Flash-0731-DSpark-Drafter-Q2_K-Q8_0-dflash.gguf` (~7 GB). The MXFP4-Q8_0 file in the same repository uses architecture `deepseek_v4_flash_dspark_draft`, which the pinned llama.cpp rejects at load time. The `-dflash` file uses architecture `dflash`, the name the pinned runtime registers for DSpark drafts. The guide's benchmark used a locally converted MXFP4 drafter; converting it locally is a possible follow-up if Q2_K draft acceptance is poor.
 - llama.cpp commit `0b14b87d7c20cb753b94b96854dd7b45306fc696`, HIP `gfx1151`, flags `GGML_HIP_MMQ_MFMA=ON GGML_HIP_NO_VMM=ON GGML_HIP_GRAPHS=OFF GGML_NATIVE=OFF`.
 - Launch: `-m <shard1> -md <drafter> --spec-type draft-dspark --spec-draft-n-max 3 -ngl all -ngld all --fit off -c 8192 -np 1 -fa on -ctk q8_0 -ctv q8_0 -ctkd q8_0 -ctvd q8_0 --load-mode dio`.
 

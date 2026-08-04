@@ -48,7 +48,7 @@ r[onix.aspen1.deepseek.module.missing_draft]
 
 ### Requirement: Aspen1 serves DeepSeek-V4-Flash-0731 with DSpark
 
-r[onix.aspen1.deepseek.serving] `aspen1` MUST serve `DeepSeek-V4-Flash-0731` as UD-IQ3_XXS with the MXFP4-Q8_0 DSpark drafter through `llamacpp-server` on port 13305, and the aspen1 mesh-llm seed MUST route to that service.
+r[onix.aspen1.deepseek.serving] `aspen1` MUST serve `DeepSeek-V4-Flash-0731` as UD-IQ3_XXS with a `dflash`-architecture DSpark drafter through `llamacpp-server` on port 13305, and the aspen1 mesh-llm seed MUST route to that service.
 
 #### Scenario: Inventory wires the verified configuration
 
@@ -56,7 +56,7 @@ r[onix.aspen1.deepseek.serving.inventory]
 - GIVEN the evaluated `aspen1` NixOS configuration
 - WHEN the `llamacpp-server-deepseek-v4-flash-aspen1` unit and mesh-llm seed settings are inspected
 - THEN the model is the unsloth `UD-IQ3_XXS` first shard with three extra shards
-- AND the draft model is `DeepSeek-V4-Flash-0731-DSpark-Drafter-MXFP4-Q8_0.gguf`
+- AND the draft model is `DeepSeek-V4-Flash-0731-DSpark-Drafter-Q2_K-Q8_0-dflash.gguf`
 - AND the server arguments include `--spec-type draft-dspark` and `--spec-draft-n-max 3`
 - AND the port is 13305
 - AND the aspen1 mesh-llm `backendUnit` is `llamacpp-server-deepseek-v4-flash-aspen1.service`

@@ -402,8 +402,12 @@ let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
           "UD-IQ3_XXS/DeepSeek-V4-Flash-0731-UD-IQ3_XXS-00003-of-00004.gguf",
           "UD-IQ3_XXS/DeepSeek-V4-Flash-0731-UD-IQ3_XXS-00004-of-00004.gguf",
         ],
+        # The MXFP4-Q8_0 drafter in this repo uses arch
+        # `deepseek_v4_flash_dspark_draft`, which the pinned llama.cpp does
+        # not know. The Q2_K-Q8_0-dflash variant uses arch `dflash`, the
+        # name the pinned runtime registers for DSpark drafts.
         draftModelRepo = "alessandrobologna/DeepSeek-V4-Flash-0731-DSpark-Drafter-GGUF",
-        draftModelFile = "DeepSeek-V4-Flash-0731-DSpark-Drafter-MXFP4-Q8_0.gguf",
+        draftModelFile = "DeepSeek-V4-Flash-0731-DSpark-Drafter-Q2_K-Q8_0-dflash.gguf",
         modelAlias = "DeepSeek-V4-Flash-0731",
         contextSize = 8192,
         parallelSlots = 1,
