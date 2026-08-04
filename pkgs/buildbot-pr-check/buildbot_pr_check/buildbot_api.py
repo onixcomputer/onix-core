@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Buildbot API functions for buildbot-pr-check."""
 
 import json
@@ -10,6 +9,9 @@ from dataclasses import dataclass
 
 from .build_status import BuildStatus, get_build_status
 from .exceptions import BuildbotAPIError
+
+MAX_LOG_WORKERS = 10
+FAILED_STEP_RESULT_MINIMUM = 2
 
 
 @dataclass
@@ -52,7 +54,7 @@ def get_triggered_builds(base_url: str, builder_id: str, build_num: str) -> list
     build_requests = []
 
     try:
-        with urllib.request.urlopen(api_url) as response:  # noqa: S310
+        with urllib.request.urlopen(api_url) as response:
             data = json.loads(response.read())
     except (urllib.error.URLError, urllib.error.HTTPError) as e:
         raise BuildbotAPIError(f"Failed to fetch build steps from Buildbot: {e}")
@@ -77,7 +79,7 @@ def check_build_request_status(base_url: str, request_id: int) -> BuildRequestSt
     api_url = f"https://{base_url}/api/v2/buildrequests/{request_id}?property=*"
 
     try:
-        with urllib.request.urlopen(api_url) as response:  # noqa: S310
+        with urllib.request.urlopen(api_url) as response:
             data = json.loads(response.read())
             request = data["buildrequests"][0]
             result = request.get("results")
@@ -96,7 +98,7 @@ def check_build_request_status(base_url: str, request_id: int) -> BuildRequestSt
                     f"https://{base_url}/api/v2/buildrequests/{request_id}/builds"
                 )
                 try:
-                    with urllib.request.urlopen(builds_url) as builds_response:  # noqa: S310
+                    with urllib.request.urlopen(builds_url) as builds_response:
                         builds_data = json.loads(builds_response.read())
                         if builds_data.get("builds"):
                             build_id = builds_data["builds"][0].get("buildid")
@@ -128,7 +130,7 @@ def get_step_log_urls(base_url: str, step_id: int, step_name: str) -> list[LogUr
     logs_url = f"https://{base_url}/api/v2/steps/{step_id}/logs"
 
     try:
-        with urllib.request.urlopen(logs_url) as log_response:  # noqa: S310
+        with urllib.request.urlopen(logs_url) as log_response:
             log_data = json.loads(log_response.read())
 
             for log in log_data.get("logs", []):
@@ -158,7 +160,7 @@ def get_build_log_urls(base_url: str, build_id: int) -> list[LogUrl]:
     try:
         # Get build steps
         steps_url = f"https://{base_url}/api/v2/builds/{build_id}/steps"
-        with urllib.request.urlopen(steps_url) as response:  # noqa: S310
+        with urllib.request.urlopen(steps_url) as response:
             data = json.loads(response.read())
             steps = data.get("steps", [])
 
@@ -166,7 +168,7 @@ def get_build_log_urls(base_url: str, build_id: int) -> list[LogUrl]:
                 return []
 
             # Use ThreadPoolExecutor for parallel log fetching
-            max_workers = min(10, max(1, len(steps)))  # Limit concurrent connections
+            max_workers = min(MAX_LOG_WORKERS, max(1, len(steps)))
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 # Submit all step log requests to the thread pool
                 future_to_step = {}
@@ -184,10 +186,11 @@ def get_build_log_urls(base_url: str, build_id: int) -> list[LogUrl]:
                     try:
                         step_logs = future.result()
                         log_urls.extend(step_logs)
-                    except Exception as e:
+                    except Exception as error:  # noqa: BLE001
+                        # Keep other step logs when one worker fails unexpectedly.
                         step_id, step_name = future_to_step[future]
                         print(
-                            f"Error getting logs for step {step_name} (ID: {step_id}): {e}"
+                            f"Error getting logs for step {step_name} (ID: {step_id}): {error}"
                         )
 
     except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError):
@@ -205,7 +208,7 @@ def get_parent_build_status(
         build_url = (
             f"https://{base_url}/api/v2/builders/{builder_id}/builds/{build_num}"
         )
-        with urllib.request.urlopen(build_url) as response:  # noqa: S310
+        with urllib.request.urlopen(build_url) as response:
             data = json.loads(response.read())
             build = data["builds"][0]
 
@@ -224,13 +227,13 @@ def get_parent_build_status(
                 BuildStatus.CANCELLED,
             ]:
                 steps_url = f"https://{base_url}/api/v2/builders/{builder_id}/builds/{build_num}/steps"
-                with urllib.request.urlopen(steps_url) as steps_response:  # noqa: S310
+                with urllib.request.urlopen(steps_url) as steps_response:
                     steps_data = json.loads(steps_response.read())
 
                     for step in steps_data.get("steps", []):
                         # Check if step failed
                         step_results = step.get("results")
-                        if step_results and step_results >= 2:  # FAILURE or worse
+                        if step_results and step_results >= FAILED_STEP_RESULT_MINIMUM:
                             step_id = step.get("stepid")
                             if step_id:
                                 step_logs = get_step_log_urls(
@@ -254,7 +257,7 @@ def get_build_names(base_url: str, builder_id: str, build_num: str) -> dict[int,
     request_to_name = {}
 
     try:
-        with urllib.request.urlopen(api_url) as response:  # noqa: S310
+        with urllib.request.urlopen(api_url) as response:
             data = json.loads(response.read())
             props = data["properties"][0]
 

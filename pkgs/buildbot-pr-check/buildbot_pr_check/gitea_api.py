@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Gitea API functions for buildbot-pr-check."""
 
 import json
@@ -24,10 +23,10 @@ def get_buildbot_urls_from_gitea(
     buildbot_urls = []
 
     try:
-        req = urllib.request.Request(api_url)  # noqa: S310
+        req = urllib.request.Request(api_url)
         req.add_header("Accept", "application/json")
 
-        with urllib.request.urlopen(req) as response:  # noqa: S310
+        with urllib.request.urlopen(req) as response:
             pr_data = json.loads(response.read())
             head_sha = pr_data.get("head", {}).get("sha", "")
 
@@ -36,11 +35,11 @@ def get_buildbot_urls_from_gitea(
                 status_url = (
                     f"{base_url}/api/v1/repos/{owner}/{repo}/statuses/{head_sha}"
                 )
-                req = urllib.request.Request(status_url)  # noqa: S310
+                req = urllib.request.Request(status_url)
                 req.add_header("Accept", "application/json")
 
                 try:
-                    with urllib.request.urlopen(req) as status_response:  # noqa: S310
+                    with urllib.request.urlopen(req) as status_response:
                         statuses = json.loads(status_response.read())
 
                         for status in statuses:

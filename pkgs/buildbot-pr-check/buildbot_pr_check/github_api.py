@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """GitHub API functions for buildbot-pr-check."""
 
 import json
@@ -44,7 +43,7 @@ def get_buildbot_urls_from_github(owner: str, repo: str, pr_num: str) -> list[st
     # Get PR commits
     api_url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_num}"
 
-    req = urllib.request.Request(api_url)  # noqa: S310
+    req = urllib.request.Request(api_url)
     req.add_header("Accept", "application/vnd.github.v3+json")
 
     # Get GitHub token
@@ -53,7 +52,7 @@ def get_buildbot_urls_from_github(owner: str, repo: str, pr_num: str) -> list[st
         req.add_header("Authorization", f"token {github_token}")
 
     try:
-        with urllib.request.urlopen(req) as response:  # noqa: S310
+        with urllib.request.urlopen(req) as response:
             pr_data = json.loads(response.read())
             head_sha = pr_data["head"]["sha"]
     except (urllib.error.URLError, urllib.error.HTTPError) as e:
@@ -65,7 +64,7 @@ def get_buildbot_urls_from_github(owner: str, repo: str, pr_num: str) -> list[st
     checks_url = (
         f"https://api.github.com/repos/{owner}/{repo}/commits/{head_sha}/check-runs"
     )
-    req = urllib.request.Request(checks_url)  # noqa: S310
+    req = urllib.request.Request(checks_url)
     req.add_header("Accept", "application/vnd.github.v3+json")
     if github_token:
         req.add_header("Authorization", f"token {github_token}")
@@ -73,7 +72,7 @@ def get_buildbot_urls_from_github(owner: str, repo: str, pr_num: str) -> list[st
     buildbot_urls = []
 
     try:
-        with urllib.request.urlopen(req) as response:  # noqa: S310
+        with urllib.request.urlopen(req) as response:
             checks_data = json.loads(response.read())
 
             for check in checks_data.get("check_runs", []):
@@ -92,13 +91,13 @@ def get_buildbot_urls_from_github(owner: str, repo: str, pr_num: str) -> list[st
     status_url = (
         f"https://api.github.com/repos/{owner}/{repo}/commits/{head_sha}/status"
     )
-    req = urllib.request.Request(status_url)  # noqa: S310
+    req = urllib.request.Request(status_url)
     req.add_header("Accept", "application/vnd.github.v3+json")
     if github_token:
         req.add_header("Authorization", f"token {github_token}")
 
     try:
-        with urllib.request.urlopen(req) as response:  # noqa: S310
+        with urllib.request.urlopen(req) as response:
             status_data = json.loads(response.read())
 
             for status in status_data.get("statuses", []):

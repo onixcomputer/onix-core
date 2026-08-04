@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """URL parsing and validation functions for buildbot-pr-check."""
 
 import re

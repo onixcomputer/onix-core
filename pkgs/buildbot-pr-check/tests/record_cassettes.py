@@ -16,6 +16,7 @@ def main():
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "-v", "tests/test_buildbot_pr_check.py"],
         cwd=Path(__file__).parent.parent,
+        check=False,
     )
 
     return result.returncode

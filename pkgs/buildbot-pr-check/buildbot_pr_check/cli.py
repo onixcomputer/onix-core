@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Command-line interface for buildbot-pr-check."""
 
 import argparse

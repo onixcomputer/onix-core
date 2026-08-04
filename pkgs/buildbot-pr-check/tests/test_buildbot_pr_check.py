@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Integration tests for buildbot_pr_check using VCR.py for HTTP request recording."""
 
 import sys
@@ -10,7 +9,6 @@ import vcr
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import buildbot_pr_check
-
 
 # Configure VCR
 vcr_config = vcr.VCR(

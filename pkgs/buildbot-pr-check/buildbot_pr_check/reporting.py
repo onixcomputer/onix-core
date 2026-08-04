@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Reporting functions for buildbot-pr-check."""
 
 import logging
@@ -17,6 +16,9 @@ from .colors import Colors, colorize
 
 logger = logging.getLogger(__name__)
 
+REPORT_DIVIDER_WIDTH = 80
+MAX_STATUS_WORKERS = 20
+
 
 @dataclass
 class BuildStatusReport:
@@ -31,7 +33,7 @@ class BuildStatusReport:
 def check_build_status(build: BuildWithTriggers) -> BuildStatusReport:
     """Check status of all build requests for a build."""
     print(f"\n{colorize('🔍 Checking:', Colors.CYAN)} {build.url}")
-    print("─" * 80)
+    print("─" * REPORT_DIVIDER_WIDTH)
 
     # First check parent build status
     parent_status, parent_logs = get_parent_build_status(
@@ -67,9 +69,7 @@ def check_build_status(build: BuildWithTriggers) -> BuildStatusReport:
     virtual_builder_map = {}
 
     # Use ThreadPoolExecutor for parallel requests
-    max_workers = min(
-        20, max(1, len(build.build_requests))
-    )  # Limit concurrent connections
+    max_workers = min(MAX_STATUS_WORKERS, max(1, len(build.build_requests)))
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Submit all requests to the thread pool
         future_to_req_id = {
@@ -87,9 +87,9 @@ def check_build_status(build: BuildWithTriggers) -> BuildStatusReport:
                 statuses[req_status.status].append(req_id)
                 build_id_map[req_id] = req_status.build_id
                 virtual_builder_map[req_id] = req_status.virtual_builder_name
-            except Exception as e:
-                # Handle any errors from the thread
-                print(f"Error checking request {req_id}: {e}")
+            except Exception as error:  # noqa: BLE001
+                # Keep other request results when one worker fails unexpectedly.
+                print(f"Error checking request {req_id}: {error}")
                 if None not in statuses:
                     statuses[None] = []
                 statuses[None].append(req_id)
