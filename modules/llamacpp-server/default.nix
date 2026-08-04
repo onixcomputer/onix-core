@@ -42,6 +42,7 @@ in
               modelFile
               modelRevision
               extraModelFiles
+              draftModelSource
               draftModelRepo
               draftModelFile
               draftModelRevision
@@ -59,6 +60,7 @@ in
               cacheTypeK
               cacheTypeV
               flashAttention
+              gpuPerformanceLock
               noMmap
               enableMetrics
               autoStart
@@ -75,6 +77,7 @@ in
             draftModelPath = "${modelsDir}/${draftModelFile}";
             draftModelUrl = "https://huggingface.co/${draftModelRepo}/resolve/${draftModelRevision}/${draftModelFile}";
             hasDraftModel = draftModelFile != "";
+            draftFromPackage = hasDraftModel && draftModelSource == "package";
 
             # r[impl onix.aspen1.deepseek.module]
             # Pure download plan: every file the pull service must fetch,
@@ -85,7 +88,7 @@ in
                 inherit file;
                 url = "https://huggingface.co/${modelRepo}/resolve/${modelRevision}/${file}";
               }) extraModelFiles
-              ++ lib.optional hasDraftModel { file = draftModelFile; url = draftModelUrl; };
+              ++ lib.optional (hasDraftModel && !draftFromPackage) { file = draftModelFile; url = draftModelUrl; };
             requiredModelFiles = map (download: "${modelsDir}/${download.file}") modelDownloads;
             metaliumCacheDir = "${stateDir}/cache";
             metaliumLogsDir = "${stateDir}/tt-metal-logs";
@@ -248,6 +251,16 @@ in
                 ${lib.concatMapStringsSep "\n" (
                   download: "download_file ${lib.escapeShellArg download.file} ${lib.escapeShellArg download.url}"
                 ) modelDownloads}
+                ${lib.optionalString draftFromPackage ''
+
+                  target="''${model_dir}/${draftModelFile}"
+                  if [ ! -f "$target" ]; then
+                    echo "Installing packaged draft model: ${draftModelFile}"
+                    install -m ${modelFileMode} ${pkgs.deepseek-v4-dspark-draft} "$target"
+                  else
+                    echo "Model file already present: ${draftModelFile}"
+                  fi
+                ''}
               '';
             };
 
@@ -258,6 +271,17 @@ in
             checkModelFiles = pkgs.writeShellScript "${serviceName}-check-models" (
               lib.concatMapStringsSep "\n" (path: "test -f ${lib.escapeShellArg path}") requiredModelFiles
             );
+
+            # Automatic Radeon clocks cost several tokens per second on
+            # Strix Halo; lock the performance profile before serving.
+            radeonDeviceIndex = 0;
+            acpiPlatformProfile = "/sys/firmware/acpi/platform_profile";
+            lockGpuClocks = pkgs.writeShellScript "${serviceName}-lock-gpu-clocks" ''
+              if [ -w ${acpiPlatformProfile} ]; then
+                echo performance > ${acpiPlatformProfile}
+              fi
+              ${pkgs.rocmPackages.rocm-smi}/bin/rocm-smi -d ${toString radeonDeviceIndex} --setperflevel high
+            '';
           in
           {
             assertions = [
@@ -270,8 +294,12 @@ in
                 message = "llamacpp-server ${instanceName}: modelFile must not be empty";
               }
               {
-                assertion = (draftModelFile != "") == (draftModelRepo != "");
-                message = "llamacpp-server ${instanceName}: draftModelRepo and draftModelFile must be set together";
+                assertion = (draftModelFile != "") == (draftModelRepo != "" || draftFromPackage);
+                message = "llamacpp-server ${instanceName}: draftModelRepo and draftModelFile must be set together unless draftModelSource is package";
+              }
+              {
+                assertion = !draftFromPackage || (pkgs.deepseek-v4-dspark-draft or null) != null;
+                message = "llamacpp-server ${instanceName}: draftModelSource package requires the deepseek-v4-dspark-draft package";
               }
               {
                 assertion = contextSize > 0;
@@ -363,6 +391,7 @@ in
 
                   serviceConfig = {
                     ExecCondition = "${checkModelFiles}";
+                    ExecStartPre = lib.mkIf gpuPerformanceLock [ "${lockGpuClocks}" ];
                     ExecStart = lib.escapeShellArgs serverArgs;
                     Restart = "on-failure";
                     RestartSec = serverRestartDelay;

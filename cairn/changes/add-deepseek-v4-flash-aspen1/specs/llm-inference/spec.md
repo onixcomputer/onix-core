@@ -56,7 +56,7 @@ r[onix.aspen1.deepseek.serving.inventory]
 - GIVEN the evaluated `aspen1` NixOS configuration
 - WHEN the `llamacpp-server-deepseek-v4-flash-aspen1` unit and mesh-llm seed settings are inspected
 - THEN the model is the unsloth `UD-IQ3_XXS` first shard with three extra shards
-- AND the draft model is `DeepSeek-V4-Flash-0731-DSpark-Drafter-Q2_K-Q8_0-dflash.gguf`
+- AND the draft model is `DeepSeek-V4-Flash-0731-DSpark-llamacpp-MXFP4-Q8_0.gguf` converted from the official checkpoint
 - AND the server arguments include `--spec-type draft-dspark` and `--spec-draft-n-max 3`
 - AND the port is 13305
 - AND the aspen1 mesh-llm `backendUnit` is `llamacpp-server-deepseek-v4-flash-aspen1.service`
