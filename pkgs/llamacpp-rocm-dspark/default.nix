@@ -20,7 +20,9 @@ let
 in
 base.overrideAttrs (old: {
   pname = "llamacpp-rocm-dspark";
-  version = "0.1.0-${lib.substring 0 7 upstreamRev}";
+  # nixpkgs injects version as LLAMA_BUILD_NUMBER, so it must stay a plain
+  # integer. The pinned commit is 67 commits after tag b10173.
+  version = "10174";
   src = pkgs.fetchFromGitHub {
     owner = "ggml-org";
     repo = "llama.cpp";
