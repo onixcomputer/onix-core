@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly MINIMUM_OBSERVATION_SECONDS=86400
+readonly MINIMUM_BACKUP_HEADROOM_BYTES=60129542144
+readonly RID=rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo
+readonly RID_DIRECTORY=z2CpqLFpdP36fZXYUK5ZNWxMibpCo
+readonly IMPORTER_NID=z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx
+readonly CANONICAL_OID=1baa4f552ae55923b025d99d08073286158836be
+readonly ISSUE_ID=d9f9c0ad2da34c8cdd95ec0ad2f741de7361c76d
+readonly ISSUE_REF_OID=de02d0257d181fc61662fa8e028b2296c5b30f8f
+readonly PATCH_ID=86c2607da3e4960e173f4de56f776a291574c5e1
+readonly PATCH_REF_OID=97309eba9aed4ddb77934a4a49efd8c840e3be26
+readonly SIGREFS_OID=d13faa9620a139c0eedc15eb4565e35934858c1c
+readonly LOCAL_REPOSITORY="$HOME/.radicle/storage/$RID_DIRECTORY"
+readonly PUBLIC_URL="https://git.onix.computer/$RID_DIRECTORY.git"
+readonly ASPEN_HOST=root@aspen1.local
+readonly DESKTOP_HOST=root@100.110.43.11
+script_directory="$(dirname "$0")"
+readonly script_directory
+readonly START_EPOCH_FILE="$script_directory/started-epoch"
+readonly SSH_OPTIONS=(-o StrictHostKeyChecking=yes -o HostKeyAlgorithms=ssh-ed25519)
+
+mode="${1:-}"
+if [[ "$mode" != start && "$mode" != end ]]; then
+  printf 'usage: %s <start|end>\n' "$0" >&2
+  exit 1
+fi
+
+started_epoch="$(cat "$START_EPOCH_FILE")"
+observed_epoch="$(date -u +%s)"
+elapsed_seconds=$((observed_epoch - started_epoch))
+if [[ "$mode" == end && "$elapsed_seconds" -lt "$MINIMUM_OBSERVATION_SECONDS" ]]; then
+  printf 'observation window is incomplete: %s seconds\n' "$elapsed_seconds" >&2
+  exit 1
+fi
+
+local_ref() {
+  git --git-dir="$LOCAL_REPOSITORY" rev-parse "$1"
+}
+
+test "$(local_ref refs/heads/main)" = "$CANONICAL_OID"
+test "$(local_ref "refs/namespaces/$IMPORTER_NID/refs/cobs/xyz.radicle.issue/$ISSUE_ID")" = "$ISSUE_REF_OID"
+test "$(local_ref "refs/namespaces/$IMPORTER_NID/refs/cobs/xyz.radicle.patch/$PATCH_ID")" = "$PATCH_REF_OID"
+test "$(local_ref "refs/namespaces/$IMPORTER_NID/refs/rad/sigrefs")" = "$SIGREFS_OID"
+readonly EXPECTED_LOCAL_NODE_COUNT=1
+local_node_count="$(pgrep -u "$(id -u)" -f -c '^radicle-node --force$' || true)"
+test "$local_node_count" = "$EXPECTED_LOCAL_NODE_COUNT"
+
+# Constants are intentionally expanded locally into the bounded remote command.
+# shellcheck disable=SC2029
+aspen_result="$(ssh "${SSH_OPTIONS[@]}" "$ASPEN_HOST" "set -eu; repo=/var/lib/radicle/storage/$RID_DIRECTORY; test \"\$(git --git-dir=\"\$repo\" rev-parse refs/heads/main)\" = $CANONICAL_OID; test \"\$(git --git-dir=\"\$repo\" rev-parse refs/namespaces/$IMPORTER_NID/refs/cobs/xyz.radicle.issue/$ISSUE_ID)\" = $ISSUE_REF_OID; test \"\$(git --git-dir=\"\$repo\" rev-parse refs/namespaces/$IMPORTER_NID/refs/cobs/xyz.radicle.patch/$PATCH_ID)\" = $PATCH_REF_OID; test \"\$(git --git-dir=\"\$repo\" rev-parse refs/namespaces/$IMPORTER_NID/refs/rad/sigrefs)\" = $SIGREFS_OID; systemctl is-active --quiet radicle-node.service radicle-httpd.service radicle-policy-reconcile.timer radicle-ci-node.service radicle-ci-sync.timer borgbackup-job-britton-desktop.timer; test -z \"\$(find /var/lib/radicle-ci-exchange/outbox -mindepth 1 -maxdepth 1 -print -quit)\"; test ! -e /var/lib/radicle-restore-check; test ! -e /var/lib/radicle-forge-metadata-restore-check; printf aspen=verified")"
+test "$aspen_result" = aspen=verified
+
+# Constants are intentionally expanded locally into the bounded remote command.
+# shellcheck disable=SC2029
+desktop_result="$(ssh "${SSH_OPTIONS[@]}" "$DESKTOP_HOST" "set -eu; repo=/var/lib/radicle/storage/$RID_DIRECTORY; test \"\$(git --git-dir=\"\$repo\" rev-parse refs/heads/main)\" = $CANONICAL_OID; test \"\$(git --git-dir=\"\$repo\" rev-parse refs/namespaces/$IMPORTER_NID/refs/cobs/xyz.radicle.issue/$ISSUE_ID)\" = $ISSUE_REF_OID; test \"\$(git --git-dir=\"\$repo\" rev-parse refs/namespaces/$IMPORTER_NID/refs/cobs/xyz.radicle.patch/$PATCH_ID)\" = $PATCH_REF_OID; test \"\$(git --git-dir=\"\$repo\" rev-parse refs/namespaces/$IMPORTER_NID/refs/rad/sigrefs)\" = $SIGREFS_OID; systemctl is-active --quiet radicle-node.service radicle-policy-reconcile.timer; test \"\$(zfs get -Hp -o value available datapool/radicle-backup)\" -ge $MINIMUM_BACKUP_HEADROOM_BYTES; printf desktop=verified")"
+test "$desktop_result" = desktop=verified
+
+public_refs="$(nix shell nixpkgs#gitFull -c git ls-remote "$PUBLIC_URL")"
+printf '%s\n' "$public_refs" | grep -F "$CANONICAL_OID" | grep -F 'refs/heads/main' >/dev/null
+printf '%s\n' "$public_refs" | grep -F "$ISSUE_REF_OID" | grep -F "refs/namespaces/$IMPORTER_NID/refs/cobs/xyz.radicle.issue/$ISSUE_ID" >/dev/null
+printf '%s\n' "$public_refs" | grep -F "$PATCH_REF_OID" | grep -F "refs/namespaces/$IMPORTER_NID/refs/cobs/xyz.radicle.patch/$PATCH_ID" >/dev/null
+printf '%s\n' "$public_refs" | grep -F "$SIGREFS_OID" | grep -F "refs/namespaces/$IMPORTER_NID/refs/rad/sigrefs" >/dev/null
+
+printf 'schema=onix.radicle-forge-observation.v1\n'
+printf 'mode=%s\n' "$mode"
+printf 'started_epoch=%s\n' "$started_epoch"
+printf 'observed_epoch=%s\n' "$observed_epoch"
+printf 'elapsed_seconds=%s\n' "$elapsed_seconds"
+printf 'rid=%s\n' "$RID"
+printf 'canonical_main=%s\n' "$CANONICAL_OID"
+printf 'issue_ref=%s\n' "$ISSUE_REF_OID"
+printf 'patch_ref=%s\n' "$PATCH_REF_OID"
+printf 'sigrefs=%s\n' "$SIGREFS_OID"
+printf 'signed_refs_feature=parent\n'
+printf 'local_node_count=%s\n' "$local_node_count"
+printf 'aspen=verified\n'
+printf 'desktop=verified\n'
+printf 'public_https=verified\n'
+printf 'ci_outbox=empty\n'
+printf 'canonical_guard=not-executed\n'
+printf 'result=verified\n'

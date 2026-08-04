@@ -1,0 +1,11 @@
+archive=aspen1-britton-desktop-2026-07-26T20:45:35
+node_id=z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8
+canonical_main=1baa4f552ae55923b025d99d08073286158836be
+issue_ref=de02d0257d181fc61662fa8e028b2296c5b30f8f
+issue_status=closed-solved
+patch_ref=97309eba9aed4ddb77934a4a49efd8c840e3be26
+patch_status=archived
+imported_review=attribution-only
+sigrefs=d13faa9620a139c0eedc15eb4565e35934858c1c
+signed_refs_feature=parent
+semantic_restore_result=verified

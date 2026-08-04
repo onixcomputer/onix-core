@@ -1,0 +1,78 @@
+{
+  "schema": "valence.radicle-forge-operations.source-batch.v1",
+  "source_system": "github",
+  "repository_url": "https://github.com/OnixResearch/bounded-exec",
+  "repository_rid": "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+  "importer_did": "did:key:z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx",
+  "records": [
+    {
+      "kind": "issue",
+      "record": {
+        "source_key": "github:OnixResearch/bounded-exec:issue:1",
+        "number": 1,
+        "url": "https://github.com/OnixResearch/bounded-exec/issues/1",
+        "title": "Fixture issue",
+        "body": "Fixture issue body.",
+        "state": "solved",
+        "author": {
+          "source_id": "github:1001",
+          "login": "fixture-author"
+        },
+        "created_at": "2026-07-26T10:00:00Z",
+        "updated_at": "2026-07-26T12:00:00Z",
+        "labels": ["migration", "validation"],
+        "events": [
+          {
+            "event_id": "issue-comment-1",
+            "kind": "comment",
+            "actor": {
+              "source_id": "github:1002",
+              "login": "fixture-reviewer"
+            },
+            "timestamp": "2026-07-26T11:00:00Z",
+            "url": "https://github.com/OnixResearch/bounded-exec/issues/1#issuecomment-1",
+            "body": "Fixture issue comment.",
+            "review_state": null
+          }
+        ]
+      }
+    },
+    {
+      "kind": "pull_request",
+      "record": {
+        "source_key": "github:OnixResearch/bounded-exec:pull_request:2",
+        "number": 2,
+        "url": "https://github.com/OnixResearch/bounded-exec/pull/2",
+        "title": "Fixture pull request",
+        "body": "Fixture pull-request body.",
+        "state": "merged",
+        "author": {
+          "source_id": "github:1001",
+          "login": "fixture-author"
+        },
+        "created_at": "2026-07-26T10:00:00Z",
+        "updated_at": "2026-07-26T12:00:00Z",
+        "labels": ["migration"],
+        "base_oid": "29dac88ecded94457572db3fdfaaaab95fa91525",
+        "head_oid": "1baa4f552ae55923b025d99d08073286158836be",
+        "target_ref": "refs/heads/main",
+        "merged_commit_oid": "1baa4f552ae55923b025d99d08073286158836be",
+        "events": [
+          {
+            "event_id": "pull-review-1",
+            "kind": "review",
+            "actor": {
+              "source_id": "github:1002",
+              "login": "fixture-reviewer"
+            },
+            "timestamp": "2026-07-26T11:00:00Z",
+            "url": "https://github.com/OnixResearch/bounded-exec/pull/2#pullrequestreview-1",
+            "body": "Fixture approval text.",
+            "review_state": "approved"
+          }
+        ]
+      }
+    }
+  ],
+  "existing_mappings": []
+}
