@@ -1,0 +1,29 @@
+[package]
+name = "herdr-plugin-pueue"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[features]
+test-fixture = []
+
+[[bin]]
+name = "herdr-plugin-pueue"
+path = "src/main.rs"
+
+[[bin]]
+name = "fake-pueue"
+path = "src/bin/fake-pueue.rs"
+required-features = ["test-fixture"]
+
+[dependencies]
+crossterm.workspace = true
+pueue-plugin-core = { path = "../pueue-plugin-core" }
+ratatui.workspace = true
+
+[dev-dependencies]
+toml.workspace = true
+
+[lints]
+workspace = true

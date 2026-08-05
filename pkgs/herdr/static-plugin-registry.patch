@@ -1,0 +1,145 @@
+--- a/src/persist/plugin_registry.rs
++++ b/src/persist/plugin_registry.rs
+@@ -6,6 +6,7 @@
+ use crate::api::schema::InstalledPluginInfo;
+ 
+ pub const MANIFEST_UNAVAILABLE_WARNING_PREFIX: &str = "manifest unavailable: ";
++pub const STATIC_PLUGIN_REGISTRY_ENV_VAR: &str = "HERDR_STATIC_PLUGIN_REGISTRY";
+ const REGISTRY_LOCK_FILE: &str = ".plugins.lock";
+ 
+ fn registry_path() -> PathBuf {
+@@ -16,6 +17,48 @@
+     crate::config::config_dir().join(REGISTRY_LOCK_FILE)
+ }
+ 
++fn static_registry_path() -> Option<PathBuf> {
++    std::env::var_os(STATIC_PLUGIN_REGISTRY_ENV_VAR)
++        .filter(|value| !value.is_empty())
++        .map(PathBuf::from)
++}
++
++fn merge_plugin_entries(
++    mutable_plugins: Vec<InstalledPluginInfo>,
++    static_plugins: Vec<InstalledPluginInfo>,
++) -> Vec<InstalledPluginInfo> {
++    let mut merged = std::collections::BTreeMap::new();
++    for plugin in mutable_plugins.into_iter().chain(static_plugins) {
++        merged.insert(plugin.plugin_id.clone(), plugin);
++    }
++    merged.into_values().collect()
++}
++
++fn load_static_plugins(path: Option<&Path>) -> Vec<InstalledPluginInfo> {
++    let Some(path) = path else {
++        return Vec::new();
++    };
++    match load_from_path_strict(path) {
++        Ok(plugins) => plugins,
++        Err(err) => {
++            warn!(path = %path.display(), err = %err, "failed to load static plugin registry");
++            Vec::new()
++        }
++    }
++}
++
++fn runtime_plugins(mutable_plugins: Vec<InstalledPluginInfo>) -> Vec<InstalledPluginInfo> {
++    let static_registry = static_registry_path();
++    runtime_plugins_from_path(mutable_plugins, static_registry.as_deref())
++}
++
++fn runtime_plugins_from_path(
++    mutable_plugins: Vec<InstalledPluginInfo>,
++    static_registry: Option<&Path>,
++) -> Vec<InstalledPluginInfo> {
++    merge_plugin_entries(mutable_plugins, load_static_plugins(static_registry))
++}
++
+ fn with_registry_lock<T>(operation: impl FnOnce() -> std::io::Result<T>) -> std::io::Result<T> {
+     let lock_path = registry_lock_path();
+     if let Some(parent) = lock_path.parent() {
+@@ -60,16 +103,19 @@
+     mutation: impl FnOnce(&mut Vec<InstalledPluginInfo>) -> T,
+ ) -> std::io::Result<(T, Vec<InstalledPluginInfo>)> {
+     with_registry_lock(|| {
+-        let mut plugins = load_from_path_strict(&registry_path())?;
+-        let result = mutation(&mut plugins);
+-        plugins.sort_by(|left, right| left.plugin_id.cmp(&right.plugin_id));
+-        save_to_path(&registry_path(), &plugins)?;
+-        Ok((result, plugins))
++        let mut mutable_plugins = load_from_path_strict(&registry_path())?;
++        let result = mutation(&mut mutable_plugins);
++        mutable_plugins.sort_by(|left, right| left.plugin_id.cmp(&right.plugin_id));
++        save_to_path(&registry_path(), &mutable_plugins)?;
++        Ok((result, runtime_plugins(mutable_plugins)))
+     })
+ }
+ 
+ pub fn try_load() -> std::io::Result<Vec<InstalledPluginInfo>> {
+-    with_registry_lock(|| load_from_path_strict(&registry_path()))
++    with_registry_lock(|| {
++        let mutable_plugins = load_from_path_strict(&registry_path())?;
++        Ok(runtime_plugins(mutable_plugins))
++    })
+ }
+ 
+ /// Load the global registry. Returns an empty vec on failure so a corrupt or
+@@ -270,6 +316,59 @@
+     }
+ 
+     #[test]
++    fn static_plugins_merge_with_mutable_plugins_and_win_duplicate_ids() {
++        let mut mutable_duplicate = sample_plugin("example.duplicate");
++        mutable_duplicate.version = "0.1.0".to_string();
++        let mut static_duplicate = sample_plugin("example.duplicate");
++        static_duplicate.version = "0.2.0".to_string();
++
++        let merged = merge_plugin_entries(
++            vec![sample_plugin("example.mutable"), mutable_duplicate],
++            vec![sample_plugin("example.static"), static_duplicate],
++        );
++
++        let ids_and_versions = merged
++            .iter()
++            .map(|plugin| (plugin.plugin_id.as_str(), plugin.version.as_str()))
++            .collect::<Vec<_>>();
++        assert_eq!(
++            ids_and_versions,
++            vec![
++                ("example.duplicate", "0.2.0"),
++                ("example.mutable", "0.1.0"),
++                ("example.static", "0.1.0"),
++            ]
++        );
++    }
++
++    #[test]
++    fn missing_static_registry_keeps_mutable_plugins() {
++        let path = temp_registry_path("missing-static");
++        let mutable_plugins = vec![sample_plugin("example.mutable")];
++
++        let merged = runtime_plugins_from_path(mutable_plugins.clone(), Some(&path));
++
++        assert_eq!(merged, mutable_plugins);
++        assert!(!path.exists());
++    }
++
++    #[test]
++    fn malformed_static_registry_keeps_mutable_plugins_and_source_bytes() {
++        let path = temp_registry_path("malformed-static");
++        let malformed = b"not valid json";
++        if let Some(parent) = path.parent() {
++            std::fs::create_dir_all(parent).unwrap();
++        }
++        std::fs::write(&path, malformed).unwrap();
++        let mutable_plugins = vec![sample_plugin("example.mutable")];
++
++        let merged = runtime_plugins_from_path(mutable_plugins.clone(), Some(&path));
++
++        assert_eq!(merged, mutable_plugins);
++        assert_eq!(std::fs::read(path).unwrap(), malformed);
++    }
++
++    #[test]
+     fn save_replaces_existing_registry_file() {
+         let path = temp_registry_path("replace-existing");
+         save_to_path(&path, &[sample_plugin("example.first")]).unwrap();

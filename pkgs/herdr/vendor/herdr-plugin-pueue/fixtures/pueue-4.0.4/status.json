@@ -1,0 +1,75 @@
+{
+  "tasks": {
+    "1": {
+      "id": 1,
+      "created_at": "2026-07-29T12:00:00-04:00",
+      "original_command": "cargo build",
+      "command": "cargo build",
+      "path": "/workspace/build",
+      "envs": {
+        "API_TOKEN": "fixture-secret-do-not-display"
+      },
+      "group": "build",
+      "dependencies": [],
+      "priority": 0,
+      "label": "compile",
+      "status": {
+        "Stashed": {
+          "enqueue_at": null
+        }
+      }
+    },
+    "2": {
+      "id": 2,
+      "created_at": "2026-07-29T12:01:00-04:00",
+      "original_command": "cargo test",
+      "command": "cargo test",
+      "path": "/workspace/test",
+      "envs": {
+        "API_TOKEN": "fixture-secret-do-not-display"
+      },
+      "group": "default",
+      "dependencies": [],
+      "priority": 0,
+      "label": "tests",
+      "status": {
+        "Running": {
+          "enqueued_at": "2026-07-29T12:01:01-04:00",
+          "start": "2026-07-29T12:01:02-04:00"
+        }
+      }
+    },
+    "3": {
+      "id": 3,
+      "created_at": "2026-07-29T12:02:00-04:00",
+      "original_command": "cargo fmt --check",
+      "command": "cargo fmt --check",
+      "path": "/workspace/test",
+      "envs": {
+        "API_TOKEN": "fixture-secret-do-not-display"
+      },
+      "group": "default",
+      "dependencies": [],
+      "priority": 0,
+      "label": "format",
+      "status": {
+        "Done": {
+          "enqueued_at": "2026-07-29T12:02:01-04:00",
+          "start": "2026-07-29T12:02:02-04:00",
+          "end": "2026-07-29T12:02:03-04:00",
+          "result": "Success"
+        }
+      }
+    }
+  },
+  "groups": {
+    "build": {
+      "status": "Paused",
+      "parallel_tasks": 1
+    },
+    "default": {
+      "status": "Running",
+      "parallel_tasks": 2
+    }
+  }
+}

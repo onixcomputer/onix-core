@@ -1,0 +1,31 @@
+[workspace]
+members = [
+  "crates/herdr-plugin-pueue",
+  "crates/pueue-plugin-core",
+]
+default-members = ["crates/herdr-plugin-pueue"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+crossterm = "0.29"
+ratatui = "0.30"
+semver = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+unicode-width = "0.2"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unwrap_used = "deny"

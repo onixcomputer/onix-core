@@ -20,18 +20,86 @@ let
   actualSystemStateVersion = desktopConfig.system.stateVersion;
   neovimConfig = desktopHome.programs.neovim;
   cargoConfigSource = desktopHome.home.file.".cargo/config.toml".source;
-  minimumPueueHerdrVersion = "0.7.4";
+  minimumPueueHerdrVersion = "0.7.5";
   pueuePopupActionId = "dev.herdr.pueue.open-dashboard";
   pueueSplitActionId = "dev.herdr.pueue.open-dashboard-split";
   pueuePopupKey = "prefix+p";
   pueueSplitKey = "prefix+shift+p";
   invalidPueueActionId = "dev.herdr.pueue.invalid";
   pueuePluginLinkSource = "/home/brittonr/git/herdr-plugin-pueue";
+  pueueStatusToken = "$pueue_status";
+  pueueFirstRunningToken = "$pueue_running_1";
+  pueueSecondRunningToken = "$pueue_running_2";
+  unsafePueueEnvironmentToken = "$pueue_env";
+  workflowPluginSources = [
+    {
+      source = "smarzban/herdr-file-viewer";
+      revision = "96fcc0a2bdd2727ec88c38f8c8806f97b7ca0ea0";
+    }
+    {
+      source = "persiyanov/herdr-reviewr";
+      revision = "1068100ec5553f51f7527f60fb08055d7f2fd29e";
+    }
+    {
+      source = "paulbkim-dev/vim-herdr-navigation";
+      revision = "548607d0e417fdb30966846fce7436aa05a6738d";
+    }
+    {
+      source = "osolmaz/ghzinga/plugins/herdr";
+      revision = "30cf4ac79c69140cdac1c8bcf7caa54be34f361b";
+    }
+    {
+      source = "nikok6/herdr-mirror";
+      revision = "8bfc7cfca617ab92b068f8ef21b48c3bed807918";
+    }
+    {
+      source = "NathanFlurry/herdr-plugin-jj-workspace";
+      revision = "a9f1d3bcdaa2354e336a5173da85cbe4970c0f2e";
+    }
+    {
+      source = "../herdr-plugin-pueue";
+      revision = "29b2ba060297ec15909e06ef1311200c17965cbe";
+    }
+  ];
+  workflowPluginBindings = [
+    {
+      action = "herdr-file-viewer.open-file-viewer";
+      key = "prefix+f";
+    }
+    {
+      action = "herdr-file-viewer.open-file-viewer-tab";
+      key = "prefix+shift+f";
+    }
+    {
+      action = "persiyanov.reviewr.toggle";
+      key = "prefix+shift+e";
+    }
+    {
+      action = "vim-herdr-navigation.left";
+      key = "ctrl+h";
+    }
+    {
+      action = "vim-herdr-navigation.down";
+      key = "ctrl+j";
+    }
+    {
+      action = "vim-herdr-navigation.up";
+      key = "ctrl+k";
+    }
+    {
+      action = "vim-herdr-navigation.right";
+      key = "ctrl+l";
+    }
+  ];
+  expectedGhzingaVersion = "0.5.0";
+  invalidWorkflowPluginAction = "invalid.workflow-plugin.action";
   cairnPackageName = "cairn";
   invalidCairnPackageName = "cairn-bogus";
   octetPackageName = "cargo-octet";
   invalidOctetPackageName = "cargo-octet-bogus";
   packageName = package: package.pname or (lib.getName package);
+  usesUploadedCairnArtifactInput =
+    package: packageName package == cairnPackageName && (package.usesUploadedArtifactInput or false);
   hasHomePackageNamed =
     expectedName: home: lib.any (package: packageName package == expectedName) home.home.packages;
   brittonrDevHomes = {
@@ -39,10 +107,47 @@ let
     laptop = aspen3Home;
     server = aspen1Home;
   };
+  homePackages = desktopHome.home.packages;
+  ghzingaPackage = lib.findFirst (package: (package.pname or null) == "ghzinga") null homePackages;
+  ghzingaPackageVersion = if ghzingaPackage == null then "missing" else ghzingaPackage.version;
+  ghzingaPackagePath = if ghzingaPackage == null then "/missing-ghzinga" else toString ghzingaPackage;
+  syncHerdrPluginsPackage = lib.findFirst (
+    package: (package.pname or (package.name or null)) == "sync-herdr-plugins"
+  ) null homePackages;
+  hasBogusGhzingaPackage = lib.any (package: (package.pname or null) == "ghzinga-bogus") homePackages;
+  vimHerdrNavigationConfigSource =
+    desktopHome.xdg.configFile."nvim/after/plugin/herdr_nav.lua".source;
+  fishInteractiveShellInitFile = pkgs.writeText "britton-desktop-fish-init" desktopHome.programs.fish.interactiveShellInit;
   herdrPackage = lib.findFirst (
     package: (package.pname or null) == "herdr"
   ) null desktopConfig.environment.systemPackages;
   herdrPackageVersion = if herdrPackage == null then "missing" else herdrPackage.version;
+  herdrPackagePath = if herdrPackage == null then "/missing-herdr" else toString herdrPackage;
+  herdrPluginBundle = if herdrPackage == null then null else herdrPackage.pluginBundle or null;
+  herdrPluginBundlePath =
+    if herdrPluginBundle == null then
+      "/missing-herdr-plugin-bundle"
+    else
+      "${herdrPluginBundle}/plugins.json";
+  patchedHerdrPackage = if herdrPackage == null then null else herdrPackage.patchedPackage or null;
+  patchedHerdrPackagePath =
+    if patchedHerdrPackage == null then "/missing-patched-herdr" else toString patchedHerdrPackage;
+  expectedBundledPluginIds =
+    if herdrPackage == null then [ ] else herdrPackage.expectedPluginIds or [ ];
+  requiredBundledPluginArtifacts =
+    if herdrPackage == null then [ ] else herdrPackage.requiredPluginArtifacts or [ ];
+  bundledPluginSources = if herdrPackage == null then [ ] else herdrPackage.pluginSources or [ ];
+  bundledPluginRuntimePackages =
+    if herdrPackage == null then [ ] else herdrPackage.runtimePackages or [ ];
+  hasExpectedBundledPluginSources = bundledPluginSources == workflowPluginSources;
+  expectedBundledPluginIdsJson = builtins.toJSON (
+    builtins.sort builtins.lessThan expectedBundledPluginIds
+  );
+  expectedBundledPluginCount = builtins.length expectedBundledPluginIds;
+  mutableFixturePluginId = "example.mutable";
+  duplicateFixturePluginId = "mirror";
+  expectedMutablePluginCount = 1;
+  expectedMergedPluginCount = expectedBundledPluginCount + expectedMutablePluginCount;
   hasCompatibleHerdrPackage =
     herdrPackage != null && lib.versionAtLeast herdrPackageVersion minimumPueueHerdrVersion;
   herdrConfigSource = desktopHome.xdg.configFile."herdr/config.toml".source;
@@ -115,6 +220,7 @@ let
   # Positive and negative coverage for
   # r[verify onix.britton-desktop.herdr.pueue.version],
   # r[verify onix.britton-desktop.herdr.pueue.bindings],
+  # r[verify onix.britton-desktop.herdr.pueue.sidebar_overview],
   # r[verify onix.britton-desktop.herdr.pueue.ownership], and
   # r[verify onix.britton-desktop.herdr.pueue.validation].
   herdrPueueDashboard = pkgs.runCommand "herdr-pueue-dashboard" { } ''
@@ -142,6 +248,22 @@ let
       echo "positive: rendered Herdr config must contain the Pueue split key" >&2
       exit 1
     fi
+    if ! ${pkgs.gnugrep}/bin/grep -Fq '${pueueStatusToken}' "$herdr_config"; then
+      echo "positive: rendered Herdr config must contain the Pueue status token" >&2
+      exit 1
+    fi
+    if ! ${pkgs.gnugrep}/bin/grep -Fq '${pueueFirstRunningToken}' "$herdr_config"; then
+      echo "positive: rendered Herdr config must contain the first Pueue running-task token" >&2
+      exit 1
+    fi
+    if ! ${pkgs.gnugrep}/bin/grep -Fq '${pueueSecondRunningToken}' "$herdr_config"; then
+      echo "positive: rendered Herdr config must contain the second Pueue running-task token" >&2
+      exit 1
+    fi
+    if ${pkgs.gnugrep}/bin/grep -Fq '${unsafePueueEnvironmentToken}' "$herdr_config"; then
+      echo "negative: rendered Herdr config must not request Pueue environment metadata" >&2
+      exit 1
+    fi
     if ${pkgs.gnugrep}/bin/grep -Fq '${invalidPueueActionId}' "$herdr_config"; then
       echo "negative: rendered Herdr config must reject invalid Pueue actions" >&2
       exit 1
@@ -150,6 +272,225 @@ let
       echo "negative: runtime plugin link sources must not enter Herdr config" >&2
       exit 1
     fi
+    ${lib.optionalString hasHerdrPluginActivationMutation ''
+      echo "negative: Home Manager activation must not mutate Herdr plugin state" >&2
+      exit 1
+    ''}
+
+    touch "$out"
+  '';
+
+  # Positive and negative coverage for
+  # r[verify onix.britton-desktop.herdr.wrapper.plugins],
+  # r[verify onix.britton-desktop.herdr.wrapper.registry],
+  # r[verify onix.britton-desktop.herdr.wrapper.install],
+  # r[verify onix.britton-desktop.herdr.wrapper.ownership], and
+  # r[verify onix.britton-desktop.herdr.wrapper.validation].
+  herdrWorkflowPlugins = pkgs.runCommand "herdr-workflow-plugins" { } ''
+    set -eu
+
+    ${lib.optionalString (ghzingaPackageVersion != expectedGhzingaVersion) ''
+      echo "positive: ghzinga version ${ghzingaPackageVersion} must equal ${expectedGhzingaVersion}" >&2
+      exit 1
+    ''}
+    if [ ! -x '${ghzingaPackagePath}/bin/gzg' ]; then
+      echo "positive: ghzinga package must contain gzg" >&2
+      exit 1
+    fi
+    if [ ! -x '${ghzingaPackagePath}/bin/ghzinga' ]; then
+      echo "positive: ghzinga package must contain ghzinga" >&2
+      exit 1
+    fi
+    ${lib.optionalString hasBogusGhzingaPackage ''
+      echo "negative: Home Manager package list must not contain ghzinga-bogus" >&2
+      exit 1
+    ''}
+    ${lib.optionalString (syncHerdrPluginsPackage != null) ''
+      echo "negative: Home Manager must not install sync-herdr-plugins" >&2
+      exit 1
+    ''}
+    ${lib.optionalString (!hasExpectedBundledPluginSources) ''
+      echo "negative: bundled plugin source pins must match the reviewed source list" >&2
+      exit 1
+    ''}
+    ${lib.optionalString (!hasCompatibleHerdrPackage) ''
+      echo "positive: wrapped Herdr ${herdrPackageVersion} must be at least ${minimumPueueHerdrVersion}" >&2
+      exit 1
+    ''}
+    ${lib.optionalString (herdrPluginBundle == null) ''
+      echo "positive: wrapped Herdr must expose its plugin bundle" >&2
+      exit 1
+    ''}
+    ${lib.optionalString (patchedHerdrPackage == null) ''
+      echo "positive: wrapped Herdr must expose its patched base package" >&2
+      exit 1
+    ''}
+
+    wrapper=${lib.escapeShellArg "${herdrPackagePath}/bin/herdr"}
+    registry=${lib.escapeShellArg herdrPluginBundlePath}
+    if [ ! -x "$wrapper" ]; then
+      echo "positive: wrapped Herdr executable must exist" >&2
+      exit 1
+    fi
+    if [ ! -f "$registry" ]; then
+      echo "positive: static Herdr plugin registry must exist" >&2
+      exit 1
+    fi
+    if ! ${pkgs.gnugrep}/bin/grep -Fq 'HERDR_STATIC_PLUGIN_REGISTRY' "$wrapper"; then
+      echo "positive: Herdr wrapper must select the static plugin registry" >&2
+      exit 1
+    fi
+    if ${pkgs.gnugrep}/bin/grep -Eq 'herdr plugin (install|link)|sync-herdr-plugins' "$wrapper"; then
+      echo "negative: Herdr wrapper must not mutate plugin registration" >&2
+      exit 1
+    fi
+    if ${pkgs.gnugrep}/bin/grep -Eq 'XDG_(CONFIG|STATE)_HOME=' "$wrapper"; then
+      echo "negative: Herdr wrapper must not replace mutable XDG directories" >&2
+      exit 1
+    fi
+    ${lib.concatMapStringsSep "\n" (runtimePackage: ''
+      if ! ${pkgs.gnugrep}/bin/grep -Fq ${lib.escapeShellArg (toString runtimePackage)} "$wrapper"; then
+        echo "positive: Herdr wrapper PATH is missing ${runtimePackage.pname or runtimePackage.name}" >&2
+        exit 1
+      fi
+    '') bundledPluginRuntimePackages}
+
+    ${lib.concatMapStringsSep "\n" (artifact: ''
+      if [ ! -e ${lib.escapeShellArg artifact} ]; then
+        echo "positive: bundled plugin artifact is missing: ${artifact}" >&2
+        exit 1
+      fi
+    '') requiredBundledPluginArtifacts}
+
+    export HOME="$TMPDIR/home"
+    export XDG_CONFIG_HOME="$TMPDIR/config"
+    export XDG_STATE_HOME="$TMPDIR/state"
+    unset HERDR_CLIENT_SOCKET_PATH HERDR_SESSION HERDR_SOCKET_PATH
+    mkdir -p "$HOME" "$XDG_CONFIG_HOME" "$XDG_STATE_HOME"
+
+    "$wrapper" plugin list --json > "$TMPDIR/static-plugins.json"
+    static_ids="$(${pkgs.jq}/bin/jq -c '[.result.plugins[].plugin_id] | sort' "$TMPDIR/static-plugins.json")"
+    if [ "$static_ids" != ${lib.escapeShellArg expectedBundledPluginIdsJson} ]; then
+      echo "positive: wrapped Herdr must load the exact bundled plugin ids" >&2
+      exit 1
+    fi
+
+    mutable_fixture="$TMPDIR/mutable-plugin"
+    mkdir -p "$mutable_fixture"
+    cat > "$mutable_fixture/herdr-plugin.toml" <<'EOF'
+    id = "${mutableFixturePluginId}"
+    name = "Mutable fixture"
+    version = "0.1.0"
+    min_herdr_version = "0.7.0"
+    platforms = ["linux"]
+    EOF
+    "$wrapper" plugin link "$mutable_fixture" >/dev/null
+    "$wrapper" plugin list --json > "$TMPDIR/merged-plugins.json"
+    merged_count="$(${pkgs.jq}/bin/jq '.result.plugins | length' "$TMPDIR/merged-plugins.json")"
+    if [ "$merged_count" -ne ${toString expectedMergedPluginCount} ]; then
+      echo "positive: static and mutable plugin registries must load together" >&2
+      exit 1
+    fi
+    ${pkgs.jq}/bin/jq -e \
+      '.result.plugins | any(.plugin_id == "${mutableFixturePluginId}")' \
+      "$TMPDIR/merged-plugins.json" >/dev/null
+
+    mutable_registry="$XDG_CONFIG_HOME/herdr/plugins.json"
+    mutable_count="$(${pkgs.jq}/bin/jq 'length' "$mutable_registry")"
+    if [ "$mutable_count" -ne ${toString expectedMutablePluginCount} ]; then
+      echo "negative: mutable registry must not persist static plugin entries" >&2
+      exit 1
+    fi
+
+    duplicate_fixture="$TMPDIR/duplicate-plugin"
+    mkdir -p "$duplicate_fixture"
+    cat > "$duplicate_fixture/herdr-plugin.toml" <<'EOF'
+    id = "${duplicateFixturePluginId}"
+    name = "Mutable duplicate"
+    version = "99.0.0"
+    min_herdr_version = "0.7.0"
+    platforms = ["linux"]
+    EOF
+    "$wrapper" plugin link "$duplicate_fixture" >/dev/null
+    "$wrapper" plugin list --json > "$TMPDIR/duplicate-plugins.json"
+    ${pkgs.jq}/bin/jq -e \
+      '.result.plugins | any(.plugin_id == "${duplicateFixturePluginId}" and .version == "0.1.14")' \
+      "$TMPDIR/duplicate-plugins.json" >/dev/null
+    ${pkgs.jq}/bin/jq -e \
+      'any(.[]; .plugin_id == "${duplicateFixturePluginId}" and .version == "99.0.0")' \
+      "$mutable_registry" >/dev/null
+
+    malformed_root="$TMPDIR/malformed"
+    malformed_registry="$TMPDIR/malformed-static.json"
+    mkdir -p "$malformed_root/herdr"
+    ${pkgs.jq}/bin/jq \
+      '[.[] | select(.plugin_id == "${mutableFixturePluginId}")]' \
+      "$mutable_registry" > "$malformed_root/herdr/plugins.json"
+    printf '%s' 'not valid json' > "$malformed_registry"
+    HERDR_STATIC_PLUGIN_REGISTRY="$malformed_registry" \
+      XDG_CONFIG_HOME="$malformed_root" \
+      ${lib.escapeShellArg "${patchedHerdrPackagePath}/bin/herdr"} plugin list --json \
+      > "$TMPDIR/malformed-fallback.json"
+    ${pkgs.jq}/bin/jq -e \
+      '.result.plugins | any(.plugin_id == "${mutableFixturePluginId}")' \
+      "$TMPDIR/malformed-fallback.json" >/dev/null
+    if [ "$(< "$malformed_registry")" != 'not valid json' ]; then
+      echo "negative: malformed static input must remain unchanged" >&2
+      exit 1
+    fi
+
+    herdr_config=${herdrConfigSource}
+    ${lib.concatMapStringsSep "\n" (binding: ''
+      if ! ${pkgs.gnugrep}/bin/grep -Fq '${binding.action}' "$herdr_config"; then
+        echo "positive: Herdr config must contain ${binding.action}" >&2
+        exit 1
+      fi
+      if ! ${pkgs.gnugrep}/bin/grep -Fq 'key = "${binding.key}"' "$herdr_config"; then
+        echo "positive: Herdr config must contain ${binding.key}" >&2
+        exit 1
+      fi
+    '') workflowPluginBindings}
+    if ${pkgs.gnugrep}/bin/grep -Fq '${invalidWorkflowPluginAction}' "$herdr_config"; then
+      echo "negative: Herdr config must not contain a bogus workflow plugin action" >&2
+      exit 1
+    fi
+    ${lib.concatMapStringsSep "\n" (plugin: ''
+      if ${pkgs.gnugrep}/bin/grep -Fq '${plugin.source}' "$herdr_config"; then
+        echo "negative: plugin source locations must not enter Herdr config" >&2
+        exit 1
+      fi
+    '') workflowPluginSources}
+
+    nvim_adapter=${lib.escapeShellArg vimHerdrNavigationConfigSource}
+    ${lib.concatMapStringsSep "\n"
+      (key: ''
+        if ! ${pkgs.gnugrep}/bin/grep -Fq 'map("<C-${key}>"' "$nvim_adapter"; then
+          echo "positive: Neovim adapter must map Ctrl+${key}" >&2
+          exit 1
+        fi
+      '')
+      [
+        "h"
+        "j"
+        "k"
+        "l"
+      ]
+    }
+    if ! ${pkgs.gnugrep}/bin/grep -Fq 'HERDR_BIN_PATH' "$nvim_adapter"; then
+      echo "positive: Neovim adapter must use the current Herdr binary" >&2
+      exit 1
+    fi
+
+    fish_init=${lib.escapeShellArg fishInteractiveShellInitFile}
+    if ! ${pkgs.gnugrep}/bin/grep -Fq 'set -gu CDPATH . ~/git' "$fish_init"; then
+      echo "positive: Fish must keep CDPATH as a non-exported global" >&2
+      exit 1
+    fi
+    if ${pkgs.gnugrep}/bin/grep -Fq 'set -x CDPATH' "$fish_init"; then
+      echo "negative: Fish must not export CDPATH to plugin scripts" >&2
+      exit 1
+    fi
+
     ${lib.optionalString hasHerdrPluginActivationMutation ''
       echo "negative: Home Manager activation must not mutate Herdr plugin state" >&2
       exit 1
@@ -222,7 +563,23 @@ let
         }
       ]) brittonrDevHomes
     );
-  cairnDevToolAssertions = devToolAssertionsFor cairnPackageName invalidCairnPackageName;
+  cairnSourceAssertions = lib.concatLists (
+    lib.mapAttrsToList (role: home: [
+      {
+        name = "positive: brittonr ${role} Cairn uses the uploaded artifact input";
+        condition = lib.any usesUploadedCairnArtifactInput home.home.packages;
+      }
+      {
+        name = "negative: brittonr ${role} excludes Cairn with a remote artifact fetch";
+        condition =
+          !lib.any (
+            package: packageName package == cairnPackageName && !usesUploadedCairnArtifactInput package
+          ) home.home.packages;
+      }
+    ]) brittonrDevHomes
+  );
+  cairnDevToolAssertions =
+    devToolAssertionsFor cairnPackageName invalidCairnPackageName ++ cairnSourceAssertions;
   octetDevToolAssertions = devToolAssertionsFor octetPackageName invalidOctetPackageName;
 
   failedAssertions = lib.filter (assertion: !assertion.condition) assertions;
@@ -338,5 +695,6 @@ in
 
     kache-wrapper-workspace-wrapper-bypass = kacheWrapperWorkspaceWrapperBypass;
     herdr-pueue-dashboard = herdrPueueDashboard;
+    herdr-workflow-plugins = herdrWorkflowPlugins;
   };
 }

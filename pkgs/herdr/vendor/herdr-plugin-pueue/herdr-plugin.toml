@@ -1,0 +1,35 @@
+id = "dev.herdr.pueue"
+name = "Pueue Dashboard"
+version = "0.1.0"
+min_herdr_version = "0.7.5"
+description = "Inspect and control Pueue tasks in a Herdr pane or popup"
+platforms = ["linux"]
+
+[[build]]
+command = ["cargo", "build", "--release", "--locked", "--package", "herdr-plugin-pueue", "--target-dir", "target"]
+
+[[actions]]
+id = "open-dashboard"
+title = "Open Pueue dashboard popup"
+contexts = ["workspace"]
+command = ["./target/release/herdr-plugin-pueue", "open-dashboard"]
+
+[[actions]]
+id = "open-dashboard-split"
+title = "Open Pueue dashboard split"
+contexts = ["workspace"]
+command = ["./target/release/herdr-plugin-pueue", "open-dashboard-split"]
+
+[[panes]]
+id = "dashboard"
+title = "Pueue"
+placement = "popup"
+width = "90%"
+height = "80%"
+command = ["./target/release/herdr-plugin-pueue", "dashboard"]
+
+[[panes]]
+id = "dashboard-split"
+title = "Pueue"
+placement = "split"
+command = ["./target/release/herdr-plugin-pueue", "dashboard"]
