@@ -159,6 +159,10 @@ let
         "*/facter.json"
         "inventory.json"
 
+        # vendored sources mirror their origin repositories byte for byte;
+        # the origin toolchain owns their formatting
+        "pkgs/herdr/vendor/**"
+
       ];
 
       formatter = {
