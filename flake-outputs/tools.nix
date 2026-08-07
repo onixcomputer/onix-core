@@ -55,6 +55,8 @@ in
     horizon = pkgs.callPackage ../pkgs/horizon { horizon-src = self.inputs.horizon; };
     iroh-ssh = pkgs.callPackage ../pkgs/iroh-ssh { };
     llamacpp-rocm-rpc = pkgs.callPackage ../pkgs/llamacpp-rocm-rpc { };
+    llamacpp-rocm-dspark = pkgs.callPackage ../pkgs/llamacpp-rocm-dspark { };
+    deepseek-v4-dspark-draft = pkgs.callPackage ../pkgs/deepseek-v4-dspark-draft { };
     lemonade-server = pkgs.callPackage ../pkgs/lemonade { };
     mesh-llm = pkgs.callPackage ../pkgs/mesh-llm { };
     radicle-ci-runner = pkgs.callPackage ../pkgs/radicle-ci-runner { };

@@ -42,7 +42,7 @@ let
     label = "Aspen1";
     machineName = "aspen1";
     meshAddress = "100.100.103.95";
-    backendUnit = "lemonade.service";
+    backendUnit = "llamacpp-server-deepseek-v4-flash-aspen1.service";
   };
   aspen2Node = mkNode {
     label = "Aspen2";
