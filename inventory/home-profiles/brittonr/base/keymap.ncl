@@ -172,6 +172,22 @@ in
           popup | Key,
           split | Key,
         },
+      fileViewer
+        | {
+          split | Key,
+          tab | Key,
+        },
+      reviewr
+        | {
+          toggle | Key,
+        },
+      vimNavigation
+        | {
+          left | Key,
+          down | Key,
+          up | Key,
+          right | Key,
+        },
     }
     = {
       # Bare Alt is not valid in Herdr 0.7.0, so combine shared secondary
@@ -186,6 +202,20 @@ in
       pueueDashboard = {
         popup = "p",
         split = "shift+p",
+      },
+      # r[impl onix.britton-desktop.herdr.workflow_plugins.bindings]
+      fileViewer = {
+        split = "f",
+        tab = "shift+f",
+      },
+      reviewr = {
+        toggle = "shift+e",
+      },
+      vimNavigation = {
+        left = "ctrl+h",
+        down = "ctrl+j",
+        up = "ctrl+k",
+        right = "ctrl+l",
       },
     },
 

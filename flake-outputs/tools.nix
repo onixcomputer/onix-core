@@ -11,6 +11,12 @@ let
   sopsViz = (import ./_sops-viz.nix) { inherit pkgs; };
 
   buildbot-pr-check = pkgs.callPackage ../pkgs/buildbot-pr-check { };
+  ghzingaPackage = pkgs.callPackage ../pkgs/ghzinga { };
+  herdrPackage = pkgs.callPackage ../pkgs/herdr {
+    ghzinga = ghzingaPackage;
+    herdr = self.inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr;
+    wrapperLib = self.inputs.wrappers.lib;
+  };
 
   wasmPluginsWithHostImports =
     self.inputs.onix-wasm.packages.${pkgs.stdenv.hostPlatform.system}.wasm-plugins.overrideAttrs
@@ -36,13 +42,16 @@ in
     dumbpipe = pkgs.callPackage ../pkgs/dumbpipe { };
     sendme = pkgs.callPackage ../pkgs/sendme { };
     crw = pkgs.callPackage ../pkgs/crw { };
+    ghzinga = ghzingaPackage;
     kache = pkgs.callPackage ../pkgs/kache { };
     verify-deploy = pkgs.callPackage ../pkgs/verify-deploy { };
     ki-editor = self.inputs.ki-editor.packages.${pkgs.stdenv.hostPlatform.system}.default;
     mercury-cli = self.inputs.mercury-cli.packages.${pkgs.stdenv.hostPlatform.system}.mercury-cli;
+    prime-agent = pkgs.callPackage ../pkgs/prime-agent { };
   }
   // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
     branchfs = pkgs.callPackage ../pkgs/branchfs { };
+    herdr = herdrPackage;
     horizon = pkgs.callPackage ../pkgs/horizon { horizon-src = self.inputs.horizon; };
     iroh-ssh = pkgs.callPackage ../pkgs/iroh-ssh { };
     llamacpp-rocm-rpc = pkgs.callPackage ../pkgs/llamacpp-rocm-rpc { };
@@ -67,6 +76,14 @@ in
     lib.optionalAttrs (builtins.elem pkgs.stdenv.hostPlatform.system (
       traceyPkg.meta.platforms or [ ]
     )) { tracey = traceyPkg; }
+  )
+  // (
+    let
+      kunaPkg = pkgs.callPackage ../pkgs/kuna { };
+    in
+    lib.optionalAttrs (builtins.elem pkgs.stdenv.hostPlatform.system (kunaPkg.meta.platforms or [ ])) {
+      kuna = kunaPkg;
+    }
   )
   // (sopsViz.packages or { });
 }

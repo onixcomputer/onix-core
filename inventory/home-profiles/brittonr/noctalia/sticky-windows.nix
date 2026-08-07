@@ -6,7 +6,7 @@
   ...
 }:
 let
-  niriPackage = inputs.niri.packages.${pkgs.stdenv.hostPlatform.system}.niri;
+  niriPackage = import ./lib/niri-package.nix { inherit inputs lib pkgs; };
   jq = "${pkgs.jq}/bin/jq";
   niri = "${niriPackage}/bin/niri";
   notifySend = "${pkgs.libnotify}/bin/notify-send";

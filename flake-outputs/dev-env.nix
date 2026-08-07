@@ -173,6 +173,7 @@ let
         ];
         shellcheck.includes = [
           "*.sh"
+          "*.envrc"
           "scripts/pre-commit"
         ];
         shellcheck.options = [
@@ -277,100 +278,108 @@ in
 
   devShells = {
     # Full development environment with all tools
-    default = pkgs.mkShell {
-      packages = [
-        clan-cli
-        preCommitEval.package
-        (pkgs.python3.withPackages (ps: [
-          ps.pytest
-          ps.vcrpy
-          ps.pytest-vcr
-        ]))
-        self'.packages.nix-eval-warnings
-        self'.packages.dumbpipe
-        self'.packages.sendme
-        self'.packages.verify-deploy
-        self'.packages.claude-md
-      ]
-      ++ lib.optionals (self'.packages ? tracey) [ self'.packages.tracey ]
-      ++ [
-        self.inputs.drift.packages.${pkgs.stdenv.hostPlatform.system}.default
-      ]
-      ++ [
-        pkgs.nickel
-        pkgs.nix-output-monitor
-        pkgs.sops
-        (pkgs.writeShellApplication {
-          name = "eval-warnings";
-          runtimeInputs = [ self'.packages.nix-eval-warnings ];
-          text = ''
-            if [ -z "''${1:-}" ]; then
-              echo "Usage: eval-warnings <flake-ref>"
-              echo "Example: eval-warnings '.#checks'"
-              exit 1
-            fi
-            exec nix-eval-warnings "$@"
-          '';
-        })
-        (pkgs.writeShellApplication {
-          name = "nix-prefetch-sri";
-          runtimeInputs = [
-            pkgs.curl
-            pkgs.nix
+    default = self.inputs.devenv.lib.mkShell {
+      inherit pkgs;
+      inputs = self.inputs // {
+        inherit self;
+      };
+      modules = [
+        {
+          packages = [
+            clan-cli
+            preCommitEval.package
+            (pkgs.python3.withPackages (ps: [
+              ps.pytest
+              ps.vcrpy
+              ps.pytest-vcr
+            ]))
+            self'.packages.nix-eval-warnings
+            self'.packages.dumbpipe
+            self'.packages.sendme
+            self'.packages.verify-deploy
+            self'.packages.claude-md
+          ]
+          ++ lib.optionals (self'.packages ? tracey) [ self'.packages.tracey ]
+          ++ [
+            self.inputs.drift.packages.${pkgs.stdenv.hostPlatform.system}.default
+          ]
+          ++ [
+            pkgs.nickel
+            pkgs.nix-output-monitor
+            pkgs.sops
+            (pkgs.writeShellApplication {
+              name = "eval-warnings";
+              runtimeInputs = [ self'.packages.nix-eval-warnings ];
+              text = ''
+                if [ -z "''${1:-}" ]; then
+                  echo "Usage: eval-warnings <flake-ref>"
+                  echo "Example: eval-warnings '.#checks'"
+                  exit 1
+                fi
+                exec nix-eval-warnings "$@"
+              '';
+            })
+            (pkgs.writeShellApplication {
+              name = "nix-prefetch-sri";
+              runtimeInputs = [
+                pkgs.curl
+                pkgs.nix
+              ];
+              text = ''
+                if [ -z "''${1:-}" ]; then
+                  echo "Usage: nix-prefetch-sri <url>"
+                  exit 1
+                fi
+                curl -sL "$1" | nix hash file --sri /dev/stdin
+              '';
+            })
+            (pkgs.writeShellApplication {
+              name = "build";
+              text = ''
+                if [ -z "''${1:-}" ]; then
+                  echo "Usage: build <machine-name>"
+                  exit 1
+                fi
+                if command -v nom &> /dev/null; then
+                  nom build ".#nixosConfigurations.$1.config.system.build.toplevel"
+                else
+                  nix build ".#nixosConfigurations.$1.config.system.build.toplevel"
+                fi
+              '';
+            })
+            (pkgs.writeShellApplication {
+              name = "validate";
+              text = ''
+                echo "Running nix fmt..."
+                nix fmt && echo "Running pre-commit checks..." && pre-commit run --all-files
+              '';
+            })
+            # AI agent CLI tools (mics-skills)
+            inputs'.mics-skills.browser-cli
+            inputs'.mics-skills.context7-cli
+            inputs'.mics-skills.db-cli
+            inputs'.mics-skills.gmaps-cli
+            inputs'.mics-skills.kagi-search
+            inputs'.mics-skills.pexpect-cli
+            inputs'.mics-skills.screenshot-cli
+            inputs'.mics-skills.weather-cli
           ];
-          text = ''
-            if [ -z "''${1:-}" ]; then
-              echo "Usage: nix-prefetch-sri <url>"
-              exit 1
+
+          enterShell = ''
+            if [ -f .env ]; then
+              set -a
+              source .env
+              set +a
             fi
-            curl -sL "$1" | nix hash file --sri /dev/stdin
+
+            mkdir -p "$PWD/.pi"
+            ${piLinkCommands}
+            unset pi_source pi_target
+
+            ${preCommitEval.installationScript}
           '';
-        })
-        (pkgs.writeShellApplication {
-          name = "build";
-          text = ''
-            if [ -z "''${1:-}" ]; then
-              echo "Usage: build <machine-name>"
-              exit 1
-            fi
-            if command -v nom &> /dev/null; then
-              nom build ".#nixosConfigurations.$1.config.system.build.toplevel"
-            else
-              nix build ".#nixosConfigurations.$1.config.system.build.toplevel"
-            fi
-          '';
-        })
-        (pkgs.writeShellApplication {
-          name = "validate";
-          text = ''
-            echo "Running nix fmt..."
-            nix fmt && echo "Running pre-commit checks..." && pre-commit run --all-files
-          '';
-        })
-        # AI agent CLI tools (mics-skills)
-        inputs'.mics-skills.browser-cli
-        inputs'.mics-skills.context7-cli
-        inputs'.mics-skills.db-cli
-        inputs'.mics-skills.gmaps-cli
-        inputs'.mics-skills.kagi-search
-        inputs'.mics-skills.pexpect-cli
-        inputs'.mics-skills.screenshot-cli
-        inputs'.mics-skills.weather-cli
+        }
       ];
-
-      shellHook = ''
-        if [ -f .env ]; then
-          set -a
-          source .env
-          set +a
-        fi
-
-        mkdir -p "$PWD/.pi"
-        ${piLinkCommands}
-        unset pi_source pi_target
-
-        ${preCommitEval.installationScript}
-      '';
     };
 
     # Minimal shell with just clan CLI

@@ -233,7 +233,9 @@
       "%,
 
       cdpath = m%"
-        set -x CDPATH . ~/git
+        # Fish uses CDPATH without exporting it. Child scripts can use `cd`
+        # without command-substitution output from the Bash CDPATH behavior.
+        set -gu CDPATH . ~/git
       "%,
 
       delta = m%"

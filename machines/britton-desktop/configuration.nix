@@ -477,9 +477,10 @@ in
     ttWkv7OwnerControl
     self.packages.${pkgs.stdenv.hostPlatform.system}.opendeck
     self.packages.${pkgs.stdenv.hostPlatform.system}.ttsim
-    # Keep Herdr on the accepted llm-agents provider.
-    # r[impl onix.britton-desktop.herdr.pueue.version]
-    inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr
+    # Keep the wrapped Herdr base on the accepted llm-agents provider.
+    # r[impl onix.britton-desktop.herdr.wrapper.install]
+    # r[impl onix.britton-desktop.herdr.wrapper.install.provider]
+    self.packages.${pkgs.stdenv.hostPlatform.system}.herdr
   ];
 
   # ZFS on the 4TB data drive

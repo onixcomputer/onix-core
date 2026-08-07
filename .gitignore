@@ -2,8 +2,10 @@
 result
 result-*
 
-# Direnv cache
+# Direnv and devenv
+!/.envrc
 .direnv/
+/.devenv/
 
 # Python cache
 __pycache__/
