@@ -102,10 +102,13 @@ let
   secretSpecPackageName = "secretspec";
   invalidSecretSpecPackageName = "secretspec-bogus";
   packageName = package: package.pname or (lib.getName package);
+  packagePriority = package: package.meta.priority or lib.meta.defaultPriority;
+  findHomePackageNamed =
+    expectedName: home:
+    lib.findFirst (package: packageName package == expectedName) null home.home.packages;
   usesUploadedCairnArtifactInput =
     package: packageName package == cairnPackageName && (package.usesUploadedArtifactInput or false);
-  hasHomePackageNamed =
-    expectedName: home: lib.any (package: packageName package == expectedName) home.home.packages;
+  hasHomePackageNamed = expectedName: home: findHomePackageNamed expectedName home != null;
   brittonrDevHomes = {
     desktop = desktopHome;
     laptop = aspen3Home;
@@ -585,9 +588,24 @@ let
   cairnDevToolAssertions =
     devToolAssertionsFor cairnPackageName invalidCairnPackageName ++ cairnSourceAssertions;
   octetDevToolAssertions = devToolAssertionsFor octetPackageName invalidOctetPackageName;
+  secretSpecPriorityAssertions = lib.mapAttrsToList (
+    role: home:
+    let
+      devenvPackage = findHomePackageNamed devenvPackageName home;
+      secretSpecPackage = findHomePackageNamed secretSpecPackageName home;
+    in
+    {
+      name = "negative: brittonr ${role} dev profile avoids the secretspec executable conflict";
+      condition =
+        devenvPackage != null
+        && secretSpecPackage != null
+        && packagePriority devenvPackage < packagePriority secretSpecPackage;
+    }
+  ) brittonrDevHomes;
   globalDevToolAssertions =
     devToolAssertionsFor devenvPackageName invalidDevenvPackageName
-    ++ devToolAssertionsFor secretSpecPackageName invalidSecretSpecPackageName;
+    ++ devToolAssertionsFor secretSpecPackageName invalidSecretSpecPackageName
+    ++ secretSpecPriorityAssertions;
 
   failedAssertions = lib.filter (assertion: !assertion.condition) assertions;
   failedNames = lib.concatMapStringsSep "; " (assertion: assertion.name) failedAssertions;

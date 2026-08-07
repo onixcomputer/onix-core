@@ -1,4 +1,9 @@
-{ pkgs, inputs, ... }:
+{
+  pkgs,
+  inputs,
+  lib,
+  ...
+}:
 let
   tuicr = pkgs.callPackage ../../../../pkgs/tuicr { };
   tracey = pkgs.callPackage ../../../../pkgs/tracey { };
@@ -95,7 +100,7 @@ in
     # AI/dev tooling
     cairn
     devenv
-    secretspec
+    (lib.lowPrio secretspec)
     tracey
     kuna
     primeAgent
