@@ -97,6 +97,10 @@ let
   invalidCairnPackageName = "cairn-bogus";
   octetPackageName = "cargo-octet";
   invalidOctetPackageName = "cargo-octet-bogus";
+  devenvPackageName = "devenv";
+  invalidDevenvPackageName = "devenv-bogus";
+  secretSpecPackageName = "secretspec";
+  invalidSecretSpecPackageName = "secretspec-bogus";
   packageName = package: package.pname or (lib.getName package);
   usesUploadedCairnArtifactInput =
     package: packageName package == cairnPackageName && (package.usesUploadedArtifactInput or false);
@@ -581,6 +585,9 @@ let
   cairnDevToolAssertions =
     devToolAssertionsFor cairnPackageName invalidCairnPackageName ++ cairnSourceAssertions;
   octetDevToolAssertions = devToolAssertionsFor octetPackageName invalidOctetPackageName;
+  globalDevToolAssertions =
+    devToolAssertionsFor devenvPackageName invalidDevenvPackageName
+    ++ devToolAssertionsFor secretSpecPackageName invalidSecretSpecPackageName;
 
   failedAssertions = lib.filter (assertion: !assertion.condition) assertions;
   failedNames = lib.concatMapStringsSep "; " (assertion: assertion.name) failedAssertions;
@@ -594,6 +601,12 @@ let
   failedOctetDevToolNames = lib.concatMapStringsSep "; " (
     assertion: assertion.name
   ) failedOctetDevToolAssertions;
+  failedGlobalDevToolAssertions = lib.filter (
+    assertion: !assertion.condition
+  ) globalDevToolAssertions;
+  failedGlobalDevToolNames = lib.concatMapStringsSep "; " (
+    assertion: assertion.name
+  ) failedGlobalDevToolAssertions;
   report = builtins.toFile "home-manager-2605-migration-report.txt" ''
     Home Manager 26.05 migration check
 
@@ -637,6 +650,14 @@ let
       assertion: "- ${assertion.name}: ${if assertion.condition then "PASS" else "FAIL"}"
     ) octetDevToolAssertions}
   '';
+  globalDevToolReport = builtins.toFile "brittonr-global-dev-tool-report.txt" ''
+    brittonr global dev tool check
+
+    Assertions:
+    ${lib.concatMapStringsSep "\n" (
+      assertion: "- ${assertion.name}: ${if assertion.condition then "PASS" else "FAIL"}"
+    ) globalDevToolAssertions}
+  '';
 in
 {
   checks = lib.optionalAttrs (system == "x86_64-linux") {
@@ -663,6 +684,14 @@ in
         ''
       else
         throw "brittonr-octet-dev-tool failed: ${failedOctetDevToolNames}";
+
+    brittonr-global-dev-tools =
+      if failedGlobalDevToolAssertions == [ ] then
+        pkgs.runCommand "brittonr-global-dev-tools" { inherit globalDevToolReport; } ''
+          cp "$globalDevToolReport" "$out"
+        ''
+      else
+        throw "brittonr-global-dev-tools failed: ${failedGlobalDevToolNames}";
 
     aspen3-input-palm-rejection =
       if failedPalmAssertions == [ ] then

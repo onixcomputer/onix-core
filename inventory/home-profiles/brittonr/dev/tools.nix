@@ -94,6 +94,8 @@ in
 
     # AI/dev tooling
     cairn
+    devenv
+    secretspec
     tracey
     kuna
     primeAgent
