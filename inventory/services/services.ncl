@@ -683,7 +683,15 @@ let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
       module = { name = "llm-agents", input = "self" },
       roles.default = {
         tags."llm-client" = {},
-        settings.packages = ["pi", "openspec", "qwen-code", "hermes-agent"],
+        settings.packages = ["pi", "openspec", "hermes-agent"],
+      },
+    },
+
+    "qwen-code-agents" = {
+      module = { name = "llm-agents", input = "self" },
+      roles.default = {
+        tags."qwen-code-client" = {},
+        settings.packages = ["qwen-code"],
       },
     },
 

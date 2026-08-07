@@ -56,6 +56,7 @@ let service_tags = [
   "llm-client",
   "monitoring",
   "prometheus",
+  "qwen-code-client",
   "static-demo",
   "static-test",
   "syncthing",
