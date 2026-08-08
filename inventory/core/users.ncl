@@ -66,14 +66,14 @@ let { ValidateUserRefs, .. } = import "user-contracts.ncl" in
       },
     },
 
-    # Desktop: base + dev + noctalia + creative + social + media + herdr
+    # Desktop: interactive profiles plus personal Radicle supervision.
     hm-desktop = {
       module = { name = "home-manager-profiles", input = "self" },
       roles.default = {
         machines.britton-desktop = {},
         settings = {
           username = "brittonr",
-          profiles = ["base", "dev", "noctalia", "creative", "social", "media", "kache", "herdr"],
+          profiles = ["base", "dev", "noctalia", "creative", "social", "media", "kache", "herdr", "radicle"],
           homeStateVersion = "26.05",
         },
       },

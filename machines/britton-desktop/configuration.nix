@@ -25,6 +25,14 @@ let
   ];
   ldacQualityMode = "hq";
 
+  # r[impl onix.radicle_replica.personal_persistence]
+  # r[impl onix.radicle_replica.personal_listener]
+  personalRadicleUserName = "brittonr";
+  personalRadicleUserUid = config.users.users.${personalRadicleUserName}.uid;
+  personalRadicleUserSliceName = "user-${toString personalRadicleUserUid}";
+  managedRadicleNodePort = config.services.radicle.node.listenPort;
+  managedRadicleNodeBindRule = "tcp:${toString managedRadicleNodePort}";
+
   llamaCpuPkg = pkgs.llama-cpp;
   supraStateDirectory = "llamacpp-server-supra-router";
   supraStateDir = "/var/lib/${supraStateDirectory}";
@@ -183,9 +191,15 @@ in
   time.timeZone = "America/New_York";
   time.hardwareClockInLocalTime = true; # Prevent time sync issues with Windows
 
-  users.users.brittonr.openssh.authorizedKeys.keys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII6Mya4qU+UPAe2FUnR9L+s1Ny8MkZSA14X+aiGRJV/g id_bd"
-  ];
+  users.users.brittonr = {
+    linger = true;
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII6Mya4qU+UPAe2FUnR9L+s1Ny8MkZSA14X+aiGRJV/g id_bd"
+    ];
+  };
+
+  systemd.slices.${personalRadicleUserSliceName}.sliceConfig.SocketBindDeny =
+    managedRadicleNodeBindRule;
 
   nix.settings = {
     # Enable experimental features for uid-range support and Nix build cgroups.
