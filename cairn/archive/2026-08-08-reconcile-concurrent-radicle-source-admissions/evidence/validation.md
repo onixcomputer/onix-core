@@ -5,6 +5,7 @@ Date: 2026-08-08
 ## Topology
 
 ```text
+merge result: 3d93c411114614163e2e03a8f460f08c4aec4542
 canonical first parent: bf7f37d34bb87b402bda275f09b36b097742805e
 reviewed second parent: b8387cd7d59fa3b0d4ea67646352dd27c4f7d7ed
 merge base: ecd2b31a6d9617fd70733fd276f96754be9ac4e5

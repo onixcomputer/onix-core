@@ -15,4 +15,5 @@
 
 - [x] [parallel] V2 Run Nickel formatting and evaluation, focused primary/replica/admission Nix checks, and source evidence checks. r[onix.radicle_source_admission.concurrent_integration]
   - Evidence: `evidence/validation.md` records four passing focused Nix checks, passing Nickel export, and the pre-existing package-identity blocker.
-- [ ] [serial] V3 Run Cairn validation, gates, synchronization, and archive with explicit authority non-claims. r[onix.radicle_source_admission.concurrent_integration]
+- [x] [serial] V3 Run Cairn validation, gates, synchronization, and archive with explicit authority non-claims. r[onix.radicle_source_admission.concurrent_integration]
+  - Evidence: `evidence/validation.md` records bounded results and non-claims; lifecycle transcripts are retained with the archived change.
