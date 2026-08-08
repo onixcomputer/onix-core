@@ -1,10 +1,6 @@
-# Radicle Source Admission Specification
+# Radicle Source Admission Reconciliation Delta
 
-## Purpose
-
-Defines the `radicle-source-admission` capability.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Exact governed source policy
 
@@ -113,3 +109,24 @@ Onix Core MUST emit typed Nickel and JSON evidence with a BLAKE3 sidecar. Eviden
 - GIVEN missing producer identity, runtime-only overrides, endpoint mismatch, widened authority, or weakened non-claims
 - WHEN validation runs
 - THEN it MUST fail closed.
+
+## ADDED Requirements
+
+### Requirement: Concurrent admission integration preserves both histories
+
+r[onix.radicle_source_admission.concurrent_integration]
+
+A reconciliation merge MUST preserve current canonical history and the reviewed `durable-file-publication` admission history as parents. It MUST NOT rewrite either line or remove an accepted source.
+
+#### Scenario: Reviewed merge preserves both admissions
+
+- GIVEN current canonical Choregraph admission and reviewed durable-publication admission
+- WHEN the reconciliation merge is constructed
+- THEN both accepted histories MUST be ancestors
+- AND the resulting policy MUST contain both RIDs.
+
+#### Scenario: Reconciliation drops or rewrites a source
+
+- GIVEN a candidate that omits one parent, one RID, or one evidence package
+- WHEN integration review runs
+- THEN integration MUST fail.

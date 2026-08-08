@@ -40,6 +40,7 @@ let
   personalRadicleNodeChecks = (import ./_personal-radicle-node-checks.nix) innerArgs;
   radicleCiRunnerChecks = (import ./_radicle-ci-runner-checks.nix) innerArgs;
   radicleChoregraphAdmissionChecks = (import ./_radicle-choregraph-admission-checks.nix) innerArgs;
+  radicleDurableFilePublicationAdmissionChecks = (import ./_radicle-durable-file-publication-admission-checks.nix) innerArgs;
   radicleExecutionGraphAdmissionChecks = (import ./_radicle-execution-graph-admission-checks.nix) innerArgs;
   radicleNodeChecks = (import ./_radicle-node-checks.nix) innerArgs;
   radiclePrivatePilotChecks = (import ./_radicle-private-pilot-checks.nix) innerArgs;
@@ -68,6 +69,7 @@ in
     // (personalRadicleNodeChecks.checks or { })
     // (radicleCiRunnerChecks.checks or { })
     // (radicleChoregraphAdmissionChecks.checks or { })
+    // (radicleDurableFilePublicationAdmissionChecks.checks or { })
     // (radicleExecutionGraphAdmissionChecks.checks or { })
     // (radicleNodeChecks.checks or { })
     // (radiclePrivatePilotChecks.checks or { })

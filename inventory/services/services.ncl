@@ -61,8 +61,16 @@ let radicle_pilot_rid = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo" in
 let artifact_auth_rid = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f" in
 let execution_graph_rid = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a" in
 let choregraph_rid = "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF" in
+let durable_file_publication_rid = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM" in
 let radicle_private_pilot_rid = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg" in
-let radicle_source_rids = [radicle_pilot_rid, artifact_auth_rid, execution_graph_rid, choregraph_rid] in
+let radicle_source_rids = [
+  radicle_pilot_rid,
+  artifact_auth_rid,
+  execution_graph_rid,
+  choregraph_rid,
+  durable_file_publication_rid,
+]
+in
 let radicle_private_source_rids = [radicle_private_pilot_rid] in
 let radicle_production_seed_node_id = "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8" in
 let radicle_reviewed_commit = "29dac88ecded94457572db3fdfaaaab95fa91525" in

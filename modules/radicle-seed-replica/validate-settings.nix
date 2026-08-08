@@ -1,5 +1,6 @@
 # r[impl onix.radicle_replica.configuration]
 # r[impl onix.radicle_replica.identity_distinct]
+# r[impl onix.radicle_source_admission.validation]
 { lib }:
 {
   settings,
@@ -21,11 +22,13 @@ let
   artifactAuthRepository = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
   executionGraphRepository = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a";
   choregraphRepository = "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF";
+  durableFilePublicationRepository = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM";
   governedRepositories = [
     boundedExecRepository
     artifactAuthRepository
     executionGraphRepository
     choregraphRepository
+    durableFilePublicationRepository
   ];
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   governedPrivateRepositories = [ privatePilotRepository ];
@@ -85,7 +88,7 @@ lib.concatLists [
   (rejectUnless validRepositoryIds "Radicle replica repositories must be canonical public rad:z IDs")
   (rejectUnless uniqueRepositoryIds "Radicle replica repositories must not contain duplicates")
   (rejectUnless (settings.seedRepositories == governedRepositories)
-    "Radicle replica must admit exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs in the public set"
+    "Radicle replica must admit exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs in the public set; it must also admit the durable-file-publication RID"
   )
   (rejectUnless validPrivateRepositoryIds "Radicle private seed repositories must be canonical rad:z IDs")
   (rejectUnless uniquePrivateRepositoryIds "Radicle private seed repositories must not contain duplicates")

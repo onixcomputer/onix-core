@@ -29,11 +29,13 @@ let
   artifactAuthRepository = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
   executionGraphRepository = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a";
   choregraphRepository = "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF";
+  durableFilePublicationRepository = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM";
   governedRepositories = [
     boundedExecRepository
     artifactAuthRepository
     executionGraphRepository
     choregraphRepository
+    durableFilePublicationRepository
   ];
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   governedPrivateRepositories = [ privatePilotRepository ];
@@ -183,7 +185,7 @@ lib.concatLists [
   ) "httpsEnabled requires the read-only HTTP gateway")
   (rejectUnless validSeedRepositoryIds "seedRepositories must contain only canonical public rad:z repository IDs")
   (rejectUnless uniqueSeedRepositoryIds "seedRepositories must not contain duplicate repository IDs")
-  (rejectUnless seedRepositoriesAreGoverned "seedRepositories must contain exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs in the public set")
+  (rejectUnless seedRepositoriesAreGoverned "seedRepositories must contain exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs in the public set; it must also contain the durable-file-publication RID")
   (rejectUnless validPrivateSeedRepositoryIds "privateSeedRepositories must contain only canonical rad:z repository IDs")
   (rejectUnless uniquePrivateSeedRepositoryIds "privateSeedRepositories must not contain duplicate repository IDs")
   (rejectUnless privateSeedRepositoriesAreGoverned "privateSeedRepositories must contain exactly the reviewed private pilot RID")
@@ -195,7 +197,7 @@ lib.concatLists [
   (rejectUnless validHttpsGitRepositoryIds "httpsGitRepositories must contain only canonical public rad:z repository IDs")
   (rejectUnless uniqueHttpsGitRepositoryIds "httpsGitRepositories must not contain duplicate repository IDs")
   (rejectUnless httpsGitRepositoriesAreSeeded "httpsGitRepositories must be a subset of seedRepositories")
-  (rejectUnless httpsGitRepositoriesAreGoverned "enabled HTTPS Git must expose exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs")
+  (rejectUnless httpsGitRepositoriesAreGoverned "enabled HTTPS Git must expose exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs; it must also expose the durable-file-publication RID")
   (rejectUnless (!settings.backupEnabled || backupFactsPresent)
     "enabled backup requires complete target host, address, failure-domain, repository, and dataset facts"
   )

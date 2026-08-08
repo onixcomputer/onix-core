@@ -2,6 +2,7 @@
 # r[verify onix.radicle_replica.validation]
 # r[verify onix.radicle_replica.authority]
 # r[verify onix.radicle_replica.desktop_isolation]
+# r[verify onix.radicle_source_admission.validation]
 {
   self,
   pkgs,
@@ -34,11 +35,13 @@ let
   artifactAuthRepository = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
   executionGraphRepository = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a";
   choregraphRepository = "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF";
+  durableFilePublicationRepository = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM";
   governedRepositories = [
     pilotRepository
     artifactAuthRepository
     executionGraphRepository
     choregraphRepository
+    durableFilePublicationRepository
   ];
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   privateRepositories = [ privatePilotRepository ];
@@ -332,6 +335,7 @@ let
           pilotRepository
           artifactAuthRepository
           executionGraphRepository
+          durableFilePublicationRepository
         ];
       };
       packageVersion = nodePackage.version;
@@ -339,7 +343,21 @@ let
       expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs";
     }
     {
-      name = "undeclared-fifth-rid";
+      name = "missing-durable-file-publication-rid";
+      settings = positiveSettings // {
+        seedRepositories = [
+          pilotRepository
+          artifactAuthRepository
+          executionGraphRepository
+          choregraphRepository
+        ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs";
+    }
+    {
+      name = "undeclared-sixth-rid";
       settings = positiveSettings // {
         seedRepositories = governedRepositories ++ [ inheritedRepository ];
       };

@@ -63,6 +63,7 @@ let
   artifactAuthRepository = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
   executionGraphRepository = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a";
   choregraphRepository = "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF";
+  durableFilePublicationRepository = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM";
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   privatePilotCommit = "ff4ff027817465b1bb04251a8a98db42cc610b0c";
   privatePilotIdentityRevision = "cb3f6273f35ff437e58f15332d48f25b06c4b9cc";
@@ -73,6 +74,7 @@ let
     artifactAuthRepository
     executionGraphRepository
     choregraphRepository
+    durableFilePublicationRepository
   ];
   privateRepositories = [ privatePilotRepository ];
   pinnedRepository = productionPilotRepository;
@@ -481,6 +483,7 @@ let
           productionPilotRepository
           artifactAuthRepository
           executionGraphRepository
+          durableFilePublicationRepository
         ];
       };
       packageVersion = nodePackage.version;
@@ -488,7 +491,21 @@ let
       expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs";
     }
     {
-      name = "unknown-fifth-seed-rid";
+      name = "missing-durable-file-publication-seed-rid";
+      settings = positiveSettings // {
+        seedRepositories = [
+          productionPilotRepository
+          artifactAuthRepository
+          executionGraphRepository
+          choregraphRepository
+        ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs";
+    }
+    {
+      name = "unknown-sixth-seed-rid";
       settings = positiveSettings // {
         seedRepositories = productionRepositories ++ [ unmanagedRepository ];
       };
@@ -640,6 +657,7 @@ let
           productionPilotRepository
           artifactAuthRepository
           executionGraphRepository
+          durableFilePublicationRepository
         ];
       };
       packageVersion = nodePackage.version;
@@ -647,7 +665,21 @@ let
       expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs";
     }
     {
-      name = "https-unknown-fifth-rid";
+      name = "https-missing-durable-file-publication-rid";
+      settings = httpsSettings // {
+        httpsGitRepositories = [
+          productionPilotRepository
+          artifactAuthRepository
+          executionGraphRepository
+          choregraphRepository
+        ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs";
+    }
+    {
+      name = "https-unknown-sixth-rid";
       settings = httpsSettings // {
         seedRepositories = productionRepositories ++ [ unmanagedRepository ];
         httpsGitRepositories = productionRepositories ++ [ unmanagedRepository ];
