@@ -319,6 +319,10 @@ in
             command = "/home/brittonr/.cargo-target/release/chaoscontrol-trace";
             options = [ "NOPASSWD" ];
           }
+          {
+            command = "/home/brittonr/.cargo-target/release/ebpf-trace-evidence-selftest";
+            options = [ "NOPASSWD" ];
+          }
         ]
         ++ ttWkv7OwnerControlSudoCommands;
       }
