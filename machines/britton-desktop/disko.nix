@@ -1,4 +1,7 @@
 let
+  cargoTargetQuota = "1500G";
+  gitWorkspaceQuota = "600G";
+  kacheNixQuota = "64G";
   radicleBackupQuota = "256G";
   radicleBackupRecordSize = "1M";
   radicleSeedQuota = "64G";
@@ -29,10 +32,21 @@ in
           cargo-target = {
             type = "zfs_fs";
             mountpoint = "/home/brittonr/.cargo-target";
+            options.quota = cargoTargetQuota;
+          };
+          git = {
+            type = "zfs_fs";
+            mountpoint = "/home/brittonr/git";
+            options.quota = gitWorkspaceQuota;
+            mountOptions = [
+              "defaults"
+              "nofail"
+            ];
           };
           kache-nix = {
             type = "zfs_fs";
             mountpoint = "/var/cache/kache-nix";
+            options.quota = kacheNixQuota;
             mountOptions = [
               "defaults"
               # The activation script creates this optional cache dataset on

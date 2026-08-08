@@ -24,6 +24,7 @@ let
       ;
   };
   machineChecks = (import ./_machine-checks.nix) innerArgs;
+  sshHostKeyChecks = (import ./_ssh-host-key-checks.nix) innerArgs;
   varsChecks = (import ./_vars-checks.nix) innerArgs;
   vmTests = (import ./_vm-tests.nix) { inherit pkgs lib; };
   wasmChecks = (import ./_wasm-checks.nix) innerArgs;
@@ -50,6 +51,7 @@ in
 {
   checks =
     (machineChecks.checks or { })
+    // (sshHostKeyChecks.checks or { })
     // (varsChecks.checks or { })
     // (vmTests.checks or { })
     // (wasmChecks.checks or { })

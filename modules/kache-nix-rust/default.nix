@@ -65,7 +65,10 @@ in
                 if ! "$zfs" list -H -o name "$dataset" >/dev/null 2>&1; then
                   "$zfs" create -o mountpoint="$mountpoint" "$dataset"
                 else
-                  "$zfs" set mountpoint="$mountpoint" "$dataset"
+                  current_mountpoint="$("$zfs" get -H -o value mountpoint "$dataset")"
+                  if [ "$current_mountpoint" != "$mountpoint" ]; then
+                    "$zfs" set mountpoint="$mountpoint" "$dataset"
+                  fi
                 fi
 
                 "$zfs" mount "$dataset" >/dev/null 2>&1 || true

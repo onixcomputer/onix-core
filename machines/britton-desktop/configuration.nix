@@ -173,6 +173,8 @@ let
   ttWkv7OwnerControl = tenstorrentPackages.ttwkv7-owner-control;
 in
 {
+  imports = [ ./build-storage.nix ];
+
   networking = {
     hostName = "britton-desktop";
     resolvconf.extraConfig = ''

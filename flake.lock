@@ -2550,15 +2550,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1783640847,
-        "narHash": "sha256-qDw15NB+gb+A7fj3QgEJAAjqpvpqDraSCpYOdPRamFI=",
+        "lastModified": 1783972003,
+        "narHash": "sha256-CMZk1q/ybrpNEr8XoCtMsV5127bYKsUXl0ZitImIaPY=",
         "owner": "tenstorrent",
         "repo": "tt-kmd",
-        "rev": "d3b9ec9e5087b4993cdbc9a71b9ba757e94371a1",
+        "rev": "49ae9d88e177635746db4c085bd21a9481adb591",
         "type": "github"
       },
       "original": {
         "owner": "tenstorrent",
+        "ref": "ttkmd-2.10.0",
         "repo": "tt-kmd",
         "type": "github"
       }

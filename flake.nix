@@ -158,7 +158,7 @@
       };
     };
     tt-kmd = {
-      url = "github:tenstorrent/tt-kmd";
+      url = "github:tenstorrent/tt-kmd/ttkmd-2.10.0";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         flake-parts.follows = "flake-parts";

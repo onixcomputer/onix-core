@@ -6,6 +6,7 @@
 }:
 let
   backupJobName = "britton-desktop";
+  sshHostKeys = import ../../lib/ssh-host-keys.nix { inherit lib; };
   backupUnitName = "borgbackup-job-${backupJobName}";
   backupCredentialDirectory = "/run/credentials/${backupUnitName}.service";
   borgRuntimeDirectoryName = "radicle-backup-borg";
@@ -26,7 +27,7 @@ let
   expectedPrivatePilotSigrefs = "ad1b6d032b69a4b81910b2fc98f8707b9ff268fb";
   expectedPrivatePilotSourceBlake3 = "514904bdcf5f23b0813c567efbc8b6732248de94482037a58011bfff3fc26853";
   targetAddress = "100.110.43.11";
-  targetHostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEehqswjtdQwNb4o2/hV7Qg1HCZkpbLZDDbReDoPmf/p";
+  targetHostKey = sshHostKeys.requirePublicKey backupJobName;
   privateKeyMode = "0400";
   publicKeyMode = "0444";
   radiclePrivateCredential = "radicle-node-private";

@@ -21,6 +21,8 @@ let
   tenstorrentVendorId = "1e52";
   nvidiaVendorId = "10de";
   expectedTenstorrentDeviceCount = 2;
+  expectedTenstorrentDriverVersion = "2.10.0";
+  incompatibleTenstorrentDriverVersion = "0.0.0-incompatible-fixture";
   requiredGraphicsDriver = "amdgpu";
   forbiddenInitrdModule = "nvidia";
   removedNvidiaServiceName = "docker-sglang-diffusion-krea2-britton-desktop";
@@ -92,6 +94,9 @@ let
   brittonDesktopSudoers = brittonDesktopConfig.environment.etc.sudoers.source;
   brittonDesktopServices = brittonDesktopConfig.systemd.services;
   tenstorrentHostGuide = brittonDesktopConfig.environment.etc."tenstorrent/README.md".text;
+  tenstorrentKernelModule = brittonDesktopConfig.boot.kernelPackages.tt-kmd;
+  tenstorrentKernelVersion = brittonDesktopConfig.boot.kernelPackages.kernel.modDirVersion;
+  tenstorrentKernelModuleFile = "${tenstorrentKernelModule}/lib/modules/${tenstorrentKernelVersion}/misc/tenstorrent.ko.xz";
   hasRequiredAccelerator = lib.elem requiredAcceleratorTag brittonDesktopTags;
   hasForbiddenAccelerator = lib.elem forbiddenAcceleratorTag brittonDesktopTags;
   hasRequiredGraphicsDriver = lib.elem requiredGraphicsDriver brittonDesktopGraphicsDrivers;
@@ -473,6 +478,30 @@ let
     touch "$out"
   '';
 
+  # Positive and negative coverage for the pinned TT-KMD module version.
+  brittonDesktopTenstorrentDriver = pkgs.runCommand "britton-desktop-tenstorrent-driver" { } ''
+    assert_driver_version() {
+      actual_version="$1"
+      expected_version="$2"
+      test "$actual_version" = "$expected_version"
+    }
+
+    test -f ${lib.escapeShellArg tenstorrentKernelModuleFile}
+    actual_tenstorrent_driver_version="$(${pkgs.kmod}/bin/modinfo -F version ${lib.escapeShellArg tenstorrentKernelModuleFile})"
+
+    if ! assert_driver_version "$actual_tenstorrent_driver_version" ${lib.escapeShellArg expectedTenstorrentDriverVersion}; then
+      echo "${brittonDesktopName} must use TT-KMD ${expectedTenstorrentDriverVersion}; built module reports $actual_tenstorrent_driver_version"
+      exit 1
+    fi
+
+    if assert_driver_version ${lib.escapeShellArg incompatibleTenstorrentDriverVersion} ${lib.escapeShellArg expectedTenstorrentDriverVersion}; then
+      echo "The TT-KMD version guard accepted an incompatible fixture"
+      exit 1
+    fi
+
+    touch "$out"
+  '';
+
   # Group machine names by their `system` field from machines.ncl
   machinesPerSystem = builtins.groupBy (name: machinesDef.${name}.system) (lib.attrNames machinesDef);
 
@@ -501,5 +530,6 @@ in
         (pkgs.stdenv.hostPlatform.isLinux && system == machinesDef.${brittonDesktopName}.system)
         {
           britton-desktop-accelerator-inventory = brittonDesktopAcceleratorInventory;
+          britton-desktop-tenstorrent-driver = brittonDesktopTenstorrentDriver;
         };
 }

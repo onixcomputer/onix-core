@@ -61,7 +61,10 @@ in
       daemonLogFilter | NonEmpty,
     }
     = {
-      cacheDir = "/home/brittonr/.cache/kache",
+      # Keep the interactive cache off the root filesystem. The machine-owned
+      # datapool/kache-nix dataset is shared with Nix builders, but each caller
+      # uses an isolated subdirectory.
+      cacheDir = "/var/cache/kache-nix/user-brittonr",
       cacheBudgetGiB = 32,
       localOnly = true,
       daemonService = true,

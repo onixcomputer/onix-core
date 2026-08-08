@@ -1,5 +1,12 @@
-{ inputs, pkgs, ... }:
+{
+  inputs,
+  lib,
+  pkgs,
+  ...
+}:
 let
+  sshHostKeys = import ../../lib/ssh-host-keys.nix { inherit lib; };
+  brittonDesktopHostKey = sshHostKeys.requirePublicKey "britton-desktop";
   grubWallpaper = pkgs.fetchurl {
     name = "nixos-grub-wallpaper.jpg";
     url = "https://raw.githubusercontent.com/adeci/wallpapers/main/nix-grub-2880x1920.jpg";
@@ -76,7 +83,7 @@ in
     '';
     knownHosts.britton-desktop = {
       hostNames = [ "britton-desktop" ];
-      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEehqswjtdQwNb4o2/hV7Qg1HCZkpbLZDDbReDoPmf/p";
+      publicKey = brittonDesktopHostKey;
     };
   };
 

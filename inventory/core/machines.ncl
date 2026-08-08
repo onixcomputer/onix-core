@@ -228,7 +228,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "syncthing",
         "thunderbolt-link",
       ],
-      deploy.targetHost = "root@britton-desktop",
+      deploy.targetHost = "root@britton-desktop.clan",
     },
 
     # ========== SBCs ==========
