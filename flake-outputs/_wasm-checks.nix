@@ -518,17 +518,16 @@ in
         fi
       '';
 
-    # Derivation-like round-trip: pass a complex attrset (mimicking a
-    # derivation's structure) as an arg, Nickel module returns it, verify
-    # the fields survive the trip through nix_to_nickel -> Nickel eval ->
-    # nickel_to_nix.
+    # Derivation-like round-trip: pass a complex attrset that Nix classifies
+    # as an opaque derivation value. Nickel returns the ForeignId unchanged.
+    # Nix then recovers the value and reads its fields.
     # Note: actual `derivation { ... }` values crash with --store dummy://
     # because drvPath/outPath require store resolution. This test uses a
     # plain attrset with similar structure instead.
     wasm-foreignId-derivation-roundtrip =
       let
         ncl = pkgs.writeText "drv-roundtrip.ncl" ''
-          fun { drv, .. } => { name = drv.name, sys = drv.system, typ = drv.type }
+          fun { drv, .. } => { result = drv }
         '';
       in
       mkWasmTest "foreignId-derivation-roundtrip" ''
@@ -538,7 +537,11 @@ in
             path = ${plugins}/nickel_plugin.wasm;
             function = "evalNickelFileWith";
           } { file = ${ncl}; args = { drv = drv; }; };
-        in out
+        in {
+          name = out.result.name;
+          sys = out.result.system;
+          typ = out.result.type;
+        }
       '' ''{ name = "test-drv"; sys = "x86_64-linux"; typ = "derivation"; }'';
 
     # Large lazy attrset: pass a big attrset as arg, nix_to_nickel
