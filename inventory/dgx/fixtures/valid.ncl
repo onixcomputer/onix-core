@@ -18,8 +18,9 @@ let { DgxMachines, .. } = import "../contracts.ncl" in
       irohPublicKey = "DGX_FIXTURE_IROH_PUBLIC_KEY",
     },
     meshBackend = {
-      unit = "fixture-openai-backend.service",
+      unit = "llamacpp-server-dgx-local.service",
       externallyManaged = false,
+      modelAlias = "rwkv7-g1i-13.3b-q6-k",
     },
   },
 } | DgxMachines

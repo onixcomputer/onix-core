@@ -37,6 +37,8 @@ Each real machine needs these reviewed facts:
 - the `framework-only` access policy
 - SecretSpec names for each required runtime credential
 - one Mesh-LLM backend owner
+- the model alias that Mesh-LLM requests
+- an optional hash-pinned local GGUF profile
 
 Machine files use these paths:
 
@@ -89,7 +91,17 @@ The shared DGX NixOS module provides these services and tools:
 - Sendme
 - iroh-ssh with SecretSpec bootstrap key files
 - Mesh-LLM bound to `tailscale0`
+- the `graham33/nixos-dgx-spark` NixOS module for GB10 hardware and CUDA support
+- a CUDA `llama.cpp` OpenAI-compatible backend on `127.0.0.1:13305`
 
-Mesh-LLM needs one declared loopback backend owner. The owner is a systemd unit or an explicit external owner, not both.
+The upstream DGX input supplies hardware, kernel, CUDA, and NVIDIA policy. This setup does not use its playbooks for model serving.
+
+The default local model is `RWKV7-G1i-13.3B Q6_K`. Its repository revision and Hugging Face LFS SHA-256 are fixed in `modules/dgx-machine/rwkv7-profile.nix`.
+
+A machine can replace the default through `meshBackend.localModel` in the typed Nickel inventory. A replacement needs a model alias, repository, commit, GGUF path, SHA-256, context size, GPU layer count, and runtime flags. The Mesh-LLM alias must match the selected model alias.
+
+The shared `modules/llamacpp-server/mk-nixos-config.nix` core serves both the DGX backend and existing llama.cpp services. Other existing model instances remain available.
+
+Mesh-LLM needs one declared loopback backend owner. The owner is the fixed local systemd unit or an explicit external owner, not both.
 
 The module authorizes only the Framework SSH key for `brittonr` and `root`. It does not authorize the cproof.ai key or discovered builder keys.

@@ -68,7 +68,11 @@ The module graph will include these items:
 
 A real record must name the local backend unit or declare an externally managed backend. The adapter will reject an unowned loopback backend.
 
-The Tailscale, iroh-ssh, and Mesh-LLM modules will expose pure settings-to-Nix cores. Clan and Devenv shells will supply runtime files and service orchestration.
+The local backend uses the shared llama.cpp settings-to-Nix core. It defaults to the hash-pinned RWKV7 G1i 13.3B Q6_K profile. A typed inventory record can replace this profile with another commit-pinned and SHA-256-pinned GGUF model.
+
+The `graham33/nixos-dgx-spark` input supplies hardware, kernel, CUDA, and NVIDIA policy. The model service does not use upstream playbooks.
+
+The Tailscale, iroh-ssh, Mesh-LLM, and llama.cpp modules will expose pure settings-to-Nix cores. Clan and Devenv shells will supply runtime files and service orchestration.
 
 **Rationale:** A shared module graph prevents a Devenv copy from drifting from the tested DGX policy. The pure cores support direct evaluation checks.
 

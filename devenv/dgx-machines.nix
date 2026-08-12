@@ -86,6 +86,8 @@ let
               enable = true;
               meshBackendUnit = backendUnit;
               meshBackendExternallyManaged = machine.meshBackend.externallyManaged;
+              meshActivationModel = machine.meshBackend.modelAlias;
+              localModel = machine.meshBackend.localModel or { };
             };
             inherit runtimeSecretFiles;
           };

@@ -18,6 +18,54 @@ let
 
   sendmePackage = pkgs.callPackage ../../pkgs/sendme { };
   meshLlmPackage = pkgs.callPackage ../../pkgs/mesh-llm { };
+  rwkvProfile = import ./rwkv7-profile.nix;
+  localBackendInstanceName = "dgx-local";
+  localBackendUnit = "llamacpp-server-${localBackendInstanceName}.service";
+  minimumLlamaCppVersion = "10133";
+  loopbackHost = "127.0.0.1";
+  llamaApiPort = 13305;
+  disabledNumericOption = 0;
+  defaultMetaliumInspectorPort = 50051;
+
+  localModel = cfg.services.localModel;
+  localLlamaSettings = {
+    host = loopbackHost;
+    port = llamaApiPort;
+    backend = "cuda";
+    modelRepo = localModel.repository;
+    modelFile = localModel.file;
+    modelRevision = localModel.revision;
+    modelSha256 = localModel.sha256;
+    extraModelFiles = [ ];
+    draftModelSource = "download";
+    draftModelRepo = "";
+    draftModelFile = "";
+    draftModelRevision = "main";
+    modelAlias = localModel.alias;
+    inherit (localModel) gpuLayers;
+    metaliumDeviceId = disabledNumericOption;
+    metaliumInspectorPort = defaultMetaliumInspectorPort;
+    metaliumTrace = false;
+    inherit (localModel) contextSize;
+    generationThreads = disabledNumericOption;
+    batchThreads = disabledNumericOption;
+    batchSize = disabledNumericOption;
+    ubatchSize = disabledNumericOption;
+    parallelSlots = disabledNumericOption;
+    cacheTypeK = null;
+    cacheTypeV = null;
+    inherit (localModel) flashAttention;
+    gpuPerformanceLock = false;
+    inherit (localModel) noMmap;
+    inherit (localModel) enableMetrics;
+    autoStart = true;
+    inherit (localModel) extraArgs;
+  };
+  localLlamaConfig = import ../llamacpp-server/mk-nixos-config.nix {
+    inherit inputs lib pkgs;
+    instanceName = localBackendInstanceName;
+    settings = localLlamaSettings;
+  };
 
   defaultSshPort = 22;
   meshApiPort = 9337;
@@ -37,8 +85,8 @@ let
   irohSettings.sshPort = defaultSshPort;
   meshSettings = {
     mode = "joiner";
-    endpointUrl = "http://127.0.0.1:13305/v1";
-    proxyActivationModel = "Qwen3-0.6B-Q4_K_M";
+    endpointUrl = "http://${loopbackHost}:${toString llamaApiPort}/v1";
+    proxyActivationModel = cfg.services.meshActivationModel;
     proxyActivationContextSize = meshProxyContextSize;
     apiPort = meshApiPort;
     consolePort = meshConsolePort;
@@ -70,6 +118,7 @@ let
       joinTokenPath = secretPath "meshJoinToken";
       package = meshLlmPackage;
     })
+    (lib.mkIf (!cfg.services.meshBackendExternallyManaged) localLlamaConfig)
   ];
 in
 {
@@ -90,6 +139,63 @@ in
         type = lib.types.bool;
         default = false;
         description = "Declare that another owner supplies the loopback Mesh-LLM backend.";
+      };
+      meshActivationModel = lib.mkOption {
+        type = lib.types.strMatching "[a-zA-Z0-9._/+:-]+";
+        default = rwkvProfile.alias;
+        description = "Model name that Mesh-LLM sends to the owned backend.";
+      };
+      localModel = lib.mkOption {
+        description = "Hash-pinned GGUF profile for the local DGX llama.cpp backend.";
+        default = { };
+        type = lib.types.submodule {
+          options = {
+            alias = lib.mkOption {
+              type = lib.types.strMatching "[a-zA-Z0-9._/+:-]+";
+              default = rwkvProfile.alias;
+            };
+            repository = lib.mkOption {
+              type = lib.types.strMatching "[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+";
+              default = rwkvProfile.repository;
+            };
+            revision = lib.mkOption {
+              type = lib.types.strMatching "[0-9a-f]{40}";
+              default = rwkvProfile.revision;
+            };
+            file = lib.mkOption {
+              type = lib.types.strMatching "[a-zA-Z0-9._/+:-]+[.]gguf";
+              default = rwkvProfile.file;
+            };
+            sha256 = lib.mkOption {
+              type = lib.types.strMatching "[0-9a-f]{64}";
+              default = rwkvProfile.sha256;
+            };
+            contextSize = lib.mkOption {
+              type = lib.types.ints.positive;
+              default = rwkvProfile.contextSize;
+            };
+            gpuLayers = lib.mkOption {
+              type = lib.types.ints.unsigned;
+              default = rwkvProfile.gpuLayers;
+            };
+            flashAttention = lib.mkOption {
+              type = lib.types.bool;
+              default = rwkvProfile.flashAttention;
+            };
+            noMmap = lib.mkOption {
+              type = lib.types.bool;
+              default = rwkvProfile.noMmap;
+            };
+            enableMetrics = lib.mkOption {
+              type = lib.types.bool;
+              default = rwkvProfile.enableMetrics;
+            };
+            extraArgs = lib.mkOption {
+              type = lib.types.listOf lib.types.str;
+              default = rwkvProfile.extraArgs;
+            };
+          };
+        };
       };
     };
 
@@ -160,6 +266,22 @@ in
                 (cfg.services.meshBackendUnit != null && cfg.services.meshBackendUnit != "")
                 != cfg.services.meshBackendExternallyManaged;
               message = "DGX Mesh-LLM must name one backend unit or declare external ownership.";
+            }
+            {
+              assertion =
+                cfg.services.meshBackendExternallyManaged || cfg.services.meshBackendUnit == localBackendUnit;
+              message = "The local DGX backend must be ${localBackendUnit}.";
+            }
+            {
+              assertion =
+                cfg.services.meshBackendExternallyManaged || cfg.services.meshActivationModel == localModel.alias;
+              message = "The local DGX model alias must match the Mesh-LLM activation model.";
+            }
+            {
+              assertion =
+                cfg.services.meshBackendExternallyManaged
+                || lib.versionAtLeast pkgs.llama-cpp.version minimumLlamaCppVersion;
+              message = "The DGX local backend requires llama.cpp ${minimumLlamaCppVersion} or newer.";
             }
           ];
         }

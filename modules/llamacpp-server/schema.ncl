@@ -6,6 +6,7 @@
     modelRepo = { type = "string", description = "Hugging Face repository containing the GGUF model" },
     modelFile = { type = "string", description = "GGUF filename to download from modelRepo" },
     modelRevision = { type = "string", default = "main", description = "Hugging Face revision or branch for the model file" },
+    modelSha256 = { type = "nullable_string", default = null, description = "Optional lowercase SHA-256 identity for the primary GGUF file" },
     extraModelFiles = { type = "array_string", default = [], description = "Additional files to download from modelRepo, such as remaining GGUF shards" },
     draftModelSource = { type = "enum", values = ["download", "package"], default = "download", description = "Draft GGUF origin: Hugging Face download or the Nix-built deepseek-v4-dspark-draft package" },
     draftModelRepo = { type = "string", default = "", description = "Hugging Face repository containing the optional speculative draft GGUF" },

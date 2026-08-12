@@ -26,7 +26,18 @@ let
   );
   fixtureRoot = ../tests/dgx-devenv;
   fixtureInventory = builtins.fromJSON (builtins.readFile (fixtureRoot + "/inventory.json"));
+  customModelInventory = builtins.fromJSON (
+    builtins.readFile (fixtureRoot + "/custom-model-inventory.json")
+  );
   fixtureMachine = fixtureInventory.machines.fixture-dgx;
+  customModelMachine = customModelInventory.machines.fixture-dgx;
+  externalBackendMachine = fixtureMachine // {
+    meshBackend = {
+      externallyManaged = true;
+      modelAlias = "external-dgx-model";
+    };
+  };
+  externalBackendInventory.machines.fixture-dgx = externalBackendMachine;
   fixturePathExists = relativePath: builtins.pathExists (fixtureRoot + "/${relativePath}");
   unexpectedFakeDevenvExitCode = 96;
   fakeDevenv = pkgs.writeShellScriptBin "devenv" ''
@@ -62,6 +73,42 @@ let
   };
   fixtureValidation = inventoryCore.validateInventory {
     inventory = fixtureInventory;
+    pathExists = fixturePathExists;
+    requireFiles = true;
+  };
+  customModelValidation = inventoryCore.validateInventory {
+    inventory = customModelInventory;
+    pathExists = fixturePathExists;
+    requireFiles = true;
+  };
+  externalBackendValidation = inventoryCore.validateInventory {
+    inventory = externalBackendInventory;
+    pathExists = fixturePathExists;
+    requireFiles = true;
+  };
+  invalidModelHashValidation = inventoryCore.validateInventory {
+    inventory = {
+      machines.fixture-dgx = customModelMachine // {
+        meshBackend = customModelMachine.meshBackend // {
+          localModel = customModelMachine.meshBackend.localModel // {
+            sha256 = "not-a-sha256";
+          };
+        };
+      };
+    };
+    pathExists = fixturePathExists;
+    requireFiles = true;
+  };
+  invalidModelPathValidation = inventoryCore.validateInventory {
+    inventory = {
+      machines.fixture-dgx = customModelMachine // {
+        meshBackend = customModelMachine.meshBackend // {
+          localModel = customModelMachine.meshBackend.localModel // {
+            file = "../fixture-Q4_K_M.gguf";
+          };
+        };
+      };
+    };
     pathExists = fixturePathExists;
     requireFiles = true;
   };
@@ -203,6 +250,22 @@ let
     clanMachineNames = [ ];
     enableFacter = false;
   };
+  customModelMachines = import ../devenv/dgx-machines.nix {
+    inherit lib;
+    inputs = canaryInputs;
+    projectRoot = fixtureRoot;
+    inventory = customModelInventory;
+    clanMachineNames = [ ];
+    enableFacter = false;
+  };
+  externalBackendMachines = import ../devenv/dgx-machines.nix {
+    inherit lib;
+    inputs = canaryInputs;
+    projectRoot = fixtureRoot;
+    inventory = externalBackendInventory;
+    clanMachineNames = [ ];
+    enableFacter = false;
+  };
   canaryConfig = canary.lib.mkConfig {
     inherit pkgs;
     inputs = canaryInputs;
@@ -213,11 +276,50 @@ let
       }
     ];
   };
+  customModelCanaryConfig = canary.lib.mkConfig {
+    inherit pkgs;
+    inputs = canaryInputs;
+    modules = [
+      {
+        devenv.root = toString fixtureRoot;
+        machines = customModelMachines;
+      }
+    ];
+  };
+  externalBackendCanaryConfig = canary.lib.mkConfig {
+    inherit pkgs;
+    inputs = canaryInputs;
+    modules = [
+      {
+        devenv.root = toString fixtureRoot;
+        machines = externalBackendMachines;
+      }
+    ];
+  };
   evaluatedFixtureMachine = canaryConfig.machines.fixture-dgx;
   evaluatedFixtureNixos = evaluatedFixtureMachine._nixosEval.config;
+  evaluatedCustomModelNixos = customModelCanaryConfig.machines.fixture-dgx._nixosEval.config;
+  evaluatedExternalBackendNixos = externalBackendCanaryConfig.machines.fixture-dgx._nixosEval.config;
   fixtureDiskoScript = evaluatedFixtureMachine.build.diskoScript;
   fixtureNixosToplevel = evaluatedFixtureMachine.build.nixos;
   fixtureServiceName = "mesh-llm-dgx-spark";
+  localBackendServiceName = "llamacpp-server-dgx-local";
+  localBackendPullServiceName = "${localBackendServiceName}-model-pull";
+  rwkvProfile = import ../modules/dgx-machine/rwkv7-profile.nix;
+  defaultModelPath = "/var/lib/${localBackendServiceName}/models/${rwkvProfile.file}";
+  customModelPath = "/var/lib/${localBackendServiceName}/models/${customModelMachine.meshBackend.localModel.file}";
+  defaultBackendExecStart =
+    evaluatedFixtureNixos.systemd.services.${localBackendServiceName}.serviceConfig.ExecStart;
+  defaultBackendExecCondition =
+    evaluatedFixtureNixos.systemd.services.${localBackendServiceName}.serviceConfig.ExecCondition;
+  defaultPullExecStart =
+    evaluatedFixtureNixos.systemd.services.${localBackendPullServiceName}.serviceConfig.ExecStart;
+  customBackendExecStart =
+    evaluatedCustomModelNixos.systemd.services.${localBackendServiceName}.serviceConfig.ExecStart;
+  customBackendExecCondition =
+    evaluatedCustomModelNixos.systemd.services.${localBackendServiceName}.serviceConfig.ExecCondition;
+  customPullExecStart =
+    evaluatedCustomModelNixos.systemd.services.${localBackendPullServiceName}.serviceConfig.ExecStart;
   expectedBrittonUid = 1555;
   frameworkKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILYzh3yIsSTOYXkJMFHBKzkakoDfonm3/RED5rqMqhIO britton@framework";
   excludedKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAX7hNDY0L9JSSIP+NVTbDluJgJ9c/l9nzbuwCNkVxgr britton@cproof.ai";
@@ -259,6 +361,22 @@ let
     {
       name = "synthetic inventory is valid";
       condition = fixtureValidation.valid;
+    }
+    {
+      name = "a custom hash-pinned GGUF profile is valid";
+      condition = customModelValidation.valid;
+    }
+    {
+      name = "an externally managed backend profile is valid";
+      condition = externalBackendValidation.valid;
+    }
+    {
+      name = "an invalid custom model hash fails closed";
+      condition = !invalidModelHashValidation.valid;
+    }
+    {
+      name = "a model path traversal attempt fails closed";
+      condition = !invalidModelPathValidation.valid;
     }
     {
       name = "duplicate ownership fails closed";
@@ -316,12 +434,52 @@ let
         evaluatedFixtureNixos.services.tailscale.enable
         && builtins.hasAttr "iroh-ssh" evaluatedFixtureNixos.systemd.services
         && builtins.hasAttr fixtureServiceName evaluatedFixtureNixos.systemd.services
+        && builtins.hasAttr localBackendServiceName evaluatedFixtureNixos.systemd.services
+        && builtins.hasAttr localBackendPullServiceName evaluatedFixtureNixos.systemd.services
         &&
           builtins.elem "tailscaled.service"
             evaluatedFixtureNixos.systemd.services.${fixtureServiceName}.after
         &&
           builtins.elem fixtureMachine.meshBackend.unit
             evaluatedFixtureNixos.systemd.services.${fixtureServiceName}.after;
+    }
+    {
+      name = "RWKV7 13.3B Q6_K is the hash-pinned default DGX model";
+      condition =
+        evaluatedFixtureNixos.onix.dgxMachine.services.localModel == rwkvProfile
+        && evaluatedFixtureNixos.onix.dgxMachine.services.meshActivationModel == rwkvProfile.alias
+        && lib.hasInfix defaultModelPath defaultBackendExecStart
+        && lib.hasInfix rwkvProfile.alias defaultBackendExecStart
+        && !(lib.hasInfix "--flash-attn" defaultBackendExecStart)
+        && defaultBackendExecCondition != null
+        && defaultPullExecStart != null;
+    }
+    {
+      name = "typed inventory can replace the default with another GGUF model";
+      condition =
+        evaluatedCustomModelNixos.onix.dgxMachine.services.localModel
+        == customModelMachine.meshBackend.localModel
+        &&
+          evaluatedCustomModelNixos.onix.dgxMachine.services.meshActivationModel
+          == customModelMachine.meshBackend.modelAlias
+        && lib.hasInfix customModelPath customBackendExecStart
+        && lib.hasInfix customModelMachine.meshBackend.modelAlias customBackendExecStart
+        && lib.hasInfix "--flash-attn on" customBackendExecStart
+        && customBackendExecCondition != null
+        && customPullExecStart != null;
+    }
+    {
+      name = "external ownership omits the local llama.cpp backend";
+      condition =
+        evaluatedExternalBackendNixos.onix.dgxMachine.services.meshBackendExternallyManaged
+        &&
+          evaluatedExternalBackendNixos.onix.dgxMachine.services.meshActivationModel
+          == externalBackendMachine.meshBackend.modelAlias
+        && !(builtins.hasAttr localBackendServiceName evaluatedExternalBackendNixos.systemd.services)
+        && !(builtins.hasAttr localBackendPullServiceName evaluatedExternalBackendNixos.systemd.services)
+        && !(builtins.elem "${localBackendServiceName}.service"
+          evaluatedExternalBackendNixos.systemd.services.${fixtureServiceName}.after
+        );
     }
     {
       name = "DGX runtime credentials use private SecretSpec bootstrap files";
@@ -405,6 +563,7 @@ in
             pkgs.coreutils
             pkgs.diffutils
             pkgs.gawk
+            pkgs.gnugrep
             pkgs.nickel
             pkgs.openssh
           ];
@@ -414,6 +573,13 @@ in
           cmp ${dgxInventorySource}/generated/machines.json "$TMPDIR/production.json"
           nickel export --format json ${dgxInventorySource}/fixtures/valid.ncl > "$TMPDIR/fixture.json"
           cmp ${fixtureRoot}/inventory.json "$TMPDIR/fixture.json"
+          nickel export --format json ${dgxInventorySource}/fixtures/valid-custom-model.ncl > "$TMPDIR/custom-model.json"
+          cmp ${fixtureRoot}/custom-model-inventory.json "$TMPDIR/custom-model.json"
+
+          grep -F ${lib.escapeShellArg rwkvProfile.sha256} ${defaultPullExecStart}
+          grep -F ${lib.escapeShellArg rwkvProfile.sha256} ${defaultBackendExecCondition}
+          grep -F ${lib.escapeShellArg customModelMachine.meshBackend.localModel.sha256} ${customPullExecStart}
+          grep -F ${lib.escapeShellArg customModelMachine.meshBackend.localModel.sha256} ${customBackendExecCondition}
 
           for fixture in ${dgxInventorySource}/fixtures/invalid-*.ncl; do
             if nickel export "$fixture" > /dev/null 2> "$TMPDIR/invalid.log"; then

@@ -26,6 +26,8 @@
 - [x] [serial] Configure Devenv SecretSpec bootstrap files and file-only Mesh-LLM join credentials. r[onix.dgx_devenv.secrets]
 - [x] [serial] Force the Framework key as the only authorized key for `brittonr` and `root`. r[onix.dgx_devenv.access]
 - [x] [serial] Add positive and negative module checks for service parity, backend ownership, runtime secrets, UID policy, and rejected keys. r[onix.dgx_devenv.services] r[onix.dgx_devenv.secrets] r[onix.dgx_devenv.access]
+- [x] [serial] Add the hash-pinned RWKV7 G1i 13.3B Q6_K default through the shared llama.cpp core. r[onix.dgx_devenv.services]
+- [x] [serial] Keep local GGUF selection configurable and reject unsafe or mismatched profiles. r[onix.dgx_devenv.services]
 
 ## Phase 4: Experimental Devenv adapter
 
@@ -53,4 +55,4 @@
 - [x] [serial] Document the exact canary revision, supported commands, required real-machine facts, and live-action prohibition. r[onix.dgx_devenv.pin] r[onix.dgx_devenv.build]
 - [x] [serial] Add the Devenv machines pull request to the README references. r[onix.dgx_devenv.pin]
 - [x] [serial] Record that install and deploy need a separate authorized Cairn change. r[onix.dgx_devenv.build] r[onix.dgx_devenv.storage]
-- [ ] [serial] Run repository formatting, focused flake checks, Cairn validation, and proposal/design/tasks gates. r[onix.dgx_devenv.validation]
+- [x] [serial] Run repository formatting, focused flake checks, Cairn validation, and proposal/design/tasks gates. r[onix.dgx_devenv.validation]

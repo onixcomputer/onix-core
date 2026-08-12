@@ -1,5 +1,6 @@
 # Typed source contract for Devenv-owned DGX machines.
 let required_system = "aarch64-linux" in
+let local_backend_unit = "llamacpp-server-dgx-local.service" in
 let placeholder_pattern = ".*(REPLACE|replace|placeholder|example).*" in
 
 let Name =
@@ -95,18 +96,109 @@ in
 
 let BackendUnit =
   std.contract.from_validator (match {
-    value if std.is_string value
-      && std.string.is_match "^[a-zA-Z0-9@_.:-]+[.]service$" value => 'Ok,
+    value if value == local_backend_unit => 'Ok,
     value if std.is_string value =>
-      'Error { message = "backend unit must be a systemd service name, got \"%{value}\"" },
+      'Error {
+        message = "local backend unit must be %{local_backend_unit}, got \"%{value}\"",
+      },
     _ => 'Error { message = "backend unit must be a string" },
   }
   )
 in
 
+let ModelAlias =
+  std.contract.from_validator (match {
+    value if std.is_string value
+      && std.string.is_match "^[a-zA-Z0-9._/+:-]+$" value => 'Ok,
+    value if std.is_string value =>
+      'Error { message = "model alias contains unsupported characters: \"%{value}\"" },
+    _ => 'Error { message = "model alias must be a string" },
+  }
+  )
+in
+
+let ModelRepository =
+  std.contract.from_validator (match {
+    value if std.is_string value
+      && std.string.is_match "^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$" value => 'Ok,
+    value if std.is_string value =>
+      'Error { message = "model repository must use owner/name form, got \"%{value}\"" },
+    _ => 'Error { message = "model repository must be a string" },
+  }
+  )
+in
+
+let ModelRevision =
+  std.contract.from_validator (match {
+    value if std.is_string value
+      && std.string.is_match "^[0-9a-f]{40}$" value => 'Ok,
+    value if std.is_string value =>
+      'Error { message = "model revision must be a 40-character commit, got \"%{value}\"" },
+    _ => 'Error { message = "model revision must be a string" },
+  }
+  )
+in
+
+let ModelFile =
+  std.contract.from_validator (match {
+    value if std.is_string value
+      && std.string.is_match "^[a-zA-Z0-9._+:-]+(/[a-zA-Z0-9._+:-]+)*[.]gguf$" value
+      && !std.string.is_match "(^|/)\\.{1,2}(/|$)" value
+      && !std.string.is_match placeholder_pattern value => 'Ok,
+    value if std.is_string value =>
+      'Error { message = "model file must be a safe GGUF path, got \"%{value}\"" },
+    _ => 'Error { message = "model file must be a string" },
+  }
+  )
+in
+
+let ModelSha256 =
+  std.contract.from_validator (match {
+    value if std.is_string value
+      && std.string.is_match "^[0-9a-f]{64}$" value => 'Ok,
+    value if std.is_string value =>
+      'Error { message = "model sha256 must be 64 lowercase hexadecimal characters" },
+    _ => 'Error { message = "model sha256 must be a string" },
+  }
+  )
+in
+
+let PositiveNumber =
+  std.contract.from_validator (match {
+    value if std.is_number value && value > 0 => 'Ok,
+    _ => 'Error { message = "must be a positive number" },
+  }
+  )
+in
+
+let NonNegativeNumber =
+  std.contract.from_validator (match {
+    value if std.is_number value && value >= 0 => 'Ok,
+    _ => 'Error { message = "must be a non-negative number" },
+  }
+  )
+in
+
+let LocalModel = {
+  alias | ModelAlias,
+  repository | ModelRepository,
+  revision | ModelRevision,
+  file | ModelFile,
+  sha256 | ModelSha256,
+  contextSize | PositiveNumber,
+  gpuLayers | NonNegativeNumber,
+  flashAttention | Bool,
+  noMmap | Bool,
+  enableMetrics | Bool,
+  extraArgs | Array String,
+}
+in
+
 let BackendOwnership = {
   unit | BackendUnit | optional,
   externallyManaged | Bool,
+  modelAlias | ModelAlias,
+  localModel | LocalModel | optional,
 }
 in
 
@@ -158,6 +250,13 @@ let NameAndPathMatch =
         'Error { message = "%{field}: runtime secret names must be distinct" }
       else if has_backend_unit == value.meshBackend.externallyManaged then
         'Error { message = "%{field}: meshBackend must name one unit or declare external ownership" }
+      else if value.meshBackend.externallyManaged
+      && std.record.has_field "localModel" value.meshBackend then
+        'Error { message = "%{field}: an externally managed backend cannot declare localModel" }
+      else if !value.meshBackend.externallyManaged
+      && std.record.has_field "localModel" value.meshBackend
+      && value.meshBackend.modelAlias != value.meshBackend.localModel.alias then
+        'Error { message = "%{field}: local model alias must match meshBackend.modelAlias" }
       else
         'Ok
     )

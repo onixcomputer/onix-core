@@ -44,6 +44,7 @@ let
   llamacppNegativeErrors = llamacppServerValidation.negative;
   expectedLlamacppNegativeFields = [
     "backend"
+    "modelSha256"
     "metaliumDeviceId"
     "metaliumInspectorPort"
     "metaliumTrace"
