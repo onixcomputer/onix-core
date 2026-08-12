@@ -1,0 +1,15 @@
+inputs:
+  onix-core:
+    url: path:.
+  devenv:
+    follows: onix-core/devenv-machines
+  nixpkgs:
+    follows: onix-core/nixpkgs
+  disko:
+    follows: onix-core/disko
+  nixos-facter-modules:
+    follows: onix-core/nixos-facter-modules
+  dgx-spark:
+    follows: onix-core/dgx-spark
+secretspec:
+  enable: true

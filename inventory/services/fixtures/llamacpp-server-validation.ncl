@@ -19,6 +19,7 @@ let default_metalium_inspector_port = 50051 in
         modelRepo = "prithivMLmods/VibeThinker-3B-GGUF",
         modelFile = "VibeThinker-3B.Q8_0.gguf",
         modelRevision = "main",
+        modelSha256 = "dcd147f24f8749420ebc784c5b9c75ca2c0d2ced2e6f365be18ed97a4508d488",
         modelAlias = "VibeThinker-3B",
         gpuLayers = default_gpu_layers,
         metaliumDeviceId = default_metalium_device_id,
@@ -44,6 +45,7 @@ let default_metalium_inspector_port = 50051 in
       "llamacpp-server-metalium-negative"
       {
         backend = "unsupported-backend",
+        modelSha256 = 42,
         metaliumDeviceId = "device-zero",
         metaliumInspectorPort = 70000,
         metaliumTrace = "enabled",

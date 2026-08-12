@@ -1,0 +1,4 @@
+{ ... }:
+{
+  imports = [ ../../modules/dgx-machine ];
+}

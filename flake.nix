@@ -20,6 +20,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Experimental DGX machine lifecycle from cachix/devenv#3073.
+    # Keep this exact canary separate from the default development shell.
+    devenv-machines = {
+      url = "github:cachix/devenv/6e61f6a12f730b81228f70ee2487320fdbb1e2fc";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     nix = {
       url = "github:onixcomputer/nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -40,6 +47,8 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nixos-facter-modules.url = "github:nix-community/nixos-facter-modules";
 
     sops-nix = {
       url = "github:Mic92/sops-nix";
@@ -115,6 +124,15 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+    dgx-spark = {
+      url = "github:graham33/nixos-dgx-spark";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        disko.follows = "disko";
+        pre-commit-hooks.follows = "pre-commit-hooks-nix";
+      };
+    };
     niri = {
       url = "github:brittonr/niri";
       inputs.nixpkgs.follows = "nixpkgs";

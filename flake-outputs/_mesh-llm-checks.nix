@@ -13,6 +13,7 @@ let
   meshPort = 47916;
   proxyActivationModel = "Qwen3-0.6B-Q4_K_M";
   proxyActivationContextSize = 512;
+  meshEndpointUrl = "http://127.0.0.1:13305/v1";
 
   machineConfig = name: self.nixosConfigurations.${name}.config;
   mkNode =
@@ -68,7 +69,6 @@ let
     desktopNode
   ];
   meshNodes = [ aspen1Node ] ++ joinerNodes;
-  desktopCommand = desktopNode.command;
 
   usesDedicatedUser = node: node.service.serviceConfig.User == "mesh-llm";
   hasPrivateLaunchFlags =
@@ -87,6 +87,8 @@ let
   ordersAfterBackend = node: builtins.elem node.backendUnit node.service.after;
   hasJoinCredential =
     node: lib.any (credential: lib.hasPrefix "join-token:" credential) node.credentials;
+  hasJoinFileArgument =
+    node: lib.hasInfix "--join-file" node.command && lib.hasInfix "%d/join-token" node.command;
   hasJoinGenerator = node: builtins.hasAttr generatorName node.config.clan.core.vars.generators;
   tcpIsPrivate =
     node:
@@ -94,7 +96,113 @@ let
     && !(builtins.elem consolePort node.config.networking.firewall.allowedTCPPorts);
   udpIsOpen = node: builtins.elem meshPort node.config.networking.firewall.allowedUDPPorts;
 
+  plugins = self.packages.x86_64-linux.wasm-plugins;
+  wasm = import ../lib/wasm.nix { inherit plugins; };
+  meshSchema = wasm.evalNickelFile ../modules/mesh-llm/schema.ncl;
+  dgxSparkBindInterface = "tailscale0";
+  dgxFixtureInstanceName = "dgx-fixture";
+  dgxFixtureServiceName = "mesh-llm-${dgxFixtureInstanceName}";
+  dgxFixtureBackendUnit = "fixture-openai-backend.service";
+  dgxFixtureJoinTokenPath = "/run/dgx-fixture-join-token";
+  dgxFixtureSettings = {
+    mode = "joiner";
+    endpointUrl = meshEndpointUrl;
+    inherit
+      proxyActivationModel
+      proxyActivationContextSize
+      apiPort
+      consolePort
+      meshPort
+      ;
+    meshBindAddress = "0.0.0.0";
+    meshBindInterface = dgxSparkBindInterface;
+    meshName = "onix-private-inference";
+    nodeName = null;
+    backendUnit = dgxFixtureBackendUnit;
+    backendExternallyManaged = false;
+  };
+  dgxFixtureConfig = {
+    networking.hostName = dgxFixtureInstanceName;
+    clan.core.vars.generators.${dgxFixtureServiceName}.files."join-token".path =
+      dgxFixtureJoinTokenPath;
+  };
+  meshServiceDefinition = (import ../modules/mesh-llm { schema = meshSchema; }) { inherit lib; };
+  mkDgxFixtureModuleConfig =
+    resolvedSettings:
+    let
+      perInstance = meshServiceDefinition.roles.default.perInstance {
+        instanceName = dgxFixtureInstanceName;
+        extendSettings = _defaults: resolvedSettings;
+      };
+    in
+    perInstance.nixosModule {
+      inherit lib;
+      pkgs = pkgs // {
+        mesh-llm = meshPackage;
+      };
+      config = dgxFixtureConfig;
+    };
+  dgxFixtureModuleMerge = mkDgxFixtureModuleConfig dgxFixtureSettings;
+  dgxFixtureModuleConfig =
+    assert dgxFixtureModuleMerge._type == "merge";
+    builtins.head dgxFixtureModuleMerge.contents;
+  directDgxFixtureModuleConfig = import ../modules/mesh-llm/mk-nixos-config.nix {
+    inherit lib pkgs;
+    config = dgxFixtureConfig;
+    instanceName = dgxFixtureInstanceName;
+    settings = dgxFixtureSettings;
+    joinTokenPath = dgxFixtureJoinTokenPath;
+    package = meshPackage;
+  };
+  invalidDgxFixtureModuleMerge = mkDgxFixtureModuleConfig (
+    dgxFixtureSettings
+    // {
+      meshBindInterface = null;
+    }
+  );
+  invalidDgxFixtureModuleConfig =
+    assert invalidDgxFixtureModuleMerge._type == "merge";
+    builtins.head invalidDgxFixtureModuleMerge.contents;
+  invalidDgxBackendModuleMerge = mkDgxFixtureModuleConfig (
+    dgxFixtureSettings
+    // {
+      backendUnit = null;
+    }
+  );
+  invalidDgxBackendModuleConfig =
+    assert invalidDgxBackendModuleMerge._type == "merge";
+    builtins.head invalidDgxBackendModuleMerge.contents;
+  dgxFixtureFailedAssertions = lib.filter (item: !item.assertion) dgxFixtureModuleConfig.assertions;
+  dgxFixtureService = dgxFixtureModuleConfig.systemd.services.${dgxFixtureServiceName};
+  dgxFixtureExecStart = dgxFixtureService.serviceConfig.ExecStart;
+  dgxFixtureUsesExpectedLauncher = lib.hasInfix "mesh-llm-dgx-fixture-interface-launcher" dgxFixtureExecStart;
+  dgxFixtureUsesTailscaleInterface =
+    dgxFixtureFailedAssertions == [ ]
+    && builtins.elem "tailscaled.service" dgxFixtureService.wants
+    && builtins.elem "tailscaled.service" dgxFixtureService.after
+    && dgxFixtureService.environment.MESH_LLM_BIND_INTERFACE == dgxSparkBindInterface;
+  dgxFixtureCoreParity =
+    dgxFixtureModuleConfig.systemd.services.${dgxFixtureServiceName}
+    == directDgxFixtureModuleConfig.systemd.services.${dgxFixtureServiceName}
+    &&
+      dgxFixtureModuleConfig.networking.firewall.allowedUDPPorts
+      == directDgxFixtureModuleConfig.networking.firewall.allowedUDPPorts;
+  dgxFixtureRejectsMissingBinding = lib.any (
+    item: !item.assertion && lib.hasInfix "set exactly one" item.message
+  ) invalidDgxFixtureModuleConfig.assertions;
+  dgxFixtureRejectsMissingBackend = lib.any (
+    item: !item.assertion && lib.hasInfix "requires backendUnit" item.message
+  ) invalidDgxBackendModuleConfig.assertions;
+
   meshPackage = self.packages.${pkgs.stdenv.hostPlatform.system}.mesh-llm;
+  armMeshPackage = self.packages.aarch64-linux.mesh-llm;
+  armMeshTarget = "aarch64-unknown-linux-gnu";
+  expectedLlamaRevision = "86b94708f22478f900b76ca02e316f4f3418faff";
+  armMeshPackageSupported =
+    armMeshPackage.releaseTarget == armMeshTarget
+    && builtins.elem "aarch64-linux" armMeshPackage.meta.platforms
+    && armMeshPackage ? openaiEndpoint;
+  unsupportedDarwinExcluded = !(builtins.elem "aarch64-darwin" armMeshPackage.meta.platforms);
 in
 {
   checks = lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") {
@@ -104,37 +212,55 @@ in
           test -x ${meshPackage}/bin/mesh-llm
           test -x ${meshPackage}/bin/openai-endpoint
           test -f ${meshPackage}/share/mesh-llm/plugins/openai-endpoint/plugin.toml
-          grep -F -- '--mesh-discovery-mode mdns' ${aspen2Node.command}
-          grep -F -- '--headless' ${aspen2Node.command}
-          grep -F -- '--bind-ip ${aspen2Node.meshAddress}' ${aspen2Node.command}
-          grep -F -- '--model ${proxyActivationModel}' ${aspen2Node.command}
-          grep -F -- '--ctx-size ${toString proxyActivationContextSize}' ${aspen2Node.command}
+          test ${lib.escapeShellArg meshPackage.llamaRevision} = ${lib.escapeShellArg expectedLlamaRevision}
+          ${meshPackage}/bin/mesh-llm --help > "$TMPDIR/help"
+          grep -F -- '--join-file <PATH>' "$TMPDIR/help"
+          test -x ${dgxFixtureExecStart}
+          grep -F -- '--join-file "$join_token_file"' ${dgxFixtureExecStart}
+          grep -F 'CREDENTIALS_DIRECTORY' ${dgxFixtureExecStart}
 
-          grep -F -- '--mesh-discovery-mode mdns' ${aspen3Node.command}
-          grep -F -- '--headless' ${aspen3Node.command}
-          grep -F -- '--bind-ip ${aspen3Node.meshAddress}' ${aspen3Node.command}
-          grep -F -- '--model ${proxyActivationModel}' ${aspen3Node.command}
-          grep -F -- '--ctx-size ${toString proxyActivationContextSize}' ${aspen3Node.command}
-
-          grep -F -- '--mesh-discovery-mode mdns' ${desktopCommand}
-          grep -F -- '--headless' ${desktopCommand}
-          grep -F -- '--bind-ip ${desktopNode.meshAddress}' ${desktopCommand}
-          grep -F -- '--model ${proxyActivationModel}' ${desktopCommand}
-          grep -F -- '--ctx-size ${toString proxyActivationContextSize}' ${desktopCommand}
+          ${lib.optionalString (!armMeshPackageSupported) ''
+            echo "Mesh-LLM must select the pinned ARM64 Linux release and source-built plugin" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!unsupportedDarwinExcluded) ''
+            echo "Mesh-LLM must reject unsupported ARM64 Darwin packaging" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!dgxFixtureUsesExpectedLauncher) ''
+            echo "DGX Spark Mesh-LLM did not select its interface launcher" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!dgxFixtureUsesTailscaleInterface) ''
+            echo "DGX Spark Mesh-LLM interface fixture failed" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!dgxFixtureCoreParity) ''
+            echo "Mesh-LLM Clan and plain NixOS cores diverged" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!dgxFixtureRejectsMissingBinding) ''
+            echo "Mesh-LLM accepted a fixture without a private bind target" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!dgxFixtureRejectsMissingBackend) ''
+            echo "Mesh-LLM accepted an unowned loopback backend" >&2
+            exit 1
+          ''}
 
           ${lib.optionalString (!(lib.all usesDedicatedUser meshNodes)) ''
             echo "Mesh-LLM services must use the dedicated unprivileged user" >&2
             exit 1
           ''}
-          ${lib.optionalString (!(hasPrivateLaunchFlags aspen1Node)) ''
-            echo "Aspen1 Mesh-LLM launch command must enforce private headless discovery" >&2
+          ${lib.optionalString (!(lib.all hasPrivateLaunchFlags meshNodes)) ''
+            echo "Mesh-LLM launch commands must enforce private headless discovery" >&2
             exit 1
           ''}
-          ${lib.optionalString (!(selectsMeshAddress aspen1Node)) ''
-            echo "Aspen1 Mesh-LLM launch command must select its Tailscale address" >&2
+          ${lib.optionalString (!(lib.all selectsMeshAddress meshNodes)) ''
+            echo "Mesh-LLM launch commands must select each Tailscale address" >&2
             exit 1
           ''}
-          ${lib.optionalString (!(hasPluginAwareProxyActivation aspen1Node)) ''
+          ${lib.optionalString (!(lib.all hasPluginAwareProxyActivation meshNodes)) ''
             echo "Mesh-LLM v0.72.2 sidecars must activate the plugin-aware proxy with a bounded CPU model" >&2
             exit 1
           ''}
@@ -150,12 +276,20 @@ in
             echo "Mesh-LLM joiners must load the join credential" >&2
             exit 1
           ''}
+          ${lib.optionalString (!(lib.all hasJoinFileArgument joinerNodes)) ''
+            echo "Mesh-LLM joiners must pass only the systemd credential path" >&2
+            exit 1
+          ''}
           ${lib.optionalString (!(lib.all hasJoinGenerator joinerNodes)) ''
             echo "Mesh-LLM join credential generators are absent" >&2
             exit 1
           ''}
           ${lib.optionalString (hasJoinGenerator aspen1Node) ''
             echo "Aspen1 seed must not require a join credential generator" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (lib.hasInfix "--join-file" aspen1Node.command) ''
+            echo "Aspen1 seed must not receive a join credential file" >&2
             exit 1
           ''}
           ${lib.optionalString (!(lib.all tcpIsPrivate meshNodes)) ''
@@ -167,22 +301,36 @@ in
             exit 1
           ''}
 
-          missing_credentials="$TMPDIR/missing-credentials"
-          mkdir -p "$missing_credentials"
-          if CREDENTIALS_DIRECTORY="$missing_credentials" ${desktopCommand} >"$TMPDIR/missing.out" 2>"$TMPDIR/missing.err"; then
-            echo "Desktop launcher accepted a missing join credential" >&2
+          if ${meshPackage}/bin/mesh-llm --join-file "$TMPDIR/missing-token" serve --headless >"$TMPDIR/missing.out" 2>"$TMPDIR/missing.err"; then
+            echo "Mesh-LLM accepted a missing join credential file" >&2
             exit 1
           fi
-          grep -F "join credential is missing" "$TMPDIR/missing.err"
+          grep -F "failed to read join token file" "$TMPDIR/missing.err"
 
-          placeholder_credentials="$TMPDIR/placeholder-credentials"
-          mkdir -p "$placeholder_credentials"
-          printf '%s' 'Welcome to SOPS! Edit this file as you please!' > "$placeholder_credentials/join-token"
-          if CREDENTIALS_DIRECTORY="$placeholder_credentials" ${desktopCommand} >"$TMPDIR/placeholder.out" 2>"$TMPDIR/placeholder.err"; then
-            echo "Desktop launcher accepted the SOPS placeholder" >&2
+          : > "$TMPDIR/empty-token"
+          if ${meshPackage}/bin/mesh-llm --join-file "$TMPDIR/empty-token" serve --headless >"$TMPDIR/empty.out" 2>"$TMPDIR/empty.err"; then
+            echo "Mesh-LLM accepted an empty join credential file" >&2
             exit 1
           fi
-          grep -F "join credential is unset" "$TMPDIR/placeholder.err"
+          grep -F "file contains no token" "$TMPDIR/empty.err"
+
+          printf '%s\n%s\n' first second > "$TMPDIR/multiline-token"
+          if ${meshPackage}/bin/mesh-llm --join-file "$TMPDIR/multiline-token" serve --headless >"$TMPDIR/multiline.out" 2>"$TMPDIR/multiline.err"; then
+            echo "Mesh-LLM accepted a multiline join credential file" >&2
+            exit 1
+          fi
+          grep -F "token contains whitespace" "$TMPDIR/multiline.err"
+          if grep -F first "$TMPDIR/multiline.err"; then
+            echo "Mesh-LLM logged join credential contents" >&2
+            exit 1
+          fi
+
+          printf 'token\n\n' > "$TMPDIR/extra-newline-token"
+          if ${meshPackage}/bin/mesh-llm --join-file "$TMPDIR/extra-newline-token" serve --headless >"$TMPDIR/extra-newline.out" 2>"$TMPDIR/extra-newline.err"; then
+            echo "Mesh-LLM accepted extra credential lines" >&2
+            exit 1
+          fi
+          grep -F "token contains whitespace" "$TMPDIR/extra-newline.err"
 
           touch "$out"
         '';
