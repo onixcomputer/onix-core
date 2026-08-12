@@ -4,6 +4,8 @@
   settings,
   configPath,
   nodeName,
+  meshBindAddress ? settings.meshBindAddress,
+  joinTokenFile ? null,
 }:
 [
   "${package}/bin/mesh-llm"
@@ -17,7 +19,7 @@
   "--mesh-discovery-mode"
   "mdns"
   "--bind-ip"
-  settings.meshBindAddress
+  meshBindAddress
   "--bind-port"
   (toString settings.meshPort)
   "--port"
@@ -31,4 +33,7 @@
   "--log-format"
   "json"
 ]
-++ lib.optionals (settings.mode == "joiner") [ "--join" ]
+++ lib.optionals (settings.mode == "joiner") [
+  "--join-file"
+  joinTokenFile
+]

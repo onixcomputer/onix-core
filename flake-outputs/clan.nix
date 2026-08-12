@@ -26,6 +26,8 @@ in
     ;
   clan = clanModule.config;
 
+  nixosModules.dgxMachine = ../modules/dgx-machine;
+
   lib = {
     # Wasm plugin library — call with a system string to get evalNickelFile, fromYAML, etc.
     # Usage: self.lib.wasm "x86_64-linux" → { evalNickelFile, evalNickel, fromYAML, toYAML, fromINI }

@@ -38,6 +38,7 @@
         "fenix": "fenix",
         "flakeCompat": "flakeCompat",
         "nixpkgs": [
+          "onix-core",
           "ki-editor",
           "nixpkgs"
         ]
@@ -93,9 +94,11 @@
     "buildbot-nix": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ],
         "treefmt-nix": [
+          "onix-core",
           "treefmt-nix"
         ]
       },
@@ -116,18 +119,22 @@
     "bun2nix": {
       "inputs": {
         "flake-parts": [
+          "onix-core",
           "llm-agents",
           "flake-parts"
         ],
         "nixpkgs": [
+          "onix-core",
           "llm-agents",
           "nixpkgs"
         ],
         "systems": [
+          "onix-core",
           "llm-agents",
           "systems"
         ],
         "treefmt-nix": [
+          "onix-core",
           "llm-agents",
           "treefmt-nix"
         ]
@@ -149,13 +156,16 @@
     "cachix": {
       "inputs": {
         "devenv": [
+          "onix-core",
           "devenv"
         ],
         "flake-compat": [
+          "onix-core",
           "devenv",
           "flake-compat"
         ],
         "git-hooks": [
+          "onix-core",
           "devenv",
           "git-hooks"
         ],
@@ -179,13 +189,16 @@
     "cachix_2": {
       "inputs": {
         "devenv": [
+          "onix-core",
           "devenv-machines"
         ],
         "flake-compat": [
+          "onix-core",
           "devenv-machines",
           "flake-compat"
         ],
         "git-hooks": [
+          "onix-core",
           "devenv-machines",
           "git-hooks"
         ],
@@ -211,6 +224,7 @@
         "artifact": "artifact",
         "nickel-export": "nickel-export",
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ],
         "slotcar": "slotcar_3"
@@ -232,6 +246,7 @@
     "cairn_2": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "cairn",
           "nickel-export",
           "nixpkgs"
@@ -256,6 +271,7 @@
     "cairn_3": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "cairn",
           "nickel-export",
           "cairn",
@@ -281,6 +297,7 @@
     "cairn_4": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "cairn",
           "slotcar",
           "nixpkgs"
@@ -304,6 +321,7 @@
     "cairn_5": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "tigerstyle",
           "nixpkgs"
         ],
@@ -327,23 +345,29 @@
       "inputs": {
         "data-mesher": "data-mesher",
         "disko": [
+          "onix-core",
           "disko"
         ],
         "flake-parts": [
+          "onix-core",
           "flake-parts"
         ],
         "nix-darwin": "nix-darwin",
         "nix-select": "nix-select",
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ],
         "sops-nix": [
+          "onix-core",
           "sops-nix"
         ],
         "systems": [
+          "onix-core",
           "systems"
         ],
         "treefmt-nix": [
+          "onix-core",
           "treefmt-nix"
         ]
       },
@@ -505,14 +529,17 @@
     "data-mesher": {
       "inputs": {
         "flake-parts": [
+          "onix-core",
           "clan-core",
           "flake-parts"
         ],
         "nixpkgs": [
+          "onix-core",
           "clan-core",
           "nixpkgs"
         ],
         "treefmt-nix": [
+          "onix-core",
           "clan-core",
           "treefmt-nix"
         ]
@@ -540,6 +567,7 @@
         "nix": "nix",
         "nixd": "nixd",
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ],
         "rust-overlay": "rust-overlay_6"
@@ -569,6 +597,7 @@
         "nix": "nix_2",
         "nixd": "nixd_2",
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ],
         "rust-overlay": "rust-overlay_7"
@@ -591,17 +620,21 @@
     "dgx-spark": {
       "inputs": {
         "disko": [
+          "onix-core",
           "disko"
         ],
         "flake-parts": [
+          "onix-core",
           "flake-parts"
         ],
         "nix-gl-host": "nix-gl-host",
         "nixified-ai": "nixified-ai",
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ],
         "pre-commit-hooks": [
+          "onix-core",
           "pre-commit-hooks-nix"
         ]
       },
@@ -622,6 +655,7 @@
     "disko": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ]
       },
@@ -642,9 +676,11 @@
     "drift": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ],
         "rust-overlay": [
+          "onix-core",
           "rust-overlay"
         ],
         "unit2nix": "unit2nix"
@@ -769,9 +805,11 @@
       "inputs": {
         "nix-darwin": "nix-darwin_2",
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ],
         "treefmt-nix": [
+          "onix-core",
           "treefmt-nix"
         ]
       },
@@ -792,6 +830,7 @@
     "fenix": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "ki-editor",
           "alejandra",
           "nixpkgs"
@@ -879,6 +918,7 @@
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": [
+          "onix-core",
           "devenv",
           "nixpkgs"
         ]
@@ -900,6 +940,7 @@
     "flake-parts_2": {
       "inputs": {
         "nixpkgs-lib": [
+          "onix-core",
           "devenv-machines",
           "nixpkgs"
         ]
@@ -921,6 +962,7 @@
     "flake-parts_3": {
       "inputs": {
         "nixpkgs-lib": [
+          "onix-core",
           "dgx-spark",
           "nixified-ai",
           "nixpkgs"
@@ -943,6 +985,7 @@
     "flake-parts_4": {
       "inputs": {
         "nixpkgs-lib": [
+          "onix-core",
           "dgx-spark",
           "nixified-ai",
           "hercules-ci-effects",
@@ -965,6 +1008,7 @@
     "flake-parts_5": {
       "inputs": {
         "nixpkgs-lib": [
+          "onix-core",
           "drift",
           "unit2nix",
           "nixpkgs"
@@ -987,6 +1031,7 @@
     "flake-parts_6": {
       "inputs": {
         "nixpkgs-lib": [
+          "onix-core",
           "nixpkgs"
         ]
       },
@@ -1233,10 +1278,12 @@
     "git-hooks": {
       "inputs": {
         "flake-compat": [
+          "onix-core",
           "devenv",
           "flake-compat"
         ],
         "nixpkgs": [
+          "onix-core",
           "devenv",
           "nixpkgs"
         ]
@@ -1258,12 +1305,15 @@
     "git-hooks-nix": {
       "inputs": {
         "flake-compat": [
+          "onix-core",
           "nix"
         ],
         "gitignore": [
+          "onix-core",
           "nix"
         ],
         "nixpkgs": [
+          "onix-core",
           "nix",
           "nixpkgs"
         ]
@@ -1285,10 +1335,12 @@
     "git-hooks_2": {
       "inputs": {
         "flake-compat": [
+          "onix-core",
           "devenv-machines",
           "flake-compat"
         ],
         "nixpkgs": [
+          "onix-core",
           "devenv-machines",
           "nixpkgs"
         ]
@@ -1310,6 +1362,7 @@
     "gitignore": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "pre-commit-hooks-nix",
           "nixpkgs"
         ]
@@ -1331,6 +1384,7 @@
     "grub2-themes": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ]
       },
@@ -1352,6 +1406,7 @@
       "inputs": {
         "flake-parts": "flake-parts_4",
         "nixpkgs": [
+          "onix-core",
           "dgx-spark",
           "nixified-ai",
           "nixpkgs"
@@ -1374,9 +1429,11 @@
     "hercules-ci-effects_2": {
       "inputs": {
         "flake-parts": [
+          "onix-core",
           "flake-parts"
         ],
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ]
       },
@@ -1397,6 +1454,7 @@
     "home-manager": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ]
       },
@@ -1436,9 +1494,11 @@
         "crane": "crane_5",
         "flake-utils": "flake-utils_5",
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ],
         "rust-overlay": [
+          "onix-core",
           "rust-overlay"
         ]
       },
@@ -1460,15 +1520,19 @@
       "inputs": {
         "bun2nix": "bun2nix",
         "flake-parts": [
+          "onix-core",
           "flake-parts"
         ],
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ],
         "systems": [
+          "onix-core",
           "systems"
         ],
         "treefmt-nix": [
+          "onix-core",
           "treefmt-nix"
         ]
       },
@@ -1490,6 +1554,7 @@
       "inputs": {
         "flake-utils": "flake-utils_6",
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ]
       },
@@ -1510,9 +1575,11 @@
     "mics-skills": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ],
         "treefmt-nix": [
+          "onix-core",
           "treefmt-nix"
         ]
       },
@@ -1533,6 +1600,7 @@
     "musnix": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ]
       },
@@ -1554,6 +1622,7 @@
       "inputs": {
         "cairn": "cairn_2",
         "nixpkgs": [
+          "onix-core",
           "cairn",
           "nixpkgs"
         ],
@@ -1594,6 +1663,7 @@
     "niri": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ],
         "rust-overlay": "rust-overlay_8"
@@ -1616,6 +1686,7 @@
       "inputs": {
         "flake-utils": "flake-utils_7",
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ]
       },
@@ -1636,25 +1707,31 @@
     "nix": {
       "inputs": {
         "flake-compat": [
+          "onix-core",
           "devenv",
           "flake-compat"
         ],
         "flake-parts": [
+          "onix-core",
           "devenv",
           "flake-parts"
         ],
         "git-hooks-nix": [
+          "onix-core",
           "devenv",
           "git-hooks"
         ],
         "nixpkgs": [
+          "onix-core",
           "devenv",
           "nixpkgs"
         ],
         "nixpkgs-23-11": [
+          "onix-core",
           "devenv"
         ],
         "nixpkgs-regression": [
+          "onix-core",
           "devenv"
         ]
       },
@@ -1676,6 +1753,7 @@
     "nix-darwin": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "clan-core",
           "nixpkgs"
         ]
@@ -1697,6 +1775,7 @@
     "nix-darwin_2": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "fast-nix-gc",
           "nixpkgs"
         ]
@@ -1718,6 +1797,7 @@
     "nix-gl-host": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "dgx-spark",
           "nixpkgs"
         ]
@@ -1739,6 +1819,7 @@
     "nix-index-database": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ]
       },
@@ -1772,25 +1853,31 @@
     "nix_2": {
       "inputs": {
         "flake-compat": [
+          "onix-core",
           "devenv-machines",
           "flake-compat"
         ],
         "flake-parts": [
+          "onix-core",
           "devenv-machines",
           "flake-parts"
         ],
         "git-hooks-nix": [
+          "onix-core",
           "devenv-machines",
           "git-hooks"
         ],
         "nixpkgs": [
+          "onix-core",
           "devenv-machines",
           "nixpkgs"
         ],
         "nixpkgs-23-11": [
+          "onix-core",
           "devenv-machines"
         ],
         "nixpkgs-regression": [
+          "onix-core",
           "devenv-machines"
         ]
       },
@@ -1813,10 +1900,12 @@
       "inputs": {
         "flake-compat": "flake-compat_3",
         "flake-parts": [
+          "onix-core",
           "flake-parts"
         ],
         "git-hooks-nix": "git-hooks-nix",
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ],
         "nixpkgs-23-11": "nixpkgs-23-11",
@@ -1839,10 +1928,12 @@
     "nixd": {
       "inputs": {
         "flake-parts": [
+          "onix-core",
           "devenv",
           "flake-parts"
         ],
         "nixpkgs": [
+          "onix-core",
           "devenv",
           "nixpkgs"
         ],
@@ -1865,10 +1956,12 @@
     "nixd_2": {
       "inputs": {
         "flake-parts": [
+          "onix-core",
           "devenv-machines",
           "flake-parts"
         ],
         "nixpkgs": [
+          "onix-core",
           "devenv-machines",
           "nixpkgs"
         ],
@@ -1891,6 +1984,7 @@
     "nixdelta": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ]
       },
@@ -1911,9 +2005,11 @@
     "nixfmt-rs": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ],
         "treefmt-nix": [
+          "onix-core",
           "treefmt-nix"
         ]
       },
@@ -1936,6 +2032,7 @@
         "flake-parts": "flake-parts_3",
         "hercules-ci-effects": "hercules-ci-effects",
         "nixpkgs": [
+          "onix-core",
           "dgx-spark",
           "nixpkgs"
         ]
@@ -2164,6 +2261,7 @@
     "noctalia": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ]
       },
@@ -2184,6 +2282,7 @@
     "noctalia-plugins": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ]
       },
@@ -2201,70 +2300,7 @@
         "type": "github"
       }
     },
-    "onix-wasm": {
-      "inputs": {
-        "nickel-wasm-vendor": "nickel-wasm-vendor",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1775191973,
-        "narHash": "sha256-i/kB/zADSaZct49zscZgwA0JCKcZPAwwmoX+uYPjy6U=",
-        "owner": "onixcomputer",
-        "repo": "onix-wasm",
-        "rev": "d7b7351c474d7bdeebec768c7f92e7f0fb983955",
-        "type": "github"
-      },
-      "original": {
-        "owner": "onixcomputer",
-        "repo": "onix-wasm",
-        "type": "github"
-      }
-    },
-    "pinenote-nixos": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1771120430,
-        "narHash": "sha256-uv9U3arVtO3eV0Bq7KGhbJiaCTU9y47udaDfn0X9hlo=",
-        "owner": "WeraPea",
-        "repo": "pinenote-nixos",
-        "rev": "6d1a56076ab3ecc291654b6628abc2cd066b474a",
-        "type": "github"
-      },
-      "original": {
-        "owner": "WeraPea",
-        "repo": "pinenote-nixos",
-        "type": "github"
-      }
-    },
-    "pre-commit-hooks-nix": {
-      "inputs": {
-        "flake-compat": "flake-compat_4",
-        "gitignore": "gitignore",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1781733627,
-        "narHash": "sha256-U3yTuGBnmXvXoQI3qkpfEDsn9RovQPAjN7ndRco+3u0=",
-        "owner": "cachix",
-        "repo": "pre-commit-hooks.nix",
-        "rev": "3bbec39bc90eadfa031e6f3b77272f3f60803e39",
-        "type": "github"
-      },
-      "original": {
-        "owner": "cachix",
-        "repo": "pre-commit-hooks.nix",
-        "type": "github"
-      }
-    },
-    "root": {
+    "onix-core": {
       "inputs": {
         "adios-flake": "adios-flake",
         "brittonpi": "brittonpi",
@@ -2312,6 +2348,106 @@
         "upmpdcli": "upmpdcli",
         "wl-walls": "wl-walls",
         "wrappers": "wrappers"
+      },
+      "locked": {
+        "path": ".",
+        "type": "path"
+      },
+      "original": {
+        "path": ".",
+        "type": "path"
+      },
+      "parent": []
+    },
+    "onix-wasm": {
+      "inputs": {
+        "nickel-wasm-vendor": "nickel-wasm-vendor",
+        "nixpkgs": [
+          "onix-core",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1775191973,
+        "narHash": "sha256-i/kB/zADSaZct49zscZgwA0JCKcZPAwwmoX+uYPjy6U=",
+        "owner": "onixcomputer",
+        "repo": "onix-wasm",
+        "rev": "d7b7351c474d7bdeebec768c7f92e7f0fb983955",
+        "type": "github"
+      },
+      "original": {
+        "owner": "onixcomputer",
+        "repo": "onix-wasm",
+        "type": "github"
+      }
+    },
+    "pinenote-nixos": {
+      "inputs": {
+        "nixpkgs": [
+          "onix-core",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1771120430,
+        "narHash": "sha256-uv9U3arVtO3eV0Bq7KGhbJiaCTU9y47udaDfn0X9hlo=",
+        "owner": "WeraPea",
+        "repo": "pinenote-nixos",
+        "rev": "6d1a56076ab3ecc291654b6628abc2cd066b474a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "WeraPea",
+        "repo": "pinenote-nixos",
+        "type": "github"
+      }
+    },
+    "pre-commit-hooks-nix": {
+      "inputs": {
+        "flake-compat": "flake-compat_4",
+        "gitignore": "gitignore",
+        "nixpkgs": [
+          "onix-core",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1781733627,
+        "narHash": "sha256-U3yTuGBnmXvXoQI3qkpfEDsn9RovQPAjN7ndRco+3u0=",
+        "owner": "cachix",
+        "repo": "pre-commit-hooks.nix",
+        "rev": "3bbec39bc90eadfa031e6f3b77272f3f60803e39",
+        "type": "github"
+      },
+      "original": {
+        "owner": "cachix",
+        "repo": "pre-commit-hooks.nix",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "devenv": [
+          "onix-core",
+          "devenv-machines"
+        ],
+        "dgx-spark": [
+          "onix-core",
+          "dgx-spark"
+        ],
+        "disko": [
+          "onix-core",
+          "disko"
+        ],
+        "nixos-facter-modules": [
+          "onix-core",
+          "nixos-facter-modules"
+        ],
+        "nixpkgs": [
+          "onix-core",
+          "nixpkgs"
+        ],
+        "onix-core": "onix-core"
       }
     },
     "rust-analyzer-src": {
@@ -2334,6 +2470,7 @@
     "rust-overlay": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "cairn",
           "nickel-export",
           "cairn",
@@ -2360,6 +2497,7 @@
     "rust-overlay_10": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "tigerstyle",
           "cairn",
           "slotcar",
@@ -2383,6 +2521,7 @@
     "rust-overlay_2": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "cairn",
           "nickel-export",
           "cairn",
@@ -2407,6 +2546,7 @@
     "rust-overlay_3": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "cairn",
           "nickel-export",
           "nixpkgs"
@@ -2429,6 +2569,7 @@
     "rust-overlay_4": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "cairn",
           "slotcar",
           "cairn",
@@ -2453,6 +2594,7 @@
     "rust-overlay_5": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "cairn",
           "slotcar",
           "nixpkgs"
@@ -2475,6 +2617,7 @@
     "rust-overlay_6": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "devenv",
           "nixpkgs"
         ]
@@ -2496,6 +2639,7 @@
     "rust-overlay_7": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "devenv-machines",
           "nixpkgs"
         ]
@@ -2517,6 +2661,7 @@
     "rust-overlay_8": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "niri",
           "nixpkgs"
         ]
@@ -2538,6 +2683,7 @@
     "rust-overlay_9": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ]
       },
@@ -2670,6 +2816,7 @@
     "sops-nix": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ]
       },
@@ -2690,6 +2837,7 @@
     "srvos": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ]
       },
@@ -2860,15 +3008,19 @@
     "tenstorrent-nix": {
       "inputs": {
         "flake-parts": [
+          "onix-core",
           "flake-parts"
         ],
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ],
         "systems": [
+          "onix-core",
           "systems"
         ],
         "treefmt-nix": [
+          "onix-core",
           "treefmt-nix"
         ]
       },
@@ -2893,9 +3045,11 @@
         "dylint-src": "dylint-src_6",
         "flake-utils": "flake-utils_9",
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ],
         "rust-overlay": [
+          "onix-core",
           "rust-overlay"
         ]
       },
@@ -2916,6 +3070,7 @@
     "treefmt-nix": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "devenv",
           "nixd",
           "nixpkgs"
@@ -2938,6 +3093,7 @@
     "treefmt-nix_2": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "devenv-machines",
           "nixd",
           "nixpkgs"
@@ -2960,6 +3116,7 @@
     "treefmt-nix_3": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ]
       },
@@ -2980,12 +3137,15 @@
     "tt-kmd": {
       "inputs": {
         "flake-parts": [
+          "onix-core",
           "flake-parts"
         ],
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ],
         "systems": [
+          "onix-core",
           "systems"
         ]
       },
@@ -3008,6 +3168,7 @@
       "inputs": {
         "flake-parts": "flake-parts_5",
         "nixpkgs": [
+          "onix-core",
           "drift",
           "nixpkgs"
         ]
@@ -3030,6 +3191,7 @@
       "inputs": {
         "flake-utils": "flake-utils_10",
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ]
       },
@@ -3050,6 +3212,7 @@
     "wl-walls": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ]
       },
@@ -3070,6 +3233,7 @@
     "wrappers": {
       "inputs": {
         "nixpkgs": [
+          "onix-core",
           "nixpkgs"
         ]
       },

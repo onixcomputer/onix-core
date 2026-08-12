@@ -1,0 +1,12 @@
+[package]
+name = "dgx-machine"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "dgx-machine"
+path = "src/main.rs"
