@@ -179,6 +179,9 @@ let
     '';
   };
   ttWkv7OwnerControl = tenstorrentPackages.ttwkv7-owner-control;
+  # r[impl onix.tenstorrent.native_runtime.rwkv7_p150x2.production_observation]
+  rwkv7P150x2Runtime = tenstorrentPackages.rwkv7-p150x2-runtime;
+  rwkv7P150x2Evidence = tenstorrentPackages.rwkv7-p150x2-evidence;
 in
 {
   imports = [ ./build-storage.nix ];
@@ -495,6 +498,9 @@ in
     llamaCpuPkg
     ttBenchmarkCommand
     ttWkv7OwnerControl
+    # r[verify onix.tenstorrent.native_runtime.rwkv7_p150x2.production_observation]
+    rwkv7P150x2Runtime
+    rwkv7P150x2Evidence
     self.packages.${pkgs.stdenv.hostPlatform.system}.opendeck
     self.packages.${pkgs.stdenv.hostPlatform.system}.ttsim
     # Keep the wrapped Herdr base on the accepted llm-agents provider.

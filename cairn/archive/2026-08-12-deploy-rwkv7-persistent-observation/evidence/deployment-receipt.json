@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "event_kind": "rwkv7_p150x2_deployment_observation",
+  "hash_algorithm": "blake3",
+  "tenstorrent_nix_revision": "53e3f321990810c80ad32ae9c8cd521863231bfc",
+  "system_closure": "/nix/store/9sz5xr2hyp5fsivyi633jd5b15xs37m9-nixos-system-britton-desktop-26.11.20260803.104240a",
+  "runtime_package": "rwkv7-p150x2-runtime-0.1.0",
+  "evidence_package": "rwkv7-p150x2-evidence-0.1.0",
+  "profile": {
+    "profile_id": "rwkv7-p150x2-persistent-decode-v2",
+    "profile_blake3": "e41319204ddf36bda088afb8a4d55a367dc163951ea29c45738e3b11b815819a",
+    "model_profile_blake3": "d33ed1051c7595327368cce7b42e16f025e8fc78d96addb0353fba2e86314a88",
+    "physically_admitted": true,
+    "admitted_decode_windows": [
+      2,
+      4
+    ]
+  },
+  "observation": {
+    "physical_device_ids": [
+      0,
+      1
+    ],
+    "selected_decode_windows": [
+      2,
+      4
+    ],
+    "worker_receipt_blake3": [
+      "b6a7cd7194ce837009a33dacca1fd52ae77aa9e6ab1f835bd5b156c2cad32751",
+      "4b34c4d53715a1d7bbb5fc409bd8a7fc1f8e5d29f2753dca5caab84a3ea4f7b3"
+    ],
+    "monitoring_receipt_blake3": "cb4a322b41de5dbe0ee11a345c8f49b1e923692f4592ee56528ab707f6817be0",
+    "monitoring_batch_blake3": "6d4d5e7bf48e9c16898838bfbbdd0c1908c3be5f8b326f1b74f7f2a2296108b6",
+    "accepted_event_count": 2,
+    "completed_request_count": 8,
+    "persistent_trace_count": 2,
+    "normal_dispatch_count": 0,
+    "fallback_count": 0,
+    "parity_passed_count": 2,
+    "cleanup_complete_count": 2,
+    "timed_out_count": 0,
+    "failed_count": 0,
+    "alert_count": 0,
+    "verdict": "clean",
+    "persistent_admission_recommendation": "retain"
+  },
+  "restoration": {
+    "docker_inference_service": "inactive",
+    "llamacpp_service": "inactive",
+    "device_0_unowned": true,
+    "device_1_unowned": true
+  },
+  "non_claims": [
+    "the deployment does not create an RWKV-7 daemon",
+    "the deployment does not route live traffic",
+    "the observation does not mutate the installed profile",
+    "the observation does not admit decode window 8",
+    "the observation does not authorize a larger-window evaluation"
+  ]
+}
