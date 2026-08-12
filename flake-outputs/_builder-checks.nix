@@ -16,6 +16,17 @@ let
   wasm = import ../lib/wasm.nix { inherit plugins; };
 
   allMachines = (wasm.evalNickelFile ../inventory/core/machines.ncl).machines;
+  builderTargetData = wasm.evalNickelFile ../inventory/tags/builder-targets.ncl;
+  invalidBuilderTargetEvaluation = builtins.tryEval (
+    builtins.deepSeq (wasm.evalNickelFile ../inventory/tags/fixtures/invalid-builder-target-empty-ssh-host.ncl) true
+  );
+  expectedAspenBuilderHost = "aspen1.local";
+  staleAspenBuilderHost = "10.10.10.1";
+  aspenTarget = lib.findFirst (target: target.name == "aspen1") null builderTargetData.targets;
+  configuredAspenBuilderHost = if aspenTarget == null then null else aspenTarget.sshHost or null;
+  desktopConfig = self.nixosConfigurations.britton-desktop.config;
+  desktopBuilderHosts = map (builder: builder.hostName) desktopConfig.nix.buildMachines;
+  desktopAspenHostNames = desktopConfig.programs.ssh.knownHosts.aspen1.hostNames or [ ];
 
   # Machines with the remote-builders tag.
   builderMachines = lib.filterAttrs (
@@ -46,6 +57,33 @@ let
 in
 {
   builder-no-self = pkgs.runCommand "builder-no-self-check" { } ''
+        # Positive and negative coverage for
+        # r[verify onix.remote_builder.routing.contract],
+        # r[verify onix.remote_builder.routing.aspen],
+        # r[verify onix.remote_builder.routing.selection],
+        # r[verify onix.remote_builder.routing.host_key], and
+        # r[verify onix.remote_builder.routing.invalid].
+        ${lib.optionalString (configuredAspenBuilderHost != expectedAspenBuilderHost) ''
+          echo "Aspen must declare ${expectedAspenBuilderHost} as its builder endpoint" >&2
+          exit 1
+        ''}
+        ${lib.optionalString (!(builtins.elem expectedAspenBuilderHost desktopBuilderHosts)) ''
+          echo "britton-desktop must select ${expectedAspenBuilderHost} as a builder" >&2
+          exit 1
+        ''}
+        ${lib.optionalString (builtins.elem staleAspenBuilderHost desktopBuilderHosts) ''
+          echo "britton-desktop must not select the cluster-only Aspen endpoint" >&2
+          exit 1
+        ''}
+        ${lib.optionalString (!(builtins.elem expectedAspenBuilderHost desktopAspenHostNames)) ''
+          echo "Aspen's managed host key must bind ${expectedAspenBuilderHost}" >&2
+          exit 1
+        ''}
+        ${lib.optionalString invalidBuilderTargetEvaluation.success ''
+          echo "the empty builder SSH host fixture passed its Nickel contract" >&2
+          exit 1
+        ''}
+
         ${pkgs.python3}/bin/python3 << 'PYEOF'
     import json, sys
 
