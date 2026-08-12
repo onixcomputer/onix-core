@@ -1692,22 +1692,31 @@ r[onix.tenstorrent.native_runtime.dedicated_repository] Onix SHALL publish reusa
 - AND malformed, incomplete, or unsupported inputs are rejected before device initialization
 
 ### Requirement: Deploy bounded RWKV-7 persistent decode observation tools
-r[onix.tenstorrent.native_runtime.rwkv7_p150x2.production_observation] The `britton-desktop` system SHALL install the package-matched RWKV-7 P150x2 runtime and evidence tools from the pinned `tenstorrent.nix` input so an operator can run a bounded, fail-closed observation for admitted decode windows `[2, 4]`.
+r[onix.tenstorrent.native_runtime.rwkv7_p150x2.production_observation] The `britton-desktop` system SHALL install the package-matched RWKV-7 P150x2 runtime and evidence tools from the pinned `tenstorrent.nix` input so an operator can use bounded, fail-closed persistent decode for admitted windows `[2, 4, 8]`.
 
 #### Scenario: Production observation tools are deployed
 - GIVEN a pinned `tenstorrent.nix` revision with the physically admitted P150x2 runtime, monitoring policy, and receipt validator
-- WHEN the `britton-desktop` system closure is built and activated
+- WHEN the exact `britton-desktop` system closure is built and activated
 - THEN the runtime and evidence packages are present through stable system paths
-- AND the installed profile admits only decode windows `2` and `4`
+- AND the installed profile is `rwkv7-p150x2-persistent-decode-v3`
+- AND its BLAKE3 is `c5bfa37d83c026bfdb9255da4810bc90af71c7a0e949f05c9c5bf3e709654568`
+- AND its admitted decode windows are exactly `[2, 4, 8]`
 
-#### Scenario: Bounded physical telemetry is clean
-- GIVEN free physical devices `0` and `1`, inactive competing services, and explicit regular telemetry receipt paths
-- WHEN the operator runs one bounded production-selected observation and classifies the complete ordered batch with the installed monitoring policy
-- THEN every accepted persistent event reports exact token parity, exact FP32 recurrent-state parity, completed cleanup, no timeout, and no terminal failure
-- AND the aggregate monitoring receipt contains no critical or warning alert and recommends retaining current admission
+#### Scenario: Deployment uses one exact closure
+- GIVEN the target closure passed evaluation and build checks and the current closure is recorded
+- WHEN the operator activates the target closure
+- THEN activation executes the target store path's `bin/switch-to-configuration` command
+- AND post-activation verification requires `/run/current-system` to resolve to that exact target
+- AND the recorded prior closure remains available as the rollback target
 
-#### Scenario: Observation evidence fails closed
-- GIVEN malformed telemetry, duplicate events, parity failure, cleanup failure, replay timeout, terminal failure, unsupported admission, or a missing bounded input
-- WHEN the installed monitor classifies the explicit batch
-- THEN it returns a nonzero warning, critical, or input-error status with a fixed alert code
-- AND no larger decode window becomes admitted
+#### Scenario: Deployment does not create new admission evidence
+- GIVEN the window `8` correctness, cleanup, profiling, speedup, and canary evidence is archived in the pinned `tenstorrent.nix` revision
+- WHEN `onix-core` deploys the accepted package set
+- THEN deployment verification does not run an unbounded device loop or mutate the installed profile
+- AND it does not claim new correctness, performance, determinism, or admission evidence
+
+#### Scenario: Deployment verification fails closed
+- GIVEN a stale lock, missing command, wrong closure, wrong profile identity, changed service state, or unexpected device owner
+- WHEN deployment verification runs
+- THEN the deployment is not accepted
+- AND the operator restores the recorded prior closure if activation changed the active system
