@@ -139,6 +139,7 @@ let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
       module = { name = "tailscale", input = "self" },
       roles.peer = {
         tags."tailnet-brittonr" = {},
+        tags."dgx-spark" = {},
         settings = {
           enableSSH = true,
           exitNode = false,
@@ -196,6 +197,11 @@ let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
     "iroh-ssh-bonsai" = {
       module = { name = "iroh-ssh", input = "self" },
       roles.peer.machines.bonsai = {},
+    },
+
+    "iroh-ssh-dgx-spark" = {
+      module = { name = "iroh-ssh", input = "self" },
+      roles.peer.tags."dgx-spark" = {},
     },
 
     "cloudflare-brittonr" = {
@@ -683,6 +689,18 @@ let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
           endpointUrl = mesh_openai_endpoint_url,
           meshBindAddress = mesh_desktop_address,
           backendUnit = "llamacpp-server-vibethinker-britton-desktop.service",
+        },
+      },
+    },
+
+    "mesh-llm-dgx-spark" = {
+      module = { name = "mesh-llm", input = "self" },
+      roles.default = {
+        tags."dgx-spark" = {},
+        settings = {
+          mode = "joiner",
+          endpointUrl = mesh_openai_endpoint_url,
+          meshBindInterface = "tailscale0",
         },
       },
     },

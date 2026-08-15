@@ -4,6 +4,7 @@
   settings,
   configPath,
   nodeName,
+  meshBindAddress ? settings.meshBindAddress,
 }:
 [
   "${package}/bin/mesh-llm"
@@ -17,7 +18,7 @@
   "--mesh-discovery-mode"
   "mdns"
   "--bind-ip"
-  settings.meshBindAddress
+  meshBindAddress
   "--bind-port"
   (toString settings.meshPort)
   "--port"

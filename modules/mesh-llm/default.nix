@@ -43,6 +43,7 @@ in
               apiPort
               consolePort
               meshBindAddress
+              meshBindInterface
               meshPort
               nodeName
               backendUnit
@@ -55,6 +56,15 @@ in
             generatorName = serviceName;
             stateDirectory = serviceName;
             statePath = "/var/lib/${stateDirectory}";
+            wildcardMeshBindAddresses = [
+              "0.0.0.0"
+              "::"
+            ];
+            dynamicMeshBindAddressPlaceholder = "__mesh_bind_address__";
+            hasStaticMeshBindAddress = !(builtins.elem meshBindAddress wildcardMeshBindAddresses);
+            hasMeshBindInterface = meshBindInterface != null && meshBindInterface != "";
+            effectiveMeshBindAddress =
+              if hasMeshBindInterface then dynamicMeshBindAddressPlaceholder else meshBindAddress;
             effectiveNodeName =
               if nodeName == null || nodeName == "" then config.networking.hostName else nodeName;
             joinTokenPath =
@@ -76,8 +86,42 @@ in
               inherit package settings;
               configPath = configFile;
               nodeName = effectiveNodeName;
+              meshBindAddress = effectiveMeshBindAddress;
             };
-            launchCommand = lib.escapeShellArgs launchArgs;
+            launchCommandTemplate = lib.escapeShellArgs launchArgs;
+            interfaceLauncher =
+              if hasMeshBindInterface then
+                pkgs.writeShellApplication {
+                  name = "${serviceName}-interface-launcher";
+                  runtimeInputs = [
+                    pkgs.iproute2
+                    pkgs.jq
+                  ];
+                  text = ''
+                    mesh_interface=${lib.escapeShellArg meshBindInterface}
+                    mesh_bind_address="$(
+                      ip -json -4 address show dev "$mesh_interface" \
+                        | jq -er '.[0].addr_info | map(select(.scope == "global")) | .[0].local'
+                    )"
+                    if [ -z "$mesh_bind_address" ]; then
+                      echo "${serviceName}: interface $mesh_interface has no global IPv4 address" >&2
+                      exit 1
+                    fi
+                    exec ${
+                      lib.replaceStrings
+                        [ (lib.escapeShellArg dynamicMeshBindAddressPlaceholder) ]
+                        [ ''"$mesh_bind_address"'' ]
+                        launchCommandTemplate
+                    } "$@"
+                  '';
+                }
+              else
+                null;
+            launchCommand =
+              if hasMeshBindInterface then
+                lib.escapeShellArg (lib.getExe interfaceLauncher)
+              else
+                launchCommandTemplate;
 
             credentialPlaceholder = "Welcome to SOPS! Edit this file as you please!";
             minimumProxyActivationContextSize = 512;
@@ -101,6 +145,7 @@ in
               '';
             };
 
+            interfaceUnits = lib.optional (meshBindInterface == "tailscale0") "tailscaled.service";
             backendUnits = lib.optional (backendUnit != null && backendUnit != "") backendUnit;
             restartDelay = "10s";
             stopTimeout = "30s";
@@ -108,12 +153,17 @@ in
           {
             assertions = [
               {
-                assertion = meshBindAddress != "0.0.0.0" && meshBindAddress != "::";
-                message = "${serviceName}: meshBindAddress must select one reachable private interface address.";
+                assertion = hasStaticMeshBindAddress != hasMeshBindInterface;
+                message = "${serviceName}: set exactly one private meshBindAddress or meshBindInterface.";
               }
               {
-                assertion = !(lib.hasPrefix "127." meshBindAddress) && meshBindAddress != "::1";
+                assertion =
+                  !hasStaticMeshBindAddress || (!(lib.hasPrefix "127." meshBindAddress) && meshBindAddress != "::1");
                 message = "${serviceName}: meshBindAddress must be reachable by the other mesh node, not loopback.";
+              }
+              {
+                assertion = !hasMeshBindInterface || builtins.match "^[a-zA-Z0-9_.:-]+$" meshBindInterface != null;
+                message = "${serviceName}: meshBindInterface contains unsupported characters.";
               }
               {
                 assertion = lib.hasPrefix "http://127.0.0.1:" endpointUrl && lib.hasSuffix "/v1" endpointUrl;
@@ -171,13 +221,16 @@ in
             systemd.services.${serviceName} = {
               description = "Private Mesh-LLM sidecar (${instanceName}, ${mode})";
               wantedBy = [ "multi-user.target" ];
-              wants = [ "network-online.target" ] ++ backendUnits;
-              after = [ "network-online.target" ] ++ backendUnits;
+              wants = [ "network-online.target" ] ++ interfaceUnits ++ backendUnits;
+              after = [ "network-online.target" ] ++ interfaceUnits ++ backendUnits;
 
               environment = {
                 HOME = statePath;
                 LD_LIBRARY_PATH = lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ];
                 MESH_LLM_NO_SELF_UPDATE = "1";
+              }
+              // lib.optionalAttrs hasMeshBindInterface {
+                MESH_LLM_BIND_INTERFACE = meshBindInterface;
               };
 
               serviceConfig = {

@@ -13,6 +13,7 @@ let
   meshPort = 47916;
   proxyActivationModel = "Qwen3-0.6B-Q4_K_M";
   proxyActivationContextSize = 512;
+  meshEndpointUrl = "http://127.0.0.1:13305/v1";
 
   machineConfig = name: self.nixosConfigurations.${name}.config;
   mkNode =
@@ -94,7 +95,92 @@ let
     && !(builtins.elem consolePort node.config.networking.firewall.allowedTCPPorts);
   udpIsOpen = node: builtins.elem meshPort node.config.networking.firewall.allowedUDPPorts;
 
+  plugins = self.packages.x86_64-linux.wasm-plugins;
+  wasm = import ../lib/wasm.nix { inherit plugins; };
+  serviceInventory = (wasm.evalNickelFile ../inventory/services/services.ncl).instances;
+  meshSchema = wasm.evalNickelFile ../modules/mesh-llm/schema.ncl;
+  dgxSparkTagName = "dgx-spark";
+  dgxSparkBindInterface = "tailscale0";
+  dgxSparkMeshInstanceName = "mesh-llm-dgx-spark";
+  dgxSparkIrohInstanceName = "iroh-ssh-dgx-spark";
+  tailscaleDgxTargetPresent = builtins.hasAttr dgxSparkTagName serviceInventory.br-tailnet.roles.peer.tags;
+  irohDgxTargetPresent =
+    builtins.hasAttr dgxSparkTagName
+      serviceInventory.${dgxSparkIrohInstanceName}.roles.peer.tags;
+  dgxSparkMeshRole = serviceInventory.${dgxSparkMeshInstanceName}.roles.default;
+  meshDgxTargetPresent = builtins.hasAttr dgxSparkTagName dgxSparkMeshRole.tags;
+  dgxSparkMeshSettings = dgxSparkMeshRole.settings;
+  meshDgxUsesPrivateInterface =
+    dgxSparkMeshSettings.mode == "joiner"
+    && dgxSparkMeshSettings.endpointUrl == meshEndpointUrl
+    && dgxSparkMeshSettings.meshBindInterface == dgxSparkBindInterface;
+  meshDgxAvoidsExplicitWildcard = !(builtins.hasAttr "meshBindAddress" dgxSparkMeshSettings);
+
+  dgxFixtureInstanceName = "dgx-fixture";
+  dgxFixtureServiceName = "mesh-llm-${dgxFixtureInstanceName}";
+  dgxFixtureSettings = {
+    mode = "joiner";
+    endpointUrl = meshEndpointUrl;
+    inherit
+      proxyActivationModel
+      proxyActivationContextSize
+      apiPort
+      consolePort
+      meshPort
+      ;
+    meshBindAddress = "0.0.0.0";
+    meshBindInterface = dgxSparkBindInterface;
+    meshName = "onix-private-inference";
+    nodeName = null;
+    backendUnit = null;
+  };
+  meshServiceDefinition = (import ../modules/mesh-llm { schema = meshSchema; }) { inherit lib; };
+  mkDgxFixtureModuleConfig =
+    resolvedSettings:
+    let
+      perInstance = meshServiceDefinition.roles.default.perInstance {
+        instanceName = dgxFixtureInstanceName;
+        extendSettings = _defaults: resolvedSettings;
+      };
+    in
+    perInstance.nixosModule {
+      inherit lib;
+      pkgs = pkgs // {
+        mesh-llm = meshPackage;
+      };
+      config = {
+        networking.hostName = dgxFixtureInstanceName;
+        clan.core.vars.generators.${dgxFixtureServiceName}.files."join-token".path =
+          "/run/dgx-fixture-join-token";
+      };
+    };
+  dgxFixtureModuleConfig = mkDgxFixtureModuleConfig dgxFixtureSettings;
+  invalidDgxFixtureModuleConfig = mkDgxFixtureModuleConfig (
+    dgxFixtureSettings
+    // {
+      meshBindInterface = null;
+    }
+  );
+  dgxFixtureFailedAssertions = lib.filter (item: !item.assertion) dgxFixtureModuleConfig.assertions;
+  dgxFixtureService = dgxFixtureModuleConfig.systemd.services.${dgxFixtureServiceName};
+  dgxFixtureExecStart = dgxFixtureService.serviceConfig.ExecStart;
+  dgxFixtureUsesTailscaleInterface =
+    dgxFixtureFailedAssertions == [ ]
+    && builtins.elem "tailscaled.service" dgxFixtureService.wants
+    && builtins.elem "tailscaled.service" dgxFixtureService.after
+    && dgxFixtureService.environment.MESH_LLM_BIND_INTERFACE == dgxSparkBindInterface;
+  dgxFixtureRejectsMissingBinding = lib.any (
+    item: !item.assertion && lib.hasInfix "set exactly one" item.message
+  ) invalidDgxFixtureModuleConfig.assertions;
+
   meshPackage = self.packages.${pkgs.stdenv.hostPlatform.system}.mesh-llm;
+  armMeshPackage = self.packages.aarch64-linux.mesh-llm;
+  armMeshTarget = "aarch64-unknown-linux-gnu";
+  armMeshPackageSupported =
+    armMeshPackage.releaseTarget == armMeshTarget
+    && builtins.elem "aarch64-linux" armMeshPackage.meta.platforms
+    && armMeshPackage ? openaiEndpoint;
+  unsupportedDarwinExcluded = !(builtins.elem "aarch64-darwin" armMeshPackage.meta.platforms);
 in
 {
   checks = lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") {
@@ -104,6 +190,46 @@ in
           test -x ${meshPackage}/bin/mesh-llm
           test -x ${meshPackage}/bin/openai-endpoint
           test -f ${meshPackage}/share/mesh-llm/plugins/openai-endpoint/plugin.toml
+          test -x ${dgxFixtureExecStart}
+          grep -F 'mesh-llm-dgx-fixture-interface-launcher' ${dgxFixtureExecStart}
+
+          ${lib.optionalString (!armMeshPackageSupported) ''
+            echo "Mesh-LLM must select the pinned ARM64 Linux release and source-built plugin" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!unsupportedDarwinExcluded) ''
+            echo "Mesh-LLM must reject unsupported ARM64 Darwin packaging" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!tailscaleDgxTargetPresent) ''
+            echo "DGX Spark is missing the Tailscale service target" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!irohDgxTargetPresent) ''
+            echo "DGX Spark is missing the iroh-ssh service target" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!meshDgxTargetPresent) ''
+            echo "DGX Spark is missing the Mesh-LLM service target" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!meshDgxUsesPrivateInterface) ''
+            echo "DGX Spark Mesh-LLM must join through tailscale0" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!meshDgxAvoidsExplicitWildcard) ''
+            echo "DGX Spark Mesh-LLM must not declare a wildcard bind address" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!dgxFixtureUsesTailscaleInterface) ''
+            echo "DGX Spark Mesh-LLM interface fixture failed" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!dgxFixtureRejectsMissingBinding) ''
+            echo "Mesh-LLM accepted a fixture without a private bind target" >&2
+            exit 1
+          ''}
+
           grep -F -- '--mesh-discovery-mode mdns' ${aspen2Node.command}
           grep -F -- '--headless' ${aspen2Node.command}
           grep -F -- '--bind-ip ${aspen2Node.meshAddress}' ${aspen2Node.command}

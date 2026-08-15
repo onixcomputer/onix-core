@@ -115,6 +115,15 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+    dgx-spark = {
+      url = "github:graham33/nixos-dgx-spark";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        disko.follows = "disko";
+        pre-commit-hooks.follows = "pre-commit-hooks-nix";
+      };
+    };
     niri = {
       url = "github:brittonr/niri";
       inputs.nixpkgs.follows = "nixpkgs";

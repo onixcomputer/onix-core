@@ -11,6 +11,7 @@ let default_proxy_activation_context_size = 512 in
     apiPort = { type = "port", default = default_api_port, description = "Loopback OpenAI-compatible Mesh-LLM API port" },
     consolePort = { type = "port", default = default_console_port, description = "Loopback Mesh-LLM management API port" },
     meshBindAddress = { type = "string", default = "0.0.0.0", description = "Explicit private interface address for Mesh-LLM QUIC transport" },
+    meshBindInterface = { type = "nullable_string", default = null, description = "Interface whose global IPv4 address is resolved when the service starts" },
     meshPort = { type = "port", default = default_mesh_port, description = "Fixed UDP port for private Mesh-LLM QUIC transport" },
     meshName = { type = "string", default = "onix-private-inference", description = "Friendly private mesh name" },
     nodeName = { type = "nullable_string", default = null, description = "Optional Mesh-LLM node display name; defaults to the machine hostname" },

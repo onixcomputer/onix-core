@@ -18,6 +18,7 @@ let tag_file_tags = [
   "cross-compile",
   "desktop",
   "dev",
+  "dgx-spark",
   "docker",
   "gaming",
   "greeter",

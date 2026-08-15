@@ -38,4 +38,7 @@ If you use direnv, run `direnv allow` once. The `.envrc` file opens the same she
 - [tenstorrent/tt-system-tools](https://github.com/tenstorrent/tt-system-tools) — upstream hugepages setup behavior adapted declaratively for NixOS.
 - [tenstorrent/tt-system-firmware](https://github.com/tenstorrent/tt-system-firmware) — firmware bundle source packaged for manual `tt-flash` use.
 - `../changebot` — sibling Remora Rust workspace used as the kache Nix-build pilot example.
+- [graham33/nixos-dgx-spark](https://github.com/graham33/nixos-dgx-spark) — upstream NixOS hardware module used by the reusable `dgx-spark` machine tag.
+- [cachix/devenv#3073](https://github.com/cachix/devenv/pull/3073) — experimental Devenv machines interface selected for the device-free DGX lifecycle plan.
+- `docs/dgx-spark-power-profile.md` — DGX Spark GPU clock-cap serving profile, runbook, and measured power data.
 

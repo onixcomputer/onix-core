@@ -66,6 +66,18 @@ let { ValidateUserRefs, .. } = import "user-contracts.ncl" in
       },
     },
 
+    # Aspen3 also needs the creative tools profile, which includes OrcaSlicer.
+    hm-aspen3-creative = {
+      module = { name = "home-manager-profiles", input = "self" },
+      roles.default = {
+        machines.aspen3 = {},
+        settings = {
+          username = "brittonr",
+          profiles = ["creative"],
+        },
+      },
+    },
+
     # Desktop: interactive profiles plus personal Radicle supervision.
     hm-desktop = {
       module = { name = "home-manager-profiles", input = "self" },

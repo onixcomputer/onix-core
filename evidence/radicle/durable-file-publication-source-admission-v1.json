@@ -4,9 +4,7 @@
     "delegate_credentials_absent": true,
     "no_new_privileges": true,
     "protect_home": true,
-    "seed_credentials": [
-      "machine-scoped-radicle-node-key"
-    ]
+    "seed_credentials": ["machine-scoped-radicle-node-key"]
   },
   "deployment": {
     "aspen_closure": "/nix/store/j2mvzq86wwdrgna1972av3cm868rq9ni-nixos-system-aspen1-26.11.20260629.7a1a647",
@@ -21,9 +19,7 @@
     "durable-file-publication:cairn/archive/2026-07-27-establish-durable-file-publication/evidence/validation.md"
   ],
   "governance": {
-    "delegates": [
-      "did:key:z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx"
-    ],
+    "delegates": ["did:key:z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx"],
     "identity_revision": "8d6d95454c09449708e687b51e80c787750e75e3",
     "publisher_sigrefs": "8aa111383236ef76578edb18dbc5410395a42763",
     "signed_refs_feature": "parent",
@@ -41,9 +37,7 @@
   ],
   "observed_date": "2026-07-27",
   "policy": {
-    "ci_rids": [
-      "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo"
-    ],
+    "ci_rids": ["rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo"],
     "https_rids": [
       "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
       "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
@@ -51,9 +45,7 @@
       "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM"
     ],
     "implementation_revision": "8211b290622d7e8aa7f07198b125cd9169f59f0c",
-    "private_rids": [
-      "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg"
-    ],
+    "private_rids": ["rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg"],
     "public_rids": [
       "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
       "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
