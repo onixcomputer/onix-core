@@ -2,11 +2,11 @@
   lib,
   stdenv,
   stdenvNoCC,
+  buildNpmPackage,
   fetchurl,
   makeWrapper,
   nodejs,
   uv,
-  cacert,
   autoPatchelfHook,
 }:
 
@@ -18,32 +18,43 @@ let
     hash = "sha256-iLZXhRjHLNUaglvIDyjg/vmmTGfeSn1v16/Xyhs02gs=";
   };
 
-  releaseInstall = stdenvNoCC.mkDerivation {
-    pname = "prime-agent-release";
+  releaseSource = stdenvNoCC.mkDerivation {
+    pname = "prime-agent-release-source";
     inherit version;
-
-    dontUnpack = true;
-    nativeBuildInputs = [
-      cacert
-      nodejs
-    ];
+    src = releaseTarball;
+    sourceRoot = "package";
+    dontBuild = true;
 
     installPhase = ''
       runHook preInstall
 
-      export HOME="$TMPDIR"
-      export npm_config_cache="$TMPDIR/npm-cache"
-      export npm_config_update_notifier=false
-      npm install --global --prefix $out --ignore-scripts --legacy-peer-deps ${releaseTarball}
+      mkdir -p $out
+      cp -r . $out/
+      cp ${./package-lock.json} $out/package-lock.json
 
       runHook postInstall
     '';
+  };
 
-    dontCheckForBrokenSymlinks = true;
-    dontFixup = true;
-    outputHashAlgo = "sha256";
-    outputHashMode = "recursive";
-    outputHash = "sha256-Vx32BaOkSH5UjCyKfzPrqm6NlYdHupBMylCyN6TQiMg=";
+  releaseInstall = buildNpmPackage {
+    pname = "prime-agent-release";
+    inherit version;
+    src = releaseSource;
+    npmDepsHash = "sha256-E/ZXdxQBixnayrrnYKFfwCbaGUrQGs5PZVg/DSMZ03s=";
+    npmFlags = [
+      "--ignore-scripts"
+      "--legacy-peer-deps"
+    ];
+    dontNpmBuild = true;
+
+    installPhase = ''
+      runHook preInstall
+
+      mkdir -p $out/lib/node_modules/prime-agent
+      cp -r . $out/lib/node_modules/prime-agent/
+
+      runHook postInstall
+    '';
   };
 in
 stdenv.mkDerivation {
@@ -68,10 +79,9 @@ stdenv.mkDerivation {
   installPhase = ''
     runHook preInstall
 
-    mkdir -p $out
+    mkdir -p $out/bin
     cp -r ${releaseInstall}/. $out/
     chmod -R u+w $out
-    rm $out/bin/prime-agent
 
     makeWrapper ${nodejs}/bin/node $out/bin/prime-agent \
       --add-flags "$out/lib/node_modules/prime-agent/dist/bundle/cli.js" \

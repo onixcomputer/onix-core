@@ -13,7 +13,12 @@
 let
   privateStateDirectoryMode = "0700";
   reviewedNodeVersion = "1.9.1";
-  reviewedHttpdVersion = "0.25.0";
+  reviewedHttpdVersion = "0.27.0";
+  reviewedHttpdSourceUrl = "https://seed.radicle.dev/z4V1sjrXqjvFdnCUbxPFqd5p4DtH5.git";
+  reviewedHttpdSourceRevision = "refs/tags/releases/0.27.0";
+  reviewedHttpdSourceHash = "sha256-OJrHV5WdFNzoYrOkqpN1ctrJDB3JTJhH54q/C6IV9ZU=";
+  reviewedHttpdCargoHash = "sha256-FjYhw27pAX9Tilgm/Tg18Vkv4/K5kEFJAbhv1mDY0rg=";
+  bootstrapHttpdVersion = "0.25.0";
   minimumRejectedNodeVersion = "1.9.0";
   expectedHost = "aspen1";
   unexpectedHost = "aspen2";
@@ -87,6 +92,22 @@ let
 
   nodePackage = self.packages.${system}.radicle-node;
   httpdPackage = self.packages.${system}.radicle-httpd;
+  httpdIdentityMatchesReview =
+    identity:
+    identity.version == reviewedHttpdVersion
+    && identity.url == reviewedHttpdSourceUrl
+    && identity.revCustom == reviewedHttpdSourceRevision
+    && identity.outputHash == reviewedHttpdSourceHash
+    && identity.cargoHash == reviewedHttpdCargoHash;
+  observedHttpdIdentity = {
+    inherit (httpdPackage) version cargoHash;
+    inherit (httpdPackage.src) url revCustom outputHash;
+  };
+  unreviewedHttpdIdentity = observedHttpdIdentity // {
+    revCustom = "refs/tags/releases/unreviewed";
+  };
+  reviewedHttpdIdentityValid = httpdIdentityMatchesReview observedHttpdIdentity;
+  unreviewedHttpdIdentityRejected = !(httpdIdentityMatchesReview unreviewedHttpdIdentity);
   policyReconciler = import ../modules/radicle-node/policy-reconciler.nix { inherit pkgs; };
   backupManifest = import ../modules/radicle-node/backup-manifest.nix { inherit pkgs; };
   validateSettings = import ../modules/radicle-node/validate-settings.nix { inherit lib; };
@@ -1041,7 +1062,7 @@ let
     && receipt.policy.minimum_node_version == reviewedNodeVersion
     && receipt.policy.minimum_signed_refs_feature == "parent"
     && receipt.packages.node.version == reviewedNodeVersion
-    && receipt.packages.httpd.version == reviewedHttpdVersion
+    && receipt.packages.httpd.version == bootstrapHttpdVersion
     && receipt.machine.host == expectedHost
     && receipt.machine.deployment_target == deploymentTarget
     && receipt.identity.node_id == "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8"
@@ -1176,8 +1197,8 @@ in
             echo "radicle-node version changed without updating the reviewed package identity" >&2
             exit 1
           ''}
-          ${lib.optionalString (httpdPackage.version != reviewedHttpdVersion) ''
-            echo "radicle-httpd version changed without updating the reviewed package identity" >&2
+          ${lib.optionalString (!reviewedHttpdIdentityValid || !unreviewedHttpdIdentityRejected) ''
+            echo "radicle-httpd source, dependency, or version identity review failed" >&2
             exit 1
           ''}
           ${lib.optionalString (positiveValidationErrors != [ ]) ''
