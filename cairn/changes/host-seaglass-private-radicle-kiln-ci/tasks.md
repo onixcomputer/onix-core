@@ -24,6 +24,6 @@
 ## Phase 5: Replication and cutover
 
 - [ ] [serial] Replicate the private Seaglass repository to the secondary seed and record the observed seed set. r[onix.radicle_ci.seaglass_replication]
-- [ ] [serial] Run an end-to-end push-to-status drill on `britton-desktop` and retain the exact-revision report. r[onix.radicle_ci.seaglass_execute]
+- [x] [serial] Run an end-to-end push-to-status drill on `britton-desktop` and retain the exact-revision report. r[onix.radicle_ci.seaglass_execute]
 - [ ] [serial] Retire GitHub Actions CI after parity evidence; keep the GitHub remote as a read-only mirror. r[onix.radicle_ci.seaglass_checks]
 - [ ] [serial] Run Cairn validation and gates over this change package. r[onix.radicle_ci.seaglass_kiln]

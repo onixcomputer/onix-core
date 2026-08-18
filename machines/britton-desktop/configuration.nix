@@ -34,7 +34,7 @@ let
   managedRadicleNodeBindRule = "tcp:${toString managedRadicleNodePort}";
   privateSeaglassRid = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
   privateSeaglassStorageName = lib.removePrefix "rad:" privateSeaglassRid;
-  privateSeaglassRevision = "d897df935c12dd2a3690f5c5d14d6822dc08e587";
+  privateSeaglassRevision = "44ed329b09e472aa12866c8dceedbfb3526b25a1";
   privateSeaglassIdentityRevision = "34622578746c320714509e309233fc7df051d202";
   personalRadicleHome = "/home/${personalRadicleUserName}/.radicle";
   personalRadicleNodeId = "z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";

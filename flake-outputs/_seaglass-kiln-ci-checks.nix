@@ -12,7 +12,7 @@ let
   replicationServiceConfig = replicationService.serviceConfig;
   replicationCommand = replicationServiceConfig.ExecStart;
   seaglassRid = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
-  seaglassRevision = "d897df935c12dd2a3690f5c5d14d6822dc08e587";
+  seaglassRevision = "44ed329b09e472aa12866c8dceedbfb3526b25a1";
   seaglassIdentityRevision = "34622578746c320714509e309233fc7df051d202";
   personalNodeId = "z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
   privatePilotRid = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";

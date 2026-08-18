@@ -5,12 +5,12 @@
 | Fact | Value |
 |---|---|
 | Host | `britton-desktop` |
-| System closure | `/nix/store/zkd8hbjpm672p6w7bn81zkjbq2y6vn0j-nixos-system-britton-desktop-26.11.20260803.104240a` |
+| System closure | `/nix/store/15axryvnq7krhz52lw11il1l9r0m8b9a-nixos-system-britton-desktop-26.11.20260803.104240a` |
 | Broker | `radicle-ci-broker.service`, active |
 | Kiln package | `/nix/store/sq38b7ya66wff7c05k4xqhi87xdf16m1-kiln-0.1.0` |
 | Managed Radicle home | `/var/lib/radicle` |
 | Seaglass RID | `rad:z3xXXCQXCTquvAawh41YYs8yC8xmk` |
-| Seaglass commit | `bea681be760e76a7e18a663df6ed38c2a9d0e1c6` |
+| Seaglass commit | `44ed329b09e472aa12866c8dceedbfb3526b25a1` |
 | Seaglass identity | `34622578746c320714509e309233fc7df051d202` |
 | Managed node identity | `did:key:z6MkkQCj5EczNiVzDzCkX9ewHNJ7NDEXSKbuRiS1x7o72yeG` |
 
@@ -71,12 +71,52 @@ against the same managed RID and revision. It used the existing
 {"response":"finished","result":"success"}
 ```
 
+## Full push-to-status drill
+
+The first full push exposed Cairn's transitive private Artifact input.
+Flake evaluation and Cargo vendoring both tried the locked GitHub SSH URL.
+The executor did not receive an account SSH key. Instead, onix-core
+injected its immutable Artifact input, and Seaglass routed only the exact
+reviewed URL and revision to that input during Cairn vendoring.
+
+The source-routing check has positive and negative cases. It verifies the
+Git revision from Cairn's unchanged lock and the content through the Nix
+archive hash. The full adapter preflight then passed before `master`
+moved.
+
+The authoring node pushed `master` from `d897df935…` to
+`44ed329b09e472aa12866c8dceedbfb3526b25a1`. The managed node fetched that
+exact object. The broker admitted the repository, `flake.nix`, and default
+branch filters. It then created these identities:
+
+| Identity | Value |
+|---|---|
+| Broker run | `160ad4be-1302-450f-91b4-98f25262f72c` |
+| Kiln run | `kiln-44ed329b-1787068902888322241` |
+| Radicle job | `01b27c46a30de07fa2679e9f867926466c53eeab` |
+
+The bounded report records the exact revision and terminal success:
+
+```json
+{
+  "branch": "master",
+  "repository": "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk",
+  "result": "success",
+  "revision": "44ed329b09e472aa12866c8dceedbfb3526b25a1",
+  "run_id": "kiln-44ed329b-1787068902888322241",
+  "schema": "onix.radicle-ci-report.v1"
+}
+```
+
+`cibtool run list --json` independently reports the broker run as
+`finished`, with result `success`, the same commit, Kiln run, and Radicle
+job identity.
+
 ## Non-claims
 
-The successful replay proves deployed adapter acquisition and one focused
-check. It did not pass through a new broker event or update a new Radicle
-job COB. A new pushed revision is still required for the final
-push-to-status drill.
+The passing full flake run proves the relation between the pushed commit
+and the current Seaglass flake surface. GitHub-only parity rails remain
+open until they become flake checks.
 
 The configured cgroup covers the broker, adapter, and Nix client. It does
 not prove that local Nix daemon workers or remote builders share the same
