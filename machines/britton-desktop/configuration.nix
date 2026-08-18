@@ -34,7 +34,7 @@ let
   managedRadicleNodeBindRule = "tcp:${toString managedRadicleNodePort}";
   privateSeaglassRid = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
   privateSeaglassStorageName = lib.removePrefix "rad:" privateSeaglassRid;
-  privateSeaglassRevision = "bea681be760e76a7e18a663df6ed38c2a9d0e1c6";
+  privateSeaglassRevision = "d897df935c12dd2a3690f5c5d14d6822dc08e587";
   privateSeaglassIdentityRevision = "34622578746c320714509e309233fc7df051d202";
   personalRadicleHome = "/home/${personalRadicleUserName}/.radicle";
   personalRadicleNodeId = "z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
@@ -103,6 +103,26 @@ let
     pkgs.coreutils
     pkgs.gitMinimal
   ];
+  kilnNixArgumentCount = 4;
+  kilnArtifactSource = inputs.cairn.inputs.artifact;
+  kilnNixCommand = pkgs.writeShellApplication {
+    name = "seaglass-kiln-nix";
+    text = ''
+      expected_argument_count=${toString kilnNixArgumentCount}
+      if [ "$#" -ne "$expected_argument_count" ]; then
+        echo "expected the fixed Kiln Nix argument contract" >&2
+        exit 1
+      fi
+      if [ "$1" != "flake" ] || [ "$2" != "check" ] || [ "$3" != "--no-update-lock-file" ]; then
+        echo "refusing an unexpected Kiln Nix command" >&2
+        exit 1
+      fi
+
+      exec ${pkgs.nix}/bin/nix flake check --no-update-lock-file \
+        --override-input cairn/artifact path:${kilnArtifactSource} \
+        "$4"
+    '';
+  };
   kilnConcurrentAdapters = 1;
   bytesPerMebibyte = 1024 * 1024;
   kilnMaxOutputMebibytes = 8;
@@ -404,7 +424,7 @@ in
             KILN_ADAPTER_PROTOCOL = "defelo";
             KILN_REPORT_DIR = "/var/lib/radicle-ci/reports";
             KILN_REPORT_BASE_URL = "https://ci.onix.computer/reports";
-            KILN_NIX = "${pkgs.nix}/bin/nix";
+            KILN_NIX = lib.getExe kilnNixCommand;
             KILN_MAX_OUTPUT_BYTES = toString kilnMaxOutputBytes;
             PATH = kilnExecutablePath;
           };

@@ -12,7 +12,7 @@ let
   replicationServiceConfig = replicationService.serviceConfig;
   replicationCommand = replicationServiceConfig.ExecStart;
   seaglassRid = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
-  seaglassRevision = "bea681be760e76a7e18a663df6ed38c2a9d0e1c6";
+  seaglassRevision = "d897df935c12dd2a3690f5c5d14d6822dc08e587";
   seaglassIdentityRevision = "34622578746c320714509e309233fc7df051d202";
   personalNodeId = "z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
   privatePilotRid = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
@@ -21,6 +21,10 @@ let
     pkgs.coreutils
     pkgs.gitMinimal
   ];
+  expectedArtifactRevision = "e41340bec587b6d049b5cc518ec7db925dde84be";
+  expectedArtifactNarHash = "sha256-2cM912L2YXVnVX9LquwhAPKyjPP/z/oFQRe7Qq9bHHE=";
+  artifactSource = self.lib.inputs.cairn.inputs.artifact;
+  kilnNixCommand = brokerSettings.adapters.kiln.env.KILN_NIX;
   expectedConcurrentAdapters = 1;
   bytesPerMebibyte = 1024 * 1024;
   expectedMaxOutputMebibytes = 8;
@@ -56,6 +60,8 @@ let
     && brokerSettings.adapters.kiln.env.KILN_ADAPTER_PROTOCOL == "defelo"
     && brokerSettings.adapters.kiln.env.KILN_MAX_OUTPUT_BYTES == toString expectedMaxOutputBytes
     && brokerSettings.adapters.kiln.env.PATH == expectedKilnPath
+    && artifactSource.rev == expectedArtifactRevision
+    && artifactSource.narHash == expectedArtifactNarHash
     && brokerSettings.max_run_time == expectedMaxRunTime
     && brokerSettings.concurrent_adapters == expectedConcurrentAdapters
     && kilnTriggers == [ expectedTrigger ]
@@ -84,6 +90,9 @@ in
       "the private Seaglass replication shell lost its reviewed service boundary";
     pkgs.runCommand "seaglass-kiln-ci-policy-check" { } ''
       test -x ${lib.escapeShellArg expectedAdapterCommand}
+      test -x ${lib.escapeShellArg kilnNixCommand}
+      grep -F -- ${lib.escapeShellArg "--override-input cairn/artifact"} ${lib.escapeShellArg kilnNixCommand} >/dev/null
+      grep -F -- ${lib.escapeShellArg (toString artifactSource)} ${lib.escapeShellArg kilnNixCommand} >/dev/null
       test -x ${lib.escapeShellArg replicationCommand}
       grep -F -- ${lib.escapeShellArg seaglassRid} ${lib.escapeShellArg replicationCommand} >/dev/null
       grep -F -- ${lib.escapeShellArg seaglassRevision} ${lib.escapeShellArg replicationCommand} >/dev/null
