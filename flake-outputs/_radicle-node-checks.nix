@@ -65,6 +65,7 @@ let
   choregraphRepository = "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF";
   durableFilePublicationRepository = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM";
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
+  privateSeaglassRepository = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
   privatePilotCommit = "ff4ff027817465b1bb04251a8a98db42cc610b0c";
   privatePilotIdentityRevision = "cb3f6273f35ff437e58f15332d48f25b06c4b9cc";
   privatePilotSigrefs = "ad1b6d032b69a4b81910b2fc98f8707b9ff268fb";
@@ -76,7 +77,10 @@ let
     choregraphRepository
     durableFilePublicationRepository
   ];
-  privateRepositories = [ privatePilotRepository ];
+  privateRepositories = [
+    privatePilotRepository
+    privateSeaglassRepository
+  ];
   pinnedRepository = productionPilotRepository;
   productionHttpsServerName = "git.onix.computer";
   productionCloudflareTunnelName = "aspen1-services";
@@ -535,7 +539,16 @@ let
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "privateSeedRepositories must contain exactly the reviewed private pilot RID";
+      expected = "privateSeedRepositories must contain exactly the reviewed private repository set";
+    }
+    {
+      name = "missing-private-seaglass-rid";
+      settings = positiveSettings // {
+        privateSeedRepositories = [ privatePilotRepository ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "privateSeedRepositories must contain exactly the reviewed private repository set";
     }
     {
       name = "malformed-private-pilot-rid";

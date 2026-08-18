@@ -28,7 +28,10 @@ let default_backup_retention_weekly = 4 in
           "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a",
           "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF",
         ],
-        privateSeedRepositories = ["rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg"],
+        privateSeedRepositories = [
+          "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg",
+          "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk",
+        ],
         httpdEnabled = true,
         httpListenAddress = "127.0.0.1",
         httpListenPort = default_http_port,

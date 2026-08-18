@@ -31,7 +31,11 @@ let
     durableFilePublicationRepository
   ];
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
-  governedPrivateRepositories = [ privatePilotRepository ];
+  privateSeaglassRepository = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
+  governedPrivateRepositories = [
+    privatePilotRepository
+    privateSeaglassRepository
+  ];
   canonicalRepositoryIdPattern = "rad:z[1-9A-HJ-NP-Za-km-z]+";
   fingerprintPattern = "SHA256:[A-Za-z0-9+/]+={0,${toString maximumFingerprintPadding}}";
 
@@ -94,7 +98,7 @@ lib.concatLists [
   (rejectUnless uniquePrivateRepositoryIds "Radicle private seed repositories must not contain duplicates")
   (rejectUnless (
     settings.privateSeedRepositories == governedPrivateRepositories
-  ) "Radicle replica must admit exactly the reviewed private pilot RID")
+  ) "Radicle replica must admit exactly the reviewed private repository set")
   (rejectUnless privateRepositoryClassesAreDisjoint "Radicle public and private repository sets must be disjoint")
   (rejectUnless (
     settings.stateDirectory == expectedStateDirectory

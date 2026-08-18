@@ -38,7 +38,11 @@ let
     durableFilePublicationRepository
   ];
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
-  governedPrivateRepositories = [ privatePilotRepository ];
+  privateSeaglassRepository = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
+  governedPrivateRepositories = [
+    privatePilotRepository
+    privateSeaglassRepository
+  ];
   canonicalRepositoryIdPattern = "rad:z[1-9A-HJ-NP-Za-km-z]+";
 
   rejectUnless = condition: message: lib.optional (!condition) message;
@@ -188,7 +192,7 @@ lib.concatLists [
   (rejectUnless seedRepositoriesAreGoverned "seedRepositories must contain exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs in the public set; it must also contain the durable-file-publication RID")
   (rejectUnless validPrivateSeedRepositoryIds "privateSeedRepositories must contain only canonical rad:z repository IDs")
   (rejectUnless uniquePrivateSeedRepositoryIds "privateSeedRepositories must not contain duplicate repository IDs")
-  (rejectUnless privateSeedRepositoriesAreGoverned "privateSeedRepositories must contain exactly the reviewed private pilot RID")
+  (rejectUnless privateSeedRepositoriesAreGoverned "privateSeedRepositories must contain exactly the reviewed private repository set")
   (rejectUnless seedRepositoryClassesAreDisjoint "public and private seed repository sets must be disjoint")
   (rejectUnless validHttpsName "httpsServerName must be a public DNS name without scheme or .local suffix")
   (rejectUnless validHttpsTransport "httpsTransport must be direct-acme or cloudflare-tunnel")

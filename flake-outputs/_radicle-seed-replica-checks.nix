@@ -44,7 +44,11 @@ let
     durableFilePublicationRepository
   ];
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
-  privateRepositories = [ privatePilotRepository ];
+  privateSeaglassRepository = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
+  privateRepositories = [
+    privatePilotRepository
+    privateSeaglassRepository
+  ];
   expectedCommit = "29dac88ecded94457572db3fdfaaaab95fa91525";
   absentObject = "1111111111111111111111111111111111111111";
   inheritedRepository = "rad:z3gqcJUoA1n9HaHKufZs5FCSGazv5";
@@ -372,7 +376,16 @@ let
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
-      expected = "exactly the reviewed private pilot RID";
+      expected = "exactly the reviewed private repository set";
+    }
+    {
+      name = "missing-private-seaglass-rid";
+      settings = positiveSettings // {
+        privateSeedRepositories = [ privatePilotRepository ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the reviewed private repository set";
     }
     {
       name = "malformed-private-pilot-rid";
