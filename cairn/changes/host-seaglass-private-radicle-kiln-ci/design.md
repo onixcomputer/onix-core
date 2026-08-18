@@ -29,26 +29,44 @@ this change does not do.
 
 ## Control plane and execution split
 
-Kiln owns CI meaning: run identity, state transitions, terminal outcome
-binding, and effect requests. Its Radicle broker adapter implements the
-broker trigger protocol and returns one triggered line and one terminal
-line per accepted run.
+Kiln owns the broker protocol mapping and the deployed CI run contract.
+The published `kiln-adapter-radicle` binary is the visible composition
+root for one accepted broker request. It maps the request, acquires the
+exact local revision, invokes Nix, binds the observed process result,
+writes a bounded report, and returns one triggered line and one terminal
+line.
 
-The Radicle CI broker owns event filtering and adapter dispatch. The Nix
-adapter owns build execution for the admitted `checks.<system>` set over
-the exact pushed revision.
+The Radicle CI broker owns repository filtering, event persistence,
+adapter dispatch, adapter timeout, and Radicle job status publication.
+There is no second Nix adapter process. Nix execution is an imperative
+shell capability inside the Kiln Radicle adapter.
 
-The split is explicit. The control plane does not execute builds. The
-executor does not own CI meaning.
+The published executor is an operational bridge. Run identity creation
+and terminal classification still occur in the adapter shell. Kiln tracks
+the provider-port and pure-decision cleanup in its active
+`align-provider-port-ownership` change. This onix-core change does not
+claim that cleanup is complete.
 
-## Why the broker and Nix adapter, not the pilot runner
+## Why the broker and Kiln adapter, not the pilot runner
 
 The existing `radicle-ci-runner` module serves one fixed reviewed
 commit with immutable lock identities and one bounded command. Seaglass
 is a living repository with many rails and a large flake. The broker and
-Nix adapter path handles arbitrary pushed revisions and builds the whole
+Kiln adapter path handles arbitrary pushed revisions and builds the whole
 admitted check set. It is the reference integration named in the Kiln
 hosting and integration contracts.
+
+## Resource boundaries
+
+The broker admits one adapter at a time and terminates an adapter after
+two hours. The adapter retains at most eight MiB from each process output
+stream. The systemd broker cgroup has an eight-core CPU quota and a 24 GiB
+memory limit.
+
+The cgroup covers the broker, adapter, and Nix client. It does not prove
+that local Nix daemon workers or remote builders share the same memory
+cgroup. Full executor memory isolation remains open until the build
+execution boundary supplies enforceable per-run limits.
 
 ## Seaglass flake parity
 
@@ -60,7 +78,7 @@ GitHub-only appears in a named gap report.
 ## Evidence
 
 Each phase emits evidence under this change package: seed acquisition
-probes, `git ls-remote` output, adapter fixtures, executor bound
+probes, Radicle bookmark observations, adapter fixtures, executor bound
 records, the checked revision report, the seed-set observation, and the
 final parity gap report. The change archives only after every gate
 passes.

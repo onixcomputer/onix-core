@@ -32,6 +32,14 @@ let
   personalRadicleUserSliceName = "user-${toString personalRadicleUserUid}";
   managedRadicleNodePort = config.services.radicle.node.listenPort;
   managedRadicleNodeBindRule = "tcp:${toString managedRadicleNodePort}";
+  privateSeaglassRid = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
+  kilnMaxRunTime = "2h";
+  kilnConcurrentAdapters = 1;
+  bytesPerMebibyte = 1024 * 1024;
+  kilnMaxOutputMebibytes = 8;
+  kilnMaxOutputBytes = kilnMaxOutputMebibytes * bytesPerMebibyte;
+  kilnMemoryMax = "24G";
+  kilnCpuQuota = "800%";
 
   llamaCpuPkg = pkgs.llama-cpp;
   supraStateDirectory = "llamacpp-server-supra-router";
@@ -317,6 +325,8 @@ in
     radicle.ci.broker = {
       enable = true;
       settings = {
+        max_run_time = kilnMaxRunTime;
+        concurrent_adapters = kilnConcurrentAdapters;
         adapters.kiln = {
           command = "${
             inputs.kiln.packages.${pkgs.stdenv.hostPlatform.system}.default
@@ -326,6 +336,7 @@ in
             KILN_REPORT_DIR = "/var/lib/radicle-ci/reports";
             KILN_REPORT_BASE_URL = "https://ci.onix.computer/reports";
             KILN_NIX = "${pkgs.nix}/bin/nix";
+            KILN_MAX_OUTPUT_BYTES = toString kilnMaxOutputBytes;
           };
         };
         triggers = [
@@ -334,6 +345,7 @@ in
             filters = [
               {
                 And = [
+                  { Repository = privateSeaglassRid; }
                   { HasFile = "flake.nix"; }
                   "DefaultBranch"
                 ];
@@ -382,6 +394,11 @@ in
       # The supplementary Llama rollout must not interrupt the existing card-0
       # service even when its reproducible package path changes during activation.
       llamacpp-server-vibethinker-britton-desktop.restartIfChanged = false;
+
+      radicle-ci-broker.serviceConfig = {
+        MemoryMax = kilnMemoryMax;
+        CPUQuota = kilnCpuQuota;
+      };
 
       # r[impl onix.tenstorrent.model_performance.managed_benchmark]
       ${ttBenchmarkServiceName} = {
