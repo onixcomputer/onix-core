@@ -1298,6 +1298,26 @@
         "type": "github"
       }
     },
+    "kiln": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_6",
+        "rust-overlay": "rust-overlay_7"
+      },
+      "locked": {
+        "lastModified": 1786165229,
+        "narHash": "sha256-EYf1KCHfHiHcYTy9vrPkM5rEgpE+Q9x2W7WT+Nkiyl8=",
+        "ref": "refs/heads/main",
+        "rev": "36984e367eafd44c22d2b4f4f47121deb51eece3",
+        "revCount": 5,
+        "type": "git",
+        "url": "https://seed.radicle.garden/z2wsvXm5S2sJGvuV1k5JHiwi1PbKE.git"
+      },
+      "original": {
+        "rev": "36984e367eafd44c22d2b4f4f47121deb51eece3",
+        "type": "git",
+        "url": "https://seed.radicle.garden/z2wsvXm5S2sJGvuV1k5JHiwi1PbKE.git"
+      }
+    },
     "llm-agents": {
       "inputs": {
         "bun2nix": "bun2nix",
@@ -1438,7 +1458,7 @@
         "nixpkgs": [
           "nixpkgs"
         ],
-        "rust-overlay": "rust-overlay_7"
+        "rust-overlay": "rust-overlay_8"
       },
       "locked": {
         "lastModified": 1780978947,
@@ -1732,7 +1752,7 @@
     },
     "nixos-hardware": {
       "inputs": {
-        "nixpkgs": "nixpkgs_6"
+        "nixpkgs": "nixpkgs_7"
       },
       "locked": {
         "lastModified": 1782562157,
@@ -1863,6 +1883,22 @@
     },
     "nixpkgs_6": {
       "locked": {
+        "lastModified": 1785967620,
+        "narHash": "sha256-IItrdb7Puk05RqOBWZYFC5X6Wl1sJmCfh5MWVHw5iMM=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "b7c2ada94fe99c15b0dbcf4d11fd7850b957a436",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_7": {
+      "locked": {
         "lastModified": 1767892417,
         "narHash": "sha256-8bW3q88CEg2u4hSP66Vf4lpbLonHz7hqDNBMcCY7E9U=",
         "rev": "3497aa5c9457a9d88d71fa93a4a8368816fbeeba",
@@ -1874,7 +1910,7 @@
         "url": "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz"
       }
     },
-    "nixpkgs_7": {
+    "nixpkgs_8": {
       "locked": {
         "lastModified": 1785747939,
         "narHash": "sha256-D740uKsMbgsfK2oaDenJLLPIZfq7W0/g4KN/Fls8eKs=",
@@ -1890,7 +1926,7 @@
         "type": "github"
       }
     },
-    "nixpkgs_8": {
+    "nixpkgs_9": {
       "locked": {
         "lastModified": 1773840656,
         "narHash": "sha256-9tpvMGFteZnd3gRQZFlRCohVpqooygFuy9yjuyRL2C0=",
@@ -2027,6 +2063,7 @@
         "home-manager": "home-manager",
         "horizon": "horizon",
         "ki-editor": "ki-editor",
+        "kiln": "kiln",
         "llm-agents": "llm-agents",
         "mercury-cli": "mercury-cli",
         "mics-skills": "mics-skills",
@@ -2038,13 +2075,13 @@
         "nixdelta": "nixdelta",
         "nixfmt-rs": "nixfmt-rs",
         "nixos-hardware": "nixos-hardware",
-        "nixpkgs": "nixpkgs_7",
+        "nixpkgs": "nixpkgs_8",
         "noctalia": "noctalia",
         "noctalia-plugins": "noctalia-plugins",
         "onix-wasm": "onix-wasm",
         "pinenote-nixos": "pinenote-nixos",
         "pre-commit-hooks-nix": "pre-commit-hooks-nix",
-        "rust-overlay": "rust-overlay_8",
+        "rust-overlay": "rust-overlay_9",
         "sops-nix": "sops-nix",
         "srvos": "srvos",
         "systems": "systems_7",
@@ -2081,6 +2118,29 @@
           "nickel-export",
           "cairn",
           "slotcar",
+          "cairn",
+          "slotcar",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1774235565,
+        "narHash": "sha256-D8OOwvq3zDDCtIhMcNueb9tGSZaZUanKpWDleRgQ80U=",
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "rev": "dc00324a2438762582b49954373112b8eab29cab",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "rust-overlay_10": {
+      "inputs": {
+        "nixpkgs": [
+          "tigerstyle",
           "cairn",
           "slotcar",
           "nixpkgs"
@@ -2216,6 +2276,27 @@
     "rust-overlay_7": {
       "inputs": {
         "nixpkgs": [
+          "kiln",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1786160316,
+        "narHash": "sha256-oLoc3ZLg1LX/S5Jb3v6MrF415AzDyC4vgeWy9UcYTQk=",
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "rev": "4e1c940c96560ceab7c547f89642231371a66646",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "rust-overlay_8": {
+      "inputs": {
+        "nixpkgs": [
           "niri",
           "nixpkgs"
         ]
@@ -2234,7 +2315,7 @@
         "type": "github"
       }
     },
-    "rust-overlay_8": {
+    "rust-overlay_9": {
       "inputs": {
         "nixpkgs": [
           "nixpkgs"
@@ -2246,29 +2327,6 @@
         "owner": "oxalica",
         "repo": "rust-overlay",
         "rev": "067959ef838c440558ca519cf08ca87f43c3db3a",
-        "type": "github"
-      },
-      "original": {
-        "owner": "oxalica",
-        "repo": "rust-overlay",
-        "type": "github"
-      }
-    },
-    "rust-overlay_9": {
-      "inputs": {
-        "nixpkgs": [
-          "tigerstyle",
-          "cairn",
-          "slotcar",
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1774235565,
-        "narHash": "sha256-D8OOwvq3zDDCtIhMcNueb9tGSZaZUanKpWDleRgQ80U=",
-        "owner": "oxalica",
-        "repo": "rust-overlay",
-        "rev": "dc00324a2438762582b49954373112b8eab29cab",
         "type": "github"
       },
       "original": {
@@ -2372,8 +2430,8 @@
         "crane": "crane_6",
         "dylint-src": "dylint-src_5",
         "flake-utils": "flake-utils_8",
-        "nixpkgs": "nixpkgs_8",
-        "rust-overlay": "rust-overlay_9"
+        "nixpkgs": "nixpkgs_9",
+        "rust-overlay": "rust-overlay_10"
       },
       "locked": {
         "lastModified": 1778903772,

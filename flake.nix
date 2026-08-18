@@ -234,6 +234,10 @@
         rust-overlay.follows = "rust-overlay";
       };
     };
+
+    kiln = {
+      url = "git+https://seed.radicle.garden/z2wsvXm5S2sJGvuV1k5JHiwi1PbKE.git?rev=36984e367eafd44c22d2b4f4f47121deb51eece3";
+    };
     musnix = {
       url = "github:musnix/musnix";
       inputs.nixpkgs.follows = "nixpkgs";

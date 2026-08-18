@@ -311,6 +311,38 @@ in
     };
 
     printing.enable = true;
+
+    # r[impl onix.radicle_ci.seaglass_kiln]
+    # r[impl onix.radicle_ci.seaglass_execute]
+    radicle.ci.broker = {
+      enable = true;
+      settings = {
+        adapters.kiln = {
+          command = "${
+            inputs.kiln.packages.${pkgs.stdenv.hostPlatform.system}.default
+          }/bin/kiln-adapter-radicle";
+          env = {
+            KILN_ADAPTER_PROTOCOL = "defelo";
+            KILN_REPORT_DIR = "/var/lib/radicle-ci/reports";
+            KILN_REPORT_BASE_URL = "https://ci.onix.computer/reports";
+            KILN_NIX = "${pkgs.nix}/bin/nix";
+          };
+        };
+        triggers = [
+          {
+            adapter = "kiln";
+            filters = [
+              {
+                And = [
+                  { HasFile = "flake.nix"; }
+                  "DefaultBranch"
+                ];
+              }
+            ];
+          }
+        ];
+      };
+    };
   };
 
   security = {
