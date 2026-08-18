@@ -13,8 +13,8 @@ let
   replicationCommand = replicationServiceConfig.ExecStart;
   seaglassRid = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
   seaglassRevision = "bea681be760e76a7e18a663df6ed38c2a9d0e1c6";
+  seaglassIdentityRevision = "34622578746c320714509e309233fc7df051d202";
   personalNodeId = "z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
-  managedNodeId = "z6MkkQCj5EczNiVzDzCkX9ewHNJ7NDEXSKbuRiS1x7o72yeG";
   privatePilotRid = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   expectedMaxRunTime = "2h";
   expectedConcurrentAdapters = 1;
@@ -82,8 +82,8 @@ in
       test -x ${lib.escapeShellArg replicationCommand}
       grep -F -- ${lib.escapeShellArg seaglassRid} ${lib.escapeShellArg replicationCommand} >/dev/null
       grep -F -- ${lib.escapeShellArg seaglassRevision} ${lib.escapeShellArg replicationCommand} >/dev/null
+      grep -F -- ${lib.escapeShellArg seaglassIdentityRevision} ${lib.escapeShellArg replicationCommand} >/dev/null
       grep -F -- ${lib.escapeShellArg personalNodeId} ${lib.escapeShellArg replicationCommand} >/dev/null
-      grep -F -- ${lib.escapeShellArg managedNodeId} ${lib.escapeShellArg replicationCommand} >/dev/null
       if grep -F -- ${lib.escapeShellArg privatePilotRid} ${lib.escapeShellArg replicationCommand} >/dev/null; then
         echo "private Seaglass replication must reject the unrelated pilot repository" >&2
         exit 1

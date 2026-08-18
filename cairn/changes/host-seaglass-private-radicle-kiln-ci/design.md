@@ -26,9 +26,10 @@ cannot bootstrap the first copy.
 
 A bounded one-shot service queries the supervised personal node through
 its existing control socket. It reads that node's operating-system-selected
-loopback address, authorizes only the reviewed managed node identity,
-connects the managed node to it, and runs native `rad seed --from`.
-The service then verifies the reviewed Seaglass commit
+loopback address, confirms that the repository identity authorizes only
+the reviewed managed node, connects the managed node to the source, and
+runs native `rad seed --from`. The service then verifies the reviewed
+Seaglass identity and commit
 inside managed storage. Its root authority is limited to read-only access
 to the personal Radicle home and the existing managed-node control path.
 It cannot bind a network listener.

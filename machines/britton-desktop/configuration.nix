@@ -35,10 +35,9 @@ let
   privateSeaglassRid = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
   privateSeaglassStorageName = lib.removePrefix "rad:" privateSeaglassRid;
   privateSeaglassRevision = "bea681be760e76a7e18a663df6ed38c2a9d0e1c6";
+  privateSeaglassIdentityRevision = "34622578746c320714509e309233fc7df051d202";
   personalRadicleHome = "/home/${personalRadicleUserName}/.radicle";
   personalRadicleNodeId = "z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
-  managedRadicleNodeId = "z6MkkQCj5EczNiVzDzCkX9ewHNJ7NDEXSKbuRiS1x7o72yeG";
-  managedRadicleFollowAlias = "britton-desktop-managed-seed";
   managedRadicleHome = "/var/lib/radicle";
   seaglassReplicationServiceName = "radicle-seaglass-replicate";
   seaglassReplicationAttempts = 24;
@@ -79,12 +78,6 @@ let
         exit 1
       fi
 
-      RAD_HOME=${lib.escapeShellArg personalRadicleHome} \
-        RAD_SOCKET=${lib.escapeShellArg "${personalRadicleHome}/node/control.sock"} \
-        rad follow \
-          --alias ${lib.escapeShellArg managedRadicleFollowAlias} \
-          ${lib.escapeShellArg managedRadicleNodeId}
-
       RAD_HOME=${lib.escapeShellArg managedRadicleHome} \
         rad node connect \
           --timeout ${lib.escapeShellArg seaglassReplicationConnectTimeout} \
@@ -100,6 +93,8 @@ let
       repository_path=${lib.escapeShellArg "${managedRadicleHome}/storage/${privateSeaglassStorageName}"}
       test -d "$repository_path"
       git --git-dir="$repository_path" cat-file -e ${lib.escapeShellArg "${privateSeaglassRevision}^{commit}"}
+      observed_identity="$(git --git-dir="$repository_path" rev-parse refs/rad/id)"
+      test "$observed_identity" = ${lib.escapeShellArg privateSeaglassIdentityRevision}
       echo "replicated the reviewed Seaglass revision into managed Radicle storage"
     '';
   };
