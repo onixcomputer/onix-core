@@ -5,7 +5,7 @@
 | Fact | Value |
 |---|---|
 | Host | `britton-desktop` |
-| System closure | `/nix/store/15axryvnq7krhz52lw11il1l9r0m8b9a-nixos-system-britton-desktop-26.11.20260803.104240a` |
+| System closure | `/nix/store/3aby9cqw9kvycic9z16kl55hy1xckrb6-nixos-system-britton-desktop-26.11.20260803.104240a` |
 | Broker | `radicle-ci-broker.service`, active |
 | Kiln package | `/nix/store/sq38b7ya66wff7c05k4xqhi87xdf16m1-kiln-0.1.0` |
 | Managed Radicle home | `/var/lib/radicle` |
