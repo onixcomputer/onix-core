@@ -172,3 +172,7 @@ new token limited to zone read and DNS edit would reduce desktop authority.
 The static policy check verifies the tailnet allowlist. The live
 public-address hairpin probe could not connect, so it did not independently
 exercise Traefik's HTTP `403` path from a non-tailnet source.
+
+Repository-wide Cairn validation remains blocked by
+`cairn.lifecycle_directory.migration_required`. The repository contains
+legacy `cairn/` content but no native `.cairn/` content.
