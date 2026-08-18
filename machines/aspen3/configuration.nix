@@ -3,6 +3,7 @@
   inputs,
   lib,
   pkgs,
+  self,
   ...
 }:
 let
@@ -187,5 +188,9 @@ in
   environment.systemPackages = with pkgs; [
     alsa-utils
     opentofu
+    # Keep the wrapped Herdr base on the accepted llm-agents provider so the
+    # interactive terminal gets the same plugin set as britton-desktop.
+    # r[impl onix.aspen3.herdr.wrapper.install]
+    self.packages.${pkgs.stdenv.hostPlatform.system}.herdr
   ];
 }

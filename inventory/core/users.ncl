@@ -78,6 +78,19 @@ let { ValidateUserRefs, .. } = import "user-contracts.ncl" in
       },
     },
 
+    # Aspen3 also gets the Herdr terminal plugin profile with its generated
+    # config.toml, matching the wired-binary install in the machine config.
+    hm-aspen3-herdr = {
+      module = { name = "home-manager-profiles", input = "self" },
+      roles.default = {
+        machines.aspen3 = {},
+        settings = {
+          username = "brittonr",
+          profiles = ["herdr"],
+        },
+      },
+    },
+
     # Desktop: interactive profiles plus personal Radicle supervision.
     hm-desktop = {
       module = { name = "home-manager-profiles", input = "self" },

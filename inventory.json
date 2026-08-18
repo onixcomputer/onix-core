@@ -5,7 +5,7 @@
     },
     "aspen3": {
       "deploy": {
-        "targetHost": "root@aspen3"
+        "targetHost": "root@100.108.13.4"
       }
     }
   }

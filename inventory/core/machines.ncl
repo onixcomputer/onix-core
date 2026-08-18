@@ -183,7 +183,10 @@ let { Machines, .. } = import "contracts.ncl" in
         "amd-gpu",
         "gaming",
       ],
-      deploy.targetHost = "root@aspen3",
+      # aspen3's tailscale device registers as `aspen3-1`; the bare `aspen3`
+      # name does not resolve to this host on the deploy LAN. Pin the deploy
+      # target to the same tailscale address the service mesh uses.
+      deploy.targetHost = "root@100.108.13.4",
     },
 
     # ========== Desktop ==========
