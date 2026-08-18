@@ -2,7 +2,7 @@
 
 - [x] [serial] Seed the Seaglass private RID with scope `all` into the Radicle storage that the `britton-desktop` CI broker watches. r[onix.radicle_ci.seaglass_acquire]
 - [x] [serial] Prove the adapter resolves the exact pushed revision from local Radicle storage without GitHub. r[onix.radicle_ci.seaglass_acquire]
-- [ ] [serial] Add a negative fixture proving an unseeded repository produces no broker run. r[onix.radicle_ci.seaglass_acquire]
+- [x] [serial] Add a negative fixture proving an unseeded repository produces no broker run. r[onix.radicle_ci.seaglass_acquire]
 
 ## Phase 2: Flake inputs
 

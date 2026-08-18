@@ -96,6 +96,14 @@ let
     && brokerServiceConfig.MemoryMax == expectedMemoryMax
     && brokerServiceConfig.CPUQuota == expectedCpuQuota;
   negativeRepositoryRejected = !(admitsRepository privatePilotRid);
+  # r[verify onix.radicle_ci.seaglass_acquire.rejected]
+  # A broker run requires storage presence AND trigger admission. A
+  # repository outside the admitted private set must fail admission, or
+  # the broker could start a run without any seeded object to execute.
+  unseededCandidates = [ privatePilotRid ];
+  unseededRunsRejected = builtins.foldl' (
+    acc: rid: acc && !(admitsRepository rid)
+  ) true unseededCandidates;
   reportServingPolicyValid =
     reportServerConfig.User == expectedReportUser
     && reportServerConfig.Group == expectedReportGroup
@@ -143,6 +151,8 @@ in
       "Seaglass Kiln CI settings do not match the reviewed adapter, trigger, or resource policy";
     assert lib.assertMsg negativeRepositoryRejected
       "the Kiln trigger must reject the non-Seaglass private pilot repository";
+    assert lib.assertMsg unseededRunsRejected
+      "an unseeded repository must not be admitted by the broker trigger, so it produces no broker run";
     assert lib.assertMsg reportServingPolicyValid
       "Seaglass report serving lost its loopback backend, tailnet route, or read-only service boundary";
     assert lib.assertMsg negativeReportExposureRejected
@@ -172,10 +182,22 @@ in
       grep -F -- ${lib.escapeShellArg seaglassRevision} ${lib.escapeShellArg replicationCommand} >/dev/null
       grep -F -- ${lib.escapeShellArg seaglassIdentityRevision} ${lib.escapeShellArg replicationCommand} >/dev/null
       grep -F -- ${lib.escapeShellArg personalNodeId} ${lib.escapeShellArg replicationCommand} >/dev/null
-      if grep -F -- ${lib.escapeShellArg privatePilotRid} ${lib.escapeShellArg replicationCommand} >/dev/null; then
-        echo "private Seaglass replication must reject the unrelated pilot repository" >&2
+      # Negative fixture: an unseeded repository produces no broker run.
+      # The broker needs storage presence AND trigger admission. The
+      # replication writer is the only path into the broker-watched
+      # storage, so it must seed exactly one repository and never copy a
+      # candidate outside the admitted set.
+      seed_invocations="$(grep -c 'rad seed' ${lib.escapeShellArg replicationCommand} || true)"
+      if test "$seed_invocations" -ne 1; then
+        echo "managed storage writer must seed exactly one repository" >&2
         exit 1
       fi
+      for candidate in ${lib.escapeShellArg privatePilotRid}; do
+        if grep -Fq -- "$candidate" ${lib.escapeShellArg replicationCommand}; then
+          echo "an unseeded repository was copied into managed broker storage: $candidate" >&2
+          exit 1
+        fi
+      done
       touch "$out"
     '';
 }
