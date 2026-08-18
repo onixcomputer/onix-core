@@ -20,12 +20,22 @@ Radicle storage the broker service uses. The adapter resolves
 involved.
 
 The deployment seeds the private Seaglass RID with scope `all` into
-that `britton-desktop` Radicle storage. After seeding, acquisition never
-needs GitHub or a public Radicle seed.
+that `britton-desktop` Radicle storage. Private repositories do not enter
+normal public inventory announcements, so policy reconciliation alone
+cannot bootstrap the first copy.
 
-A private seed HTTP Git endpoint is intentionally out of scope. It is
-useful only when a machine or flake consumes Seaglass as an input, which
-this change does not do.
+A bounded one-shot service queries the supervised personal node through
+its existing control socket. It reads that node's operating-system-selected
+loopback address, connects the managed node to it, and runs native
+`rad seed --from`. The service then verifies the reviewed Seaglass commit
+inside managed storage. Its root authority is limited to read-only access
+to the personal Radicle home and the existing managed-node control path.
+It cannot bind a network listener.
+
+After this first native replication, acquisition never needs GitHub or a
+public Radicle seed. A private seed HTTP Git endpoint is intentionally out
+of scope. It is useful only when a machine or flake consumes Seaglass as
+an input, which this change does not do.
 
 ## Control plane and execution split
 

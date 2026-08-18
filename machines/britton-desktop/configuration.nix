@@ -33,6 +33,68 @@ let
   managedRadicleNodePort = config.services.radicle.node.listenPort;
   managedRadicleNodeBindRule = "tcp:${toString managedRadicleNodePort}";
   privateSeaglassRid = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
+  privateSeaglassStorageName = lib.removePrefix "rad:" privateSeaglassRid;
+  privateSeaglassRevision = "bea681be760e76a7e18a663df6ed38c2a9d0e1c6";
+  personalRadicleHome = "/home/${personalRadicleUserName}/.radicle";
+  personalRadicleNodeId = "z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
+  managedRadicleHome = "/var/lib/radicle";
+  seaglassReplicationServiceName = "radicle-seaglass-replicate";
+  seaglassReplicationAttempts = 24;
+  seaglassReplicationRetryDelay = 5;
+  seaglassReplicationConnectTimeout = "30s";
+  seaglassReplicationFetchTimeout = "2min";
+  seaglassReplicationCommand = pkgs.writeShellApplication {
+    name = "radicle-seaglass-replicate";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.gitMinimal
+      pkgs.gnused
+      pkgs.radicle-node
+    ];
+    text = ''
+      attempt=1
+      personal_address=""
+      while [ "$attempt" -le ${toString seaglassReplicationAttempts} ]; do
+        node_status="$(
+          RAD_HOME=${lib.escapeShellArg personalRadicleHome} \
+          RAD_SOCKET=${lib.escapeShellArg "${personalRadicleHome}/node/control.sock"} \
+          rad node status 2>/dev/null || true
+        )"
+        personal_address="$(
+          printf '%s\n' "$node_status" \
+            | sed -nE 's/.*listening for inbound connections on ([^ ]+)\.$/\1/p' \
+            | tail -n 1
+        )"
+        if [ -n "$personal_address" ]; then
+          break
+        fi
+        sleep ${toString seaglassReplicationRetryDelay}
+        attempt=$((attempt + 1))
+      done
+
+      if [ -z "$personal_address" ]; then
+        echo "personal Radicle node address did not become available" >&2
+        exit 1
+      fi
+
+      RAD_HOME=${lib.escapeShellArg managedRadicleHome} \
+        rad node connect \
+          --timeout ${lib.escapeShellArg seaglassReplicationConnectTimeout} \
+          ${lib.escapeShellArg personalRadicleNodeId}@"$personal_address"
+
+      RAD_HOME=${lib.escapeShellArg managedRadicleHome} \
+        rad seed \
+          --scope all \
+          --from ${lib.escapeShellArg personalRadicleNodeId} \
+          --timeout ${lib.escapeShellArg seaglassReplicationFetchTimeout} \
+          ${lib.escapeShellArg privateSeaglassRid}
+
+      repository_path=${lib.escapeShellArg "${managedRadicleHome}/storage/${privateSeaglassStorageName}"}
+      test -d "$repository_path"
+      git --git-dir="$repository_path" cat-file -e ${lib.escapeShellArg "${privateSeaglassRevision}^{commit}"}
+      echo "replicated the reviewed Seaglass revision into managed Radicle storage"
+    '';
+  };
   kilnMaxRunTime = "2h";
   kilnConcurrentAdapters = 1;
   bytesPerMebibyte = 1024 * 1024;
@@ -398,6 +460,66 @@ in
       radicle-ci-broker.serviceConfig = {
         MemoryMax = kilnMemoryMax;
         CPUQuota = kilnCpuQuota;
+      };
+
+      ${seaglassReplicationServiceName} = {
+        description = "Replicate private Seaglass source into managed Radicle storage";
+        after = [
+          "home-manager-${personalRadicleUserName}.service"
+          "network-online.target"
+          "radicle-node.service"
+        ];
+        wants = [
+          "home-manager-${personalRadicleUserName}.service"
+          "network-online.target"
+        ];
+        requires = [ "radicle-node.service" ];
+        wantedBy = [ "multi-user.target" ];
+        restartTriggers = [ seaglassReplicationCommand ];
+        unitConfig.RequiresMountsFor = managedRadicleHome;
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = lib.getExe seaglassReplicationCommand;
+          RemainAfterExit = true;
+          User = "root";
+          Group = "root";
+          WorkingDirectory = managedRadicleHome;
+          BindReadOnlyPaths =
+            config.systemd.services.radicle-policy-reconcile.serviceConfig.BindReadOnlyPaths;
+          ReadWritePaths = [ managedRadicleHome ];
+          AmbientCapabilities = [
+            "CAP_DAC_OVERRIDE"
+            "CAP_DAC_READ_SEARCH"
+          ];
+          CapabilityBoundingSet = [
+            "CAP_DAC_OVERRIDE"
+            "CAP_DAC_READ_SEARCH"
+          ];
+          InaccessiblePaths = [ "/run/secrets" ];
+          LockPersonality = true;
+          NoNewPrivileges = true;
+          PrivateDevices = true;
+          PrivateTmp = true;
+          ProtectClock = true;
+          ProtectControlGroups = true;
+          ProtectHome = "read-only";
+          ProtectHostname = true;
+          ProtectKernelLogs = true;
+          ProtectKernelModules = true;
+          ProtectKernelTunables = true;
+          ProtectSystem = "strict";
+          RemoveIPC = true;
+          RestrictAddressFamilies = [
+            "AF_INET"
+            "AF_UNIX"
+          ];
+          RestrictNamespaces = true;
+          RestrictRealtime = true;
+          RestrictSUIDSGID = true;
+          SocketBindDeny = "any";
+          SystemCallArchitectures = "native";
+          UMask = "0077";
+        };
       };
 
       # r[impl onix.tenstorrent.model_performance.managed_benchmark]
