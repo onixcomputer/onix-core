@@ -1,6 +1,6 @@
 ## Phase 1: CI-node replication
 
-- [ ] [serial] Seed the Seaglass private RID with scope `all` into the Radicle storage that the `britton-desktop` CI broker watches. r[onix.radicle_ci.seaglass_acquire]
+- [x] [serial] Seed the Seaglass private RID with scope `all` into the Radicle storage that the `britton-desktop` CI broker watches. r[onix.radicle_ci.seaglass_acquire]
 - [x] [serial] Prove the adapter resolves the exact pushed revision from local Radicle storage without GitHub. r[onix.radicle_ci.seaglass_acquire]
 - [ ] [serial] Add a negative fixture proving an unseeded repository produces no broker run. r[onix.radicle_ci.seaglass_acquire]
 
@@ -10,8 +10,8 @@
 
 ## Phase 3: Kiln and broker deployment
 
-- [ ] [serial] Package and deploy the Kiln Radicle adapter and bind every accepted trigger to one Kiln run identity. r[onix.radicle_ci.seaglass_kiln]
-- [ ] [serial] Deploy the Radicle CI broker with the Seaglass trigger filter and the Nix adapter executor. r[onix.radicle_ci.seaglass_execute]
+- [x] [serial] Package and deploy the Kiln Radicle adapter and bind every accepted trigger to one Kiln run identity. r[onix.radicle_ci.seaglass_kiln]
+- [x] [serial] Deploy the Radicle CI broker with the Seaglass trigger filter and the Nix adapter executor. r[onix.radicle_ci.seaglass_execute]
 - [x] [serial] Add positive and negative adapter fixtures for malformed, unknown-version, and oversized triggers. r[onix.radicle_ci.seaglass_kiln]
 - [ ] [serial] Bound executor memory, CPU, output, and timeout with systemd and record the bound in evidence. r[onix.radicle_ci.seaglass_execute]
 
