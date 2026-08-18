@@ -410,25 +410,48 @@ in
                   ];
                   text = ''
                     CF_TOKEN=$(cat ${cloudflareTokenFile})
-                    ZONE_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${domain}" \
-                      -H "Authorization: Bearer $CF_TOKEN" \
-                      -H "Content-Type: application/json" | jq -r '.result[0].id')
+                    ZONE_RESPONSE=$(curl --silent --show-error --request GET \
+                      "https://api.cloudflare.com/client/v4/zones?name=${domain}" \
+                      --header "Authorization: Bearer $CF_TOKEN" \
+                      --header "Content-Type: application/json")
+                    if [ "$(printf '%s' "$ZONE_RESPONSE" | jq -r '.success')" != "true" ]; then
+                      echo "Cloudflare zone lookup failed" >&2
+                      printf '%s' "$ZONE_RESPONSE" | jq -c '.errors' >&2
+                      exit 1
+                    fi
+                    ZONE_ID=$(printf '%s' "$ZONE_RESPONSE" | jq -r '.result[0].id // empty')
+                    if [ -z "$ZONE_ID" ]; then
+                      echo "Cloudflare zone lookup returned no zone for ${domain}" >&2
+                      exit 1
+                    fi
 
                     CURRENT_IP=$(${ipSourceCmd})
                     for subdomain in ${lib.concatStringsSep " " subdomainsList}; do
                       echo "Checking if $subdomain.${domain} exists..."
 
-                      RECORD_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=A&name=$subdomain.${domain}" \
-                        -H "Authorization: Bearer $CF_TOKEN" \
-                        -H "Content-Type: application/json" | jq -r '.result[0].id // empty')
+                      RECORD_RESPONSE=$(curl --silent --show-error --request GET \
+                        "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=A&name=$subdomain.${domain}" \
+                        --header "Authorization: Bearer $CF_TOKEN" \
+                        --header "Content-Type: application/json")
+                      if [ "$(printf '%s' "$RECORD_RESPONSE" | jq -r '.success')" != "true" ]; then
+                        echo "Cloudflare DNS record lookup failed for $subdomain.${domain}" >&2
+                        printf '%s' "$RECORD_RESPONSE" | jq -c '.errors' >&2
+                        exit 1
+                      fi
+                      RECORD_ID=$(printf '%s' "$RECORD_RESPONSE" | jq -r '.result[0].id // empty')
 
                       if [ -z "$RECORD_ID" ]; then
                         echo "Creating DNS record for $subdomain.${domain} → $CURRENT_IP"
-                        curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
-                          -H "Authorization: Bearer $CF_TOKEN" \
-                          -H "Content-Type: application/json" \
-                          --data "{\"type\":\"A\",\"name\":\"$subdomain.${domain}\",\"content\":\"$CURRENT_IP\",\"ttl\":1,\"proxied\":false}" \
-                          | jq -r '.success'
+                        CREATE_RESPONSE=$(curl --silent --show-error --request POST \
+                          "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
+                          --header "Authorization: Bearer $CF_TOKEN" \
+                          --header "Content-Type: application/json" \
+                          --data "{\"type\":\"A\",\"name\":\"$subdomain.${domain}\",\"content\":\"$CURRENT_IP\",\"ttl\":1,\"proxied\":false}")
+                        if [ "$(printf '%s' "$CREATE_RESPONSE" | jq -r '.success')" != "true" ]; then
+                          echo "Cloudflare DNS record creation failed for $subdomain.${domain}" >&2
+                          printf '%s' "$CREATE_RESPONSE" | jq -c '.errors' >&2
+                          exit 1
+                        fi
                       else
                         echo "DNS record for $subdomain.${domain} already exists"
                       fi

@@ -166,6 +166,8 @@ in
       fi
       test -x ${lib.escapeShellArg ddclientPrivateCommand}
       grep -F -- ${lib.escapeShellArg expectedReportHostname} ${lib.escapeShellArg ddclientPrivateCommand} >/dev/null
+      grep -F -- "Cloudflare zone lookup failed" ${lib.escapeShellArg ddclientPrivateCommand} >/dev/null
+      grep -F -- "Cloudflare DNS record creation failed" ${lib.escapeShellArg ddclientPrivateCommand} >/dev/null
       grep -F -- ${lib.escapeShellArg seaglassRid} ${lib.escapeShellArg replicationCommand} >/dev/null
       grep -F -- ${lib.escapeShellArg seaglassRevision} ${lib.escapeShellArg replicationCommand} >/dev/null
       grep -F -- ${lib.escapeShellArg seaglassIdentityRevision} ${lib.escapeShellArg replicationCommand} >/dev/null
