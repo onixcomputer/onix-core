@@ -129,6 +129,23 @@ let
   kilnMaxOutputBytes = kilnMaxOutputMebibytes * bytesPerMebibyte;
   kilnMemoryMax = "24G";
   kilnCpuQuota = "800%";
+  kilnReportDirectory = "/var/lib/radicle-ci/reports";
+  kilnReportHostname = "ci.onix.computer";
+  kilnReportUrlPrefix = "/reports";
+  kilnReportBaseUrl = "https://${kilnReportHostname}${kilnReportUrlPrefix}";
+  kilnReportServerName = "radicle-ci-reports";
+  kilnReportServerBindAddress = "127.0.0.1";
+  kilnReportServerPort = 8990;
+  kilnReportServerUser = "radicle";
+  kilnReportServerGroup = "radicle";
+  kilnReportServerRestartDelay = "5s";
+  kilnReportServerMemoryMax = "256M";
+  kilnReportServerCpuQuota = "100%";
+  kilnReportTailnetSourceRange = "100.64.0.0/10";
+  kilnReportStripPrefixMiddleware = "${kilnReportServerName}-strip-prefix";
+  kilnReportTailnetMiddleware = "${kilnReportServerName}-tailnet-only";
+  kilnReportRouterRule = "Host(`${kilnReportHostname}`) && (Path(`${kilnReportUrlPrefix}`) || PathPrefix(`${kilnReportUrlPrefix}/`))";
+  kilnReportBackendUrl = "http://${kilnReportServerBindAddress}:${toString kilnReportServerPort}";
 
   llamaCpuPkg = pkgs.llama-cpp;
   supraStateDirectory = "llamacpp-server-supra-router";
@@ -411,6 +428,27 @@ in
 
     # r[impl onix.radicle_ci.seaglass_kiln]
     # r[impl onix.radicle_ci.seaglass_execute]
+    traefik.dynamicConfigOptions.http = {
+      routers.${kilnReportServerName} = {
+        rule = kilnReportRouterRule;
+        service = kilnReportServerName;
+        entryPoints = [ "websecure" ];
+        middlewares = [
+          kilnReportTailnetMiddleware
+          kilnReportStripPrefixMiddleware
+          "security-headers"
+        ];
+        tls.certResolver = "letsencrypt";
+      };
+      services.${kilnReportServerName}.loadBalancer.servers = [
+        { url = kilnReportBackendUrl; }
+      ];
+      middlewares = {
+        ${kilnReportTailnetMiddleware}.ipAllowList.sourceRange = [ kilnReportTailnetSourceRange ];
+        ${kilnReportStripPrefixMiddleware}.stripPrefix.prefixes = [ kilnReportUrlPrefix ];
+      };
+    };
+
     radicle.ci.broker = {
       enable = true;
       settings = {
@@ -422,8 +460,8 @@ in
           }/bin/kiln-adapter-radicle";
           env = {
             KILN_ADAPTER_PROTOCOL = "defelo";
-            KILN_REPORT_DIR = "/var/lib/radicle-ci/reports";
-            KILN_REPORT_BASE_URL = "https://ci.onix.computer/reports";
+            KILN_REPORT_DIR = kilnReportDirectory;
+            KILN_REPORT_BASE_URL = kilnReportBaseUrl;
             KILN_NIX = lib.getExe kilnNixCommand;
             KILN_MAX_OUTPUT_BYTES = toString kilnMaxOutputBytes;
             PATH = kilnExecutablePath;
@@ -488,6 +526,61 @@ in
       radicle-ci-broker.serviceConfig = {
         MemoryMax = kilnMemoryMax;
         CPUQuota = kilnCpuQuota;
+      };
+
+      ${kilnReportServerName} = {
+        description = "Serve private Radicle CI reports through the local Traefik backend";
+        after = [ "radicle-ci-broker.service" ];
+        requires = [ "radicle-ci-broker.service" ];
+        wantedBy = [ "multi-user.target" ];
+        unitConfig.RequiresMountsFor = kilnReportDirectory;
+        serviceConfig = {
+          ExecStart = ''
+            ${lib.getExe pkgs.static-web-server} \
+              --host ${kilnReportServerBindAddress} \
+              --port ${toString kilnReportServerPort} \
+              --root ${kilnReportDirectory} \
+              --log-level info \
+              --directory-listing false \
+              --disable-symlinks true \
+              --ignore-hidden-files true
+          '';
+          User = kilnReportServerUser;
+          Group = kilnReportServerGroup;
+          WorkingDirectory = kilnReportDirectory;
+          Restart = "on-failure";
+          RestartSec = kilnReportServerRestartDelay;
+          MemoryMax = kilnReportServerMemoryMax;
+          CPUQuota = kilnReportServerCpuQuota;
+          AmbientCapabilities = "";
+          CapabilityBoundingSet = "";
+          IPAddressAllow = [ "localhost" ];
+          IPAddressDeny = [ "any" ];
+          LockPersonality = true;
+          MemoryDenyWriteExecute = true;
+          NoNewPrivileges = true;
+          PrivateDevices = true;
+          PrivateTmp = true;
+          ProtectClock = true;
+          ProtectControlGroups = true;
+          ProtectHome = true;
+          ProtectHostname = true;
+          ProtectKernelLogs = true;
+          ProtectKernelModules = true;
+          ProtectKernelTunables = true;
+          ProtectSystem = "strict";
+          ReadOnlyPaths = [ kilnReportDirectory ];
+          RemoveIPC = true;
+          RestrictAddressFamilies = [
+            "AF_INET"
+            "AF_UNIX"
+          ];
+          RestrictNamespaces = true;
+          RestrictRealtime = true;
+          RestrictSUIDSGID = true;
+          SystemCallArchitectures = "native";
+          UMask = "0077";
+        };
       };
 
       ${seaglassReplicationServiceName} = {

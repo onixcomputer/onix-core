@@ -176,6 +176,7 @@ let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
               public = false,
             },
           },
+          additionalSubdomains = ["ci"],
           tailscaleSSH = true,
           tailscaleExitNode = false,
           traefikDashboard = true,
