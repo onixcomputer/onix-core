@@ -99,6 +99,10 @@ let
     '';
   };
   kilnMaxRunTime = "2h";
+  kilnExecutablePath = lib.makeBinPath [
+    pkgs.coreutils
+    pkgs.gitMinimal
+  ];
   kilnConcurrentAdapters = 1;
   bytesPerMebibyte = 1024 * 1024;
   kilnMaxOutputMebibytes = 8;
@@ -402,6 +406,7 @@ in
             KILN_REPORT_BASE_URL = "https://ci.onix.computer/reports";
             KILN_NIX = "${pkgs.nix}/bin/nix";
             KILN_MAX_OUTPUT_BYTES = toString kilnMaxOutputBytes;
+            PATH = kilnExecutablePath;
           };
         };
         triggers = [

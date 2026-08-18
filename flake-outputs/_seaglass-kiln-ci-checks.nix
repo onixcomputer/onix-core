@@ -17,6 +17,10 @@ let
   personalNodeId = "z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
   privatePilotRid = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   expectedMaxRunTime = "2h";
+  expectedKilnPath = lib.makeBinPath [
+    pkgs.coreutils
+    pkgs.gitMinimal
+  ];
   expectedConcurrentAdapters = 1;
   bytesPerMebibyte = 1024 * 1024;
   expectedMaxOutputMebibytes = 8;
@@ -51,6 +55,7 @@ let
     brokerSettings.adapters.kiln.command == expectedAdapterCommand
     && brokerSettings.adapters.kiln.env.KILN_ADAPTER_PROTOCOL == "defelo"
     && brokerSettings.adapters.kiln.env.KILN_MAX_OUTPUT_BYTES == toString expectedMaxOutputBytes
+    && brokerSettings.adapters.kiln.env.PATH == expectedKilnPath
     && brokerSettings.max_run_time == expectedMaxRunTime
     && brokerSettings.concurrent_adapters == expectedConcurrentAdapters
     && kilnTriggers == [ expectedTrigger ]
