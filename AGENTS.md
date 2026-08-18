@@ -1,7 +1,7 @@
 # Agent Notes
 
 ## Cairn lifecycle
-- Use native Cairn lifecycle artifacts under `cairn/` for planning and change tracking in this repo. Do not create or update OpenSpec artifacts unless the user explicitly asks for migration/compatibility work.
+- Use native Cairn lifecycle artifacts under `.cairn/` for planning and change tracking in this repo. Do not create or update OpenSpec artifacts unless the user explicitly asks for migration/compatibility work.
 - Use `/home/brittonr/git/cairn` as the local Cairn source checkout. It should authenticate to the canonical project `https://github.com/OnixResearch/cairn` via the SSH remote `git@github.com:OnixResearch/cairn.git`.
 - Validate with `nix run path:/home/brittonr/git/cairn#cairn -- validate --root /home/brittonr/git/onix-core --policy /home/brittonr/git/cairn/cairn-policy/generated/cairn-policy.json`.
 

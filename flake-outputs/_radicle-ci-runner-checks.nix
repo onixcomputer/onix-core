@@ -113,7 +113,7 @@ let
   deploymentReceipt = wasm.evalNickelFile deploymentReceiptSource;
   deploymentReceiptJson = builtins.fromJSON (builtins.readFile deploymentReceiptJsonPath);
   deploymentReceiptExpectedHash = lib.removeSuffix "\n" (builtins.readFile deploymentReceiptHashPath);
-  archivedCiEvidence = ../cairn/archive/2026-07-25-deploy-radicle-forge-ci-runner/evidence;
+  archivedCiEvidence = ../.cairn/archive/2026-07-25-deploy-radicle-forge-ci-runner/evidence;
   patchEventPath = archivedCiEvidence + "/patch-event-v1.json";
   patchResultPath = archivedCiEvidence + "/patch-result-v1.json";
   patchArtifactPath = archivedCiEvidence + "/patch-artifact-v1.json";
