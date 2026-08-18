@@ -112,6 +112,51 @@ The bounded report records the exact revision and terminal success:
 `finished`, with result `success`, the same commit, Kiln run, and Radicle
 job identity.
 
+## Private report serving
+
+Onix-core commits `04b13d7f` and `a0642926` added and deployed private
+report serving. The final system closure is:
+
+```text
+/nix/store/ahrk9xgv59lkms91rm831z612fhm2d5c-nixos-system-britton-desktop-26.11.20260803.104240a
+```
+
+The `radicle-ci-reports` service runs as `radicle` and reads the retained
+report directory through a read-only systemd boundary. It binds only
+`127.0.0.1:8990`. The backend port is absent from the global firewall
+list. The unit has a `256M` memory limit and a `100%` CPU quota.
+
+Traefik accepts only `ci.onix.computer` paths equal to `/reports` or below
+`/reports/`. It applies the `100.64.0.0/10` tailnet source allowlist before
+it strips the prefix. The route then applies the shared security headers.
+The DNS A record points to the managed tailnet address `100.110.43.11`.
+
+The original desktop Cloudflare token was stale. Cloudflare returned error
+`9109`, `Invalid access token`. The deployment reused an existing valid,
+owner-managed token from onix-core and re-encrypted it for the desktop
+recipients. The DNS script now fails if Cloudflare rejects the zone
+lookup, record lookup, or record creation. It no longer reports a false
+successful service start after a rejected update.
+
+A strict TLS request to this exact URL returned the retained success
+report without `--insecure` or a local hostname override:
+
+```text
+https://ci.onix.computer/reports/z3xXXCQXCTquvAawh41YYs8yC8xmk/kiln-44ed329b-1787068902888322241.json
+```
+
+The observed route results were:
+
+| Probe | Result |
+|---|---|
+| Report index | HTTP `200` |
+| Exact JSON report | HTTP `200` with revision `44ed329b09e472aa12866c8dceedbfb3526b25a1` |
+| Missing report | HTTP `404` |
+| Host path outside `/reports` | HTTP `404` |
+
+The node, broker, report server, Traefik, and private DNS service were all
+active after deployment.
+
 ## Non-claims
 
 The passing full flake run proves the relation between the pushed commit
@@ -120,4 +165,10 @@ open until they become flake checks.
 
 The configured cgroup covers the broker, adapter, and Nix client. It does
 not prove that local Nix daemon workers or remote builders share the same
-memory cgroup. Report serving at `ci.onix.computer` also remains open.
+memory cgroup.
+
+The reused Cloudflare token also has Cloudflare Tunnel edit authority. A
+new token limited to zone read and DNS edit would reduce desktop authority.
+The static policy check verifies the tailnet allowlist. The live
+public-address hairpin probe could not connect, so it did not independently
+exercise Traefik's HTTP `403` path from a non-tailnet source.

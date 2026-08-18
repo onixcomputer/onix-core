@@ -12,6 +12,7 @@
 
 - [x] [serial] Package and deploy the Kiln Radicle adapter and bind every accepted trigger to one Kiln run identity. r[onix.radicle_ci.seaglass_kiln]
 - [x] [serial] Deploy the Radicle CI broker with the Seaglass trigger filter and the Nix adapter executor. r[onix.radicle_ci.seaglass_execute]
+- [x] [serial] Serve retained broker and Kiln reports through tailnet-only HTTPS with a read-only loopback backend. r[onix.radicle_ci.seaglass_execute]
 - [x] [serial] Add positive and negative adapter fixtures for malformed, unknown-version, and oversized triggers. r[onix.radicle_ci.seaglass_kiln]
 - [ ] [serial] Bound executor memory, CPU, output, and timeout with systemd and record the bound in evidence. r[onix.radicle_ci.seaglass_execute]
 

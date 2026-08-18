@@ -80,6 +80,18 @@ that local Nix daemon workers or remote builders share the same memory
 cgroup. Full executor memory isolation remains open until the build
 execution boundary supplies enforceable per-run limits.
 
+## Report serving boundary
+
+A dedicated `radicle-ci-reports` process serves only the broker report
+directory. It runs as `radicle`, mounts that directory read-only, and
+binds a loopback socket. It cannot open a public backend port.
+
+Traefik owns HTTPS termination and path routing. The report router accepts
+only `/reports` paths for `ci.onix.computer`, rejects sources outside the
+tailnet range, strips the public prefix, and forwards to the loopback
+process. Private DNS points the hostname to the managed tailnet address.
+The DNS update shell fails closed on every rejected Cloudflare operation.
+
 ## Seaglass flake parity
 
 GitHub Actions currently runs rails that are not flake checks. The
