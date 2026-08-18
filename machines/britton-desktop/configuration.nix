@@ -37,6 +37,8 @@ let
   privateSeaglassRevision = "bea681be760e76a7e18a663df6ed38c2a9d0e1c6";
   personalRadicleHome = "/home/${personalRadicleUserName}/.radicle";
   personalRadicleNodeId = "z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
+  managedRadicleNodeId = "z6MkkQCj5EczNiVzDzCkX9ewHNJ7NDEXSKbuRiS1x7o72yeG";
+  managedRadicleFollowAlias = "britton-desktop-managed-seed";
   managedRadicleHome = "/var/lib/radicle";
   seaglassReplicationServiceName = "radicle-seaglass-replicate";
   seaglassReplicationAttempts = 24;
@@ -76,6 +78,12 @@ let
         echo "personal Radicle node address did not become available" >&2
         exit 1
       fi
+
+      RAD_HOME=${lib.escapeShellArg personalRadicleHome} \
+        RAD_SOCKET=${lib.escapeShellArg "${personalRadicleHome}/node/control.sock"} \
+        rad follow \
+          --alias ${lib.escapeShellArg managedRadicleFollowAlias} \
+          ${lib.escapeShellArg managedRadicleNodeId}
 
       RAD_HOME=${lib.escapeShellArg managedRadicleHome} \
         rad node connect \
