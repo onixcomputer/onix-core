@@ -1,13 +1,12 @@
-## Phase 1: Private seed and acquisition
+## Phase 1: CI-node replication
 
-- [ ] [serial] Admit the Seaglass private RID to the desktop seed admission and seed it with scope `all`. r[onix.radicle_ci.seaglass_acquire]
-- [ ] [serial] Enable the private seed HTTP Git endpoint on `britton-desktop` and prove `git ls-remote` resolves the exact reviewed Seaglass commit. r[onix.radicle_ci.seaglass_acquire]
-- [ ] [serial] Add a negative fixture proving an undeclared repository is rejected by the private HTTP endpoint. r[onix.radicle_ci.seaglass_acquire]
+- [ ] [serial] Seed the Seaglass private RID with scope `all` into the Radicle storage that the `britton-desktop` CI broker watches. r[onix.radicle_ci.seaglass_acquire]
+- [ ] [serial] Prove the adapter resolves the exact pushed revision from local Radicle storage without GitHub. r[onix.radicle_ci.seaglass_acquire]
+- [ ] [serial] Add a negative fixture proving an unseeded repository produces no broker run. r[onix.radicle_ci.seaglass_acquire]
 
 ## Phase 2: Flake inputs
 
 - [ ] [serial] Add the `kiln` flake input from the public Radicle RID at a reviewed revision. r[onix.radicle_ci.seaglass_kiln]
-- [ ] [serial] Add the `seaglass` flake input from the private seed at the reviewed revision. r[onix.radicle_ci.seaglass_acquire]
 
 ## Phase 3: Kiln and broker deployment
 

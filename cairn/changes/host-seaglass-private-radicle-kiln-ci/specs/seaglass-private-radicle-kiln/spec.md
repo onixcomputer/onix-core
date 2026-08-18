@@ -9,31 +9,33 @@ boundary.
 
 ## ADDED Requirements
 
-### Requirement: Private repository acquisition through the desktop seed
+### Requirement: Exact revision available to the CI adapter
 
-r[onix.radicle_ci.seaglass_acquire] `onix-core` MUST make the private
-Seaglass repository at RID `rad:z3xXXCQXCTquvAawh41YYs8yC8xmk`
-reachable to local Nix flake evaluation through a `britton-desktop`
-private seed HTTP Git endpoint, and MUST keep undeclared and public-only
-repositories out of that endpoint.
+r[onix.radicle_ci.seaglass_acquire] `onix-core` MUST make the exact
+pushed revision of the private Seaglass repository at RID
+`rad:z3xXXCQXCTquvAawh41YYs8yC8xmk` available to the CI adapters from
+the `britton-desktop` Radicle storage that the broker service uses,
+without acquiring the repository from GitHub or a public Radicle seed.
 
-#### Scenario: Exact private master is acquired over HTTP
+#### Scenario: Exact revision is acquired from local storage
 
 r[onix.radicle_ci.seaglass_acquire.accepted]
-- GIVEN the private Seaglass RID is admitted to the desktop seed with
-  scope `all` and the private seed HTTP endpoint is active
-- WHEN an independent client runs `git ls-remote` against the private
-  seed HTTP URL and Nix evaluates `git+https://<desktop>/<rid>.git`
-- THEN both paths MUST resolve the exact reviewed Seaglass commit
+- GIVEN the private Seaglass RID is seeded with scope `all` into the
+  Radicle storage used by the `britton-desktop` CI broker
+- WHEN a push carries a new exact revision and the adapter resolves
+  `git+file://$RAD_HOME/storage/$rid?rev=$oid` in the broker service
+  environment
+- THEN the adapter MUST build against that exact revision
 - AND the acquisition MUST not depend on GitHub or a public Radicle seed
 
-#### Scenario: Undeclared repository reaches the private endpoint
+#### Scenario: Unseeded repository yields no run
 
 r[onix.radicle_ci.seaglass_acquire.rejected]
-- GIVEN the private seed HTTP endpoint receives a request for a repo
-  that is not in the admitted private set
-- WHEN the request reaches the HTTP boundary
-- THEN the request MUST fail without exposing repository contents
+- GIVEN a private repository is not present in the broker-watched
+  Radicle storage or is outside the admitted private set
+- WHEN the broker considers a trigger for that repository
+- THEN the broker MUST not start a spurious run or expose repository
+  contents beyond the admitted set
 
 ### Requirement: First deployed Kiln control-plane consumer
 

@@ -20,13 +20,10 @@ and execution wiring owned by `onix-core`.
 ## What Changes
 
 - Add `kiln` as a flake input from its public Radicle RID at a reviewed
-  revision.
-- Add `seaglass` as a flake input from the private Radicle RID, acquired
-  through the `britton-desktop` private seed HTTP endpoint.
-- Enable the private seed HTTP Git endpoint so Nix can acquire the
-  private repository over the smart HTTP transport.
-- Add the Seaglass RID to the private seed admission and replicate it on
-  the desktop seed nodes with scope `all`.
+  revision. This input exists because `onix-core` must package and deploy
+  the Kiln adapter binary.
+- Seed the Seaglass private RID into the `britton-desktop` Radicle
+  storage that the CI broker watches, replicated with scope `all`.
 - Deploy the Radicle CI broker with the Seaglass trigger filter and two
   registered adapters: the Nix adapter for execution and the Kiln Radicle
   adapter as the control-plane surface.
@@ -34,6 +31,12 @@ and execution wiring owned by `onix-core`.
   already flake checks into the Seaglass flake `checks` set.
 - Keep the GitHub remote as a declared read-only mirror. Retire GitHub
   Actions only after parity evidence on the private CI path.
+
+No `seaglass` flake input is required. The adapter builds the exact
+pushed revision directly from the CI node's Radicle storage
+(`git+file://$RAD_HOME/storage/$rid?rev=$oid`). A private seed HTTP
+endpoint is needed only if a machine or flake consumes Seaglass as an
+input, which is out of scope for this change.
 
 ## Impact
 

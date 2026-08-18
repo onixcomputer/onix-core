@@ -14,14 +14,18 @@ deployment boundary.
 
 ## Acquisition path
 
-Nix flake evaluation needs a git URL for the private `seaglass` input.
-Radicle seeds that expose the git smart HTTP transport provide
-`git+https://<host>/<rid>.git`. The `seed.radicle.garden` seed does not
-hold the private repository, so `onix-core` must enable the private seed
-HTTP Git endpoint on `britton-desktop`.
+The broker adapter builds the exact pushed revision directly from the
+Radicle storage the broker service uses. The adapter resolves
+`git+file://$RAD_HOME/storage/$rid?rev=$oid`. No consumer flake input is
+involved.
 
-The endpoint admits only the private RID set. It rejects undeclared and
-public-only repositories at the HTTP boundary.
+The deployment seeds the private Seaglass RID with scope `all` into
+that `britton-desktop` Radicle storage. After seeding, acquisition never
+needs GitHub or a public Radicle seed.
+
+A private seed HTTP Git endpoint is intentionally out of scope. It is
+useful only when a machine or flake consumes Seaglass as an input, which
+this change does not do.
 
 ## Control plane and execution split
 
