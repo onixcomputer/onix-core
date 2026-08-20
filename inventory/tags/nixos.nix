@@ -11,6 +11,7 @@
     inputs.srvos.nixosModules.mixins-nix-experimental
     inputs.srvos.nixosModules.mixins-trusted-nix-caches
     inputs.nix-index-database.nixosModules.nix-index
+    inputs.multiverse.nixosModules.default
     ./common/fhs-compat.nix
     ./common/zswap.nix
     ./common/nix-signing.nix

@@ -11,6 +11,9 @@
 
     # nix-index + comma
     inputs.nix-index-database.darwinModules.nix-index
+
+    # Package pinning through nixpkgs-multiverse (see AGENTS.md)
+    inputs.multiverse.darwinModules.default
   ];
 
   nixpkgs.hostPlatform = "aarch64-darwin";

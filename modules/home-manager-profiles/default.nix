@@ -70,6 +70,10 @@ in
                   extraSpecialArgs = {
                     inherit inputs;
                   };
+                  # Package pinning through nixpkgs-multiverse for every
+                  # user profile (derivation-based, so it is safe under
+                  # useGlobalPkgs — see AGENTS.md "Package pinning").
+                  sharedModules = [ inputs.multiverse.homeManagerModules.default ];
 
                   users.${settings.username} = {
                     imports = profileImports;

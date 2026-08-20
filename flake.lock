@@ -2266,6 +2266,21 @@
         "type": "github"
       }
     },
+    "multiverse": {
+      "locked": {
+        "lastModified": 1787182866,
+        "narHash": "sha256-USTvARmEcYSi/Epr2y+M5gd86ePxbQ98Mk+QCSrjDO4=",
+        "owner": "fzakaria",
+        "repo": "nixpkgs-multiverse",
+        "rev": "9cc02098e177f784f822c57973ebfc3c02c21bed",
+        "type": "github"
+      },
+      "original": {
+        "owner": "fzakaria",
+        "repo": "nixpkgs-multiverse",
+        "type": "github"
+      }
+    },
     "musnix": {
       "inputs": {
         "nixpkgs": [
@@ -3285,6 +3300,7 @@
         "llm-agents": "llm-agents",
         "mercury-cli": "mercury-cli",
         "mics-skills": "mics-skills",
+        "multiverse": "multiverse",
         "musnix": "musnix",
         "niri": "niri",
         "nitrous": "nitrous",
