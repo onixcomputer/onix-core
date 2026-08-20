@@ -16,6 +16,10 @@
     inputs.multiverse.darwinModules.default
   ];
 
+  # Per-package pins maintained by `mvs lock`; installs nothing until
+  # `multiverse.enable = true` is set (see AGENTS.md "Package pinning").
+  multiverse.lock = ../../multiverse.lock;
+
   nixpkgs.hostPlatform = "aarch64-darwin";
   nixpkgs.config.allowUnfree = true;
 

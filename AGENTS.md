@@ -33,7 +33,12 @@
 - A pin brings its revision's closure, so unfree pins need `multiverse.config.allowUnfree = true` (the module's revisions do not inherit the host's `nixpkgs.config`).
 - `config.multiverse.plan` reports how pins divide across revisions without fetching anything; `assertions = [ { assertion = config.multiverse.plan.revisions == 1; message = config.multiverse.plan.why; } ];` enforces one-revision consistency.
 - Cost is per revision touched. `minimize` (default) groups pins onto the fewest revisions that can serve them; `mvs solve` explains the same plan from the CLI.
-- `flake-outputs/_multiverse-checks.nix` verifies module wiring offline (plan resolution, install counts, duplicate-claim assertion, pin type check).
+- Per-package locks live in the repo-root `multiverse.lock` (format maintained by `mvs`, excluded from treefmt via `*.lock`). It is wired into every NixOS machine, the darwin machine, and every home-manager profile; entries install nothing until `multiverse.enable = true` is set, and resolve as `config.multiverse.locked.<attr>` meanwhile. Workflow inside `nix develop`:
+  - `mvs lock add <attr>[@ver]` — pin a package (newest indexed version when `@ver` is omitted)
+  - `nix flake update multiverse && mvs lock update <attr>` — move exactly one pin forward (two steps on purpose: the pin cannot name a revision the input does not know)
+  - `mvs lock status` — how far behind each pin has fallen, offline
+  - `mvs lock minimize [--check]` — collapse pins onto the fewest revisions; `--check` fails CI on drifted locks
+- `flake-outputs/_multiverse-checks.nix` verifies module wiring offline (plan resolution, install counts, duplicate-claim assertion, pin type check, repository lock parse, lock-version rejection).
 
 ## Packaging
 - `pkgs/lemonade/default.nix` must accept either `lemond` or `lemonade-router` as the daemon binary name. Upstream changed names across releases, so install both aliases for compatibility.

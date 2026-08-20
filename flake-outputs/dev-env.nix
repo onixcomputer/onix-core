@@ -298,6 +298,9 @@ in
             self'.packages.sendme
             self'.packages.verify-deploy
             self'.packages.claude-md
+            # Query the nixpkgs-multiverse index and maintain multiverse.lock
+            # (offline; see AGENTS.md "Package pinning")
+            inputs'.multiverse.packages.mvs
           ]
           ++ lib.optionals (self'.packages ? tracey) [ self'.packages.tracey ]
           ++ [

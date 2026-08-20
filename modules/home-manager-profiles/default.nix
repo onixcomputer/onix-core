@@ -73,7 +73,14 @@ in
                   # Package pinning through nixpkgs-multiverse for every
                   # user profile (derivation-based, so it is safe under
                   # useGlobalPkgs — see AGENTS.md "Package pinning").
-                  sharedModules = [ inputs.multiverse.homeManagerModules.default ];
+                  sharedModules = [
+                    inputs.multiverse.homeManagerModules.default
+                    {
+                      # Per-package pins maintained by `mvs lock`; installs
+                      # nothing until `multiverse.enable = true` is set.
+                      multiverse.lock = ../../multiverse.lock;
+                    }
+                  ];
 
                   users.${settings.username} = {
                     imports = profileImports;

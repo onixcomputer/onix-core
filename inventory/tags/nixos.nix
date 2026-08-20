@@ -21,6 +21,11 @@
     ./common/wasm-lib.nix
   ];
 
+  # Per-package pins maintained by `mvs lock` (see AGENTS.md "Package
+  # pinning"). Entries install only when `multiverse.enable = true` is set
+  # per machine; until then they resolve as `config.multiverse.locked.<attr>`.
+  multiverse.lock = ../../multiverse.lock;
+
   nixpkgs.config.allowUnfree = true;
 
   # Stamp every built system with its git revision.

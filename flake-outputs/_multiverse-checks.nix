@@ -1,15 +1,17 @@
 # nixpkgs-multiverse module integration checks.
 #
 # Positive: the multiverse NixOS module imports into our evaluation, a pin
-# round-trips through the option system, the pin plan resolves offline, and
-# the wrapper installs exactly the resolved pin set. The index files ship
-# inside the multiverse checkout, so forcing `plan` and `pinned` structure
-# reads local JSON only — no nixpkgs revision is fetched at check time.
+# round-trips through the option system, the pin plan resolves offline, the
+# wrapper installs exactly the resolved pin set, and the repository's real
+# multiverse.lock parses through the module. The index files ship inside the
+# multiverse checkout, so forcing `plan` and shallow `pinned`/`locked`
+# structure reads local JSON only — no nixpkgs revision is fetched at check
+# time (attribute lookups and length never force a derivation).
 #
 # Negative: an attribute claimed by both `multiverse.pins` and
 # `multiverse.cooldown.packages` produces a failing assertion (instead of a
-# buildEnv file collision at build time), and a non-string pin value fails
-# the option type check.
+# buildEnv file collision at build time), a non-string pin value fails the
+# option type check, and a lock file with an unknown format version throws.
 {
   inputs',
   pkgs,
@@ -92,6 +94,40 @@ let
       null
   );
   typeErrorOk = !typeError.success;
+
+  # The repository's real lock file must parse through the module: readLock
+  # checks the format version before anything else, so a successful (shallow)
+  # force is also a version check. attrNames never forces a derivation, so a
+  # populated lock still costs no fetch here.
+  lockEval = evalWith {
+    multiverse = {
+      enable = true;
+      lock = ../multiverse.lock;
+    };
+  };
+  lockParsed = builtins.attrNames lockEval.config.multiverse.locked;
+  lockInstalled = builtins.length lockEval.config.multiverse.packages;
+  lockOk = lockParsed == [ ] && lockInstalled == 0;
+
+  # A lock declaring an unknown format version must throw rather than being
+  # read as if nothing were wrong.
+  badLock = builtins.toFile "multiverse.lock" (
+    builtins.toJSON {
+      version = 999;
+      pins = { };
+    }
+  );
+  badLockEval = builtins.tryEval (
+    builtins.seq
+      (evalWith {
+        multiverse = {
+          enable = true;
+          lock = badLock;
+        };
+      }).config.multiverse.locked
+      null
+  );
+  badLockOk = !badLockEval.success;
 in
 {
   checks = {
@@ -108,6 +144,16 @@ in
       ''}
       ${lib.optionalString (!typeErrorOk) ''
         echo "multiverse pin type check accepted a non-string value"
+        exit 1
+      ''}
+      ${lib.optionalString (!lockOk) ''
+        echo "multiverse repository lock did not parse cleanly:"
+        echo "  attrs: ${builtins.toString lockParsed}"
+        echo "  packages installed from it: ${toString lockInstalled}"
+        exit 1
+      ''}
+      ${lib.optionalString (!badLockOk) ''
+        echo "multiverse accepted a lock file with an unknown format version"
         exit 1
       ''}
       touch $out
