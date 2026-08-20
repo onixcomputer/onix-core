@@ -10,6 +10,10 @@ let
   ttFlashPyYamlNixRequirement = "pyyaml >= 6.0.1";
   ttFlashTabulatePinnedRequirement = "tabulate == 0.9.0";
   ttFlashTabulateNixRequirement = "tabulate >= 0.9.0";
+  ttTopologyLegacyMetadataImport = "import pkg_resources";
+  ttTopologyModernMetadataImport = "from importlib.metadata import version as distribution_version";
+  ttTopologyLegacyVersionLookup = ''pkg_resources.get_distribution("tt_topology").version'';
+  ttTopologyModernVersionLookup = ''distribution_version("tt-topology")'';
   tenstorrentPackageRenames = {
     burnin = "tt-burnin";
     flash = "tt-flash";
@@ -45,9 +49,11 @@ let
     }).overrideAttrs
       (oldAttrs: {
         postPatch = (oldAttrs.postPatch or "") + ''
-          substituteInPlace tt_topology/tt_topology.py \
-            --replace-fail "import pkg_resources" "from importlib.metadata import version as distribution_version" \
-            --replace-fail 'pkg_resources.get_distribution("tt_topology").version' 'distribution_version("tt-topology")'
+          if grep -Fq ${lib.escapeShellArg ttTopologyLegacyMetadataImport} tt_topology/tt_topology.py; then
+            substituteInPlace tt_topology/tt_topology.py \
+              --replace-fail ${lib.escapeShellArg ttTopologyLegacyMetadataImport} ${lib.escapeShellArg ttTopologyModernMetadataImport} \
+              --replace-fail ${lib.escapeShellArg ttTopologyLegacyVersionLookup} ${lib.escapeShellArg ttTopologyModernVersionLookup}
+          fi
         '';
       });
   tenstorrentFlash = tenstorrentPythonPackages.tt-flash.overrideAttrs (oldAttrs: {

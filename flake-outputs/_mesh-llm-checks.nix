@@ -13,7 +13,8 @@ let
   meshPort = 47916;
   proxyActivationModel = "Qwen3-0.6B-Q4_K_M";
   proxyActivationContextSize = 512;
-  meshEndpointUrl = "http://127.0.0.1:13305/v1";
+  defaultMeshEndpointUrl = "http://127.0.0.1:13305/v1";
+  desktopMeshEndpointUrl = "http://127.0.0.1:8000/v1";
 
   machineConfig = name: self.nixosConfigurations.${name}.config;
   mkNode =
@@ -21,6 +22,7 @@ let
       label,
       machineName,
       meshAddress,
+      endpointUrl,
       backendUnit,
     }:
     let
@@ -31,6 +33,7 @@ let
       inherit
         label
         meshAddress
+        endpointUrl
         backendUnit
         config
         service
@@ -43,25 +46,29 @@ let
     label = "Aspen1";
     machineName = "aspen1";
     meshAddress = "100.100.103.95";
+    endpointUrl = defaultMeshEndpointUrl;
     backendUnit = "llamacpp-server-deepseek-v4-flash-aspen1.service";
   };
   aspen2Node = mkNode {
     label = "Aspen2";
     machineName = "aspen2";
     meshAddress = "100.125.64.121";
+    endpointUrl = defaultMeshEndpointUrl;
     backendUnit = "lemonade.service";
   };
   aspen3Node = mkNode {
     label = "Aspen3";
     machineName = "aspen3";
     meshAddress = "100.108.13.4";
+    endpointUrl = defaultMeshEndpointUrl;
     backendUnit = "lemonade.service";
   };
   desktopNode = mkNode {
     label = "Desktop";
     machineName = "britton-desktop";
     meshAddress = "100.110.43.11";
-    backendUnit = "llamacpp-server-vibethinker-britton-desktop.service";
+    endpointUrl = desktopMeshEndpointUrl;
+    backendUnit = "qwen38-p150x2.service";
   };
   joinerNodes = [
     aspen2Node
@@ -98,6 +105,11 @@ let
   plugins = self.packages.x86_64-linux.wasm-plugins;
   wasm = import ../lib/wasm.nix { inherit plugins; };
   serviceInventory = (wasm.evalNickelFile ../inventory/services/services.ncl).instances;
+  desktopMeshSettings =
+    serviceInventory.${instanceName}.roles.default.machines."britton-desktop".settings;
+  desktopUsesQwenEndpoint =
+    desktopMeshSettings.endpointUrl == desktopMeshEndpointUrl
+    && desktopMeshSettings.backendUnit == desktopNode.backendUnit;
   meshSchema = wasm.evalNickelFile ../modules/mesh-llm/schema.ncl;
   dgxSparkTagName = "dgx-spark";
   dgxSparkBindInterface = "tailscale0";
@@ -112,7 +124,7 @@ let
   dgxSparkMeshSettings = dgxSparkMeshRole.settings;
   meshDgxUsesPrivateInterface =
     dgxSparkMeshSettings.mode == "joiner"
-    && dgxSparkMeshSettings.endpointUrl == meshEndpointUrl
+    && dgxSparkMeshSettings.endpointUrl == defaultMeshEndpointUrl
     && dgxSparkMeshSettings.meshBindInterface == dgxSparkBindInterface;
   meshDgxAvoidsExplicitWildcard = !(builtins.hasAttr "meshBindAddress" dgxSparkMeshSettings);
 
@@ -120,7 +132,7 @@ let
   dgxFixtureServiceName = "mesh-llm-${dgxFixtureInstanceName}";
   dgxFixtureSettings = {
     mode = "joiner";
-    endpointUrl = meshEndpointUrl;
+    endpointUrl = defaultMeshEndpointUrl;
     inherit
       proxyActivationModel
       proxyActivationContextSize
@@ -248,6 +260,10 @@ in
           grep -F -- '--model ${proxyActivationModel}' ${desktopCommand}
           grep -F -- '--ctx-size ${toString proxyActivationContextSize}' ${desktopCommand}
 
+          ${lib.optionalString (!desktopUsesQwenEndpoint) ''
+            echo "Desktop Mesh-LLM must target the Qwen endpoint and system unit" >&2
+            exit 1
+          ''}
           ${lib.optionalString (!(lib.all usesDedicatedUser meshNodes)) ''
             echo "Mesh-LLM services must use the dedicated unprivileged user" >&2
             exit 1

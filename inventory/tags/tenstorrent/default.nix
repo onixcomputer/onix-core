@@ -66,14 +66,7 @@ let
   ttInferenceServerPrerequisitesUrl = "https://github.com/tenstorrent/tt-inference-server/blob/main/docs/prerequisites.md";
   ttInferenceServerWorkflowsUrl = "https://github.com/tenstorrent/tt-inference-server/blob/main/docs/workflows_user_guide.md";
   ttInferenceServerHardwareModelsUrl = "https://github.com/tenstorrent/tt-inference-server/blob/main/docs/model_support/models_by_hardware.md";
-  llamaP150ModelSupportUrl = "https://github.com/tenstorrent/tt-inference-server/blob/main/docs/model_support/llm/Llama-3.1-8B_p150.md";
-  vibeThinkerApiPort = 13305;
-  supraRouterApiPort = 13306;
   ttInferenceServerDefaultPort = 8000;
-  llamaPhysicalDeviceId = 1;
-  llamaModelId = "meta-llama/Llama-3.1-8B-Instruct";
-  llamaContainerServiceName = "docker-tt-inference-server-llama-3-1-8b-instruct-p150";
-  llamaCredentialGeneratorName = "tt-inference-server-llama-3-1-8b-instruct-p150";
   ttInferenceServerContainerUid = 1000;
   ttInferenceServerMinimumPython = "3.8";
   ttInferenceServerSmokeTestMode = "smoke-test";
@@ -626,47 +619,12 @@ in
 
       ### britton-desktop deployed serving layout
 
-      r[impl onix.tenstorrent.vllm.p150_llama]
-
-      - VibeThinker remains always-on at `127.0.0.1:${toString vibeThinkerApiPort}`
-        on physical card 0.
-      - Supra-Router remains available at `127.0.0.1:${toString supraRouterApiPort}`
-        through its validated four-thread CPU runtime.
-      - `${llamaModelId}` is declared at
-        `127.0.0.1:${toString ttInferenceServerDefaultPort}` with only physical
-        card ${toString llamaPhysicalDeviceId} mapped into its digest-pinned
-        container. The supported P150 limits and model provenance are recorded at
-        ${llamaP150ModelSupportUrl}.
-
-      The Llama service remains conditionally stopped until an authorized gated-model
-      credential is generated. Its start condition performs a metadata-only access
-      probe and skips container launch when Hugging Face has not approved the account.
-      Enter the token only through Clan's hidden prompt:
-
-      ```sh
-      clan vars generate britton-desktop --generator ${llamaCredentialGeneratorName}
-      NIX_CONFIG='secret-key-files =' clan machines update britton-desktop \
-        --target-host root@localhost --build-host localhost --host-key-check none
-      ```
-
-      The generated root-only environment file contains `HF_TOKEN`; do not put the
-      token in inventory, Nix derivations, shell history, or service logs. Preserve
-      at least 360 GB of free root-disk capacity before first startup because image,
-      model-weight, and compilation caches are large. Initial download and TT graph
-      compilation can take substantially longer than an ordinary service restart.
-      Before launch, the unit removes only a model-weight directory whose
-      `config.json` is absent or lacks `model_type`, preventing a failed gated
-      download from being mistaken for a complete offline cache.
-
-      During this supplementary rollout, NixOS switch-time restarts are disabled
-      for VibeThinker so activating the new service cannot interrupt card 0. Package
-      or unit changes for that service therefore require a separately scheduled
-      manual restart.
-
-      To roll back the supplement without affecting VibeThinker or Supra, stop
-      `${llamaContainerServiceName}.service` and set the service instance's
-      `autoStart` setting to false before the next deployment. Do not restore Supra
-      to card ${toString llamaPhysicalDeviceId} while the Llama container is active.
+      The Tenstorrent tag owns hardware bringup, not model authority. The
+      `britton-desktop` machine configuration imports the pinned `tenstorrent.nix`
+      Qwen module and records its exact model, endpoint, limits, and service checks
+      later in this guide. The reusable TT-Inference-Server module remains available
+      for validated fixtures and future reviewed deployments, but no P150 container
+      is assigned on this host while Qwen owns both devices.
 
       Blackhole model-support indexes to check before choosing `--model`:
 

@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Defines the `llamacpp-metalium-serving` capability.
+Defines the reusable `llamacpp-metalium-serving` capability.
 
 ## Requirements
 
 ### Requirement: Metalium is a selectable llama.cpp backend
 
-r[onix.llamacpp_server.metalium_backend] The schema-driven `llamacpp-server` service MUST select the pinned `llama-cpp-metalium` package when configured with the Metalium backend and MUST expose an explicit non-negative Metalium device identifier.
+r[onix.llamacpp_server.metalium_backend] The schema-driven `llamacpp-server` service MUST select the pinned `llama-cpp-metalium` package when configured with the Metalium backend and MUST expose an explicit non-negative device identifier.
 
 #### Scenario: Metalium backend selects a physical device
 
@@ -19,36 +19,28 @@ r[onix.llamacpp_server.metalium_backend] The schema-driven `llamacpp-server` ser
 
 ### Requirement: Metalium serving rejects unsupported runtime combinations
 
-r[onix.llamacpp_server.metalium_safety] A Metalium `llamacpp-server` instance MUST keep KV cache on the CPU, MUST reject flash attention, MUST reject explicit quantized KV-cache types, MUST remove `GGML_METALIUM_MESH_SHAPE` from its service environment, and MUST keep experimental Metalium trace replay disabled by default unless that individual service satisfies the reviewed per-service evidence and rollback boundary.
+r[onix.llamacpp_server.metalium_safety] A Metalium `llamacpp-server` instance MUST keep KV cache on the CPU, MUST reject flash attention and explicit quantized KV-cache types, and MUST remove mesh variables from its service environment.
 
 #### Scenario: Safe default Metalium configuration evaluates
 
-- GIVEN a Metalium instance with flash attention disabled, no KV-cache quantization overrides, and no trace opt-in
+- GIVEN a Metalium instance with flash attention disabled and no KV-cache override
 - WHEN the module assertions are evaluated
 - THEN the configuration succeeds
 - AND the generated command contains `--no-kv-offload`
-- AND the service environment disables Metalium trace replay
-
-#### Scenario: Evidence-gated trace opt-in evaluates
-
-- GIVEN an individual Metalium service whose fixed-input trial demonstrated correct output and a material warm-performance improvement
-- WHEN that service explicitly opts into Metalium trace replay
-- THEN its generated environment enables trace replay without changing physical-device or mutable-state isolation
 
 #### Scenario: Unsupported Metalium cache configuration is rejected
 
-- GIVEN a Metalium instance with flash attention enabled or an explicit KV-cache quantization type
+- GIVEN a Metalium instance with flash attention or an explicit KV-cache type
 - WHEN the module assertions are evaluated
 - THEN evaluation reports a configuration error
 
-### Requirement: VibeThinker uses the measured single-device path
+### Requirement: The former desktop VibeThinker deployment is retired
 
-r[onix.vibethinker.metalium_serving] The `britton-desktop` VibeThinker service MUST use Q8_0 weights on Blackhole device 0 with batch and physical batch size 512, one parallel slot, CPU F16 KV cache, trace capture disabled, and no llama.cpp mesh aggregation while the host's P150x2 descriptor remains available to native TT-NN and TT-Metal workloads.
+r[onix.tenstorrent.p150x2_qwen.exclusivity] The reusable llama.cpp module MUST remain available, but `britton-desktop` MUST NOT assign the former VibeThinker instance while Qwen owns both P150 devices.
 
-#### Scenario: VibeThinker service uses the latency configuration
+#### Scenario: Desktop service inventory is evaluated
 
 - GIVEN the `britton-desktop` service inventory
-- WHEN the VibeThinker systemd unit is generated
-- THEN it uses the Metalium backend and selects device 0
-- AND it does not enable flash attention, quantized KV cache, trace capture, or llama.cpp mesh aggregation
-- AND the Tenstorrent host environment still exports the P150x2 mesh descriptor
+- WHEN assigned llama.cpp instances are inspected
+- THEN no `vibethinker-britton-desktop` instance is assigned
+- AND the generic Metalium module checks remain available for future reviewed instances

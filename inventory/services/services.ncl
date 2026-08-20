@@ -47,6 +47,7 @@ let radicle_node_address = "100.100.103.95" in
 let radicle_desktop_replica_address = "100.110.43.11" in
 let radicle_aspen3_replica_address = "100.108.13.4" in
 let mesh_openai_endpoint_url = "http://127.0.0.1:13305/v1" in
+let mesh_desktop_openai_endpoint_url = "http://127.0.0.1:8000/v1" in
 let mesh_aspen1_address = radicle_node_address in
 let mesh_aspen2_address = "100.125.64.121" in
 let mesh_aspen3_address = radicle_aspen3_replica_address in
@@ -498,51 +499,6 @@ let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
       },
     },
 
-    # r[impl onix.vibethinker.metalium_serving]
-    # r[impl onix.tenstorrent.concurrent_models.vibethinker]
-    "vibethinker-britton-desktop" = {
-      module = { name = "llamacpp-server", input = "self" },
-      roles.server.machines.britton-desktop.settings = {
-        backend = "metalium",
-        modelRepo = "prithivMLmods/VibeThinker-3B-GGUF",
-        modelFile = "VibeThinker-3B.Q8_0.gguf",
-        modelAlias = "VibeThinker-3B",
-        contextSize = 131072,
-        gpuLayers = 999,
-        metaliumDeviceId = 0,
-        metaliumInspectorPort = 50051,
-        metaliumTrace = false,
-        generationThreads = 8,
-        batchThreads = 8,
-        batchSize = 512,
-        ubatchSize = 512,
-        parallelSlots = 1,
-        cacheTypeK = null,
-        cacheTypeV = null,
-        flashAttention = false,
-        extraArgs = ["--fit", "off"],
-      },
-    },
-
-    # r[impl onix.tenstorrent.vllm.p150_llama]
-    "llama-3-1-8b-instruct-p150" = {
-      module = { name = "tt-inference-server", input = "self" },
-      roles.default.machines.britton-desktop.settings = {
-        stateDir = "/var/lib/tt-inference-server-llama-3-1-8b-instruct",
-        image = "ghcr.io/tenstorrent/tt-inference-server/vllm-tt-metal-src-release-ubuntu-22.04-amd64:0.18.0-c49bb76-6b4a3a7@sha256:6aee48978be401c0a86cb1761c4d64af818df8380bc7b27c1018d704518545ff",
-        model = "meta-llama/Llama-3.1-8B-Instruct",
-        device = "p150",
-        physicalDeviceId = 1,
-        host = "127.0.0.1",
-        port = 8000,
-        cacheUid = 1000,
-        cacheGid = 1000,
-        enableTraceCapture = true,
-        autoStart = true,
-        extraArgs = [],
-      },
-    },
-
     # r[impl onix.radicle_node.hosting]
     "radicle-forge-bootstrap" = {
       module = { name = "radicle-node", input = "self" },
@@ -688,9 +644,9 @@ let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
         },
         britton-desktop.settings = {
           mode = "joiner",
-          endpointUrl = mesh_openai_endpoint_url,
+          endpointUrl = mesh_desktop_openai_endpoint_url,
           meshBindAddress = mesh_desktop_address,
-          backendUnit = "llamacpp-server-vibethinker-britton-desktop.service",
+          backendUnit = "qwen38-p150x2.service",
         },
       },
     },

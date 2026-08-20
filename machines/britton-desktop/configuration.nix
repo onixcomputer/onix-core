@@ -168,24 +168,37 @@ let
   ttMetaliumRuntimeRoot = "${ttMetalPackage}/libexec/tt-metalium";
   ttP150x2MeshDescriptor = "${ttMetaliumRuntimeRoot}/tt_metal/fabric/mesh_graph_descriptors/p150_x2_mesh_graph_descriptor.textproto";
   vibeThinkerServiceName = "llamacpp-server-vibethinker-britton-desktop";
+  vibeThinkerUnitName = "${vibeThinkerServiceName}.service";
   p150LlamaServiceName = "docker-tt-inference-server-llama-3-1-8b-instruct-p150";
   p150LlamaUnitName = "${p150LlamaServiceName}.service";
-  p150LlamaDevicePath = "/dev/tenstorrent/1";
+  qwenServiceName = "qwen38-p150x2";
+  qwenUnitName = "${qwenServiceName}.service";
+  qwenModelRevision = "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0";
+  qwenModelPath = "/home/brittonr/.cache/huggingface/hub/models--Qwen--Qwen3.8-27B/snapshots/${qwenModelRevision}";
+  qwenListenAddress = "127.0.0.1";
+  qwenApiPort = 8000;
+  qwenMaximumSequenceLength = 2048;
+  qwenMaximumGenerationTokens = 64;
+  qwenConflictingUnits = [
+    vibeThinkerUnitName
+    p150LlamaUnitName
+  ];
+  ttWkv7DiagnosticDevicePath = "/dev/tenstorrent/1";
   ttWkv7OwnerControlUser = "brittonr";
   ttWkv7OwnerControlCommandName = "ttwkv7-owner-control";
   ttWkv7OwnerControlSystemctl = "${config.systemd.package}/bin/systemctl";
   ttWkv7OwnerControlLsof = "${pkgs.lsof}/bin/lsof";
   ttWkv7OwnerControlSudoCommands = [
     {
-      command = "${ttWkv7OwnerControlSystemctl} stop ${p150LlamaUnitName}";
+      command = "${ttWkv7OwnerControlSystemctl} stop ${qwenUnitName}";
       options = [ "NOPASSWD" ];
     }
     {
-      command = "${ttWkv7OwnerControlSystemctl} start ${p150LlamaUnitName}";
+      command = "${ttWkv7OwnerControlSystemctl} start ${qwenUnitName}";
       options = [ "NOPASSWD" ];
     }
     {
-      command = "${ttWkv7OwnerControlLsof} ${p150LlamaDevicePath}";
+      command = "${ttWkv7OwnerControlLsof} ${ttWkv7DiagnosticDevicePath}";
       options = [ "NOPASSWD" ];
     }
   ];
@@ -200,8 +213,7 @@ let
   ttBenchmarkLogsDirectory = ttBenchmarkServiceName;
   ttBenchmarkLogsDir = "/var/log/${ttBenchmarkLogsDirectory}";
   ttBenchmarkLatestSummary = "${ttBenchmarkStateDir}/latest-summary.json";
-  ttBenchmarkVibeRestoreMarker = "/run/${ttBenchmarkServiceName}-restore-vibethinker";
-  ttBenchmarkLlamaRestoreMarker = "/run/${ttBenchmarkServiceName}-restore-p150-llama";
+  ttBenchmarkQwenRestoreMarker = "/run/${ttBenchmarkServiceName}-restore-qwen";
   ttBenchmarkSuccessMarker = "/run/${ttBenchmarkServiceName}-last-run-succeeded";
   ttBenchmarkInspectorPort = 50061;
   ttBenchmarkStateDirectoryMode = "0755";
@@ -213,46 +225,25 @@ let
       pkgs.systemd
     ];
     text = ''
-      restore_vibethinker() {
-        if test -f ${lib.escapeShellArg ttBenchmarkVibeRestoreMarker}; then
-          echo "Restoring ${vibeThinkerServiceName}.service"
-          systemctl start ${lib.escapeShellArg "${vibeThinkerServiceName}.service"}
-          rm -f ${lib.escapeShellArg ttBenchmarkVibeRestoreMarker}
+      restore_qwen() {
+        if test -f ${lib.escapeShellArg ttBenchmarkQwenRestoreMarker}; then
+          echo "Restoring ${qwenUnitName}"
+          systemctl start ${lib.escapeShellArg qwenUnitName}
+          rm -f ${lib.escapeShellArg ttBenchmarkQwenRestoreMarker}
         fi
       }
 
-      restore_p150_llama() {
-        if test -f ${lib.escapeShellArg ttBenchmarkLlamaRestoreMarker}; then
-          echo "Restoring ${p150LlamaServiceName}.service"
-          systemctl start ${lib.escapeShellArg "${p150LlamaServiceName}.service"}
-          rm -f ${lib.escapeShellArg ttBenchmarkLlamaRestoreMarker}
-        fi
-      }
-
-      restore_displaced_services() {
-        restore_p150_llama
-        restore_vibethinker
-      }
-
-      trap restore_displaced_services EXIT HUP INT TERM
+      trap restore_qwen EXIT HUP INT TERM
       rm -f ${lib.escapeShellArg ttBenchmarkSuccessMarker}
 
-      if test -f ${lib.escapeShellArg ttBenchmarkLlamaRestoreMarker}; then
-        echo "Recovering P150 Llama from an interrupted earlier benchmark"
-        restore_p150_llama
-      fi
-      if test -f ${lib.escapeShellArg ttBenchmarkVibeRestoreMarker}; then
-        echo "Recovering VibeThinker from an interrupted earlier benchmark"
-        restore_vibethinker
+      if test -f ${lib.escapeShellArg ttBenchmarkQwenRestoreMarker}; then
+        echo "Recovering Qwen from an interrupted earlier benchmark"
+        restore_qwen
       fi
 
-      if systemctl is-active --quiet ${lib.escapeShellArg "${vibeThinkerServiceName}.service"}; then
-        touch ${lib.escapeShellArg ttBenchmarkVibeRestoreMarker}
-        systemctl stop ${lib.escapeShellArg "${vibeThinkerServiceName}.service"}
-      fi
-      if systemctl is-active --quiet ${lib.escapeShellArg "${p150LlamaServiceName}.service"}; then
-        touch ${lib.escapeShellArg ttBenchmarkLlamaRestoreMarker}
-        systemctl stop ${lib.escapeShellArg "${p150LlamaServiceName}.service"}
+      if systemctl is-active --quiet ${lib.escapeShellArg qwenUnitName}; then
+        touch ${lib.escapeShellArg ttBenchmarkQwenRestoreMarker}
+        systemctl stop ${lib.escapeShellArg qwenUnitName}
       fi
 
       ${lib.getExe ttBenchmarkCore} \
@@ -292,10 +283,49 @@ let
       cat ${lib.escapeShellArg ttBenchmarkLatestSummary}
     '';
   };
-  ttWkv7OwnerControl = tenstorrentPackages.ttwkv7-owner-control;
+  ttWkv7OwnerControl = tenstorrentPackages.ttwkv7-owner-control.override {
+    ownerUnit = qwenUnitName;
+    devicePath = ttWkv7DiagnosticDevicePath;
+  };
 in
 {
-  imports = [ ./build-storage.nix ];
+  imports = [
+    ./build-storage.nix
+    inputs.tenstorrent-nix.nixosModules.default
+  ];
+
+  hardware = {
+    # r[impl onix.tenstorrent.p150x2_qwen.deployment]
+    # r[impl onix.tenstorrent.p150x2_qwen.contract]
+    # r[impl onix.tenstorrent.p150x2_qwen.exclusivity]
+    tenstorrent = {
+      enable = true;
+      driverPackage = config.boot.kernelPackages.tt-kmd;
+      descriptorPackage = ttMetalPackage;
+      accessPolicy = "permissive";
+      meshName = "p150_x2";
+      qwen38 = {
+        enable = true;
+        package = tenstorrentPackages.qwen36;
+        modelPath = qwenModelPath;
+        modelAlias = "Qwen3.8-27B";
+        listenAddress = qwenListenAddress;
+        port = qwenApiPort;
+        maximumSequenceLength = qwenMaximumSequenceLength;
+        maximumGenerationTokens = qwenMaximumGenerationTokens;
+        conflictingUnits = qwenConflictingUnits;
+      };
+    };
+
+    # AMD 9950X3D: microcode updates + P-State active mode.
+    # Active mode lets firmware rank cores across the asymmetric CCDs.
+    cpu.amd.updateMicrocode = true;
+
+    bluetooth.settings.General = {
+      Experimental = true;
+      FastConnectable = true;
+    };
+  };
 
   networking = {
     hostName = "britton-desktop";
@@ -341,16 +371,6 @@ in
       "nixos-test"
       "big-parallel"
     ];
-  };
-
-  # AMD 9950X3D: microcode updates + P-State active mode.
-  # active mode lets firmware handle preferred-core ranking across the
-  # asymmetric CCDs (3D V-Cache vs high-clock).
-  hardware.cpu.amd.updateMicrocode = true;
-
-  hardware.bluetooth.settings.General = {
-    Experimental = true;
-    FastConnectable = true;
   };
 
   boot = {
@@ -519,10 +539,6 @@ in
 
   systemd = {
     services = {
-      # The supplementary Llama rollout must not interrupt the existing card-0
-      # service even when its reproducible package path changes during activation.
-      llamacpp-server-vibethinker-britton-desktop.restartIfChanged = false;
-
       radicle-ci-broker.serviceConfig = {
         MemoryMax = kilnMemoryMax;
         CPUQuota = kilnCpuQuota;
@@ -761,10 +777,30 @@ in
 
   environment.etc."tenstorrent/README.md".text = lib.mkAfter ''
 
+    ### Declarative Qwen3.8-27B P150x2 service
+
+    `${qwenUnitName}` is the only managed service that owns both P150 devices.
+    It serves the pinned `${qwenModelRevision}` snapshot through the serialized,
+    greedy OpenAI-compatible endpoint at
+    `http://${qwenListenAddress}:${toString qwenApiPort}`. Prompt plus generation
+    is limited to ${toString qwenMaximumSequenceLength} tokens. One request can
+    generate at most ${toString qwenMaximumGenerationTokens} tokens.
+
+    The retired `${vibeThinkerUnitName}` and `${p150LlamaUnitName}` units are
+    absent from the generated host configuration. The Qwen unit also declares
+    both names as conflicts to stop stale units during activation.
+
+    Verify the deployed service with:
+
+    ```sh
+    systemctl status ${qwenUnitName}
+    curl --fail http://${qwenListenAddress}:${toString qwenApiPort}/healthz
+    ```
+
     ### britton-desktop ttWKV7 owner control
 
     The host installs `${ttWkv7OwnerControlCommandName}` as a least-privilege
-    interface for the device-1 owner lifecycle:
+    interface for the Qwen owner lifecycle:
 
     ```sh
     ${ttWkv7OwnerControlCommandName} validate
@@ -773,9 +809,9 @@ in
     ```
 
     `validate` performs no service mutation. `isolate` and `restore` affect only
-    `${p150LlamaUnitName}` and ownership inspection is fixed to
-    `${p150LlamaDevicePath}`. This capability does not authorize a hardware
-    probe, select a device, create runtime state, or permit a retry.
+    `${qwenUnitName}`. Ownership inspection is fixed to
+    `${ttWkv7DiagnosticDevicePath}`. This capability does not authorize a
+    hardware probe, select a device, create runtime state, or permit a retry.
   '';
 
   environment.systemPackages = with pkgs; [

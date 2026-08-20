@@ -26,7 +26,27 @@ let
   requiredGraphicsDriver = "amdgpu";
   forbiddenInitrdModule = "nvidia";
   removedNvidiaServiceName = "docker-sglang-diffusion-krea2-britton-desktop";
-  vibeThinkerServiceName = "llamacpp-server-vibethinker-britton-desktop";
+  retiredVibeThinkerServiceName = "llamacpp-server-vibethinker-britton-desktop";
+  retiredVibeThinkerUnitName = "${retiredVibeThinkerServiceName}.service";
+  retiredLlamaContainerName = "tt-inference-server-llama-3-1-8b-instruct-p150";
+  retiredLlamaServiceName = "docker-${retiredLlamaContainerName}";
+  retiredLlamaUnitName = "${retiredLlamaServiceName}.service";
+  qwenServiceName = "qwen38-p150x2";
+  qwenUnitName = "${qwenServiceName}.service";
+  qwenModelRevision = "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0";
+  qwenModelPath = "/home/brittonr/.cache/huggingface/hub/models--Qwen--Qwen3.8-27B/snapshots/${qwenModelRevision}";
+  qwenListenAddress = "127.0.0.1";
+  qwenApiPort = 8000;
+  qwenMaximumSequenceLength = 2048;
+  qwenMaximumGenerationTokens = 64;
+  qwenExpectedConflicts = [
+    retiredVibeThinkerUnitName
+    retiredLlamaUnitName
+  ];
+  qwenDevicePaths = [
+    "/dev/tenstorrent/0"
+    "/dev/tenstorrent/1"
+  ];
   ttBenchmarkServiceName = "tt-vibethinker-benchmark";
   ttBenchmarkCommandName = "tt-vibethinker-bench";
   ttBenchmarkStateDirectory = ttBenchmarkServiceName;
@@ -34,30 +54,16 @@ let
   ttBenchmarkCacheDir = "/var/cache/${ttBenchmarkServiceName}";
   ttBenchmarkLogsDir = "/var/log/${ttBenchmarkServiceName}";
   supraRouterServiceName = "llamacpp-server-supra-router";
-  llamaContainerName = "tt-inference-server-llama-3-1-8b-instruct-p150";
-  llamaServiceName = "docker-${llamaContainerName}";
-  llamaGeneratorName = llamaContainerName;
   requiredEndpointServices = [
-    vibeThinkerServiceName
+    qwenServiceName
     supraRouterServiceName
-    llamaServiceName
   ];
-  requiredMetaliumServices = [ vibeThinkerServiceName ];
-  metaliumTraceEnvironmentVariable = "GGML_METALIUM_TRACE";
-  metaliumTraceDisabledEnvironmentValue = "0";
-  validatedMetaliumWorkerThreads = 8;
-  metaliumGenerationThreadsArgument = "--threads ${toString validatedMetaliumWorkerThreads}";
-  metaliumBatchThreadsArgument = "--threads-batch ${toString validatedMetaliumWorkerThreads}";
   validatedSupraCpuThreads = 4;
   supraCpuGenerationThreadsArgument = "--threads ${toString validatedSupraCpuThreads}";
   supraCpuBatchThreadsArgument = "--threads-batch ${toString validatedSupraCpuThreads}";
   cpuOnlyGpuLayersArgument = "--gpu-layers 0";
   metaliumPackageNameFragment = "llama-cpp-metalium";
-  llamaModel = "meta-llama/Llama-3.1-8B-Instruct";
-  llamaDevice = "p150";
-  llamaPhysicalDeviceId = 1;
-  llamaDevicePath = "/dev/tenstorrent/${toString llamaPhysicalDeviceId}";
-  llamaUnitName = "${llamaServiceName}.service";
+  ttWkv7DiagnosticDevicePath = "/dev/tenstorrent/1";
   ttWkv7OwnerControlUser = "brittonr";
   ttWkv7OwnerControlCommandName = "ttwkv7-owner-control";
   ttWkv7OwnerControlSystemctl = "${brittonDesktopConfig.systemd.package}/bin/systemctl";
@@ -65,13 +71,10 @@ let
   ttWkv7OwnerControlSudoWrapper = "/run/wrappers/bin/sudo";
   forbiddenTtWkv7OwnerControlStoreSudo = "${pkgs.sudo}/bin/sudo";
   requiredTtWkv7OwnerControlCommands = [
-    "${ttWkv7OwnerControlSystemctl} stop ${llamaUnitName}"
-    "${ttWkv7OwnerControlSystemctl} start ${llamaUnitName}"
-    "${ttWkv7OwnerControlLsof} ${llamaDevicePath}"
+    "${ttWkv7OwnerControlSystemctl} stop ${qwenUnitName}"
+    "${ttWkv7OwnerControlSystemctl} start ${qwenUnitName}"
+    "${ttWkv7OwnerControlLsof} ${ttWkv7DiagnosticDevicePath}"
   ];
-  llamaApiPort = 8000;
-  llamaLoopbackHost = "127.0.0.1";
-  llamaImage = "ghcr.io/tenstorrent/tt-inference-server/vllm-tt-metal-src-release-ubuntu-22.04-amd64:0.18.0-c49bb76-6b4a3a7@sha256:6aee48978be401c0a86cb1761c4d64af818df8380bc7b27c1018d704518545ff";
   ttMetaliumToolsUrl = "https://docs.tenstorrent.com/tt-metal/latest/tt-metalium/tools/index.html";
   ttWkv7PackageNameFragment = "ttwkv7";
   ttWkv7CommandName = "wkv7";
@@ -102,24 +105,45 @@ let
   hasRequiredGraphicsDriver = lib.elem requiredGraphicsDriver brittonDesktopGraphicsDrivers;
   hasForbiddenInitrdModule = lib.elem forbiddenInitrdModule brittonDesktopConfig.boot.initrd.kernelModules;
   hasRemovedNvidiaService = builtins.hasAttr removedNvidiaServiceName brittonDesktopServices;
+  hasRetiredVibeThinkerService = builtins.hasAttr retiredVibeThinkerServiceName brittonDesktopServices;
+  hasRetiredLlamaService = builtins.hasAttr retiredLlamaServiceName brittonDesktopServices;
+  brittonDesktopContainers = brittonDesktopConfig.virtualisation.oci-containers.containers;
+  hasRetiredLlamaContainer = builtins.hasAttr retiredLlamaContainerName brittonDesktopContainers;
   missingEndpointServices = builtins.filter (
     serviceName: !(builtins.hasAttr serviceName brittonDesktopServices)
   ) requiredEndpointServices;
-  missingMetaliumServices = builtins.filter (
-    serviceName: !(builtins.hasAttr serviceName brittonDesktopServices)
-  ) requiredMetaliumServices;
   serviceEnvironmentValue =
     serviceName: variableName:
     brittonDesktopServices.${serviceName}.environment.${variableName} or null;
-  vibeThinkerTraceEnvironmentValue = serviceEnvironmentValue vibeThinkerServiceName metaliumTraceEnvironmentVariable;
-  keepsRegressedVibeThinkerTraceDisabled =
-    vibeThinkerTraceEnvironmentValue == metaliumTraceDisabledEnvironmentValue;
-  vibeThinkerWarmupCommand = brittonDesktopServices.${vibeThinkerServiceName}.postStart or null;
-  keepsVibeThinkerWarmupDisabled = vibeThinkerWarmupCommand == null || vibeThinkerWarmupCommand == "";
-  keepsVibeThinkerRunningAcrossSwitch =
-    !(brittonDesktopServices.${vibeThinkerServiceName}.restartIfChanged or true);
-  vibeThinkerMeshEnvironmentValue = serviceEnvironmentValue vibeThinkerServiceName "GGML_METALIUM_MESH_SHAPE";
-  keepsVibeThinkerOnSingleDevice = vibeThinkerMeshEnvironmentValue == null;
+  serviceExecStart = serviceName: brittonDesktopServices.${serviceName}.serviceConfig.ExecStart;
+
+  qwenService = brittonDesktopServices.${qwenServiceName} or { };
+  qwenServiceConfig = qwenService.serviceConfig or { };
+  qwenExecStart = qwenServiceConfig.ExecStart or "";
+  qwenConditionPaths = qwenService.unitConfig.ConditionPathExists or [ ];
+  qwenUnsetEnvironment = qwenServiceConfig.UnsetEnvironment or [ ];
+  qwenHasExpectedCommand =
+    lib.hasInfix "/bin/qwen36-p150x2-serve" qwenExecStart
+    && lib.hasInfix "--host ${qwenListenAddress}" qwenExecStart
+    && lib.hasInfix "--port ${toString qwenApiPort}" qwenExecStart
+    && lib.hasInfix "--model-path ${qwenModelPath}" qwenExecStart
+    && lib.hasInfix "--model-alias Qwen3.8-27B" qwenExecStart
+    && lib.hasInfix "--max-sequence-length ${toString qwenMaximumSequenceLength}" qwenExecStart
+    && lib.hasInfix "--max-generation-tokens ${toString qwenMaximumGenerationTokens}" qwenExecStart;
+  qwenHasExpectedEnvironment =
+    serviceEnvironmentValue qwenServiceName "HF_HUB_OFFLINE" == "1"
+    && serviceEnvironmentValue qwenServiceName "HF_MODEL" == qwenModelPath
+    && serviceEnvironmentValue qwenServiceName "MESH_DEVICE" == "P150x2"
+    && serviceEnvironmentValue qwenServiceName "QWEN35_TEMP" == "0"
+    && serviceEnvironmentValue qwenServiceName "TT_CACHE_PATH" == qwenModelPath;
+  qwenOwnsBothDevices = lib.all (devicePath: lib.elem devicePath qwenConditionPaths) qwenDevicePaths;
+  qwenHasExpectedConflicts = (qwenService.conflicts or [ ]) == qwenExpectedConflicts;
+  qwenStartsAtBoot = lib.elem "multi-user.target" (qwenService.wantedBy or [ ]);
+  qwenUsesDeviceGroup = (qwenServiceConfig.Group or null) == "tenstorrent";
+  qwenClearsAmbientMesh =
+    lib.elem "TT_MESH_GRAPH_DESC_PATH" qwenUnsetEnvironment
+    && lib.elem "TT_METAL_SIMULATOR" qwenUnsetEnvironment;
+
   hasManagedTtBenchmark = builtins.hasAttr ttBenchmarkServiceName brittonDesktopServices;
   ttBenchmarkService = brittonDesktopServices.${ttBenchmarkServiceName} or { };
   ttBenchmarkServiceConfig = ttBenchmarkService.serviceConfig or { };
@@ -141,22 +165,6 @@ let
   hasTtBenchmarkCommand = ttBenchmarkCommandPackage != null;
   ttBenchmarkCommandExecutable =
     if hasTtBenchmarkCommand then lib.getExe ttBenchmarkCommandPackage else null;
-  serviceExecStart = serviceName: brittonDesktopServices.${serviceName}.serviceConfig.ExecStart;
-  hasValidatedMetaliumWorkerBudget =
-    serviceName:
-    let
-      execStart = serviceExecStart serviceName;
-    in
-    lib.hasInfix metaliumGenerationThreadsArgument execStart
-    && lib.hasInfix metaliumBatchThreadsArgument execStart;
-  missingValidatedWorkerBudgets = builtins.filter (
-    serviceName: !(hasValidatedMetaliumWorkerBudget serviceName)
-  ) requiredMetaliumServices;
-  serviceCpuAffinity =
-    serviceName: brittonDesktopServices.${serviceName}.serviceConfig.CPUAffinity or null;
-  servicesWithRejectedCpuAffinity = builtins.filter (
-    serviceName: serviceCpuAffinity serviceName != null
-  ) requiredMetaliumServices;
 
   supraExecStart = serviceExecStart supraRouterServiceName;
   supraMetaliumEnvironmentVariables = [
@@ -175,36 +183,6 @@ let
     && lib.all (
       variableName: serviceEnvironmentValue supraRouterServiceName variableName == null
     ) supraMetaliumEnvironmentVariables;
-
-  brittonDesktopContainers = brittonDesktopConfig.virtualisation.oci-containers.containers;
-  llamaContainer = brittonDesktopContainers.${llamaContainerName} or { };
-  llamaCommand = llamaContainer.cmd or [ ];
-  llamaExtraOptions = llamaContainer.extraOptions or [ ];
-  hasIsolatedLlamaContainer =
-    builtins.hasAttr llamaContainerName brittonDesktopContainers
-    && (llamaContainer.image or null) == llamaImage
-    &&
-      (llamaContainer.ports or [ ]) == [
-        "${llamaLoopbackHost}:${toString llamaApiPort}:${toString llamaApiPort}"
-      ]
-    && lib.elem "--model" llamaCommand
-    && lib.elem llamaModel llamaCommand
-    && lib.elem "--tt-device" llamaCommand
-    && lib.elem llamaDevice llamaCommand
-    && lib.elem "--device=${llamaDevicePath}:${llamaDevicePath}" llamaExtraOptions
-    && !(builtins.hasAttr "TT_VISIBLE_DEVICES" (llamaContainer.environment or { }))
-    && builtins.length (llamaContainer.environmentFiles or [ ]) == 1;
-  llamaGenerators = brittonDesktopConfig.clan.core.vars.generators;
-  hasSecretLlamaCredential =
-    builtins.hasAttr llamaGeneratorName llamaGenerators
-    && (llamaGenerators.${llamaGeneratorName}.files."env-file".secret or false)
-    && (llamaGenerators.${llamaGeneratorName}.files."env-file".deploy or false)
-    && (llamaGenerators.${llamaGeneratorName}.files."env-file".mode or null) == "0400";
-  llamaExecCondition = brittonDesktopServices.${llamaServiceName}.serviceConfig.ExecCondition or null;
-  hasGatedLlamaStartup =
-    llamaExecCondition != null && lib.hasInfix "credential-check" llamaExecCondition;
-  llamaPreStart = brittonDesktopServices.${llamaServiceName}.preStart or "";
-  repairsIncompleteLlamaWeights = lib.hasInfix "model-cache-repair" llamaPreStart;
   ttWkv7CommandPackage = lib.findFirst (
     package: lib.hasInfix ttWkv7PackageNameFragment (toString package)
   ) null brittonDesktopConfig.environment.systemPackages;
@@ -267,25 +245,29 @@ let
   documentsManagedTtBenchmark =
     lib.hasInfix "sudo ${ttBenchmarkCommandName}" tenstorrentHostGuide
     && lib.hasInfix "${ttBenchmarkStateDir}/latest-summary.json" tenstorrentHostGuide;
+  documentsQwenDeployment =
+    lib.hasInfix qwenUnitName tenstorrentHostGuide
+    && lib.hasInfix qwenModelRevision tenstorrentHostGuide
+    && lib.hasInfix "http://${qwenListenAddress}:${toString qwenApiPort}" tenstorrentHostGuide
+    && lib.hasInfix "only managed service that owns both P150 devices" tenstorrentHostGuide;
   documentsTtWkv7OwnerControl =
     lib.hasInfix "${ttWkv7OwnerControlCommandName} validate" tenstorrentHostGuide
-    && lib.hasInfix llamaUnitName tenstorrentHostGuide
-    && lib.hasInfix llamaDevicePath tenstorrentHostGuide
-    && lib.hasInfix "does not authorize a hardware" tenstorrentHostGuide
-    && lib.hasInfix "probe, select a device" tenstorrentHostGuide;
+    && lib.hasInfix qwenUnitName tenstorrentHostGuide
+    && lib.hasInfix ttWkv7DiagnosticDevicePath tenstorrentHostGuide
+    && lib.hasInfix "does not authorize a" tenstorrentHostGuide
+    && lib.hasInfix "hardware probe, select a device" tenstorrentHostGuide;
 
   # Positive and negative coverage for
   # r[verify onix.britton_desktop.accelerators.inventory],
   # r[verify onix.britton_desktop.accelerators.services],
-  # r[verify onix.tenstorrent.model_performance.trace_replay],
-  # r[verify onix.tenstorrent.model_performance.concurrent_serving],
+  # r[verify onix.tenstorrent.p150x2_qwen.deployment],
+  # r[verify onix.tenstorrent.p150x2_qwen.contract],
+  # r[verify onix.tenstorrent.p150x2_qwen.exclusivity],
   # r[verify onix.tenstorrent.model_performance.managed_benchmark],
   # r[verify onix.tenstorrent.native_runtime.ttwkv7.host],
   # r[verify onix.tenstorrent.native_runtime.ttwkv7.compatibility_boundary],
-  # r[verify onix.tenstorrent.native_runtime.ttwkv7.owner_control],
-  # r[verify onix.tenstorrent.native_runtime.ttwkv7.owner_control.sudo_wrapper],
-  # r[verify onix.tenstorrent.vllm.p150_llama], and
-  # r[verify onix.tenstorrent.vllm.secrets].
+  # r[verify onix.tenstorrent.native_runtime.ttwkv7.owner_control], and
+  # r[verify onix.tenstorrent.native_runtime.ttwkv7.owner_control.sudo_wrapper].
   brittonDesktopAcceleratorInventory = pkgs.runCommand "britton-desktop-accelerator-inventory" { } ''
     ${lib.optionalString (!hasRequiredAccelerator) ''
       echo "${brittonDesktopName} must retain the ${requiredAcceleratorTag} tag"
@@ -319,24 +301,44 @@ let
       echo "${brittonDesktopName} is missing required model endpoint services: ${lib.concatStringsSep " " missingEndpointServices}"
       exit 1
     ''}
-    ${lib.optionalString (missingMetaliumServices != [ ]) ''
-      echo "${brittonDesktopName} is missing required Metalium services: ${lib.concatStringsSep " " missingMetaliumServices}"
+    ${lib.optionalString hasRetiredVibeThinkerService ''
+      echo "${brittonDesktopName} must not generate retired service ${retiredVibeThinkerServiceName}"
       exit 1
     ''}
-    ${lib.optionalString (!keepsRegressedVibeThinkerTraceDisabled) ''
-      echo "${vibeThinkerServiceName} must keep trace replay disabled after its measured regression"
+    ${lib.optionalString hasRetiredLlamaService ''
+      echo "${brittonDesktopName} must not generate retired service ${retiredLlamaServiceName}"
       exit 1
     ''}
-    ${lib.optionalString (!keepsVibeThinkerWarmupDisabled) ''
-      echo "${vibeThinkerServiceName} must not run trace warmup while trace replay is disabled"
+    ${lib.optionalString hasRetiredLlamaContainer ''
+      echo "${brittonDesktopName} must not generate retired container ${retiredLlamaContainerName}"
       exit 1
     ''}
-    ${lib.optionalString (!keepsVibeThinkerRunningAcrossSwitch) ''
-      echo "${vibeThinkerServiceName} must not be interrupted by the supplementary Llama activation"
+    ${lib.optionalString (!qwenHasExpectedCommand) ''
+      echo "${qwenServiceName} must use the pinned serialized Qwen command and limits"
       exit 1
     ''}
-    ${lib.optionalString (!keepsVibeThinkerOnSingleDevice) ''
-      echo "${vibeThinkerServiceName} must remain on the accepted single-device serving path"
+    ${lib.optionalString (!qwenHasExpectedEnvironment) ''
+      echo "${qwenServiceName} must select the pinned model and P150x2 runtime"
+      exit 1
+    ''}
+    ${lib.optionalString (!qwenOwnsBothDevices) ''
+      echo "${qwenServiceName} must require both physical P150 device nodes"
+      exit 1
+    ''}
+    ${lib.optionalString (!qwenHasExpectedConflicts) ''
+      echo "${qwenServiceName} must conflict with both retired accelerator services"
+      exit 1
+    ''}
+    ${lib.optionalString (!qwenStartsAtBoot) ''
+      echo "${qwenServiceName} must start through multi-user.target"
+      exit 1
+    ''}
+    ${lib.optionalString (!qwenUsesDeviceGroup) ''
+      echo "${qwenServiceName} must use the Tenstorrent device group"
+      exit 1
+    ''}
+    ${lib.optionalString (!qwenClearsAmbientMesh) ''
+      echo "${qwenServiceName} must clear ambient simulator and mesh settings"
       exit 1
     ''}
     ${lib.optionalString (!hasManagedTtBenchmark) ''
@@ -357,30 +359,6 @@ let
     ''}
     ${lib.optionalString (!keepsSupraOnCpu) ''
       echo "${supraRouterServiceName} must retain the validated CPU-only four-thread runtime"
-      exit 1
-    ''}
-    ${lib.optionalString (!hasIsolatedLlamaContainer) ''
-      echo "${llamaContainerName} must retain its digest, loopback API, p150 profile, and exclusive ${llamaDevicePath} mapping"
-      exit 1
-    ''}
-    ${lib.optionalString (!hasSecretLlamaCredential) ''
-      echo "${llamaGeneratorName} must deploy HF_TOKEN through a root-only Clan secret file"
-      exit 1
-    ''}
-    ${lib.optionalString (!hasGatedLlamaStartup) ''
-      echo "${llamaServiceName} must preflight gated-model access before launching Docker"
-      exit 1
-    ''}
-    ${lib.optionalString (!repairsIncompleteLlamaWeights) ''
-      echo "${llamaServiceName} must discard incomplete model caches before startup"
-      exit 1
-    ''}
-    ${lib.optionalString (missingValidatedWorkerBudgets != [ ]) ''
-      echo "Metalium services are missing the validated ${toString validatedMetaliumWorkerThreads}-thread worker budget: ${lib.concatStringsSep " " missingValidatedWorkerBudgets}"
-      exit 1
-    ''}
-    ${lib.optionalString (servicesWithRejectedCpuAffinity != [ ]) ''
-      echo "Metalium services must not retain the rejected CCD affinity trial: ${lib.concatStringsSep " " servicesWithRejectedCpuAffinity}"
       exit 1
     ''}
     ${lib.optionalString (!hasTtWkv7CommandPackage) ''
@@ -411,16 +389,27 @@ let
       echo "${brittonDesktopName} Tenstorrent guide must document the managed benchmark command and summary"
       exit 1
     ''}
+    ${lib.optionalString (!documentsQwenDeployment) ''
+      echo "${brittonDesktopName} Tenstorrent guide must document the admitted Qwen deployment"
+      exit 1
+    ''}
     ${lib.optionalString (!documentsTtWkv7OwnerControl) ''
       echo "${brittonDesktopName} Tenstorrent guide must document least-privilege ttWKV7 owner control"
       exit 1
     ''}
     ${lib.optionalString (ttBenchmarkExecStart != null) ''
       test -x ${lib.escapeShellArg ttBenchmarkExecStart}
-      grep -F -- "trap restore_displaced_services EXIT HUP INT TERM" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
+      grep -F -- "trap restore_qwen EXIT HUP INT TERM" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
       grep -F -- "systemctl is-active --quiet" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
-      grep -F -- "${vibeThinkerServiceName}.service" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
-      grep -F -- "${llamaServiceName}.service" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
+      grep -F -- ${lib.escapeShellArg qwenUnitName} ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
+      if grep -F -- ${lib.escapeShellArg retiredVibeThinkerUnitName} ${lib.escapeShellArg ttBenchmarkExecStart}; then
+        echo "${ttBenchmarkServiceName} must not restore the retired VibeThinker service" >&2
+        exit 1
+      fi
+      if grep -F -- ${lib.escapeShellArg retiredLlamaUnitName} ${lib.escapeShellArg ttBenchmarkExecStart}; then
+        echo "${ttBenchmarkServiceName} must not restore the retired Llama service" >&2
+        exit 1
+      fi
       grep -F -- "last-run-succeeded" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
       grep -F -- "--cache-root ${ttBenchmarkCacheDir}" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
       grep -F -- "--logs-root ${ttBenchmarkLogsDir}" ${lib.escapeShellArg ttBenchmarkExecStart} >/dev/null
@@ -457,8 +446,8 @@ let
       test "$extra_status" -eq 2
       grep -F -- "usage:" owner-control-extra.log >/dev/null
 
-      grep -F -- ${lib.escapeShellArg llamaUnitName} ${lib.escapeShellArg ttWkv7OwnerControlExecutable} >/dev/null
-      grep -F -- ${lib.escapeShellArg llamaDevicePath} ${lib.escapeShellArg ttWkv7OwnerControlExecutable} >/dev/null
+      grep -F -- ${lib.escapeShellArg qwenUnitName} ${lib.escapeShellArg ttWkv7OwnerControlExecutable} >/dev/null
+      grep -F -- ${lib.escapeShellArg ttWkv7DiagnosticDevicePath} ${lib.escapeShellArg ttWkv7OwnerControlExecutable} >/dev/null
       grep -F -- ${lib.escapeShellArg ttWkv7OwnerControlSystemctl} ${lib.escapeShellArg ttWkv7OwnerControlExecutable} >/dev/null
       grep -F -- ${lib.escapeShellArg ttWkv7OwnerControlLsof} ${lib.escapeShellArg ttWkv7OwnerControlExecutable} >/dev/null
       grep -F -- ${lib.escapeShellArg ttWkv7OwnerControlSudoWrapper} ${lib.escapeShellArg ttWkv7OwnerControlExecutable} >/dev/null

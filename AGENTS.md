@@ -16,6 +16,7 @@
 
 ## AI services
 - `britton-desktop` has no NVIDIA GPU. Its installed accelerators are two Tenstorrent Blackhole P150 cards; the AMD Granite Ridge controller is display-only. Do not select CUDA, NVIDIA container passthrough, or the Strix-Halo-specific `amd-gpu` compute tag for this host.
+- `qwen38-p150x2.service` is the only managed model service that owns the two P150 cards. It serves the pinned Qwen3.8-27B snapshot on loopback port 8000. Do not restore the retired VibeThinker or P150 Llama units while Qwen is admitted.
 - For Tenstorrent debugging, start with `tt-smi`, service journals, and each service's `tt-metal-logs/generated/inspector` data. Use the official [TT-Metalium tools index](https://docs.tenstorrent.com/tt-metal/latest/tt-metalium/tools/index.html) for Inspector, `tt-triage`, Watcher, Device Print, and profiler escalation. Upstream only fully supports those tools on source builds, so source-level triage must use a checkout matching the pinned runtime.
 - The Speaches container writes its Hugging Face cache as the in-container `ubuntu` user. Mount the cache directory with uid/gid `1000:1000` or model preloading fails with `PermissionError` under `/home/ubuntu/.cache/huggingface/hub`.
 - `modules/hermes-gateway` syncs clan-var Matrix secrets into `~/.hermes/.env` at service start. Do not set `TERMINAL_CWD` in the systemd environment; Hermes warns that env var is deprecated, so set `terminal.cwd` in `~/.hermes/config.yaml` instead.

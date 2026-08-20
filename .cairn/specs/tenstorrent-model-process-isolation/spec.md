@@ -6,54 +6,54 @@ Defines the `tenstorrent-model-process-isolation` capability.
 
 ## Requirements
 
-### Requirement: Metalium model processes isolate physical devices
+### Requirement: Independent Metalium processes isolate devices
 
-r[onix.tenstorrent.model_process_isolation.devices] Each independent Metalium model service MUST restrict UMD discovery to its configured physical PCIe device through `TT_VISIBLE_DEVICES`, MUST select logical device 0 after filtering, and MUST remove mesh-shape and mesh-descriptor variables from the service environment.
+r[onix.tenstorrent.model_process_isolation.devices] An independent single-device Metalium process MUST restrict UMD discovery through `TT_VISIBLE_DEVICES`, MUST select logical device 0 after filtering, and MUST remove mesh variables from its process environment.
 
-#### Scenario: Physical card 1 is remapped for an isolated process
+#### Scenario: A physical card is remapped for a diagnostic process
 
-- GIVEN a Metalium service configured for physical device 1
-- WHEN the service environment is generated
-- THEN `TT_VISIBLE_DEVICES` equals `1`
-- AND `GGML_METALIUM_DEVICE_ID` equals `0`
-- AND the service does not inherit a multi-card mesh shape or descriptor
+- GIVEN a diagnostic selects one physical P150
+- WHEN its isolated process environment is generated
+- THEN only that physical device is visible
+- AND the process selects logical device 0
+- AND the process does not inherit the host P150x2 descriptor
 
-#### Scenario: Invalid physical device identifiers are rejected
+#### Scenario: An invalid physical device identifier is rejected
 
-- GIVEN a Metalium service with a negative or non-integer physical device identifier
+- GIVEN a negative or non-integer physical device identifier
 - WHEN module assertions are evaluated
 - THEN evaluation reports a configuration error
 
-### Requirement: Metalium model processes isolate mutable runtime state
+### Requirement: Model processes isolate mutable runtime state
 
-r[onix.tenstorrent.model_process_isolation.state] Each independent Metalium model service MUST use a service-private `TT_METAL_CACHE`, MUST write generated TT-Metal logs outside the source repository, and MUST use an inspector RPC address that does not collide with another deployed Metalium service.
+r[onix.tenstorrent.model_process_isolation.state] Each Metalium process MUST use private cache and log paths, and each Inspector endpoint MUST not collide with another process.
 
-#### Scenario: Two model services start without cache or device-lock contention
+#### Scenario: A diagnostic runs beside CPU Supra
 
-- GIVEN VibeThinker and Supra-Router-51M are assigned different physical cards and state paths
-- WHEN both services start concurrently
-- THEN neither process waits for the other process's `CHIP_IN_USE` lock
-- AND neither process shares a kernel compilation cache
+- GIVEN CPU Supra is active and Qwen is isolated before the diagnostic starts
+- WHEN the diagnostic creates its runtime paths
+- THEN it does not share Qwen cache or log state
+- AND it does not claim Supra resources
 
 ### Requirement: Supra-Router-51M preserves P150 capacity
 
-r[onix.tenstorrent.concurrent_models.supra] The `llamacpp-server-supra-router` service MUST preserve port 13306, its model alias, deterministic sampling, routing output behavior, and GGUF model path, MUST use the CPU backend when its checked throughput equals or exceeds the former tuned Metalium deployment, and MUST NOT claim or reserve a Tenstorrent physical device needed by a supported larger model service.
+r[onix.tenstorrent.concurrent_models.supra] The `llamacpp-server-supra-router` service MUST preserve port 13306, its model alias, deterministic sampling, routing output, and GGUF model path, and MUST NOT reserve a Tenstorrent device.
 
-#### Scenario: Supra returns a routing decision while both P150s serve larger models
+#### Scenario: Supra returns a routing decision while Qwen owns both P150s
 
-- GIVEN VibeThinker owns physical card 0 and Llama-3.1-8B-Instruct owns physical card 1
-- WHEN a structurally framed routing prompt is submitted to CPU Supra on port 13306 while VibeThinker handles a request
-- THEN Supra returns the expected pipe-separated routing schema and fixed-input output
-- AND Supra throughput does not materially regress from its former tuned Metalium deployment
+- GIVEN Qwen owns physical devices 0 and 1
+- WHEN a routing prompt is submitted to CPU Supra on port 13306
+- THEN Supra returns its expected routing schema
 - AND Supra does not acquire a Tenstorrent device lock, cache, or Inspector endpoint
 
-### Requirement: VibeThinker remains on physical card 0
+### Requirement: Qwen has exclusive P150x2 ownership
 
-r[onix.tenstorrent.concurrent_models.vibethinker] The `britton-desktop` VibeThinker service MUST remain assigned to physical card 0 while the host-level P150x2 descriptor remains available for explicitly mesh-aware TT-Metal and TT-NN workloads.
+r[onix.tenstorrent.p150x2_qwen.exclusivity] `qwen38-p150x2.service` MUST be the only automatically started model service that can acquire either P150 device.
 
-#### Scenario: Host topology and process isolation coexist
+#### Scenario: Host topology and Qwen ownership coexist
 
 - GIVEN the Tenstorrent host tag exports the P150x2 descriptor
-- WHEN the two single-card model units are generated
-- THEN the host environment retains the descriptor
-- AND each model service removes the descriptor from its own process environment
+- WHEN the Qwen service starts
+- THEN it requires both device nodes
+- AND it clears ambient mesh and simulator variables
+- AND the former single-card VibeThinker and Llama services remain absent
