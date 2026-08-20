@@ -22,7 +22,20 @@
 
     nix = {
       url = "github:onixcomputer/nix";
-      inputs.nixpkgs.follows = "nixpkgs";
+      # The fork still carries packaging/patches/0001-Fix-uncaught_exceptions-...
+      # (boostorg/context 58832123) and injects it as the first boost patch,
+      # so any nixpkgs that also applies the 0921b9f (BOOST_NOINLINE) and
+      # 58832123 pair for boost 1.88-1.92 breaks the patch sequence and boost
+      # cannot build. release-26.05 gained that pair in b5e044308f12
+      # (2026-08-02) and builds boost 1.89.0, so the channel tip is not safe.
+      # Pin the immutable build-4193 snapshot the fork was already locked to
+      # instead of the moving channels.nixos.org tarball, so `nix flake
+      # update` cannot silently advance into the broken zone. When the fork
+      # drops its local patch, resolve the current channel tip with the
+      # multiverse and pin that commit here:
+      #   nix eval --raw github:fzakaria/nixpkgs-multiverse#multiverse.x86_64-linux.releaseTips."26.05".rev
+      # (see AGENTS.md "Flake evaluation").
+      inputs.nixpkgs.url = "https://releases.nixos.org/nixos/26.05/nixos-26.05.4193.a50de1b7d8a5/nixexprs.tar.xz";
       inputs.flake-parts.follows = "flake-parts";
     };
 
