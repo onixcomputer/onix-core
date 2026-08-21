@@ -41,4 +41,5 @@ If you use direnv, run `direnv allow` once. The `.envrc` file opens the same she
 - [graham33/nixos-dgx-spark](https://github.com/graham33/nixos-dgx-spark) — upstream NixOS hardware module used by the reusable `dgx-spark` machine tag.
 - [cachix/devenv#3073](https://github.com/cachix/devenv/pull/3073) — experimental Devenv machines interface selected for the device-free DGX lifecycle plan.
 - `docs/dgx-spark-power-profile.md` — DGX Spark GPU clock-cap serving profile, runbook, and measured power data.
+- [OpenBubbles/openbubbles-app](https://github.com/OpenBubbles/openbubbles-app) — upstream serverless iMessage/Apple-services client; the pinned Linux release bundle wrapped as the local `openbubbles` package.
 

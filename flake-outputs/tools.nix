@@ -67,6 +67,7 @@ in
     sone = pkgs.callPackage ../pkgs/sone { };
     opendeck = pkgs.callPackage ../pkgs/opendeck { };
     open-notebook = pkgs.callPackage ../pkgs/open-notebook { };
+    openbubbles = pkgs.callPackage ../pkgs/openbubbles { };
   }
   // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
     rbw-pinentry = pkgs.callPackage ../pkgs/rbw-pinentry { };
