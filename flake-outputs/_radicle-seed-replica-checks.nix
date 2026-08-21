@@ -36,12 +36,14 @@ let
   executionGraphRepository = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a";
   choregraphRepository = "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF";
   durableFilePublicationRepository = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM";
+  koiterminalRepository = "rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ";
   governedRepositories = [
     pilotRepository
     artifactAuthRepository
     executionGraphRepository
     choregraphRepository
     durableFilePublicationRepository
+    koiterminalRepository
   ];
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   privateSeaglassRepository = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
@@ -361,7 +363,22 @@ let
       expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs";
     }
     {
-      name = "undeclared-sixth-rid";
+      name = "missing-koiterminal-rid";
+      settings = positiveSettings // {
+        seedRepositories = [
+          pilotRepository
+          artifactAuthRepository
+          executionGraphRepository
+          choregraphRepository
+          durableFilePublicationRepository
+        ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs";
+    }
+    {
+      name = "undeclared-seventh-rid";
       settings = positiveSettings // {
         seedRepositories = governedRepositories ++ [ inheritedRepository ];
       };

@@ -30,12 +30,14 @@ let
   executionGraphRepository = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a";
   choregraphRepository = "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF";
   durableFilePublicationRepository = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM";
+  koiterminalRepository = "rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ";
   governedRepositories = [
     boundedExecRepository
     artifactAuthRepository
     executionGraphRepository
     choregraphRepository
     durableFilePublicationRepository
+    koiterminalRepository
   ];
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   privateSeaglassRepository = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
@@ -189,7 +191,7 @@ lib.concatLists [
   ) "httpsEnabled requires the read-only HTTP gateway")
   (rejectUnless validSeedRepositoryIds "seedRepositories must contain only canonical public rad:z repository IDs")
   (rejectUnless uniqueSeedRepositoryIds "seedRepositories must not contain duplicate repository IDs")
-  (rejectUnless seedRepositoriesAreGoverned "seedRepositories must contain exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs in the public set; it must also contain the durable-file-publication RID")
+  (rejectUnless seedRepositoriesAreGoverned "seedRepositories must contain exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs in the public set; it must also contain the durable-file-publication and koiTerminal fork RIDs")
   (rejectUnless validPrivateSeedRepositoryIds "privateSeedRepositories must contain only canonical rad:z repository IDs")
   (rejectUnless uniquePrivateSeedRepositoryIds "privateSeedRepositories must not contain duplicate repository IDs")
   (rejectUnless privateSeedRepositoriesAreGoverned "privateSeedRepositories must contain exactly the reviewed private repository set")

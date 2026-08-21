@@ -69,6 +69,7 @@ let
   executionGraphRepository = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a";
   choregraphRepository = "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF";
   durableFilePublicationRepository = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM";
+  koiterminalRepository = "rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ";
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   privateSeaglassRepository = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
   privatePilotCommit = "ff4ff027817465b1bb04251a8a98db42cc610b0c";
@@ -81,6 +82,7 @@ let
     executionGraphRepository
     choregraphRepository
     durableFilePublicationRepository
+    koiterminalRepository
   ];
   privateRepositories = [
     privatePilotRepository
@@ -530,7 +532,22 @@ let
       expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs";
     }
     {
-      name = "unknown-sixth-seed-rid";
+      name = "missing-koiterminal-seed-rid";
+      settings = positiveSettings // {
+        seedRepositories = [
+          productionPilotRepository
+          artifactAuthRepository
+          executionGraphRepository
+          choregraphRepository
+          durableFilePublicationRepository
+        ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs";
+    }
+    {
+      name = "unknown-seventh-seed-rid";
       settings = positiveSettings // {
         seedRepositories = productionRepositories ++ [ unmanagedRepository ];
       };
@@ -713,7 +730,22 @@ let
       expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs";
     }
     {
-      name = "https-unknown-sixth-rid";
+      name = "https-missing-koiterminal-rid";
+      settings = httpsSettings // {
+        httpsGitRepositories = [
+          productionPilotRepository
+          artifactAuthRepository
+          executionGraphRepository
+          choregraphRepository
+          durableFilePublicationRepository
+        ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs";
+    }
+    {
+      name = "https-unknown-seventh-rid";
       settings = httpsSettings // {
         seedRepositories = productionRepositories ++ [ unmanagedRepository ];
         httpsGitRepositories = productionRepositories ++ [ unmanagedRepository ];
