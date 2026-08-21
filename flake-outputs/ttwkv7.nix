@@ -10,11 +10,15 @@ let
   system = pkgs.stdenv.hostPlatform.system;
   isSupportedSystem = system == supportedSystem;
   tenstorrent = self.inputs.tenstorrent-nix;
+  # r[impl onix.tenstorrent.native_runtime.rwkv7_p150x2.production_observation]
+  # r[verify onix.tenstorrent.native_runtime.rwkv7_p150x2.production_observation]
   packageNames = [
     "rwkv-lab"
     "rwkv-layer-harness"
     "rwkv-ttwkv7-boundary-device"
     "rwkv-ttwkv7-persistent-device"
+    "rwkv7-p150x2-evidence"
+    "rwkv7-p150x2-runtime"
     "tt-vibethinker-bench"
     "ttsim"
     "ttwkv7"

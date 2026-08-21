@@ -38,6 +38,7 @@ let
   kacheNixRustChecks = (import ./_kache-nix-rust-checks.nix) innerArgs;
   meshLlmChecks = (import ./_mesh-llm-checks.nix) innerArgs;
   dgxSparkPowerChecks = (import ./_dgx-spark-power-checks.nix) innerArgs;
+  dgxDevenvChecks = (import ./_dgx-devenv-checks.nix) innerArgs;
   personalRadicleNodeChecks = (import ./_personal-radicle-node-checks.nix) innerArgs;
   radicleCiRunnerChecks = (import ./_radicle-ci-runner-checks.nix) innerArgs;
   radicleChoregraphAdmissionChecks = (import ./_radicle-choregraph-admission-checks.nix) innerArgs;
@@ -70,6 +71,7 @@ in
     // (kacheNixRustChecks.checks or { })
     // (meshLlmChecks.checks or { })
     // (dgxSparkPowerChecks.checks or { })
+    // (dgxDevenvChecks.checks or { })
     // (personalRadicleNodeChecks.checks or { })
     // (radicleCiRunnerChecks.checks or { })
     // (radicleChoregraphAdmissionChecks.checks or { })

@@ -17,6 +17,10 @@ let
     herdr = self.inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr;
     wrapperLib = self.inputs.wrappers.lib;
   };
+  dgxMachinePackage = pkgs.callPackage ../pkgs/dgx-machine {
+    devenv = self.inputs.devenv-machines.packages.${pkgs.stdenv.hostPlatform.system}.devenv;
+    machineInventory = ../inventory/dgx/generated/machines.json;
+  };
 
   wasmPluginsWithHostImports =
     self.inputs.onix-wasm.packages.${pkgs.stdenv.hostPlatform.system}.wasm-plugins.overrideAttrs
@@ -54,6 +58,7 @@ in
     herdr = herdrPackage;
     horizon = pkgs.callPackage ../pkgs/horizon { horizon-src = self.inputs.horizon; };
     iroh-ssh = pkgs.callPackage ../pkgs/iroh-ssh { };
+    dgx-machine = dgxMachinePackage;
     llamacpp-rocm-rpc = pkgs.callPackage ../pkgs/llamacpp-rocm-rpc { };
     llamacpp-rocm-dspark = pkgs.callPackage ../pkgs/llamacpp-rocm-dspark { };
     deepseek-v4-dspark-draft = pkgs.callPackage ../pkgs/deepseek-v4-dspark-draft { };
@@ -89,4 +94,11 @@ in
     }
   )
   // (sopsViz.packages or { });
+
+  apps = lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+    dgx-machine = {
+      type = "app";
+      program = lib.getExe dgxMachinePackage;
+    };
+  };
 }

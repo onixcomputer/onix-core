@@ -1,0 +1,39 @@
+{
+  "machines": {
+    "fixture-dgx": {
+      "accessPolicy": "framework-only",
+      "diskById": "/dev/disk/by-id/nvme-NVIDIA_fixture_01",
+      "diskoModule": ".machines/fixture-dgx/disko.nix",
+      "facterReport": ".machines/fixture-dgx/facter.json",
+      "knownHostsFile": ".machines/fixture-dgx/known_hosts",
+      "meshBackend": {
+        "externallyManaged": false,
+        "localModel": {
+          "alias": "fixture-custom-q4",
+          "contextSize": 4096,
+          "enableMetrics": true,
+          "extraArgs": [],
+          "file": "models/fixture-Q4_K_M.gguf",
+          "flashAttention": true,
+          "gpuLayers": 999,
+          "noMmap": true,
+          "repository": "fixture-owner/fixture-gguf",
+          "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "modelAlias": "fixture-custom-q4",
+        "unit": "llamacpp-server-dgx-local.service"
+      },
+      "name": "fixture-dgx",
+      "runtimeSecrets": {
+        "irohPrivateKey": "DGX_FIXTURE_IROH_PRIVATE_KEY",
+        "irohPublicKey": "DGX_FIXTURE_IROH_PUBLIC_KEY",
+        "meshJoinToken": "DGX_FIXTURE_MESH_JOIN_TOKEN",
+        "tailscaleAuthKey": "DGX_FIXTURE_TAILSCALE_AUTH_KEY"
+      },
+      "sshHostFingerprint": "SHA256:TrBgpa4BhZB3BXxKMxEjHaM5jZE13eMrwCPJv043YGo",
+      "system": "aarch64-linux",
+      "targetHost": "root@fixture-dgx"
+    }
+  }
+}

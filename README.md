@@ -8,6 +8,8 @@ Run `nix develop --accept-flake-config --no-pure-eval` to open the default deven
 
 If you use direnv, run `direnv allow` once. The `.envrc` file opens the same shell automatically.
 
+Read [`docs/dgx-machines.md`](docs/dgx-machines.md) for the device-free DGX machine lifecycle.
+
 ## References
 - [BlinkDL/RWKV-LM](https://github.com/BlinkDL/RWKV-LM) — pinned official RWKV-7 model, byte-tokenizer, and PyTorch recurrence equations used by the real-weight, stateful-decode, bounded-prompt, and CPU equation-reference harnesses.
 - [fla-org/flash-linear-attention](https://github.com/fla-org/flash-linear-attention) — pinned v0.3.0 checkpoint naming, cross-layer value mixing, recurrent cache, model normalization, and untied language-model head wiring used to decode and independently compare the Hugging Face model format.
@@ -42,4 +44,6 @@ If you use direnv, run `direnv allow` once. The `.envrc` file opens the same she
 - [cachix/devenv#3073](https://github.com/cachix/devenv/pull/3073) — experimental Devenv machines interface selected for the device-free DGX lifecycle plan.
 - `docs/dgx-spark-power-profile.md` — DGX Spark GPU clock-cap serving profile, runbook, and measured power data.
 - [OpenBubbles/openbubbles-app](https://github.com/OpenBubbles/openbubbles-app) — upstream serverless iMessage/Apple-services client; the pinned Linux release bundle wrapped as the local `openbubbles` package.
+- [cachix/secretspec](https://github.com/cachix/secretspec) — declarative secret resolver used by the DGX installation bootstrap boundary.
+- [Mesh-LLM/mesh-llm](https://github.com/Mesh-LLM/mesh-llm) — private inference mesh patched to read invite tokens from credential files.
 

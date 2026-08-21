@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "event_kind": "rwkv7_p150x2_window8_deployment",
+  "hash_algorithm": "blake3",
+  "tenstorrent_nix_revision": "b1e5ff766e9c4e656b5cb1f15356d46c95d832c4",
+  "admission_revision": "8089efa5d0bcffca6e7ac42f73cb2bfcf97935c6",
+  "system_closure": "/nix/store/vnaw887lbpk2fzk0z65i1km3pv9qzyr1-nixos-system-britton-desktop-26.11.20260803.104240a",
+  "prior_system_closure": "/nix/store/9sz5xr2hyp5fsivyi633jd5b15xs37m9-nixos-system-britton-desktop-26.11.20260803.104240a",
+  "activated_at": "2026-08-12T16:55:05-04:00",
+  "activation": {
+    "method": "exact_store_switch_to_configuration",
+    "active_link_matches_target": true,
+    "rollback_target_recorded": true
+  },
+  "packages": {
+    "runtime": "/nix/store/2a058d7mqh8z1fdfn3ix97jajvknnd1v-rwkv7-p150x2-runtime-0.1.0",
+    "evidence": "/nix/store/45zp40w8f0fnjj5pgc2c0s8c1bpqpx7j-rwkv7-p150x2-evidence-0.1.0",
+    "runtime_command_present": true,
+    "monitor_command_present": true
+  },
+  "profile": {
+    "profile_id": "rwkv7-p150x2-persistent-decode-v3",
+    "profile_blake3": "c5bfa37d83c026bfdb9255da4810bc90af71c7a0e949f05c9c5bf3e709654568",
+    "physically_admitted": true,
+    "admitted_decode_windows": [
+      2,
+      4,
+      8
+    ]
+  },
+  "restoration": {
+    "activation_restarted_managed_inference_units": true,
+    "docker_inference_service": "inactive",
+    "llamacpp_service": "inactive",
+    "device_0_unowned": true,
+    "device_1_unowned": true
+  },
+  "validation": {
+    "baseline_system_build_passed": true,
+    "first_target_system_build_blocked_by_missing_numpy": true,
+    "numpy_packaging_fix_revision": "b1e5ff766e9c4e656b5cb1f15356d46c95d832c4",
+    "fixed_evidence_package_build_passed": true,
+    "final_system_build_passed": true,
+    "profile_identity_passed": true,
+    "service_state_restored": true,
+    "device_state_restored": true
+  },
+  "non_claims": [
+    "deployment did not run decode",
+    "deployment did not create new correctness evidence",
+    "deployment did not create new performance evidence",
+    "deployment did not change the admitted profile",
+    "deployment did not route live traffic"
+  ]
+}

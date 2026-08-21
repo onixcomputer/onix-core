@@ -1,0 +1,201 @@
+--- a/crates/mesh-llm-cli/src/parser.rs
++++ b/crates/mesh-llm-cli/src/parser.rs
+@@ -428,6 +428,10 @@
+     #[arg(long, short)]
+     pub join: Vec<String>,
+ 
++    /// Read one mesh invite token from each file (can repeat).
++    #[arg(long, value_name = "PATH")]
++    pub join_file: Vec<PathBuf>,
++
+     /// Discover a mesh and join it.
+     #[arg(long, default_missing_value = "", num_args = 0..=1)]
+     pub discover: Option<String>,
+@@ -1076,6 +1080,7 @@
+         "--gguf",
+         "--mmproj",
+         "--join",
++        "--join-file",
+         "--discover",
+         "--mesh-name",
+         "--region",
+@@ -1492,6 +1497,33 @@
+     }
+ 
+     #[test]
++    fn join_file_parses_before_the_runtime_surface() {
++        let normalized = normalize_runtime_surface_args([
++            "mesh-llm",
++            "--join-file",
++            "/run/credentials/mesh-join-token",
++            "serve",
++            "--headless",
++        ]);
++        let cli = Cli::try_parse_from(normalized.normalized).expect("join file should parse");
++
++        assert_eq!(normalized.explicit_surface, Some(RuntimeSurface::Serve));
++        assert_eq!(
++            cli.join_file,
++            vec![PathBuf::from("/run/credentials/mesh-join-token")]
++        );
++        assert!(cli.join.is_empty());
++    }
++
++    #[test]
++    fn join_file_requires_a_path() {
++        let error = Cli::try_parse_from(["mesh-llm", "--join-file"])
++            .expect_err("join file without a path must fail");
++
++        assert_eq!(error.kind(), ErrorKind::InvalidValue);
++    }
++
++    #[test]
+     fn auth_status_rejects_runtime_only_owner_required_flag() {
+         let err = Cli::try_parse_from(["mesh-llm", "auth", "status", "--owner-required"])
+             .expect_err("runtime-only flag should be rejected for auth status");
+--- a/crates/mesh-llm/src/lib.rs
++++ b/crates/mesh-llm/src/lib.rs
+@@ -1,7 +1,9 @@
+ #![recursion_limit = "256"]
+ 
++use std::path::PathBuf;
+ use std::time::Duration;
+ 
++use anyhow::Context;
+ use clap::{CommandFactory, Parser};
+ 
+ mod commands;
+@@ -42,7 +44,7 @@
+     mesh_llm_tui::install_terminal_panic_hook();
+ 
+     mesh_llm_host_runtime::run_runtime_initialized(
+-        runtime_options_from_cli(cli),
++        runtime_options_from_cli(cli)?,
+         explicit_surface,
+         warning,
+     )
+@@ -118,14 +120,65 @@
+         .and_then(|()| String::from_utf8(bytes).ok())
+ }
+ 
+-fn runtime_options_from_cli(cli: mesh_llm_cli::Cli) -> mesh_llm_host_runtime::RuntimeOptions {
+-    mesh_llm_host_runtime::RuntimeOptions {
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++enum JoinTokenContentError {
++    Empty,
++    ContainsWhitespace,
++}
++
++impl JoinTokenContentError {
++    const fn message(self) -> &'static str {
++        match self {
++            Self::Empty => "file contains no token",
++            Self::ContainsWhitespace => "token contains whitespace",
++        }
++    }
++}
++
++fn normalize_join_token_contents(contents: &str) -> Result<String, JoinTokenContentError> {
++    let token = contents
++        .strip_suffix("\r\n")
++        .or_else(|| contents.strip_suffix('\n'))
++        .unwrap_or(contents);
++    if token.is_empty() {
++        return Err(JoinTokenContentError::Empty);
++    }
++    if token.chars().any(char::is_whitespace) {
++        return Err(JoinTokenContentError::ContainsWhitespace);
++    }
++    Ok(token.to_owned())
++}
++
++fn load_join_tokens(
++    mut inline_tokens: Vec<String>,
++    join_files: &[PathBuf],
++) -> anyhow::Result<Vec<String>> {
++    for path in join_files {
++        let contents = std::fs::read_to_string(path)
++            .with_context(|| format!("failed to read join token file {}", path.display()))?;
++        let token = normalize_join_token_contents(&contents).map_err(|error| {
++            anyhow::anyhow!(
++                "invalid join token file {}: {}",
++                path.display(),
++                error.message()
++            )
++        })?;
++        inline_tokens.push(token);
++    }
++    Ok(inline_tokens)
++}
++
++fn runtime_options_from_cli(
++    cli: mesh_llm_cli::Cli,
++) -> anyhow::Result<mesh_llm_host_runtime::RuntimeOptions> {
++    let join = load_join_tokens(cli.join, &cli.join_file)?;
++    Ok(mesh_llm_host_runtime::RuntimeOptions {
+         log_format: cli.log_format,
+         debug: cli.debug,
+         skippy_metrics_otlp_grpc: cli.skippy_metrics_otlp_grpc,
+         mesh_guardrails: map_mesh_guardrail_mode(cli.mesh_guardrails),
+         help_text: runtime_help_text(),
+-        join: cli.join,
++        join,
+         discover: cli.discover,
+         auto: cli.auto,
+         mesh_discovery_mode: map_mesh_discovery_mode(cli.mesh_discovery_mode),
+@@ -180,7 +233,7 @@
+         trust_policy: cli.trust_policy.map(map_trust_policy),
+         trust_owner: cli.trust_owner,
+         nostr_discovery: cli.nostr_discovery,
+-    }
++    })
+ }
+ 
+ fn command_uses_machine_output(command: Option<&mesh_llm_cli::Command>) -> bool {
+@@ -268,6 +321,46 @@
+ #[cfg(test)]
+ mod cli_entrypoint_tests {
+     use std::ffi::OsString;
++    use std::path::PathBuf;
++
++    #[test]
++    fn join_token_file_loading_preserves_inline_order_and_trims_line_endings() {
++        let temporary_directory = tempfile::tempdir().expect("temporary directory");
++        let token_path = temporary_directory.path().join("join-token");
++        std::fs::write(&token_path, "file-token\r\n").expect("write join token");
++
++        let tokens = super::load_join_tokens(vec!["inline-token".to_owned()], &[token_path])
++            .expect("valid join token file");
++
++        assert_eq!(tokens, vec!["inline-token", "file-token"]);
++    }
++
++    #[test]
++    fn join_token_file_contents_reject_empty_and_multiline_values() {
++        assert_eq!(
++            super::normalize_join_token_contents("\r\n"),
++            Err(super::JoinTokenContentError::Empty)
++        );
++        assert_eq!(
++            super::normalize_join_token_contents("first\nsecond\n"),
++            Err(super::JoinTokenContentError::ContainsWhitespace)
++        );
++        assert_eq!(
++            super::normalize_join_token_contents("token\n\n"),
++            Err(super::JoinTokenContentError::ContainsWhitespace)
++        );
++    }
++
++    #[test]
++    fn join_token_file_loading_reports_missing_files_without_secret_data() {
++        let missing_path = PathBuf::from("/missing/mesh-join-token");
++        let error = super::load_join_tokens(Vec::new(), &[missing_path])
++            .expect_err("missing join token file must fail");
++        let message = error.to_string();
++
++        assert!(message.contains("failed to read join token file"));
++        assert!(!message.contains("inline-token"));
++    }
+ 
+     #[test]
+     fn runtime_surface_help_request_handles_serve_and_client_help() {

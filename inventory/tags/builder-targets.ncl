@@ -4,44 +4,10 @@
 # to catch typos at `ncl export` time.
 let machines_data = import "../core/machines.ncl" in
 let machine_names = std.record.fields machines_data.machines in
-
-let ValidMachineName =
-  std.contract.from_validator (fun name =>
-    if std.array.elem name machine_names then
-      'Ok
-    else
-      'Error {
-        message = "unknown machine: \"%{name}\"",
-        notes = ["Valid machines: %{std.string.join ", " machine_names}"],
-      }
-  )
-in
-
-let PositiveNum =
-  std.contract.from_validator (match {
-    value if std.is_number value && value > 0 => 'Ok,
-    _ => 'Error { message = "must be a positive number" },
-  }
-  )
-in
-
-let BuilderTarget = {
-  name | ValidMachineName,
-  # Optional allow-list of consuming machine hostnames that may use this
-  # builder. Omit for globally reachable builders; set [] for builder targets
-  # that are only valid from their own local Nix context and must not be
-  # advertised to remote clients.
-  allowedConsumers | Array ValidMachineName | optional,
-  speedFactor | PositiveNum,
-  systems | Array String,
-  sshUser | String,
-  maxJobs | PositiveNum,
-  supportedFeatures | Array String,
-}
-in
+let Contracts = (import "builder-target-contracts.ncl") machine_names in
 
 {
-  targets | Array BuilderTarget = [
+  targets = [
     {
       name = "britton-air",
       speedFactor = 12,
@@ -58,10 +24,12 @@ in
       supportedFeatures = ["big-parallel"],
     },
     {
+      # r[impl onix.remote_builder.routing.aspen]
       name = "aspen1",
       speedFactor = 20,
       systems = ["x86_64-linux"],
       sshUser = "root",
+      sshHost = "aspen1.local",
       maxJobs = 16,
       supportedFeatures = ["nixos-test", "big-parallel", "kvm"],
     },
@@ -69,4 +37,4 @@ in
     # causing nix to dispatch the same derivations in both directions.
     # aspen1 is the dedicated build server; aspen2 offloads to it.
   ],
-}
+} | Contracts.BuilderTargets

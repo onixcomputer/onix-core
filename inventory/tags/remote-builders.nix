@@ -35,6 +35,20 @@ let
   consumerMayUseTarget =
     target: !(target ? allowedConsumers) || builtins.elem hostname target.allowedConsumers;
 
+  # r[impl onix.remote_builder.routing.selection]
+  selectBuilderHost =
+    target: machine:
+    let
+      explicitSshHost = target.sshHost or null;
+      lanAddress = machine.addresses.lan or null;
+    in
+    if explicitSshHost != null then
+      explicitSshHost
+    else if lanAddress != null then
+      lanAddress
+    else
+      machine.name;
+
   builderMachines = lib.filterAttrs (
     name: _:
     builtins.elem name builderTargetNames
@@ -42,14 +56,13 @@ let
     && consumerMayUseTarget builderTargetsByName.${name}
   ) allMachines;
 
-  # Build the nix.buildMachines list from Nickel target metadata + machine addresses.
-  # Use LAN address if available, otherwise use hostname directly (reachable via Tailscale MagicDNS).
+  # Build the nix.buildMachines list from typed target metadata and inventory.
+  # An explicit SSH host takes priority over the LAN address and machine name.
   allBuildMachines = lib.mapAttrsToList (
     name: m:
     let
       target = builderTargetsByName.${name};
-      lan = m.addresses.lan or null;
-      sshHostName = if lan != null then lan else name;
+      sshHostName = selectBuilderHost target m;
     in
     {
       protocol = "ssh-ng";
@@ -65,14 +78,20 @@ let
     }
   ) builderMachines;
 
-  # Generate SSH known hosts from inventory + vars
+  # r[impl onix.remote_builder.routing.host_key]
+  # Generate SSH known hosts from inventory + vars.
   knownHostEntries = lib.mapAttrs' (
     name: m:
     let
       lan = m.addresses.lan or null;
+      target = builderTargetsByName.${name} or null;
+      explicitSshHost = if target == null then null else target.sshHost or null;
       hostKey = getHostKey name;
-      hostNames =
-        lib.optional (lan != null) lan ++ lib.optional (name != (if lan != null then lan else "")) name;
+      hostNames = lib.unique (
+        lib.optional (explicitSshHost != null) explicitSshHost
+        ++ lib.optional (lan != null) lan
+        ++ lib.optional (name != (if lan != null then lan else "")) name
+      );
     in
     lib.nameValuePair name {
       inherit hostNames;
@@ -80,8 +99,13 @@ let
     }
   ) (lib.filterAttrs (name: _: getHostKey name != null) allMachines);
 
+  explicitBuilderHosts = builtins.map (target: target.sshHost) (
+    builtins.filter (target: target ? sshHost) builderData.targets
+  );
+
   rootDeployHosts = lib.unique (
-    lib.flatten (
+    explicitBuilderHosts
+    ++ lib.flatten (
       lib.mapAttrsToList (
         name: m:
         let

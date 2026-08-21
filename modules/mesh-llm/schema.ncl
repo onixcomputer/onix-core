@@ -16,5 +16,6 @@ let default_proxy_activation_context_size = 512 in
     meshName = { type = "string", default = "onix-private-inference", description = "Friendly private mesh name" },
     nodeName = { type = "nullable_string", default = null, description = "Optional Mesh-LLM node display name; defaults to the machine hostname" },
     backendUnit = { type = "nullable_string", default = null, description = "Optional local inference systemd unit ordered before the sidecar" },
+    backendExternallyManaged = { type = "bool", default = false, description = "Declare that an external owner provides the loopback inference backend" },
   },
 }

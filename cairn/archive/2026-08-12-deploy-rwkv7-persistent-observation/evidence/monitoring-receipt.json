@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "event_kind": "rwkv7_persistent_decode_monitoring",
+  "hash_algorithm": "blake3",
+  "policy_id": "rwkv7-p150x2-persistent-decode-monitoring-v1",
+  "policy_blake3": "1f7d19e70df728919350b7b5f8242b2592fb2037366b2d88398b945698c0100e",
+  "source": {
+    "event_count": 2,
+    "accepted_event_count": 2,
+    "rejected_event_count": 0,
+    "event_blake3": [
+      "8af284b172c54f8316b259f9d947e6fe36d5f425168510de51791d11f31c76af",
+      "4c5069ee1c8d61aeb6af9d0bfb0431b96293dcb6f09cdb3e985a7c05e514c03c"
+    ],
+    "batch_blake3": "6d4d5e7bf48e9c16898838bfbbdd0c1908c3be5f8b326f1b74f7f2a2296108b6"
+  },
+  "metrics": {
+    "eligibility": {
+      "window_admitted": 2,
+      "workload_eligible": 2,
+      "bindings_validated": 2,
+      "profile_physically_admitted": 2,
+      "candidate_requested": 0
+    },
+    "dispatch": {
+      "persistent_trace": 2,
+      "normal_dispatch": 0,
+      "selected_windows": {
+        "2": 1,
+        "4": 1,
+        "none": 0
+      }
+    },
+    "fallback": {
+      "count": 0,
+      "rate": 0.0,
+      "reasons": {
+        "binding_mismatch": 0,
+        "canary_interlock_blocked": 0,
+        "parity_evidence_missing": 0,
+        "profile_not_admitted": 0,
+        "profiler_evidence_missing": 0,
+        "simulator_evidence_missing": 0,
+        "stable_gain_missing": 0,
+        "trace_unavailable": 0,
+        "window_not_admitted": 0
+      }
+    },
+    "terminal": {
+      "completed": 8,
+      "cancelled": 0,
+      "timed_out": 0,
+      "failed": 0
+    },
+    "parity": {
+      "passed": 2,
+      "not_applicable": 0
+    },
+    "cleanup": {
+      "complete": 2,
+      "not_applicable": 0
+    },
+    "timing": {
+      "trace_setup": {
+        "sum_seconds": 0.496671583,
+        "maximum_seconds": 0.330435405
+      },
+      "trace_replay": {
+        "sum_seconds": 0.035253393,
+        "maximum_seconds": 0.023484228
+      },
+      "cleanup": {
+        "sum_seconds": 0.003420236,
+        "maximum_seconds": 0.001761925
+      }
+    }
+  },
+  "alerts": [],
+  "verdict": "clean",
+  "persistent_admission_recommendation": "retain",
+  "non_claims": [
+    "the receipt does not deliver network metrics or pages",
+    "the receipt does not mutate persistent admission",
+    "the receipt does not control canary traffic",
+    "the receipt does not prove telemetry producer correctness",
+    "the receipt does not replace worker process supervision"
+  ]
+}
