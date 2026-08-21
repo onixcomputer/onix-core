@@ -19,6 +19,7 @@ in
     with pkgs;
     [
       bat
+      b3sum
       btop
       fd
       gh
