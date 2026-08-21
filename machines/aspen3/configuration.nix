@@ -136,6 +136,9 @@ in
     SUBSYSTEM=="drm", KERNEL=="renderD[0-9]*", GROUP="${renderGroup}", MODE="${hardwareAccessMode}"
     SUBSYSTEM=="accel", KERNEL=="accel[0-9]*", GROUP="${renderGroup}", MODE="${hardwareAccessMode}"
 
+    # FTDI USB serial adapters (idVendor 0403) for non-root access.
+    SUBSYSTEM=="usb", ATTRS{idVendor}=="0403", MODE="0664", GROUP="dialout"
+
     # Keep the internal ELAN9008 touchscreen armed as a suspend wake source so
     # firmware-level tap-to-wake works when supported.
     ACTION=="add|change", SUBSYSTEM=="i2c", KERNEL=="${touchScreenI2cDevice}", TEST=="power/wakeup", ATTR{power/wakeup}="enabled"
