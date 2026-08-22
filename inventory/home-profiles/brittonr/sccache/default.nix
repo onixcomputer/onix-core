@@ -124,6 +124,7 @@ let
       ]) linkerArgs;
     };
     net.retry = netRetry;
+    net."git-fetch-with-cli" = true;
     term.quiet = termQuiet;
   };
 
