@@ -11,20 +11,11 @@
     "profile_blake3": "e41319204ddf36bda088afb8a4d55a367dc163951ea29c45738e3b11b815819a",
     "model_profile_blake3": "d33ed1051c7595327368cce7b42e16f025e8fc78d96addb0353fba2e86314a88",
     "physically_admitted": true,
-    "admitted_decode_windows": [
-      2,
-      4
-    ]
+    "admitted_decode_windows": [2, 4]
   },
   "observation": {
-    "physical_device_ids": [
-      0,
-      1
-    ],
-    "selected_decode_windows": [
-      2,
-      4
-    ],
+    "physical_device_ids": [0, 1],
+    "selected_decode_windows": [2, 4],
     "worker_receipt_blake3": [
       "b6a7cd7194ce837009a33dacca1fd52ae77aa9e6ab1f835bd5b156c2cad32751",
       "4b34c4d53715a1d7bbb5fc409bd8a7fc1f8e5d29f2753dca5caab84a3ea4f7b3"

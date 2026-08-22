@@ -46,4 +46,5 @@ Read [`docs/dgx-machines.md`](docs/dgx-machines.md) for the device-free DGX mach
 - [OpenBubbles/openbubbles-app](https://github.com/OpenBubbles/openbubbles-app) — upstream serverless iMessage/Apple-services client; the pinned Linux release bundle wrapped as the local `openbubbles` package.
 - [cachix/secretspec](https://github.com/cachix/secretspec) — declarative secret resolver used by the DGX installation bootstrap boundary.
 - [Mesh-LLM/mesh-llm](https://github.com/Mesh-LLM/mesh-llm) — private inference mesh patched to read invite tokens from credential files.
+- [Hister installing docs](https://hister.org/docs/installing) — upstream installing documentation for the Hister self-hosted search server and terminal client, covering prebuilt binaries, builds from source, Docker, Nix package and flake modules, and Proxmox installs.
 

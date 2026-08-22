@@ -806,6 +806,14 @@ let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
       },
     },
 
+    "hister-desktop" = {
+      module = { name = "hister", input = "self" },
+      roles.server.machines.britton-desktop.settings = {
+        port = 4433,
+        bindAddress = "127.0.0.1",
+      },
+    },
+
     "brittonr-vault" = {
       module = { name = "vaultwarden", input = "self" },
       roles.server.machines.aspen1 = {},

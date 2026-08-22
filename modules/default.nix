@@ -55,6 +55,7 @@ let
     "home-manager-profiles" = import ./home-manager-profiles (schemaArgs ./home-manager-profiles);
     "harmonia" = import ./harmonia (schemaArgs ./harmonia);
     "hermes-gateway" = import ./hermes-gateway (schemaArgs ./hermes-gateway);
+    "hister" = import ./hister (schemaArgs ./hister);
     "llamacpp-rpc" = import ./llamacpp-rpc (schemaArgs ./llamacpp-rpc);
     "llamacpp-server" = import ./llamacpp-server (schemaArgs ./llamacpp-server);
     "syncthing" = import ./syncthing (schemaArgs ./syncthing);

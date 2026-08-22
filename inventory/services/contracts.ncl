@@ -24,6 +24,7 @@ let self_modules = [
   "grafana",
   "harmonia",
   "hermes-gateway",
+  "hister",
   "home-manager-profiles",
   "homepage-dashboard",
   "infinity",

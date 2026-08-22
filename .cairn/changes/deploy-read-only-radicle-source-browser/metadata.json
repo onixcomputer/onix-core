@@ -1,7 +1,5 @@
 {
-  "groups": [
-    "feature:radicle-source-browser"
-  ],
+  "groups": ["feature:radicle-source-browser"],
   "status": "blocked",
   "workflow_profile": {
     "id": "spec-driven",

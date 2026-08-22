@@ -22,11 +22,7 @@
     "profile_id": "rwkv7-p150x2-persistent-decode-v3",
     "profile_blake3": "c5bfa37d83c026bfdb9255da4810bc90af71c7a0e949f05c9c5bf3e709654568",
     "physically_admitted": true,
-    "admitted_decode_windows": [
-      2,
-      4,
-      8
-    ]
+    "admitted_decode_windows": [2, 4, 8]
   },
   "restoration": {
     "activation_restarted_managed_inference_units": true,
