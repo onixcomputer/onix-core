@@ -66,6 +66,7 @@ let durable_file_publication_rid = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM" in
 let koiterminal_rid = "rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ" in
 let radicle_private_pilot_rid = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg" in
 let radicle_seaglass_rid = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk" in
+let radicle_hardened_wasmtime_rid = "rad:z3hRCegTsS8jpJVgxYfb9psEzxHpG" in
 let radicle_source_rids = [
   radicle_pilot_rid,
   artifact_auth_rid,
@@ -75,7 +76,11 @@ let radicle_source_rids = [
   koiterminal_rid,
 ]
 in
-let radicle_private_source_rids = [radicle_private_pilot_rid, radicle_seaglass_rid] in
+let radicle_private_source_rids = [
+  radicle_private_pilot_rid,
+  radicle_seaglass_rid,
+  radicle_hardened_wasmtime_rid,
+] in
 let radicle_production_seed_node_id = "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8" in
 let radicle_reviewed_commit = "29dac88ecded94457572db3fdfaaaab95fa91525" in
 let radicle_ci_policy_blake3 = "091e57f4409f79db14465ccc26e730bf1181209fe45c28d7dd1259393e93f740" in

@@ -72,6 +72,7 @@ let
   koiterminalRepository = "rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ";
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   privateSeaglassRepository = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
+  privateHardenedWasmtimeRepository = "rad:z3hRCegTsS8jpJVgxYfb9psEzxHpG";
   privatePilotCommit = "ff4ff027817465b1bb04251a8a98db42cc610b0c";
   privatePilotIdentityRevision = "cb3f6273f35ff437e58f15332d48f25b06c4b9cc";
   privatePilotSigrefs = "ad1b6d032b69a4b81910b2fc98f8707b9ff268fb";
@@ -87,6 +88,7 @@ let
   privateRepositories = [
     privatePilotRepository
     privateSeaglassRepository
+    privateHardenedWasmtimeRepository
   ];
   pinnedRepository = productionPilotRepository;
   productionHttpsServerName = "git.onix.computer";
