@@ -80,7 +80,8 @@ let radicle_private_source_rids = [
   radicle_private_pilot_rid,
   radicle_seaglass_rid,
   radicle_hardened_wasmtime_rid,
-] in
+]
+in
 let radicle_production_seed_node_id = "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8" in
 let radicle_reviewed_commit = "29dac88ecded94457572db3fdfaaaab95fa91525" in
 let radicle_ci_policy_blake3 = "091e57f4409f79db14465ccc26e730bf1181209fe45c28d7dd1259393e93f740" in
