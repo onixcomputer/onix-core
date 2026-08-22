@@ -78,6 +78,37 @@ in
         };
       }
     )
+    (
+      _final: prev: {
+        # nixpkgs' python dlib expression is stale against the 20.0.1 tarball
+        # in two ways, and both break howdy's face-recognition dependency on
+        # every nixpkgs that pairs dlib 20.0.1 with the old expression:
+        #
+        # 1. `build-cores.patch` no longer applies: upstream removed two
+        #    trailing-whitespace bytes inside the hunk.
+        # 2. 20.0.1's setup.py defers its `--set` argv stripping until
+        #    build_extension runs, so setuptools rejects the `--set` flags
+        #    that nixpkgs' preConfigure shim injects via setupPyBuildFlags.
+        #
+        # The overlay replaces the patch with the same change rebased onto
+        # 20.0.1, bakes the cmake options into the cmake_args_dict literal
+        # (same values the shim used to pass), and drops the shim. Remove this
+        # whole override once upstream nixpkgs repairs the expression.
+        pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
+          (
+            _python-final: python-prev: {
+              dlib = python-prev.dlib.overrideAttrs (_old: {
+                patches = [
+                  ./dlib-20.0.1-build-cores.patch
+                  ./dlib-20.0.1-cmake-args.patch
+                ];
+                preConfigure = "";
+              });
+            }
+          )
+        ];
+      }
+    )
   ];
 
   nix = {

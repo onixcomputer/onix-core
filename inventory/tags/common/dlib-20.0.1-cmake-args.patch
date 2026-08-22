@@ -1,0 +1,13 @@
+--- a/setup.py
++++ b/setup.py
+@@ -177,6 +177,10 @@
+             'CMAKE_LIBRARY_OUTPUT_DIRECTORY': extdir,
+             'DLIB_USE_FFMPEG': 'OFF',
+             'PYTHON_EXECUTABLE': sys.executable,
++            'BUILD_SHARED_LIBS': 'TRUE',
++            'USE_SSE4_INSTRUCTIONS': 'FALSE',
++            'USE_AVX_INSTRUCTIONS': 'FALSE',
++            'DLIB_USE_CUDA': 'FALSE',
+         }
+         for key, value in os.environ.items():
+             if key.startswith("DLIB_"):
