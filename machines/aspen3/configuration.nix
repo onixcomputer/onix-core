@@ -34,6 +34,11 @@ let
   ];
   ldacQualityMode = "hq";
   touchpadTapToClick = false;
+  leviathanBuilderHost = "leviathan.cymric-daggertooth.ts.net";
+  leviathanBuilderHostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMeSXZNbJuMapeK3JL7B/NfIo1ER8omtbPqTGMK1KNIj";
+  leviathanBuilderMaxJobs = 16;
+  leviathanBuilderSpeedFactor = 20;
+  leviathanBuilderSshKey = config.clan.core.vars.generators.nix-builder-ssh.files."id_ed25519".path;
   # r[impl onix.radicle_replica.desktop_isolation]
   radicleDesktopUserName = "brittonr";
   radicleDesktopUserUid = config.users.users.${radicleDesktopUserName}.uid;
@@ -58,6 +63,30 @@ in
   networking = {
     hostName = "aspen3";
     hostId = zfsHostId;
+  };
+
+  # Leviathan executes ARM64 cross-compilation derivations on its x86_64 build platform.
+  nix.buildMachines = lib.mkAfter [
+    {
+      protocol = "ssh-ng";
+      hostName = leviathanBuilderHost;
+      systems = [ "x86_64-linux" ];
+      maxJobs = leviathanBuilderMaxJobs;
+      speedFactor = leviathanBuilderSpeedFactor;
+      supportedFeatures = [
+        "benchmark"
+        "big-parallel"
+        "kvm"
+        "nixos-test"
+      ];
+      sshUser = "brittonr";
+      sshKey = leviathanBuilderSshKey;
+    }
+  ];
+
+  programs.ssh.knownHosts.leviathan = {
+    hostNames = [ leviathanBuilderHost ];
+    publicKey = leviathanBuilderHostKey;
   };
 
   boot = {

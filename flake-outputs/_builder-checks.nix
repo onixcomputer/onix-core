@@ -14,6 +14,11 @@
 let
   plugins = self.packages.x86_64-linux.wasm-plugins;
   wasm = import ../lib/wasm.nix { inherit plugins; };
+  aspen3Name = "aspen3";
+  leviathanHostName = "leviathan.cymric-daggertooth.ts.net";
+  leviathanBuildSystem = "x86_64-linux";
+  leviathanTargetSystem = "aarch64-linux";
+  leviathanSshUser = "brittonr";
 
   allMachines = (wasm.evalNickelFile ../inventory/core/machines.ncl).machines;
   builderTargetData = wasm.evalNickelFile ../inventory/tags/builder-targets.ncl;
@@ -47,8 +52,16 @@ let
           hostname = cfg.networking.hostName;
           lan = machine.addresses.lan or null;
           builderHosts = map (m: m.hostName) builders;
+          leviathanKnownHost = cfg.programs.ssh.knownHosts.leviathan or null;
           builders = map (m: {
-            inherit (m) hostName systems supportedFeatures;
+            inherit (m)
+              hostName
+              protocol
+              sshKey
+              sshUser
+              supportedFeatures
+              systems
+              ;
           }) builders;
         }
       ) builderMachines
@@ -90,6 +103,12 @@ in
     with open("${builderListsJSON}") as f:
         machines = json.load(f)
 
+    aspen3_name = "${aspen3Name}"
+    leviathan_host = "${leviathanHostName}"
+    leviathan_build_system = "${leviathanBuildSystem}"
+    leviathan_target_system = "${leviathanTargetSystem}"
+    leviathan_ssh_user = "${leviathanSshUser}"
+
     errors = []
     for name, info in machines.items():
         hostname = info["hostname"]
@@ -115,6 +134,49 @@ in
                 if "aarch64-linux" in systems:
                     errors.append(
                         f"{name}: advertises nested aarch64-linux through britton-air Darwin endpoint"
+                    )
+
+        if name == aspen3_name:
+            leviathan_builders = [
+                builder
+                for builder in info["builders"]
+                if builder["hostName"] == leviathan_host
+            ]
+            if len(leviathan_builders) != 1:
+                errors.append(
+                    f"positive: {name} must have exactly one Leviathan cross builder"
+                )
+            else:
+                builder = leviathan_builders[0]
+                systems = builder.get("systems", [])
+                if systems != [leviathan_build_system]:
+                    errors.append(
+                        f"positive: Leviathan must use build platform {leviathan_build_system}, got {systems}"
+                    )
+                if leviathan_target_system in systems:
+                    errors.append(
+                        f"negative: Leviathan must not advertise native {leviathan_target_system}"
+                    )
+                if builder.get("protocol") != "ssh-ng":
+                    errors.append("positive: Leviathan must use the ssh-ng protocol")
+                if builder.get("sshUser") != leviathan_ssh_user:
+                    errors.append(
+                        f"positive: Leviathan must use SSH user {leviathan_ssh_user}"
+                    )
+                if not builder.get("sshKey"):
+                    errors.append("negative: Leviathan must not omit its SSH key")
+
+            known_host = info.get("leviathanKnownHost")
+            if known_host is None:
+                errors.append("negative: aspen3 must not omit the Leviathan host key")
+            else:
+                if leviathan_host not in known_host.get("hostNames", []):
+                    errors.append(
+                        "positive: the Leviathan known-host entry must cover its builder hostname"
+                    )
+                if not known_host.get("publicKey", "").startswith("ssh-ed25519 "):
+                    errors.append(
+                        "negative: the Leviathan known-host entry must contain an Ed25519 key"
                     )
 
     if errors:
