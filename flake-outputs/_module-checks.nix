@@ -24,6 +24,7 @@ let
   sglangDiffusionValidation = wasm.evalNickelFile ../inventory/services/fixtures/sglang-diffusion-validation.ncl;
   ttInferenceServerValidation = wasm.evalNickelFile ../inventory/services/fixtures/tt-inference-server-validation.ncl;
   rustfsValidation = wasm.evalNickelFile ../inventory/services/fixtures/rustfs-validation.ncl;
+  rustfsTopologyTests = import ../modules/rustfs/topology-tests.nix { inherit lib; };
 
   # Modules registered in contracts.ncl (clan perInstance services only)
   registeredModules = lib.sort lib.lessThan moduleLists.selfModules;
@@ -91,6 +92,7 @@ let
   rustfsPositiveErrors = rustfsValidation.positive;
   rustfsNegativeErrors = rustfsValidation.negative;
   expectedRustfsNegativeFields = [
+    "mode"
     "dataDir"
     "bindAddress"
     "apiPort"
@@ -98,10 +100,16 @@ let
     "enableConsole"
     "openFirewall"
     "firewallInterface"
+    "clusterEndpoints"
+    "topologyWaitMode"
+    "topologyWaitTimeoutSeconds"
   ];
   missingRustfsNegativeFields = builtins.filter (
     field: !(lib.any (error: lib.hasInfix field error) rustfsNegativeErrors)
   ) expectedRustfsNegativeFields;
+  rustfsTopologyPositiveErrors = rustfsTopologyTests.positiveErrors;
+  rustfsTopologyMissingNegativeCases = rustfsTopologyTests.missingNegativeCases;
+  rustfsTopologyNegativeErrors = rustfsTopologyTests.negativeErrors;
 in
 {
   checks = {
@@ -196,6 +204,23 @@ in
         printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" missingRustfsNegativeFields)}
         echo "Actual errors:"
         printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" rustfsNegativeErrors)}
+        exit 1
+      ''}
+      touch $out
+    '';
+
+    # r[verify onix.rustfs_cluster.validation]
+    rustfs-topology = pkgs.runCommand "rustfs-topology" { } ''
+      ${lib.optionalString (rustfsTopologyPositiveErrors != [ ]) ''
+        echo "Valid RustFS topologies produced unexpected errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" rustfsTopologyPositiveErrors)}
+        exit 1
+      ''}
+      ${lib.optionalString (rustfsTopologyMissingNegativeCases != [ ]) ''
+        echo "Invalid RustFS topologies did not report expected errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" rustfsTopologyMissingNegativeCases)}
+        echo "Actual errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" rustfsTopologyNegativeErrors)}
         exit 1
       ''}
       touch $out

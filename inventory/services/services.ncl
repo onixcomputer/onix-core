@@ -105,15 +105,32 @@ let radicle_backup_retention_weekly = 4 in
 let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
 let rustfs_api_port = 39000 in
 let rustfs_console_port = 39001 in
-let rustfs_server_settings = fun data_dir =>
+let rustfs_topology_wait_timeout_seconds = 120 in
+let rustfs_aspen1_address = "100.100.103.95" in
+let rustfs_aspen3_address = "100.108.13.4" in
+let rustfs_britton_desktop_address = "100.110.43.11" in
+let rustfs_aspen1_data_dir = "/var/lib/rustfs-cluster" in
+let rustfs_aspen3_data_dir = "/mnt/usb4-nvme/rustfs-cluster" in
+let rustfs_britton_desktop_data_dir = "/datapool/rustfs-cluster" in
+let rustfs_cluster_endpoints = [
+  "http://%{rustfs_aspen1_address}:%{rustfs_api_port}%{rustfs_aspen1_data_dir}",
+  "http://%{rustfs_aspen3_address}:%{rustfs_api_port}%{rustfs_aspen3_data_dir}",
+  "http://%{rustfs_britton_desktop_address}:%{rustfs_api_port}%{rustfs_britton_desktop_data_dir}",
+]
+in
+let rustfs_cluster_settings = fun bind_address data_dir =>
   {
+    mode = "distributed",
     dataDir = data_dir,
-    bindAddress = "0.0.0.0",
+    bindAddress = bind_address,
     apiPort = rustfs_api_port,
     consolePort = rustfs_console_port,
     enableConsole = true,
     openFirewall = true,
     firewallInterface = "tailscale0",
+    clusterEndpoints = rustfs_cluster_endpoints,
+    topologyWaitMode = "bounded",
+    topologyWaitTimeoutSeconds = rustfs_topology_wait_timeout_seconds,
   }
 in
 {
@@ -145,19 +162,14 @@ in
       },
     },
 
-    "rustfs-aspen1" = {
+    # r[impl onix.rustfs_cluster.composition]
+    "rustfs-cluster" = {
       module = { name = "rustfs", input = "self" },
-      roles.server.machines.aspen1.settings = rustfs_server_settings "/var/lib/rustfs",
-    },
-
-    "rustfs-aspen3" = {
-      module = { name = "rustfs", input = "self" },
-      roles.server.machines.aspen3.settings = rustfs_server_settings "/mnt/usb4-nvme/rustfs",
-    },
-
-    "rustfs-britton-desktop" = {
-      module = { name = "rustfs", input = "self" },
-      roles.server.machines.britton-desktop.settings = rustfs_server_settings "/datapool/rustfs",
+      roles.server.machines = {
+        aspen1.settings = rustfs_cluster_settings rustfs_aspen1_address rustfs_aspen1_data_dir,
+        aspen3.settings = rustfs_cluster_settings rustfs_aspen3_address rustfs_aspen3_data_dir,
+        britton-desktop.settings = rustfs_cluster_settings rustfs_britton_desktop_address rustfs_britton_desktop_data_dir,
+      },
     },
 
     "kache-nix-rust-britton-desktop" = {
