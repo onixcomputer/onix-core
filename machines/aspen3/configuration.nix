@@ -34,6 +34,19 @@ let
   ];
   ldacQualityMode = "hq";
   touchpadTapToClick = false;
+  usb4NvmeFileSystemUuid = "a47086f0-54df-4a9e-afec-94d06ad7e41b";
+  usb4NvmeMountPoint = "/mnt/usb4-nvme";
+  usb4NvmeDeviceTimeout = "5s";
+  usb4PciRescanDelaySeconds = 2;
+  pciRescanPath = "/sys/bus/pci/rescan";
+  amdVulkanIcd = "/run/opengl-driver/share/vulkan/icd.d/amd_icd64.json";
+  radeonVulkanIcd = "/run/opengl-driver/share/vulkan/icd.d/radeon_icd.x86_64.json";
+  nvidiaVulkanIcd = "/run/opengl-driver/share/vulkan/icd.d/nvidia_icd.x86_64.json";
+  hybridVulkanIcdFiles = lib.concatStringsSep ":" [
+    amdVulkanIcd
+    radeonVulkanIcd
+    nvidiaVulkanIcd
+  ];
   leviathanBuilderHost = "leviathan.cymric-daggertooth.ts.net";
   leviathanBuilderHostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMeSXZNbJuMapeK3JL7B/NfIo1ER8omtbPqTGMK1KNIj";
   leviathanBuilderMaxJobs = 16;
@@ -96,7 +109,30 @@ in
     kernelModules = [ amdNpuKernelModule ];
   };
 
+  # Keep the integrated Radeon GPU as the display owner. The NVIDIA open
+  # module binds to the hot-plugged RTX 5080 when the USB4 PCIe link appears.
+  hardware.nvidia = {
+    modesetting.enable = true;
+    powerManagement.enable = true;
+    powerManagement.finegrained = false;
+    open = true;
+    nvidiaSettings = true;
+    package = config.boot.kernelPackages.nvidiaPackages.vulkan_beta;
+  };
+
+  fileSystems.${usb4NvmeMountPoint} = {
+    device = "/dev/disk/by-uuid/${usb4NvmeFileSystemUuid}";
+    fsType = "ext4";
+    options = [
+      "nofail"
+      "x-systemd.automount"
+      "x-systemd.device-timeout=${usb4NvmeDeviceTimeout}"
+    ];
+  };
+
   services = {
+    xserver.videoDrivers = lib.mkAfter [ "nvidia" ];
+
     # The ASUS Flow module enables GPU switching by default for GV302X. This
     # GZ302EAC target has the integrated Radeon 8060S, so no mux daemon is needed.
     supergfxd.enable = false;
@@ -171,23 +207,52 @@ in
     # Keep the internal ELAN9008 touchscreen armed as a suspend wake source so
     # firmware-level tap-to-wake works when supported.
     ACTION=="add|change", SUBSYSTEM=="i2c", KERNEL=="${touchScreenI2cDevice}", TEST=="power/wakeup", ATTR{power/wakeup}="enabled"
+
+    # The DEG2 bridge can become authorized before Linux scans its downstream
+    # PCIe buses. Ask systemd to run the bounded rescan after authorization.
+    ACTION=="add|change", SUBSYSTEM=="thunderbolt", ATTR{authorized}=="1", TAG+="systemd", ENV{SYSTEMD_WANTS}+="usb4-pci-rescan.service"
   '';
 
-  users.groups.${c0sdGroup}.members = [ "brittonr" ];
-  users.users.brittonr.extraGroups = [ renderGroup ];
+  systemd = {
+    services = {
+      usb4-pci-rescan = {
+        description = "Rescan PCIe after USB4 authorization";
+        after = [ "bolt.service" ];
+        wants = [ "bolt.service" ];
+        wantedBy = [ "multi-user.target" ];
+        serviceConfig.Type = "oneshot";
+        script = ''
+          ${pkgs.coreutils}/bin/sleep ${toString usb4PciRescanDelaySeconds}
+          ${pkgs.coreutils}/bin/printf '1\n' > ${pciRescanPath}
+        '';
+      };
 
-  systemd.slices.${radicleDesktopUserSliceName}.sliceConfig.SocketBindDeny =
-    radicleManagedNodeBindRule;
+      c0sd-sysfs-perms = {
+        description = "Allow c0sd group to soft-cycle SD host controller";
+        wantedBy = [ "multi-user.target" ];
+        serviceConfig.Type = "oneshot";
+        script = ''
+          ${pkgs.coreutils}/bin/chgrp ${c0sdGroup} ${sdhciPciDriverPath}/bind ${sdhciPciDriverPath}/unbind
+          ${pkgs.coreutils}/bin/chmod ${sdhciDriverControlMode} ${sdhciPciDriverPath}/bind ${sdhciPciDriverPath}/unbind
+        '';
+      };
+    };
 
-  systemd.services.c0sd-sysfs-perms = {
-    description = "Allow c0sd group to soft-cycle SD host controller";
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig.Type = "oneshot";
-    script = ''
-      ${pkgs.coreutils}/bin/chgrp ${c0sdGroup} ${sdhciPciDriverPath}/bind ${sdhciPciDriverPath}/unbind
-      ${pkgs.coreutils}/bin/chmod ${sdhciDriverControlMode} ${sdhciPciDriverPath}/bind ${sdhciPciDriverPath}/unbind
-    '';
+    slices.${radicleDesktopUserSliceName}.sliceConfig.SocketBindDeny = radicleManagedNodeBindRule;
   };
+
+  # The AMD tag restricts Vulkan discovery to Radeon. Add the external
+  # NVIDIA ICD without changing the default display GPU.
+  environment.variables = {
+    VK_ICD_FILENAMES = lib.mkForce hybridVulkanIcdFiles;
+    VK_DRIVER_FILES = lib.mkForce hybridVulkanIcdFiles;
+  };
+
+  users.groups.${c0sdGroup}.members = [ "brittonr" ];
+  users.users.brittonr.extraGroups = [
+    renderGroup
+    "video"
+  ];
 
   home-manager.users.brittonr = {
     # r[onix.aspen3.power.idle]
@@ -219,6 +284,8 @@ in
 
   environment.systemPackages = with pkgs; [
     alsa-utils
+    nvme-cli
+    pciutils
     opentofu
     # Keep the wrapped Herdr base on the accepted llm-agents provider so the
     # interactive terminal gets the same plugin set as britton-desktop.
