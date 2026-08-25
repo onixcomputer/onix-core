@@ -37,6 +37,7 @@ let
     "homepage-dashboard" = import ./homepage-dashboard (schemaArgs ./homepage-dashboard);
     "cloudflare-tunnel" = import ./cloudflare-tunnel (schemaArgs ./cloudflare-tunnel);
     "calibre-server" = import ./calibre-server (schemaArgs ./calibre-server);
+    "celld" = import ./celld (schemaArgs ./celld);
     "llm" = import ./llm (schemaArgs ./llm);
     "upmpdcli" = import ./upmpdcli (schemaArgs ./upmpdcli);
     "nix-gc" = import ./nix-gc ({ inherit inputs; } // schemaArgs ./nix-gc);

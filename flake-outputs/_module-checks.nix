@@ -25,6 +25,8 @@ let
   ttInferenceServerValidation = wasm.evalNickelFile ../inventory/services/fixtures/tt-inference-server-validation.ncl;
   rustfsValidation = wasm.evalNickelFile ../inventory/services/fixtures/rustfs-validation.ncl;
   rustfsTopologyTests = import ../modules/rustfs/topology-tests.nix { inherit lib; };
+  celldValidation = wasm.evalNickelFile ../inventory/services/fixtures/celld-validation.ncl;
+  celldSettingsTests = import ../modules/celld/settings-tests.nix { inherit lib; };
 
   # Modules registered in contracts.ncl (clan perInstance services only)
   registeredModules = lib.sort lib.lessThan moduleLists.selfModules;
@@ -121,6 +123,72 @@ let
       self.nixosConfigurations.${machine}.config.systemd.services.rustfs.serviceConfig.RestrictAddressFamilies
     )
   ) rustfsClusterMachines;
+
+  celldPositiveErrors = celldValidation.positive;
+  celldNegativeErrors = celldValidation.negative;
+  expectedCelldNegativeFields = [
+    "stateDir"
+    "bindAddress"
+    "storageEndpoint"
+    "bucketName"
+    "region"
+    "accessKeyId"
+    "publicPort"
+    "internalPort"
+    "openFirewall"
+    "firewallInterface"
+    "provisionStorage"
+    "rustfsAdminGenerator"
+    "deployCounter"
+    "leaseTtlMilliseconds"
+    "restartDelaySeconds"
+    "shutdownDrainMilliseconds"
+  ];
+  missingCelldNegativeFields = builtins.filter (
+    field: !(lib.any (error: lib.hasInfix field error) celldNegativeErrors)
+  ) expectedCelldNegativeFields;
+  celldSettingsPositiveErrors = celldSettingsTests.positiveErrors;
+  celldSettingsMissingNegativeCases = celldSettingsTests.missingNegativeCases;
+  celldSettingsNegativeErrors = celldSettingsTests.negativeErrors;
+  celldPublicPort = 39200;
+  celldInternalPort = 39201;
+  celldClusterMachines = [
+    "aspen1"
+    "aspen3"
+    "britton-desktop"
+  ];
+  celldProvisionerMachines = builtins.filter (
+    machine:
+    builtins.hasAttr "celld-storage-provision"
+      self.nixosConfigurations.${machine}.config.systemd.services
+  ) celldClusterMachines;
+  celldMissingServices = builtins.filter (
+    machine: !(builtins.hasAttr "celld" self.nixosConfigurations.${machine}.config.systemd.services)
+  ) celldClusterMachines;
+  celldExpectedStorageEndpoints = {
+    aspen1 = "http://100.100.103.95:39000";
+    aspen3 = "http://100.108.13.4:39000";
+    britton-desktop = "http://100.110.43.11:39000";
+  };
+  celldStorageEndpointMismatches = builtins.filter (
+    machine:
+    self.nixosConfigurations.${machine}.config.systemd.services.celld.environment.S3_ENDPOINT
+    != celldExpectedStorageEndpoints.${machine}
+  ) celldClusterMachines;
+  celldTailnetFirewallMismatches = builtins.filter (
+    machine:
+    let
+      firewall = self.nixosConfigurations.${machine}.config.networking.firewall;
+      tailnetPorts = firewall.interfaces.tailscale0.allowedTCPPorts;
+      globalPorts = firewall.allowedTCPPorts;
+      requiredPorts = [
+        celldPublicPort
+        celldInternalPort
+      ];
+    in
+    !(lib.all (port: builtins.elem port tailnetPorts) requiredPorts)
+    || lib.any (port: builtins.elem port globalPorts) requiredPorts
+  ) celldClusterMachines;
 in
 {
   checks = {
@@ -237,6 +305,66 @@ in
       ${lib.optionalString (rustfsMissingNetlinkMachines != [ ]) ''
         echo "RustFS cannot enumerate local interfaces without AF_NETLINK:"
         printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" rustfsMissingNetlinkMachines)}
+        exit 1
+      ''}
+      touch $out
+    '';
+
+    # r[verify onix.celld_rustfs.package]
+    celld-package = pkgs.runCommand "celld-package" { } ''
+      actual="$(${lib.getExe self.packages.${pkgs.stdenv.hostPlatform.system}.celld} --version)"
+      test "$actual" = "celld 0.3.0"
+      touch $out
+    '';
+
+    # r[verify onix.celld_rustfs.validation]
+    celld-settings = pkgs.runCommand "celld-settings" { } ''
+      ${lib.optionalString (celldPositiveErrors != [ ]) ''
+        echo "Valid Celld settings produced unexpected type errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" celldPositiveErrors)}
+        exit 1
+      ''}
+      ${lib.optionalString (missingCelldNegativeFields != [ ]) ''
+        echo "Invalid Celld settings did not report expected fields:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" missingCelldNegativeFields)}
+        exit 1
+      ''}
+      ${lib.optionalString (celldSettingsPositiveErrors != [ ]) ''
+        echo "Valid Celld settings produced semantic errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" celldSettingsPositiveErrors)}
+        exit 1
+      ''}
+      ${lib.optionalString (celldSettingsMissingNegativeCases != [ ]) ''
+        echo "Invalid Celld settings did not report expected semantic errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" celldSettingsMissingNegativeCases)}
+        echo "Actual errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" celldSettingsNegativeErrors)}
+        exit 1
+      ''}
+      touch $out
+    '';
+
+    # r[verify onix.celld_rustfs.composition]
+    # r[verify onix.celld_rustfs.security]
+    celld-generated = pkgs.runCommand "celld-generated" { } ''
+      ${lib.optionalString (builtins.length celldProvisionerMachines != 1) ''
+        echo "Celld requires exactly one storage provisioner; found:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" celldProvisionerMachines)}
+        exit 1
+      ''}
+      ${lib.optionalString (celldMissingServices != [ ]) ''
+        echo "Celld service is missing from fleet machines:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" celldMissingServices)}
+        exit 1
+      ''}
+      ${lib.optionalString (celldStorageEndpointMismatches != [ ]) ''
+        echo "Celld nodes are not aligned with local RustFS endpoints:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" celldStorageEndpointMismatches)}
+        exit 1
+      ''}
+      ${lib.optionalString (celldTailnetFirewallMismatches != [ ]) ''
+        echo "Celld firewall ports are not Tailnet-only on:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" celldTailnetFirewallMismatches)}
         exit 1
       ''}
       touch $out

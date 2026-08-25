@@ -13,6 +13,7 @@ Read [`docs/dgx-machines.md`](docs/dgx-machines.md) for the device-free DGX mach
 ## References
 - [BlinkDL/RWKV-LM](https://github.com/BlinkDL/RWKV-LM) — pinned official RWKV-7 model, byte-tokenizer, and PyTorch recurrence equations used by the real-weight, stateful-decode, bounded-prompt, and CPU equation-reference harnesses.
 - [fla-org/flash-linear-attention](https://github.com/fla-org/flash-linear-attention) — pinned v0.3.0 checkpoint naming, cross-layer value mixing, recurrent cache, model normalization, and untied language-model head wiring used to decode and independently compare the Hugging Face model format.
+- [denoland/celld](https://github.com/denoland/celld) — pinned self-hosted Durable Objects runtime used by the private RustFS-backed Celld fleet.
 - [devenv](https://github.com/cachix/devenv) — developer environment framework used by the default flake shell.
 - [Grafana](https://github.com/grafana/grafana) — upstream Grafana 13.0.3 generated email assets retained to repair the package's missing runtime templates.
 - `../herdr-plugin-pueue` — local Herdr Pueue dashboard source vendored for the plugin wrapper until the repository has a remote.

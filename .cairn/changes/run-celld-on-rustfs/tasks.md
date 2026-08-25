@@ -1,19 +1,19 @@
 ## Phase 1: Package and configuration core
 
-- [ ] [serial] Package the immutable Celld release and prove the executable version for r[onix.celld_rustfs.package].
-- [ ] [serial] Add typed Celld settings and pure positive and negative validation for r[onix.celld_rustfs.validation].
-- [ ] [serial] Register the Celld Clan module and focused module checks for r[onix.celld_rustfs.composition].
+- [x] [serial] Package the immutable Celld release and prove the executable version for r[onix.celld_rustfs.package].
+- [x] [serial] Add typed Celld settings and pure positive and negative validation for r[onix.celld_rustfs.validation].
+- [x] [serial] Register the Celld Clan module and focused module checks for r[onix.celld_rustfs.composition].
 
 ## Phase 2: Storage and service shell
 
-- [ ] [serial] Generate shared encrypted Celld credentials and implement idempotent bucket-scoped RustFS provisioning for r[onix.celld_rustfs.storage].
-- [ ] [serial] Add hardened systemd services, private state, Tailnet listeners, and interface-only firewall policy for r[onix.celld_rustfs.security].
-- [ ] [serial] Add the deterministic counter Worker deployment for r[onix.celld_rustfs.runtime].
+- [x] [serial] Generate shared encrypted Celld credentials and implement idempotent bucket-scoped RustFS provisioning for r[onix.celld_rustfs.storage].
+- [x] [serial] Add hardened systemd services, private state, Tailnet listeners, and interface-only firewall policy for r[onix.celld_rustfs.security].
+- [x] [serial] Add the deterministic counter Worker deployment for r[onix.celld_rustfs.runtime].
 
 ## Phase 3: Composition and static verification
 
-- [ ] [serial] Compose one three-node inventory instance with exactly one provisioner for r[onix.celld_rustfs.composition].
-- [ ] [serial] Run positive and negative settings checks, generated-service checks, package checks, Cairn gates, and all affected system builds for r[onix.celld_rustfs.validation].
+- [x] [serial] Compose one three-node inventory instance with exactly one provisioner for r[onix.celld_rustfs.composition].
+- [x] [serial] Run positive and negative settings checks, generated-service checks, package checks, Cairn gates, and all affected system builds for r[onix.celld_rustfs.validation].
 
 ## Phase 4: Runtime acceptance
 

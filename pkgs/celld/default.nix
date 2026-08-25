@@ -17,9 +17,9 @@ let
       hash = "sha256-iKNQcBRECPkCA2B2t/iN84VIzk3aBz//J6bdH20rrig=";
     };
   };
-  source = sources.${stdenvNoCC.hostPlatform.system} or (
-    throw "celld: unsupported platform ${stdenvNoCC.hostPlatform.system}"
-  );
+  source =
+    sources.${stdenvNoCC.hostPlatform.system}
+      or (throw "celld: unsupported platform ${stdenvNoCC.hostPlatform.system}");
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "celld";
@@ -28,6 +28,11 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   src = fetchurl {
     url = "https://github.com/denoland/celld/releases/download/v${finalAttrs.version}/celld-${source.target}.gz";
     inherit (source) hash;
+  };
+
+  licenseFile = fetchurl {
+    url = "https://raw.githubusercontent.com/denoland/celld/v${finalAttrs.version}/LICENSE";
+    hash = "sha256-z8d0m5b2O9McPEK1xHG/dWgUBT6EfBDz6wA0F7xSPTA=";
   };
 
   dontUnpack = true;
@@ -43,9 +48,10 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   installPhase = ''
     runHook preInstall
 
-    install -d "$out/bin"
+    install -d "$out/bin" "$out/share/licenses/celld"
     gzip -dc "$src" > "$out/bin/celld"
     chmod 0555 "$out/bin/celld"
+    install -m 0444 "$licenseFile" "$out/share/licenses/celld/LICENSE"
 
     runHook postInstall
   '';

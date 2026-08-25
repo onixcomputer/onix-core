@@ -133,6 +133,35 @@ let rustfs_cluster_settings = fun bind_address data_dir =>
     topologyWaitTimeoutSeconds = rustfs_topology_wait_timeout_seconds,
   }
 in
+let celld_public_port = 39200 in
+let celld_internal_port = 39201 in
+let celld_bucket_name = "onix-celld-lab" in
+let celld_region = "us-east-1" in
+let celld_access_key_id = "celld-lab" in
+let celld_state_dir = "/var/lib/celld-lab" in
+let celld_lease_ttl_milliseconds = 10000 in
+let celld_restart_delay_seconds = 10 in
+let celld_shutdown_drain_milliseconds = 25000 in
+let celld_fleet_settings = fun bind_address provision_storage =>
+  {
+    stateDir = celld_state_dir,
+    bindAddress = bind_address,
+    storageEndpoint = "http://%{bind_address}:%{rustfs_api_port}",
+    bucketName = celld_bucket_name,
+    region = celld_region,
+    accessKeyId = celld_access_key_id,
+    publicPort = celld_public_port,
+    internalPort = celld_internal_port,
+    openFirewall = true,
+    firewallInterface = "tailscale0",
+    provisionStorage = provision_storage,
+    rustfsAdminGenerator = "rustfs-rustfs-cluster",
+    deployCounter = true,
+    leaseTtlMilliseconds = celld_lease_ttl_milliseconds,
+    restartDelaySeconds = celld_restart_delay_seconds,
+    shutdownDrainMilliseconds = celld_shutdown_drain_milliseconds,
+  }
+in
 {
   instances = {
 
@@ -169,6 +198,16 @@ in
         aspen1.settings = rustfs_cluster_settings rustfs_aspen1_address rustfs_aspen1_data_dir,
         aspen3.settings = rustfs_cluster_settings rustfs_aspen3_address rustfs_aspen3_data_dir,
         britton-desktop.settings = rustfs_cluster_settings rustfs_britton_desktop_address rustfs_britton_desktop_data_dir,
+      },
+    },
+
+    # r[impl onix.celld_rustfs.composition]
+    "celld-lab" = {
+      module = { name = "celld", input = "self" },
+      roles.server.machines = {
+        aspen1.settings = celld_fleet_settings rustfs_aspen1_address true,
+        aspen3.settings = celld_fleet_settings rustfs_aspen3_address false,
+        britton-desktop.settings = celld_fleet_settings rustfs_britton_desktop_address false,
       },
     },
 
