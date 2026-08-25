@@ -112,6 +112,9 @@ in
                   "AF_UNIX"
                   "AF_INET"
                   "AF_INET6"
+                  # RustFS uses netlink to verify that the configured bind
+                  # address belongs to a local interface.
+                  "AF_NETLINK"
                 ];
               }
               // lib.optionalAttrs topology.distributed {

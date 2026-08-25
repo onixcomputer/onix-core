@@ -110,6 +110,17 @@ let
   rustfsTopologyPositiveErrors = rustfsTopologyTests.positiveErrors;
   rustfsTopologyMissingNegativeCases = rustfsTopologyTests.missingNegativeCases;
   rustfsTopologyNegativeErrors = rustfsTopologyTests.negativeErrors;
+  rustfsClusterMachines = [
+    "aspen1"
+    "aspen3"
+    "britton-desktop"
+  ];
+  rustfsMissingNetlinkMachines = builtins.filter (
+    machine:
+    !(builtins.elem "AF_NETLINK"
+      self.nixosConfigurations.${machine}.config.systemd.services.rustfs.serviceConfig.RestrictAddressFamilies
+    )
+  ) rustfsClusterMachines;
 in
 {
   checks = {
@@ -221,6 +232,11 @@ in
         printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" rustfsTopologyMissingNegativeCases)}
         echo "Actual errors:"
         printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" rustfsTopologyNegativeErrors)}
+        exit 1
+      ''}
+      ${lib.optionalString (rustfsMissingNetlinkMachines != [ ]) ''
+        echo "RustFS cannot enumerate local interfaces without AF_NETLINK:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" rustfsMissingNetlinkMachines)}
         exit 1
       ''}
       touch $out
