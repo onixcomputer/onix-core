@@ -15,11 +15,11 @@
 - [x] [serial] Run focused Nickel, topology, module, inventory, vars, and machine evaluation checks. r[onix.rustfs_cluster.validation]
 - [x] [serial] Pin and build the upstream `nix-eval-jobs` Nix 2.36 port with the pinned Onix Nix compatibility patch. r[onix.rustfs_cluster.rollout]
 - [x] [serial] Build all three machine configurations without changing the live services. r[onix.rustfs_cluster.rollout]
-- [ ] [serial] Confirm Aspen1 reachability, preserve standalone state, and deploy all nodes as one coordinated cutover. r[onix.rustfs_cluster.rollout]
+- [x] [serial] Confirm Aspen1 reachability, preserve standalone state, and deploy all nodes as one coordinated cutover. r[onix.rustfs_cluster.rollout]
 
 ## Phase 4: Runtime evidence
 
-- [ ] [serial] Verify one namespace through every node with authenticated S3 create, write, read, list, and cleanup operations. r[onix.rustfs_cluster.runtime]
-- [ ] [parallel] Verify anonymous requests fail and cluster credentials match on all nodes without exposing secret values. r[onix.rustfs_cluster.security]
-- [ ] [serial] Verify coordinated restart and one-node outage recovery before claiming node-loss tolerance. r[onix.rustfs_cluster.failure]
-- [ ] [serial] Record bounded evidence, sync accepted requirements, archive the change, and commit verified results. r[onix.rustfs_cluster.validation]
+- [x] [serial] Verify one namespace through every node with authenticated S3 create, write, read, list, and cleanup operations. r[onix.rustfs_cluster.runtime]
+- [x] [parallel] Verify anonymous requests fail and cluster credentials match on all nodes without exposing secret values. r[onix.rustfs_cluster.security]
+- [x] [serial] Verify coordinated restart and one-node outage recovery before claiming node-loss tolerance. r[onix.rustfs_cluster.failure]
+- [x] [serial] Record bounded evidence, sync accepted requirements, archive the change, and commit verified results. r[onix.rustfs_cluster.validation]

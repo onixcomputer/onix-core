@@ -1,8 +1,8 @@
-# Private RustFS Cluster Specification
+# Rustfs Cluster Specification
 
 ## Purpose
 
-Provide one private S3-compatible namespace across selected Onix machines without claiming production readiness.
+Defines the `rustfs-cluster` capability.
 
 ## Requirements
 
