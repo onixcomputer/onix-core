@@ -55,6 +55,7 @@ in
   }
   // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
     branchfs = pkgs.callPackage ../pkgs/branchfs { };
+    celld = pkgs.callPackage ../pkgs/celld { };
     herdr = herdrPackage;
     horizon = pkgs.callPackage ../pkgs/horizon { horizon-src = self.inputs.horizon; };
     iroh-ssh = pkgs.callPackage ../pkgs/iroh-ssh { };
