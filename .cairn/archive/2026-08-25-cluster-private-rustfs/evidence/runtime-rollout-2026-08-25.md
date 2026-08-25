@@ -62,9 +62,9 @@ The retained test bucket, objects, client binary, and client configuration were 
 
 ## Final state
 
-All three systems reported a running system state. All RustFS services were active, running, and had no warning-level journal entries during the final two-minute observation window.
+All three RustFS services were active and running with `NRestarts=0`. Each endpoint remained ready, and no RustFS warning-level journal entries appeared during the final two-minute observation window.
 
-Aspen1 briefly retained a failed Radicle CI runner state from the large generation switch. Its current runner configuration paths existed, so the stale failure state was reset without executing a job. Aspen1 then reported a running system state with no failed units.
+Aspen3 and the desktop reported a running system state. Aspen1 reported degraded after validation because short-lived root SSH session scopes entered failed state. The earlier Radicle CI runner failure was reset after its current configuration path became present in the live system closure. Neither Aspen1 failure involved RustFS.
 
 ## Final validation
 
