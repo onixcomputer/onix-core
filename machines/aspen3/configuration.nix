@@ -16,6 +16,7 @@ let
   sdhciPciDriverPath = "/sys/bus/pci/drivers/sdhci-pci";
   sdhciDriverControlMode = "0660";
   mpvVolumeMaxPercent = 120;
+  usb4PciePrefetchWindow = "1G";
   bluetoothAudioCodecs = [
     "ldac"
     "aac"
@@ -105,6 +106,9 @@ in
   boot = {
     kernelPackages = pkgs.linuxPackages;
     supportedFilesystems = [ "zfs" ];
+    # Reserve enough prefetchable MMIO for the AS02MC04 FPGA's 512 MiB BAR
+    # when it appears through the USB4 hot-plug bridge after boot.
+    kernelParams = [ "pci=realloc=on,hpmmioprefsize=${usb4PciePrefetchWindow}" ];
     # Expose the Strix Halo Ryzen AI/XDNA NPU as /dev/accel/accel*.
     kernelModules = [ amdNpuKernelModule ];
   };
