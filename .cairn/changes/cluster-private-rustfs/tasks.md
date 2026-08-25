@@ -13,8 +13,8 @@
 ## Phase 3: Build and rollout
 
 - [x] [serial] Run focused Nickel, topology, module, inventory, vars, and machine evaluation checks. r[onix.rustfs_cluster.validation]
-- [ ] [serial] Build all three machine configurations without changing the live services. r[onix.rustfs_cluster.rollout]
-  - `britton-desktop` and `aspen3` build successfully. `aspen1` remains blocked by the pre-existing `nix-eval-jobs 2.35.1` and Nix `2.36.0` API incompatibility.
+- [x] [serial] Pin and build the upstream `nix-eval-jobs` Nix 2.36 port with the pinned Onix Nix compatibility patch. r[onix.rustfs_cluster.rollout]
+- [x] [serial] Build all three machine configurations without changing the live services. r[onix.rustfs_cluster.rollout]
 - [ ] [serial] Confirm Aspen1 reachability, preserve standalone state, and deploy all nodes as one coordinated cutover. r[onix.rustfs_cluster.rollout]
 
 ## Phase 4: Runtime evidence

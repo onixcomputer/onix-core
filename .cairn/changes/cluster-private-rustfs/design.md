@@ -56,6 +56,12 @@ Each machine binds its Tailnet address and receives the same ordered endpoint li
 
 **Rationale:** A partial cutover removes the working standalone endpoint without creating an accepted cluster.
 
+### Decision: Pin the upstream Nix 2.36 evaluator port
+
+**Choice:** Build `nix-eval-jobs` from upstream revision `41235ab624bbb4e21c84ce30a76756921fe59f89`. Apply one local patch for the earlier `FullInputs` and `toValue` APIs in the pinned Onix Nix revision.
+
+**Rationale:** Aspen1's Buildbot worker must use the wasm-enabled Onix Nix libraries. Nixpkgs `nix-eval-jobs 2.35.1` cannot compile against Nix 2.36, while the upstream port targets a newer Nix master API. The narrow patch keeps the reviewed upstream port and preserves the required wasm evaluator.
+
 ## Positive and Negative Validation
 
 Positive tests cover single-node compatibility and a valid three-node topology. Negative tests cover too few endpoints, duplicate endpoints, wildcard binding, a missing local endpoint, a wrong port, malformed paths, and mixed endpoint modes.
@@ -69,4 +75,5 @@ Live tests cover shared credentials, one namespace through each node, authentica
 - One endpoint per host couples node and drive failure.
 - Client access has no stable load-balanced address.
 - Shared root credentials increase the effect of one node compromise.
-- Aspen1 reachability and its unrelated `nix-eval-jobs` build failure can block deployment.
+- Aspen1 reachability can block deployment.
+- The evaluator compatibility patch is temporary and must be removed when nixpkgs carries a matching Nix 2.36 source.

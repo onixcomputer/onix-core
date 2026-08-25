@@ -15,7 +15,7 @@ RustFS `1.0.0-rc.2` supports distributed URL endpoints, but upstream marks distr
 
 ## Impact
 
-- **Files**: RustFS schema, topology core, Clan service lowering, Nickel fixtures, module checks, service inventory, generated shared vars, Cairn artifacts, and runtime evidence.
+- **Files**: RustFS schema, topology core, Clan service lowering, Nickel fixtures, module checks, service inventory, generated shared vars, the Aspen1 evaluator compatibility pin, Cairn artifacts, and runtime evidence.
 - **Security**: All nodes receive one cluster credential. Ports remain open only on `tailscale0`.
 - **Storage**: New cluster data uses dedicated directories beside the retained standalone directories.
 - **Availability**: A three-endpoint erasure set is intended to survive one unavailable endpoint. Only a live fault test can support that claim.

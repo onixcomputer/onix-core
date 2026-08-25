@@ -60,6 +60,13 @@ in
             nix-store
             ;
         };
+        nixEvalJobsNix36Revision = "41235ab624bbb4e21c84ce30a76756921fe59f89";
+        nixEvalJobsNix36Source = prev.fetchFromGitHub {
+          owner = "NixOS";
+          repo = "nix-eval-jobs";
+          rev = nixEvalJobsNix36Revision;
+          hash = "sha256-j72ybHHDR6b+abyBC+Dm1hSh6/ppllH3jO/dgahMixA=";
+        };
       in
       {
         nixVersions = prev.nixVersions // {
@@ -72,10 +79,17 @@ in
 
         # Rebuild nix-eval-jobs against the wasm-enabled Nix so buildbot
         # workers can evaluate builtins.wasm calls (Nickel plugin, YAML, etc).
-        # Keep nixpkgs' current source/version so it tracks Nix C++ API changes.
-        nix-eval-jobs = prev.nix-eval-jobs.override {
-          nixComponents = onixNixComponents;
-        };
+        # Nix 2.36 changed derivation inputs and several flake APIs. Use the
+        # reviewed upstream Nix 2.36 port until nixpkgs carries that source.
+        nix-eval-jobs =
+          (prev.nix-eval-jobs.override {
+            nixComponents = onixNixComponents;
+          }).overrideAttrs
+            (old: {
+              version = "2.36.0-unstable-2026-08-24";
+              src = nixEvalJobsNix36Source;
+              patches = (old.patches or [ ]) ++ [ ./nix-eval-jobs-2.36-release.patch ];
+            });
       }
     )
     (_final: prev: {

@@ -1,0 +1,123 @@
+diff --git a/src/cache-status-resolver.cc b/src/cache-status-resolver.cc
+index 69ac567..8febefa 100644
+--- a/src/cache-status-resolver.cc
++++ b/src/cache-status-resolver.cc
+@@ -241,29 +241,6 @@ void CacheStatusResolver::visitDrv(Traversal *traversal,
+         return;
+     }
+     const auto &derivation = readDerivation(drvPath);
+-    /* The input derivations, grouped so each is visited once with every
+-     * output wanted from it. Source inputs aren't derivations. */
+-    std::map<nix::StorePath, nix::StringSet> inputDrvs;
+-    for (const auto &input : derivation.inputs) {
+-        const auto *built =
+-            std::get_if<nix::SingleDerivedPath::Built>(&input.raw());
+-        if (built == nullptr) {
+-            continue;
+-        }
+-        const auto *opaque =
+-            std::get_if<nix::SingleDerivedPath::Opaque>(&built->drvPath->raw());
+-        if (opaque == nullptr) {
+-            // An output of a dynamic derivation. TODO probe it; its
+-            // outputs are unknown until the derivation producing them is
+-            // built. Visiting the derivation it comes from with no
+-            // wanted outputs — meaning all of them — is what pre-2.36
+-            // did, by leaving the nested childMap unread.
+-            inputDrvs[built->drvPath->getBaseStorePath()];
+-            continue;
+-        }
+-        inputDrvs[opaque->path].insert(built->output);
+-    }
+-
+     auto outputs = missingOutputs(derivation, wantedOutputs);
+     if (!outputs.known) {
+         traversal->unknownPaths.push_back(drvPath);
+@@ -272,8 +249,9 @@ void CacheStatusResolver::visitDrv(Traversal *traversal,
+     /* Validity probes are cheap daemon lookups: recurse anyway so a single
+      * queryValidPaths round covers the whole closure. */
+     if (!outputs.complete) {
+-        for (const auto &[inputDrvPath, inputWanted] : inputDrvs) {
+-            visitDrv(traversal, inputDrvPath, inputWanted);
++        for (const auto &[inputDrvPath, inputNode] :
++             derivation.inputs.drvs.map) {
++            visitDrv(traversal, inputDrvPath, inputNode.value);
+         }
+         return;
+     }
+@@ -293,8 +271,9 @@ void CacheStatusResolver::visitDrv(Traversal *traversal,
+         return;
+     }
+ 
+-    for (const auto &[inputDrvPath, inputWanted] : inputDrvs) {
+-        visitDrv(traversal, inputDrvPath, inputWanted);
++    for (const auto &[inputDrvPath, inputNode] :
++         derivation.inputs.drvs.map) {
++        visitDrv(traversal, inputDrvPath, inputNode.value);
+     }
+     /* Post-order: dependencies before their dependants. */
+     traversal->neededBuilds.push_back(drvPath);
+diff --git a/src/constituents.cc b/src/constituents.cc
+index 0990860..b51e0a3 100644
+--- a/src/constituents.cc
++++ b/src/constituents.cc
+@@ -116,11 +116,8 @@ void addConstituents(nlohmann::json &job, nix::Derivation &drv,
+             std::string(jobs.find(childJobName)->second["drvPath"]));
+         auto childDrv = store->readDerivation(childDrvPath);
+         job["constituents"].push_back(store->printStorePath(childDrvPath));
+-        drv.inputs.insert(nix::SingleDerivedPath::Built{
+-            .drvPath = nix::make_ref<nix::SingleDerivedPath>(
+-                nix::SingleDerivedPath::Opaque{.path = childDrvPath}),
+-            .output = childDrv.outputs.begin()->first,
+-        });
++        drv.inputs.drvs.map[childDrvPath].value = {
++            childDrv.outputs.begin()->first};
+     }
+ }
+ 
+diff --git a/src/drv.cc b/src/drv.cc
+index 2c7b510..a945180 100644
+--- a/src/drv.cc
++++ b/src/drv.cc
+@@ -97,24 +97,12 @@ auto queryMeta(nix::PackageInfo &packageInfo, nix::EvalState &state)
+ auto queryInputDrvs(const nix::Derivation &drv)
+     -> std::map<nix::StorePath, std::set<std::string>> {
+     std::map<nix::StorePath, std::set<std::string>> drvs;
+-    for (const auto &input : drv.inputs) {
+-        const auto *built =
+-            std::get_if<nix::SingleDerivedPath::Built>(&input.raw());
+-        if (built == nullptr) {
+-            continue;
+-        }
+-        const auto *opaque =
+-            std::get_if<nix::SingleDerivedPath::Opaque>(&built->drvPath->raw());
+-        if (opaque == nullptr) {
+-            // An output of a dynamic derivation. TODO report it; the
+-            // output name belongs to the derivation that derivation
+-            // produces, so this format has nowhere to put it. Naming the
+-            // derivation it comes from with no outputs is what pre-2.36
+-            // did, by leaving the nested childMap unread.
+-            drvs[built->drvPath->getBaseStorePath()];
+-            continue;
++    for (const auto &[inputDrvPath, inputNode] : drv.inputs.drvs.map) {
++        std::set<std::string> inputDrvOutputs;
++        for (const auto &outputName : inputNode.value) {
++            inputDrvOutputs.insert(outputName);
+         }
+-        drvs[opaque->path].insert(built->output);
++        drvs.emplace(inputDrvPath, std::move(inputDrvOutputs));
+     }
+     return drvs;
+ }
+diff --git a/src/worker.cc b/src/worker.cc
+index 4881481..ca18cdf 100644
+--- a/src/worker.cc
++++ b/src/worker.cc
+@@ -115,7 +115,7 @@ auto evaluateFlake(const nix::ref<nix::EvalState> &state, const MyArgs &args)
+         return value;
+     }
+     // Fragment specified, use normal evaluation
+-    return flake.toValue(*state, nix::AutoCall::No).first;
++    return flake.toValue(*state).first;
+ }
+ 
+ auto attrPathJoin(nlohmann::json input) -> std::string {
