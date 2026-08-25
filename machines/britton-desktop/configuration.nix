@@ -174,7 +174,7 @@ let
   qwenServiceName = "qwen38-p150x2";
   qwenUnitName = "${qwenServiceName}.service";
   qwenModelRevision = "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0";
-  qwenModelPath = "/home/brittonr/.cache/huggingface/hub/models--Qwen--Qwen3.8-27B/snapshots/${qwenModelRevision}";
+  qwenModelPath = "/home/brittonr/models/${qwenModelRevision}";
   qwenListenAddress = "127.0.0.1";
   qwenApiPort = 8000;
   qwenMaximumSequenceLength = 2048;
