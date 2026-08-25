@@ -44,6 +44,7 @@ let self_modules = [
   "radicle-ci-runner",
   "radicle-node",
   "radicle-seed-replica",
+  "rustfs",
   "sglang-diffusion",
   "speaches",
   "static-server",

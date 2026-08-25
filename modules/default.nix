@@ -50,6 +50,7 @@ let
     "radicle-ci-runner" = import ./radicle-ci-runner (schemaArgs ./radicle-ci-runner);
     "radicle-node" = import ./radicle-node (schemaArgs ./radicle-node);
     "radicle-seed-replica" = import ./radicle-seed-replica (schemaArgs ./radicle-seed-replica);
+    "rustfs" = import ./rustfs (schemaArgs ./rustfs);
     "cloud-hypervisor-vm" = import ./cloud-hypervisor-vm (schemaArgs ./cloud-hypervisor-vm);
     "llm-agents" = import ./llm-agents (schemaArgs ./llm-agents);
     "home-manager-profiles" = import ./home-manager-profiles (schemaArgs ./home-manager-profiles);

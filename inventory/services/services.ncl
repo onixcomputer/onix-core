@@ -103,6 +103,8 @@ let radicle_backup_dataset_quota_gib = 256 in
 let radicle_backup_retention_daily = 7 in
 let radicle_backup_retention_weekly = 4 in
 let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
+let rustfs_aspen3_api_port = 39000 in
+let rustfs_aspen3_console_port = 39001 in
 {
   instances = {
 
@@ -129,6 +131,19 @@ let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
           optimizeStore = true,
           autoOptimise = true,
         },
+      },
+    },
+
+    "rustfs-aspen3" = {
+      module = { name = "rustfs", input = "self" },
+      roles.server.machines.aspen3.settings = {
+        dataDir = "/mnt/usb4-nvme/rustfs",
+        bindAddress = "0.0.0.0",
+        apiPort = rustfs_aspen3_api_port,
+        consolePort = rustfs_aspen3_console_port,
+        enableConsole = true,
+        openFirewall = true,
+        firewallInterface = "tailscale0",
       },
     },
 
