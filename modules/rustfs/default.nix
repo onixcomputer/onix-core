@@ -91,11 +91,7 @@ in
                 { interfaces.${settings.firewallInterface}.allowedTCPPorts = enabledPorts; }
             );
 
-            systemd.tmpfiles.settings."20-rustfs-hardening".${settings.dataDir}.d = {
-              mode = stateDirectoryMode;
-              user = "rustfs";
-              group = "rustfs";
-            };
+            systemd.tmpfiles.settings."10-rustfs".${settings.dataDir}.d.mode = stateDirectoryMode;
 
             systemd.services.rustfs = {
               unitConfig.RequiresMountsFor = [ settings.dataDir ];
