@@ -107,6 +107,18 @@ r[onix.celld_rustfs.validation.provisioner]
 - WHEN generated topology validation runs
 - THEN evaluation fails with a provisioner-count error
 
+### Requirement: Fleet clocks stay bounded
+
+r[onix.celld_rustfs.clock] Every fleet host MUST use a time synchronization service that operates with its network manager and hardware-clock policy.
+
+#### Scenario: Lease authority uses synchronized time
+
+r[onix.celld_rustfs.clock.sync]
+- GIVEN three Celld nodes with time-bounded leases and peer authentication
+- WHEN the fleet runs beyond one lease lifetime
+- THEN host clock skew remains below one lease lifetime
+- AND no node self-fences because another host prematurely expires its lease
+
 ### Requirement: Deployment proves durable state
 
 r[onix.celld_rustfs.runtime] Runtime acceptance MUST exercise a deployed Durable Object through every Celld node.

@@ -189,6 +189,9 @@ let
     !(lib.all (port: builtins.elem port tailnetPorts) requiredPorts)
     || lib.any (port: builtins.elem port globalPorts) requiredPorts
   ) celldClusterMachines;
+  celldDesktopClockProviderValid =
+    self.nixosConfigurations.britton-desktop.config.services.chrony.enable
+    && !self.nixosConfigurations.britton-desktop.config.services.timesyncd.enable;
 in
 {
   checks = {
@@ -365,6 +368,10 @@ in
       ${lib.optionalString (celldTailnetFirewallMismatches != [ ]) ''
         echo "Celld firewall ports are not Tailnet-only on:"
         printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" celldTailnetFirewallMismatches)}
+        exit 1
+      ''}
+      ${lib.optionalString (!celldDesktopClockProviderValid) ''
+        echo "Celld requires Chrony on the NetworkManager-managed desktop"
         exit 1
       ''}
       touch $out

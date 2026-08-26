@@ -339,6 +339,7 @@ in
 
   time.timeZone = "America/New_York";
   time.hardwareClockInLocalTime = true; # Prevent time sync issues with Windows
+  services.chrony.enable = true;
 
   users.users.brittonr = {
     linger = true;

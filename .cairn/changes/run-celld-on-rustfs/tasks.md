@@ -13,6 +13,7 @@
 ## Phase 3: Composition and static verification
 
 - [x] [serial] Compose one three-node inventory instance with exactly one provisioner for r[onix.celld_rustfs.composition].
+- [ ] [serial] Keep host clock skew below one lease lifetime with a working synchronization provider for r[onix.celld_rustfs.clock].
 - [x] [serial] Run positive and negative settings checks, generated-service checks, package checks, Cairn gates, and all affected system builds for r[onix.celld_rustfs.validation].
 
 ## Phase 4: Runtime acceptance

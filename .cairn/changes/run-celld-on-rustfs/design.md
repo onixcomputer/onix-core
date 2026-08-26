@@ -38,6 +38,12 @@ The fleet remains experimental because Celld is alpha software and RustFS distri
 
 **Rationale:** Service startup alone does not prove Durable Object storage. A small deterministic Worker provides positive state-transition evidence and supports restart and node-loss tests.
 
+### Decision: Keep fleet clocks synchronized
+
+**Choice:** Use Chrony on the NetworkManager-managed desktop while preserving its local-time RTC setting. Keep systemd-timesyncd on the Aspen hosts.
+
+**Rationale:** Celld lease expiry, peer authentication, and replay limits require bounded clock skew. Systemd-timesyncd saw the desktop's NetworkManager links as offline, which let its clock advance about 140 seconds and expire valid Aspen leases.
+
 ### Decision: Keep domain and effect boundaries visible
 
 **Choice:** Pure Nix helpers validate addresses, ports, bucket names, paths, and designated-provisioner topology. The Clan module shell owns secrets, systemd units, storage provisioning, process execution, and runtime observation.
