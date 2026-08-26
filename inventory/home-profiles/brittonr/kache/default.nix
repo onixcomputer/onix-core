@@ -36,6 +36,7 @@ let
       kachePackage
       pkgs.coreutils
       pkgs.mold
+      pkgs.stdenv.cc
     ];
     text = ''
       if [ "$#" -lt 1 ]; then
@@ -158,6 +159,7 @@ in
     packages = [
       kachePackage
       pkgs.mold
+      pkgs.stdenv.cc
     ];
     file.".cargo/config.toml".source = cargoConfigFile;
     sessionVariables.KACHE_CONFIG = configPath;

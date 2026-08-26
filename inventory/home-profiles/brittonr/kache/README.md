@@ -26,8 +26,8 @@ manual `RUSTC_WRAPPER` export and no `kache init` run are needed.
 - Cargo defaults `target.x86_64-unknown-linux-gnu.linker = "cc"`
 - Cargo adds `-fuse-ld=mold` via target-specific rustflags so the compiler
   driver selects mold as the backend linker
-- `mold` is installed in the managed user environment and is also available to
-  the wrapper process
+- the compiler driver and `mold` are installed in the managed user environment
+  and are also available to the wrapper process
 - Cargo tools that set `RUSTC_WORKSPACE_WRAPPER` (for example cargo-octet's
   Dylint driver) bypass kache automatically and execute the workspace wrapper
   directly; kache 0.6.0 only recognizes rustc-shaped argv in wrapper mode
