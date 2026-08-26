@@ -192,6 +192,7 @@ in
                 "rustfs.service"
                 "tailscaled.service"
               ];
+              path = [ pkgs.getent ];
               serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
