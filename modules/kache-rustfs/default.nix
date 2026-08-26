@@ -39,7 +39,9 @@ in
               config.clan.core.vars.generators.${settings.rustfsAdminGenerator}.files."env-file".path;
             secretKeyByteCount = 32;
             secretFileMode = "0400";
+            cacheDirectoryMode = "0700";
             serviceUmask = "0077";
+            systemConfigPath = "/etc/kache-rustfs/config.toml";
             daemonIdleTimeoutSeconds = 0;
             policyName = "kache-rustfs-${instanceName}";
             storageAuthority = lib.removePrefix "http://" (
@@ -120,6 +122,7 @@ in
             ];
 
             clan.core.vars.generators.${credentialGeneratorName} = {
+              share = true;
               files."aws-env" = {
                 secret = true;
                 deploy = true;
@@ -135,7 +138,14 @@ in
               '';
             };
 
-            environment.systemPackages = [ syncTool ];
+            environment = {
+              etc."kache-rustfs/config.toml".source = kacheConfigFile;
+              systemPackages = [ syncTool ];
+            };
+
+            systemd.tmpfiles.rules = [
+              "d ${settings.cacheDir} ${cacheDirectoryMode} ${settings.serviceUser} users -"
+            ];
 
             systemd.services.kache-rustfs-storage-provision = lib.mkIf settings.provisionStorage {
               description = "Provision bucket-scoped RustFS storage for Kache";
@@ -194,7 +204,7 @@ in
               requires = lib.optional settings.provisionStorage "kache-rustfs-storage-provision.service";
               unitConfig.RequiresMountsFor = [ settings.cacheDir ];
               environment = {
-                KACHE_CONFIG = kacheConfigFile;
+                KACHE_CONFIG = systemConfigPath;
                 KACHE_CACHE_DIR = settings.cacheDir;
                 KACHE_DAEMON_IDLE_TIMEOUT = toString daemonIdleTimeoutSeconds;
                 KACHE_LOCAL_ONLY = "0";

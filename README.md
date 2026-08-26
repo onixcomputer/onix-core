@@ -22,7 +22,7 @@ Read [`docs/rustfs-build-caches.md`](docs/rustfs-build-caches.md) for private Ka
 - [Grafana](https://github.com/grafana/grafana) — upstream Grafana 13.0.3 generated email assets retained to repair the package's missing runtime templates.
 - `../herdr-plugin-pueue` — local Herdr Pueue dashboard source vendored for the plugin wrapper until the repository has a remote.
 - [ki-editor/ki-editor](https://github.com/ki-editor/ki-editor) — upstream flake used for the Ki editor package.
-- [kunobi-ninja/kache](https://github.com/kunobi-ninja/kache) — upstream Rust/C/C++ build cache used for the desktop local and RustFS-backed cache.
+- [kunobi-ninja/kache](https://github.com/kunobi-ninja/kache) — upstream Rust/C/C++ build cache used by the three-node RustFS-backed Kache fleet.
 - [kyuz0/amd-strix-halo-vllm-toolboxes](https://github.com/kyuz0/amd-strix-halo-vllm-toolboxes) — upstream Strix Halo RDMA/vLLM toolbox guide used for the `rdma-cluster` tag.
 - [marty1885/ttWKV7](https://github.com/marty1885/ttWKV7) — upstream standalone RWKV-7 WKV7 operator packaged with its runtime JIT kernels.
 - [murerkinn/bookshelf](https://github.com/murerkinn/bookshelf) — pinned self-hosted browser and OPDS library used by the private Tailnet Bookshelf service.

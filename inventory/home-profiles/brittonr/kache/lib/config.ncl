@@ -1,7 +1,7 @@
-# Desktop-local kache profile data — source of truth.
+# Fleet Kache Cargo profile data — source of truth.
 #
-# Validates the managed Cargo defaults and local-only kache pilot settings used
-# by the Home Manager module.
+# The machine-level Clan service owns cache storage and remote policy. This file
+# validates portable Cargo defaults and the shared system configuration path.
 let NonEmpty =
   std.contract.from_validator (match {
     value if std.is_string value && std.string.length value > 0 => 'Ok,
@@ -14,14 +14,6 @@ let Positive =
   std.contract.from_validator (match {
     value if std.is_number value && value > 0 => 'Ok,
     _ => 'Error { message = "must be a positive number" },
-  }
-  )
-in
-
-let NonNegative =
-  std.contract.from_validator (match {
-    value if std.is_number value && value >= 0 => 'Ok,
-    _ => 'Error { message = "must be a non-negative number" },
   }
   )
 in
@@ -52,34 +44,9 @@ in
 
   kache
     | {
-      cacheDir | NonEmpty,
-      cacheBudgetGiB | Positive,
-      localOnly | Bool,
-      daemonService | Bool,
-      storageEndpoint | NonEmpty,
-      bucketName | NonEmpty,
-      region | NonEmpty,
-      prefix | NonEmpty,
-      daemonIdleTimeoutSecs | NonNegative,
-      daemonRestartDelay | NonEmpty,
-      daemonLogFilter | NonEmpty,
+      configPath | NonEmpty,
     }
     = {
-      # Keep the interactive cache off the root filesystem. The machine-owned
-      # datapool/kache-nix dataset is shared with Nix builders, but each caller
-      # uses an isolated subdirectory.
-      cacheDir = "/var/cache/kache-nix/user-brittonr",
-      cacheBudgetGiB = 32,
-      localOnly = false,
-      # The system-level kache-rustfs service owns the daemon and its credential file.
-      daemonService = false,
-      storageEndpoint = "http://100.110.43.11:39000",
-      bucketName = "onix-kache",
-      region = "us-east-1",
-      prefix = "artifacts",
-      # 0 disables upstream's idle-exit watchdog so systemd remains the daemon owner.
-      daemonIdleTimeoutSecs = 0,
-      daemonRestartDelay = "5s",
-      daemonLogFilter = "kache=info",
+      configPath = "/etc/kache-rustfs/config.toml",
     },
 }

@@ -1,8 +1,8 @@
-# kache desktop pilot
+# Kache fleet profile
 
 This profile makes Home Manager the source of truth for `~/.cargo/config.toml`
-and `~/.config/kache/config.toml` on `britton-desktop` while piloting kache as
-Cargo's `rustc-wrapper`.
+on Aspen1, Aspen3, and `britton-desktop`. It configures Kache as Cargo's
+`rustc-wrapper` and reads machine policy from `/etc/kache-rustfs/config.toml`.
 
 Cargo uses a managed `cargo-rustc-kache-wrapper` automatically. The NixOS
 `kache-rustfs.service` owns the daemon and its private RustFS credentials. No
@@ -11,11 +11,12 @@ manual `RUSTC_WRAPPER` export and no `kache init` run are needed.
 ## Managed defaults
 
 - Cargo target dir stays on `/home/brittonr/.cargo-target`
-- Cargo defaults to `build.jobs = 20` on `britton-desktop`
+- Cargo defaults to `build.jobs = 20` on all three nodes
 - Cargo keeps `net.retry = 3`
 - Cargo keeps `term.quiet = false`
-- kache uses the local disk cache at `/var/cache/kache-nix/user-brittonr`
-- kache caps the local disk cache at 32 GiB
+- Aspen1 and the desktop use `/var/cache/kache-nix/user-brittonr`
+- Aspen3 uses `/mnt/usb4-nvme/kache-nix/user-brittonr`
+- each node caps its local disk cache at 32 GiB
 - kache uses the dedicated `onix-kache` RustFS bucket through the local daemon
 - kache's daemon runs as the declarative NixOS service `kache-rustfs.service`
 - Home Manager does not start a second user daemon
@@ -39,10 +40,10 @@ already exists, activation fails closed.
 
 Manual rollback path:
 
-1. Replace the `kache` profile with the previous `sccache` profile in
-   `inventory/core/users.ncl`
-2. Re-activate Home Manager
-3. If needed, copy `~/.cargo/config.toml.pre-kache` back to
+1. Remove or narrow the `hm-kache-fleet` assignment in `inventory/core/users.ncl`
+2. Add the `sccache` profile where the previous wrapper is required
+3. Re-activate Home Manager
+4. If needed, copy `~/.cargo/config.toml.pre-kache` back to
    `~/.cargo/config.toml`
 
 Do not run `kache init`; it edits user files that this profile manages.

@@ -301,23 +301,127 @@ let
   niks3SemanticPositiveErrors = niks3SettingsTests.positiveErrors;
   niks3MissingNegativeCases = niks3SettingsTests.missingNegativeCases;
 
-  kacheRustfsDesktop = self.nixosConfigurations.britton-desktop.config;
-  kacheRustfsService = kacheRustfsDesktop.systemd.services.kache-rustfs;
-  kacheRustfsCredential =
-    kacheRustfsDesktop.clan.core.vars.generators.kache-rustfs-kache-remote.files."aws-env";
-  kacheRustfsSyncTools = builtins.filter (
-    package: lib.getName package == "kache-rustfs-sync"
-  ) kacheRustfsDesktop.environment.systemPackages;
+  kacheRustfsMachines = [
+    "aspen1"
+    "aspen3"
+    "britton-desktop"
+  ];
+  kacheRustfsSystemConfigPath = "/etc/kache-rustfs/config.toml";
+  kacheRustfsExpected = {
+    aspen1 = {
+      cacheDir = "/var/cache/kache-nix/user-brittonr";
+      endpoint = "http://100.100.103.95:39000";
+    };
+    aspen3 = {
+      cacheDir = "/mnt/usb4-nvme/kache-nix/user-brittonr";
+      endpoint = "http://100.108.13.4:39000";
+    };
+    britton-desktop = {
+      cacheDir = "/var/cache/kache-nix/user-brittonr";
+      endpoint = "http://100.110.43.11:39000";
+    };
+  };
+  kacheRustfsFleetErrors =
+    nodes:
+    let
+      machineNames = map (node: node.machine) nodes;
+      missingMachines = builtins.filter (
+        machine: !(builtins.elem machine machineNames)
+      ) kacheRustfsMachines;
+      extraMachines = builtins.filter (
+        machine: !(builtins.elem machine kacheRustfsMachines)
+      ) machineNames;
+      provisioners = builtins.filter (node: node.provisions) nodes;
+    in
+    lib.optional (missingMachines != [ ]) "Kache fleet is missing required machines"
+    ++ lib.optional (extraMachines != [ ]) "Kache fleet contains unexpected machines"
+    ++ lib.optional (
+      builtins.length provisioners != 1
+    ) "Kache fleet must contain exactly one storage provisioner";
+  kacheRustfsPositiveFleetErrors = kacheRustfsFleetErrors [
+    {
+      machine = "aspen1";
+      provisions = false;
+    }
+    {
+      machine = "aspen3";
+      provisions = false;
+    }
+    {
+      machine = "britton-desktop";
+      provisions = true;
+    }
+  ];
+  kacheRustfsMissingMachineErrors = kacheRustfsFleetErrors [
+    {
+      machine = "aspen1";
+      provisions = false;
+    }
+    {
+      machine = "britton-desktop";
+      provisions = true;
+    }
+  ];
+  kacheRustfsMultipleProvisionerErrors = kacheRustfsFleetErrors [
+    {
+      machine = "aspen1";
+      provisions = true;
+    }
+    {
+      machine = "aspen3";
+      provisions = false;
+    }
+    {
+      machine = "britton-desktop";
+      provisions = true;
+    }
+  ];
+  kacheRustfsProvisioners = builtins.filter (
+    machine:
+    builtins.hasAttr "kache-rustfs-storage-provision"
+      self.nixosConfigurations.${machine}.config.systemd.services
+  ) kacheRustfsMachines;
+  kacheRustfsMismatches = builtins.filter (
+    machine:
+    let
+      machineConfig = self.nixosConfigurations.${machine}.config;
+      expected = kacheRustfsExpected.${machine};
+      service = machineConfig.systemd.services.kache-rustfs;
+      credentialGenerator = machineConfig.clan.core.vars.generators.kache-rustfs-kache-remote;
+      credential = credentialGenerator.files."aws-env";
+      homeConfig = machineConfig.home-manager.users.brittonr;
+      generatedConfig = builtins.readFile machineConfig.environment.etc."kache-rustfs/config.toml".source;
+      syncTools = builtins.filter (
+        package: lib.getName package == "kache-rustfs-sync"
+      ) machineConfig.environment.systemPackages;
+      expectedTmpfilesRule = "d ${expected.cacheDir} 0700 brittonr users -";
+    in
+    service.serviceConfig.User != "brittonr"
+    || service.serviceConfig.ProtectSystem != "strict"
+    || service.serviceConfig.Restart != "always"
+    || service.environment.KACHE_CONFIG != kacheRustfsSystemConfigPath
+    || service.environment.KACHE_CACHE_DIR != expected.cacheDir
+    || service.environment.KACHE_LOCAL_ONLY != "0"
+    || !credentialGenerator.share
+    || credential.owner != "brittonr"
+    || credential.mode != "0400"
+    || builtins.length syncTools != 1
+    || !(builtins.elem expectedTmpfilesRule machineConfig.systemd.tmpfiles.rules)
+    || !(lib.hasInfix "local_store = \"${expected.cacheDir}\"" generatedConfig)
+    || !(lib.hasInfix "local_max_size = \"32GiB\"" generatedConfig)
+    || !(lib.hasInfix "endpoint = \"${expected.endpoint}\"" generatedConfig)
+    || homeConfig.home.sessionVariables.KACHE_CONFIG != kacheRustfsSystemConfigPath
+    || !(builtins.hasAttr ".cargo/config.toml" homeConfig.home.file)
+    || builtins.hasAttr "kache" homeConfig.systemd.user.services
+  ) kacheRustfsMachines;
   kacheRustfsGeneratedValid =
-    builtins.hasAttr "kache-rustfs-storage-provision" kacheRustfsDesktop.systemd.services
-    && kacheRustfsService.serviceConfig.User == "brittonr"
-    && kacheRustfsService.serviceConfig.ProtectSystem == "strict"
-    && kacheRustfsService.serviceConfig.Restart == "always"
-    && kacheRustfsService.environment.KACHE_LOCAL_ONLY == "0"
-    && kacheRustfsCredential.owner == "brittonr"
-    && kacheRustfsCredential.mode == "0400"
-    && builtins.length kacheRustfsSyncTools == 1
-    && !(builtins.hasAttr "kache" kacheRustfsDesktop.home-manager.users.brittonr.systemd.user.services);
+    kacheRustfsPositiveFleetErrors == [ ]
+    && lib.any (error: lib.hasInfix "missing required machines" error) kacheRustfsMissingMachineErrors
+    && lib.any (
+      error: lib.hasInfix "exactly one storage provisioner" error
+    ) kacheRustfsMultipleProvisionerErrors
+    && kacheRustfsProvisioners == [ "britton-desktop" ]
+    && kacheRustfsMismatches == [ ];
 
   niks3Port = 39400;
   niks3ServerUrl = "http://100.100.103.95:${toString niks3Port}";

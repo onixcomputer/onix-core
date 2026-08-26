@@ -91,6 +91,23 @@ let { ValidateUserRefs, .. } = import "user-contracts.ncl" in
       },
     },
 
+    # Apply the managed Cargo Kache wrapper to every RustFS node. The matching
+    # machine-level service owns each daemon, configuration, and credential.
+    hm-kache-fleet = {
+      module = { name = "home-manager-profiles", input = "self" },
+      roles.default = {
+        machines = {
+          aspen1 = {},
+          aspen3 = {},
+          britton-desktop = {},
+        },
+        settings = {
+          username = "brittonr",
+          profiles = ["kache"],
+        },
+      },
+    },
+
     # Desktop: interactive profiles plus personal Radicle supervision.
     hm-desktop = {
       module = { name = "home-manager-profiles", input = "self" },
@@ -98,7 +115,7 @@ let { ValidateUserRefs, .. } = import "user-contracts.ncl" in
         machines.britton-desktop = {},
         settings = {
           username = "brittonr",
-          profiles = ["base", "dev", "noctalia", "creative", "social", "media", "kache", "herdr", "radicle"],
+          profiles = ["base", "dev", "noctalia", "creative", "social", "media", "herdr", "radicle"],
           homeStateVersion = "26.05",
         },
       },
