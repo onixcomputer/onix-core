@@ -6,6 +6,7 @@
     retentionTime = { type = "string", default = "30d", description = "Metric retention period" },
     globalConfig = { type = "record", default = {}, description = "Prometheus global configuration" },
     additionalScrapeConfigs = { type = "array", default = [], description = "Additional scrape configurations" },
+    httpProbeTargets = { type = "array_string", default = [], description = "HTTP endpoints probed through the loopback blackbox exporter" },
     rules = { type = "array", default = [], description = "Alerting rule YAML documents" },
     # dnsDiscovery and staticTargets use NixOS submodules — typed as record, validated at build time
     staticTargets = { type = "record", default = {}, description = "Static targets per job" },

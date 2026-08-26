@@ -110,6 +110,8 @@ let bookshelf_source_dir = "/datapool/bookshelf/source" in
 let bookshelf_library_dir = "/datapool/bookshelf/library" in
 let rustfs_api_port = 39000 in
 let rustfs_console_port = 39001 in
+let rustfs_niks3_api_port = 39500 in
+let rustfs_niks3_console_port = 39501 in
 let rustfs_topology_wait_timeout_seconds = 120 in
 let rustfs_aspen1_address = "100.100.103.95" in
 let rustfs_aspen3_address = "100.108.13.4" in
@@ -117,6 +119,12 @@ let rustfs_britton_desktop_address = "100.110.43.11" in
 let rustfs_aspen1_data_dir = "/var/lib/rustfs-cluster" in
 let rustfs_aspen3_data_dir = "/mnt/usb4-nvme/rustfs-cluster" in
 let rustfs_britton_desktop_data_dir = "/datapool/rustfs-cluster" in
+let rustfs_niks3_bind_address = "127.0.0.1" in
+let rustfs_niks3_data_dir = "/var/lib/rustfs-niks3-cache" in
+let rustfs_niks3_resource_weight = 10 in
+let rustfs_niks3_nice = 10 in
+let rustfs_niks3_oom_score_adjust = 500 in
+let rustfs_backup_retention_days = 14 in
 let rustfs_cluster_endpoints = [
   "http://%{rustfs_aspen1_address}:%{rustfs_api_port}%{rustfs_aspen1_data_dir}",
   "http://%{rustfs_aspen3_address}:%{rustfs_api_port}%{rustfs_aspen3_data_dir}",
@@ -126,6 +134,7 @@ in
 let rustfs_cluster_settings = fun bind_address data_dir =>
   {
     mode = "distributed",
+    serviceName = "rustfs",
     dataDir = data_dir,
     bindAddress = bind_address,
     apiPort = rustfs_api_port,
@@ -137,6 +146,39 @@ let rustfs_cluster_settings = fun bind_address data_dir =>
     topologyWaitMode = "bounded",
     topologyWaitTimeoutSeconds = rustfs_topology_wait_timeout_seconds,
   }
+in
+let rustfs_niks3_settings = {
+  mode = "single",
+  serviceName = "rustfs-niks3-cache",
+  dataDir = rustfs_niks3_data_dir,
+  bindAddress = rustfs_niks3_bind_address,
+  apiPort = rustfs_niks3_api_port,
+  consolePort = rustfs_niks3_console_port,
+  enableConsole = false,
+  openFirewall = false,
+  firewallInterface = "tailscale0",
+  clusterEndpoints = [],
+  topologyWaitMode = "fail-fast",
+  topologyWaitTimeoutSeconds = rustfs_topology_wait_timeout_seconds,
+  cpuWeight = rustfs_niks3_resource_weight,
+  ioWeight = rustfs_niks3_resource_weight,
+  nice = rustfs_niks3_nice,
+  oomScoreAdjust = rustfs_niks3_oom_score_adjust,
+}
+in
+let rustfs_authority_backup_settings = {
+  sourceEndpoint = "http://%{rustfs_britton_desktop_address}:%{rustfs_api_port}",
+  buckets = [
+    "onix-celld-lab",
+    "onix-site-celld",
+    "onix-niks3-metadata-backup",
+  ],
+  targetDir = "/datapool/rustfs-authority-backup",
+  schedule = "*-*-* 02:45:00",
+  retentionDays = rustfs_backup_retention_days,
+  adminGenerator = "rustfs-rustfs-cluster",
+  restoreProbeBucket = "onix-restore-probe",
+}
 in
 let celld_public_port = 39200 in
 let celld_internal_port = 39201 in
@@ -221,29 +263,46 @@ let kache_remote_settings = fun bind_address cache_dir provision_storage =>
   }
 in
 let niks3_port = 39400 in
+let niks3_metadata_backup_bucket = "onix-niks3-metadata-backup" in
+let niks3_metadata_backup_directory = "/var/backup/niks3" in
+let niks3_metadata_backup_schedule = "*-*-* 02:15:00" in
 let niks3_server_url = "http://%{rustfs_aspen1_address}:%{niks3_port}" in
 let niks3_server_settings = {
   bindAddress = rustfs_aspen1_address,
   port = niks3_port,
-  storageEndpoint = "http://%{rustfs_aspen1_address}:%{rustfs_api_port}",
+  storageEndpoint = "http://%{rustfs_niks3_bind_address}:%{rustfs_niks3_api_port}",
+  storageServiceName = "rustfs-niks3-cache",
   bucketName = "onix-niks3",
   region = "us-east-1",
   accessKeyId = "niks3-cache",
   provisionStorage = true,
-  rustfsAdminGenerator = "rustfs-rustfs-cluster",
+  rustfsAdminGenerator = "rustfs-niks3-storage",
   openFirewall = true,
   firewallInterface = "tailscale0",
   gcOlderThan = "720h",
   gcFailedUploadsOlderThan = "6h",
   gcSchedule = "daily",
   maxNarSize = "8G",
+  metadataBackupEnabled = true,
+  metadataBackupEndpoint = "http://%{rustfs_aspen1_address}:%{rustfs_api_port}",
+  metadataBackupBucket = niks3_metadata_backup_bucket,
+  metadataBackupAccessKeyId = "niks3-metadata-backup",
+  metadataBackupAdminGenerator = "rustfs-rustfs-cluster",
+  metadataBackupDirectory = niks3_metadata_backup_directory,
+  metadataBackupSchedule = niks3_metadata_backup_schedule,
 }
 in
 let niks3_upload_batch_size = 50 in
 let niks3_upload_idle_exit_timeout_seconds = 0 in
 let niks3_max_concurrent_uploads = 1 in
-let niks3_uploader_settings = {
+let niks3_uploader_settings = fun local_address => {
   serverUrl = niks3_server_url,
+  automaticUploads = false,
+  maintenanceMarker = "/run/niks3-maintenance-window",
+  maintenanceGuardUrls = [
+    "http://%{local_address}:%{rustfs_api_port}/health",
+    "http://%{local_address}:%{celld_public_port}/__celld/health",
+  ],
   batchSize = niks3_upload_batch_size,
   idleExitTimeoutSeconds = niks3_upload_idle_exit_timeout_seconds,
   maxConcurrentUploads = niks3_max_concurrent_uploads,
@@ -282,11 +341,20 @@ in
     # r[impl onix.rustfs_cluster.composition]
     "rustfs-cluster" = {
       module = { name = "rustfs", input = "self" },
-      roles.server.machines = {
-        aspen1.settings = rustfs_cluster_settings rustfs_aspen1_address rustfs_aspen1_data_dir,
-        aspen3.settings = rustfs_cluster_settings rustfs_aspen3_address rustfs_aspen3_data_dir,
-        britton-desktop.settings = rustfs_cluster_settings rustfs_britton_desktop_address rustfs_britton_desktop_data_dir,
+      roles = {
+        server.machines = {
+          aspen1.settings = rustfs_cluster_settings rustfs_aspen1_address rustfs_aspen1_data_dir,
+          aspen3.settings = rustfs_cluster_settings rustfs_aspen3_address rustfs_aspen3_data_dir,
+          britton-desktop.settings = rustfs_cluster_settings rustfs_britton_desktop_address rustfs_britton_desktop_data_dir,
+        },
+        backup.machines.britton-desktop.settings = rustfs_authority_backup_settings,
       },
+    },
+
+    # r[impl onix.rustfs_build_caches.niks3.isolation]
+    "niks3-storage" = {
+      module = { name = "rustfs", input = "self" },
+      roles.server.machines.aspen1.settings = rustfs_niks3_settings,
     },
 
     # r[impl onix.celld_rustfs.composition]
@@ -325,9 +393,9 @@ in
       roles = {
         server.machines.aspen1.settings = niks3_server_settings,
         uploader.machines = {
-          aspen1.settings = niks3_uploader_settings,
-          aspen3.settings = niks3_uploader_settings,
-          britton-desktop.settings = niks3_uploader_settings,
+          aspen1.settings = niks3_uploader_settings rustfs_aspen1_address,
+          aspen3.settings = niks3_uploader_settings rustfs_aspen3_address,
+          britton-desktop.settings = niks3_uploader_settings rustfs_britton_desktop_address,
         },
       },
     },
@@ -472,6 +540,17 @@ in
                   { targets = ["localhost:9090"] },
                 ],
               },
+            ],
+            httpProbeTargets = [
+              "http://%{rustfs_aspen1_address}:%{rustfs_api_port}/health",
+              "http://%{rustfs_aspen3_address}:%{rustfs_api_port}/health",
+              "http://%{rustfs_britton_desktop_address}:%{rustfs_api_port}/health",
+              "http://%{rustfs_aspen1_address}:%{celld_public_port}/__celld/health",
+              "http://%{rustfs_aspen3_address}:%{celld_public_port}/__celld/health",
+              "http://%{rustfs_britton_desktop_address}:%{celld_public_port}/__celld/health",
+              "http://%{rustfs_aspen3_address}:%{site_celld_public_port}/__celld/health",
+              "http://%{rustfs_britton_desktop_address}:%{site_celld_public_port}/__celld/health",
+              "%{niks3_server_url}/nix-cache-info",
             ],
             rules = prom_rules,
           },

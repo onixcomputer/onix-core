@@ -25,6 +25,7 @@ let
   ttInferenceServerValidation = wasm.evalNickelFile ../inventory/services/fixtures/tt-inference-server-validation.ncl;
   rustfsValidation = wasm.evalNickelFile ../inventory/services/fixtures/rustfs-validation.ncl;
   rustfsTopologyTests = import ../modules/rustfs/topology-tests.nix { inherit lib; };
+  rustfsBackupSettingsTests = import ../modules/rustfs/backup-settings-tests.nix { inherit lib; };
   rustfsBucketPolicyTests = import ../lib/rustfs-bucket-policy-tests.nix { inherit lib; };
   celldValidation = wasm.evalNickelFile ../inventory/services/fixtures/celld-validation.ncl;
   celldSettingsTests = import ../modules/celld/settings-tests.nix { inherit lib; };
@@ -98,10 +99,11 @@ let
     field: !(lib.any (error: lib.hasInfix field error) ttInferenceServerNegativeErrors)
   ) expectedTtInferenceServerNegativeFields;
 
-  rustfsPositiveErrors = rustfsValidation.positive;
-  rustfsNegativeErrors = rustfsValidation.negative;
+  rustfsPositiveErrors = rustfsValidation.positive ++ rustfsValidation.backup_positive;
+  rustfsNegativeErrors = rustfsValidation.negative ++ rustfsValidation.backup_negative;
   expectedRustfsNegativeFields = [
     "mode"
+    "serviceName"
     "dataDir"
     "bindAddress"
     "apiPort"
@@ -112,6 +114,17 @@ let
     "clusterEndpoints"
     "topologyWaitMode"
     "topologyWaitTimeoutSeconds"
+    "cpuWeight"
+    "ioWeight"
+    "nice"
+    "oomScoreAdjust"
+    "sourceEndpoint"
+    "buckets"
+    "targetDir"
+    "schedule"
+    "retentionDays"
+    "adminGenerator"
+    "restoreProbeBucket"
   ];
   missingRustfsNegativeFields = builtins.filter (
     field: !(lib.any (error: lib.hasInfix field error) rustfsNegativeErrors)
@@ -119,6 +132,8 @@ let
   rustfsTopologyPositiveErrors = rustfsTopologyTests.positiveErrors;
   rustfsTopologyMissingNegativeCases = rustfsTopologyTests.missingNegativeCases;
   rustfsTopologyNegativeErrors = rustfsTopologyTests.negativeErrors;
+  rustfsBackupPositiveErrors = rustfsBackupSettingsTests.positiveErrors;
+  rustfsBackupMissingNegativeCases = rustfsBackupSettingsTests.missingNegativeCases;
   rustfsClusterMachines = [
     "aspen1"
     "aspen3"
@@ -130,6 +145,19 @@ let
       self.nixosConfigurations.${machine}.config.systemd.services.rustfs.serviceConfig.RestrictAddressFamilies
     )
   ) rustfsClusterMachines;
+  rustfsBackupTargetDir = "/datapool/rustfs-authority-backup";
+  rustfsBackupServiceName = "rustfs-authority-backup-rustfs-cluster";
+  rustfsRestoreServiceName = "rustfs-authority-restore-probe-rustfs-cluster";
+  rustfsDesktopConfig = self.nixosConfigurations.britton-desktop.config;
+  rustfsBackupService = rustfsDesktopConfig.systemd.services.${rustfsBackupServiceName};
+  rustfsRestoreService = rustfsDesktopConfig.systemd.services.${rustfsRestoreServiceName};
+  rustfsBackupGeneratedValid =
+    builtins.hasAttr rustfsBackupServiceName rustfsDesktopConfig.systemd.services
+    && builtins.hasAttr rustfsRestoreServiceName rustfsDesktopConfig.systemd.services
+    && builtins.hasAttr rustfsBackupServiceName rustfsDesktopConfig.systemd.timers
+    && builtins.elem rustfsBackupTargetDir rustfsBackupService.unitConfig.RequiresMountsFor
+    && builtins.elem rustfsBackupTargetDir rustfsRestoreService.unitConfig.RequiresMountsFor
+    && rustfsRestoreService.serviceConfig.ReadOnlyPaths == [ rustfsBackupTargetDir ];
 
   celldPositiveErrors = celldValidation.positive;
   celldNegativeErrors = celldValidation.negative;
@@ -371,6 +399,7 @@ let
     "bindAddress"
     "port"
     "storageEndpoint"
+    "storageServiceName"
     "bucketName"
     "region"
     "accessKeyId"
@@ -382,7 +411,17 @@ let
     "gcFailedUploadsOlderThan"
     "gcSchedule"
     "maxNarSize"
+    "metadataBackupEnabled"
+    "metadataBackupEndpoint"
+    "metadataBackupBucket"
+    "metadataBackupAccessKeyId"
+    "metadataBackupAdminGenerator"
+    "metadataBackupDirectory"
+    "metadataBackupSchedule"
     "serverUrl"
+    "automaticUploads"
+    "maintenanceMarker"
+    "maintenanceGuardUrls"
     "batchSize"
     "idleExitTimeoutSeconds"
     "maxConcurrentUploads"
@@ -518,6 +557,11 @@ let
     && kacheRustfsMismatches == [ ];
 
   niks3Port = 39400;
+  niks3StoragePort = 39500;
+  niks3StorageAddress = "127.0.0.1";
+  niks3StorageDataDir = "/var/lib/rustfs-niks3-cache";
+  niks3StorageResourceWeight = 10;
+  niks3MaintenanceMarker = "/run/niks3-maintenance-window";
   niks3ServerUrl = "http://100.100.103.95:${toString niks3Port}";
   niks3MaxConcurrentUploads = 1;
   niks3BucketName = "onix-niks3";
@@ -529,6 +573,7 @@ let
   ];
   niks3Aspen1 = self.nixosConfigurations.aspen1.config;
   niks3ServerSettings = niks3Aspen1.services.niks3;
+  niks3StorageUnit = niks3Aspen1.systemd.services.rustfs-niks3-cache;
   niks3Provisioners = builtins.filter (
     machine:
     builtins.hasAttr "niks3-storage-provision"
@@ -541,6 +586,13 @@ let
     in
     !(builtins.hasAttr "niks3-auto-upload" machineConfig.systemd.services)
     || machineConfig.services."niks3-auto-upload".maxConcurrentUploads != niks3MaxConcurrentUploads
+    || machineConfig.systemd.sockets.niks3-auto-upload.wantedBy != [ ]
+    ||
+      machineConfig.systemd.services.niks3-auto-upload.unitConfig.ConditionPathExists
+      != niks3MaintenanceMarker
+    || !(lib.hasInfix "niks3-post-build-upload-disabled" (
+      toString machineConfig.nix.settings.post-build-hook
+    ))
     || !(builtins.elem niks3ServerUrl machineConfig.nix.settings.extra-substituters)
     || !(lib.any (
       key: lib.hasPrefix niks3PublicKeyPrefix key
@@ -554,17 +606,56 @@ let
     && niks3ServerSettings.package.version == "1.8.0"
     && niks3ServerSettings.httpAddr == "100.100.103.95:${toString niks3Port}"
     && niks3ServerSettings.s3.bucket == niks3BucketName
-    && niks3ServerSettings.s3.endpoint == "100.100.103.95:39000"
+    && niks3ServerSettings.s3.endpoint == "${niks3StorageAddress}:${toString niks3StoragePort}"
     && niks3ServerSettings.s3.bucketLookup == "path"
     && !niks3ServerSettings.s3.useSSL
     && niks3ServerSettings.readProxy.enable
-    && niks3Aspen1.systemd.services.niks3.serviceConfig.User == "niks3";
+    && niks3Aspen1.systemd.services.niks3.serviceConfig.User == "niks3"
+    &&
+      niks3StorageUnit.environment.RUSTFS_ADDRESS == "${niks3StorageAddress}:${toString niks3StoragePort}"
+    && niks3StorageUnit.environment.RUSTFS_VOLUMES == niks3StorageDataDir
+    && niks3StorageUnit.serviceConfig.ReadWritePaths == [ niks3StorageDataDir ]
+    && niks3StorageUnit.serviceConfig.CPUWeight == niks3StorageResourceWeight
+    && niks3StorageUnit.serviceConfig.IOWeight == niks3StorageResourceWeight;
   niks3StorageCredentialFiles = niks3Aspen1.clan.core.vars.generators.niks3-nix-cache-storage.files;
   niks3CredentialsValid =
     niks3StorageCredentialFiles."access-key".owner == "niks3"
     && niks3StorageCredentialFiles."access-key".mode == "0400"
     && niks3StorageCredentialFiles."secret-key".owner == "niks3"
     && niks3StorageCredentialFiles."signing-key".owner == "niks3";
+  niks3MetadataBackupCredential =
+    niks3Aspen1.clan.core.vars.generators."niks3-nix-cache-metadata-backup".files."aws-env";
+  niks3MetadataBackupValid =
+    niks3Aspen1.services.postgresqlBackup.enable
+    && niks3Aspen1.services.postgresqlBackup.databases == [ "niks3" ]
+    && niks3Aspen1.services.postgresqlBackup.location == "/var/backup/niks3"
+    && builtins.hasAttr "niks3-metadata-backup-provision" niks3Aspen1.systemd.services
+    && builtins.hasAttr "niks3-metadata-backup-upload" niks3Aspen1.systemd.services
+    &&
+      builtins.elem "niks3-metadata-backup-upload.service"
+        niks3Aspen1.systemd.services."postgresqlBackup-niks3".unitConfig.OnSuccess
+    && niks3MetadataBackupCredential.mode == "0400";
+  niks3QueueMetricMismatches = builtins.filter (
+    machine:
+    let
+      machineConfig = self.nixosConfigurations.${machine}.config;
+    in
+    !(builtins.hasAttr "niks3-queue-metrics" machineConfig.systemd.services)
+    || !(builtins.hasAttr "niks3-queue-metrics" machineConfig.systemd.timers)
+    || !(builtins.elem "--collector.textfile.directory=/var/lib/prometheus-node-exporter-text-files" machineConfig.services.prometheus.exporters.node.extraFlags)
+  ) niks3Machines;
+  storageMonitoringConfig = self.nixosConfigurations.britton-desktop.config;
+  storageMonitoringRules = lib.concatStringsSep "\n" storageMonitoringConfig.services.prometheus.rules;
+  storageMonitoringValid =
+    storageMonitoringConfig.services.prometheus.exporters.blackbox.enable
+    && storageMonitoringConfig.services.prometheus.exporters.blackbox.listenAddress == "127.0.0.1"
+    && lib.any (
+      scrape: scrape.job_name == "storage-coordination-health"
+    ) storageMonitoringConfig.services.prometheus.scrapeConfigs
+    && lib.hasInfix "Niks3UploadQueueCritical" storageMonitoringRules
+    && lib.hasInfix "StorageCoordinationProbeFailed" storageMonitoringRules
+    && lib.hasInfix "StorageCoordinationProbeSlow" storageMonitoringRules
+    && lib.hasInfix "BuildStorageLowCapacity" storageMonitoringRules;
 in
 {
   checks = {
@@ -659,6 +750,23 @@ in
         printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" missingRustfsNegativeFields)}
         echo "Actual errors:"
         printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" rustfsNegativeErrors)}
+        exit 1
+      ''}
+      ${lib.optionalString (rustfsBackupPositiveErrors != [ ]) ''
+        echo "Valid RustFS backup settings produced semantic errors"
+        exit 1
+      ''}
+      ${lib.optionalString (rustfsBackupMissingNegativeCases != [ ]) ''
+        echo "Invalid RustFS backup settings did not report expected semantic errors"
+        exit 1
+      ''}
+      touch $out
+    '';
+
+    # r[verify onix.rustfs_build_caches.recovery]
+    rustfs-backup-generated = pkgs.runCommand "rustfs-backup-generated" { } ''
+      ${lib.optionalString (!rustfsBackupGeneratedValid) ''
+        echo "RustFS authority backup or restore units drifted"
         exit 1
       ''}
       touch $out
@@ -901,18 +1009,20 @@ in
 
     # r[verify onix.rustfs_build_caches.kache]
     kache-package =
-      pkgs.runCommand "kache-package" { nativeBuildInputs = [ self.packages.${pkgs.stdenv.hostPlatform.system}.kache ]; } ''
-        actual="$(kache --version)"
-        if [ "$actual" != "kache 0.16.0" ]; then
-          echo "Unexpected Kache version: $actual"
-          exit 1
-        fi
-        if kache unsupported-command >/dev/null 2>&1; then
-          echo "Kache accepted an unsupported command"
-          exit 1
-        fi
-        touch $out
-      '';
+      pkgs.runCommand "kache-package"
+        { nativeBuildInputs = [ self.packages.${pkgs.stdenv.hostPlatform.system}.kache ]; }
+        ''
+          actual="$(kache --version)"
+          if [ "$actual" != "kache 0.16.0" ]; then
+            echo "Unexpected Kache version: $actual"
+            exit 1
+          fi
+          if kache unsupported-command >/dev/null 2>&1; then
+            echo "Kache accepted an unsupported command"
+            exit 1
+          fi
+          touch $out
+        '';
 
     # r[verify onix.rustfs_build_caches.verification]
     kache-rustfs-settings = pkgs.runCommand "kache-rustfs-settings" { } ''
@@ -965,6 +1075,19 @@ in
       touch $out
     '';
 
+    # r[verify onix.rustfs_build_caches.monitoring]
+    storage-monitoring-generated = pkgs.runCommand "storage-monitoring-generated" { } ''
+      ${lib.optionalString (niks3QueueMetricMismatches != [ ]) ''
+        echo "niks3 queue metrics are missing from fleet nodes"
+        exit 1
+      ''}
+      ${lib.optionalString (!storageMonitoringValid) ''
+        echo "storage blackbox probes or alert rules drifted"
+        exit 1
+      ''}
+      touch $out
+    '';
+
     # r[verify onix.rustfs_build_caches.niks3]
     # r[verify onix.rustfs_build_caches.uploaders]
     niks3-generated = pkgs.runCommand "niks3-generated" { } ''
@@ -986,6 +1109,10 @@ in
       ''}
       ${lib.optionalString (!niks3CredentialsValid) ''
         echo "niks3 storage or signing credentials lost private ownership"
+        exit 1
+      ''}
+      ${lib.optionalString (!niks3MetadataBackupValid) ''
+        echo "niks3 metadata backup authority drifted"
         exit 1
       ''}
       touch $out

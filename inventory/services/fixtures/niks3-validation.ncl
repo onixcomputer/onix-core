@@ -10,6 +10,7 @@ let invalid_port = 70000 in
         bindAddress = "100.100.103.95",
         port = default_port,
         storageEndpoint = "http://100.100.103.95:39000",
+        storageServiceName = "rustfs",
         bucketName = "onix-niks3",
         region = "us-east-1",
         accessKeyId = "niks3-cache",
@@ -21,6 +22,13 @@ let invalid_port = 70000 in
         gcFailedUploadsOlderThan = "6h",
         gcSchedule = "daily",
         maxNarSize = "8G",
+        metadataBackupEnabled = true,
+        metadataBackupEndpoint = "http://100.100.103.95:39000",
+        metadataBackupBucket = "onix-niks3-metadata-backup",
+        metadataBackupAccessKeyId = "niks3-metadata-backup",
+        metadataBackupAdminGenerator = "rustfs-rustfs-cluster",
+        metadataBackupDirectory = "/var/backup/niks3",
+        metadataBackupSchedule = "*-*-* 02:15:00",
       },
   server_negative =
     sc.validate_fields
@@ -30,6 +38,7 @@ let invalid_port = 70000 in
         bindAddress = 0,
         port = invalid_port,
         storageEndpoint = {},
+        storageServiceName = false,
         bucketName = [],
         region = false,
         accessKeyId = [],
@@ -41,6 +50,13 @@ let invalid_port = 70000 in
         gcFailedUploadsOlderThan = [],
         gcSchedule = false,
         maxNarSize = 0,
+        metadataBackupEnabled = "yes",
+        metadataBackupEndpoint = [],
+        metadataBackupBucket = false,
+        metadataBackupAccessKeyId = [],
+        metadataBackupAdminGenerator = {},
+        metadataBackupDirectory = false,
+        metadataBackupSchedule = [],
       },
   uploader_positive =
     sc.validate_fields
@@ -48,6 +64,9 @@ let invalid_port = 70000 in
       "niks3-uploader-positive"
       {
         serverUrl = "http://100.100.103.95:%{default_port}",
+        automaticUploads = false,
+        maintenanceMarker = "/run/niks3-maintenance-window",
+        maintenanceGuardUrls = ["http://100.100.103.95:39000/health"],
         batchSize = 50,
         idleExitTimeoutSeconds = 0,
         maxConcurrentUploads = 8,
@@ -59,6 +78,9 @@ let invalid_port = 70000 in
       "niks3-uploader-negative"
       {
         serverUrl = [],
+        automaticUploads = "yes",
+        maintenanceMarker = false,
+        maintenanceGuardUrls = "health",
         batchSize = "batch",
         idleExitTimeoutSeconds = false,
         maxConcurrentUploads = "uploads",

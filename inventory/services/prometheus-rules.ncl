@@ -2,6 +2,9 @@
 #
 # Separated from services.ncl for readability.
 # Each element is a complete YAML document.
+let queue_critical_path_count = 100 in
+let probe_slow_seconds = 2 in
+let build_storage_minimum_available_ratio = 0.15 in
 [
   m%"
     groups:
@@ -97,6 +100,51 @@
             annotations:
               summary: "Systemd service failed on {{ $labels.instance }}"
               description: "Service {{ $labels.name }} is in failed state"
+
+          - alert: Niks3UploadQueueWaiting
+            expr: onix_niks3_upload_queue_paths > 0
+            for: 6h
+            labels:
+              severity: warning
+            annotations:
+              summary: "niks3 maintenance queue is waiting on {{ $labels.node }}"
+              description: "{{ $value }} durable paths await an admitted maintenance drain"
+
+          - alert: Niks3UploadQueueCritical
+            expr: onix_niks3_upload_queue_paths > %{queue_critical_path_count}
+            for: 30m
+            labels:
+              severity: critical
+            annotations:
+              summary: "niks3 maintenance queue is deep on {{ $labels.node }}"
+              description: "{{ $value }} durable paths await maintenance"
+
+          - alert: StorageCoordinationProbeFailed
+            expr: probe_success{job="storage-coordination-health"} == 0
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Storage or coordination endpoint failed"
+              description: "{{ $labels.instance }} did not return an accepted response"
+
+          - alert: StorageCoordinationProbeSlow
+            expr: probe_duration_seconds{job="storage-coordination-health"} > %{probe_slow_seconds}
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Storage or coordination endpoint is slow"
+              description: "{{ $labels.instance }} took {{ $value }} seconds"
+
+          - alert: BuildStorageLowCapacity
+            expr: node_filesystem_avail_bytes{mountpoint=~"/|/mnt/usb4-nvme|/datapool"} / node_filesystem_size_bytes < %{build_storage_minimum_available_ratio}
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Build storage capacity is low on {{ $labels.instance }}"
+              description: "{{ $labels.mountpoint }} has {{ $value | humanizePercentage }} available"
 
           - alert: RadicleNodeNotActive
             expr: systemd_unit_state{name="radicle-node.service",state="active"} != 1

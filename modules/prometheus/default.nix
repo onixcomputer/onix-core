@@ -74,6 +74,7 @@ in
                 enableAutoDiscovery
                 discoveryMethod
                 additionalScrapeConfigs
+                httpProbeTargets
                 staticTargets
                 dnsDiscovery
                 ;
@@ -83,9 +84,46 @@ in
                 "enableAutoDiscovery"
                 "discoveryMethod"
                 "additionalScrapeConfigs"
+                "httpProbeTargets"
                 "staticTargets"
                 "dnsDiscovery"
               ];
+
+              blackboxPort = 9115;
+              blackboxProbeTimeout = "5s";
+              blackboxEnabled = httpProbeTargets != [ ];
+              blackboxConfig = pkgs.writeText "prometheus-blackbox-storage.yaml" (
+                lib.generators.toYAML { } {
+                  modules.http_2xx = {
+                    prober = "http";
+                    timeout = blackboxProbeTimeout;
+                    http = {
+                      method = "GET";
+                      preferred_ip_protocol = "ip4";
+                    };
+                  };
+                }
+              );
+              blackboxScrapeConfigs = lib.optional blackboxEnabled {
+                job_name = "storage-coordination-health";
+                metrics_path = "/probe";
+                params.module = [ "http_2xx" ];
+                static_configs = [ { targets = httpProbeTargets; } ];
+                relabel_configs = [
+                  {
+                    source_labels = [ "__address__" ];
+                    target_label = "__param_target";
+                  }
+                  {
+                    source_labels = [ "__param_target" ];
+                    target_label = "instance";
+                  }
+                  {
+                    target_label = "__address__";
+                    replacement = "127.0.0.1:${toString blackboxPort}";
+                  }
+                ];
+              };
 
               # Check if Tailscale is available
               hasTailscale = config.services.tailscale.enable or false;
@@ -276,9 +314,15 @@ in
                         else
                           autoDiscoveredConfigs;
 
-                      allConfigs = mergedConfigs ++ staticConfigs ++ additionalScrapeConfigs;
+                      allConfigs = mergedConfigs ++ staticConfigs ++ additionalScrapeConfigs ++ blackboxScrapeConfigs;
                     in
                     lib.mkIf (allConfigs != [ ]) allConfigs;
+                  exporters.blackbox = lib.mkIf blackboxEnabled {
+                    enable = true;
+                    listenAddress = "127.0.0.1";
+                    port = blackboxPort;
+                    configFile = blackboxConfig;
+                  };
                 }
               ];
 

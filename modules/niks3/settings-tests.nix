@@ -5,6 +5,7 @@ let
     bindAddress = "100.100.103.95";
     port = 39400;
     storageEndpoint = "http://100.100.103.95:39000";
+    storageServiceName = "rustfs";
     bucketName = "onix-niks3";
     region = "us-east-1";
     accessKeyId = "niks3-cache";
@@ -16,10 +17,20 @@ let
     gcFailedUploadsOlderThan = "6h";
     gcSchedule = "daily";
     maxNarSize = "8G";
+    metadataBackupEnabled = true;
+    metadataBackupEndpoint = "http://100.100.103.95:39000";
+    metadataBackupBucket = "onix-niks3-metadata-backup";
+    metadataBackupAccessKeyId = "niks3-metadata-backup";
+    metadataBackupAdminGenerator = "rustfs-rustfs-cluster";
+    metadataBackupDirectory = "/var/backup/niks3";
+    metadataBackupSchedule = "*-*-* 02:15:00";
   };
   negativeIdleTimeoutSeconds = -1;
   validUploader = {
     serverUrl = "http://100.100.103.95:39400";
+    automaticUploads = false;
+    maintenanceMarker = "/run/niks3-maintenance-window";
+    maintenanceGuardUrls = [ "http://100.100.103.95:39000/health" ];
     batchSize = 50;
     idleExitTimeoutSeconds = 0;
     maxConcurrentUploads = 8;
@@ -45,6 +56,13 @@ let
       expected = "storageEndpoint";
       settings = validServer // {
         storageEndpoint = "s3.invalid";
+      };
+    }
+    {
+      name = "empty-storage-service";
+      expected = "storageServiceName";
+      settings = validServer // {
+        storageServiceName = "";
       };
     }
     {
@@ -110,6 +128,34 @@ let
         maxNarSize = "large";
       };
     }
+    {
+      name = "invalid-backup-endpoint";
+      expected = "metadataBackupEndpoint";
+      settings = validServer // {
+        metadataBackupEndpoint = "s3.invalid";
+      };
+    }
+    {
+      name = "invalid-backup-bucket";
+      expected = "metadataBackupBucket";
+      settings = validServer // {
+        metadataBackupBucket = "Invalid_Backup";
+      };
+    }
+    {
+      name = "relative-backup-directory";
+      expected = "metadataBackupDirectory";
+      settings = validServer // {
+        metadataBackupDirectory = "var/backup/niks3";
+      };
+    }
+    {
+      name = "empty-backup-schedule";
+      expected = "metadataBackupSchedule";
+      settings = validServer // {
+        metadataBackupSchedule = "";
+      };
+    }
   ];
   uploaderCases = [
     {
@@ -117,6 +163,34 @@ let
       expected = "serverUrl";
       settings = validUploader // {
         serverUrl = "niks3.invalid";
+      };
+    }
+    {
+      name = "invalid-automatic-uploads";
+      expected = "automaticUploads";
+      settings = validUploader // {
+        automaticUploads = "yes";
+      };
+    }
+    {
+      name = "relative-maintenance-marker";
+      expected = "maintenanceMarker";
+      settings = validUploader // {
+        maintenanceMarker = "run/niks3-maintenance-window";
+      };
+    }
+    {
+      name = "missing-maintenance-guards";
+      expected = "maintenanceGuardUrls";
+      settings = validUploader // {
+        maintenanceGuardUrls = [ ];
+      };
+    }
+    {
+      name = "invalid-maintenance-guard";
+      expected = "maintenanceGuardUrls";
+      settings = validUploader // {
+        maintenanceGuardUrls = [ "file:///tmp/health" ];
       };
     }
     {

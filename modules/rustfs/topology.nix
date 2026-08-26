@@ -3,6 +3,17 @@ settings:
 let
   minimumDistributedEndpointCount = 3;
   maximumErasureSetDriveCount = 16;
+  minimumResourceWeight = 1;
+  maximumResourceWeight = 10000;
+  minimumNice = -20;
+  maximumNice = 19;
+  minimumOomScoreAdjust = -1000;
+  maximumOomScoreAdjust = 1000;
+  serviceNameIsSafe =
+    builtins.isString settings.serviceName
+    && builtins.match "[A-Za-z0-9_.@-]+" settings.serviceName != null;
+  resourceWeightIsValid =
+    weight: builtins.isInt weight && weight >= minimumResourceWeight && weight <= maximumResourceWeight;
   distributed = settings.mode == "distributed";
   endpoints = settings.clusterEndpoints;
   endpointCount = builtins.length endpoints;
@@ -41,6 +52,10 @@ in
   };
 
   assertions = [
+    {
+      assertion = serviceNameIsSafe;
+      message = "rustfs serviceName must contain only systemd-safe letters, digits, dots, underscores, at signs, or hyphens";
+    }
     {
       assertion = settings.dataDir != "" && lib.hasPrefix "/" settings.dataDir;
       message = "rustfs dataDir must be a non-empty absolute path";
@@ -84,6 +99,26 @@ in
     {
       assertion = !distributed || settings.topologyWaitTimeoutSeconds > 0;
       message = "rustfs topologyWaitTimeoutSeconds must be positive in distributed mode";
+    }
+    {
+      assertion = resourceWeightIsValid settings.cpuWeight;
+      message = "rustfs cpuWeight must be an integer between ${toString minimumResourceWeight} and ${toString maximumResourceWeight}";
+    }
+    {
+      assertion = resourceWeightIsValid settings.ioWeight;
+      message = "rustfs ioWeight must be an integer between ${toString minimumResourceWeight} and ${toString maximumResourceWeight}";
+    }
+    {
+      assertion =
+        builtins.isInt settings.nice && settings.nice >= minimumNice && settings.nice <= maximumNice;
+      message = "rustfs nice must be an integer between ${toString minimumNice} and ${toString maximumNice}";
+    }
+    {
+      assertion =
+        builtins.isInt settings.oomScoreAdjust
+        && settings.oomScoreAdjust >= minimumOomScoreAdjust
+        && settings.oomScoreAdjust <= maximumOomScoreAdjust;
+      message = "rustfs oomScoreAdjust must be an integer between ${toString minimumOomScoreAdjust} and ${toString maximumOomScoreAdjust}";
     }
   ];
 }

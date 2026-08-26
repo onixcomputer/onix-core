@@ -5,6 +5,9 @@ let
   testConsolePort = 39001;
   wrongApiPort = 39002;
   topologyWaitTimeoutSeconds = 120;
+  defaultResourceWeight = 100;
+  protectedOomScoreAdjust = -1000;
+  invalidOomScoreAdjust = 1001;
   localAddress = "100.64.0.1";
   peerAddressA = "100.64.0.2";
   peerAddressB = "100.64.0.3";
@@ -22,6 +25,7 @@ let
   ];
   baseSettings = {
     mode = "single";
+    serviceName = "rustfs";
     dataDir = localDataDir;
     bindAddress = "0.0.0.0";
     apiPort = testApiPort;
@@ -29,6 +33,10 @@ let
     enableConsole = true;
     clusterEndpoints = [ ];
     topologyWaitMode = "bounded";
+    cpuWeight = defaultResourceWeight;
+    ioWeight = defaultResourceWeight;
+    nice = 0;
+    oomScoreAdjust = protectedOomScoreAdjust;
     inherit topologyWaitTimeoutSeconds;
   };
   validDistributedSettings = baseSettings // {
@@ -42,6 +50,27 @@ let
       builtins.filter (entry: !entry.assertion) (mkTopology settings).assertions
     );
   negativeCases = [
+    {
+      name = "unsafe-service-name";
+      expected = "serviceName";
+      settings = baseSettings // {
+        serviceName = "rustfs cache";
+      };
+    }
+    {
+      name = "zero-cpu-weight";
+      expected = "cpuWeight";
+      settings = baseSettings // {
+        cpuWeight = 0;
+      };
+    }
+    {
+      name = "invalid-oom-score";
+      expected = "oomScoreAdjust";
+      settings = baseSettings // {
+        oomScoreAdjust = invalidOomScoreAdjust;
+      };
+    }
     {
       name = "too-few-endpoints";
       expected = "at least";
