@@ -67,6 +67,8 @@ in
             acceptedTimeoutMs = 900000;
             productionSeedHost = builtins.head (lib.splitString ":" settings.productionSeedAddress);
             serviceStartTimeout = "2m";
+            syncFetchTimeout = serviceStartTimeout;
+            syncReplicaCount = 1;
             nodeReadinessAttempts = 60;
             nodeReadinessDelaySeconds = 1;
             serviceRestartDelay = "10s";
@@ -350,7 +352,13 @@ in
                   sleep ${toString nodeReadinessDelaySeconds}
                 done
                 ${policyReconciler}/bin/radicle-policy-reconciler ${nodePackage}/bin/rad ${lib.escapeShellArg settings.rid}
-                ${nodePackage}/bin/rad sync --fetch --seed ${lib.escapeShellArg settings.productionSeedNodeId} --signed-refs-feature-level ${lib.escapeShellArg settings.signedRefsFeature} ${lib.escapeShellArg settings.rid}
+                ${nodePackage}/bin/rad sync \
+                  --fetch \
+                  --seed ${lib.escapeShellArg settings.productionSeedNodeId} \
+                  --replicas ${toString syncReplicaCount} \
+                  --timeout ${lib.escapeShellArg syncFetchTimeout} \
+                  --signed-refs-feature-level ${lib.escapeShellArg settings.signedRefsFeature} \
+                  ${lib.escapeShellArg settings.rid}
               '';
             };
           in

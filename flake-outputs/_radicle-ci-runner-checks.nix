@@ -28,6 +28,9 @@ let
   botControlSocket = "${botState}/node/control.sock";
   nodeReadinessAttempts = 60;
   nodeReadinessDelaySeconds = 1;
+  syncReplicaCount = 1;
+  unsafeDefaultReplicaCount = 3;
+  syncFetchTimeout = "2m";
   acceptedTimeoutMs = 900000;
   acceptedMemoryBytes = 8589934592;
   acceptedCpuQuota = "200%";
@@ -340,6 +343,9 @@ in
         grep -Fq ${lib.escapeShellArg "attempts_remaining=${toString nodeReadinessAttempts}"} ${syncCommand}
         grep -Fq ${lib.escapeShellArg "sleep ${toString nodeReadinessDelaySeconds}"} ${syncCommand}
         grep -Fq 'if test "$attempts_remaining" -eq 0' ${syncCommand}
+        grep -Fq -- ${lib.escapeShellArg "--replicas ${toString syncReplicaCount}"} ${syncCommand}
+        grep -Fq -- ${lib.escapeShellArg "--timeout ${syncFetchTimeout}"} ${syncCommand}
+        ! grep -Fq -- ${lib.escapeShellArg "--replicas ${toString unsafeDefaultReplicaCount}"} ${syncCommand}
 
         touch "$out"
       '';
