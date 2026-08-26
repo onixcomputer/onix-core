@@ -12,5 +12,5 @@
 ## Phase 3: Verification and rollout
 
 - [x] [depends:compose-the-service-on-britton-desktop-and-document-the-source-endpoint-publishing-procedure-and-backup-boundary] Run package, module, contract, Cairn, Clan, and full desktop build checks. r[onix.bookshelf.verification]
-- [ ] [depends:run-package-module-contract-cairn-clan-and-full-desktop-build-checks] Deploy to `britton-desktop` and record service, firewall, permission, HTTP, and negative exposure evidence. r[onix.bookshelf.storage] r[onix.bookshelf.network] r[onix.bookshelf.runtime]
-- [ ] [depends:deploy-to-britton-desktop-and-record-service-firewall-permission-http-and-negative-exposure-evidence] Sync accepted specifications, archive the change, and integrate the verified branch. r[onix.bookshelf.verification]
+- [x] [depends:run-package-module-contract-cairn-clan-and-full-desktop-build-checks] Deploy to `britton-desktop` and record service, firewall, permission, HTTP, and negative exposure evidence. r[onix.bookshelf.storage] r[onix.bookshelf.network] r[onix.bookshelf.runtime]
+- [x] [depends:deploy-to-britton-desktop-and-record-service-firewall-permission-http-and-negative-exposure-evidence] Sync accepted specifications, archive the change, and integrate the verified branch. r[onix.bookshelf.verification]
