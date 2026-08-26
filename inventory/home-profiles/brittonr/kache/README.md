@@ -4,9 +4,9 @@ This profile makes Home Manager the source of truth for `~/.cargo/config.toml`
 and `~/.config/kache/config.toml` on `britton-desktop` while piloting kache as
 Cargo's `rustc-wrapper`.
 
-Cargo uses a managed `cargo-rustc-kache-wrapper` automatically, and Home
-Manager starts the upstream-shaped `kache.service` user daemon. No manual
-`RUSTC_WRAPPER` export and no `kache init` run are needed.
+Cargo uses a managed `cargo-rustc-kache-wrapper` automatically. The NixOS
+`kache-rustfs.service` owns the daemon and its private RustFS credentials. No
+manual `RUSTC_WRAPPER` export and no `kache init` run are needed.
 
 ## Managed defaults
 
@@ -14,10 +14,11 @@ Manager starts the upstream-shaped `kache.service` user daemon. No manual
 - Cargo defaults to `build.jobs = 20` on `britton-desktop`
 - Cargo keeps `net.retry = 3`
 - Cargo keeps `term.quiet = false`
-- kache uses only the local disk cache at `/home/brittonr/.cache/kache`
+- kache uses the local disk cache at `/var/cache/kache-nix/user-brittonr`
 - kache caps the local disk cache at 32 GiB
-- kache runs with `KACHE_LOCAL_ONLY=1`; S3 and planner config stay disabled
-- kache's daemon runs as the declarative Home Manager user service `kache.service`
+- kache uses the dedicated `onix-kache` RustFS bucket through the local daemon
+- kache's daemon runs as the declarative NixOS service `kache-rustfs.service`
+- Home Manager does not start a second user daemon
 - kache's daemon idle timeout is disabled so systemd remains the lifecycle owner
 - The wrapper derives `KACHE_KEY_SALT` from the active `rustc`, `cc`, and
   `mold` store paths, then appends any user-supplied `KACHE_KEY_SALT`
@@ -55,7 +56,7 @@ cargo build --help >/dev/null
 kache doctor
 ```
 
-`kache doctor` should report the managed wrapper/config and local cache path.
+`kache doctor` should report the managed wrapper, config, local cache path, and S3 remote. Use `kache-rustfs-sync --dry-run` to test remote authority.
 
 ### Repeated clean build stats
 

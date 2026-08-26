@@ -113,6 +113,13 @@
         treefmt-nix.follows = "treefmt-nix";
       };
     };
+    niks3 = {
+      url = "github:Mic92/niks3/v1.8.0";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        treefmt-nix.follows = "treefmt-nix";
+      };
+    };
     hercules-ci-effects = {
       url = "github:hercules-ci/hercules-ci-effects";
       inputs = {

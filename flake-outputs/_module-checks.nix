@@ -25,10 +25,15 @@ let
   ttInferenceServerValidation = wasm.evalNickelFile ../inventory/services/fixtures/tt-inference-server-validation.ncl;
   rustfsValidation = wasm.evalNickelFile ../inventory/services/fixtures/rustfs-validation.ncl;
   rustfsTopologyTests = import ../modules/rustfs/topology-tests.nix { inherit lib; };
+  rustfsBucketPolicyTests = import ../lib/rustfs-bucket-policy-tests.nix { inherit lib; };
   celldValidation = wasm.evalNickelFile ../inventory/services/fixtures/celld-validation.ncl;
   celldSettingsTests = import ../modules/celld/settings-tests.nix { inherit lib; };
   bookshelfValidation = wasm.evalNickelFile ../inventory/services/fixtures/bookshelf-validation.ncl;
   bookshelfSettingsTests = import ../modules/bookshelf/settings-tests.nix { inherit lib; };
+  kacheRustfsValidation = wasm.evalNickelFile ../inventory/services/fixtures/kache-rustfs-validation.ncl;
+  kacheRustfsSettingsTests = import ../modules/kache-rustfs/settings-tests.nix { inherit lib; };
+  niks3Validation = wasm.evalNickelFile ../inventory/services/fixtures/niks3-validation.ncl;
+  niks3SettingsTests = import ../modules/niks3/settings-tests.nix { inherit lib; };
 
   # Modules registered in contracts.ncl (clan perInstance services only)
   registeredModules = lib.sort lib.lessThan moduleLists.selfModules;
@@ -245,6 +250,120 @@ let
   bookshelfPrivateDirectoriesValid =
     builtins.elem "d ${bookshelfSourceDirectory} 0700 bookshelf bookshelf -" bookshelfDesktopConfig.systemd.tmpfiles.rules
     && builtins.elem "d ${bookshelfLibraryDirectory} 0700 bookshelf bookshelf -" bookshelfDesktopConfig.systemd.tmpfiles.rules;
+
+  kacheRustfsPositiveErrors = kacheRustfsValidation.positive;
+  kacheRustfsNegativeErrors = kacheRustfsValidation.negative;
+  expectedKacheRustfsNegativeFields = [
+    "cacheDir"
+    "cacheMaxSize"
+    "serviceUser"
+    "storageEndpoint"
+    "bucketName"
+    "region"
+    "prefix"
+    "accessKeyId"
+    "provisionStorage"
+    "rustfsAdminGenerator"
+    "restartDelaySeconds"
+  ];
+  missingKacheRustfsNegativeFields = builtins.filter (
+    field: !(lib.any (error: lib.hasInfix field error) kacheRustfsNegativeErrors)
+  ) expectedKacheRustfsNegativeFields;
+  kacheRustfsSemanticPositiveErrors = kacheRustfsSettingsTests.positiveErrors;
+  kacheRustfsMissingNegativeCases = kacheRustfsSettingsTests.missingNegativeCases;
+
+  niks3PositiveErrors = niks3Validation.server_positive ++ niks3Validation.uploader_positive;
+  niks3NegativeErrors = niks3Validation.server_negative ++ niks3Validation.uploader_negative;
+  expectedNiks3NegativeFields = [
+    "bindAddress"
+    "port"
+    "storageEndpoint"
+    "bucketName"
+    "region"
+    "accessKeyId"
+    "provisionStorage"
+    "rustfsAdminGenerator"
+    "openFirewall"
+    "firewallInterface"
+    "gcOlderThan"
+    "gcFailedUploadsOlderThan"
+    "gcSchedule"
+    "maxNarSize"
+    "serverUrl"
+    "batchSize"
+    "idleExitTimeoutSeconds"
+    "maxConcurrentUploads"
+    "verifyS3Integrity"
+  ];
+  missingNiks3NegativeFields = builtins.filter (
+    field: !(lib.any (error: lib.hasInfix field error) niks3NegativeErrors)
+  ) expectedNiks3NegativeFields;
+  niks3SemanticPositiveErrors = niks3SettingsTests.positiveErrors;
+  niks3MissingNegativeCases = niks3SettingsTests.missingNegativeCases;
+
+  kacheRustfsDesktop = self.nixosConfigurations.britton-desktop.config;
+  kacheRustfsService = kacheRustfsDesktop.systemd.services.kache-rustfs;
+  kacheRustfsCredential =
+    kacheRustfsDesktop.clan.core.vars.generators.kache-rustfs-kache-remote.files."aws-env";
+  kacheRustfsSyncTools = builtins.filter (
+    package: lib.getName package == "kache-rustfs-sync"
+  ) kacheRustfsDesktop.environment.systemPackages;
+  kacheRustfsGeneratedValid =
+    builtins.hasAttr "kache-rustfs-storage-provision" kacheRustfsDesktop.systemd.services
+    && kacheRustfsService.serviceConfig.User == "brittonr"
+    && kacheRustfsService.serviceConfig.ProtectSystem == "strict"
+    && kacheRustfsService.environment.KACHE_LOCAL_ONLY == "0"
+    && kacheRustfsCredential.owner == "brittonr"
+    && kacheRustfsCredential.mode == "0400"
+    && builtins.length kacheRustfsSyncTools == 1
+    && !(builtins.hasAttr "kache" kacheRustfsDesktop.home-manager.users.brittonr.systemd.user.services);
+
+  niks3Port = 39400;
+  niks3ServerUrl = "http://100.100.103.95:${toString niks3Port}";
+  niks3BucketName = "onix-niks3";
+  niks3PublicKeyPrefix = "onix-niks3-1:";
+  niks3Machines = [
+    "aspen1"
+    "aspen3"
+    "britton-desktop"
+  ];
+  niks3Aspen1 = self.nixosConfigurations.aspen1.config;
+  niks3ServerSettings = niks3Aspen1.services.niks3;
+  niks3Provisioners = builtins.filter (
+    machine:
+    builtins.hasAttr "niks3-storage-provision"
+      self.nixosConfigurations.${machine}.config.systemd.services
+  ) niks3Machines;
+  niks3UploaderMismatches = builtins.filter (
+    machine:
+    let
+      machineConfig = self.nixosConfigurations.${machine}.config;
+    in
+    !(builtins.hasAttr "niks3-auto-upload" machineConfig.systemd.services)
+    || !(builtins.elem niks3ServerUrl machineConfig.nix.settings.extra-substituters)
+    || !(lib.any (
+      key: lib.hasPrefix niks3PublicKeyPrefix key
+    ) machineConfig.nix.settings.extra-trusted-public-keys)
+  ) niks3Machines;
+  niks3FirewallValid =
+    builtins.elem niks3Port niks3Aspen1.networking.firewall.interfaces.tailscale0.allowedTCPPorts
+    && !(builtins.elem niks3Port niks3Aspen1.networking.firewall.allowedTCPPorts);
+  niks3ServerGeneratedValid =
+    niks3ServerSettings.enable
+    && niks3ServerSettings.package.version == "1.8.0"
+    && niks3ServerSettings.httpAddr == "100.100.103.95:${toString niks3Port}"
+    && niks3ServerSettings.s3.bucket == niks3BucketName
+    && niks3ServerSettings.s3.endpoint == "100.100.103.95:39000"
+    && niks3ServerSettings.s3.bucketLookup == "path"
+    && !niks3ServerSettings.s3.useSSL
+    && niks3ServerSettings.readProxy.enable
+    && niks3Aspen1.systemd.services.niks3.serviceConfig.User == "niks3";
+  niks3StorageCredentialFiles = niks3Aspen1.clan.core.vars.generators.niks3-nix-cache-storage.files;
+  niks3CredentialsValid =
+    niks3StorageCredentialFiles."access-key".owner == "niks3"
+    && niks3StorageCredentialFiles."access-key".mode == "0400"
+    && niks3StorageCredentialFiles."secret-key".owner == "niks3"
+    && niks3StorageCredentialFiles."signing-key".owner == "niks3";
 in
 {
   checks = {
@@ -361,6 +480,28 @@ in
       ${lib.optionalString (rustfsMissingNetlinkMachines != [ ]) ''
         echo "RustFS cannot enumerate local interfaces without AF_NETLINK:"
         printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" rustfsMissingNetlinkMachines)}
+        exit 1
+      ''}
+      touch $out
+    '';
+
+    # r[verify onix.rustfs_build_caches.storage]
+    # r[verify onix.rustfs_build_caches.verification]
+    rustfs-bucket-policy = pkgs.runCommand "rustfs-bucket-policy" { } ''
+      ${lib.optionalString (rustfsBucketPolicyTests.positiveErrors != [ ]) ''
+        echo "Valid RustFS bucket policy settings produced errors"
+        exit 1
+      ''}
+      ${lib.optionalString (rustfsBucketPolicyTests.negativeFailures != [ ]) ''
+        echo "Invalid RustFS bucket policy settings were accepted"
+        exit 1
+      ''}
+      ${lib.optionalString (!rustfsBucketPolicyTests.objectResourceIsScoped) ''
+        echo "RustFS object policy escaped its bucket"
+        exit 1
+      ''}
+      ${lib.optionalString (!rustfsBucketPolicyTests.objectActionsAreExplicit) ''
+        echo "RustFS object policy is missing actions or contains a wildcard"
         exit 1
       ''}
       touch $out
@@ -498,6 +639,83 @@ in
           echo "Bookshelf import command accepted missing input"
           exit 1
         fi
+      ''}
+      touch $out
+    '';
+
+    # r[verify onix.rustfs_build_caches.verification]
+    kache-rustfs-settings = pkgs.runCommand "kache-rustfs-settings" { } ''
+      ${lib.optionalString (kacheRustfsPositiveErrors != [ ]) ''
+        echo "Valid Kache RustFS settings produced type errors"
+        exit 1
+      ''}
+      ${lib.optionalString (missingKacheRustfsNegativeFields != [ ]) ''
+        echo "Invalid Kache RustFS settings did not report expected fields"
+        exit 1
+      ''}
+      ${lib.optionalString (kacheRustfsSemanticPositiveErrors != [ ]) ''
+        echo "Valid Kache RustFS settings produced semantic errors"
+        exit 1
+      ''}
+      ${lib.optionalString (kacheRustfsMissingNegativeCases != [ ]) ''
+        echo "Invalid Kache RustFS settings did not report expected semantic errors"
+        exit 1
+      ''}
+      touch $out
+    '';
+
+    # r[verify onix.rustfs_build_caches.verification]
+    niks3-settings = pkgs.runCommand "niks3-settings" { } ''
+      ${lib.optionalString (niks3PositiveErrors != [ ]) ''
+        echo "Valid niks3 settings produced type errors"
+        exit 1
+      ''}
+      ${lib.optionalString (missingNiks3NegativeFields != [ ]) ''
+        echo "Invalid niks3 settings did not report expected fields"
+        exit 1
+      ''}
+      ${lib.optionalString (niks3SemanticPositiveErrors != [ ]) ''
+        echo "Valid niks3 settings produced semantic errors"
+        exit 1
+      ''}
+      ${lib.optionalString (niks3MissingNegativeCases != [ ]) ''
+        echo "Invalid niks3 settings did not report expected semantic errors"
+        exit 1
+      ''}
+      touch $out
+    '';
+
+    # r[verify onix.rustfs_build_caches.kache]
+    kache-rustfs-generated = pkgs.runCommand "kache-rustfs-generated" { } ''
+      ${lib.optionalString (!kacheRustfsGeneratedValid) ''
+        echo "Kache RustFS runtime, credentials, provisioner, or sync command drifted"
+        exit 1
+      ''}
+      touch $out
+    '';
+
+    # r[verify onix.rustfs_build_caches.niks3]
+    # r[verify onix.rustfs_build_caches.uploaders]
+    niks3-generated = pkgs.runCommand "niks3-generated" { } ''
+      ${lib.optionalString (builtins.length niks3Provisioners != 1) ''
+        echo "niks3 requires exactly one RustFS provisioner"
+        exit 1
+      ''}
+      ${lib.optionalString (niks3UploaderMismatches != [ ]) ''
+        echo "niks3 upload, substitution, or signing trust is missing on fleet nodes"
+        exit 1
+      ''}
+      ${lib.optionalString (!niks3FirewallValid) ''
+        echo "niks3 port is not restricted to tailscale0"
+        exit 1
+      ''}
+      ${lib.optionalString (!niks3ServerGeneratedValid) ''
+        echo "niks3 server package, RustFS backend, read proxy, or service user drifted"
+        exit 1
+      ''}
+      ${lib.optionalString (!niks3CredentialsValid) ''
+        echo "niks3 storage or signing credentials lost private ownership"
+        exit 1
       ''}
       touch $out
     '';

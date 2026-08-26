@@ -28,6 +28,10 @@ let
     daemonRestartDelay
     daemonService
     localOnly
+    storageEndpoint
+    bucketName
+    region
+    prefix
     ;
 
   localCacheSize = "${toString cacheBudgetGiB}GiB";
@@ -45,6 +49,12 @@ let
       local_max_size = localCacheSize;
       local_only = localOnly;
       daemon_idle_timeout_secs = daemonIdleTimeoutSecs;
+      remote = {
+        type = "s3";
+        bucket = bucketName;
+        endpoint = storageEndpoint;
+        inherit region prefix;
+      };
     };
   };
 

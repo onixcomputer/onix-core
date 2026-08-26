@@ -56,6 +56,10 @@ in
       cacheBudgetGiB | Positive,
       localOnly | Bool,
       daemonService | Bool,
+      storageEndpoint | NonEmpty,
+      bucketName | NonEmpty,
+      region | NonEmpty,
+      prefix | NonEmpty,
       daemonIdleTimeoutSecs | NonNegative,
       daemonRestartDelay | NonEmpty,
       daemonLogFilter | NonEmpty,
@@ -66,8 +70,13 @@ in
       # uses an isolated subdirectory.
       cacheDir = "/var/cache/kache-nix/user-brittonr",
       cacheBudgetGiB = 32,
-      localOnly = true,
-      daemonService = true,
+      localOnly = false,
+      # The system-level kache-rustfs service owns the daemon and its credential file.
+      daemonService = false,
+      storageEndpoint = "http://100.110.43.11:39000",
+      bucketName = "onix-kache",
+      region = "us-east-1",
+      prefix = "artifacts",
       # 0 disables upstream's idle-exit watchdog so systemd remains the daemon owner.
       daemonIdleTimeoutSecs = 0,
       daemonRestartDelay = "5s",

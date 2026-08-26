@@ -167,6 +167,47 @@ let celld_fleet_settings = fun bind_address provision_storage =>
     shutdownDrainMilliseconds = celld_shutdown_drain_milliseconds,
   }
 in
+let kache_remote_settings = {
+  cacheDir = "/var/cache/kache-nix/user-brittonr",
+  cacheMaxSize = "32GiB",
+  serviceUser = "brittonr",
+  storageEndpoint = "http://%{rustfs_britton_desktop_address}:%{rustfs_api_port}",
+  bucketName = "onix-kache",
+  region = "us-east-1",
+  prefix = "artifacts",
+  accessKeyId = "kache-remote",
+  provisionStorage = true,
+  rustfsAdminGenerator = "rustfs-rustfs-cluster",
+  restartDelaySeconds = 5,
+}
+in
+let niks3_port = 39400 in
+let niks3_server_url = "http://%{rustfs_aspen1_address}:%{niks3_port}" in
+let niks3_server_settings = {
+  bindAddress = rustfs_aspen1_address,
+  port = niks3_port,
+  storageEndpoint = "http://%{rustfs_aspen1_address}:%{rustfs_api_port}",
+  bucketName = "onix-niks3",
+  region = "us-east-1",
+  accessKeyId = "niks3-cache",
+  provisionStorage = true,
+  rustfsAdminGenerator = "rustfs-rustfs-cluster",
+  openFirewall = true,
+  firewallInterface = "tailscale0",
+  gcOlderThan = "720h",
+  gcFailedUploadsOlderThan = "6h",
+  gcSchedule = "daily",
+  maxNarSize = "8G",
+}
+in
+let niks3_uploader_settings = {
+  serverUrl = niks3_server_url,
+  batchSize = 50,
+  idleExitTimeoutSeconds = 0,
+  maxConcurrentUploads = 8,
+  verifyS3Integrity = true,
+}
+in
 {
   instances = {
 
@@ -213,6 +254,26 @@ in
         aspen1.settings = celld_fleet_settings rustfs_aspen1_address true,
         aspen3.settings = celld_fleet_settings rustfs_aspen3_address false,
         britton-desktop.settings = celld_fleet_settings rustfs_britton_desktop_address false,
+      },
+    },
+
+    # r[impl onix.rustfs_build_caches.kache]
+    "kache-remote" = {
+      module = { name = "kache-rustfs", input = "self" },
+      roles.client.machines.britton-desktop.settings = kache_remote_settings,
+    },
+
+    # r[impl onix.rustfs_build_caches.niks3]
+    # r[impl onix.rustfs_build_caches.uploaders]
+    "nix-cache" = {
+      module = { name = "niks3", input = "self" },
+      roles = {
+        server.machines.aspen1.settings = niks3_server_settings,
+        uploader.machines = {
+          aspen1.settings = niks3_uploader_settings,
+          aspen3.settings = niks3_uploader_settings,
+          britton-desktop.settings = niks3_uploader_settings,
+        },
       },
     },
 

@@ -1962,6 +1962,30 @@
         "type": "github"
       }
     },
+    "niks3": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "treefmt-nix": [
+          "treefmt-nix"
+        ]
+      },
+      "locked": {
+        "lastModified": 1785748885,
+        "narHash": "sha256-86afR/fMjLRLmBEMFA6ow6SRI9T5Qe83l0em/FciW2g=",
+        "owner": "Mic92",
+        "repo": "niks3",
+        "rev": "61501c4223ec3ad804c20625128cab1155166041",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Mic92",
+        "ref": "v1.8.0",
+        "repo": "niks3",
+        "type": "github"
+      }
+    },
     "niri": {
       "inputs": {
         "nixpkgs": [
@@ -2766,6 +2790,7 @@
         "mics-skills": "mics-skills",
         "multiverse": "multiverse",
         "musnix": "musnix",
+        "niks3": "niks3",
         "niri": "niri",
         "nitrous": "nitrous",
         "nix": "nix_3",

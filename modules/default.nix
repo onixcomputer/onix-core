@@ -42,7 +42,9 @@ let
     "llm" = import ./llm (schemaArgs ./llm);
     "upmpdcli" = import ./upmpdcli (schemaArgs ./upmpdcli);
     "nix-gc" = import ./nix-gc ({ inherit inputs; } // schemaArgs ./nix-gc);
+    "niks3" = import ./niks3 (schemaArgs ./niks3);
     "kache-nix-rust" = import ./kache-nix-rust (schemaArgs ./kache-nix-rust);
+    "kache-rustfs" = import ./kache-rustfs (schemaArgs ./kache-rustfs);
     "ollama" = import ./ollama (schemaArgs ./ollama);
     "open-notebook" = import ./open-notebook (schemaArgs ./open-notebook);
     "speaches" = import ./speaches (schemaArgs ./speaches);
