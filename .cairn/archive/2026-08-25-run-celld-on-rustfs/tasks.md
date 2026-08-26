@@ -26,4 +26,4 @@
 ## Phase 5: Completion
 
 - [x] [serial] Record bounded runtime evidence and non-claims for r[onix.celld_rustfs.runtime].
-- [ ] [serial] Sync the accepted specification, archive the change, validate the final tree, and integrate the verified branch for r[onix.celld_rustfs.failure].
+- [x] [serial] Sync the accepted specification, archive the change, validate the final tree, and integrate the verified branch for r[onix.celld_rustfs.failure].

@@ -61,6 +61,12 @@ The first provisioning attempt showed that MinIO Client requires `getent` in its
 
 All three Celld health endpoints returned `{"ok":true}`. All services were active, all listeners remained Tailnet-only, and the counter retained one durable lineage through restart and node loss.
 
+## Final validation
+
+Cairn structural validation passed after sync and archive. The focused Celld checks and all three complete NixOS system builds passed.
+
+The repository-wide Tracey command reported zero references for all 394 accepted requirements. The selected policy scans Rust and Nickel files only under `crates/` and `tools/`. This Nix configuration repository has no evidence roots in that profile, so the result is a repository policy coverage gap rather than failed Celld runtime evidence.
+
 ## Non-claims
 
 - Celld `v0.3.0` is alpha software and is not safe for hostile multi-tenant use.
