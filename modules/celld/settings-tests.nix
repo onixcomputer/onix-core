@@ -18,6 +18,8 @@ let
     publisherUser = null;
     publicPort = testPublicPort;
     internalPort = testInternalPort;
+    stripTrailingSlashProxy = false;
+    backendPort = 39202;
     openFirewall = true;
     firewallInterface = "tailscale0";
     provisionStorage = true;
@@ -59,6 +61,14 @@ let
       expected = "must be distinct";
       settings = baseSettings // {
         internalPort = testPublicPort;
+      };
+    }
+    {
+      name = "shared-proxy-backend-port";
+      expected = "backendPort";
+      settings = baseSettings // {
+        stripTrailingSlashProxy = true;
+        backendPort = testPublicPort;
       };
     }
     {

@@ -18,7 +18,13 @@ The Clan Celld module is declared per instance, but its generated unit names, Un
 
 **Rationale:** These are the two healthy requested hosts. Distinct ports, state directories, identities, credentials, and bucket authority isolate Site from the lab fleet. Aspen1 is excluded from Site rollout until it is reachable.
 
-### Decision: Expose a standard AWS profile only to the publisher
+### Decision: Normalize trailing-slash paths at private ingress
+
+**Choice:** Run an instance-specific nginx adapter on the public Site port. Strip only the final slash before proxying to Celld on a firewall-private backend port. Configure Celld asset routing to use `drop-trailing-slash`.
+
+**Rationale:** Celld 0.3.0 rejects non-root paths that end in `/` before its asset router runs. The Site generator emits trailing-slash links. A private ingress adapter preserves those public links without adding Worker code to the asset-only deployment or patching an immutable upstream binary.
+
+### Decision: Expose standard AWS environment variables only to the publisher
 
 **Choice:** Let a Celld instance declare an optional `publisherUser`. Generate a file with standard AWS environment variables from the same bucket-scoped secret and deploy it with mode `0400` to that user.
 

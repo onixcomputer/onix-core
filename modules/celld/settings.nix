@@ -53,7 +53,10 @@ in
   # r[impl onix.celld_rustfs.validation]
   inherit leaseSeconds;
   bucketUri = "s3://${settings.bucketName}";
-  publicListener = "${settings.bindAddress}:${toString settings.publicPort}";
+  publicListener = "${settings.bindAddress}:${
+    toString (if settings.stripTrailingSlashProxy then settings.backendPort else settings.publicPort)
+  }";
+  publicIngressListener = "${settings.bindAddress}:${toString settings.publicPort}";
   internalListener = "${settings.bindAddress}:${toString settings.internalPort}";
 
   assertions = [
@@ -85,6 +88,12 @@ in
     {
       assertion = settings.publicPort != settings.internalPort;
       message = "celld publicPort and internalPort must be distinct";
+    }
+    {
+      assertion =
+        !settings.stripTrailingSlashProxy
+        || (settings.backendPort != settings.publicPort && settings.backendPort != settings.internalPort);
+      message = "celld compatibility proxy backendPort must be distinct from publicPort and internalPort";
     }
     {
       assertion = bucketNameIsSafe;

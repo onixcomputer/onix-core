@@ -26,7 +26,10 @@ r[onix.site_celld_fleet.composition] The inventory MUST compose one Site Celld f
 
 - GIVEN the reviewed service inventory
 - WHEN Nix evaluates both Site hosts
-- THEN each host has a `celld-site` service on ports `32110` and `32111`
+- THEN each host has separate `celld-site` and `celld-site-ingress` services
+- AND public ingress uses port `32110`
+- AND Celld peer traffic uses port `32111`
+- AND the firewall-private Celld backend uses port `32112`
 - AND the service uses bucket `onix-site-celld`
 - AND only aspen3 has the Site storage provisioner
 - AND the existing lab service and bucket remain unchanged
@@ -59,10 +62,18 @@ r[onix.site_celld_fleet.validation] Repository checks MUST reject missing Site s
 - THEN both fleets have their expected isolated resources
 - AND every Site listener is admitted only on `tailscale0`
 - AND Site listener ports do not overlap the default Linux ephemeral range
+- AND the backend port is not admitted by the Tailnet firewall
 
 ### Requirement: Serving claims require live observation
 
 r[onix.site_celld_fleet.runtime] Rollout evidence MUST separate asset upload, Celld activation, and successful asset retrieval through each deployed Site listener.
+
+#### Scenario: A generated trailing-slash route is requested
+
+- GIVEN the active asset deployment contains a nested `index.html`
+- WHEN a client requests its generated trailing-slash route through Site ingress
+- THEN ingress removes only the final slash before it forwards the request
+- AND Celld returns the expected asset bytes
 
 #### Scenario: Site assets become active
 

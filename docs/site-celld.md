@@ -14,9 +14,12 @@ The fleet uses these isolated resources:
 - systemd service: `celld-site.service`
 - public port: `32110`
 - internal port: `32111`
+- private Celld backend port: `32112`
 - state directory: `/var/lib/celld-site`
 
 The `celld-lab` fleet remains separate. It continues to use service `celld.service`, bucket `onix-celld-lab`, and ports `39200` and `39201`.
+
+Celld `0.3.0` rejects non-root request paths that end in `/` before asset routing. The `celld-site-ingress` nginx adapter removes only the final slash before it forwards a request to Celld on port `32112`. The public URL stays unchanged. The firewall does not admit the backend port from the Tailnet.
 
 ## Publisher credential
 

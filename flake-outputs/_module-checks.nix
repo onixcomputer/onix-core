@@ -144,6 +144,8 @@ let
     "publisherUser"
     "publicPort"
     "internalPort"
+    "stripTrailingSlashProxy"
+    "backendPort"
     "openFirewall"
     "firewallInterface"
     "provisionStorage"
@@ -204,8 +206,11 @@ let
 
   siteCelldPublicPort = 32110;
   siteCelldInternalPort = 32111;
-  siteCelldPortsAvoidEphemeralRange = siteCelldPublicPort < 32768 && siteCelldInternalPort < 32768;
+  siteCelldBackendPort = 32112;
+  siteCelldPortsAvoidEphemeralRange =
+    siteCelldPublicPort < 32768 && siteCelldInternalPort < 32768 && siteCelldBackendPort < 32768;
   siteCelldServiceName = "celld-site";
+  siteCelldIngressServiceName = "celld-site-ingress";
   siteCelldProvisionServiceName = "celld-site-storage-provision";
   siteCelldBucketUri = "s3://onix-site-celld";
   siteCelldMachines = [
@@ -220,6 +225,21 @@ let
   siteCelldMissingServices = builtins.filter (
     machine:
     !(builtins.hasAttr siteCelldServiceName self.nixosConfigurations.${machine}.config.systemd.services)
+  ) siteCelldMachines;
+  siteCelldMissingIngressServices = builtins.filter (
+    machine:
+    !(builtins.hasAttr siteCelldIngressServiceName
+      self.nixosConfigurations.${machine}.config.systemd.services
+    )
+  ) siteCelldMachines;
+  siteCelldExpectedBackendListeners = {
+    aspen3 = "100.108.13.4:${toString siteCelldBackendPort}";
+    britton-desktop = "100.110.43.11:${toString siteCelldBackendPort}";
+  };
+  siteCelldBackendListenerMismatches = builtins.filter (
+    machine:
+    self.nixosConfigurations.${machine}.config.systemd.services.${siteCelldServiceName}.environment.CELLD_ADDR
+    != siteCelldExpectedBackendListeners.${machine}
   ) siteCelldMachines;
   siteCelldExpectedStorageEndpoints = {
     aspen3 = "http://100.108.13.4:39000";
@@ -256,7 +276,10 @@ let
       ];
     in
     !(lib.all (port: builtins.elem port firewall.interfaces.tailscale0.allowedTCPPorts) requiredPorts)
-    || lib.any (port: builtins.elem port firewall.allowedTCPPorts) requiredPorts
+    || builtins.elem siteCelldBackendPort firewall.interfaces.tailscale0.allowedTCPPorts
+    || lib.any (port: builtins.elem port firewall.allowedTCPPorts) (
+      requiredPorts ++ [ siteCelldBackendPort ]
+    )
   ) siteCelldMachines;
   siteCelldPublisherCredential =
     self.nixosConfigurations.britton-desktop.config.clan.core.vars.generators.celld-site-celld.files."publisher-aws-env";
@@ -653,6 +676,16 @@ in
       ${lib.optionalString (siteCelldMissingServices != [ ]) ''
         echo "Site Celld service is missing from fleet machines:"
         printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" siteCelldMissingServices)}
+        exit 1
+      ''}
+      ${lib.optionalString (siteCelldMissingIngressServices != [ ]) ''
+        echo "Site Celld compatibility ingress is missing from fleet machines:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" siteCelldMissingIngressServices)}
+        exit 1
+      ''}
+      ${lib.optionalString (siteCelldBackendListenerMismatches != [ ]) ''
+        echo "Site Celld backend listeners are not isolated behind ingress:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" siteCelldBackendListenerMismatches)}
         exit 1
       ''}
       ${lib.optionalString (siteCelldStorageEndpointMismatches != [ ]) ''

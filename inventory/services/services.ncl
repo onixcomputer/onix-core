@@ -187,6 +187,8 @@ let site_celld_fleet_settings = fun bind_address provision_storage =>
     publisherUser = site_celld_publisher_user,
     publicPort = site_celld_public_port,
     internalPort = site_celld_internal_port,
+    stripTrailingSlashProxy = true,
+    backendPort = 32112,
     openFirewall = true,
     firewallInterface = "tailscale0",
     provisionStorage = provision_storage,

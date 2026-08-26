@@ -66,6 +66,27 @@ in
             minioClient = lib.getExe pkgs.minio-client;
             celldExecutable = lib.getExe celldPackage;
             esbuildExecutable = lib.getExe pkgs.esbuild;
+            ingressServiceName = "${runtimeName}-ingress";
+            ingressRuntimeDirectory = ingressServiceName;
+            ingressConfig = pkgs.writeText "${ingressServiceName}.conf" ''
+              pid /run/${ingressRuntimeDirectory}/nginx.pid;
+              error_log stderr warn;
+              events { }
+              http {
+                access_log off;
+                server {
+                  listen ${evaluated.publicIngressListener};
+                  location / {
+                    rewrite ^(.+)/$ $1 break;
+                    proxy_pass http://${evaluated.publicListener};
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $http_host;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                  }
+                }
+              }
+            '';
             bucketPolicy = pkgs.writeText "${policyName}-policy.json" (
               builtins.toJSON {
                 Version = "2012-10-17";
@@ -300,6 +321,48 @@ in
                 ProtectKernelTunables = true;
                 ProtectSystem = "strict";
                 ReadWritePaths = [ settings.stateDir ];
+                CapabilityBoundingSet = "";
+                AmbientCapabilities = "";
+                LockPersonality = true;
+                RemoveIPC = true;
+                RestrictAddressFamilies = [
+                  "AF_UNIX"
+                  "AF_INET"
+                  "AF_INET6"
+                ];
+                RestrictNamespaces = true;
+                RestrictRealtime = true;
+                RestrictSUIDSGID = true;
+                SystemCallArchitectures = "native";
+              };
+            };
+
+            # r[impl onix.site_celld_fleet.runtime]
+            systemd.services.${ingressServiceName} = lib.mkIf settings.stripTrailingSlashProxy {
+              description = "Trailing-slash compatibility ingress for ${runtimeName}";
+              wantedBy = [ "multi-user.target" ];
+              after = [ "${runtimeName}.service" ];
+              requires = [ "${runtimeName}.service" ];
+              serviceConfig = {
+                Type = "simple";
+                ExecStart = "${lib.getExe pkgs.nginx} -c ${ingressConfig} -p /run/${ingressRuntimeDirectory} -g 'daemon off;'";
+                User = ingressServiceName;
+                Group = ingressServiceName;
+                DynamicUser = true;
+                RuntimeDirectory = ingressRuntimeDirectory;
+                Restart = "always";
+                RestartSec = settings.restartDelaySeconds;
+                UMask = serviceUmask;
+                NoNewPrivileges = true;
+                PrivateDevices = true;
+                PrivateTmp = true;
+                ProtectClock = true;
+                ProtectControlGroups = true;
+                ProtectHome = true;
+                ProtectKernelLogs = true;
+                ProtectKernelModules = true;
+                ProtectKernelTunables = true;
+                ProtectSystem = "strict";
                 CapabilityBoundingSet = "";
                 AmbientCapabilities = "";
                 LockPersonality = true;
