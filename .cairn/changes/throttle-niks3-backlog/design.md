@@ -14,7 +14,7 @@ A large rebuild activated multiple queues together. RustFS returned timeouts, `S
 
 ### Decision: Preserve every queued path
 
-**Choice:** Do not clear or rewrite any uploader SQLite database. Drain one node at a time during acceptance.
+**Choice:** Do not clear or rewrite any uploader SQLite database. Exercise only one node's queue during acceptance.
 
 **Rationale:** The queues are the durability boundary for completed builds. Dropping entries would hide the overload instead of fixing it.
 
@@ -28,4 +28,5 @@ A large rebuild activated multiple queues together. RustFS returned timeouts, `S
 
 - A large queue takes longer to drain.
 - Three nodes can still upload at once during normal operation.
+- One large store path can still delay Celld lease writes and cause a designed self-fence.
 - This change does not prove RustFS behavior under unlimited load.

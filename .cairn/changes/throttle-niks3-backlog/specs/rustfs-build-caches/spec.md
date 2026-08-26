@@ -17,9 +17,9 @@ r[onix.rustfs_build_caches.uploaders.unavailable]
 - THEN the build result remains valid
 - AND the uploader retains or retries queued work without blocking normal substitution
 
-#### Scenario: A large backlog drains
+#### Scenario: A large backlog makes bounded progress
 r[onix.rustfs_build_caches.uploaders.backlog]
 - GIVEN one or more nodes have durable queued paths
-- WHEN upload workers run
-- THEN queue depth decreases without deleting pending entries
-- AND RustFS, niks3, and Celld health remain available during the bounded observation
+- WHEN one node's upload worker runs
+- THEN queue depth decreases without deleting pending live entries
+- AND runtime evidence records any coordinator self-fence and its recovery after upload pressure stops
