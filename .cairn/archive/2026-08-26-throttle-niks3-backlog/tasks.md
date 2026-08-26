@@ -11,4 +11,4 @@
 
 ## Phase 3: Completion
 
-- [ ] [serial] Sync the accepted specification, archive the change, and integrate the verified branch. r[onix.rustfs_build_caches.uploaders]
+- [x] [serial] Sync the accepted specification, archive the change, and integrate the verified branch. r[onix.rustfs_build_caches.uploaders]
