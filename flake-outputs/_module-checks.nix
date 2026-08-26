@@ -259,7 +259,7 @@ let
     || lib.any (port: builtins.elem port firewall.allowedTCPPorts) requiredPorts
   ) siteCelldMachines;
   siteCelldPublisherCredential =
-    self.nixosConfigurations.britton-desktop.config.clan.core.vars.generators.celld-site-celld.files."aws-credentials";
+    self.nixosConfigurations.britton-desktop.config.clan.core.vars.generators.celld-site-celld.files."publisher-aws-env";
   siteCelldPublisherCredentialValid =
     siteCelldPublisherCredential.secret
     && siteCelldPublisherCredential.deploy
@@ -267,7 +267,7 @@ let
     && siteCelldPublisherCredential.group == siteCelldServiceName
     && siteCelldPublisherCredential.mode == "0400";
   celldLabPublisherCredentialAbsent =
-    !(builtins.hasAttr "aws-credentials" self.nixosConfigurations.britton-desktop.config.clan.core.vars.generators.celld-celld-lab.files);
+    !(builtins.hasAttr "publisher-aws-env" self.nixosConfigurations.britton-desktop.config.clan.core.vars.generators.celld-celld-lab.files);
 
   bookshelfPositiveErrors = bookshelfValidation.positive;
   bookshelfNegativeErrors = bookshelfValidation.negative;

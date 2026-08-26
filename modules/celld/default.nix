@@ -152,7 +152,7 @@ in
                 };
               }
               // lib.optionalAttrs (settings.publisherUser != null) {
-                "aws-credentials" = {
+                "publisher-aws-env" = {
                   secret = true;
                   deploy = true;
                   owner = settings.publisherUser;
@@ -166,8 +166,8 @@ in
                 printf 'AWS_ACCESS_KEY_ID=%s\nAWS_SECRET_ACCESS_KEY=%s\n' \
                   ${lib.escapeShellArg settings.accessKeyId} "$secret_key" > "$out/aws-env"
                 ${lib.optionalString (settings.publisherUser != null) ''
-                  printf '[default]\naws_access_key_id=%s\naws_secret_access_key=%s\n' \
-                    ${lib.escapeShellArg settings.accessKeyId} "$secret_key" > "$out/aws-credentials"
+                  printf 'AWS_ACCESS_KEY_ID=%s\nAWS_SECRET_ACCESS_KEY=%s\nAWS_EC2_METADATA_DISABLED=true\n' \
+                    ${lib.escapeShellArg settings.accessKeyId} "$secret_key" > "$out/publisher-aws-env"
                 ''}
               '';
             };

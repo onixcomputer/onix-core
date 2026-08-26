@@ -20,7 +20,7 @@ The Clan Celld module is declared per instance, but its generated unit names, Un
 
 ### Decision: Expose a standard AWS profile only to the publisher
 
-**Choice:** Let a Celld instance declare an optional `publisherUser`. Generate an AWS shared-credentials file from the same bucket-scoped secret and deploy it with mode `0400` to that user.
+**Choice:** Let a Celld instance declare an optional `publisherUser`. Generate a file with standard AWS environment variables from the same bucket-scoped secret and deploy it with mode `0400` to that user.
 
 **Rationale:** Site already consumes the standard AWS credential chain. This keeps credentials out of Nickel, browser code, receipts, and the Site functional core. It also avoids changing the operator's default AWS files.
 
@@ -34,4 +34,4 @@ The Clan Celld module is declared per instance, but its generated unit names, Un
 
 - A two-node Celld fleet has less failure-domain coverage than the existing three-node lab fleet. This change makes no node-loss tolerance claim.
 - The shared publisher credential permits writes only inside the Site fleet bucket. Compromise of the publisher user can still replace the Site application.
-- The publisher must set `AWS_SHARED_CREDENTIALS_FILE` to the deployed profile path. The module does not replace ambient AWS configuration.
+- The publisher must export the deployed variables for one command. The module does not replace ambient AWS configuration.

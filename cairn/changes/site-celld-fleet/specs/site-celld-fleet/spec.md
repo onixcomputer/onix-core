@@ -33,12 +33,12 @@ r[onix.site_celld_fleet.composition] The inventory MUST compose one Site Celld f
 
 ### Requirement: Publisher credentials stay at the adapter boundary
 
-r[onix.site_celld_fleet.credentials] The module MUST deploy the Site bucket credential as a standard AWS shared-credentials file owned only by the declared publisher user and MUST NOT place secret values in Nickel, browser assets, or receipts.
+r[onix.site_celld_fleet.credentials] The module MUST deploy the Site bucket credential as standard AWS environment variables owned only by the declared publisher user and MUST NOT place secret values in Nickel, browser assets, or receipts.
 
 #### Scenario: Site publishes through the AWS credential chain
 
 - GIVEN the Site credential generator completed
-- WHEN the publisher sets `AWS_SHARED_CREDENTIALS_FILE` to the deployed file
+- WHEN the publisher exports the deployed AWS environment variables for one command
 - THEN Celld uses that profile to write only to the Site bucket
 - AND receipt output contains no access key or secret key
 

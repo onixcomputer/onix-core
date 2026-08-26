@@ -20,10 +20,10 @@ The `celld-lab` fleet remains separate. It continues to use service `celld.servi
 
 ## Publisher credential
 
-Clan generates one bucket-scoped credential. The Celld service reads the environment file as user `celld-site`. User `brittonr` receives the same secret in standard AWS shared-credentials format:
+Clan generates one bucket-scoped credential. The Celld service reads the environment file as user `celld-site`. User `brittonr` receives the same secret as standard AWS environment variables:
 
 ```text
-/run/secrets/vars/shared/celld-site-celld/aws-credentials
+/run/secrets/vars/shared/celld-site-celld/publisher-aws-env
 ```
 
 The file has mode `0400`. It does not contain RustFS administrator authority.
@@ -31,13 +31,17 @@ The file has mode `0400`. It does not contain RustFS administrator authority.
 Set the file for one command. Do not replace the user's default AWS configuration:
 
 ```sh
-AWS_SHARED_CREDENTIALS_FILE=/run/secrets/vars/shared/celld-site-celld/aws-credentials \
+(
+  set -a
+  . /run/secrets/vars/shared/celld-site-celld/publisher-aws-env
+  set +a
   site celld-deploy \
     --project-name aspen-docs \
     --compatibility-date 2026-08-26 \
     --bucket s3://onix-site-celld \
     --endpoint http://100.110.43.11:39000 \
     --write
+)
 ```
 
 Run the same command without `--write` first.
