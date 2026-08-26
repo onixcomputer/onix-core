@@ -57,6 +57,10 @@ in
               chmod -R u+w ${lib.escapeShellArg runtimeApplication}
               ln -sfn ${lib.escapeShellArg "${bookshelfPackage}/lib/bookshelf/node_modules"} ${lib.escapeShellArg "${runtimeRoot}/node_modules"}
             '';
+            runServer = pkgs.writeShellScript "run-bookshelf-server" ''
+              cd ${lib.escapeShellArg runtimeApplication}
+              exec ${pkgs.nodejs_24}/bin/node server.js
+            '';
             importTool = pkgs.writeShellApplication {
               name = "bookshelf-import";
               runtimeInputs = [
@@ -145,13 +149,13 @@ in
               path = [ pkgs.nodejs_24 ];
               serviceConfig = {
                 ExecStartPre = prepareRuntime;
-                ExecStart = "${pkgs.nodejs_24}/bin/node ${runtimeApplication}/server.js";
+                ExecStart = runServer;
                 User = serviceUser;
                 Group = serviceGroup;
                 UMask = serviceUmask;
                 RuntimeDirectory = runtimeDirectory;
                 RuntimeDirectoryMode = privateDirectoryMode;
-                WorkingDirectory = runtimeApplication;
+                WorkingDirectory = runtimeRoot;
                 Restart = "on-failure";
                 RestartSec = settings.restartDelaySeconds;
                 ReadWritePaths = [ settings.libraryDir ];

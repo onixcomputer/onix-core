@@ -218,6 +218,8 @@ let
   bookshelfAddress = "100.110.43.11";
   bookshelfLibraryDirectory = "/datapool/bookshelf/library";
   bookshelfSourceDirectory = "/datapool/bookshelf/source";
+  bookshelfRuntimeDirectory = "bookshelf";
+  bookshelfRuntimeRoot = "/run/${bookshelfRuntimeDirectory}";
   bookshelfDesktopConfig = self.nixosConfigurations.britton-desktop.config;
   bookshelfService = bookshelfDesktopConfig.systemd.services.bookshelf;
   bookshelfPublishServicePresent = builtins.hasAttr "bookshelf-publish" bookshelfDesktopConfig.systemd.services;
@@ -234,6 +236,8 @@ let
     bookshelfService.serviceConfig.User == "bookshelf"
     && bookshelfService.serviceConfig.Group == "bookshelf"
     && bookshelfService.serviceConfig.ProtectSystem == "strict"
+    && bookshelfService.serviceConfig.RuntimeDirectory == bookshelfRuntimeDirectory
+    && bookshelfService.serviceConfig.WorkingDirectory == bookshelfRuntimeRoot
     && builtins.elem bookshelfLibraryDirectory bookshelfService.serviceConfig.ReadWritePaths;
   bookshelfTailnetFirewallValid =
     builtins.elem bookshelfPort bookshelfDesktopConfig.networking.firewall.interfaces.tailscale0.allowedTCPPorts
