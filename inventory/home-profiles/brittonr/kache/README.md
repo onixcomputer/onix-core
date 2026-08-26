@@ -29,8 +29,8 @@ manual `RUSTC_WRAPPER` export and no `kache init` run are needed.
 - the compiler driver and `mold` are installed in the managed user environment
   and are also available to the wrapper process
 - Cargo tools that set `RUSTC_WORKSPACE_WRAPPER` (for example cargo-octet's
-  Dylint driver) bypass kache automatically and execute the workspace wrapper
-  directly; kache 0.6.0 only recognizes rustc-shaped argv in wrapper mode
+  Dylint driver) bypass Kache automatically and execute the workspace wrapper
+  directly; Kache only recognizes rustc-shaped arguments in wrapper mode
 
 ## First activation and rollback
 

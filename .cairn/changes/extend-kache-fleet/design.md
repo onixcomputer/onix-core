@@ -28,6 +28,12 @@ The accepted cache design runs a remote Kache daemon and managed Cargo wrapper o
 
 **Rationale:** Interactive system daemons can use remote authority without widening sandbox authority.
 
+### Decision: Use Kache 0.16.0
+
+**Choice:** Replace the outdated Kache 0.6.0 package with the immutable 0.16.0 release.
+
+**Rationale:** Runtime acceptance proved that 0.6.0 produced different cache keys for identical cross-node builds. Version 0.16.0 includes the current key schema, remote-store fixes, and reliability checks.
+
 ## Risks / Trade-offs
 
 - A shared write credential means one compromised Kache daemon can alter objects in the Kache bucket. It cannot access other RustFS buckets.

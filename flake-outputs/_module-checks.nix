@@ -502,6 +502,7 @@ let
     || !(builtins.elem expectedTmpfilesRule machineConfig.systemd.tmpfiles.rules)
     || !(lib.hasInfix "local_store = \"${expected.cacheDir}\"" generatedConfig)
     || !(lib.hasInfix "local_max_size = \"32GiB\"" generatedConfig)
+    || !(lib.hasInfix "prefetch_enabled = false" generatedConfig)
     || !(lib.hasInfix "endpoint = \"${expected.endpoint}\"" generatedConfig)
     || homeConfig.home.sessionVariables.KACHE_CONFIG != kacheRustfsSystemConfigPath
     || !(builtins.hasAttr ".cargo/config.toml" homeConfig.home.file)
@@ -895,6 +896,21 @@ in
       ''}
       touch $out
     '';
+
+    # r[verify onix.rustfs_build_caches.kache]
+    kache-package =
+      pkgs.runCommand "kache-package" { nativeBuildInputs = [ self.packages.${pkgs.stdenv.hostPlatform.system}.kache ]; } ''
+        actual="$(kache --version)"
+        if [ "$actual" != "kache 0.16.0" ]; then
+          echo "Unexpected Kache version: $actual"
+          exit 1
+        fi
+        if kache unsupported-command >/dev/null 2>&1; then
+          echo "Kache accepted an unsupported command"
+          exit 1
+        fi
+        touch $out
+      '';
 
     # r[verify onix.rustfs_build_caches.verification]
     kache-rustfs-settings = pkgs.runCommand "kache-rustfs-settings" { } ''

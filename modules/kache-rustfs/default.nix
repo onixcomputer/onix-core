@@ -61,6 +61,7 @@ in
                 local_max_size = settings.cacheMaxSize;
                 local_only = false;
                 daemon_idle_timeout_secs = daemonIdleTimeoutSeconds;
+                prefetch_enabled = false;
                 remote = evaluated.remoteConfig;
               };
             };

@@ -15,6 +15,8 @@ All three nodes install the managed Cargo wrapper and run `kache-rustfs.service`
 
 Each daemon uses its node-local RustFS endpoint. All daemons share the bucket-scoped Kache credential and `onix-kache` namespace. Only the desktop provisions the bucket and policy. Home Manager does not start a second daemon.
 
+The long-lived daemons disable speculative prefetch. Exact remote hits and background uploads remain active without repeated whole-bucket listings.
+
 Inspect the service:
 
 ```console

@@ -86,8 +86,8 @@ let
 
       # Cargo chains build.rustc-wrapper before RUSTC_WORKSPACE_WRAPPER as:
       #   rustc-wrapper workspace-wrapper rustc ...
-      # kache 0.6.0 only enters wrapper mode for rustc-shaped argv, so pass
-      # workspace-wrapper chains through before invoking kache.
+      # Kache only enters wrapper mode for rustc-shaped argv, so pass
+      # workspace-wrapper chains through before invoking Kache.
       if is_cargo_workspace_wrapper_chain; then
         exec "$real_rustc" "$@"
       fi
