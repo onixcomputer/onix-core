@@ -17,5 +17,5 @@
 ## Phase 4: Verification and rollout
 
 - [x] [depends:point-the-desktop-home-manager-kache-profile-at-the-private-remote-while-preserving-the-local-only-nix-sandbox-wrapper,add-trusted-read-proxy-settings-and-auto-upload-roles-on-aspen1-aspen3-and-the-desktop] Run focused checks, Cairn validation, Clan vars checks, and complete builds for all three nodes. r[onix.rustfs_build_caches.verification]
-- [ ] [depends:run-focused-checks-cairn-validation-clan-vars-checks-and-complete-builds-for-all-three-nodes] Deploy the three nodes and capture Kache, niks3, IAM, restart, Tailnet, and negative evidence. r[onix.rustfs_build_caches.kache] r[onix.rustfs_build_caches.niks3]
-- [ ] [depends:deploy-the-three-nodes-and-capture-kache-niks3-iam-restart-tailnet-and-negative-evidence] Sync the accepted specification, archive the change, and integrate the verified branch. r[onix.rustfs_build_caches.verification]
+- [x] [depends:run-focused-checks-cairn-validation-clan-vars-checks-and-complete-builds-for-all-three-nodes] Deploy the three nodes and capture Kache, niks3, IAM, restart, Tailnet, and negative evidence. r[onix.rustfs_build_caches.kache] r[onix.rustfs_build_caches.niks3]
+- [x] [depends:deploy-the-three-nodes-and-capture-kache-niks3-iam-restart-tailnet-and-negative-evidence] Sync the accepted specification, archive the change, and integrate the verified branch. r[onix.rustfs_build_caches.verification]
