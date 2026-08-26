@@ -85,6 +85,7 @@ in
               }
               trap cleanup EXIT HUP INT TERM
 
+              export MC_CONFIG_DIR="$mc_config_dir"
               export MC_HOST_rustfs="http://$RUSTFS_ACCESS_KEY:$RUSTFS_SECRET_KEY@${storageAuthority}"
 
               ${minioClient} mb --ignore-existing \
