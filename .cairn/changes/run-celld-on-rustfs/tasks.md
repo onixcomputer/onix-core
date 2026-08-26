@@ -13,17 +13,17 @@
 ## Phase 3: Composition and static verification
 
 - [x] [serial] Compose one three-node inventory instance with exactly one provisioner for r[onix.celld_rustfs.composition].
-- [ ] [serial] Keep host clock skew below one lease lifetime with a working synchronization provider for r[onix.celld_rustfs.clock].
+- [x] [serial] Keep host clock skew below one lease lifetime with a working synchronization provider for r[onix.celld_rustfs.clock].
 - [x] [serial] Run positive and negative settings checks, generated-service checks, package checks, Cairn gates, and all affected system builds for r[onix.celld_rustfs.validation].
 
 ## Phase 4: Runtime acceptance
 
-- [ ] [serial] Deploy the bucket, policy, credentials, Worker, and all three Celld services for r[onix.celld_rustfs.storage.provision].
-- [ ] [serial] Run Celld storage diagnosis through every RustFS endpoint for r[onix.celld_rustfs.storage.fencing].
-- [ ] [serial] Prove cross-node counter continuity and coordinated restart persistence for r[onix.celld_rustfs.runtime].
-- [ ] [serial] Prove one-node loss, surviving writes, rejoin, and recovered-node continuity for r[onix.celld_rustfs.failure].
+- [x] [serial] Deploy the bucket, policy, credentials, Worker, and all three Celld services for r[onix.celld_rustfs.storage.provision].
+- [x] [serial] Run Celld storage diagnosis through every RustFS endpoint for r[onix.celld_rustfs.storage.fencing].
+- [x] [serial] Prove cross-node counter continuity and coordinated restart persistence for r[onix.celld_rustfs.runtime].
+- [x] [serial] Prove one-node loss, surviving writes, rejoin, and recovered-node continuity for r[onix.celld_rustfs.failure].
 
 ## Phase 5: Completion
 
-- [ ] [serial] Record bounded runtime evidence and non-claims for r[onix.celld_rustfs.runtime].
+- [x] [serial] Record bounded runtime evidence and non-claims for r[onix.celld_rustfs.runtime].
 - [ ] [serial] Sync the accepted specification, archive the change, validate the final tree, and integrate the verified branch for r[onix.celld_rustfs.failure].
