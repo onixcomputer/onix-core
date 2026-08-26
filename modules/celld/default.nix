@@ -40,8 +40,10 @@ in
               config.clan.core.vars.generators.${credentialGeneratorName}.files."aws-env".path;
             rustfsAdminEnvironmentFile =
               config.clan.core.vars.generators.${settings.rustfsAdminGenerator}.files."env-file".path;
-            celldUser = "celld";
-            celldGroup = "celld";
+            runtimeName = settings.runtimeName;
+            provisionServiceName = "${runtimeName}-storage-provision";
+            celldUser = runtimeName;
+            celldGroup = runtimeName;
             secretKeyByteCount = 32;
             privateDirectoryMode = "0700";
             secretFileMode = "0400";
@@ -52,7 +54,7 @@ in
               settings.shutdownDrainMilliseconds + millisecondsPerSecond - 1
             ) millisecondsPerSecond;
             timeoutStopSeconds = shutdownDrainSeconds + shutdownMarginSeconds;
-            provisionStateDirectory = "/var/lib/celld-provision";
+            provisionStateDirectory = "/var/lib/${runtimeName}-provision";
             policyName = "celld-${instanceName}";
             storageAuthority = lib.removePrefix "http://" settings.storageEndpoint;
             counterProject = pkgs.runCommand "onix-celld-counter-worker" { } ''
@@ -137,22 +139,40 @@ in
             assertions = evaluated.assertions;
 
             # r[impl onix.celld_rustfs.storage]
+            # r[impl onix.site_celld_fleet.credentials]
             clan.core.vars.generators.${credentialGeneratorName} = {
               share = true;
-              files."aws-env" = {
-                secret = true;
-                deploy = true;
-                owner = celldUser;
-                group = celldGroup;
-                mode = secretFileMode;
+              files = {
+                "aws-env" = {
+                  secret = true;
+                  deploy = true;
+                  owner = celldUser;
+                  group = celldGroup;
+                  mode = secretFileMode;
+                };
+              }
+              // lib.optionalAttrs (settings.publisherUser != null) {
+                "aws-credentials" = {
+                  secret = true;
+                  deploy = true;
+                  owner = settings.publisherUser;
+                  group = celldGroup;
+                  mode = secretFileMode;
+                };
               };
               runtimeInputs = [ pkgs.openssl ];
               script = ''
                 secret_key="$(${lib.getExe pkgs.openssl} rand -hex ${toString secretKeyByteCount})"
                 printf 'AWS_ACCESS_KEY_ID=%s\nAWS_SECRET_ACCESS_KEY=%s\n' \
                   ${lib.escapeShellArg settings.accessKeyId} "$secret_key" > "$out/aws-env"
+                ${lib.optionalString (settings.publisherUser != null) ''
+                  printf '[default]\naws_access_key_id=%s\naws_secret_access_key=%s\n' \
+                    ${lib.escapeShellArg settings.accessKeyId} "$secret_key" > "$out/aws-credentials"
+                ''}
               '';
             };
+
+            environment.systemPackages = lib.optional (settings.publisherUser != null) celldPackage;
 
             users.groups.${celldGroup} = { };
             users.users.${celldUser} = {
@@ -162,7 +182,8 @@ in
               createHome = false;
             };
 
-            systemd.tmpfiles.settings."10-celld" = {
+            # r[impl onix.site_celld_fleet.isolation]
+            systemd.tmpfiles.settings."10-${runtimeName}" = {
               ${settings.stateDir}.d = {
                 mode = privateDirectoryMode;
                 user = celldUser;
@@ -183,10 +204,10 @@ in
               ];
             };
 
-            systemd.services.celld-storage-provision = lib.mkIf settings.provisionStorage {
-              description = "Provision bucket-scoped RustFS storage for Celld";
+            systemd.services.${provisionServiceName} = lib.mkIf settings.provisionStorage {
+              description = "Provision bucket-scoped RustFS storage for ${runtimeName}";
               wantedBy = [ "multi-user.target" ];
-              before = [ "celld.service" ];
+              before = [ "${runtimeName}.service" ];
               after = [
                 "network-online.target"
                 "rustfs.service"
@@ -228,19 +249,20 @@ in
 
             # r[impl onix.celld_rustfs.composition]
             # r[impl onix.celld_rustfs.runtime]
-            systemd.services.celld = {
-              description = "Self-hosted Durable Objects node";
+            # r[impl onix.site_celld_fleet.isolation]
+            systemd.services.${runtimeName} = {
+              description = "Self-hosted Durable Objects node ${runtimeName}";
               wantedBy = [ "multi-user.target" ];
               after = [
                 "network-online.target"
                 "tailscaled.service"
               ]
-              ++ lib.optional settings.provisionStorage "celld-storage-provision.service";
+              ++ lib.optional settings.provisionStorage "${provisionServiceName}.service";
               wants = [
                 "network-online.target"
                 "tailscaled.service"
               ];
-              requires = lib.optional settings.provisionStorage "celld-storage-provision.service";
+              requires = lib.optional settings.provisionStorage "${provisionServiceName}.service";
               environment = {
                 CELLD_BUCKET = evaluated.bucketUri;
                 CELLD_ADDR = evaluated.publicListener;

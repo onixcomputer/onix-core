@@ -8,12 +8,14 @@ let
   testShutdownDrainMilliseconds = 25000;
   testAddress = "100.64.0.1";
   baseSettings = {
+    runtimeName = "celld";
     stateDir = "/var/lib/celld-lab";
     bindAddress = testAddress;
     storageEndpoint = "http://${testAddress}:39000";
     bucketName = "celld-lab";
     region = "us-east-1";
     accessKeyId = "celld-lab";
+    publisherUser = null;
     publicPort = testPublicPort;
     internalPort = testInternalPort;
     openFirewall = true;
@@ -31,6 +33,20 @@ let
       builtins.filter (entry: !entry.assertion) (mkSettings settings).assertions
     );
   negativeCases = [
+    {
+      name = "unsafe-runtime-name";
+      expected = "runtimeName";
+      settings = baseSettings // {
+        runtimeName = "celld/site";
+      };
+    }
+    {
+      name = "unsafe-publisher-user";
+      expected = "publisherUser";
+      settings = baseSettings // {
+        publisherUser = "bad user";
+      };
+    }
     {
       name = "wildcard-listener";
       expected = "non-wildcard";

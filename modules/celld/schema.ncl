@@ -5,12 +5,14 @@ let default_restart_delay_seconds = 10 in
 let default_shutdown_drain_milliseconds = 25000 in
 {
   server = {
+    runtimeName = { type = "string", default = "celld", description = "Unique systemd unit and Unix identity stem for this instance" },
     stateDir = { type = "string", default = "/var/lib/celld", description = "Private local SQLite and replication working directory" },
     bindAddress = { type = "string", default = "127.0.0.1", description = "Explicit Tailnet address for public and internal listeners" },
     storageEndpoint = { type = "string", default = "http://127.0.0.1:9000", description = "S3-compatible RustFS endpoint used by this Celld node" },
     bucketName = { type = "string", default = "celld-fleet", description = "Dedicated RustFS bucket that owns one Celld fleet" },
     region = { type = "string", default = "us-east-1", description = "S3 region reported by RustFS" },
     accessKeyId = { type = "string", default = "celld-fleet", description = "Stable RustFS user and AWS access-key identifier" },
+    publisherUser = { type = "nullable_string", default = null, description = "Optional local user that receives a standard AWS publisher profile" },
     publicPort = { type = "port", default = default_public_port, description = "Tailnet-only Worker listener port" },
     internalPort = { type = "port", default = default_internal_port, description = "Tailnet-only peer and operator listener port" },
     openFirewall = { type = "bool", default = false, description = "Admit the configured listeners through the NixOS firewall" },
