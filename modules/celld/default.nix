@@ -55,7 +55,11 @@ in
             provisionStateDirectory = "/var/lib/celld-provision";
             policyName = "celld-${instanceName}";
             storageAuthority = lib.removePrefix "http://" settings.storageEndpoint;
-            counterProject = ./counter-worker;
+            counterProject = pkgs.runCommand "onix-celld-counter-worker" { } ''
+              install -d "$out"
+              install -m 0444 ${./counter-worker/index.js} "$out/index.js"
+              install -m 0444 ${./counter-worker/wrangler.jsonc} "$out/wrangler.jsonc"
+            '';
             deploymentMarker = "${provisionStateDirectory}/counter-project";
             minioClient = lib.getExe pkgs.minio-client;
             celldExecutable = lib.getExe celldPackage;
