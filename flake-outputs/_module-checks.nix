@@ -312,6 +312,7 @@ let
     builtins.hasAttr "kache-rustfs-storage-provision" kacheRustfsDesktop.systemd.services
     && kacheRustfsService.serviceConfig.User == "brittonr"
     && kacheRustfsService.serviceConfig.ProtectSystem == "strict"
+    && kacheRustfsService.serviceConfig.Restart == "always"
     && kacheRustfsService.environment.KACHE_LOCAL_ONLY == "0"
     && kacheRustfsCredential.owner == "brittonr"
     && kacheRustfsCredential.mode == "0400"

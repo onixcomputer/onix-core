@@ -205,7 +205,7 @@ in
                 User = settings.serviceUser;
                 Group = "users";
                 EnvironmentFile = credentialEnvironmentFile;
-                Restart = "on-failure";
+                Restart = "always";
                 RestartSec = settings.restartDelaySeconds;
                 UMask = serviceUmask;
                 ReadWritePaths = [ settings.cacheDir ];
