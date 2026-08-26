@@ -145,6 +145,7 @@ let
     "publicPort"
     "internalPort"
     "stripTrailingSlashProxy"
+    "backendAddress"
     "backendPort"
     "openFirewall"
     "firewallInterface"
@@ -233,8 +234,8 @@ let
     )
   ) siteCelldMachines;
   siteCelldExpectedBackendListeners = {
-    aspen3 = "100.108.13.4:${toString siteCelldBackendPort}";
-    britton-desktop = "100.110.43.11:${toString siteCelldBackendPort}";
+    aspen3 = "127.0.0.1:${toString siteCelldBackendPort}";
+    britton-desktop = "127.0.0.1:${toString siteCelldBackendPort}";
   };
   siteCelldBackendListenerMismatches = builtins.filter (
     machine:

@@ -19,6 +19,7 @@ let
     publicPort = testPublicPort;
     internalPort = testInternalPort;
     stripTrailingSlashProxy = false;
+    backendAddress = "127.0.0.1";
     backendPort = 39202;
     openFirewall = true;
     firewallInterface = "tailscale0";
@@ -69,6 +70,14 @@ let
       settings = baseSettings // {
         stripTrailingSlashProxy = true;
         backendPort = testPublicPort;
+      };
+    }
+    {
+      name = "non-loopback-proxy-backend";
+      expected = "backendAddress";
+      settings = baseSettings // {
+        stripTrailingSlashProxy = true;
+        backendAddress = testAddress;
       };
     }
     {

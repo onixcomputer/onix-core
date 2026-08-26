@@ -29,7 +29,7 @@ r[onix.site_celld_fleet.composition] The inventory MUST compose one Site Celld f
 - THEN each host has separate `celld-site` and `celld-site-ingress` services
 - AND public ingress uses port `32110`
 - AND Celld peer traffic uses port `32111`
-- AND the firewall-private Celld backend uses port `32112`
+- AND the loopback-only Celld backend uses `127.0.0.1:32112`
 - AND the service uses bucket `onix-site-celld`
 - AND only aspen3 has the Site storage provisioner
 - AND the existing lab service and bucket remain unchanged
@@ -62,7 +62,7 @@ r[onix.site_celld_fleet.validation] Repository checks MUST reject missing Site s
 - THEN both fleets have their expected isolated resources
 - AND every Site listener is admitted only on `tailscale0`
 - AND Site listener ports do not overlap the default Linux ephemeral range
-- AND the backend port is not admitted by the Tailnet firewall
+- AND the backend listener is not reachable from a Tailnet peer
 
 ### Requirement: Serving claims require live observation
 

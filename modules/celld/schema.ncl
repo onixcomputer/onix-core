@@ -16,6 +16,7 @@ let default_shutdown_drain_milliseconds = 25000 in
     publicPort = { type = "port", default = default_public_port, description = "Tailnet-only public ingress port" },
     internalPort = { type = "port", default = default_internal_port, description = "Tailnet-only peer and operator listener port" },
     stripTrailingSlashProxy = { type = "bool", default = false, description = "Normalize trailing-slash asset paths before Celld 0.3 routing" },
+    backendAddress = { type = "string", default = "127.0.0.1", description = "Loopback address for the Celld Worker listener behind the compatibility proxy" },
     backendPort = { type = "port", default = 8082, description = "Private Celld Worker listener behind the compatibility proxy" },
     openFirewall = { type = "bool", default = false, description = "Admit the configured listeners through the NixOS firewall" },
     firewallInterface = { type = "nullable_string", default = "tailscale0", description = "Private interface that admits Celld listeners" },
