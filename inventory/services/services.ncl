@@ -149,12 +149,14 @@ let celld_restart_delay_seconds = 10 in
 let celld_shutdown_drain_milliseconds = 25000 in
 let celld_fleet_settings = fun bind_address provision_storage =>
   {
+    runtimeName = "celld",
     stateDir = celld_state_dir,
     bindAddress = bind_address,
     storageEndpoint = "http://%{bind_address}:%{rustfs_api_port}",
     bucketName = celld_bucket_name,
     region = celld_region,
     accessKeyId = celld_access_key_id,
+    publisherUser = null,
     publicPort = celld_public_port,
     internalPort = celld_internal_port,
     openFirewall = true,
@@ -162,6 +164,37 @@ let celld_fleet_settings = fun bind_address provision_storage =>
     provisionStorage = provision_storage,
     rustfsAdminGenerator = "rustfs-rustfs-cluster",
     deployCounter = true,
+    leaseTtlMilliseconds = celld_lease_ttl_milliseconds,
+    restartDelaySeconds = celld_restart_delay_seconds,
+    shutdownDrainMilliseconds = celld_shutdown_drain_milliseconds,
+  }
+in
+let site_celld_public_port = 32110 in
+let site_celld_internal_port = 32111 in
+let site_celld_backend_port = 32112 in
+let site_celld_bucket_name = "onix-site-celld" in
+let site_celld_access_key_id = "celld-site" in
+let site_celld_state_dir = "/var/lib/celld-site" in
+let site_celld_publisher_user = "brittonr" in
+let site_celld_fleet_settings = fun bind_address provision_storage =>
+  {
+    runtimeName = "celld-site",
+    stateDir = site_celld_state_dir,
+    bindAddress = bind_address,
+    storageEndpoint = "http://%{bind_address}:%{rustfs_api_port}",
+    bucketName = site_celld_bucket_name,
+    region = celld_region,
+    accessKeyId = site_celld_access_key_id,
+    publisherUser = site_celld_publisher_user,
+    publicPort = site_celld_public_port,
+    internalPort = site_celld_internal_port,
+    stripTrailingSlashProxy = true,
+    backendPort = site_celld_backend_port,
+    openFirewall = true,
+    firewallInterface = "tailscale0",
+    provisionStorage = provision_storage,
+    rustfsAdminGenerator = "rustfs-rustfs-cluster",
+    deployCounter = false,
     leaseTtlMilliseconds = celld_lease_ttl_milliseconds,
     restartDelaySeconds = celld_restart_delay_seconds,
     shutdownDrainMilliseconds = celld_shutdown_drain_milliseconds,
@@ -260,6 +293,15 @@ in
         aspen1.settings = celld_fleet_settings rustfs_aspen1_address true,
         aspen3.settings = celld_fleet_settings rustfs_aspen3_address false,
         britton-desktop.settings = celld_fleet_settings rustfs_britton_desktop_address false,
+      },
+    },
+
+    # r[impl onix.site_celld_fleet.composition]
+    "site-celld" = {
+      module = { name = "celld", input = "self" },
+      roles.server.machines = {
+        aspen3.settings = site_celld_fleet_settings rustfs_aspen3_address true,
+        britton-desktop.settings = site_celld_fleet_settings rustfs_britton_desktop_address false,
       },
     },
 

@@ -12,14 +12,19 @@ let test_address = "100.64.0.1" in
       "celld:server"
       "celld-positive"
       {
+        runtimeName = "celld",
         stateDir = "/var/lib/celld-lab",
         bindAddress = test_address,
         storageEndpoint = "http://%{test_address}:39000",
         bucketName = "celld-lab",
         region = "us-east-1",
         accessKeyId = "celld-lab",
+        publisherUser = null,
         publicPort = default_public_port,
         internalPort = default_internal_port,
+        stripTrailingSlashProxy = false,
+        backendAddress = "127.0.0.1",
+        backendPort = 39202,
         openFirewall = true,
         firewallInterface = "tailscale0",
         provisionStorage = true,
@@ -34,14 +39,19 @@ let test_address = "100.64.0.1" in
       "celld:server"
       "celld-negative"
       {
+        runtimeName = false,
         stateDir = false,
         bindAddress = 0,
         storageEndpoint = [],
         bucketName = {},
         region = false,
         accessKeyId = [],
+        publisherUser = 0,
         publicPort = invalid_port,
         internalPort = "peer",
+        stripTrailingSlashProxy = "yes",
+        backendAddress = false,
+        backendPort = invalid_port,
         openFirewall = "yes",
         firewallInterface = [],
         provisionStorage = "yes",

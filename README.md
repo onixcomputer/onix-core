@@ -14,6 +14,8 @@ Read [`docs/bookshelf.md`](docs/bookshelf.md) for the private ebook library endp
 
 Read [`docs/rustfs-build-caches.md`](docs/rustfs-build-caches.md) for private Kache and niks3 endpoints, authority, operations, and rollback.
 
+Read [`docs/site-celld.md`](docs/site-celld.md) for the private Site fleet, publisher credential boundary, deployment, and activation.
+
 ## References
 - [BlinkDL/RWKV-LM](https://github.com/BlinkDL/RWKV-LM) — pinned official RWKV-7 model, byte-tokenizer, and PyTorch recurrence equations used by the real-weight, stateful-decode, bounded-prompt, and CPU equation-reference harnesses.
 - [fla-org/flash-linear-attention](https://github.com/fla-org/flash-linear-attention) — pinned v0.3.0 checkpoint naming, cross-layer value mixing, recurrent cache, model normalization, and untied language-model head wiring used to decode and independently compare the Hugging Face model format.

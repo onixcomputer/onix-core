@@ -5,12 +5,15 @@ let
   bucketNameMinimumLength = 3;
   bucketNameMaximumLength = 63;
   accessKeyMinimumLength = 3;
+  runtimeNameMaximumLength = 31;
+  publisherUserMaximumLength = 32;
   wildcardAddresses = [
     "0.0.0.0"
     "::"
     "[::]"
   ];
   statePathSegments = lib.splitString "/" settings.stateDir;
+  runtimeNameLength = builtins.stringLength settings.runtimeName;
   bucketNameLength = builtins.stringLength settings.bucketName;
   accessKeyLength = builtins.stringLength settings.accessKeyId;
   leaseSeconds = builtins.div (
@@ -35,15 +38,38 @@ let
   accessKeyIsSafe =
     accessKeyLength >= accessKeyMinimumLength
     && builtins.match "^[A-Za-z0-9][A-Za-z0-9_-]*$" settings.accessKeyId != null;
+  runtimeNameIsSafe =
+    runtimeNameLength >= 2
+    && runtimeNameLength <= runtimeNameMaximumLength
+    && builtins.match "^[a-z][a-z0-9-]*[a-z0-9]$" settings.runtimeName != null;
+  publisherUserIsSafe =
+    settings.publisherUser == null
+    || (
+      builtins.stringLength settings.publisherUser <= publisherUserMaximumLength
+      && builtins.match "^[a-z_][a-z0-9_-]*$" settings.publisherUser != null
+    );
 in
 {
   # r[impl onix.celld_rustfs.validation]
   inherit leaseSeconds;
   bucketUri = "s3://${settings.bucketName}";
-  publicListener = "${settings.bindAddress}:${toString settings.publicPort}";
+  publicListener = "${
+    if settings.stripTrailingSlashProxy then settings.backendAddress else settings.bindAddress
+  }:${
+    toString (if settings.stripTrailingSlashProxy then settings.backendPort else settings.publicPort)
+  }";
+  publicIngressListener = "${settings.bindAddress}:${toString settings.publicPort}";
   internalListener = "${settings.bindAddress}:${toString settings.internalPort}";
 
   assertions = [
+    {
+      assertion = runtimeNameIsSafe;
+      message = "celld runtimeName must be a safe lowercase systemd and Unix identity stem";
+    }
+    {
+      assertion = publisherUserIsSafe;
+      message = "celld publisherUser must be null or a safe local user name";
+    }
     {
       assertion =
         settings.stateDir != ""
@@ -64,6 +90,22 @@ in
     {
       assertion = settings.publicPort != settings.internalPort;
       message = "celld publicPort and internalPort must be distinct";
+    }
+    {
+      assertion =
+        !settings.stripTrailingSlashProxy
+        || (settings.backendPort != settings.publicPort && settings.backendPort != settings.internalPort);
+      message = "celld compatibility proxy backendPort must be distinct from publicPort and internalPort";
+    }
+    {
+      assertion =
+        !settings.stripTrailingSlashProxy
+        || builtins.elem settings.backendAddress [
+          "127.0.0.1"
+          "::1"
+          "[::1]"
+        ];
+      message = "celld compatibility proxy backendAddress must be a loopback address";
     }
     {
       assertion = bucketNameIsSafe;

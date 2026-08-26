@@ -134,14 +134,19 @@ let
   celldPositiveErrors = celldValidation.positive;
   celldNegativeErrors = celldValidation.negative;
   expectedCelldNegativeFields = [
+    "runtimeName"
     "stateDir"
     "bindAddress"
     "storageEndpoint"
     "bucketName"
     "region"
     "accessKeyId"
+    "publisherUser"
     "publicPort"
     "internalPort"
+    "stripTrailingSlashProxy"
+    "backendAddress"
+    "backendPort"
     "openFirewall"
     "firewallInterface"
     "provisionStorage"
@@ -199,6 +204,94 @@ let
   celldDesktopClockProviderValid =
     self.nixosConfigurations.britton-desktop.config.services.chrony.enable
     && !self.nixosConfigurations.britton-desktop.config.services.timesyncd.enable;
+
+  siteCelldPublicPort = 32110;
+  siteCelldInternalPort = 32111;
+  siteCelldBackendPort = 32112;
+  siteCelldPortsAvoidEphemeralRange =
+    siteCelldPublicPort < 32768 && siteCelldInternalPort < 32768 && siteCelldBackendPort < 32768;
+  siteCelldServiceName = "celld-site";
+  siteCelldIngressServiceName = "celld-site-ingress";
+  siteCelldProvisionServiceName = "celld-site-storage-provision";
+  siteCelldBucketUri = "s3://onix-site-celld";
+  siteCelldMachines = [
+    "aspen3"
+    "britton-desktop"
+  ];
+  siteCelldProvisionerMachines = builtins.filter (
+    machine:
+    builtins.hasAttr siteCelldProvisionServiceName
+      self.nixosConfigurations.${machine}.config.systemd.services
+  ) siteCelldMachines;
+  siteCelldMissingServices = builtins.filter (
+    machine:
+    !(builtins.hasAttr siteCelldServiceName self.nixosConfigurations.${machine}.config.systemd.services)
+  ) siteCelldMachines;
+  siteCelldMissingIngressServices = builtins.filter (
+    machine:
+    !(builtins.hasAttr siteCelldIngressServiceName
+      self.nixosConfigurations.${machine}.config.systemd.services
+    )
+  ) siteCelldMachines;
+  siteCelldExpectedBackendListeners = {
+    aspen3 = "127.0.0.1:${toString siteCelldBackendPort}";
+    britton-desktop = "127.0.0.1:${toString siteCelldBackendPort}";
+  };
+  siteCelldBackendListenerMismatches = builtins.filter (
+    machine:
+    self.nixosConfigurations.${machine}.config.systemd.services.${siteCelldServiceName}.environment.CELLD_ADDR
+    != siteCelldExpectedBackendListeners.${machine}
+  ) siteCelldMachines;
+  siteCelldExpectedStorageEndpoints = {
+    aspen3 = "http://100.108.13.4:39000";
+    britton-desktop = "http://100.110.43.11:39000";
+  };
+  siteCelldStorageEndpointMismatches = builtins.filter (
+    machine:
+    self.nixosConfigurations.${machine}.config.systemd.services.${siteCelldServiceName}.environment.S3_ENDPOINT
+    != siteCelldExpectedStorageEndpoints.${machine}
+  ) siteCelldMachines;
+  siteCelldBucketMismatches = builtins.filter (
+    machine:
+    self.nixosConfigurations.${machine}.config.systemd.services.${siteCelldServiceName}.environment.CELLD_BUCKET
+    != siteCelldBucketUri
+  ) siteCelldMachines;
+  siteCelldIsolationMismatches = builtins.filter (
+    machine:
+    let
+      services = self.nixosConfigurations.${machine}.config.systemd.services;
+      labService = services.celld;
+      siteService = services.${siteCelldServiceName};
+    in
+    labService.serviceConfig.User == siteService.serviceConfig.User
+    || labService.serviceConfig.WorkingDirectory == siteService.serviceConfig.WorkingDirectory
+    || labService.environment.CELLD_BUCKET == siteService.environment.CELLD_BUCKET
+  ) siteCelldMachines;
+  siteCelldTailnetFirewallMismatches = builtins.filter (
+    machine:
+    let
+      firewall = self.nixosConfigurations.${machine}.config.networking.firewall;
+      requiredPorts = [
+        siteCelldPublicPort
+        siteCelldInternalPort
+      ];
+    in
+    !(lib.all (port: builtins.elem port firewall.interfaces.tailscale0.allowedTCPPorts) requiredPorts)
+    || builtins.elem siteCelldBackendPort firewall.interfaces.tailscale0.allowedTCPPorts
+    || lib.any (port: builtins.elem port firewall.allowedTCPPorts) (
+      requiredPorts ++ [ siteCelldBackendPort ]
+    )
+  ) siteCelldMachines;
+  siteCelldPublisherCredential =
+    self.nixosConfigurations.britton-desktop.config.clan.core.vars.generators.celld-site-celld.files."publisher-aws-env";
+  siteCelldPublisherCredentialValid =
+    siteCelldPublisherCredential.secret
+    && siteCelldPublisherCredential.deploy
+    && siteCelldPublisherCredential.owner == "brittonr"
+    && siteCelldPublisherCredential.group == siteCelldServiceName
+    && siteCelldPublisherCredential.mode == "0400";
+  celldLabPublisherCredentialAbsent =
+    !(builtins.hasAttr "publisher-aws-env" self.nixosConfigurations.britton-desktop.config.clan.core.vars.generators.celld-celld-lab.files);
 
   bookshelfPositiveErrors = bookshelfValidation.positive;
   bookshelfNegativeErrors = bookshelfValidation.negative;
@@ -648,6 +741,9 @@ in
 
     # r[verify onix.celld_rustfs.composition]
     # r[verify onix.celld_rustfs.security]
+    # r[verify onix.site_celld_fleet.composition]
+    # r[verify onix.site_celld_fleet.credentials]
+    # r[verify onix.site_celld_fleet.validation]
     celld-generated = pkgs.runCommand "celld-generated" { } ''
       ${lib.optionalString (builtins.length celldProvisionerMachines != 1) ''
         echo "Celld requires exactly one storage provisioner; found:"
@@ -671,6 +767,58 @@ in
       ''}
       ${lib.optionalString (!celldDesktopClockProviderValid) ''
         echo "Celld requires Chrony on the NetworkManager-managed desktop"
+        exit 1
+      ''}
+      ${lib.optionalString (!siteCelldPortsAvoidEphemeralRange) ''
+        echo "Site Celld listener ports overlap the default Linux ephemeral range"
+        exit 1
+      ''}
+      ${lib.optionalString (siteCelldProvisionerMachines != [ "aspen3" ]) ''
+        echo "Site Celld requires aspen3 as its only storage provisioner; found:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" siteCelldProvisionerMachines)}
+        exit 1
+      ''}
+      ${lib.optionalString (siteCelldMissingServices != [ ]) ''
+        echo "Site Celld service is missing from fleet machines:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" siteCelldMissingServices)}
+        exit 1
+      ''}
+      ${lib.optionalString (siteCelldMissingIngressServices != [ ]) ''
+        echo "Site Celld compatibility ingress is missing from fleet machines:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" siteCelldMissingIngressServices)}
+        exit 1
+      ''}
+      ${lib.optionalString (siteCelldBackendListenerMismatches != [ ]) ''
+        echo "Site Celld backend listeners are not isolated behind ingress:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" siteCelldBackendListenerMismatches)}
+        exit 1
+      ''}
+      ${lib.optionalString (siteCelldStorageEndpointMismatches != [ ]) ''
+        echo "Site Celld nodes are not aligned with local RustFS endpoints:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" siteCelldStorageEndpointMismatches)}
+        exit 1
+      ''}
+      ${lib.optionalString (siteCelldBucketMismatches != [ ]) ''
+        echo "Site Celld nodes do not use the dedicated bucket:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" siteCelldBucketMismatches)}
+        exit 1
+      ''}
+      ${lib.optionalString (siteCelldIsolationMismatches != [ ]) ''
+        echo "Site and lab Celld runtime resources overlap on:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" siteCelldIsolationMismatches)}
+        exit 1
+      ''}
+      ${lib.optionalString (siteCelldTailnetFirewallMismatches != [ ]) ''
+        echo "Site Celld firewall ports are not Tailnet-only on:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" siteCelldTailnetFirewallMismatches)}
+        exit 1
+      ''}
+      ${lib.optionalString (!siteCelldPublisherCredentialValid) ''
+        echo "Site Celld publisher credential ownership is unsafe"
+        exit 1
+      ''}
+      ${lib.optionalString (!celldLabPublisherCredentialAbsent) ''
+        echo "Celld lab unexpectedly exposes a publisher credential"
         exit 1
       ''}
       touch $out

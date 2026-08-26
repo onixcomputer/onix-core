@@ -8,14 +8,19 @@ let
   testShutdownDrainMilliseconds = 25000;
   testAddress = "100.64.0.1";
   baseSettings = {
+    runtimeName = "celld";
     stateDir = "/var/lib/celld-lab";
     bindAddress = testAddress;
     storageEndpoint = "http://${testAddress}:39000";
     bucketName = "celld-lab";
     region = "us-east-1";
     accessKeyId = "celld-lab";
+    publisherUser = null;
     publicPort = testPublicPort;
     internalPort = testInternalPort;
+    stripTrailingSlashProxy = false;
+    backendAddress = "127.0.0.1";
+    backendPort = 39202;
     openFirewall = true;
     firewallInterface = "tailscale0";
     provisionStorage = true;
@@ -32,6 +37,20 @@ let
     );
   negativeCases = [
     {
+      name = "unsafe-runtime-name";
+      expected = "runtimeName";
+      settings = baseSettings // {
+        runtimeName = "celld/site";
+      };
+    }
+    {
+      name = "unsafe-publisher-user";
+      expected = "publisherUser";
+      settings = baseSettings // {
+        publisherUser = "bad user";
+      };
+    }
+    {
       name = "wildcard-listener";
       expected = "non-wildcard";
       settings = baseSettings // {
@@ -43,6 +62,22 @@ let
       expected = "must be distinct";
       settings = baseSettings // {
         internalPort = testPublicPort;
+      };
+    }
+    {
+      name = "shared-proxy-backend-port";
+      expected = "backendPort";
+      settings = baseSettings // {
+        stripTrailingSlashProxy = true;
+        backendPort = testPublicPort;
+      };
+    }
+    {
+      name = "non-loopback-proxy-backend";
+      expected = "backendAddress";
+      settings = baseSettings // {
+        stripTrailingSlashProxy = true;
+        backendAddress = testAddress;
       };
     }
     {
