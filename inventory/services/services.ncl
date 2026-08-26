@@ -169,8 +169,8 @@ let celld_fleet_settings = fun bind_address provision_storage =>
     shutdownDrainMilliseconds = celld_shutdown_drain_milliseconds,
   }
 in
-let site_celld_public_port = 39210 in
-let site_celld_internal_port = 39211 in
+let site_celld_public_port = 32110 in
+let site_celld_internal_port = 32111 in
 let site_celld_bucket_name = "onix-site-celld" in
 let site_celld_access_key_id = "celld-site" in
 let site_celld_state_dir = "/var/lib/celld-site" in

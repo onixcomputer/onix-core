@@ -202,8 +202,9 @@ let
     self.nixosConfigurations.britton-desktop.config.services.chrony.enable
     && !self.nixosConfigurations.britton-desktop.config.services.timesyncd.enable;
 
-  siteCelldPublicPort = 39210;
-  siteCelldInternalPort = 39211;
+  siteCelldPublicPort = 32110;
+  siteCelldInternalPort = 32111;
+  siteCelldPortsAvoidEphemeralRange = siteCelldPublicPort < 32768 && siteCelldInternalPort < 32768;
   siteCelldServiceName = "celld-site";
   siteCelldProvisionServiceName = "celld-site-storage-provision";
   siteCelldBucketUri = "s3://onix-site-celld";
@@ -638,6 +639,10 @@ in
       ''}
       ${lib.optionalString (!celldDesktopClockProviderValid) ''
         echo "Celld requires Chrony on the NetworkManager-managed desktop"
+        exit 1
+      ''}
+      ${lib.optionalString (!siteCelldPortsAvoidEphemeralRange) ''
+        echo "Site Celld listener ports overlap the default Linux ephemeral range"
         exit 1
       ''}
       ${lib.optionalString (siteCelldProvisionerMachines != [ "aspen3" ]) ''

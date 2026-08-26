@@ -26,7 +26,7 @@ r[onix.site_celld_fleet.composition] The inventory MUST compose one Site Celld f
 
 - GIVEN the reviewed service inventory
 - WHEN Nix evaluates both Site hosts
-- THEN each host has a `celld-site` service on ports `39210` and `39211`
+- THEN each host has a `celld-site` service on ports `32110` and `32111`
 - AND the service uses bucket `onix-site-celld`
 - AND only aspen3 has the Site storage provisioner
 - AND the existing lab service and bucket remain unchanged
@@ -58,6 +58,7 @@ r[onix.site_celld_fleet.validation] Repository checks MUST reject missing Site s
 - WHEN focused Celld checks evaluate generated NixOS configurations
 - THEN both fleets have their expected isolated resources
 - AND every Site listener is admitted only on `tailscale0`
+- AND Site listener ports do not overlap the default Linux ephemeral range
 
 ### Requirement: Serving claims require live observation
 

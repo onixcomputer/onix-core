@@ -4,16 +4,16 @@ The Site fleet serves the generated Aspen documentation on two private Tailnet e
 
 | Host | RustFS endpoint | Site endpoint |
 |---|---|---|
-| aspen3 | `http://100.108.13.4:39000` | `http://100.108.13.4:39210` |
-| britton-desktop | `http://100.110.43.11:39000` | `http://100.110.43.11:39210` |
+| aspen3 | `http://100.108.13.4:39000` | `http://100.108.13.4:32110` |
+| britton-desktop | `http://100.110.43.11:39000` | `http://100.110.43.11:32110` |
 
 The fleet uses these isolated resources:
 
 - bucket: `onix-site-celld`
 - access key: `celld-site`
 - systemd service: `celld-site.service`
-- public port: `39210`
-- internal port: `39211`
+- public port: `32110`
+- internal port: `32111`
 - state directory: `/var/lib/celld-site`
 
 The `celld-lab` fleet remains separate. It continues to use service `celld.service`, bucket `onix-celld-lab`, and ports `39200` and `39201`.
@@ -54,8 +54,8 @@ ssh root@britton-desktop systemctl restart celld-site.service
 Wait for each health response before the next restart:
 
 ```sh
-curl --fail --max-time 5 http://100.108.13.4:39210/__celld/health
-curl --fail --max-time 5 http://100.110.43.11:39210/__celld/health
+curl --fail --max-time 5 http://100.108.13.4:32110/__celld/health
+curl --fail --max-time 5 http://100.110.43.11:32110/__celld/health
 ```
 
 Then retrieve one expected asset through both endpoints.

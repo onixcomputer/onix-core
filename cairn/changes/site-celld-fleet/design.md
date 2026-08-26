@@ -14,7 +14,7 @@ The Clan Celld module is declared per instance, but its generated unit names, Un
 
 ### Decision: Use a two-node Site fleet
 
-**Choice:** Run `celld-site` on aspen3 and britton-desktop. Use ports `39210` and `39211`, bucket `onix-site-celld`, and aspen3 as the only storage provisioner.
+**Choice:** Run `celld-site` on aspen3 and britton-desktop. Use ports `32110` and `32111`, bucket `onix-site-celld`, and aspen3 as the only storage provisioner. Keep the ports below the default Linux ephemeral range.
 
 **Rationale:** These are the two healthy requested hosts. Distinct ports, state directories, identities, credentials, and bucket authority isolate Site from the lab fleet. Aspen1 is excluded from Site rollout until it is reachable.
 
