@@ -239,11 +239,14 @@ let niks3_server_settings = {
   maxNarSize = "8G",
 }
 in
+let niks3_upload_batch_size = 50 in
+let niks3_upload_idle_exit_timeout_seconds = 0 in
+let niks3_max_concurrent_uploads = 1 in
 let niks3_uploader_settings = {
   serverUrl = niks3_server_url,
-  batchSize = 50,
-  idleExitTimeoutSeconds = 0,
-  maxConcurrentUploads = 8,
+  batchSize = niks3_upload_batch_size,
+  idleExitTimeoutSeconds = niks3_upload_idle_exit_timeout_seconds,
+  maxConcurrentUploads = niks3_max_concurrent_uploads,
   verifyS3Integrity = true,
 }
 in

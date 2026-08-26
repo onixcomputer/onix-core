@@ -519,6 +519,7 @@ let
 
   niks3Port = 39400;
   niks3ServerUrl = "http://100.100.103.95:${toString niks3Port}";
+  niks3MaxConcurrentUploads = 1;
   niks3BucketName = "onix-niks3";
   niks3PublicKeyPrefix = "onix-niks3-1:";
   niks3Machines = [
@@ -539,6 +540,7 @@ let
       machineConfig = self.nixosConfigurations.${machine}.config;
     in
     !(builtins.hasAttr "niks3-auto-upload" machineConfig.systemd.services)
+    || machineConfig.services."niks3-auto-upload".maxConcurrentUploads != niks3MaxConcurrentUploads
     || !(builtins.elem niks3ServerUrl machineConfig.nix.settings.extra-substituters)
     || !(lib.any (
       key: lib.hasPrefix niks3PublicKeyPrefix key
