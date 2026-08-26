@@ -23,20 +23,36 @@ r[onix.rustfs_build_caches.storage.reject]
 - THEN evaluation fails before deployment
 
 ### Requirement: Kache remote artifact cache
-r[onix.rustfs_build_caches.kache] The desktop Kache daemon MUST use its local content-addressed store and MUST synchronize Rust artifacts through its dedicated RustFS bucket.
+r[onix.rustfs_build_caches.kache] Aspen1, Aspen3, and `britton-desktop` MUST run managed Kache Cargo wrappers and credentialed system daemons that synchronize compatible Rust artifacts through the dedicated RustFS bucket.
 
 #### Scenario: Upload Kache artifacts
 r[onix.rustfs_build_caches.kache.upload]
-- GIVEN a successful interactive Rust build
-- WHEN the Kache daemon or operator sync runs
-- THEN remote manifests and packs appear only under the configured bucket and prefix
+- GIVEN a successful interactive Rust build on a configured node
+- WHEN the managed Kache wrapper completes compilation
+- THEN its node-local daemon MUST synchronize compatible artifacts through the configured RustFS endpoint
+- AND another configured node MUST be able to reuse the accepted artifact
+
+#### Scenario: Use bounded node-local storage
+r[onix.rustfs_build_caches.kache.storage]
+- GIVEN the three nodes have different storage layouts
+- WHEN Kache configuration is generated
+- THEN every daemon MUST receive an absolute bounded local cache path
+- AND Aspen3 MUST place Kache data on its USB4 volume
+- AND exactly one node MUST provision shared bucket authority
 
 #### Scenario: Preserve Nix sandbox authority
 r[onix.rustfs_build_caches.kache.sandbox]
 - GIVEN a Nix derivation uses the Nix-owned Kache wrapper
 - WHEN it compiles Rust in a sandbox
-- THEN the wrapper remains local-only
-- AND the sandbox receives no RustFS credential file
+- THEN the wrapper MUST remain local-only
+- AND the sandbox MUST receive no RustFS credential file
+
+#### Scenario: Remote cache is unavailable
+r[onix.rustfs_build_caches.kache.unavailable]
+- GIVEN RustFS or a Kache daemon is unavailable
+- WHEN Cargo compiles a valid Rust input
+- THEN compilation MUST remain able to use the real compiler
+- AND cache failure MUST NOT convert a valid compiler result into corrupted output
 
 ### Requirement: Private niks3 service
 r[onix.rustfs_build_caches.niks3] The system MUST run pinned niks3 with PostgreSQL metadata, a RustFS data bucket, a dedicated signing key, and a Tailnet-only read and upload endpoint.

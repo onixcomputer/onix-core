@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines the dedicated private Celld fleet that serves Site assets from RustFS.
+Defines the `site-celld-fleet` capability.
 
 ## Requirements
 

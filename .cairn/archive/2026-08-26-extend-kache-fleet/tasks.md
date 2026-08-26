@@ -6,5 +6,5 @@
 ## Phase 2: Verification and rollout
 
 - [x] [serial] Add positive and negative generated checks for membership, local endpoints, storage paths, one provisioner, credentials, and Cargo wrappers. r[onix.rustfs_build_caches.kache.storage]
-- [ ] [serial] Build, deploy, and capture cross-node Kache reuse and failure-safe evidence. r[onix.rustfs_build_caches.kache.upload]
-- [ ] [serial] Sync the accepted specification, archive the change, and integrate the verified branch. r[onix.rustfs_build_caches.kache]
+- [x] [serial] Build, deploy, and capture cross-node Kache reuse and failure-safe evidence. r[onix.rustfs_build_caches.kache.upload]
+- [x] [serial] Sync the accepted specification, archive the change, and integrate the verified branch. r[onix.rustfs_build_caches.kache]
