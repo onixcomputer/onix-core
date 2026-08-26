@@ -25,6 +25,7 @@ let
       inherit inputs;
       schema = loadSchema ./buildbot;
     };
+    "bookshelf" = import ./bookshelf (schemaArgs ./bookshelf);
     "tailscale" = import ./tailscale (schemaArgs ./tailscale);
     "tailscale-traefik" = import ./tailscale-traefik (schemaArgs ./tailscale-traefik);
     "iroh-ssh" = import ./iroh-ssh (schemaArgs ./iroh-ssh);

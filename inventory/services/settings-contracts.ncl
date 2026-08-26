@@ -11,6 +11,7 @@ let sc = import "../../lib/schema-contracts.ncl" in
 # --- Module schema imports ---
 let schemas = {
   "buildbot" = import "../../modules/buildbot/schema.ncl",
+  "bookshelf" = import "../../modules/bookshelf/schema.ncl",
   "calibre-server" = import "../../modules/calibre-server/schema.ncl",
   "celld" = import "../../modules/celld/schema.ncl",
   "cloud-hypervisor-vm" = import "../../modules/cloud-hypervisor-vm/schema.ncl",

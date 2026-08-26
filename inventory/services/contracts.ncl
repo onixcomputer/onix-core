@@ -18,6 +18,7 @@ let machine_names = std.record.fields machines_data.machines in
 # --- Module registries ---
 let self_modules = [
   "buildbot",
+  "bookshelf",
   "calibre-server",
   "celld",
   "cloud-hypervisor-vm",

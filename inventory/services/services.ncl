@@ -103,6 +103,11 @@ let radicle_backup_dataset_quota_gib = 256 in
 let radicle_backup_retention_daily = 7 in
 let radicle_backup_retention_weekly = 4 in
 let radicle_backup_schedule = "Sun *-*-* 03:15:00" in
+let bookshelf_address = "100.110.43.11" in
+let bookshelf_port = 39300 in
+let bookshelf_restart_delay_seconds = 5 in
+let bookshelf_source_dir = "/datapool/bookshelf/source" in
+let bookshelf_library_dir = "/datapool/bookshelf/library" in
 let rustfs_api_port = 39000 in
 let rustfs_console_port = 39001 in
 let rustfs_topology_wait_timeout_seconds = 120 in
@@ -208,6 +213,23 @@ in
         aspen1.settings = celld_fleet_settings rustfs_aspen1_address true,
         aspen3.settings = celld_fleet_settings rustfs_aspen3_address false,
         britton-desktop.settings = celld_fleet_settings rustfs_britton_desktop_address false,
+      },
+    },
+
+    # r[impl onix.bookshelf.storage]
+    # r[impl onix.bookshelf.network]
+    "bookshelf-private" = {
+      module = { name = "bookshelf", input = "self" },
+      roles.server.machines.britton-desktop.settings = {
+        sourceDir = bookshelf_source_dir,
+        libraryDir = bookshelf_library_dir,
+        bindAddress = bookshelf_address,
+        port = bookshelf_port,
+        siteUrl = "http://%{bookshelf_address}:%{bookshelf_port}",
+        readOnly = false,
+        openFirewall = true,
+        firewallInterface = "tailscale0",
+        restartDelaySeconds = bookshelf_restart_delay_seconds,
       },
     },
 

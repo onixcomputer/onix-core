@@ -54,6 +54,7 @@ in
     prime-agent = pkgs.callPackage ../pkgs/prime-agent { };
   }
   // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+    bookshelf = pkgs.callPackage ../pkgs/bookshelf { };
     branchfs = pkgs.callPackage ../pkgs/branchfs { };
     celld = pkgs.callPackage ../pkgs/celld { };
     herdr = herdrPackage;

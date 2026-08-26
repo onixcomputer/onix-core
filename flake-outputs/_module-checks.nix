@@ -27,6 +27,8 @@ let
   rustfsTopologyTests = import ../modules/rustfs/topology-tests.nix { inherit lib; };
   celldValidation = wasm.evalNickelFile ../inventory/services/fixtures/celld-validation.ncl;
   celldSettingsTests = import ../modules/celld/settings-tests.nix { inherit lib; };
+  bookshelfValidation = wasm.evalNickelFile ../inventory/services/fixtures/bookshelf-validation.ncl;
+  bookshelfSettingsTests = import ../modules/bookshelf/settings-tests.nix { inherit lib; };
 
   # Modules registered in contracts.ncl (clan perInstance services only)
   registeredModules = lib.sort lib.lessThan moduleLists.selfModules;
@@ -192,6 +194,53 @@ let
   celldDesktopClockProviderValid =
     self.nixosConfigurations.britton-desktop.config.services.chrony.enable
     && !self.nixosConfigurations.britton-desktop.config.services.timesyncd.enable;
+
+  bookshelfPositiveErrors = bookshelfValidation.positive;
+  bookshelfNegativeErrors = bookshelfValidation.negative;
+  expectedBookshelfNegativeFields = [
+    "sourceDir"
+    "libraryDir"
+    "bindAddress"
+    "port"
+    "siteUrl"
+    "readOnly"
+    "openFirewall"
+    "firewallInterface"
+    "restartDelaySeconds"
+  ];
+  missingBookshelfNegativeFields = builtins.filter (
+    field: !(lib.any (error: lib.hasInfix field error) bookshelfNegativeErrors)
+  ) expectedBookshelfNegativeFields;
+  bookshelfSettingsPositiveErrors = bookshelfSettingsTests.positiveErrors;
+  bookshelfSettingsMissingNegativeCases = bookshelfSettingsTests.missingNegativeCases;
+  bookshelfSettingsNegativeErrors = bookshelfSettingsTests.negativeErrors;
+  bookshelfPort = 39300;
+  bookshelfAddress = "100.110.43.11";
+  bookshelfLibraryDirectory = "/datapool/bookshelf/library";
+  bookshelfSourceDirectory = "/datapool/bookshelf/source";
+  bookshelfDesktopConfig = self.nixosConfigurations.britton-desktop.config;
+  bookshelfService = bookshelfDesktopConfig.systemd.services.bookshelf;
+  bookshelfPublishServicePresent = builtins.hasAttr "bookshelf-publish" bookshelfDesktopConfig.systemd.services;
+  bookshelfImportTools = builtins.filter (
+    package: lib.getName package == "bookshelf-import"
+  ) bookshelfDesktopConfig.environment.systemPackages;
+  bookshelfImportToolPresent = builtins.length bookshelfImportTools == 1;
+  bookshelfEnvironmentValid =
+    bookshelfService.environment.BOOKSHELF_PROVIDER == "fs"
+    && bookshelfService.environment.BOOKSHELF_DIRECTORY == bookshelfLibraryDirectory
+    && bookshelfService.environment.HOSTNAME == bookshelfAddress
+    && bookshelfService.environment.PORT == toString bookshelfPort;
+  bookshelfSandboxValid =
+    bookshelfService.serviceConfig.User == "bookshelf"
+    && bookshelfService.serviceConfig.Group == "bookshelf"
+    && bookshelfService.serviceConfig.ProtectSystem == "strict"
+    && builtins.elem bookshelfLibraryDirectory bookshelfService.serviceConfig.ReadWritePaths;
+  bookshelfTailnetFirewallValid =
+    builtins.elem bookshelfPort bookshelfDesktopConfig.networking.firewall.interfaces.tailscale0.allowedTCPPorts
+    && !(builtins.elem bookshelfPort bookshelfDesktopConfig.networking.firewall.allowedTCPPorts);
+  bookshelfPrivateDirectoriesValid =
+    builtins.elem "d ${bookshelfSourceDirectory} 0700 bookshelf bookshelf -" bookshelfDesktopConfig.systemd.tmpfiles.rules
+    && builtins.elem "d ${bookshelfLibraryDirectory} 0700 bookshelf bookshelf -" bookshelfDesktopConfig.systemd.tmpfiles.rules;
 in
 {
   checks = {
@@ -373,6 +422,78 @@ in
       ${lib.optionalString (!celldDesktopClockProviderValid) ''
         echo "Celld requires Chrony on the NetworkManager-managed desktop"
         exit 1
+      ''}
+      touch $out
+    '';
+
+    # r[verify onix.bookshelf.package]
+    bookshelf-package = pkgs.runCommand "bookshelf-package" { } ''
+      test -x ${lib.escapeShellArg "${self.packages.${pkgs.stdenv.hostPlatform.system}.bookshelf}/bin/bookshelf-server"}
+      test -x ${lib.escapeShellArg "${self.packages.${pkgs.stdenv.hostPlatform.system}.bookshelf}/bin/bookshelf-sync"}
+      test -f ${lib.escapeShellArg "${self.packages.${pkgs.stdenv.hostPlatform.system}.bookshelf}/share/doc/bookshelf/LICENSE"}
+      touch $out
+    '';
+
+    # r[verify onix.bookshelf.verification]
+    bookshelf-settings = pkgs.runCommand "bookshelf-settings" { } ''
+      ${lib.optionalString (bookshelfPositiveErrors != [ ]) ''
+        echo "Valid Bookshelf settings produced unexpected type errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" bookshelfPositiveErrors)}
+        exit 1
+      ''}
+      ${lib.optionalString (missingBookshelfNegativeFields != [ ]) ''
+        echo "Invalid Bookshelf settings did not report expected fields:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" missingBookshelfNegativeFields)}
+        exit 1
+      ''}
+      ${lib.optionalString (bookshelfSettingsPositiveErrors != [ ]) ''
+        echo "Valid Bookshelf settings produced semantic errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" bookshelfSettingsPositiveErrors)}
+        exit 1
+      ''}
+      ${lib.optionalString (bookshelfSettingsMissingNegativeCases != [ ]) ''
+        echo "Invalid Bookshelf settings did not report expected semantic errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" bookshelfSettingsMissingNegativeCases)}
+        echo "Actual errors:"
+        printf '%s\n' ${lib.escapeShellArg (builtins.toJSON bookshelfSettingsNegativeErrors)}
+        exit 1
+      ''}
+      touch $out
+    '';
+
+    # r[verify onix.bookshelf.storage]
+    # r[verify onix.bookshelf.network]
+    # r[verify onix.bookshelf.runtime]
+    bookshelf-generated = pkgs.runCommand "bookshelf-generated" { } ''
+      ${lib.optionalString (!bookshelfEnvironmentValid) ''
+        echo "Bookshelf does not use the reviewed filesystem and Tailnet listener environment"
+        exit 1
+      ''}
+      ${lib.optionalString (!bookshelfSandboxValid) ''
+        echo "Bookshelf lost its dedicated account or strict writable-path sandbox"
+        exit 1
+      ''}
+      ${lib.optionalString (!bookshelfTailnetFirewallValid) ''
+        echo "Bookshelf port is not restricted to tailscale0"
+        exit 1
+      ''}
+      ${lib.optionalString (!bookshelfPrivateDirectoriesValid) ''
+        echo "Bookshelf private datapool directories lost their owner or mode"
+        exit 1
+      ''}
+      ${lib.optionalString (!bookshelfPublishServicePresent) ''
+        echo "Bookshelf operator publishing service is missing"
+        exit 1
+      ''}
+      ${lib.optionalString (!bookshelfImportToolPresent) ''
+        echo "Bookshelf operator import command is missing or duplicated"
+        exit 1
+      ''}
+      ${lib.optionalString bookshelfImportToolPresent ''
+        if ${lib.getExe (builtins.head bookshelfImportTools)} >/dev/null 2>&1; then
+          echo "Bookshelf import command accepted missing input"
+          exit 1
+        fi
       ''}
       touch $out
     '';
