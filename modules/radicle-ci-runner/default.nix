@@ -104,6 +104,13 @@ in
                 web.pinned.repositories = [ ];
               }
             );
+            runnerRuntimeStorePaths = [
+              runnerConfig
+              runnerPackage
+              pkgs.glibc
+              pkgs.stdenv.cc.cc.libgcc
+            ];
+            runnerRuntimeBindings = map (path: "${path}:${path}") runnerRuntimeStorePaths;
             isolatedNixConfig = pkgs.writeTextDir "nix.conf" ''
               experimental-features = nix-command flakes
               accept-flake-config = false
@@ -608,12 +615,11 @@ in
                   unitConfig.OnSuccess = [ "radicle-ci-publisher.service" ];
                   serviceConfig = offlineHardening // {
                     BindPaths = [ "${localStoreRoot}/nix/store:/nix/store" ];
-                    BindReadOnlyPaths = [ "${pkgs.bashInteractive}/bin/sh:/bin/sh" ];
+                    BindReadOnlyPaths = [ "${pkgs.bashInteractive}/bin/sh:/bin/sh" ] ++ runnerRuntimeBindings;
                     CPUQuota = "${toString settings.cpuQuotaPercent}%";
                     ExecStart = "${runnerPackage}/bin/radicle-ci-runner run-next ${runnerConfig}";
                     Group = runnerUser;
                     MemoryMax = settings.memoryMaxBytes;
-                    ReadOnlyPaths = [ runnerConfig ];
                     ReadWritePaths = [
                       exchangeState
                       runnerState
@@ -653,11 +659,11 @@ in
                   description = "Probe deployed timeout and output-flood enforcement";
                   serviceConfig = offlineHardening // {
                     BindPaths = [ "${localStoreRoot}/nix/store:/nix/store" ];
+                    BindReadOnlyPaths = runnerRuntimeBindings;
                     CPUQuota = "${toString settings.cpuQuotaPercent}%";
                     ExecStart = "${runnerPackage}/bin/radicle-ci-runner probe-bounds ${runnerConfig}";
                     Group = runnerUser;
                     MemoryMax = settings.memoryMaxBytes;
-                    ReadOnlyPaths = [ runnerConfig ];
                     TasksMax = runnerTasksMax;
                     Type = "oneshot";
                     UMask = privateUmask;

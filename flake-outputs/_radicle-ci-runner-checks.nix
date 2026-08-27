@@ -55,9 +55,20 @@ let
   runnerCommand = runnerService.serviceConfig.ExecStart;
   publisherCommand = publisherService.serviceConfig.ExecStart;
   runnerConfigPath = lib.last (lib.splitString " " runnerCommand);
+  runnerExecutablePath = builtins.head (lib.splitString " " runnerCommand);
+  runnerPackagePath = builtins.dirOf (builtins.dirOf runnerExecutablePath);
   runnerReadOnly = lib.toList (runnerService.serviceConfig.ReadOnlyPaths or [ ]);
   runnerBindPaths = lib.toList (runnerService.serviceConfig.BindPaths or [ ]);
   runnerBindReadOnlyPaths = lib.toList (runnerService.serviceConfig.BindReadOnlyPaths or [ ]);
+  runnerRuntimeBindingSources = map (
+    binding: builtins.head (lib.splitString ":" binding)
+  ) runnerBindReadOnlyPaths;
+  boundsProbeBindReadOnlyPaths = lib.toList (
+    boundsProbeService.serviceConfig.BindReadOnlyPaths or [ ]
+  );
+  boundsProbeRuntimeBindingSources = map (
+    binding: builtins.head (lib.splitString ":" binding)
+  ) boundsProbeBindReadOnlyPaths;
   runnerTemporaryFileSystems = lib.toList (runnerService.serviceConfig.TemporaryFileSystem or [ ]);
   runnerReadWrite = lib.toList (runnerService.serviceConfig.ReadWritePaths or [ ]);
   runnerInaccessible = lib.toList (runnerService.serviceConfig.InaccessiblePaths or [ ]);
@@ -226,6 +237,12 @@ let
     && builtins.elem runnerState runnerReadWrite
     && builtins.elem "${runnerState}/local-store/nix/store:/nix/store" runnerBindPaths
     && builtins.any (path: lib.hasSuffix "/bin/sh:/bin/sh" path) runnerBindReadOnlyPaths
+    && builtins.elem runnerConfigPath runnerRuntimeBindingSources
+    && builtins.elem runnerPackagePath runnerRuntimeBindingSources
+    && builtins.elem runnerConfigPath boundsProbeRuntimeBindingSources
+    && builtins.elem runnerPackagePath boundsProbeRuntimeBindingSources
+    && !(builtins.elem "/nix/store" runnerRuntimeBindingSources)
+    && !(builtins.elem "/nix/store" boundsProbeRuntimeBindingSources)
     && builtins.elem "/bin:ro" runnerTemporaryFileSystems
     && !(builtins.elem "/nix/store" runnerReadOnly)
     && nodeService.serviceConfig.IPAddressDeny == "any"
