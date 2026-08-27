@@ -405,6 +405,7 @@ in
 
             systemd.services.niks3-metadata-backup-upload = lib.mkIf settings.metadataBackupEnabled {
               description = "Upload a BLAKE3-bound niks3 metadata backup";
+              path = [ pkgs.getent ];
               after = [
                 "network-online.target"
                 "niks3-metadata-backup-provision.service"
@@ -421,8 +422,8 @@ in
                 ProtectHome = true;
                 ProtectSystem = "strict";
                 ReadOnlyPaths = [ metadataBackupDump ];
-                CapabilityBoundingSet = "";
-                AmbientCapabilities = "";
+                CapabilityBoundingSet = [ "CAP_DAC_READ_SEARCH" ];
+                AmbientCapabilities = [ "CAP_DAC_READ_SEARCH" ];
                 LockPersonality = true;
                 RestrictAddressFamilies = [
                   "AF_UNIX"

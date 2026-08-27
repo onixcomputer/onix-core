@@ -294,6 +294,7 @@ in
             # r[impl onix.rustfs_build_caches.recovery.backup]
             systemd.services."rustfs-authority-backup-${instanceName}" = {
               description = "Back up authoritative RustFS buckets";
+              path = [ pkgs.getent ];
               after = [
                 "network-online.target"
                 "tailscaled.service"
@@ -336,6 +337,7 @@ in
             # r[impl onix.rustfs_build_caches.recovery.restore]
             systemd.services."rustfs-authority-restore-probe-${instanceName}" = {
               description = "Verify one bounded RustFS object restore";
+              path = [ pkgs.getent ];
               after = [
                 "network-online.target"
                 "tailscaled.service"
