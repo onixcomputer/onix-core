@@ -59,7 +59,7 @@ in
             // topology.distributedEnvironment;
           in
           {
-            assertions = topology.assertions;
+            inherit (topology) assertions;
 
             clan.core.vars.generators.${generatorName} = {
               # r[impl onix.rustfs_cluster.credentials]

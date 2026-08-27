@@ -50,7 +50,7 @@ in
             minioClient = lib.getExe pkgs.minio-client;
             bucketPolicy = pkgs.writeText "${policyName}-policy.json" (
               policyLib.render {
-                bucketName = settings.bucketName;
+                inherit (settings) bucketName;
                 allowDelete = true;
                 allowMultipart = true;
               }
