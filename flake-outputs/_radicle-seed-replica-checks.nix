@@ -48,10 +48,12 @@ let
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   privateSeaglassRepository = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
   privateHardenedWasmtimeRepository = "rad:z3hRCegTsS8jpJVgxYfb9psEzxHpG";
+  privateVmCohortRepository = "rad:z2QJLUqyAZnnHPiZQ1BFjLsX9ush3";
   privateRepositories = [
     privatePilotRepository
     privateSeaglassRepository
     privateHardenedWasmtimeRepository
+    privateVmCohortRepository
   ];
   expectedCommit = "29dac88ecded94457572db3fdfaaaab95fa91525";
   absentObject = "1111111111111111111111111111111111111111";

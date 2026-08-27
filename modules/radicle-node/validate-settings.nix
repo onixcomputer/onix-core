@@ -42,10 +42,12 @@ let
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   privateSeaglassRepository = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
   privateHardenedWasmtimeRepository = "rad:z3hRCegTsS8jpJVgxYfb9psEzxHpG";
+  privateVmCohortRepository = "rad:z2QJLUqyAZnnHPiZQ1BFjLsX9ush3";
   governedPrivateRepositories = [
     privatePilotRepository
     privateSeaglassRepository
     privateHardenedWasmtimeRepository
+    privateVmCohortRepository
   ];
   canonicalRepositoryIdPattern = "rad:z[1-9A-HJ-NP-Za-km-z]+";
 

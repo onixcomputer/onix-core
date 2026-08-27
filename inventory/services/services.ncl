@@ -67,6 +67,7 @@ let koiterminal_rid = "rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ" in
 let radicle_private_pilot_rid = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg" in
 let radicle_seaglass_rid = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk" in
 let radicle_hardened_wasmtime_rid = "rad:z3hRCegTsS8jpJVgxYfb9psEzxHpG" in
+let radicle_vm_cohort_rid = "rad:z2QJLUqyAZnnHPiZQ1BFjLsX9ush3" in
 let radicle_source_rids = [
   radicle_pilot_rid,
   artifact_auth_rid,
@@ -80,6 +81,7 @@ let radicle_private_source_rids = [
   radicle_private_pilot_rid,
   radicle_seaglass_rid,
   radicle_hardened_wasmtime_rid,
+  radicle_vm_cohort_rid,
 ]
 in
 let radicle_production_seed_node_id = "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8" in
