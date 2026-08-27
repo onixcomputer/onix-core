@@ -563,6 +563,7 @@ in
             port = 9100,
             enabledCollectors = [
               "systemd",
+              "textfile",
               "processes",
               "mountstats",
               "meminfo",

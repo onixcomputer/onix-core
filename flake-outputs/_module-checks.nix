@@ -649,6 +649,7 @@ let
     in
     !(builtins.hasAttr "niks3-queue-metrics" machineConfig.systemd.services)
     || !(builtins.hasAttr "niks3-queue-metrics" machineConfig.systemd.timers)
+    || !(builtins.elem "textfile" machineConfig.services.prometheus.exporters.node.enabledCollectors)
     || !(builtins.elem "--collector.textfile.directory=/var/lib/prometheus-node-exporter-text-files" machineConfig.services.prometheus.exporters.node.extraFlags)
   ) niks3Machines;
   storageMonitoringConfig = self.nixosConfigurations.britton-desktop.config;
