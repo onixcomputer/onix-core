@@ -4,20 +4,24 @@ The fleet uses separate RustFS buckets for interactive Rust artifacts and Nix st
 
 | Cache | Runtime host | Endpoint | RustFS bucket |
 |---|---|---|---|
-| Kache | `britton-desktop` | direct S3 through the local daemon | `onix-kache` |
+| Kache | `aspen1`, `aspen3`, `britton-desktop` | local daemon through each node's RustFS endpoint | `onix-kache` |
 | niks3 | `aspen1` | `http://100.100.103.95:39400` | `onix-niks3` |
 
 Both RustFS endpoints use Tailnet HTTP because Tailscale encrypts host traffic. The runtime principals have bucket-scoped policies. They do not have RustFS administrator authority.
 
 ## Kache
 
-The Cargo wrapper keeps its local store at `/var/cache/kache-nix/user-brittonr`. The `kache-rustfs.service` daemon handles remote checks and uploads with a Clan secret. Home Manager does not start a second daemon.
+All three nodes install the managed Cargo wrapper and run `kache-rustfs.service`. Aspen1 and the desktop use `/var/cache/kache-nix/user-brittonr`. Aspen3 uses `/mnt/usb4-nvme/kache-nix/user-brittonr` to protect its root disk.
+
+Each daemon uses its node-local RustFS endpoint. All daemons share the bucket-scoped Kache credential and `onix-kache` namespace. Only the desktop provisions the bucket and policy. Home Manager does not start a second daemon.
+
+The long-lived daemons disable speculative prefetch. Exact remote hits and background uploads remain active without repeated whole-bucket listings.
 
 Inspect the service:
 
 ```console
 systemctl status kache-rustfs.service
-kache stats
+KACHE_CONFIG=/etc/kache-rustfs/config.toml kache stats
 ```
 
 Run an explicit synchronization:
@@ -27,6 +31,8 @@ kache-rustfs-sync --dry-run
 kache-rustfs-sync --push
 kache-rustfs-sync --pull
 ```
+
+The managed Cargo profile reads `/etc/kache-rustfs/config.toml`, which contains no credential. The system daemon alone reads the Clan secret.
 
 The Nix-owned Kache wrapper remains local-only. Nix build sandboxes do not receive the RustFS credentials or direct remote authority.
 
@@ -54,4 +60,4 @@ Harmonia remains deployed during this trial. It provides the existing Aspen1 sto
 
 ## Rollback
 
-Remove or disable `kache-remote` and `nix-cache` in `inventory/services/services.ncl`, then deploy the affected machines. This stops new remote cache use without deleting either RustFS bucket. Keep the buckets until restore and retention tests finish.
+Remove or disable `kache-remote` and `nix-cache` in `inventory/services/services.ncl`. Remove `hm-kache-fleet` from `inventory/core/users.ncl`, then deploy the affected machines. This stops new remote cache use without deleting either RustFS bucket. Keep the buckets until restore and retention tests finish.

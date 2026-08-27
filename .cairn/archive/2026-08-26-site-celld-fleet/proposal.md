@@ -14,5 +14,5 @@ The current Celld module also gives every instance the same systemd units, Unix 
 
 ## Impact
 
-- **Files**: `modules/celld/`, `inventory/services/`, `flake-outputs/_module-checks.nix`, `docs/`, `cairn/changes/site-celld-fleet/`, and `cairn/specs/site-celld-fleet/` after synchronization.
+- **Files**: `modules/celld/`, `inventory/services/`, `flake-outputs/_module-checks.nix`, `docs/`, `.cairn/changes/site-celld-fleet/`, and `.cairn/specs/site-celld-fleet/` after synchronization.
 - **Testing**: Nickel validation, semantic settings tests, generated NixOS topology checks, affected machine builds, bucket authority probes, Celld health checks, and a Site asset deployment through both healthy nodes.

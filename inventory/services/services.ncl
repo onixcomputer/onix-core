@@ -171,6 +171,7 @@ let celld_fleet_settings = fun bind_address provision_storage =>
 in
 let site_celld_public_port = 32110 in
 let site_celld_internal_port = 32111 in
+let site_celld_backend_port = 32112 in
 let site_celld_bucket_name = "onix-site-celld" in
 let site_celld_access_key_id = "celld-site" in
 let site_celld_state_dir = "/var/lib/celld-site" in
@@ -188,7 +189,7 @@ let site_celld_fleet_settings = fun bind_address provision_storage =>
     publicPort = site_celld_public_port,
     internalPort = site_celld_internal_port,
     stripTrailingSlashProxy = true,
-    backendPort = 32112,
+    backendPort = site_celld_backend_port,
     openFirewall = true,
     firewallInterface = "tailscale0",
     provisionStorage = provision_storage,
@@ -199,19 +200,25 @@ let site_celld_fleet_settings = fun bind_address provision_storage =>
     shutdownDrainMilliseconds = celld_shutdown_drain_milliseconds,
   }
 in
-let kache_remote_settings = {
-  cacheDir = "/var/cache/kache-nix/user-brittonr",
-  cacheMaxSize = "32GiB",
-  serviceUser = "brittonr",
-  storageEndpoint = "http://%{rustfs_britton_desktop_address}:%{rustfs_api_port}",
-  bucketName = "onix-kache",
-  region = "us-east-1",
-  prefix = "artifacts",
-  accessKeyId = "kache-remote",
-  provisionStorage = true,
-  rustfsAdminGenerator = "rustfs-rustfs-cluster",
-  restartDelaySeconds = 5,
-}
+let kache_cache_max_size = "32GiB" in
+let kache_aspen1_cache_dir = "/var/cache/kache-nix/user-brittonr" in
+let kache_aspen3_cache_dir = "/mnt/usb4-nvme/kache-nix/user-brittonr" in
+let kache_britton_desktop_cache_dir = "/var/cache/kache-nix/user-brittonr" in
+let kache_restart_delay_seconds = 5 in
+let kache_remote_settings = fun bind_address cache_dir provision_storage =>
+  {
+    cacheDir = cache_dir,
+    cacheMaxSize = kache_cache_max_size,
+    serviceUser = "brittonr",
+    storageEndpoint = "http://%{bind_address}:%{rustfs_api_port}",
+    bucketName = "onix-kache",
+    region = "us-east-1",
+    prefix = "artifacts",
+    accessKeyId = "kache-remote",
+    provisionStorage = provision_storage,
+    rustfsAdminGenerator = "rustfs-rustfs-cluster",
+    restartDelaySeconds = kache_restart_delay_seconds,
+  }
 in
 let niks3_port = 39400 in
 let niks3_server_url = "http://%{rustfs_aspen1_address}:%{niks3_port}" in
@@ -232,11 +239,14 @@ let niks3_server_settings = {
   maxNarSize = "8G",
 }
 in
+let niks3_upload_batch_size = 50 in
+let niks3_upload_idle_exit_timeout_seconds = 0 in
+let niks3_max_concurrent_uploads = 1 in
 let niks3_uploader_settings = {
   serverUrl = niks3_server_url,
-  batchSize = 50,
-  idleExitTimeoutSeconds = 0,
-  maxConcurrentUploads = 8,
+  batchSize = niks3_upload_batch_size,
+  idleExitTimeoutSeconds = niks3_upload_idle_exit_timeout_seconds,
+  maxConcurrentUploads = niks3_max_concurrent_uploads,
   verifyS3Integrity = true,
 }
 in
@@ -301,7 +311,11 @@ in
     # r[impl onix.rustfs_build_caches.kache]
     "kache-remote" = {
       module = { name = "kache-rustfs", input = "self" },
-      roles.client.machines.britton-desktop.settings = kache_remote_settings,
+      roles.client.machines = {
+        aspen1.settings = kache_remote_settings rustfs_aspen1_address kache_aspen1_cache_dir false,
+        aspen3.settings = kache_remote_settings rustfs_aspen3_address kache_aspen3_cache_dir false,
+        britton-desktop.settings = kache_remote_settings rustfs_britton_desktop_address kache_britton_desktop_cache_dir true,
+      },
     },
 
     # r[impl onix.rustfs_build_caches.niks3]

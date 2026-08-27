@@ -68,7 +68,7 @@ in
     type = "s3";
     bucket = settings.bucketName;
     endpoint = settings.storageEndpoint;
-    region = settings.region;
-    prefix = settings.prefix;
+    inherit (settings) region;
+    inherit (settings) prefix;
   };
 }

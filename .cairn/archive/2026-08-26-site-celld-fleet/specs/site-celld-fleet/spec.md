@@ -1,9 +1,3 @@
-# Site Celld Fleet Specification Delta
-
-## Purpose
-
-Adds the dedicated private Celld fleet that serves Site assets from RustFS.
-
 ## ADDED Requirements
 
 ### Requirement: Celld instances have separate runtime authority

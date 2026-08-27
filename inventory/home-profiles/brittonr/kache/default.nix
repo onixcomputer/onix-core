@@ -1,6 +1,7 @@
-# Desktop-local kache pilot profile.
+# Fleet Kache Cargo profile.
 #
-# Keep typed data in ./lib/ so root-level .nix files stay real HM modules.
+# The machine-level Clan service owns cache policy, the daemon, and credentials.
+# This profile owns only Cargo integration and the unprivileged client wrapper.
 {
   inputs,
   lib,
@@ -20,21 +21,7 @@ let
     targetDir
     termQuiet
     ;
-  inherit (profileData.kache)
-    cacheBudgetGiB
-    cacheDir
-    daemonIdleTimeoutSecs
-    daemonLogFilter
-    daemonRestartDelay
-    daemonService
-    localOnly
-    storageEndpoint
-    bucketName
-    region
-    prefix
-    ;
-
-  localCacheSize = "${toString cacheBudgetGiB}GiB";
+  inherit (profileData.kache) configPath;
 
   cargoRustcWrapperBinaryName = "cargo-rustc-kache-wrapper";
   rustcWrapperMissingArgumentMessage = "cargo-rustc-kache-wrapper: expected rustc path as first argument";
@@ -43,29 +30,13 @@ let
 
   tomlFormat = pkgs.formats.toml { };
 
-  kacheConfig = {
-    cache = {
-      local_store = cacheDir;
-      local_max_size = localCacheSize;
-      local_only = localOnly;
-      daemon_idle_timeout_secs = daemonIdleTimeoutSecs;
-      remote = {
-        type = "s3";
-        bucket = bucketName;
-        endpoint = storageEndpoint;
-        inherit region prefix;
-      };
-    };
-  };
-
-  kacheConfigFile = tomlFormat.generate "kache-config.toml" kacheConfig;
-
   cargoRustcWrapper = pkgs.writeShellApplication {
     name = cargoRustcWrapperBinaryName;
     runtimeInputs = [
       kachePackage
       pkgs.coreutils
       pkgs.mold
+      pkgs.stdenv.cc
     ];
     text = ''
       if [ "$#" -lt 1 ]; then
@@ -115,8 +86,8 @@ let
 
       # Cargo chains build.rustc-wrapper before RUSTC_WORKSPACE_WRAPPER as:
       #   rustc-wrapper workspace-wrapper rustc ...
-      # kache 0.6.0 only enters wrapper mode for rustc-shaped argv, so pass
-      # workspace-wrapper chains through before invoking kache.
+      # Kache only enters wrapper mode for rustc-shaped argv, so pass
+      # workspace-wrapper chains through before invoking Kache.
       if is_cargo_workspace_wrapper_chain; then
         exec "$real_rustc" "$@"
       fi
@@ -130,9 +101,7 @@ let
         export KACHE_KEY_SALT="$toolchain_salt"
       fi
 
-      export KACHE_CONFIG=${lib.escapeShellArg kacheConfigFile}
-      export KACHE_CACHE_DIR=${lib.escapeShellArg cacheDir}
-      export KACHE_LOCAL_ONLY=${if localOnly then "1" else "0"}
+      export KACHE_CONFIG=${lib.escapeShellArg configPath}
 
       exec kache "$real_rustc" "$@"
     '';
@@ -190,35 +159,12 @@ in
     packages = [
       kachePackage
       pkgs.mold
+      pkgs.stdenv.cc
     ];
     file.".cargo/config.toml".source = cargoConfigFile;
+    sessionVariables.KACHE_CONFIG = configPath;
     activation.backupCargoConfigBeforeTakeover = lib.hm.dag.entryBefore [
       "checkLinkTargets"
     ] backupCargoConfigScript;
   };
-
-  systemd.user.services.kache = lib.mkIf daemonService {
-    Unit = {
-      Description = "kache build cache daemon";
-      After = [ "default.target" ];
-    };
-
-    Service = {
-      Type = "simple";
-      ExecStart = "${lib.getExe kachePackage} daemon run";
-      Restart = "on-failure";
-      RestartSec = daemonRestartDelay;
-      Environment = [
-        "KACHE_CACHE_DIR=${cacheDir}"
-        "KACHE_CONFIG=${kacheConfigFile}"
-        "KACHE_DAEMON_IDLE_TIMEOUT=${toString daemonIdleTimeoutSecs}"
-        "KACHE_LOCAL_ONLY=${if localOnly then "1" else "0"}"
-        "KACHE_LOG=${daemonLogFilter}"
-      ];
-    };
-
-    Install.WantedBy = [ "default.target" ];
-  };
-
-  xdg.configFile."kache/config.toml".source = kacheConfigFile;
 }

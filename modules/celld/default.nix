@@ -40,7 +40,7 @@ in
               config.clan.core.vars.generators.${credentialGeneratorName}.files."aws-env".path;
             rustfsAdminEnvironmentFile =
               config.clan.core.vars.generators.${settings.rustfsAdminGenerator}.files."env-file".path;
-            runtimeName = settings.runtimeName;
+            inherit (settings) runtimeName;
             provisionServiceName = "${runtimeName}-storage-provision";
             celldUser = runtimeName;
             celldGroup = runtimeName;
@@ -157,7 +157,7 @@ in
             '';
           in
           {
-            assertions = evaluated.assertions;
+            inherit (evaluated) assertions;
 
             # r[impl onix.celld_rustfs.storage]
             # r[impl onix.site_celld_fleet.credentials]

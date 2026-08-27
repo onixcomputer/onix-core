@@ -63,7 +63,7 @@ in
             minioClient = lib.getExe pkgs.minio-client;
             bucketPolicy = pkgs.writeText "${policyName}-policy.json" (
               policyLib.render {
-                bucketName = settings.bucketName;
+                inherit (settings) bucketName;
                 allowDelete = true;
                 allowMultipart = true;
               }
@@ -176,21 +176,21 @@ in
               package = niks3Package;
               serverPackage = niks3ServerPackage;
               httpAddr = "${settings.bindAddress}:${toString settings.port}";
-              apiTokenFile = apiTokenFile;
+              inherit apiTokenFile;
               signKeyFiles = [ signingKeyFile ];
               cacheUrl = serverUrl;
-              serverUrl = serverUrl;
-              maxNarSize = settings.maxNarSize;
+              inherit serverUrl;
+              inherit (settings) maxNarSize;
               readProxy.enable = true;
               database.createLocally = true;
               s3 = {
                 endpoint = storageAuthority;
                 bucket = settings.bucketName;
-                region = settings.region;
+                inherit (settings) region;
                 useSSL = lib.hasPrefix "https://" settings.storageEndpoint;
                 bucketLookup = "path";
-                accessKeyFile = accessKeyFile;
-                secretKeyFile = secretKeyFile;
+                inherit accessKeyFile;
+                inherit secretKeyFile;
               };
               gc = {
                 enable = true;
@@ -279,7 +279,7 @@ in
           in
           {
             imports = [ inputs.niks3.nixosModules.niks3-auto-upload ];
-            assertions = evaluated.assertions;
+            inherit (evaluated) assertions;
 
             clan.core.vars.generators.${apiGeneratorName} = {
               share = true;
@@ -306,12 +306,12 @@ in
             services.niks3-auto-upload = {
               enable = true;
               package = hookPackage;
-              serverUrl = settings.serverUrl;
+              inherit (settings) serverUrl;
               authTokenFile = apiTokenFile;
-              batchSize = settings.batchSize;
+              inherit (settings) batchSize;
               idleExitTimeout = settings.idleExitTimeoutSeconds;
-              maxConcurrentUploads = settings.maxConcurrentUploads;
-              verifyS3Integrity = settings.verifyS3Integrity;
+              inherit (settings) maxConcurrentUploads;
+              inherit (settings) verifyS3Integrity;
             };
           };
       };
