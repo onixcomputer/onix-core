@@ -55,7 +55,7 @@ r[onix.rustfs_build_caches.kache.unavailable]
 - AND cache failure MUST NOT convert a valid compiler result into corrupted output
 
 ### Requirement: Private niks3 service
-r[onix.rustfs_build_caches.niks3] The system MUST run pinned niks3 with PostgreSQL metadata, a RustFS data bucket, a dedicated signing key, and a Tailnet-only read and upload endpoint.
+r[onix.rustfs_build_caches.niks3] The system MUST run pinned niks3 with PostgreSQL metadata, a dedicated signing key, and a Tailnet-only endpoint. niks3 object data MUST use a cache-only RustFS process that does not serve Celld buckets.
 
 #### Scenario: Read a signed store path
 r[onix.rustfs_build_caches.niks3.read]
@@ -63,36 +63,38 @@ r[onix.rustfs_build_caches.niks3.read]
 - WHEN another trusted Tailnet node requests the path from the read proxy
 - THEN Nix verifies its signature and copies the path
 
-#### Scenario: Reject anonymous writes
-r[onix.rustfs_build_caches.niks3.reject_write]
-- GIVEN a client has no API token
-- WHEN it requests an upload
-- THEN niks3 rejects the request
-- AND RustFS state is unchanged
+#### Scenario: Isolate cache object traffic
+r[onix.rustfs_build_caches.niks3.isolation]
+- GIVEN Celld uses the distributed RustFS cluster
+- WHEN niks3 uploads or reads a cache object
+- THEN the object operation uses a distinct RustFS process, port, data directory, and credential set
+- AND the cache process has no Celld bucket authority
 
-### Requirement: Fleet auto-upload
-r[onix.rustfs_build_caches.uploaders] The three RustFS nodes MUST run crash-safe niks3 auto-upload daemons with only the shared API token and a bounded single-upload worker per node.
+### Requirement: Fleet upload maintenance
+r[onix.rustfs_build_caches.uploaders] The three build nodes MUST retain durable niks3 queues, but automatic post-build activation MUST remain disabled until continuous coordination availability is proven.
 
-#### Scenario: Queue completed builds
-r[onix.rustfs_build_caches.uploaders.queue]
-- GIVEN Nix completes a build on a configured node
-- WHEN the post-build hook emits its store paths
-- THEN the local uploader queues and sends them to niks3
-- AND each node uploads no more than one path at a time
+#### Scenario: Complete a normal Nix build
+r[onix.rustfs_build_caches.uploaders.disabled]
+- GIVEN no upload maintenance window is active
+- WHEN Nix completes a build
+- THEN the build succeeds without starting a niks3 uploader
+- AND existing durable queue rows remain unchanged
 
-#### Scenario: Server is unavailable
-r[onix.rustfs_build_caches.uploaders.unavailable]
-- GIVEN niks3 is temporarily unavailable
-- WHEN a Nix build completes
-- THEN the build result remains valid
-- AND the uploader retains or retries queued work without blocking normal substitution
+#### Scenario: Admit a manual queue drain
+r[onix.rustfs_build_caches.uploaders.maintenance]
+- GIVEN an operator selects one node for maintenance
+- AND the maintenance marker exists
+- AND every configured guard endpoint is healthy
+- WHEN the operator starts the uploader socket and service
+- THEN at most one upload request runs at a time
+- AND the durable queue makes bounded progress
 
-#### Scenario: A large backlog makes bounded progress
-r[onix.rustfs_build_caches.uploaders.backlog]
-- GIVEN one or more nodes have durable queued paths
-- WHEN one node's upload worker runs
-- THEN queue depth decreases without deleting pending live entries
-- AND runtime evidence records any coordinator self-fence and its recovery after upload pressure stops
+#### Scenario: Reject unsafe drain admission
+r[onix.rustfs_build_caches.uploaders.reject]
+- GIVEN the maintenance marker is absent or one guard endpoint is unhealthy
+- WHEN the uploader service starts
+- THEN systemd rejects the start before queue work begins
+- AND no durable queue row is deleted
 
 ### Requirement: Verification coverage
 r[onix.rustfs_build_caches.verification] The system MUST include typed positive and negative fixtures, pure settings tests, generated configuration checks, complete machine builds, and bounded runtime evidence.
@@ -103,3 +105,36 @@ r[onix.rustfs_build_caches.verification.generated]
 - WHEN focused checks inspect them
 - THEN cache ports are absent from global firewall ports
 - AND runtime users, credentials, signing trust, upload hooks, and bucket settings match the reviewed contract
+
+### Requirement: Storage and coordination monitoring
+r[onix.rustfs_build_caches.monitoring] The system MUST expose queue depth and MUST probe RustFS, Celld, and niks3 availability and latency through Prometheus.
+
+#### Scenario: Backlog or service degradation occurs
+r[onix.rustfs_build_caches.monitoring.alert]
+- GIVEN an uploader queue remains deep or a health endpoint becomes slow or unavailable
+- WHEN Prometheus evaluates the configured rules
+- THEN a bounded warning or critical alert becomes active
+- AND the alert identifies the affected node or endpoint
+
+### Requirement: Authoritative backup and restore
+r[onix.rustfs_build_caches.recovery] The system MUST back up Celld object buckets and niks3 PostgreSQL metadata to storage on `britton-desktop`.
+
+#### Scenario: Scheduled backups complete
+r[onix.rustfs_build_caches.recovery.backup]
+- GIVEN the source services are healthy
+- WHEN scheduled backup units run
+- THEN Celld bucket objects and a consistent niks3 database dump reach the configured desktop backup root
+- AND disposable Kache and niks3 cache objects are excluded
+
+#### Scenario: Restore probes run
+r[onix.rustfs_build_caches.recovery.restore]
+- GIVEN a completed object snapshot and PostgreSQL dump
+- WHEN bounded restore probes run in isolated targets
+- THEN restored bytes match their source digest
+- AND the restored database exposes the expected niks3 schema
+
+#### Scenario: Backup input is missing
+r[onix.rustfs_build_caches.recovery.reject]
+- GIVEN no completed snapshot or database dump exists
+- WHEN a restore probe starts
+- THEN it fails without changing production buckets or the production database

@@ -12,5 +12,5 @@
 ## Phase 3: Validation and rollout
 
 - [x] [serial] Run positive and negative settings checks, generated checks, and complete builds for all three nodes. r[onix.rustfs_cluster.instances]
-- [ ] [serial] Deploy one verified closure per host and prove isolation, rejected unsafe drains, backup, restore, and service health. r[onix.rustfs_build_caches.niks3.isolation]
-- [ ] [serial] Sync accepted specifications, archive the change, integrate the verified branch, and record explicit non-claims. r[onix.rustfs_build_caches.recovery]
+- [x] [serial] Deploy one verified closure per host and prove isolation, rejected unsafe drains, backup, restore, and service health. r[onix.rustfs_build_caches.niks3.isolation]
+- [x] [serial] Sync accepted specifications, archive the change, integrate the verified branch, and record explicit non-claims. r[onix.rustfs_build_caches.recovery]
