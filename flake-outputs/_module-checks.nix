@@ -775,6 +775,8 @@ in
         echo "RustFS authority backup or restore units drifted"
         exit 1
       ''}
+      grep -Fq -- '! -name MANIFEST.b3' ${rustfsBackupService.serviceConfig.ExecStart}
+      ! grep -Fq -- 'find . -type f -print0' ${rustfsBackupService.serviceConfig.ExecStart}
       touch $out
     '';
 

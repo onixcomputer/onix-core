@@ -225,7 +225,7 @@ in
 
               (
                 cd "$staging"
-                ${pkgs.findutils}/bin/find . -type f -print0 \
+                ${pkgs.findutils}/bin/find . -type f ! -name MANIFEST.b3 -print0 \
                   | ${pkgs.coreutils}/bin/sort -z \
                   | while IFS= read -r -d "" object; do
                       ${pkgs.b3sum}/bin/b3sum "$object"
