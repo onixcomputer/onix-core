@@ -212,6 +212,7 @@ in
                 KACHE_LOG = "kache=info";
               };
               serviceConfig = {
+                ExecStartPre = "-${lib.getExe kachePackage} daemon stop";
                 ExecStart = "${lib.getExe kachePackage} daemon run";
                 User = settings.serviceUser;
                 Group = "users";

@@ -531,6 +531,7 @@ let
     service.serviceConfig.User != "brittonr"
     || service.serviceConfig.ProtectSystem != "strict"
     || service.serviceConfig.Restart != "always"
+    || !(lib.hasInfix "daemon stop" (toString service.serviceConfig.ExecStartPre))
     || service.environment.KACHE_CONFIG != kacheRustfsSystemConfigPath
     || service.environment.KACHE_CACHE_DIR != expected.cacheDir
     || service.environment.KACHE_LOCAL_ONLY != "0"
