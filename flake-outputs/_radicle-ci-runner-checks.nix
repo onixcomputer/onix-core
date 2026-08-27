@@ -30,7 +30,7 @@ let
   nodeReadinessDelaySeconds = 1;
   syncReplicaCount = 1;
   unsafeDefaultReplicaCount = 3;
-  syncFetchTimeout = "2m";
+  syncFetchTimeout = "30s";
   acceptedTimeoutMs = 900000;
   acceptedMemoryBytes = 8589934592;
   acceptedCpuQuota = "200%";

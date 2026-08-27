@@ -67,7 +67,7 @@ in
             acceptedTimeoutMs = 900000;
             productionSeedHost = builtins.head (lib.splitString ":" settings.productionSeedAddress);
             serviceStartTimeout = "2m";
-            syncFetchTimeout = serviceStartTimeout;
+            syncFetchTimeout = "30s";
             syncReplicaCount = 1;
             nodeReadinessAttempts = 60;
             nodeReadinessDelaySeconds = 1;

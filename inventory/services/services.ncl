@@ -94,6 +94,7 @@ let radicle_delegates = [
   "did:key:z6MkmkA6sEzzMffaWqKEKJcDh8LjAzgrJLrTNi971KN3X6sh",
 ]
 in
+let radicle_ci_scan_schedule = "*-*-* *:00/15:00" in
 let radicle_backup_target_host = "britton-desktop" in
 let radicle_backup_target_address = "100.110.43.11" in
 let radicle_backup_target_failure_domain = "britton-desktop-workstation" in
@@ -864,6 +865,7 @@ in
         cargoLockBlake3 = "79c9e70b6cd874aad8e55beb6b4242b47efc24ab344cad4ad1c42a4c3b31cd60",
         flakeNixBlake3 = "ef1b58422af1f9918554d7a0f78c6c657eded6ac64545e4c6fb3c6e1d7ba9e86",
         flakeLockBlake3 = "8f16f066737c44b0447f9bd86b89dca822183909d90563c097765f098e5abae4",
+        scanSchedule = radicle_ci_scan_schedule,
       },
     },
 
