@@ -5,9 +5,9 @@ The fleet uses separate RustFS buckets for interactive Rust artifacts and Nix st
 | Cache | Runtime host | Endpoint | RustFS bucket |
 |---|---|---|---|
 | Kache | `aspen1`, `aspen3`, `britton-desktop` | local daemon through each node's RustFS endpoint | `onix-kache` |
-| niks3 | `aspen1` | `http://100.100.103.95:39400` | `onix-niks3` on `127.0.0.1:39500` |
+| niks3 | `aspen1` | `http://100.100.103.95:39400` | `onix-niks3` on `100.100.103.95:39500` |
 
-Kache uses Tailnet HTTP because Tailscale encrypts host traffic. niks3 uses a separate loopback-only RustFS process and data directory. Runtime principals have bucket-scoped policies. They do not have RustFS administrator authority.
+Kache uses Tailnet HTTP because Tailscale encrypts host traffic. niks3 uses a separate Tailnet-only RustFS process and data directory. Runtime principals have bucket-scoped policies. They do not have RustFS administrator authority.
 
 ## Kache
 

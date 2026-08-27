@@ -558,7 +558,7 @@ let
 
   niks3Port = 39400;
   niks3StoragePort = 39500;
-  niks3StorageAddress = "127.0.0.1";
+  niks3StorageAddress = "100.100.103.95";
   niks3StorageDataDir = "/var/lib/rustfs-niks3-cache";
   niks3StorageResourceWeight = 10;
   niks3MaintenanceMarker = "/run/niks3-maintenance-window";
@@ -600,7 +600,9 @@ let
   ) niks3Machines;
   niks3FirewallValid =
     builtins.elem niks3Port niks3Aspen1.networking.firewall.interfaces.tailscale0.allowedTCPPorts
-    && !(builtins.elem niks3Port niks3Aspen1.networking.firewall.allowedTCPPorts);
+    && builtins.elem niks3StoragePort niks3Aspen1.networking.firewall.interfaces.tailscale0.allowedTCPPorts
+    && !(builtins.elem niks3Port niks3Aspen1.networking.firewall.allowedTCPPorts)
+    && !(builtins.elem niks3StoragePort niks3Aspen1.networking.firewall.allowedTCPPorts);
   niks3ServerGeneratedValid =
     niks3ServerSettings.enable
     && niks3ServerSettings.package.version == "1.8.0"
@@ -611,6 +613,8 @@ let
     && !niks3ServerSettings.s3.useSSL
     && niks3ServerSettings.readProxy.enable
     && niks3Aspen1.systemd.services.niks3.serviceConfig.User == "niks3"
+    && niks3Aspen1.systemd.services.niks3.serviceConfig.CPUWeight == niks3StorageResourceWeight
+    && niks3Aspen1.systemd.services.niks3.serviceConfig.IOWeight == niks3StorageResourceWeight
     &&
       niks3StorageUnit.environment.RUSTFS_ADDRESS == "${niks3StorageAddress}:${toString niks3StoragePort}"
     && niks3StorageUnit.environment.RUSTFS_VOLUMES == niks3StorageDataDir

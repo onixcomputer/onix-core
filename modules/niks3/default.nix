@@ -9,6 +9,9 @@ let
   serviceUmask = "0077";
   secretKeyByteCount = 32;
   signingKeyName = "onix-niks3-1";
+  backgroundResourceWeight = 10;
+  backgroundNice = 10;
+  backgroundCpuQuota = "100%";
   storageGeneratorNameFor = instanceName: "niks3-${instanceName}-storage";
   metadataBackupGeneratorNameFor = instanceName: "niks3-${instanceName}-metadata-backup";
   apiGeneratorNameFor = instanceName: "niks3-${instanceName}-api";
@@ -432,6 +435,12 @@ in
             systemd.services.niks3 = {
               after = lib.optional settings.provisionStorage "niks3-storage-provision.service";
               requires = lib.optional settings.provisionStorage "niks3-storage-provision.service";
+              serviceConfig = {
+                CPUQuota = backgroundCpuQuota;
+                CPUWeight = backgroundResourceWeight;
+                IOWeight = backgroundResourceWeight;
+                Nice = backgroundNice;
+              };
             };
           };
       };
