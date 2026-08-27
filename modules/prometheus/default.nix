@@ -355,9 +355,13 @@ in
                 "enabledCollectors"
               ];
 
-              # Apply port if specified
+              # Apply wrapper-owned options after removing them from the freeform set.
               finalConfig =
-                if settings.port != null then exporterConfig // { inherit (settings) port; } else exporterConfig;
+                exporterConfig
+                // lib.optionalAttrs (settings.port != null) { inherit (settings) port; }
+                // lib.optionalAttrs (settings.enabledCollectors != [ ]) {
+                  inherit (settings) enabledCollectors;
+                };
 
             in
             {
