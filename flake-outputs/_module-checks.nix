@@ -901,18 +901,20 @@ in
 
     # r[verify onix.rustfs_build_caches.kache]
     kache-package =
-      pkgs.runCommand "kache-package" { nativeBuildInputs = [ self.packages.${pkgs.stdenv.hostPlatform.system}.kache ]; } ''
-        actual="$(kache --version)"
-        if [ "$actual" != "kache 0.16.0" ]; then
-          echo "Unexpected Kache version: $actual"
-          exit 1
-        fi
-        if kache unsupported-command >/dev/null 2>&1; then
-          echo "Kache accepted an unsupported command"
-          exit 1
-        fi
-        touch $out
-      '';
+      pkgs.runCommand "kache-package"
+        { nativeBuildInputs = [ self.packages.${pkgs.stdenv.hostPlatform.system}.kache ]; }
+        ''
+          actual="$(kache --version)"
+          if [ "$actual" != "kache 0.16.0" ]; then
+            echo "Unexpected Kache version: $actual"
+            exit 1
+          fi
+          if kache unsupported-command >/dev/null 2>&1; then
+            echo "Kache accepted an unsupported command"
+            exit 1
+          fi
+          touch $out
+        '';
 
     # r[verify onix.rustfs_build_caches.verification]
     kache-rustfs-settings = pkgs.runCommand "kache-rustfs-settings" { } ''

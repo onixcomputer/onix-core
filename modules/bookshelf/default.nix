@@ -19,7 +19,6 @@ in
       {
         nixosModule =
           {
-            config,
             lib,
             pkgs,
             ...

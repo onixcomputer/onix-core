@@ -44,7 +44,7 @@ in
             enabledPorts = [ settings.apiPort ] ++ lib.optional settings.enableConsole settings.consolePort;
           in
           {
-            assertions = topology.assertions;
+            inherit (topology) assertions;
 
             clan.core.vars.generators.${generatorName} = {
               # r[impl onix.rustfs_cluster.credentials]
