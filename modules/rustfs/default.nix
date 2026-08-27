@@ -193,6 +193,8 @@ in
             snapshotRoot = "${settings.targetDir}/snapshots";
             latestLink = "${settings.targetDir}/latest";
             directoryMode = "0700";
+            backupRetryAttempts = 3;
+            backupRetryDelaySeconds = 2;
             fileMode = "0600";
             serviceUmask = "0077";
             minioClient = lib.getExe pkgs.minio-client;
@@ -217,10 +219,18 @@ in
               export MC_HOST_source="${sourceScheme}://$RUSTFS_ACCESS_KEY:$RUSTFS_SECRET_KEY@${sourceAuthority}"
 
               ${lib.concatMapStringsSep "\n" (bucket: ''
-                ${minioClient} mirror \
+                attempt=1
+                while ! ${minioClient} mirror \
                   "source/${bucket}" \
                   "$staging/${bucket}" \
-                  --config-dir "$mc_config_dir"
+                  --config-dir "$mc_config_dir"; do
+                  if test "$attempt" -ge ${toString backupRetryAttempts}; then
+                    echo "RustFS bucket backup failed after $attempt attempts: ${bucket}" >&2
+                    exit 1
+                  fi
+                  attempt=$((attempt + 1))
+                  ${pkgs.coreutils}/bin/sleep ${toString backupRetryDelaySeconds}
+                done
               '') settings.buckets}
 
               (
