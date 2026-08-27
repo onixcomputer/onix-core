@@ -1095,6 +1095,8 @@ in
         echo "storage blackbox probes or alert rules drifted"
         exit 1
       ''}
+      grep -Fq 'node="%s"' ${niks3Aspen1.systemd.services.niks3-queue-metrics.serviceConfig.ExecStart}
+      ! grep -Fq 'node=%s' ${niks3Aspen1.systemd.services.niks3-queue-metrics.serviceConfig.ExecStart}
       touch $out
     '';
 

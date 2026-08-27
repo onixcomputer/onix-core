@@ -513,7 +513,7 @@ in
                 {
                   echo '# HELP onix_niks3_upload_queue_paths Durable store paths waiting for maintenance upload.'
                   echo '# TYPE onix_niks3_upload_queue_paths gauge'
-                  printf 'onix_niks3_upload_queue_paths{node=%s} %s\n' \
+                  printf 'onix_niks3_upload_queue_paths{node="%s"} %s\n' \
                     ${lib.escapeShellArg config.networking.hostName} \
                     "$count"
                 } > "$temporary_file"
