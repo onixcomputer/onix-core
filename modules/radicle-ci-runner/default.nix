@@ -108,6 +108,7 @@ in
               runnerConfig
               runnerPackage
               pkgs.glibc
+              (lib.getLib pkgs.stdenv.cc.cc)
               pkgs.stdenv.cc.cc.libgcc
             ];
             runnerRuntimeBindings = map (path: "${path}:${path}") runnerRuntimeStorePaths;
