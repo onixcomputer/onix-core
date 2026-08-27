@@ -292,7 +292,7 @@ let niks3_server_settings = {
   metadataBackupSchedule = niks3_metadata_backup_schedule,
 }
 in
-let niks3_upload_batch_size = 50 in
+let niks3_upload_batch_size = 1 in
 let niks3_upload_idle_exit_timeout_seconds = 0 in
 let niks3_max_concurrent_uploads = 1 in
 let niks3_uploader_settings = fun local_address => {

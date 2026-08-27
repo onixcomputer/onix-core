@@ -473,6 +473,7 @@ in
             hookPackage = inputs.niks3.packages.${pkgs.stdenv.hostPlatform.system}.niks3-hook;
             apiTokenByteCount = 32;
             healthProbeTimeoutSeconds = 3;
+            maintenanceStopTimeoutSeconds = 30;
             queueMetricIntervalSeconds = 60;
             queueDatabase = "/var/lib/niks3-hook/upload-queue.db";
             queueMetricDirectory = "/var/lib/prometheus-node-exporter-text-files";
@@ -568,7 +569,10 @@ in
             # r[impl onix.rustfs_build_caches.uploaders.maintenance]
             systemd.services.niks3-auto-upload = lib.mkIf (!settings.automaticUploads) {
               unitConfig.ConditionPathExists = settings.maintenanceMarker;
-              serviceConfig.ExecStartPre = maintenanceGuard;
+              serviceConfig = {
+                ExecStartPre = maintenanceGuard;
+                TimeoutStopSec = "${toString maintenanceStopTimeoutSeconds}s";
+              };
             };
 
             # r[impl onix.rustfs_build_caches.monitoring]

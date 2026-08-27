@@ -563,6 +563,7 @@ let
   niks3StorageResourceWeight = 10;
   niks3MaintenanceMarker = "/run/niks3-maintenance-window";
   niks3ServerUrl = "http://100.100.103.95:${toString niks3Port}";
+  niks3UploadBatchSize = 1;
   niks3MaxConcurrentUploads = 1;
   niks3BucketName = "onix-niks3";
   niks3PublicKeyPrefix = "onix-niks3-1:";
@@ -585,6 +586,7 @@ let
       machineConfig = self.nixosConfigurations.${machine}.config;
     in
     !(builtins.hasAttr "niks3-auto-upload" machineConfig.systemd.services)
+    || machineConfig.services."niks3-auto-upload".batchSize != niks3UploadBatchSize
     || machineConfig.services."niks3-auto-upload".maxConcurrentUploads != niks3MaxConcurrentUploads
     || machineConfig.systemd.sockets.niks3-auto-upload.wantedBy != [ ]
     ||
