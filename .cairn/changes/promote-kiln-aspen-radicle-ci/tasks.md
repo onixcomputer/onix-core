@@ -2,7 +2,7 @@
 
 - [x] [serial] Add and lock a separate immutable legacy Kiln executor input for the existing broker. r[onix.radicle_ci.aspen_continuity]
 - [x] [serial] Bind the broker command and focused checks to the legacy input while the Aspen cohort remains separate. r[onix.radicle_ci.aspen_continuity]
-- [ ] [serial] Deploy the continuity fix and run one exact legacy broker event before further cutover work. r[onix.radicle_ci.aspen_continuity]
+- [x] [serial] Deploy the continuity fix and run one exact legacy broker event before further cutover work. r[onix.radicle_ci.aspen_continuity]
 
 ## Phase 1: Admit the production cohort
 
