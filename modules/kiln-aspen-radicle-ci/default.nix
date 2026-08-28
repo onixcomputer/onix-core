@@ -417,8 +417,8 @@ in
                   /etc/ssh \
                   ${lib.escapeShellArg ingressDirectory} \
                   ${lib.escapeShellArg settings.hostStateDir}; do
-                  if test -e "$forbidden"; then
-                    echo "forbidden authority is visible: $forbidden" >&2
+                  if test -r "$forbidden" || test -x "$forbidden"; then
+                    echo "forbidden authority is readable or traversable: $forbidden" >&2
                     exit 1
                   fi
                 done

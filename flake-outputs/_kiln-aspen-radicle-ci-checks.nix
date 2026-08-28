@@ -341,6 +341,7 @@ in
           grep -F -- '5f659dce24e13b30e996f0aab3419dac4c21f934' ${lib.escapeShellArg authorityProbeCommand} >/dev/null
           grep -F -- '/var/lib/radicle-ci' ${lib.escapeShellArg authorityProbeCommand} >/dev/null
           grep -F -- 'source view is writable' ${lib.escapeShellArg authorityProbeCommand} >/dev/null
+          grep -F -- 'forbidden authority is readable or traversable' ${lib.escapeShellArg authorityProbeCommand} >/dev/null
 
           grep -F -- ${lib.escapeShellArg aspenSocket} ${lib.escapeShellArg hostPreStart} >/dev/null
           grep -F -- ${lib.escapeShellArg latticeSocket} ${lib.escapeShellArg (builtins.elemAt latticePreStart 0)} >/dev/null
