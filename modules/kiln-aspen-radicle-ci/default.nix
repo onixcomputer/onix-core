@@ -103,6 +103,13 @@ in
             latticeMaximumConnections = settings.maximumRequests * providerConnectionsPerEffect;
             millisecondsPerSecond = 1000;
             subsecondRoundingMilliseconds = millisecondsPerSecond - 1;
+            providerOperationTimeoutMilliseconds =
+              settings.providerTimeoutMilliseconds + settings.providerTeardownTimeoutMilliseconds;
+            observationPollRoundingMilliseconds = maximumProviderPolls - 1;
+            observationPollIntervalMilliseconds = builtins.div (
+              providerOperationTimeoutMilliseconds + observationPollRoundingMilliseconds
+            ) maximumProviderPolls;
+            observationPollHorizonMilliseconds = observationPollIntervalMilliseconds * maximumProviderPolls;
             workflowCompletionMarginSeconds = 60;
             providerTimeoutSeconds = builtins.div (
               settings.providerTimeoutMilliseconds + subsecondRoundingMilliseconds
@@ -112,6 +119,7 @@ in
             ) millisecondsPerSecond;
             workflowTimeoutSeconds =
               providerTimeoutSeconds + providerTeardownSeconds + workflowCompletionMarginSeconds;
+            workflowTimeoutMilliseconds = workflowTimeoutSeconds * millisecondsPerSecond;
             uidOwners =
               uid: lib.attrNames (lib.filterAttrs (_name: user: (user.uid or null) == uid) config.users.users);
             shadowStartTimeout = "${toString workflowTimeoutSeconds}s";
@@ -124,6 +132,7 @@ in
             kilnArtifactSource = inputs.cairn.inputs.artifact;
             providerWrapper = pkgs.writeShellApplication {
               name = "${runtimeName}-nix-wrapper";
+              runtimeInputs = [ pkgs.gitMinimal ];
               text = ''
                 set -eu
                 expected_argument_count=${toString commandArgumentCount}
@@ -227,14 +236,19 @@ in
                 ''
                   nickel export --format json ${radicleProfileSource} > "$out"
                 '';
+            aspenProfileSource = pkgs.writeText "${runtimeName}-aspen-profile.ncl" ''
+              let base = import ${nclString "${inputs.kiln}/config/aspen-runtime-profile.ncl"} in
+              base & {
+                bounds.callback_timeout_millis | force = ${toString workflowTimeoutMilliseconds},
+              }
+            '';
             aspenProfile =
               pkgs.runCommand "${runtimeName}-aspen-profile.json"
                 {
                   nativeBuildInputs = [ pkgs.nickel ];
                 }
                 ''
-                  nickel export --format json \
-                    ${inputs.kiln}/config/aspen-runtime-profile.ncl > "$out"
+                  nickel export --format json ${aspenProfileSource} > "$out"
                 '';
             latticePreparationMarker = "${settings.latticeStateDir}/workflow-revision";
             quarantineDirectory = "${builtins.dirOf settings.hostStateDir}/quarantine";
@@ -353,7 +367,7 @@ in
                 event = "push";
                 repository = settings.repository;
                 actor = "did:key:z6MkmkA6sEzzMffaWqKEKJcDh8LjAzgrJLrTNi971KN3X6sh";
-                before = "44ed329b09e472aa12866c8dceedbfb3526b25a1";
+                before = "d88cc41b0145d5dc118a6313054c5d3e66efbe19";
                 after = "5f659dce24e13b30e996f0aab3419dac4c21f934";
                 branch = "master";
                 patch = null;
@@ -496,8 +510,11 @@ in
                 assertion =
                   maximumProviderPolls > 0
                   && providerConnectionsPerEffect > dispatchConnectionsPerEffect
-                  && latticeMaximumConnections <= maximumLatticeConnections;
-                message = "Kiln Aspen production poll or Lattice connection budget exceeds the contract bound";
+                  && latticeMaximumConnections <= maximumLatticeConnections
+                  && observationPollIntervalMilliseconds > 0
+                  && observationPollHorizonMilliseconds >= providerOperationTimeoutMilliseconds
+                  && observationPollHorizonMilliseconds < workflowTimeoutMilliseconds;
+                message = "Kiln Aspen production poll pacing or Lattice connection budget exceeds the contract bound";
               }
               {
                 assertion =
@@ -505,7 +522,7 @@ in
                 message = "Kiln Aspen production service UIDs must not alias another system account";
               }
               {
-                assertion = inputs.kiln.rev == "ccf6c64e8cba1d77299eab1386788426fa63e43e";
+                assertion = inputs.kiln.rev == "ef058aeab68f81ab0598b7e5267cc4399fe6a1a6";
                 message = "Kiln Aspen production must use the reviewed durable Kiln revision";
               }
               {
@@ -748,6 +765,8 @@ in
                   (toString settings.maximumRequests)
                   "--timeout-ms"
                   (toString settings.requestTimeoutMilliseconds)
+                  "--poll-interval-ms"
+                  (toString observationPollIntervalMilliseconds)
                 ];
                 ExecStartPost = lib.getExe grantAspenSocket;
                 ReadWritePaths = [

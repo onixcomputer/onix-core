@@ -2094,16 +2094,16 @@
         "rust-overlay": "rust-overlay_8"
       },
       "locked": {
-        "lastModified": 1787934699,
-        "narHash": "sha256-Ylqop0+bpWAurCxDDC1+9sOwjr23dEkU+dNPahvc9Gs=",
+        "lastModified": 1787955479,
+        "narHash": "sha256-4gTTm52Pth6FwAHBPwKGQRTGy36W8cQB4yDmNIROC0U=",
         "ref": "refs/heads/main",
-        "rev": "ccf6c64e8cba1d77299eab1386788426fa63e43e",
-        "revCount": 61,
+        "rev": "ef058aeab68f81ab0598b7e5267cc4399fe6a1a6",
+        "revCount": 62,
         "type": "git",
         "url": "https://seed.radicle.garden/z2wsvXm5S2sJGvuV1k5JHiwi1PbKE.git"
       },
       "original": {
-        "rev": "ccf6c64e8cba1d77299eab1386788426fa63e43e",
+        "rev": "ef058aeab68f81ab0598b7e5267cc4399fe6a1a6",
         "type": "git",
         "url": "https://seed.radicle.garden/z2wsvXm5S2sJGvuV1k5JHiwi1PbKE.git"
       }

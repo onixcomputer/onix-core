@@ -4,7 +4,7 @@ Date: 2026-08-28
 
 ## Immutable inputs
 
-- durable Kiln host and provider: `ccf6c64e8cba1d77299eab1386788426fa63e43e`;
+- paced durable Kiln host and provider: `ef058aeab68f81ab0598b7e5267cc4399fe6a1a6`;
 - retained canary Kiln: `69c0a6ac454d7291e4aed12fd72a6f2c31636e76`;
 - retained legacy broker Kiln: `8821e9adf15ad28838025bfbdd2e09c8d76fe5db`;
 - production Lattice application runtime: `feb16b911a23e36d22d1359e44a9bc6b692cc98c`;
@@ -26,7 +26,9 @@ The first status-disabled shadow attempt was retained as operation `91ab5c42...`
 
 The second status-disabled attempt, operation `690a355c...`, also received `InvalidContract` before provider acceptance. The marker named `616b`, but a store export proved the stored workflow still had revision `e86f`. The Lattice pre-start now re-imports the exact workflow on every start after it validates the marker.
 
-The third attempt, operation `d43a8b6f...`, reached the provider. Its profile report bound was four KiB below the admitted stdout, stderr, and report-header sum, so the provider exited with code `2` before Nix. Lattice runtime `c513d94...` incorrectly projected that nonzero typed exit as success. Runtime `feb16b9...` makes workflow exchange classify nonzero, missing, duplicate, or malformed typed exit output as terminal failure. The provider report bound is now 17 MiB. All three failed host roots and the false-success Lattice state are retained under the root-only quarantine directory. A fourth exact trigger identity will run the corrected shadow; none of the prior operations is redispatched.
+The third attempt, operation `d43a8b6f...`, reached the provider. Its profile report bound was four KiB below the admitted stdout, stderr, and report-header sum, so the provider exited with code `2` before Nix. Lattice runtime `c513d94...` incorrectly projected that nonzero typed exit as success. Runtime `feb16b9...` makes workflow exchange classify nonzero, missing, duplicate, or malformed typed exit output as terminal failure. The provider report bound is now 17 MiB.
+
+The fourth attempt, operation `65c700f8...`, ran through the fixed Lattice runtime and published provider report `b3:abfea36e...` with mode `0640`. The unpaced host exhausted 1,023 non-terminal observations in 286 milliseconds before that report arrived, so it correctly retained `Unknown`. The report then exposed a separate cleared-environment defect: the wrapper did not supply Git to Nix. Kiln `ef058ae...` now paces those finite observations across the provider horizon. The production Aspen callback timeout covers the same horizon, and the wrapper supplies the pinned Git package. The failed host, Lattice, and report state will remain under root-only quarantine. A fifth exact trigger identity will run the corrected shadow; none of the prior operations is redispatched.
 
 The provider profile binds UID `975`, RID `rad:z3xXXCQXCTquvAawh41YYs8yC8xmk`, the exact source view, wrapper BLAKE3, working directory, report view, report namespace, HTTPS URL, and every process and publication bound.
 

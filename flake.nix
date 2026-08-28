@@ -267,7 +267,7 @@
     };
 
     kiln = {
-      url = "git+https://seed.radicle.garden/z2wsvXm5S2sJGvuV1k5JHiwi1PbKE.git?rev=ccf6c64e8cba1d77299eab1386788426fa63e43e";
+      url = "git+https://seed.radicle.garden/z2wsvXm5S2sJGvuV1k5JHiwi1PbKE.git?rev=ef058aeab68f81ab0598b7e5267cc4399fe6a1a6";
       inputs.octet.follows = "tigerstyle";
     };
     kiln-canary = {

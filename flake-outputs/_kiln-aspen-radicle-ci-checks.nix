@@ -53,7 +53,7 @@ let
   expectedProviderReportMebibytes = 17;
   expectedProviderOutputBytes = expectedProviderOutputMebibytes * bytesPerMebibyte;
   expectedProviderReportBytes = expectedProviderReportMebibytes * bytesPerMebibyte;
-  expectedKilnRevision = "ccf6c64e8cba1d77299eab1386788426fa63e43e";
+  expectedKilnRevision = "ef058aeab68f81ab0598b7e5267cc4399fe6a1a6";
   expectedLegacyRevision = "8821e9adf15ad28838025bfbdd2e09c8d76fe5db";
   expectedLatticeRuntimeRevision = "feb16b911a23e36d22d1359e44a9bc6b692cc98c";
   expectedLatticeContractRevision = "70496e67c7fd4a8b05914161a8e09de2759bebc8";
@@ -63,6 +63,19 @@ let
   expectedProviderConnections = builtins.div maximumLatticeConnections expectedMaximumRequests;
   expectedProviderPolls = expectedProviderConnections - dispatchConnectionsPerEffect;
   expectedLatticeConnections = expectedMaximumRequests * expectedProviderConnections;
+  expectedProviderTimeoutMilliseconds = 7200000;
+  expectedProviderTeardownMilliseconds = 30000;
+  expectedProviderOperationMilliseconds =
+    expectedProviderTimeoutMilliseconds + expectedProviderTeardownMilliseconds;
+  expectedWorkflowCompletionMarginMilliseconds = 60000;
+  expectedWorkflowTimeoutMilliseconds =
+    expectedProviderOperationMilliseconds + expectedWorkflowCompletionMarginMilliseconds;
+  expectedMillisecondsPerSecond = 1000;
+  expectedWorkflowTimeoutSeconds = builtins.div (expectedWorkflowTimeoutMilliseconds) expectedMillisecondsPerSecond;
+  expectedObservationPollRoundingMilliseconds = expectedProviderPolls - 1;
+  expectedObservationPollMilliseconds = builtins.div (
+    expectedProviderOperationMilliseconds + expectedObservationPollRoundingMilliseconds
+  ) expectedProviderPolls;
   kilnInput = self.lib.inputs.kiln;
   legacyInput = self.lib.inputs.kiln-ci-legacy;
   legacyPackage = legacyInput.packages.${pkgs.stdenv.hostPlatform.system}.default;
@@ -77,12 +90,14 @@ let
       (throw "Kiln Aspen production adapter package is missing")
       desktopConfig.environment.systemPackages;
   aspenAdapterCommand = "${aspenAdapterPackage}/bin/${runtimeName}-adapter";
+  aspenProfile = desktopConfig.environment.etc."${runtimeName}/aspen-profile.json".source;
   providerProfile = desktopConfig.environment.etc."${runtimeName}/provider-profile.json".source;
   workflowProfile = desktopConfig.environment.etc."${runtimeName}/lattice-workflow.ncl".source;
   handlerProfile = desktopConfig.environment.etc."${runtimeName}/lattice-handler.ncl".source;
   sourceAdmissionCommand = sourceConfig.ExecStart;
   authorityProbeCommand = authorityProbeConfig.ExecStart;
   shadowCommand = shadowConfig.ExecStart;
+  hostStartCommand = hostConfig.ExecStart;
   hostPreStart = hostConfig.ExecStartPre;
   latticePreStart = latticeConfig.ExecStartPre;
   latticePrepareCommand = builtins.elemAt latticePreStart 1;
@@ -191,7 +206,8 @@ let
     && authorityProbeConfig.User == latticeUser
     && authorityProbeConfig.BindReadOnlyPaths == [ "${sourcePath}:${sourceView}" ]
     && authorityProbeConfig.BindPaths == [ "${reportPath}:${reportView}" ]
-    && authorityProbeConfig.ReadWritePaths == [ reportView ];
+    && authorityProbeConfig.ReadWritePaths == [ reportView ]
+    && lib.hasInfix ("--poll-interval-ms ${toString expectedObservationPollMilliseconds}") hostStartCommand;
   revisionsValid =
     kilnInput.rev == expectedKilnRevision
     && legacyInput.rev == expectedLegacyRevision
@@ -223,13 +239,13 @@ let
     latticeUid = expectedLatticeUid;
     maximumRequests = expectedMaximumRequests;
     requestTimeoutMilliseconds = 30000;
-    providerTimeoutMilliseconds = 7200000;
+    providerTimeoutMilliseconds = expectedProviderTimeoutMilliseconds;
     providerStdoutMaxBytes = expectedProviderOutputBytes;
     providerStderrMaxBytes = expectedProviderOutputBytes;
     providerReportMaxBytes = expectedProviderReportBytes;
     providerWrapperMaxBytes = 262144;
     providerPollMilliseconds = 100;
-    providerTeardownTimeoutMilliseconds = 30000;
+    providerTeardownTimeoutMilliseconds = expectedProviderTeardownMilliseconds;
     providerStageCollisionAttempts = 8;
   };
   allAssertionsPass = result: builtins.all (assertion: assertion.assertion) result.assertions;
@@ -266,7 +282,7 @@ let
     make_config {
       data_dir = ${builtins.toJSON latticeState},
       shell = ${builtins.toJSON pkgs.runtimeShell},
-      command_timeout_seconds = 7290,
+      command_timeout_seconds = ${toString expectedWorkflowTimeoutSeconds},
     }
   '';
   positiveWorkflow = pkgs.writeText "kiln-aspen-ci-positive-workflow.ncl" ''
@@ -275,7 +291,7 @@ let
       provider_executable = "/nix/store/provider/bin/kiln-radicle-nix-provider",
       provider_profile = "/nix/store/provider-profile.json",
       repository = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk",
-      command_timeout_seconds = 7290,
+      command_timeout_seconds = ${toString expectedWorkflowTimeoutSeconds},
     }
   '';
 in
@@ -305,11 +321,17 @@ in
           test -x ${lib.escapeShellArg "${kilnPackage}/bin/kiln-adapter-radicle"}
           test -x ${lib.escapeShellArg "${providerPackage}/bin/kiln-radicle-nix-provider"}
           test -x ${lib.escapeShellArg "${latticePackage}/bin/lattice"}
+          test -f ${lib.escapeShellArg aspenProfile}
           test -f ${lib.escapeShellArg providerProfile}
           test -f ${lib.escapeShellArg workflowProfile}
           test -f ${lib.escapeShellArg handlerProfile}
           grep -F -- ${lib.escapeShellArg providerWorkflowExecutable} ${lib.escapeShellArg workflowProfile} >/dev/null
           grep -F -- ${lib.escapeShellArg providerWorkflowProfile} ${lib.escapeShellArg workflowProfile} >/dev/null
+
+          jq -e \
+            --argjson callback_timeout ${toString expectedWorkflowTimeoutMilliseconds} \
+            '.bounds.callback_timeout_millis == $callback_timeout' \
+            ${lib.escapeShellArg aspenProfile} >/dev/null
 
           jq -e \
             --arg source ${lib.escapeShellArg sourceView} \
@@ -329,6 +351,7 @@ in
           grep -F -- '--override-input cairn/artifact' "$wrapper" >/dev/null
           grep -F -- 'accept-flake-config = false' "$wrapper" >/dev/null
           grep -F -- 'builders =' "$wrapper" >/dev/null
+          grep -F -- ${lib.escapeShellArg "${pkgs.gitMinimal}/bin"} "$wrapper" >/dev/null
 
           test -x ${lib.escapeShellArg aspenAdapterCommand}
           grep -F -- '--protocol defelo' ${lib.escapeShellArg aspenAdapterCommand} >/dev/null
