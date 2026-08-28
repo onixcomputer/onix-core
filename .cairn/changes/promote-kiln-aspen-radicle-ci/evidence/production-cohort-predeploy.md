@@ -16,10 +16,12 @@ The canary, production cohort, and legacy broker now use separate immutable Kiln
 
 ## Exact route
 
-The production workflow revision is `b3:8f3706acd56e69145affe40a15aa1536599a88111f3905bc3a5a047a4d5deda2`. The reviewed Kiln workflow profile and graph identities remain:
+The production workflow revision is `b3:616b5d8beb00044accf14e88c3d71b487669535e6dbf54c02fc2c4929fbc3e4a`. The reviewed Kiln workflow profile and graph identities remain:
 
 - profile `b3:67f30a749eaa91b56a5a0e42873c9b13968ff92ae87f577c6f36041f4a722cb5`;
 - graph `b3:a5af82f6dc0f5b094624022825ba048775cc4892bfdd12473bb57945e8745426`.
+
+The first status-disabled shadow attempt was retained as operation `91ab5c42...` with state `Unknown`. A raw contract exchange proved that Lattice returned `InvalidContract` before acceptance, and no provider process or report existed. The cause was a stale route revision after UID-bound provider profile paths changed the workflow command. The production workflow now uses stable `/run/current-system` and `/etc` command paths. A different exact trigger identity will run the corrected shadow; the first operation remains retained and is not redispatched.
 
 The provider profile binds UID `975`, RID `rad:z3xXXCQXCTquvAawh41YYs8yC8xmk`, the exact source view, wrapper BLAKE3, working directory, report view, report namespace, HTTPS URL, and every process and publication bound.
 

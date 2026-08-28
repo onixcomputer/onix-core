@@ -42,6 +42,8 @@ let
   internalDirectory = "${runtimeDirectory}/internal";
   aspenSocket = "${ingressDirectory}/aspen.sock";
   latticeSocket = "${internalDirectory}/lattice.sock";
+  providerWorkflowExecutable = "/run/current-system/sw/bin/kiln-radicle-nix-provider";
+  providerWorkflowProfile = "/etc/${runtimeName}/provider-profile.json";
   expectedHostUid = 974;
   expectedLatticeUid = 975;
   expectedMaximumRequests = 64;
@@ -49,7 +51,7 @@ let
   expectedLegacyRevision = "8821e9adf15ad28838025bfbdd2e09c8d76fe5db";
   expectedLatticeRuntimeRevision = "c513d94d89e901ffa56ae67f375f973e55958e42";
   expectedLatticeContractRevision = "70496e67c7fd4a8b05914161a8e09de2759bebc8";
-  expectedWorkflowRevision = "b3:8f3706acd56e69145affe40a15aa1536599a88111f3905bc3a5a047a4d5deda2";
+  expectedWorkflowRevision = "b3:616b5d8beb00044accf14e88c3d71b487669535e6dbf54c02fc2c4929fbc3e4a";
   dispatchConnectionsPerEffect = 1;
   maximumLatticeConnections = 65536;
   expectedProviderConnections = builtins.div maximumLatticeConnections expectedMaximumRequests;
@@ -296,6 +298,8 @@ in
           test -f ${lib.escapeShellArg providerProfile}
           test -f ${lib.escapeShellArg workflowProfile}
           test -f ${lib.escapeShellArg handlerProfile}
+          grep -F -- ${lib.escapeShellArg providerWorkflowExecutable} ${lib.escapeShellArg workflowProfile} >/dev/null
+          grep -F -- ${lib.escapeShellArg providerWorkflowProfile} ${lib.escapeShellArg workflowProfile} >/dev/null
 
           jq -e \
             --arg source ${lib.escapeShellArg sourceView} \

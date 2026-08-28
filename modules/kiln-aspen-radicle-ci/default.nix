@@ -43,6 +43,8 @@ in
             extensionExecutable = lib.getExe' kilnPackage "kiln-aspen-extension";
             adapterExecutable = lib.getExe' kilnPackage "kiln-adapter-radicle";
             providerExecutable = lib.getExe' providerPackage "kiln-radicle-nix-provider";
+            providerWorkflowExecutable = "/run/current-system/sw/bin/kiln-radicle-nix-provider";
+            providerWorkflowProfile = "/etc/${runtimeName}/provider-profile.json";
             latticeExecutable = lib.getExe' latticePackage "lattice";
             inherit (evaluated)
               aspenSocket
@@ -113,7 +115,7 @@ in
             uidOwners =
               uid: lib.attrNames (lib.filterAttrs (_name: user: (user.uid or null) == uid) config.users.users);
             shadowStartTimeout = "${toString workflowTimeoutSeconds}s";
-            latticeWorkflowRevision = "b3:8f3706acd56e69145affe40a15aa1536599a88111f3905bc3a5a047a4d5deda2";
+            latticeWorkflowRevision = "b3:616b5d8beb00044accf14e88c3d71b487669535e6dbf54c02fc2c4929fbc3e4a";
             latticeContractRevision = "70496e67c7fd4a8b05914161a8e09de2759bebc8";
             boundedExecRevision = "29dac88ecded94457572db3fdfaaaab95fa91525";
             durablePublicationRevision = "8e05e74e24b45f752d77145c4455385daaf6d6ab";
@@ -193,8 +195,8 @@ in
             latticeWorkflow = pkgs.writeText "${runtimeName}-workflow.ncl" ''
               let make_workflow = import ${nclString ./profiles/lattice-workflow.ncl} in
               make_workflow {
-                provider_executable = ${nclString providerExecutable},
-                provider_profile = ${nclString providerProfile},
+                provider_executable = ${nclString providerWorkflowExecutable},
+                provider_profile = ${nclString providerWorkflowProfile},
                 repository = ${nclString settings.repository},
                 command_timeout_seconds = ${toString workflowTimeoutSeconds},
               }
@@ -351,7 +353,7 @@ in
                 event = "push";
                 repository = settings.repository;
                 actor = "did:key:z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
-                before = null;
+                before = "44ed329b09e472aa12866c8dceedbfb3526b25a1";
                 after = "5f659dce24e13b30e996f0aab3419dac4c21f934";
                 branch = "master";
                 patch = null;
@@ -803,6 +805,7 @@ in
 
             environment.systemPackages = lib.mkIf settings.enable [
               aspenAdapter
+              providerPackage
               shadowClient
             ];
             environment.etc."${runtimeName}/aspen-profile.json".source = lib.mkIf settings.enable aspenProfile;
