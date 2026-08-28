@@ -310,6 +310,10 @@ in
       qwen38 = {
         enable = true;
         package = tenstorrentPackages.qwen36;
+        # Sampled requests (temperature above zero) serve through the fused
+        # GDN path under the distributional admission gate; greedy requests
+        # keep the exact-parity path.
+        sampledFusion = true;
         modelPath = qwenModelPath;
         modelAlias = "Qwen3.8-27B";
         listenAddress = qwenListenAddress;
