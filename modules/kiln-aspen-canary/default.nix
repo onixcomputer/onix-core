@@ -71,6 +71,11 @@ in
             serviceStopTimeout = "45s";
             socketReadyAttempts = 100;
             socketReadyDelaySeconds = "0.05";
+            maximumProviderPolls = 64;
+            dispatchConnectionsPerEffect = 1;
+            providerConnectionsPerEffect = maximumProviderPolls + dispatchConnectionsPerEffect;
+            maximumLatticeConnections = 65536;
+            latticeMaximumConnections = settings.maximumRequests * providerConnectionsPerEffect;
             latticeWorkflowRevision = "b3:1377fce07f3426f87ab7c61d6a716d3f1fc95be71f91ab87699e13f56dbd35b3";
             nclString = value: builtins.toJSON value;
             latticeConfig = pkgs.writeText "${runtimeName}-lattice-config.ncl" ''
@@ -85,6 +90,7 @@ in
               make_profile {
                 host_uid = ${toString settings.hostUid},
                 socket_path = ${nclString latticeSocket},
+                maximum_connections = ${toString latticeMaximumConnections},
               }
             '';
             radicleProfileSource = pkgs.writeText "${runtimeName}-radicle-profile.ncl" ''
@@ -93,6 +99,7 @@ in
                 host_uid = ${toString settings.hostUid},
                 socket_path = ${nclString latticeSocket},
                 replay_database_path = ${nclString replayDatabase},
+                maximum_polls = ${toString maximumProviderPolls},
               }
             '';
             radicleProfile =
@@ -437,7 +444,12 @@ in
               };
           in
           {
-            assertions = evaluated.assertions;
+            assertions = evaluated.assertions ++ [
+              {
+                assertion = latticeMaximumConnections <= maximumLatticeConnections;
+                message = "Kiln Aspen canary Lattice connection budget exceeds the contract bound";
+              }
+            ];
 
             users.groups.${socketGroup} = lib.mkIf settings.enable { };
             users.users.${hostUser} = lib.mkIf settings.enable {

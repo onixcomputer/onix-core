@@ -36,6 +36,7 @@ r[onix.kiln_aspen_canary.composition.accepted]
 - WHEN the operator submits one controlled trigger to the Aspen canary socket
 - THEN Aspen MUST execute the Kiln extension through its bounded native-process port
 - AND Lattice MUST observe the exact routed workflow request
+- AND the Lattice connection budget MUST cover one dispatch plus every admitted poll for each host request
 - AND Kiln MUST record the exact terminal observation or `Unknown`
 
 #### Scenario: Endpoint or profile is unavailable

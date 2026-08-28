@@ -13,6 +13,12 @@ let AbsolutePath =
     std.is_string value && std.string.is_match "^/[^\\x00]+$" value
   )
 in
+let maximum_connection_count = 65536 in
+let ConnectionCount =
+  std.contract.from_predicate (fun value =>
+    std.is_number value && value > 0 && value <= maximum_connection_count
+  )
+in
 let Blake3Identity =
   std.contract.from_predicate (fun value =>
     std.is_string value && std.string.is_match "^b3:[0-9a-f]{64}$" value
@@ -21,6 +27,7 @@ in
 let Settings = {
   host_uid | Positive,
   socket_path | AbsolutePath,
+  maximum_connections | ConnectionCount,
 }
 in
 let RouteNode = {
@@ -53,7 +60,6 @@ let HandlerProfile = {
 in
 let frame_bytes = 33554432 in
 let log_bytes = 16777216 in
-let connection_count = 64 in
 let active_execution_count = 1 in
 let deadline_milliseconds = 30000 in
 let profile_identity_value = "b3:67f30a749eaa91b56a5a0e42873c9b13968ff92ae87f577c6f36041f4a722cb5" in
@@ -70,7 +76,7 @@ fun settings =>
       limits = {
         maximum_frame_bytes = frame_bytes,
         maximum_log_bytes = log_bytes,
-        maximum_connections = connection_count,
+        maximum_connections = checked.maximum_connections,
         read_deadline_milliseconds = deadline_milliseconds,
         write_deadline_milliseconds = deadline_milliseconds,
       },

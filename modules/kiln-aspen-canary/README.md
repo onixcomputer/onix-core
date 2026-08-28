@@ -13,6 +13,8 @@ The module starts two long-lived services:
 
 The services use distinct Unix users and state roots. They share one socket group and one private runtime directory.
 
+The Lattice server connection budget covers one dispatch and every admitted poll for each bounded host request. The typed profile rejects a budget above Lattice's contract limit.
+
 The Aspen host executes `kiln-aspen-extension` through Aspen's bounded native-process port. Provider effects use Lattice's durable workflow exchange.
 
 ## Reviewed cohort
@@ -59,8 +61,10 @@ nix run path:/home/brittonr/git/cairn#cairn -- \
 Deploy only after all focused checks pass:
 
 ```console
-NIX_CONFIG=$'min-free = 0\nmax-free = 0' \
-  clan machines update britton-desktop --upload-inputs
+NIX_CONFIG=$'min-free = 0\nmax-free = 0\nbuilders =\n' \
+  nix develop path:$PWD#minimal -c clan machines update britton-desktop \
+    --build-host localhost \
+    --upload-inputs
 ```
 
 Inspect both services:

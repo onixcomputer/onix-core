@@ -22,6 +22,7 @@
 ## Phase 4: Evidence and closeout
 
 - [x] [serial] Run package, module, machine-evaluation, Cairn, and focused Nix checks. r[onix.kiln_aspen_canary.evidence]
+- [x] [serial] Derive the Lattice connection bound from the host request and provider poll bounds. r[onix.kiln_aspen_canary.composition]
 - [ ] [serial] Deploy the private canary to `britton-desktop` and run accepted, rejected, unavailable, and uncertain drills. r[onix.kiln_aspen_canary.evidence]
 - [ ] [serial] Retain the exact bounded receipt and verify every deployment non-claim. r[onix.kiln_aspen_canary.evidence]
 - [ ] [serial] Sync and archive only after all dependency and live evidence gates pass. r[onix.kiln_aspen_canary.evidence]

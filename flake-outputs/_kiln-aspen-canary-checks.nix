@@ -33,6 +33,12 @@ let
   latticeSocket = "${runtimeDirectory}/lattice.sock";
   expectedHostUid = 970;
   expectedLatticeUid = 971;
+  expectedMaximumRequests = 64;
+  expectedProviderPolls = 64;
+  dispatchConnectionsPerEffect = 1;
+  expectedProviderConnections = expectedProviderPolls + dispatchConnectionsPerEffect;
+  expectedLatticeConnections = expectedMaximumRequests * expectedProviderConnections;
+  maximumLatticeConnections = 65536;
   expectedAspenRevision = "22f8ded26ca1907c29948e08b53f35df23080733";
   expectedKilnHostRevision = "69c0a6ac454d7291e4aed12fd72a6f2c31636e76";
   expectedKilnProtocolRevision = "42eabcb21385a436ddc044fb7034b8cdaec7b8a0";
@@ -96,13 +102,14 @@ let
     latticeStateDir = latticeState;
     hostUid = expectedHostUid;
     latticeUid = expectedLatticeUid;
-    maximumRequests = 64;
+    maximumRequests = expectedMaximumRequests;
     timeoutMilliseconds = 30000;
   };
   allAssertionsPass = result: builtins.all (assertion: assertion.assertion) result.assertions;
   anyAssertionFails = result: builtins.any (assertion: !assertion.assertion) result.assertions;
   settingsChecksValid =
-    allAssertionsPass (settingsEvaluator baseSettings)
+    expectedLatticeConnections <= maximumLatticeConnections
+    && allAssertionsPass (settingsEvaluator baseSettings)
     && anyAssertionFails (settingsEvaluator (baseSettings // { latticeStateDir = hostState; }))
     && anyAssertionFails (settingsEvaluator (baseSettings // { latticeUid = expectedHostUid; }))
     && anyAssertionFails (settingsEvaluator (baseSettings // { maximumRequests = 0; }))
@@ -113,6 +120,7 @@ let
       host_uid = ${toString expectedHostUid},
       socket_path = ${builtins.toJSON latticeSocket},
       replay_database_path = ${builtins.toJSON "${hostState}/radicle-replay.sqlite"},
+      maximum_polls = ${toString expectedProviderPolls},
     }
   '';
   positiveHandlerProfile = pkgs.writeText "kiln-aspen-canary-positive-handler.ncl" ''
@@ -120,6 +128,7 @@ let
     make_profile {
       host_uid = ${toString expectedHostUid},
       socket_path = ${builtins.toJSON latticeSocket},
+      maximum_connections = ${toString expectedLatticeConnections},
     }
   '';
   positiveLatticeConfig = pkgs.writeText "kiln-aspen-canary-positive-lattice.ncl" ''
@@ -189,6 +198,7 @@ in
             ${../modules/kiln-aspen-canary/profiles/lattice-workflow.ncl} \
             ${../modules/kiln-aspen-canary/profiles/radicle-profile.ncl} \
             ${../modules/kiln-aspen-canary/profiles/fixtures/negative-handler-relative-socket.ncl} \
+            ${../modules/kiln-aspen-canary/profiles/fixtures/negative-handler-overbound-connections.ncl} \
             ${../modules/kiln-aspen-canary/profiles/fixtures/negative-lattice-relative-state.ncl} \
             ${../modules/kiln-aspen-canary/profiles/fixtures/negative-radicle-zero-uid.ncl}
           nickel typecheck ${../modules/kiln-aspen-canary/profiles/lattice-config.ncl}
@@ -202,6 +212,7 @@ in
             ${../modules/kiln-aspen-canary/profiles/lattice-workflow.ncl} >/dev/null
           for fixture in \
             ${../modules/kiln-aspen-canary/profiles/fixtures/negative-handler-relative-socket.ncl} \
+            ${../modules/kiln-aspen-canary/profiles/fixtures/negative-handler-overbound-connections.ncl} \
             ${../modules/kiln-aspen-canary/profiles/fixtures/negative-lattice-relative-state.ncl} \
             ${../modules/kiln-aspen-canary/profiles/fixtures/negative-radicle-zero-uid.ncl}; do
             if nickel export --format json "$fixture" >/dev/null 2>&1; then

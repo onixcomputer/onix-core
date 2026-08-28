@@ -17,6 +17,7 @@ let Settings = {
   host_uid | Positive,
   socket_path | AbsolutePath,
   replay_database_path | AbsolutePath,
+  maximum_polls | Positive,
 }
 in
 let Profile = {
@@ -42,10 +43,9 @@ let Profile = {
 in
 let frame_bytes = 33554432 in
 let log_bytes = 16777216 in
-let connection_count = 64 in
+let dispatch_connection_count = 1 in
 let deadline_milliseconds = 30000 in
 let replay_records = 4096 in
-let poll_count = 64 in
 let maximum_nodes = 256 in
 let maximum_edges = 1024 in
 let maximum_log_references = 256 in
@@ -75,12 +75,12 @@ fun settings =>
     socket_path = checked.socket_path,
     replay_database_path = checked.replay_database_path,
     maximum_replay_records = replay_records,
-    maximum_polls = poll_count,
+    maximum_polls = checked.maximum_polls,
     allowed_user_ids = [checked.host_uid],
     transport_limits = {
       maximum_frame_bytes = frame_bytes,
       maximum_log_bytes = log_bytes,
-      maximum_connections = connection_count,
+      maximum_connections = checked.maximum_polls + dispatch_connection_count,
       read_deadline_milliseconds = deadline_milliseconds,
       write_deadline_milliseconds = deadline_milliseconds,
     },

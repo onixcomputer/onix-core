@@ -83,6 +83,8 @@ A failure before Aspen accepts an operation is retryable only when the typed out
 
 A disconnect after acceptance remains `Unknown` until exact reconciliation. The module never starts the Lattice or direct adapter as a fallback.
 
+The Lattice server connection bound equals the host request bound multiplied by one dispatch plus the provider poll bound. This relation prevents the server from stopping before the host consumes its admitted poll budget. The result must remain within Lattice's contract maximum.
+
 The first canary keeps Aspen's process-local value durability non-claim. The host bridge must refuse restart recovery while unresolved operations exist.
 
 ## Adversarial audit
