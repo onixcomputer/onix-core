@@ -179,6 +179,7 @@
       url = "github:MercuryTechnologies/mercury-cli";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    kli.url = "github:kleisli-io/kli";
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
       inputs = {

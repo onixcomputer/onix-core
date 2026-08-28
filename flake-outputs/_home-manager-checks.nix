@@ -101,6 +101,8 @@ let
   invalidDevenvPackageName = "devenv-bogus";
   secretSpecPackageName = "secretspec";
   invalidSecretSpecPackageName = "secretspec-bogus";
+  kliPackageName = "kli";
+  invalidKliPackageName = "kli-bogus";
   packageName = package: package.pname or (lib.getName package);
   packagePriority = package: package.meta.priority or lib.meta.defaultPriority;
   findHomePackageNamed =
@@ -605,6 +607,7 @@ let
   globalDevToolAssertions =
     devToolAssertionsFor devenvPackageName invalidDevenvPackageName
     ++ devToolAssertionsFor secretSpecPackageName invalidSecretSpecPackageName
+    ++ devToolAssertionsFor kliPackageName invalidKliPackageName
     ++ secretSpecPriorityAssertions;
 
   failedAssertions = lib.filter (assertion: !assertion.condition) assertions;

@@ -13,6 +13,7 @@ let
   kuna = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.kuna;
   kiEditor = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.ki-editor;
   mercuryCli = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.mercury-cli;
+  kli = inputs.kli.packages.${pkgs.stdenv.hostPlatform.system}.default;
   primeAgent = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.prime-agent;
   cairnUpstream = inputs.cairn.packages.${pkgs.stdenv.hostPlatform.system}.cairn;
   cairnArtifactInput = inputs.cairn.inputs.artifact;
@@ -103,6 +104,7 @@ in
     (lib.lowPrio secretspec)
     tracey
     kuna
+    kli
     primeAgent
 
     # Iroh P2P tools
