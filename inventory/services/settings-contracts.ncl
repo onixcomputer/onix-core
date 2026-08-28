@@ -27,6 +27,7 @@ let schemas = {
   "kache-nix-rust" = import "../../modules/kache-nix-rust/schema.ncl",
   "kache-rustfs" = import "../../modules/kache-rustfs/schema.ncl",
   "kiln-aspen-canary" = import "../../modules/kiln-aspen-canary/schema.ncl",
+  "kiln-aspen-radicle-ci" = import "../../modules/kiln-aspen-radicle-ci/schema.ncl",
   "lemonade" = import "../../modules/lemonade/schema.ncl",
   "llamacpp-rpc" = import "../../modules/llamacpp-rpc/schema.ncl",
   "llamacpp-server" = import "../../modules/llamacpp-server/schema.ncl",

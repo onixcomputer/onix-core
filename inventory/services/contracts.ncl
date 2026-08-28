@@ -34,6 +34,7 @@ let self_modules = [
   "kache-nix-rust",
   "kache-rustfs",
   "kiln-aspen-canary",
+  "kiln-aspen-radicle-ci",
   "lemonade",
   "llamacpp-rpc",
   "llamacpp-server",

@@ -6,8 +6,8 @@
 
 ## Phase 1: Admit the production cohort
 
-- [ ] [serial] Pin the published durable Kiln Aspen host and bounded Radicle provider revisions. r[onix.radicle_ci.aspen_composition]
-- [ ] [serial] Add typed production settings and negative fixtures for users, paths, bounds, source identity, workflow identity, and rollback. r[onix.radicle_ci.aspen_composition]
+- [x] [serial] Pin the published durable Kiln Aspen host and bounded Radicle provider revisions. r[onix.radicle_ci.aspen_composition]
+- [x] [serial] Add typed production settings and negative fixtures for users, paths, bounds, source identity, workflow identity, and rollback. r[onix.radicle_ci.aspen_composition]
 - [ ] [serial] Deploy separate production host and Lattice users, state roots, sockets, ordering, resource limits, and restart policy. r[onix.radicle_ci.aspen_composition]
 - [ ] [serial] Expose only the exact read-only Seaglass source view and writable report root to the provider workflow. r[onix.radicle_ci.aspen_authority]
 - [ ] [serial] Prove that Radicle keys, node sockets, policy databases, unrelated repositories, home directories, and network authority remain unavailable. r[onix.radicle_ci.aspen_authority]

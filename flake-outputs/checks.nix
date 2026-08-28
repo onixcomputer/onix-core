@@ -50,6 +50,7 @@ let
   radicleSourceAdmissionChecks = (import ./_radicle-source-admission-checks.nix) innerArgs;
   seaglassKilnCiChecks = (import ./_seaglass-kiln-ci-checks.nix) innerArgs;
   kilnAspenCanaryChecks = (import ./_kiln-aspen-canary-checks.nix) innerArgs;
+  kilnAspenRadicleCiChecks = (import ./_kiln-aspen-radicle-ci-checks.nix) innerArgs;
   multiverseChecks = (import ./_multiverse-checks.nix) innerArgs;
 
   packageChecks = lib.mapAttrs' (n: lib.nameValuePair "package-${n}") self'.packages;
@@ -84,6 +85,7 @@ in
     // (radicleSourceAdmissionChecks.checks or { })
     // (seaglassKilnCiChecks.checks or { })
     // (kilnAspenCanaryChecks.checks or { })
+    // (kilnAspenRadicleCiChecks.checks or { })
     // (multiverseChecks.checks or { })
     // packageChecks
     // devShellChecks;

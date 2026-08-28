@@ -70,6 +70,17 @@ let kiln_aspen_canary_host_uid = 970 in
 let kiln_aspen_canary_lattice_uid = 971 in
 let kiln_aspen_canary_maximum_requests = 64 in
 let kiln_aspen_canary_timeout_milliseconds = 30000 in
+let kiln_aspen_ci_host_uid = 972 in
+let kiln_aspen_ci_lattice_uid = 973 in
+let kiln_aspen_ci_maximum_requests = 64 in
+let kiln_aspen_ci_request_timeout_milliseconds = 30000 in
+let kiln_aspen_ci_provider_timeout_milliseconds = 7200000 in
+let kiln_aspen_ci_output_max_bytes = 8388608 in
+let kiln_aspen_ci_report_max_bytes = 16777216 in
+let kiln_aspen_ci_wrapper_max_bytes = 262144 in
+let kiln_aspen_ci_provider_poll_milliseconds = 100 in
+let kiln_aspen_ci_teardown_timeout_milliseconds = 30000 in
+let kiln_aspen_ci_stage_collision_attempts = 8 in
 let radicle_hardened_wasmtime_rid = "rad:z3hRCegTsS8jpJVgxYfb9psEzxHpG" in
 let radicle_vm_cohort_rid = "rad:z2QJLUqyAZnnHPiZQ1BFjLsX9ush3" in
 let radicle_source_rids = [
@@ -889,6 +900,38 @@ in
         latticeUid = kiln_aspen_canary_lattice_uid,
         maximumRequests = kiln_aspen_canary_maximum_requests,
         timeoutMilliseconds = kiln_aspen_canary_timeout_milliseconds,
+      },
+    },
+
+    # r[impl onix.radicle_ci.aspen_composition.accepted]
+    # r[impl onix.radicle_ci.aspen_authority.accepted]
+    "seaglass-kiln-aspen-production" = {
+      module = { name = "kiln-aspen-radicle-ci", input = "self" },
+      roles.default.machines.britton-desktop.settings = {
+        enable = true,
+        runtimeName = "kiln-aspen-ci",
+        routeMode = "shadow",
+        hostStateDir = "/var/lib/kiln-aspen-radicle-ci/host",
+        latticeStateDir = "/var/lib/kiln-aspen-radicle-ci/lattice",
+        sourcePath = "/var/lib/radicle/storage/z3xXXCQXCTquvAawh41YYs8yC8xmk",
+        sourceView = "/var/lib/kiln-aspen-radicle-ci/source/seaglass.git",
+        reportPath = "/var/lib/radicle-ci/reports/aspen",
+        reportView = "/var/lib/kiln-aspen-radicle-ci/report-view",
+        repository = radicle_seaglass_rid,
+        reportNamespace = "seaglass",
+        reportBaseUrl = "https://ci.onix.computer/reports/aspen",
+        hostUid = kiln_aspen_ci_host_uid,
+        latticeUid = kiln_aspen_ci_lattice_uid,
+        maximumRequests = kiln_aspen_ci_maximum_requests,
+        requestTimeoutMilliseconds = kiln_aspen_ci_request_timeout_milliseconds,
+        providerTimeoutMilliseconds = kiln_aspen_ci_provider_timeout_milliseconds,
+        providerStdoutMaxBytes = kiln_aspen_ci_output_max_bytes,
+        providerStderrMaxBytes = kiln_aspen_ci_output_max_bytes,
+        providerReportMaxBytes = kiln_aspen_ci_report_max_bytes,
+        providerWrapperMaxBytes = kiln_aspen_ci_wrapper_max_bytes,
+        providerPollMilliseconds = kiln_aspen_ci_provider_poll_milliseconds,
+        providerTeardownTimeoutMilliseconds = kiln_aspen_ci_teardown_timeout_milliseconds,
+        providerStageCollisionAttempts = kiln_aspen_ci_stage_collision_attempts,
       },
     },
 

@@ -35,8 +35,8 @@ in
             settings = extendSettings (ms.mkDefaults schema.default);
             evaluated = import ./settings.nix { inherit lib; } settings;
             system = pkgs.stdenv.hostPlatform.system;
-            kilnPackage = inputs.kiln.packages.${system}.kiln;
-            hostPackage = inputs.kiln.packages.${system}.kiln-aspen-host;
+            kilnPackage = inputs.kiln-canary.packages.${system}.kiln;
+            hostPackage = inputs.kiln-canary.packages.${system}.kiln-aspen-host;
             latticePackage = inputs.lattice.packages.${system}.lattice;
             hostExecutable = lib.getExe' hostPackage "kiln-aspen-host";
             extensionExecutable = lib.getExe' kilnPackage "kiln-aspen-extension";
@@ -118,7 +118,7 @@ in
                 }
                 ''
                   nickel export --format json \
-                    ${inputs.kiln}/config/aspen-runtime-profile.ncl > "$out"
+                    ${inputs.kiln-canary}/config/aspen-runtime-profile.ncl > "$out"
                 '';
             latticeWorkflow = ./profiles/lattice-workflow.ncl;
             latticePreparationMarker = "${settings.latticeStateDir}/workflow-revision";
