@@ -4006,11 +4006,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1787793922,
-        "narHash": "sha256-QtuWqd2XeypbSqTv+idHeWXB/aVzZ9H+QOZ7BPdt/Nc=",
+        "lastModified": 1787934832,
+        "narHash": "sha256-zEBN91KI10LBK6siS+joFCVW8oGLh0vweRUAeRDfzNQ=",
         "ref": "refs/heads/main",
-        "rev": "4a308e2f9b05e7b415bf57d59b25bf5a6d6eb3cb",
-        "revCount": 249,
+        "rev": "a9e5b5fb7939a4650ce87458cd87f86e839d10ab",
+        "revCount": 266,
         "type": "git",
         "url": "ssh://git@github.com/OnixResearch/tenstorrent.nix.git"
       },
