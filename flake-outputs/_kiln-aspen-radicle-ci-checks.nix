@@ -32,6 +32,7 @@ let
   sourceGroup = "${runtimeName}-source";
   reportGroup = "${runtimeName}-report";
   hostState = "/var/lib/kiln-aspen-radicle-ci/host";
+  quarantineDirectory = "/var/lib/kiln-aspen-radicle-ci/quarantine";
   latticeState = "/var/lib/kiln-aspen-radicle-ci/lattice";
   sourcePath = "/var/lib/radicle/storage/z3xXXCQXCTquvAawh41YYs8yC8xmk";
   sourceView = "/var/lib/kiln-aspen-radicle-ci/source/seaglass.git";
@@ -79,6 +80,7 @@ let
   shadowCommand = shadowConfig.ExecStart;
   hostPreStart = hostConfig.ExecStartPre;
   latticePreStart = latticeConfig.ExecStartPre;
+  latticePrepareCommand = builtins.elemAt latticePreStart 1;
   hostSocketGrant = hostConfig.ExecStartPost;
   latticeSocketGrant = latticeConfig.ExecStartPost;
   brokerSettings = desktopConfig.services.radicle.ci.broker.settings;
@@ -88,6 +90,7 @@ let
   radicleGroups = desktopConfig.users.users.radicle.extraGroups;
   tmpfileSettings = desktopConfig.systemd.tmpfiles.settings."10-${runtimeName}";
   reportTmpfile = tmpfileSettings.${reportPath}.d;
+  quarantineTmpfile = tmpfileSettings.${quarantineDirectory}.d;
   reportNamespaceTmpfile = tmpfileSettings."${reportPath}/seaglass".d;
   commonHiddenPaths = [
     "/run/secrets"
@@ -171,6 +174,8 @@ let
     && !(builtins.elem sourceGroup radicleGroups)
     && !(builtins.elem reportGroup hostGroups)
     && !(builtins.elem sourceGroup hostGroups)
+    && quarantineTmpfile.user == "root"
+    && quarantineTmpfile.group == "root"
     && reportTmpfile.user == "radicle"
     && reportTmpfile.group == reportGroup
     && reportNamespaceTmpfile.user == "radicle"
@@ -349,6 +354,11 @@ in
 
           grep -F -- ${lib.escapeShellArg aspenSocket} ${lib.escapeShellArg hostPreStart} >/dev/null
           grep -F -- ${lib.escapeShellArg latticeSocket} ${lib.escapeShellArg (builtins.elemAt latticePreStart 0)} >/dev/null
+          grep -F -- ' import ' ${lib.escapeShellArg latticePrepareCommand} >/dev/null
+          if grep -F -- 'exit 0' ${lib.escapeShellArg latticePrepareCommand} >/dev/null; then
+            echo "Lattice preparation trusts its marker without re-importing the exact workflow" >&2
+            exit 1
+          fi
           grep -F -- ${lib.escapeShellArg ingressGroup} ${lib.escapeShellArg hostSocketGrant} >/dev/null
           grep -F -- ${lib.escapeShellArg internalGroup} ${lib.escapeShellArg latticeSocketGrant} >/dev/null
           touch "$out"

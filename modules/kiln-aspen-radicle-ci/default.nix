@@ -237,6 +237,7 @@ in
                     ${inputs.kiln}/config/aspen-runtime-profile.ncl > "$out"
                 '';
             latticePreparationMarker = "${settings.latticeStateDir}/workflow-revision";
+            quarantineDirectory = "${builtins.dirOf settings.hostStateDir}/quarantine";
             latticePrepare = pkgs.writeShellApplication {
               name = "${runtimeName}-prepare-lattice";
               runtimeInputs = [ pkgs.coreutils ];
@@ -246,7 +247,6 @@ in
                 expected=${lib.escapeShellArg latticeWorkflowRevision}
                 if test -f "$marker"; then
                   test "$(cat "$marker")" = "$expected"
-                  exit 0
                 fi
                 ${latticeExecutable} --config ${lib.escapeShellArg latticeConfig} \
                   import ${lib.escapeShellArg latticeWorkflow}
@@ -352,7 +352,7 @@ in
                 version = 1;
                 event = "push";
                 repository = settings.repository;
-                actor = "did:key:z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
+                actor = "did:key:z6MkjCqx5ksRqcDeNeuEnz53udbUHebRLHhddCxecWJu9koE";
                 before = "44ed329b09e472aa12866c8dceedbfb3526b25a1";
                 after = "5f659dce24e13b30e996f0aab3419dac4c21f934";
                 branch = "master";
@@ -570,6 +570,11 @@ in
                 mode = privateDirectoryMode;
                 user = hostUser;
                 group = hostUser;
+              };
+              ${quarantineDirectory}.d = {
+                mode = privateDirectoryMode;
+                user = "root";
+                group = "root";
               };
               ${settings.latticeStateDir}.d = {
                 mode = privateDirectoryMode;

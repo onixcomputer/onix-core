@@ -21,7 +21,9 @@ The production workflow revision is `b3:616b5d8beb00044accf14e88c3d71b487669535e
 - profile `b3:67f30a749eaa91b56a5a0e42873c9b13968ff92ae87f577c6f36041f4a722cb5`;
 - graph `b3:a5af82f6dc0f5b094624022825ba048775cc4892bfdd12473bb57945e8745426`.
 
-The first status-disabled shadow attempt was retained as operation `91ab5c42...` with state `Unknown`. A raw contract exchange proved that Lattice returned `InvalidContract` before acceptance, and no provider process or report existed. The cause was a stale route revision after UID-bound provider profile paths changed the workflow command. The production workflow now uses stable `/run/current-system` and `/etc` command paths. A different exact trigger identity will run the corrected shadow; the first operation remains retained and is not redispatched.
+The first status-disabled shadow attempt was retained as operation `91ab5c42...` with state `Unknown`. A raw contract exchange proved that Lattice returned `InvalidContract` before acceptance, and no provider process or report existed. The cause was a stale route revision after UID-bound provider profile paths changed the workflow command. The production workflow now uses stable `/run/current-system` and `/etc` command paths.
+
+The second status-disabled attempt, operation `690a355c...`, also received `InvalidContract` before provider acceptance. The marker named `616b`, but a store export proved the stored workflow still had revision `e86f`. The Lattice pre-start now re-imports the exact workflow on every start after it validates the marker. Both failed host roots are retained under the root-only quarantine directory. A third exact trigger identity will run the corrected shadow; neither failed operation is redispatched.
 
 The provider profile binds UID `975`, RID `rad:z3xXXCQXCTquvAawh41YYs8yC8xmk`, the exact source view, wrapper BLAKE3, working directory, report view, report namespace, HTTPS URL, and every process and publication bound.
 
