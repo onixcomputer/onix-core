@@ -49,7 +49,7 @@ let
   expectedLatticeRuntimeRevision = "c513d94d89e901ffa56ae67f375f973e55958e42";
   expectedLatticeContractRevision = "70496e67c7fd4a8b05914161a8e09de2759bebc8";
   kilnInput = self.lib.inputs.kiln-canary;
-  latticeInput = self.lib.inputs.lattice;
+  latticeInput = self.lib.inputs.lattice-canary;
   kilnPackage = kilnInput.packages.${pkgs.stdenv.hostPlatform.system}.kiln;
   hostPackage = kilnInput.packages.${pkgs.stdenv.hostPlatform.system}.kiln-aspen-host;
   latticePackage = latticeInput.packages.${pkgs.stdenv.hostPlatform.system}.lattice;

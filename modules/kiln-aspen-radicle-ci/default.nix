@@ -352,7 +352,7 @@ in
                 version = 1;
                 event = "push";
                 repository = settings.repository;
-                actor = "did:key:z6MkjCqx5ksRqcDeNeuEnz53udbUHebRLHhddCxecWJu9koE";
+                actor = "did:key:z6MkmkA6sEzzMffaWqKEKJcDh8LjAzgrJLrTNi971KN3X6sh";
                 before = "44ed329b09e472aa12866c8dceedbfb3526b25a1";
                 after = "5f659dce24e13b30e996f0aab3419dac4c21f934";
                 branch = "master";

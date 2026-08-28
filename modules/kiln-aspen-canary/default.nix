@@ -37,7 +37,7 @@ in
             system = pkgs.stdenv.hostPlatform.system;
             kilnPackage = inputs.kiln-canary.packages.${system}.kiln;
             hostPackage = inputs.kiln-canary.packages.${system}.kiln-aspen-host;
-            latticePackage = inputs.lattice.packages.${system}.lattice;
+            latticePackage = inputs.lattice-canary.packages.${system}.lattice;
             hostExecutable = lib.getExe' hostPackage "kiln-aspen-host";
             extensionExecutable = lib.getExe' kilnPackage "kiln-aspen-extension";
             adapterExecutable = lib.getExe' kilnPackage "kiln-adapter-radicle";

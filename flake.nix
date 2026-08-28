@@ -278,6 +278,10 @@
       url = "git+https://seed.radicle.garden/z2wsvXm5S2sJGvuV1k5JHiwi1PbKE.git?rev=8821e9adf15ad28838025bfbdd2e09c8d76fe5db";
     };
     lattice = {
+      url = "git+ssh://git@github.com/OnixResearch/lattice.git?rev=feb16b911a23e36d22d1359e44a9bc6b692cc98c";
+      inputs.octet.follows = "tigerstyle";
+    };
+    lattice-canary = {
       url = "git+ssh://git@github.com/OnixResearch/lattice.git?rev=c513d94d89e901ffa56ae67f375f973e55958e42";
       inputs.octet.follows = "tigerstyle";
     };
