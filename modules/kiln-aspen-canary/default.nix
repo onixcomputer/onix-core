@@ -224,6 +224,22 @@ in
                 exit 1
               '';
             };
+            removeStaleAspenSocket = pkgs.writeShellApplication {
+              name = "${runtimeName}-remove-stale-aspen-socket";
+              runtimeInputs = [ pkgs.coreutils ];
+              text = ''
+                set -eu
+                socket=${lib.escapeShellArg aspenSocket}
+                if test ! -e "$socket"; then
+                  exit 0
+                fi
+                if test ! -S "$socket"; then
+                  echo "Aspen socket path exists and is not a socket" >&2
+                  exit 1
+                fi
+                ${pkgs.coreutils}/bin/rm -f -- "$socket"
+              '';
+            };
             mkClient =
               {
                 name,
@@ -535,6 +551,7 @@ in
                 User = hostUser;
                 Group = socketGroup;
                 WorkingDirectory = settings.hostStateDir;
+                ExecStartPre = lib.getExe removeStaleAspenSocket;
                 ExecStart = lib.escapeShellArgs [
                   hostExecutable
                   "--aspen-profile"

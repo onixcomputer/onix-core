@@ -24,6 +24,7 @@ let
   uncertainService = desktopConfig.systemd.services.${uncertainServiceName};
   hostConfig = hostService.serviceConfig;
   latticeConfig = latticeService.serviceConfig;
+  staleSocketGuard = hostConfig.ExecStartPre;
   hostUser = "${runtimeName}-host";
   latticeUser = "${runtimeName}-lattice";
   hostState = "/var/lib/kiln-aspen-canary/host";
@@ -158,6 +159,14 @@ in
         test -x ${lib.escapeShellArg "${kilnPackage}/bin/kiln-aspen-extension"}
         test -x ${lib.escapeShellArg "${kilnPackage}/bin/kiln-adapter-radicle"}
         test -x ${lib.escapeShellArg "${latticePackage}/bin/lattice"}
+        test -x ${lib.escapeShellArg staleSocketGuard}
+        grep -F -- ${lib.escapeShellArg aspenSocket} ${lib.escapeShellArg staleSocketGuard} >/dev/null
+        grep -F -- 'test ! -S "$socket"' ${lib.escapeShellArg staleSocketGuard} >/dev/null
+        grep -F -- 'rm -f -- "$socket"' ${lib.escapeShellArg staleSocketGuard} >/dev/null
+        if grep -F -- ${lib.escapeShellArg latticeSocket} ${lib.escapeShellArg staleSocketGuard} >/dev/null; then
+          echo "Aspen stale-socket guard targets the Lattice socket" >&2
+          exit 1
+        fi
         grep -F -- ${lib.escapeShellArg expectedKilnProtocolRevision} ${lib.escapeShellArg hostLockPath} >/dev/null
 
         accepted=${lib.escapeShellArg acceptedService.serviceConfig.ExecStart}
