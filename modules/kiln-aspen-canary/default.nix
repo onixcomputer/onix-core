@@ -71,10 +71,11 @@ in
             serviceStopTimeout = "45s";
             socketReadyAttempts = 100;
             socketReadyDelaySeconds = "0.05";
-            maximumProviderPolls = 64;
             dispatchConnectionsPerEffect = 1;
-            providerConnectionsPerEffect = maximumProviderPolls + dispatchConnectionsPerEffect;
             maximumLatticeConnections = 65536;
+            admittedHostRequestDivisor = if settings.maximumRequests > 0 then settings.maximumRequests else 1;
+            providerConnectionsPerEffect = builtins.div maximumLatticeConnections admittedHostRequestDivisor;
+            maximumProviderPolls = providerConnectionsPerEffect - dispatchConnectionsPerEffect;
             latticeMaximumConnections = settings.maximumRequests * providerConnectionsPerEffect;
             latticeWorkflowRevision = "b3:1377fce07f3426f87ab7c61d6a716d3f1fc95be71f91ab87699e13f56dbd35b3";
             nclString = value: builtins.toJSON value;
@@ -476,8 +477,8 @@ in
           {
             assertions = evaluated.assertions ++ [
               {
-                assertion = latticeMaximumConnections <= maximumLatticeConnections;
-                message = "Kiln Aspen canary Lattice connection budget exceeds the contract bound";
+                assertion = maximumProviderPolls > 0 && latticeMaximumConnections <= maximumLatticeConnections;
+                message = "Kiln Aspen canary poll or Lattice connection budget exceeds the contract bound";
               }
             ];
 

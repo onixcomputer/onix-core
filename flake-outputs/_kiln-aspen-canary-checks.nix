@@ -38,11 +38,11 @@ let
   expectedHostUid = 970;
   expectedLatticeUid = 971;
   expectedMaximumRequests = 64;
-  expectedProviderPolls = 64;
   dispatchConnectionsPerEffect = 1;
-  expectedProviderConnections = expectedProviderPolls + dispatchConnectionsPerEffect;
-  expectedLatticeConnections = expectedMaximumRequests * expectedProviderConnections;
   maximumLatticeConnections = 65536;
+  expectedProviderConnections = builtins.div maximumLatticeConnections expectedMaximumRequests;
+  expectedProviderPolls = expectedProviderConnections - dispatchConnectionsPerEffect;
+  expectedLatticeConnections = expectedMaximumRequests * expectedProviderConnections;
   expectedAspenRevision = "22f8ded26ca1907c29948e08b53f35df23080733";
   expectedKilnHostRevision = "69c0a6ac454d7291e4aed12fd72a6f2c31636e76";
   expectedKilnProtocolRevision = "42eabcb21385a436ddc044fb7034b8cdaec7b8a0";
