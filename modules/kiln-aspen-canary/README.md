@@ -108,7 +108,7 @@ systemctl start kiln-aspen-canary-uncertain.service
 journalctl -u kiln-aspen-canary-uncertain.service --no-pager
 ```
 
-The uncertainty drill temporarily renames the live Lattice socket. A bounded local `socat` endpoint reads one complete request and closes without a response. The script restores the original live socket before it exits.
+The uncertainty drill runs as the Aspen host user. It temporarily renames the live Lattice socket. A bounded local `socat` endpoint reads one complete request and closes without a response. The script restores the original live socket before it exits.
 
 Exercise explicit rollback. This command selects Lattice directly; it is not automatic fallback:
 

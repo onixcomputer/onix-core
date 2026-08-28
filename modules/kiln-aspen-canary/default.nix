@@ -363,7 +363,6 @@ in
                 pkgs.coreutils
                 pkgs.gnugrep
                 pkgs.socat
-                pkgs.util-linux
               ];
               text = ''
                 set -eu
@@ -387,8 +386,7 @@ in
                 run_unknown() {
                   output="$1"
                   set +e
-                  ${pkgs.util-linux}/bin/runuser --user ${lib.escapeShellArg hostUser} -- \
-                    ${uncertainAdapterCommand} \
+                  ${uncertainAdapterCommand} \
                     < ${lib.escapeShellArg uncertainTrigger} >"$output" 2>&1
                   status="$?"
                   set -e
@@ -635,8 +633,8 @@ in
               ];
               serviceConfig = commonHardening // {
                 Type = "oneshot";
-                User = "root";
-                Group = "root";
+                User = hostUser;
+                Group = socketGroup;
                 ExecStart = lib.getExe uncertainClient;
                 ReadWritePaths = [
                   settings.hostStateDir

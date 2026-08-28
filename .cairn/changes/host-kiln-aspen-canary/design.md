@@ -64,7 +64,7 @@ Kiln host revision `69c0a6ac454d7291e4aed12fd72a6f2c31636e76` supplies the deplo
 
 The new module remains disabled by default. It does not modify `services.radicle.ci.broker` or its existing Seaglass trigger.
 
-When enabled, the module creates separate service users for the Aspen host bridge and Lattice workflow exchange. A shared socket group grants only the required local connection paths.
+When enabled, the module creates separate service users for the Aspen host bridge and Lattice workflow exchange. A shared socket group grants only the required local connection paths. The uncertainty drill uses the host identity and does not retain root impersonation or extra capabilities.
 
 The Lattice service starts first and owns its workflow socket and state root. The Kiln host bridge then starts with:
 

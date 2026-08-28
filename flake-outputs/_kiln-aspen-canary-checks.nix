@@ -87,7 +87,9 @@ let
     && rejectedService.wantedBy == [ ]
     && unavailableService.wantedBy == [ ]
     && rollbackService.wantedBy == [ ]
-    && uncertainService.wantedBy == [ ];
+    && uncertainService.wantedBy == [ ]
+    && uncertainService.serviceConfig.User == hostUser
+    && uncertainService.serviceConfig.Group == runtimeName;
   revisionsValid =
     kilnInput.rev == expectedKilnHostRevision
     && latticeInput.rev == expectedLatticeRuntimeRevision
@@ -202,6 +204,10 @@ in
         grep -F -- 'aspen_ingress_unknown' "$uncertain" >/dev/null
         grep -F -- '"classification":"unknown_after_write"' "$uncertain" >/dev/null
         grep -F -- 'socat -u' "$uncertain" >/dev/null
+        if grep -F -- 'runuser' "$uncertain" >/dev/null; then
+          echo "uncertainty drill retains avoidable root impersonation" >&2
+          exit 1
+        fi
         touch "$out"
       '';
 
