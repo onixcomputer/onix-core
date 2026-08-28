@@ -15,7 +15,7 @@ The services use distinct Unix users and state roots. They share one socket grou
 
 The Lattice server connection budget covers one dispatch and every admitted poll for each bounded host request. The typed profile rejects a budget above Lattice's contract limit.
 
-Before a host restart, a guarded pre-start step removes only the stale Aspen Unix socket. It fails if the exact path contains another file type and never touches the Lattice socket.
+Before a service restart, separate guarded steps remove only that service's stale Unix socket. Each guard fails if its exact path contains another file type, and cross-socket checks keep the paths separate.
 
 The Aspen host executes `kiln-aspen-extension` through Aspen's bounded native-process port. Provider effects use Lattice's durable workflow exchange.
 

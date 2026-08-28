@@ -24,7 +24,10 @@ let
   uncertainService = desktopConfig.systemd.services.${uncertainServiceName};
   hostConfig = hostService.serviceConfig;
   latticeConfig = latticeService.serviceConfig;
-  staleSocketGuard = hostConfig.ExecStartPre;
+  hostStaleSocketGuard = hostConfig.ExecStartPre;
+  latticePreStart = latticeConfig.ExecStartPre;
+  latticeStaleSocketGuard = builtins.elemAt latticePreStart 0;
+  latticePrepareCommand = builtins.elemAt latticePreStart 1;
   hostUser = "${runtimeName}-host";
   latticeUser = "${runtimeName}-lattice";
   hostState = "/var/lib/kiln-aspen-canary/host";
@@ -71,6 +74,7 @@ let
     && latticeConfig.RestrictAddressFamilies == [ "AF_UNIX" ]
     && hostConfig.Restart == "no"
     && latticeConfig.Restart == "on-failure"
+    && builtins.length latticePreStart == 2
     && builtins.elem latticeUnit hostService.after
     && builtins.elem latticeUnit hostService.requires
     && builtins.elem hostState hostConfig.ReadWritePaths
@@ -159,12 +163,21 @@ in
         test -x ${lib.escapeShellArg "${kilnPackage}/bin/kiln-aspen-extension"}
         test -x ${lib.escapeShellArg "${kilnPackage}/bin/kiln-adapter-radicle"}
         test -x ${lib.escapeShellArg "${latticePackage}/bin/lattice"}
-        test -x ${lib.escapeShellArg staleSocketGuard}
-        grep -F -- ${lib.escapeShellArg aspenSocket} ${lib.escapeShellArg staleSocketGuard} >/dev/null
-        grep -F -- 'test ! -S "$socket"' ${lib.escapeShellArg staleSocketGuard} >/dev/null
-        grep -F -- 'rm -f -- "$socket"' ${lib.escapeShellArg staleSocketGuard} >/dev/null
-        if grep -F -- ${lib.escapeShellArg latticeSocket} ${lib.escapeShellArg staleSocketGuard} >/dev/null; then
+        test -x ${lib.escapeShellArg hostStaleSocketGuard}
+        test -x ${lib.escapeShellArg latticeStaleSocketGuard}
+        test -x ${lib.escapeShellArg latticePrepareCommand}
+        grep -F -- ${lib.escapeShellArg aspenSocket} ${lib.escapeShellArg hostStaleSocketGuard} >/dev/null
+        grep -F -- 'test ! -S "$socket"' ${lib.escapeShellArg hostStaleSocketGuard} >/dev/null
+        grep -F -- 'rm -f -- "$socket"' ${lib.escapeShellArg hostStaleSocketGuard} >/dev/null
+        if grep -F -- ${lib.escapeShellArg latticeSocket} ${lib.escapeShellArg hostStaleSocketGuard} >/dev/null; then
           echo "Aspen stale-socket guard targets the Lattice socket" >&2
+          exit 1
+        fi
+        grep -F -- ${lib.escapeShellArg latticeSocket} ${lib.escapeShellArg latticeStaleSocketGuard} >/dev/null
+        grep -F -- 'test ! -S "$socket"' ${lib.escapeShellArg latticeStaleSocketGuard} >/dev/null
+        grep -F -- 'rm -f -- "$socket"' ${lib.escapeShellArg latticeStaleSocketGuard} >/dev/null
+        if grep -F -- ${lib.escapeShellArg aspenSocket} ${lib.escapeShellArg latticeStaleSocketGuard} >/dev/null; then
+          echo "Lattice stale-socket guard targets the Aspen socket" >&2
           exit 1
         fi
         grep -F -- ${lib.escapeShellArg expectedKilnProtocolRevision} ${lib.escapeShellArg hostLockPath} >/dev/null

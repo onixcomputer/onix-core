@@ -85,7 +85,7 @@ A disconnect after acceptance remains `Unknown` until exact reconciliation. The 
 
 The Lattice server connection bound equals the host request bound multiplied by one dispatch plus the provider poll bound. This relation prevents the server from stopping before the host consumes its admitted poll budget. The result must remain within Lattice's contract maximum.
 
-Systemd stops the old host before its replacement starts. A pre-start helper removes the exact Aspen path only when it is a stale Unix socket. Another file type fails closed, and the helper never targets the Lattice socket.
+Systemd stops each old service before its replacement starts. Separate pre-start helpers remove each exact service path only when it is a stale Unix socket. Another file type fails closed, and cross-socket checks keep the helpers separate.
 
 The first canary keeps Aspen's process-local value durability non-claim. The host bridge must refuse restart recovery while unresolved operations exist.
 

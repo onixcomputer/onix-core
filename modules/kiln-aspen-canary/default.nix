@@ -224,21 +224,37 @@ in
                 exit 1
               '';
             };
-            removeStaleAspenSocket = pkgs.writeShellApplication {
+            mkStaleSocketGuard =
+              {
+                name,
+                socketPath,
+                socketOwner,
+              }:
+              pkgs.writeShellApplication {
+                inherit name;
+                runtimeInputs = [ pkgs.coreutils ];
+                text = ''
+                  set -eu
+                  socket=${lib.escapeShellArg socketPath}
+                  if test ! -e "$socket"; then
+                    exit 0
+                  fi
+                  if test ! -S "$socket"; then
+                    echo ${lib.escapeShellArg "${socketOwner} socket path exists and is not a socket"} >&2
+                    exit 1
+                  fi
+                  ${pkgs.coreutils}/bin/rm -f -- "$socket"
+                '';
+              };
+            removeStaleAspenSocket = mkStaleSocketGuard {
               name = "${runtimeName}-remove-stale-aspen-socket";
-              runtimeInputs = [ pkgs.coreutils ];
-              text = ''
-                set -eu
-                socket=${lib.escapeShellArg aspenSocket}
-                if test ! -e "$socket"; then
-                  exit 0
-                fi
-                if test ! -S "$socket"; then
-                  echo "Aspen socket path exists and is not a socket" >&2
-                  exit 1
-                fi
-                ${pkgs.coreutils}/bin/rm -f -- "$socket"
-              '';
+              socketPath = aspenSocket;
+              socketOwner = "Aspen";
+            };
+            removeStaleLatticeSocket = mkStaleSocketGuard {
+              name = "${runtimeName}-remove-stale-lattice-socket";
+              socketPath = latticeSocket;
+              socketOwner = "Lattice";
             };
             mkClient =
               {
@@ -516,7 +532,10 @@ in
                 User = latticeUser;
                 Group = socketGroup;
                 WorkingDirectory = settings.latticeStateDir;
-                ExecStartPre = lib.getExe latticePrepare;
+                ExecStartPre = [
+                  (lib.getExe removeStaleLatticeSocket)
+                  (lib.getExe latticePrepare)
+                ];
                 ExecStart = lib.escapeShellArgs [
                   latticeExecutable
                   "--config"
