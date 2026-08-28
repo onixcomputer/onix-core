@@ -52,6 +52,7 @@ let
     "lemonade" = import ./lemonade (schemaArgs ./lemonade);
     "mesh-llm" = import ./mesh-llm (schemaArgs ./mesh-llm);
     "radicle-ci-runner" = import ./radicle-ci-runner (schemaArgs ./radicle-ci-runner);
+    "kiln-aspen-canary" = import ./kiln-aspen-canary (schemaArgs ./kiln-aspen-canary);
     "radicle-node" = import ./radicle-node (schemaArgs ./radicle-node);
     "radicle-seed-replica" = import ./radicle-seed-replica (schemaArgs ./radicle-seed-replica);
     "rustfs" = import ./rustfs (schemaArgs ./rustfs);

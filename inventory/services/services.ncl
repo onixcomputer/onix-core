@@ -66,6 +66,10 @@ let durable_file_publication_rid = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM" in
 let koiterminal_rid = "rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ" in
 let radicle_private_pilot_rid = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg" in
 let radicle_seaglass_rid = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk" in
+let kiln_aspen_canary_host_uid = 970 in
+let kiln_aspen_canary_lattice_uid = 971 in
+let kiln_aspen_canary_maximum_requests = 64 in
+let kiln_aspen_canary_timeout_milliseconds = 30000 in
 let radicle_hardened_wasmtime_rid = "rad:z3hRCegTsS8jpJVgxYfb9psEzxHpG" in
 let radicle_vm_cohort_rid = "rad:z2QJLUqyAZnnHPiZQ1BFjLsX9ush3" in
 let radicle_source_rids = [
@@ -298,19 +302,20 @@ in
 let niks3_upload_batch_size = 1 in
 let niks3_upload_idle_exit_timeout_seconds = 0 in
 let niks3_max_concurrent_uploads = 1 in
-let niks3_uploader_settings = fun local_address => {
-  serverUrl = niks3_server_url,
-  automaticUploads = false,
-  maintenanceMarker = "/run/niks3-maintenance-window",
-  maintenanceGuardUrls = [
-    "http://%{local_address}:%{rustfs_api_port}/health",
-    "http://%{local_address}:%{celld_public_port}/__celld/health",
-  ],
-  batchSize = niks3_upload_batch_size,
-  idleExitTimeoutSeconds = niks3_upload_idle_exit_timeout_seconds,
-  maxConcurrentUploads = niks3_max_concurrent_uploads,
-  verifyS3Integrity = true,
-}
+let niks3_uploader_settings = fun local_address =>
+  {
+    serverUrl = niks3_server_url,
+    automaticUploads = false,
+    maintenanceMarker = "/run/niks3-maintenance-window",
+    maintenanceGuardUrls = [
+      "http://%{local_address}:%{rustfs_api_port}/health",
+      "http://%{local_address}:%{celld_public_port}/__celld/health",
+    ],
+    batchSize = niks3_upload_batch_size,
+    idleExitTimeoutSeconds = niks3_upload_idle_exit_timeout_seconds,
+    maxConcurrentUploads = niks3_max_concurrent_uploads,
+    verifyS3Integrity = true,
+  }
 in
 {
   instances = {
@@ -869,6 +874,21 @@ in
         flakeNixBlake3 = "ef1b58422af1f9918554d7a0f78c6c657eded6ac64545e4c6fb3c6e1d7ba9e86",
         flakeLockBlake3 = "8f16f066737c44b0447f9bd86b89dca822183909d90563c097765f098e5abae4",
         scanSchedule = radicle_ci_scan_schedule,
+      },
+    },
+
+    # r[impl onix.kiln_aspen_canary.composition.accepted]
+    "kiln-aspen-private-canary" = {
+      module = { name = "kiln-aspen-canary", input = "self" },
+      roles.default.machines.britton-desktop.settings = {
+        enable = true,
+        runtimeName = "kiln-aspen-canary",
+        hostStateDir = "/var/lib/kiln-aspen-canary/host",
+        latticeStateDir = "/var/lib/kiln-aspen-canary/lattice",
+        hostUid = kiln_aspen_canary_host_uid,
+        latticeUid = kiln_aspen_canary_lattice_uid,
+        maximumRequests = kiln_aspen_canary_maximum_requests,
+        timeoutMilliseconds = kiln_aspen_canary_timeout_milliseconds,
       },
     },
 

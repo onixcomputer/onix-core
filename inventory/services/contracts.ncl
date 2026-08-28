@@ -33,6 +33,7 @@ let self_modules = [
   "iroh-ssh",
   "kache-nix-rust",
   "kache-rustfs",
+  "kiln-aspen-canary",
   "lemonade",
   "llamacpp-rpc",
   "llamacpp-server",

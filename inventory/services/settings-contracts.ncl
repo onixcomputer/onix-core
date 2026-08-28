@@ -26,6 +26,7 @@ let schemas = {
   "iroh-ssh" = import "../../modules/iroh-ssh/schema.ncl",
   "kache-nix-rust" = import "../../modules/kache-nix-rust/schema.ncl",
   "kache-rustfs" = import "../../modules/kache-rustfs/schema.ncl",
+  "kiln-aspen-canary" = import "../../modules/kiln-aspen-canary/schema.ncl",
   "lemonade" = import "../../modules/lemonade/schema.ncl",
   "llamacpp-rpc" = import "../../modules/llamacpp-rpc/schema.ncl",
   "llamacpp-server" = import "../../modules/llamacpp-server/schema.ncl",
