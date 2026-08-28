@@ -1,0 +1,117 @@
+{
+  "schema": "onix.kiln-aspen-private-canary-evidence.v1",
+  "verdict": "PASS",
+  "claim_level": "private-local-process-scoped-canary",
+  "observed_at": "2026-08-28",
+  "deployment": {
+    "onix_commit": "201aa202c1c527ec1beed267775d58b2c761ebea",
+    "system_closure": "/nix/store/gw5ydwxnrhc4fzwyayj2fk68q3hv4qz6-nixos-system-britton-desktop-26.11.20260819.afe3d8a",
+    "machine": "britton-desktop",
+    "build_host": "localhost",
+    "inputs_uploaded": true,
+    "current_system_matches": true,
+    "unrelated_activation_warnings": [
+      "datapool/kache-nix quota is below current used or reserved space",
+      "/var/cache/kache-nix permission update reported disk quota exceeded"
+    ]
+  },
+  "cohort": {
+    "kiln_host_revision": "69c0a6ac454d7291e4aed12fd72a6f2c31636e76",
+    "kiln_protocol_revision": "42eabcb21385a436ddc044fb7034b8cdaec7b8a0",
+    "aspen_revision": "22f8ded26ca1907c29948e08b53f35df23080733",
+    "lattice_contract_revision": "70496e67c7fd4a8b05914161a8e09de2759bebc8",
+    "lattice_runtime_revision": "c513d94d89e901ffa56ae67f375f973e55958e42",
+    "bounded_exec_revision": "29dac88ecded94457572db3fdfaaaab95fa91525"
+  },
+  "route": {
+    "profile_identity": "b3:67f30a749eaa91b56a5a0e42873c9b13968ff92ae87f577c6f36041f4a722cb5",
+    "graph_identity": "b3:a5af82f6dc0f5b094624022825ba048775cc4892bfdd12473bb57945e8745426",
+    "workflow_revision": "b3:1377fce07f3426f87ab7c61d6a716d3f1fc95be71f91ab87699e13f56dbd35b3",
+    "host_request_bound": 64,
+    "provider_poll_bound": 1023,
+    "connections_per_effect": 1024,
+    "lattice_connection_bound": 65536
+  },
+  "authority": {
+    "host_user": "kiln-aspen-canary-host",
+    "host_uid": 970,
+    "lattice_user": "kiln-aspen-canary-lattice",
+    "lattice_uid": 971,
+    "socket_group": "kiln-aspen-canary",
+    "host_state": "/var/lib/kiln-aspen-canary/host",
+    "lattice_state": "/var/lib/kiln-aspen-canary/lattice",
+    "runtime_directory": "/run/kiln-aspen-canary",
+    "aspen_socket": "/run/kiln-aspen-canary/aspen.sock",
+    "lattice_socket": "/run/kiln-aspen-canary/lattice.sock",
+    "state_mode": "0700",
+    "runtime_mode": "0770",
+    "socket_mode": "0660",
+    "uncertainty_drill_user": "kiln-aspen-canary-host"
+  },
+  "receipts": {
+    "accepted": {
+      "path": "evidence/live-receipts/accepted.jsonl",
+      "blake3": "884a5f1f9c49392bf839fe7fb7e28888c808cfd2706e05bb5ad56f4c9d45fe77",
+      "terminal": "success",
+      "exact_replay": true
+    },
+    "rejected": {
+      "path": "evidence/live-receipts/rejected.jsonl",
+      "blake3": "301ae4db3c79729497aa0269d6b298bcbc180388b227d847cd8be3a9f7b38dbf",
+      "terminal": "denied",
+      "exact_replay": true
+    },
+    "unavailable": {
+      "path": "evidence/live-receipts/unavailable.jsonl",
+      "blake3": "495d901c518912c2c30d548904a83edee4dc35e12acc4e04a5902818196d3276",
+      "classification": "unavailable",
+      "fallback": "none",
+      "exact_replay": true
+    },
+    "uncertain": {
+      "path": "evidence/live-receipts/uncertain.jsonl",
+      "blake3": "231eacd656e9d62c25e47d90a655c8c34413873aa0d831fa0d8aeb0c3b855435",
+      "classification": "unknown_after_write",
+      "reconciliation": "required",
+      "fallback": "none",
+      "same_process_replay": "unknown",
+      "exact_replay": true
+    },
+    "explicit_lattice_rollback": {
+      "path": "evidence/live-receipts/rollback-lattice.jsonl",
+      "blake3": "915f619070a0bd2878fd9269a03b828c6676f0a34c1bceb66d49046e8296e9cd",
+      "terminal": "success",
+      "automatic_fallback": false,
+      "exact_replay": true
+    }
+  },
+  "recovery": {
+    "initial_accepted_after_write_classification": "unknown",
+    "accepted_after_service_restart": "success",
+    "explicit_lattice_initial_classification": "timed_out",
+    "explicit_lattice_after_reconciliation": "success",
+    "long_lived_service_pids_changed": true,
+    "stale_socket_restart_cleanup": true,
+    "aspen_non_socket_path_rejected": true,
+    "lattice_non_socket_path_rejected": true,
+    "accepted_receipt_exact_after_restart": true,
+    "services_active_after_drills": true,
+    "socket_ownership_restored": true
+  },
+  "separation": {
+    "existing_seaglass_broker_route_changed": false,
+    "broker_targets_canary_socket": false,
+    "operator_units_have_wanted_by_target": false,
+    "automatic_runtime_fallback_observed": false
+  },
+  "non_claims": [
+    "private process observations do not prove production availability",
+    "process-local callback values do not prove active-operation durability",
+    "a successful canary does not prove CI correctness",
+    "a successful workflow does not prove workflow correctness",
+    "bounded process execution does not prove host sandboxing",
+    "provider observations do not prove external effect truth",
+    "local receipts do not establish release eligibility",
+    "unrelated host activation warnings are not resolved by this canary"
+  ]
+}
