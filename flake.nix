@@ -270,6 +270,9 @@
       url = "git+https://seed.radicle.garden/z2wsvXm5S2sJGvuV1k5JHiwi1PbKE.git?rev=69c0a6ac454d7291e4aed12fd72a6f2c31636e76";
       inputs.octet.follows = "tigerstyle";
     };
+    kiln-ci-legacy = {
+      url = "git+https://seed.radicle.garden/z2wsvXm5S2sJGvuV1k5JHiwi1PbKE.git?rev=8821e9adf15ad28838025bfbdd2e09c8d76fe5db";
+    };
     lattice = {
       url = "git+ssh://git@github.com/OnixResearch/lattice.git?rev=c513d94d89e901ffa56ae67f375f973e55958e42";
       inputs.octet.follows = "tigerstyle";

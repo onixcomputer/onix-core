@@ -480,7 +480,7 @@ in
         concurrent_adapters = kilnConcurrentAdapters;
         adapters.kiln = {
           command = "${
-            inputs.kiln.packages.${pkgs.stdenv.hostPlatform.system}.default
+            inputs.kiln-ci-legacy.packages.${pkgs.stdenv.hostPlatform.system}.default
           }/bin/kiln-adapter-radicle";
           env = {
             KILN_ADAPTER_PROTOCOL = "defelo";

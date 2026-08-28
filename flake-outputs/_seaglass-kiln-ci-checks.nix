@@ -56,8 +56,12 @@ let
   expectedReportTailnetSourceRange = "100.64.0.0/10";
   expectedReportMemoryMax = "256M";
   expectedReportCpuQuota = "100%";
+  expectedLegacyKilnRevision = "8821e9adf15ad28838025bfbdd2e09c8d76fe5db";
+  expectedHostedKilnRevision = "69c0a6ac454d7291e4aed12fd72a6f2c31636e76";
+  legacyKilnInput = self.lib.inputs.kiln-ci-legacy;
+  hostedKilnInput = self.lib.inputs.kiln;
   expectedAdapterCommand = "${
-    self.lib.inputs.kiln.packages.${pkgs.stdenv.hostPlatform.system}.default
+    legacyKilnInput.packages.${pkgs.stdenv.hostPlatform.system}.default
   }/bin/kiln-adapter-radicle";
   expectedTrigger = {
     adapter = "kiln";
@@ -80,6 +84,10 @@ let
         filter: filter ? And && builtins.elem { Repository = rid; } filter.And
       ) trigger.filters
     ) kilnTriggers;
+  continuityPinsValid =
+    legacyKilnInput.rev == expectedLegacyKilnRevision
+    && hostedKilnInput.rev == expectedHostedKilnRevision
+    && legacyKilnInput.rev != hostedKilnInput.rev;
   positivePolicyValid =
     brokerSettings.adapters.kiln.command == expectedAdapterCommand
     && brokerSettings.adapters.kiln.env.KILN_ADAPTER_PROTOCOL == "defelo"
@@ -147,6 +155,8 @@ let
 in
 {
   checks.seaglass-kiln-ci-policy =
+    assert lib.assertMsg continuityPinsValid
+      "the staged Seaglass executor and hosted Kiln inputs must remain separate immutable revisions";
     assert lib.assertMsg positivePolicyValid
       "Seaglass Kiln CI settings do not match the reviewed adapter, trigger, or resource policy";
     assert lib.assertMsg negativeRepositoryRejected
@@ -161,6 +171,14 @@ in
       "the private Seaglass replication shell lost its reviewed service boundary";
     pkgs.runCommand "seaglass-kiln-ci-policy-check" { } ''
       test -x ${lib.escapeShellArg expectedAdapterCommand}
+      legacy_diagnostic="$TMPDIR/legacy-adapter.err"
+      if printf '%s' 'not-json' \
+        | env KILN_ADAPTER_PROTOCOL=defelo ${lib.escapeShellArg expectedAdapterCommand} \
+          >"$TMPDIR/legacy-adapter.out" 2>"$legacy_diagnostic"; then
+        echo "legacy adapter accepted malformed broker input" >&2
+        exit 1
+      fi
+      grep -F -- 'radicle_json' "$legacy_diagnostic" >/dev/null
       test -x ${lib.escapeShellArg kilnNixCommand}
       grep -F -- ${lib.escapeShellArg "--override-input cairn/artifact"} ${lib.escapeShellArg kilnNixCommand} >/dev/null
       grep -F -- ${lib.escapeShellArg (toString artifactSource)} ${lib.escapeShellArg kilnNixCommand} >/dev/null
