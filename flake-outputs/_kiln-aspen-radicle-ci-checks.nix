@@ -84,6 +84,9 @@ let
   hostGroups = desktopConfig.users.users.${hostUser}.extraGroups;
   latticeGroups = desktopConfig.users.users.${latticeUser}.extraGroups;
   radicleGroups = desktopConfig.users.users.radicle.extraGroups;
+  tmpfileSettings = desktopConfig.systemd.tmpfiles.settings."10-${runtimeName}";
+  reportTmpfile = tmpfileSettings.${reportPath}.d;
+  reportNamespaceTmpfile = tmpfileSettings."${reportPath}/seaglass".d;
   commonHiddenPaths = [
     "/run/secrets"
     "/root"
@@ -166,6 +169,10 @@ let
     && !(builtins.elem sourceGroup radicleGroups)
     && !(builtins.elem reportGroup hostGroups)
     && !(builtins.elem sourceGroup hostGroups)
+    && reportTmpfile.user == "radicle"
+    && reportTmpfile.group == reportGroup
+    && reportNamespaceTmpfile.user == "radicle"
+    && reportNamespaceTmpfile.group == reportGroup
     && shadowService.wantedBy == [ ]
     && shadowConfig.User == "radicle"
     && authorityProbeService.wantedBy == [ ]

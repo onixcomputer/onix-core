@@ -591,12 +591,12 @@ in
               };
               ${settings.reportPath}.d = {
                 mode = sharedDirectoryMode;
-                user = latticeUser;
+                user = "radicle";
                 group = reportGroup;
               };
               "${settings.reportPath}/${settings.reportNamespace}".d = {
                 mode = sharedDirectoryMode;
-                user = latticeUser;
+                user = "radicle";
                 group = reportGroup;
               };
               ${settings.reportView}.d = {
