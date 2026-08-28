@@ -11,6 +11,7 @@ let
   latticeServiceName = "${runtimeName}-lattice";
   sourceServiceName = "${runtimeName}-source-admission";
   shadowServiceName = "${runtimeName}-shadow";
+  authorityProbeServiceName = "${runtimeName}-authority-probe";
   hostUnit = "${hostServiceName}.service";
   latticeUnit = "${latticeServiceName}.service";
   sourceUnit = "${sourceServiceName}.service";
@@ -18,10 +19,12 @@ let
   latticeService = desktopConfig.systemd.services.${latticeServiceName};
   sourceService = desktopConfig.systemd.services.${sourceServiceName};
   shadowService = desktopConfig.systemd.services.${shadowServiceName};
+  authorityProbeService = desktopConfig.systemd.services.${authorityProbeServiceName};
   hostConfig = hostService.serviceConfig;
   latticeConfig = latticeService.serviceConfig;
   sourceConfig = sourceService.serviceConfig;
   shadowConfig = shadowService.serviceConfig;
+  authorityProbeConfig = authorityProbeService.serviceConfig;
   hostUser = "${runtimeName}-host";
   latticeUser = "${runtimeName}-lattice";
   ingressGroup = "${runtimeName}-ingress";
@@ -39,8 +42,8 @@ let
   internalDirectory = "${runtimeDirectory}/internal";
   aspenSocket = "${ingressDirectory}/aspen.sock";
   latticeSocket = "${internalDirectory}/lattice.sock";
-  expectedHostUid = 972;
-  expectedLatticeUid = 973;
+  expectedHostUid = 974;
+  expectedLatticeUid = 975;
   expectedMaximumRequests = 64;
   expectedKilnRevision = "ccf6c64e8cba1d77299eab1386788426fa63e43e";
   expectedLegacyRevision = "8821e9adf15ad28838025bfbdd2e09c8d76fe5db";
@@ -70,6 +73,7 @@ let
   workflowProfile = desktopConfig.environment.etc."${runtimeName}/lattice-workflow.ncl".source;
   handlerProfile = desktopConfig.environment.etc."${runtimeName}/lattice-handler.ncl".source;
   sourceAdmissionCommand = sourceConfig.ExecStart;
+  authorityProbeCommand = authorityProbeConfig.ExecStart;
   shadowCommand = shadowConfig.ExecStart;
   hostPreStart = hostConfig.ExecStartPre;
   latticePreStart = latticeConfig.ExecStartPre;
@@ -163,7 +167,12 @@ let
     && !(builtins.elem reportGroup hostGroups)
     && !(builtins.elem sourceGroup hostGroups)
     && shadowService.wantedBy == [ ]
-    && shadowConfig.User == "radicle";
+    && shadowConfig.User == "radicle"
+    && authorityProbeService.wantedBy == [ ]
+    && authorityProbeConfig.User == latticeUser
+    && authorityProbeConfig.BindReadOnlyPaths == [ "${sourcePath}:${sourceView}" ]
+    && authorityProbeConfig.BindPaths == [ "${reportPath}:${reportView}" ]
+    && authorityProbeConfig.ReadWritePaths == [ reportView ];
   revisionsValid =
     kilnInput.rev == expectedKilnRevision
     && legacyInput.rev == expectedLegacyRevision
@@ -320,6 +329,11 @@ in
             echo "source admission gained network tooling" >&2
             exit 1
           fi
+          grep -F -- ${lib.escapeShellArg sourceView} ${lib.escapeShellArg authorityProbeCommand} >/dev/null
+          grep -F -- ${lib.escapeShellArg reportView} ${lib.escapeShellArg authorityProbeCommand} >/dev/null
+          grep -F -- '5f659dce24e13b30e996f0aab3419dac4c21f934' ${lib.escapeShellArg authorityProbeCommand} >/dev/null
+          grep -F -- '/var/lib/radicle-ci' ${lib.escapeShellArg authorityProbeCommand} >/dev/null
+          grep -F -- 'source view is writable' ${lib.escapeShellArg authorityProbeCommand} >/dev/null
 
           grep -F -- ${lib.escapeShellArg aspenSocket} ${lib.escapeShellArg hostPreStart} >/dev/null
           grep -F -- ${lib.escapeShellArg latticeSocket} ${lib.escapeShellArg (builtins.elemAt latticePreStart 0)} >/dev/null

@@ -1,5 +1,5 @@
-let default_host_uid = 972 in
-let default_lattice_uid = 973 in
+let default_host_uid = 974 in
+let default_lattice_uid = 975 in
 let default_maximum_requests = 64 in
 let default_request_timeout_milliseconds = 30000 in
 let default_provider_timeout_milliseconds = 7200000 in

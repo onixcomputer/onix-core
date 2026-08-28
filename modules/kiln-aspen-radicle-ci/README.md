@@ -16,7 +16,7 @@ The provider receives a cleared environment. It runs one fixed `nix flake check 
 
 ## Staging
 
-The operator-only `kiln-aspen-ci-shadow.service` has no target dependency. It sends one fixed native trigger through the production host without publishing a Radicle status. The `routeMode` setting accepts only `shadow`, `aspen`, or `legacy`. `shadow` and `legacy` retain the separately pinned legacy command. `aspen` selects the explicit Defelo-over-Aspen command and clears legacy adapter environment. No failure changes this setting automatically.
+The operator-only `kiln-aspen-ci-shadow.service` has no target dependency. It sends one fixed native trigger through the production host without publishing a Radicle status. The operator-only `kiln-aspen-ci-authority-probe.service` runs with the Lattice mount policy and verifies the exact source, read-only source access, writable report view, hidden authority paths, socket separation, and Nix daemon endpoint. The `routeMode` setting accepts only `shadow`, `aspen`, or `legacy`. `shadow` and `legacy` retain the separately pinned legacy command. `aspen` selects the explicit Defelo-over-Aspen command and clears legacy adapter environment. No failure changes this setting automatically.
 
 ## Claim boundary
 

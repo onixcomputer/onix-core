@@ -21,11 +21,13 @@ The production workflow revision is `b3:8f3706acd56e69145affe40a15aa1536599a8811
 - profile `b3:67f30a749eaa91b56a5a0e42873c9b13968ff92ae87f577c6f36041f4a722cb5`;
 - graph `b3:a5af82f6dc0f5b094624022825ba048775cc4892bfdd12473bb57945e8745426`.
 
-The provider profile binds UID `973`, RID `rad:z3xXXCQXCTquvAawh41YYs8yC8xmk`, the exact source view, wrapper BLAKE3, working directory, report view, report namespace, HTTPS URL, and every process and publication bound.
+The provider profile binds UID `975`, RID `rad:z3xXXCQXCTquvAawh41YYs8yC8xmk`, the exact source view, wrapper BLAKE3, working directory, report view, report namespace, HTTPS URL, and every process and publication bound.
 
 ## Authority
 
-The production host uses UID `972`. Lattice and the provider use UID `973`. They do not reuse canary identities.
+The production host uses UID `974`. Lattice and the provider use UID `975`. They do not reuse canary identities.
+
+The first pre-shadow activation exposed that the proposed UIDs `972` and `973` already belonged to `pcscd` and `mandb`. No shadow request had run. The production services were stopped, and only their new state, runtime, and report directories were removed. The revised module uses unused UIDs and asserts that each UID has exactly one account owner before activation.
 
 Four groups keep authority separate:
 

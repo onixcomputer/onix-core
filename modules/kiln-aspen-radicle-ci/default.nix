@@ -24,6 +24,7 @@ in
       {
         nixosModule =
           {
+            config,
             inputs,
             lib,
             pkgs,
@@ -64,6 +65,7 @@ in
             latticeServiceName = "${runtimeName}-lattice";
             sourceServiceName = "${runtimeName}-source-admission";
             shadowServiceName = "${runtimeName}-shadow";
+            authorityProbeServiceName = "${runtimeName}-authority-probe";
             hostUnit = "${hostServiceName}.service";
             latticeUnit = "${latticeServiceName}.service";
             sourceUnit = "${sourceServiceName}.service";
@@ -108,6 +110,8 @@ in
             ) millisecondsPerSecond;
             workflowTimeoutSeconds =
               providerTimeoutSeconds + providerTeardownSeconds + workflowCompletionMarginSeconds;
+            uidOwners =
+              uid: lib.attrNames (lib.filterAttrs (_name: user: (user.uid or null) == uid) config.users.users);
             shadowStartTimeout = "${toString workflowTimeoutSeconds}s";
             latticeWorkflowRevision = "b3:8f3706acd56e69145affe40a15aa1536599a88111f3905bc3a5a047a4d5deda2";
             latticeContractRevision = "70496e67c7fd4a8b05914161a8e09de2759bebc8";
@@ -377,6 +381,52 @@ in
                   < ${lib.escapeShellArg shadowTrigger}
               '';
             };
+            authorityProbe = pkgs.writeShellApplication {
+              name = "${runtimeName}-authority-probe";
+              runtimeInputs = [
+                pkgs.coreutils
+                pkgs.gitMinimal
+              ];
+              text = ''
+                set -eu
+                source=${lib.escapeShellArg settings.sourceView}
+                report=${lib.escapeShellArg reportNamespacePath}
+                expected_revision=5f659dce24e13b30e996f0aab3419dac4c21f934
+                temporary="$report/.authority-probe-$$"
+                cleanup() {
+                  rm -f -- "$temporary"
+                }
+                trap cleanup EXIT HUP INT TERM
+                test -d "$source"
+                test -d "$report"
+                test -S ${lib.escapeShellArg latticeSocket}
+                test ! -e ${lib.escapeShellArg aspenSocket}
+                test -S /nix/var/nix/daemon-socket/socket
+                git --git-dir="$source" cat-file -e "$expected_revision^{commit}"
+                if touch "$source/.authority-probe" 2>/dev/null; then
+                  rm -f -- "$source/.authority-probe"
+                  echo "source view is writable" >&2
+                  exit 1
+                fi
+                for forbidden in \
+                  /var/lib/radicle \
+                  /var/lib/radicle-ci \
+                  /run/secrets \
+                  /root \
+                  /home \
+                  /etc/ssh \
+                  ${lib.escapeShellArg ingressDirectory} \
+                  ${lib.escapeShellArg settings.hostStateDir}; do
+                  if test -e "$forbidden"; then
+                    echo "forbidden authority is visible: $forbidden" >&2
+                    exit 1
+                  fi
+                done
+                printf '%s\n' authority-probe > "$temporary"
+                test "$(cat "$temporary")" = authority-probe
+                printf '%s\n' '{"schema":"onix.kiln-aspen-authority-probe.v1","verdict":"PASS"}'
+              '';
+            };
             commonHardening = {
               CapabilityBoundingSet = "";
               AmbientCapabilities = "";
@@ -446,6 +496,11 @@ in
                   && providerConnectionsPerEffect > dispatchConnectionsPerEffect
                   && latticeMaximumConnections <= maximumLatticeConnections;
                 message = "Kiln Aspen production poll or Lattice connection budget exceeds the contract bound";
+              }
+              {
+                assertion =
+                  uidOwners settings.hostUid == [ hostUser ] && uidOwners settings.latticeUid == [ latticeUser ];
+                message = "Kiln Aspen production service UIDs must not alias another system account";
               }
               {
                 assertion = inputs.kiln.rev == "ccf6c64e8cba1d77299eab1386788426fa63e43e";
@@ -717,6 +772,25 @@ in
                 CPUQuota = shadowCpuQuota;
                 TasksMax = shadowTasksMaximum;
                 TimeoutStartSec = shadowStartTimeout;
+              };
+            };
+
+            # Operator-only least-authority probe. It runs with the Lattice mount namespace policy.
+            systemd.services.${authorityProbeServiceName} = lib.mkIf settings.enable {
+              description = "Verify the production Lattice source, report, and hidden-path boundary";
+              after = [ latticeUnit ];
+              requires = [ latticeUnit ];
+              serviceConfig = latticeHardening // {
+                Type = "oneshot";
+                User = latticeUser;
+                Group = latticeUser;
+                ExecStart = lib.getExe authorityProbe;
+                ReadOnlyPaths = [ settings.sourceView ];
+                ReadWritePaths = [ settings.reportView ];
+                MemoryMax = shadowMemoryMaximum;
+                CPUQuota = shadowCpuQuota;
+                TasksMax = shadowTasksMaximum;
+                TimeoutStartSec = serviceStartTimeout;
               };
             };
 
