@@ -431,7 +431,7 @@ in
       # writable files after linkGeneration.
       makeNoctaliaConfigMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
         noctalia_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/noctalia"
-        for f in config.toml palettes/Onix.json; do
+        for f in config.toml palettes/Adwaita.json; do
           target="$noctalia_dir/$f"
           if [ -L "$target" ]; then
             content=$(cat "$target")
@@ -555,7 +555,7 @@ in
     };
     configFile = {
       "noctalia/config.toml".force = true;
-      "noctalia/palettes/Onix.json".force = true;
+      "noctalia/palettes/Adwaita.json".force = true;
     };
   };
 
