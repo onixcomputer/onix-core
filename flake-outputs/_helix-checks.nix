@@ -151,6 +151,19 @@ in
       assert_contains '${hxOilBin} subdir collapse' "$hx_config_root"
       assert_contains '${hxOilBin} subdir refresh' "$hx_config_root"
 
+      # Default Adwaita themes, no legacy onix theme names.
+      assert_contains 'theme = "adwaita-dark"' "$hx_config_root"
+      test -f "$hx_config_root/helix/themes/adwaita-dark.toml"
+      test -f "$hx_config_root/helix/themes/adwaita-light.toml"
+      if grep -R -F 'onix-dark' "$hx_config_root" >/dev/null; then
+        echo "unexpected onix-dark in $hx_config_root" >&2
+        exit 1
+      fi
+      if grep -R -F 'onix-light' "$hx_config_root" >/dev/null; then
+        echo "unexpected onix-light in $hx_config_root" >&2
+        exit 1
+      fi
+
       assert_contains '${helixPkgs.steelix}/bin' "$zen_script"
       assert_contains '${hxOilPath}' "$zen_script"
       assert_contains '${hxOilBin} render --from' "$zen_config_root"

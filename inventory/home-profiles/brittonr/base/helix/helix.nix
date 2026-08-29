@@ -6,7 +6,6 @@
 }:
 let
   k = config.keymap;
-  activeTheme = config.theme.active;
   hxOil = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.hx-oil;
   nixfmt-rs = inputs.nixfmt-rs.packages.${pkgs.stdenv.hostPlatform.system}.default;
   rememberAlternateShell = ''
@@ -143,7 +142,7 @@ in
       ];
 
       settings = {
-        theme = activeTheme;
+        theme = "adwaita-dark";
         editor = {
           cursor-shape = {
             insert = "bar";
@@ -385,9 +384,9 @@ in
         };
       };
 
-      themes.${activeTheme} = config.helixTheme.dark;
+      themes."adwaita-dark" = config.helixTheme.dark;
 
-      themes.${builtins.replaceStrings [ "-dark" ] [ "-light" ] activeTheme} = config.helixTheme.light;
+      themes."adwaita-light" = config.helixTheme.light;
     }).wrapper
   ];
 
