@@ -129,7 +129,11 @@ in
             durablePublicationRevision = "8e05e74e24b45f752d77145c4455385daaf6d6ab";
             commandArgumentCount = 4;
             sourceRevisionHexLength = 40;
-            sourceRevisionReadyAttempts = 200;
+            sourceRevisionReadyTimeoutSeconds = 60;
+            sourceRevisionReadyDelayMilliseconds = 50;
+            sourceRevisionReadyAttempts = builtins.div (
+              sourceRevisionReadyTimeoutSeconds * millisecondsPerSecond
+            ) sourceRevisionReadyDelayMilliseconds;
             sourceRevisionReadyDelaySeconds = "0.05";
             nclString = value: builtins.toJSON value;
             kilnArtifactSource = inputs.cairn.inputs.artifact;

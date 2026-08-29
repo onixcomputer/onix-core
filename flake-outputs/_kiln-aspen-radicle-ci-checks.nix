@@ -66,8 +66,20 @@ let
   expectedProviderTimeoutMilliseconds = 7200000;
   expectedProviderTeardownMilliseconds = 30000;
   expectedSourceRevisionHexLength = 40;
-  expectedSourceReadyAttempts = 200;
+  expectedSourceReadyTimeoutSeconds = 60;
+  expectedSourceReadyDelayMilliseconds = 50;
+  expectedSourceReadyAttempts = builtins.div (
+    expectedSourceReadyTimeoutSeconds * expectedMillisecondsPerSecond
+  ) expectedSourceReadyDelayMilliseconds;
   expectedSourceReadyDelaySeconds = "0.05";
+  expectedSourceReadyHorizonMilliseconds =
+    expectedSourceReadyAttempts * expectedSourceReadyDelayMilliseconds;
+  sourceReadinessBoundsValid =
+    expectedSourceReadyAttempts > 0
+    && expectedSourceReadyDelayMilliseconds > 0
+    &&
+      expectedSourceReadyHorizonMilliseconds
+      >= expectedSourceReadyTimeoutSeconds * expectedMillisecondsPerSecond;
   invalidSourceRevision = builtins.concatStringsSep "" (
     builtins.genList (_index: "0") expectedSourceRevisionHexLength
   );
@@ -312,6 +324,8 @@ in
         "Kiln Aspen production cutover did not select the explicit Aspen route";
       assert lib.assertMsg settingsChecksValid
         "Kiln Aspen production positive or negative settings fixtures did not classify correctly";
+      assert lib.assertMsg sourceReadinessBoundsValid
+        "Kiln Aspen production source-readiness attempts do not cover the named timeout";
       pkgs.runCommand "kiln-aspen-radicle-ci-module-check"
         {
           nativeBuildInputs = [
