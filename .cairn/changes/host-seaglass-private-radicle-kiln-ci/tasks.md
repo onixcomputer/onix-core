@@ -18,7 +18,7 @@
 
 ## Phase 4: Seaglass check parity
 
-- [ ] [serial] Enumerate the GitHub Actions rails that are not flake checks and record the gap list. r[onix.radicle_ci.seaglass_checks]
+- [x] [serial] Enumerate the GitHub Actions rails that are not flake checks and record the gap list. See evidence/ci-parity-gap-list.md. r[onix.radicle_ci.seaglass_checks]
 - [ ] [serial] Express the workspace nextest rail, generated-artifact gates, harness-matrix metadata, browser E2E default rail, and steel examples as Seaglass flake checks. r[onix.radicle_ci.seaglass_checks]
 - [ ] [serial] Add a negative gap check proving GitHub-only rails are named when missing. r[onix.radicle_ci.seaglass_checks]
 
