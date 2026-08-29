@@ -42,7 +42,6 @@ in
             hostExecutable = lib.getExe' hostPackage "kiln-aspen-host";
             extensionExecutable = lib.getExe' kilnPackage "kiln-aspen-extension";
             adapterExecutable = lib.getExe' kilnPackage "kiln-adapter-radicle";
-            providerExecutable = lib.getExe' providerPackage "kiln-radicle-nix-provider";
             providerWorkflowExecutable = "/run/current-system/sw/bin/kiln-radicle-nix-provider";
             providerWorkflowProfile = "/etc/${runtimeName}/provider-profile.json";
             latticeExecutable = lib.getExe' latticePackage "lattice";
@@ -62,7 +61,7 @@ in
               runtimeDirectory
               sourceGroup
               ;
-            runtimeName = settings.runtimeName;
+            inherit (settings) runtimeName;
             hostServiceName = "${runtimeName}-host";
             latticeServiceName = "${runtimeName}-lattice";
             sourceServiceName = "${runtimeName}-source-admission";
@@ -427,7 +426,7 @@ in
               builtins.toJSON {
                 version = 1;
                 event = "push";
-                repository = settings.repository;
+                inherit (settings) repository;
                 actor = "did:key:z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
                 before = "d88cc41b0145d5dc118a6313054c5d3e66efbe19";
                 after = "5f659dce24e13b30e996f0aab3419dac4c21f934";

@@ -49,7 +49,7 @@ in
             startTimeoutSeconds =
               if topology.distributed then clusterStartTimeoutSeconds else singleNodeStartTimeoutSeconds;
             enabledPorts = [ settings.apiPort ] ++ lib.optional settings.enableConsole settings.consolePort;
-            serviceName = settings.serviceName;
+            inherit (settings) serviceName;
             serviceEnvironment = {
               RUSTFS_ADDRESS = "${settings.bindAddress}:${toString settings.apiPort}";
               RUSTFS_CONSOLE_ADDRESS = "${settings.bindAddress}:${toString settings.consolePort}";
@@ -294,7 +294,7 @@ in
             '';
           in
           {
-            assertions = evaluated.assertions;
+            inherit (evaluated) assertions;
 
             systemd.tmpfiles.rules = [
               "d ${settings.targetDir} ${directoryMode} root root - -"

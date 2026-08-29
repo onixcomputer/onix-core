@@ -51,7 +51,7 @@ in
               runtimeDirectory
               socketGroup
               ;
-            runtimeName = settings.runtimeName;
+            inherit (settings) runtimeName;
             hostServiceName = "${runtimeName}-host";
             latticeServiceName = "${runtimeName}-lattice";
             hostUnit = "${hostServiceName}.service";

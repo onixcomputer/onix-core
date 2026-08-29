@@ -58,12 +58,12 @@ in
             signingKeyFile = config.clan.core.vars.generators.${storageGeneratorName}.files."signing-key".path;
             storageEnvironmentFile =
               config.clan.core.vars.generators.${storageGeneratorName}.files."aws-env".path;
-            metadataBackupEnvironmentFile = lib.optionalString settings.metadataBackupEnabled (
-              config.clan.core.vars.generators.${metadataBackupGeneratorName}.files."aws-env".path
-            );
-            metadataBackupAdminEnvironmentFile = lib.optionalString settings.metadataBackupEnabled (
-              config.clan.core.vars.generators.${settings.metadataBackupAdminGenerator}.files."env-file".path
-            );
+            metadataBackupEnvironmentFile =
+              lib.optionalString settings.metadataBackupEnabled
+                config.clan.core.vars.generators.${metadataBackupGeneratorName}.files."aws-env".path;
+            metadataBackupAdminEnvironmentFile =
+              lib.optionalString settings.metadataBackupEnabled
+                config.clan.core.vars.generators.${settings.metadataBackupAdminGenerator}.files."env-file".path;
             rustfsAdminEnvironmentFile =
               config.clan.core.vars.generators.${settings.rustfsAdminGenerator}.files."env-file".path;
             policyName = "niks3-${instanceName}";
@@ -578,7 +578,7 @@ in
 
             # r[impl onix.rustfs_build_caches.monitoring]
             services.prometheus.exporters.node.extraFlags =
-              lib.mkIf (config.services.prometheus.exporters.node.enable)
+              lib.mkIf config.services.prometheus.exporters.node.enable
                 [ "--collector.textfile.directory=${queueMetricDirectory}" ];
             systemd.tmpfiles.rules = lib.mkIf config.services.prometheus.exporters.node.enable [
               "d ${queueMetricDirectory} ${queueMetricDirectoryMode} root root - -"

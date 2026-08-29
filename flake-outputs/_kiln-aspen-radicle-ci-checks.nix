@@ -13,7 +13,6 @@ let
   sourceRefreshServiceName = "${runtimeName}-source-refresh";
   shadowServiceName = "${runtimeName}-shadow";
   authorityProbeServiceName = "${runtimeName}-authority-probe";
-  hostUnit = "${hostServiceName}.service";
   latticeUnit = "${latticeServiceName}.service";
   sourceUnit = "${sourceServiceName}.service";
   hostService = desktopConfig.systemd.services.${hostServiceName};
@@ -113,7 +112,7 @@ let
   expectedWorkflowTimeoutMilliseconds =
     expectedProviderOperationMilliseconds + expectedWorkflowCompletionMarginMilliseconds;
   expectedMillisecondsPerSecond = 1000;
-  expectedWorkflowTimeoutSeconds = builtins.div (expectedWorkflowTimeoutMilliseconds) expectedMillisecondsPerSecond;
+  expectedWorkflowTimeoutSeconds = builtins.div expectedWorkflowTimeoutMilliseconds expectedMillisecondsPerSecond;
   expectedObservationPollRoundingMilliseconds = expectedProviderPolls - 1;
   expectedObservationPollMilliseconds = builtins.div (
     expectedProviderOperationMilliseconds + expectedObservationPollRoundingMilliseconds
@@ -242,16 +241,19 @@ let
     && statusSyncConfig.Type == "oneshot"
     && statusSyncConfig.User == "radicle"
     && statusSyncConfig.Group == "radicle"
-    && statusSyncConfig.Environment == [
-      "HOME=${radicleStateDirectory}"
-      "RAD_HOME=${radicleStateDirectory}"
-    ]
+    &&
+      statusSyncConfig.Environment == [
+        "HOME=${radicleStateDirectory}"
+        "RAD_HOME=${radicleStateDirectory}"
+      ]
     && statusSyncConfig.RuntimeMaxSec == "3m"
     && statusSyncConfig.RestrictAddressFamilies == [ "AF_UNIX" ]
     && !(builtins.elem "AF_INET" statusSyncConfig.RestrictAddressFamilies)
     && !(builtins.elem "AF_INET6" statusSyncConfig.RestrictAddressFamilies)
     && builtins.elem "radicle-node.service" statusSyncService.after
-    && builtins.match ".*rad sync --timeout 45s rad:z3xXXCQXCTquvAawh41YYs8yC8xmk" statusSyncConfig.ExecStart != null
+    &&
+      builtins.match ".*rad sync --timeout 45s rad:z3xXXCQXCTquvAawh41YYs8yC8xmk" statusSyncConfig.ExecStart
+      != null
     &&
       hostGroups == [
         ingressGroup
@@ -270,7 +272,8 @@ let
     && !(builtins.elem reportGroup hostGroups)
     && !(builtins.elem sourceGroup hostGroups)
     && builtins.length brokerPackage.patches == 1
-    && builtins.match ".*announce-namespace.*" (toString (builtins.elemAt brokerPackage.patches 0)) != null
+    &&
+      builtins.match ".*announce-namespace.*" (toString (builtins.elemAt brokerPackage.patches 0)) != null
     && quarantineTmpfile.user == "root"
     && quarantineTmpfile.group == "root"
     && reportTmpfile.user == "radicle"
@@ -284,7 +287,7 @@ let
     && authorityProbeConfig.BindReadOnlyPaths == [ "${sourcePath}:${sourceView}" ]
     && authorityProbeConfig.BindPaths == [ "${reportPath}:${reportView}" ]
     && authorityProbeConfig.ReadWritePaths == [ reportView ]
-    && lib.hasInfix ("--poll-interval-ms ${toString expectedObservationPollMilliseconds}") hostStartCommand;
+    && lib.hasInfix "--poll-interval-ms ${toString expectedObservationPollMilliseconds}" hostStartCommand;
   revisionsValid =
     kilnInput.rev == expectedKilnRevision
     && legacyInput.rev == expectedLegacyRevision
@@ -296,7 +299,7 @@ let
   settingsEvaluator = import ../modules/kiln-aspen-radicle-ci/settings.nix { inherit lib; };
   baseSettings = {
     enable = true;
-    runtimeName = runtimeName;
+    inherit runtimeName;
     routeMode = "aspen";
     hostStateDir = hostState;
     latticeStateDir = latticeState;

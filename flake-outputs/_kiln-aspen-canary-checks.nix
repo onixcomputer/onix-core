@@ -104,7 +104,7 @@ let
   settingsEvaluator = import ../modules/kiln-aspen-canary/settings.nix { inherit lib; };
   baseSettings = {
     enable = true;
-    runtimeName = runtimeName;
+    inherit runtimeName;
     hostStateDir = hostState;
     latticeStateDir = latticeState;
     hostUid = expectedHostUid;

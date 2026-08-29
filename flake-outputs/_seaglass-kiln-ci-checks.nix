@@ -41,7 +41,6 @@ let
   expectedReportDirectory = "/var/lib/radicle-ci/reports";
   expectedReportHostname = "ci.onix.computer";
   expectedReportUrlPrefix = "/reports";
-  expectedReportBaseUrl = "https://${expectedReportHostname}${expectedReportUrlPrefix}";
   expectedReportBindAddress = "127.0.0.1";
   expectedReportPort = 8990;
   expectedReportUser = "radicle";

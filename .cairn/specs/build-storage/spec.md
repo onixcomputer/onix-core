@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Keep disposable workstation build output from exhausting the `britton-desktop` root filesystem or unboundedly consuming the ZFS data pool.
+Defines the `build-storage` capability.
 
 ## Requirements
 
