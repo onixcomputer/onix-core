@@ -53,6 +53,15 @@ r[onix.radicle_ci.aspen_authority.accepted]
 - THEN it MUST read that revision through the reviewed source view
 - AND its user, mounts, groups, paths, sockets, and capabilities MUST expose no broader Radicle authority
 
+#### Scenario: Exact revision visibility is delayed
+
+r[onix.radicle_ci.aspen_authority.source_readiness]
+- GIVEN a broker event arrives before its exact commit object is visible in the admitted source view
+- WHEN the provider wrapper admits the source URI
+- THEN it MUST poll only that view for that commit under a named finite bound
+- AND it MUST invoke Nix only after the commit is visible
+- AND bound exhaustion MUST fail without fallback or broader source authority
+
 #### Scenario: Source or authority escapes the profile
 
 r[onix.radicle_ci.aspen_authority.rejected]

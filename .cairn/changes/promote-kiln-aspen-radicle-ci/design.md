@@ -47,6 +47,12 @@ The passes are serial and correlated because no subagent consent was granted.
 
 **Rationale:** The Lattice effect needs source bytes, not Radicle identity or mutation authority.
 
+### Decision: Wait for exact source visibility at the provider shell
+
+**Choice:** Before Nix starts, the cleared provider wrapper validates the exact source-view URI and polls `git cat-file` for its exact commit. The wait uses a named finite attempt and delay bound. It never fetches, opens another repository, or gains Radicle authority.
+
+**Rationale:** Radicle can emit the default-branch event before a concurrently fetched object becomes visible through the read-only bind mount. A bounded observation wait keeps acquisition with Radicle while preventing a false source-missing failure.
+
 ### Decision: Cut over one explicit composition root
 
 **Choice:** Change only the broker adapter command after shadow gates pass. It will use Defelo input compatibility and explicit Aspen runtime arguments. Missing Aspen state fails the job. It never invokes the legacy adapter automatically.

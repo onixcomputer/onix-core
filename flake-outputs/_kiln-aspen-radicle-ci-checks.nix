@@ -65,6 +65,12 @@ let
   expectedLatticeConnections = expectedMaximumRequests * expectedProviderConnections;
   expectedProviderTimeoutMilliseconds = 7200000;
   expectedProviderTeardownMilliseconds = 30000;
+  expectedSourceRevisionHexLength = 40;
+  expectedSourceReadyAttempts = 200;
+  expectedSourceReadyDelaySeconds = "0.05";
+  invalidSourceRevision = builtins.concatStringsSep "" (
+    builtins.genList (_index: "0") expectedSourceRevisionHexLength
+  );
   expectedProviderOperationMilliseconds =
     expectedProviderTimeoutMilliseconds + expectedProviderTeardownMilliseconds;
   expectedWorkflowCompletionMarginMilliseconds = 60000;
@@ -350,7 +356,21 @@ in
           grep -F -- '--override-input cairn/artifact' "$wrapper" >/dev/null
           grep -F -- 'accept-flake-config = false' "$wrapper" >/dev/null
           grep -F -- 'builders =' "$wrapper" >/dev/null
+          grep -F -- ${lib.escapeShellArg "${pkgs.coreutils}/bin"} "$wrapper" >/dev/null
           grep -F -- ${lib.escapeShellArg "${pkgs.gitMinimal}/bin"} "$wrapper" >/dev/null
+          grep -F -- ${lib.escapeShellArg "git --git-dir=${sourceView}"} "$wrapper" >/dev/null
+          grep -F -- ${lib.escapeShellArg "expected_revision_length=${toString expectedSourceRevisionHexLength}"} "$wrapper" >/dev/null
+          grep -F -- ${lib.escapeShellArg "attempt_limit=${toString expectedSourceReadyAttempts}"} "$wrapper" >/dev/null
+          grep -F -- ${lib.escapeShellArg "delay_seconds=${expectedSourceReadyDelaySeconds}"} "$wrapper" >/dev/null
+          invalid_source_diagnostic="$TMPDIR/invalid-source.err"
+          if "$wrapper" flake check --no-update-lock-file \
+            ${lib.escapeShellArg "git+file:///invalid-source?rev=${invalidSourceRevision}"} \
+            >"$TMPDIR/invalid-source.out" 2>"$invalid_source_diagnostic"; then
+            echo "provider wrapper accepted an unexpected source view" >&2
+            exit 1
+          fi
+          grep -F -- 'provider wrapper refused an unexpected source view' \
+            "$invalid_source_diagnostic" >/dev/null
 
           test -x ${lib.escapeShellArg aspenAdapterCommand}
           grep -F -- '--protocol defelo' ${lib.escapeShellArg aspenAdapterCommand} >/dev/null

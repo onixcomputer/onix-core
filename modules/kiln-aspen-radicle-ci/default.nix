@@ -128,11 +128,17 @@ in
             boundedExecRevision = "29dac88ecded94457572db3fdfaaaab95fa91525";
             durablePublicationRevision = "8e05e74e24b45f752d77145c4455385daaf6d6ab";
             commandArgumentCount = 4;
+            sourceRevisionHexLength = 40;
+            sourceRevisionReadyAttempts = 200;
+            sourceRevisionReadyDelaySeconds = "0.05";
             nclString = value: builtins.toJSON value;
             kilnArtifactSource = inputs.cairn.inputs.artifact;
             providerWrapper = pkgs.writeShellApplication {
               name = "${runtimeName}-nix-wrapper";
-              runtimeInputs = [ pkgs.gitMinimal ];
+              runtimeInputs = [
+                pkgs.coreutils
+                pkgs.gitMinimal
+              ];
               text = ''
                 set -eu
                 expected_argument_count=${toString commandArgumentCount}
@@ -144,6 +150,47 @@ in
                   echo "provider wrapper refused an unexpected operation" >&2
                   exit 1
                 fi
+
+                source_uri="$4"
+                source_prefix=${lib.escapeShellArg "git+file://${settings.sourceView}?rev="}
+                case "$source_uri" in
+                  "$source_prefix"*) ;;
+                  *)
+                    echo "provider wrapper refused an unexpected source view" >&2
+                    exit 1
+                    ;;
+                esac
+                revision="''${source_uri#"$source_prefix"}"
+                expected_revision_length=${toString sourceRevisionHexLength}
+                if test "''${#revision}" -ne "$expected_revision_length"; then
+                  echo "provider wrapper refused an invalid source revision" >&2
+                  exit 1
+                fi
+                case "$revision" in
+                  *[!0-9a-f]*)
+                    echo "provider wrapper refused an invalid source revision" >&2
+                    exit 1
+                    ;;
+                esac
+
+                source_ready=false
+                attempt_limit=${toString sourceRevisionReadyAttempts}
+                delay_seconds=${lib.escapeShellArg sourceRevisionReadyDelaySeconds}
+                attempt=0
+                while test "$attempt" -lt "$attempt_limit"; do
+                  if git --git-dir=${lib.escapeShellArg settings.sourceView} \
+                    cat-file -e "$revision^{commit}" 2>/dev/null; then
+                    source_ready=true
+                    break
+                  fi
+                  sleep "$delay_seconds"
+                  attempt=$((attempt + 1))
+                done
+                if test "$source_ready" != true; then
+                  echo "provider source revision did not become visible before its bound" >&2
+                  exit 1
+                fi
+
                 export HOME=${lib.escapeShellArg providerWorkDirectory}
                 export NIX_CONFIG=${lib.escapeShellArg ''
                   experimental-features = nix-command flakes
@@ -153,7 +200,7 @@ in
                 ''}
                 exec ${pkgs.nix}/bin/nix flake check --no-update-lock-file \
                   --override-input cairn/artifact path:${kilnArtifactSource} \
-                  "$4"
+                  "$source_uri"
               '';
             };
             providerWrapperExecutable = lib.getExe providerWrapper;

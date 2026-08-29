@@ -11,6 +11,7 @@
 - [x] [serial] Deploy separate production host and Lattice users, state roots, sockets, ordering, resource limits, and restart policy. r[onix.radicle_ci.aspen_composition]
 - [x] [serial] Expose only the exact read-only Seaglass source view and writable report root to the provider workflow. r[onix.radicle_ci.aspen_authority]
 - [x] [serial] Prove that Radicle keys, node sockets, policy databases, unrelated repositories, home directories, and network authority remain unavailable. r[onix.radicle_ci.aspen_authority]
+- [ ] [serial] Wait within a finite bound for the exact event revision to become visible without fetching or widening source authority. r[onix.radicle_ci.aspen_authority.source_readiness]
 
 ## Phase 2: Stage, observe, and cut over
 
