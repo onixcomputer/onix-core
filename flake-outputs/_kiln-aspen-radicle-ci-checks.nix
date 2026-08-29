@@ -241,8 +241,10 @@ let
     && statusSyncConfig.Type == "oneshot"
     && statusSyncConfig.User == "radicle"
     && statusSyncConfig.Group == "radicle"
-    && statusSyncConfig.Environment.HOME == radicleStateDirectory
-    && statusSyncConfig.Environment.RAD_HOME == radicleStateDirectory
+    && statusSyncConfig.Environment == [
+      "HOME=${radicleStateDirectory}"
+      "RAD_HOME=${radicleStateDirectory}"
+    ]
     && statusSyncConfig.RuntimeMaxSec == "3m"
     && statusSyncConfig.RestrictAddressFamilies == [ "AF_UNIX" ]
     && !(builtins.elem "AF_INET" statusSyncConfig.RestrictAddressFamilies)

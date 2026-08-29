@@ -784,10 +784,10 @@ in
                 ];
                 User = "radicle";
                 Group = "radicle";
-                Environment = {
-                  HOME = radicleStateDir;
-                  RAD_HOME = radicleStateDir;
-                };
+                Environment = [
+                  "HOME=${radicleStateDir}"
+                  "RAD_HOME=${radicleStateDir}"
+                ];
                 RuntimeMaxSec = statusSyncMaximumRuntime;
                 MemoryMax = statusSyncMemoryMaximum;
                 CPUQuota = statusSyncCpuQuota;
