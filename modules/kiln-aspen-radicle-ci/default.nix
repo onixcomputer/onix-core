@@ -522,7 +522,7 @@ in
                 message = "Kiln Aspen production service UIDs must not alias another system account";
               }
               {
-                assertion = inputs.kiln.rev == "330059df57641300baa6c2ae09fd3a4989018d40";
+                assertion = inputs.kiln.rev == "8c9338e5c10a0e16ee3042d11583ccccf6efe7e9";
                 message = "Kiln Aspen production must use the reviewed durable Kiln revision";
               }
               {

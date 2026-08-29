@@ -24,7 +24,7 @@
 ## Phase 3: Rollback, operations, and closeout
 
 - [ ] [serial] Add production alerts, bounded status, backup/restore, upgrade, rollback, and incident procedures. r[onix.radicle_ci.aspen_operations]
-- [ ] [serial] Exercise explicit legacy rollback without automatic failover or duplicate execution. r[onix.radicle_ci.aspen_operations]
+- [x] [serial] Exercise explicit legacy rollback without automatic failover or duplicate execution. r[onix.radicle_ci.aspen_operations]
 - [ ] [serial] Restore the Aspen route, retain exact receipts, and record all non-claims and unrelated host warnings. r[onix.radicle_ci.aspen_evidence]
 - [ ] [serial] Run focused Nix/Nickel checks, full machine evaluation, managed deployment checks, and strict Cairn validation. r[onix.radicle_ci.aspen_evidence]
 - [ ] [serial] Sync and archive only after every live production gate passes. r[onix.radicle_ci.aspen_evidence]

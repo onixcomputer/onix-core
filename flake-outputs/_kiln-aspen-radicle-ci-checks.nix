@@ -53,7 +53,7 @@ let
   expectedProviderReportMebibytes = 17;
   expectedProviderOutputBytes = expectedProviderOutputMebibytes * bytesPerMebibyte;
   expectedProviderReportBytes = expectedProviderReportMebibytes * bytesPerMebibyte;
-  expectedKilnRevision = "330059df57641300baa6c2ae09fd3a4989018d40";
+  expectedKilnRevision = "8c9338e5c10a0e16ee3042d11583ccccf6efe7e9";
   expectedLegacyRevision = "8821e9adf15ad28838025bfbdd2e09c8d76fe5db";
   expectedLatticeRuntimeRevision = "feb16b911a23e36d22d1359e44a9bc6b692cc98c";
   expectedLatticeContractRevision = "70496e67c7fd4a8b05914161a8e09de2759bebc8";
