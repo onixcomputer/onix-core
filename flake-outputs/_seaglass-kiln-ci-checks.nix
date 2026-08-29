@@ -57,7 +57,7 @@ let
   expectedReportMemoryMax = "256M";
   expectedReportCpuQuota = "100%";
   expectedLegacyKilnRevision = "8821e9adf15ad28838025bfbdd2e09c8d76fe5db";
-  expectedHostedKilnRevision = "ef058aeab68f81ab0598b7e5267cc4399fe6a1a6";
+  expectedHostedKilnRevision = "330059df57641300baa6c2ae09fd3a4989018d40";
   legacyKilnInput = self.lib.inputs.kiln-ci-legacy;
   hostedKilnInput = self.lib.inputs.kiln;
   expectedAdapterCommand = "${

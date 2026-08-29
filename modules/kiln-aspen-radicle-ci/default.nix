@@ -366,7 +366,7 @@ in
                 version = 1;
                 event = "push";
                 repository = settings.repository;
-                actor = "did:key:z6MkmkA6sEzzMffaWqKEKJcDh8LjAzgrJLrTNi971KN3X6sh";
+                actor = "did:key:z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
                 before = "d88cc41b0145d5dc118a6313054c5d3e66efbe19";
                 after = "5f659dce24e13b30e996f0aab3419dac4c21f934";
                 branch = "master";
@@ -522,7 +522,7 @@ in
                 message = "Kiln Aspen production service UIDs must not alias another system account";
               }
               {
-                assertion = inputs.kiln.rev == "ef058aeab68f81ab0598b7e5267cc4399fe6a1a6";
+                assertion = inputs.kiln.rev == "330059df57641300baa6c2ae09fd3a4989018d40";
                 message = "Kiln Aspen production must use the reviewed durable Kiln revision";
               }
               {
