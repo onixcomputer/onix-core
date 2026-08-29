@@ -105,6 +105,7 @@ let
   latticeSocketGrant = latticeConfig.ExecStartPost;
   brokerSettings = desktopConfig.services.radicle.ci.broker.settings;
   brokerCommand = brokerSettings.adapters.kiln.command;
+  brokerEnvironment = brokerSettings.adapters.kiln.env;
   hostGroups = desktopConfig.users.users.${hostUser}.extraGroups;
   latticeGroups = desktopConfig.users.users.${latticeUser}.extraGroups;
   radicleGroups = desktopConfig.users.users.radicle.extraGroups;
@@ -215,15 +216,12 @@ let
     && lib.hasInfix expectedLatticeContractRevision (
       builtins.readFile ../modules/kiln-aspen-radicle-ci/profiles/radicle-profile.ncl
     );
-  routeStillLegacy =
-    brokerCommand == expectedLegacyCommand
-    && !(lib.hasInfix aspenSocket brokerCommand)
-    && !(lib.hasInfix "--runtime aspen" brokerCommand);
+  routeUsesAspen = brokerCommand == aspenAdapterCommand && brokerEnvironment == { };
   settingsEvaluator = import ../modules/kiln-aspen-radicle-ci/settings.nix { inherit lib; };
   baseSettings = {
     enable = true;
     runtimeName = runtimeName;
-    routeMode = "shadow";
+    routeMode = "aspen";
     hostStateDir = hostState;
     latticeStateDir = latticeState;
     inherit
@@ -304,8 +302,8 @@ in
         "Kiln Aspen production users, sockets, service order, state roots, or authority bounds drifted";
       assert lib.assertMsg revisionsValid
         "Kiln Aspen production dependency revisions differ from the reviewed cohort";
-      assert lib.assertMsg routeStillLegacy
-        "Kiln Aspen production staging changed the active legacy broker route";
+      assert lib.assertMsg routeUsesAspen
+        "Kiln Aspen production cutover did not select the explicit Aspen route";
       assert lib.assertMsg settingsChecksValid
         "Kiln Aspen production positive or negative settings fixtures did not classify correctly";
       pkgs.runCommand "kiln-aspen-radicle-ci-module-check"
@@ -316,6 +314,7 @@ in
           ];
         }
         ''
+          test -x ${lib.escapeShellArg expectedLegacyCommand}
           test -x ${lib.escapeShellArg "${hostPackage}/bin/kiln-aspen-host"}
           test -x ${lib.escapeShellArg "${kilnPackage}/bin/kiln-aspen-extension"}
           test -x ${lib.escapeShellArg "${kilnPackage}/bin/kiln-adapter-radicle"}

@@ -913,7 +913,7 @@ in
       roles.default.machines.britton-desktop.settings = {
         enable = true,
         runtimeName = "kiln-aspen-ci",
-        routeMode = "shadow",
+        routeMode = "aspen",
         hostStateDir = "/var/lib/kiln-aspen-radicle-ci/host",
         latticeStateDir = "/var/lib/kiln-aspen-radicle-ci/lattice",
         sourcePath = "/var/lib/radicle/storage/z3xXXCQXCTquvAawh41YYs8yC8xmk",

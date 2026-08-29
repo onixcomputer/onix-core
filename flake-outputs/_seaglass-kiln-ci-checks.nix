@@ -29,18 +29,13 @@ let
   personalNodeId = "z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
   privatePilotRid = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   expectedMaxRunTime = "2h";
-  expectedKilnPath = lib.makeBinPath [
-    pkgs.coreutils
-    pkgs.gitMinimal
-  ];
-  expectedArtifactRevision = "e41340bec587b6d049b5cc518ec7db925dde84be";
-  expectedArtifactNarHash = "sha256-2cM912L2YXVnVX9LquwhAPKyjPP/z/oFQRe7Qq9bHHE=";
-  artifactSource = self.lib.inputs.cairn.inputs.artifact;
-  kilnNixCommand = brokerSettings.adapters.kiln.env.KILN_NIX;
+  runtimeName = "kiln-aspen-ci";
+  aspenAdapterPackage =
+    lib.findFirst (package: (package.name or "") == "${runtimeName}-adapter")
+      (throw "Kiln Aspen production adapter package is missing")
+      desktopConfig.environment.systemPackages;
+  expectedAdapterCommand = "${aspenAdapterPackage}/bin/${runtimeName}-adapter";
   expectedConcurrentAdapters = 1;
-  bytesPerMebibyte = 1024 * 1024;
-  expectedMaxOutputMebibytes = 8;
-  expectedMaxOutputBytes = expectedMaxOutputMebibytes * bytesPerMebibyte;
   expectedMemoryMax = "24G";
   expectedCpuQuota = "800%";
   expectedReportDirectory = "/var/lib/radicle-ci/reports";
@@ -60,7 +55,7 @@ let
   expectedHostedKilnRevision = "330059df57641300baa6c2ae09fd3a4989018d40";
   legacyKilnInput = self.lib.inputs.kiln-ci-legacy;
   hostedKilnInput = self.lib.inputs.kiln;
-  expectedAdapterCommand = "${
+  legacyAdapterCommand = "${
     legacyKilnInput.packages.${pkgs.stdenv.hostPlatform.system}.default
   }/bin/kiln-adapter-radicle";
   expectedTrigger = {
@@ -90,13 +85,7 @@ let
     && legacyKilnInput.rev != hostedKilnInput.rev;
   positivePolicyValid =
     brokerSettings.adapters.kiln.command == expectedAdapterCommand
-    && brokerSettings.adapters.kiln.env.KILN_ADAPTER_PROTOCOL == "defelo"
-    && brokerSettings.adapters.kiln.env.KILN_MAX_OUTPUT_BYTES == toString expectedMaxOutputBytes
-    && brokerSettings.adapters.kiln.env.KILN_REPORT_DIR == expectedReportDirectory
-    && brokerSettings.adapters.kiln.env.KILN_REPORT_BASE_URL == expectedReportBaseUrl
-    && brokerSettings.adapters.kiln.env.PATH == expectedKilnPath
-    && artifactSource.rev == expectedArtifactRevision
-    && artifactSource.narHash == expectedArtifactNarHash
+    && brokerSettings.adapters.kiln.env == { }
     && brokerSettings.max_run_time == expectedMaxRunTime
     && brokerSettings.concurrent_adapters == expectedConcurrentAdapters
     && kilnTriggers == [ expectedTrigger ]
@@ -171,17 +160,15 @@ in
       "the private Seaglass replication shell lost its reviewed service boundary";
     pkgs.runCommand "seaglass-kiln-ci-policy-check" { } ''
       test -x ${lib.escapeShellArg expectedAdapterCommand}
-      legacy_diagnostic="$TMPDIR/legacy-adapter.err"
+      test -x ${lib.escapeShellArg legacyAdapterCommand}
+      adapter_diagnostic="$TMPDIR/aspen-adapter.err"
       if printf '%s' 'not-json' \
-        | env KILN_ADAPTER_PROTOCOL=defelo ${lib.escapeShellArg expectedAdapterCommand} \
-          >"$TMPDIR/legacy-adapter.out" 2>"$legacy_diagnostic"; then
-        echo "legacy adapter accepted malformed broker input" >&2
+        | ${lib.escapeShellArg expectedAdapterCommand} \
+          >"$TMPDIR/aspen-adapter.out" 2>"$adapter_diagnostic"; then
+        echo "Aspen adapter accepted malformed broker input" >&2
         exit 1
       fi
-      grep -F -- 'radicle_json' "$legacy_diagnostic" >/dev/null
-      test -x ${lib.escapeShellArg kilnNixCommand}
-      grep -F -- ${lib.escapeShellArg "--override-input cairn/artifact"} ${lib.escapeShellArg kilnNixCommand} >/dev/null
-      grep -F -- ${lib.escapeShellArg (toString artifactSource)} ${lib.escapeShellArg kilnNixCommand} >/dev/null
+      grep -F -- 'radicle_json' "$adapter_diagnostic" >/dev/null
       test -x ${lib.escapeShellArg replicationCommand}
       printf '%s\n' ${lib.escapeShellArg reportServerCommand} | grep -F -- ${lib.escapeShellArg "--host ${expectedReportBindAddress}"} >/dev/null
       printf '%s\n' ${lib.escapeShellArg reportServerCommand} | grep -F -- ${lib.escapeShellArg "--port ${toString expectedReportPort}"} >/dev/null

@@ -55,7 +55,7 @@ A root oneshot grants a read-only default ACL only on the admitted repository. I
 
 ## Route selection
 
-`routeMode` accepts only `shadow`, `aspen`, or `legacy`. The committed value is `shadow`, so the active broker remains the legacy command. The `aspen` value selects one explicit `--protocol defelo --runtime aspen` command and clears legacy environment. No failure changes the selection.
+`routeMode` accepts only `shadow`, `aspen`, or `legacy`. The cutover candidate sets it to `aspen` after the shadow gates and empty-queue drain. This value selects one explicit `--protocol defelo --runtime aspen` command and clears legacy environment. The separately pinned `legacy` value remains the explicit rollback. No failure changes the selection.
 
 ## Checks
 
