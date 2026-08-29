@@ -66,11 +66,13 @@ in
             hostServiceName = "${runtimeName}-host";
             latticeServiceName = "${runtimeName}-lattice";
             sourceServiceName = "${runtimeName}-source-admission";
+            sourceRefreshServiceName = "${runtimeName}-source-refresh";
             shadowServiceName = "${runtimeName}-shadow";
             authorityProbeServiceName = "${runtimeName}-authority-probe";
             hostUnit = "${hostServiceName}.service";
             latticeUnit = "${latticeServiceName}.service";
             sourceUnit = "${sourceServiceName}.service";
+            sourceRefreshUnit = "${sourceRefreshServiceName}.service";
             privateDirectoryMode = "0700";
             sharedDirectoryMode = "2770";
             traversalDirectoryMode = "0711";
@@ -86,6 +88,7 @@ in
             latticeCpuQuota = "800%";
             sourceCpuQuota = "200%";
             shadowCpuQuota = "100%";
+            sourceOwnerNodeId = "z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
             hostTasksMaximum = 512;
             latticeTasksMaximum = 1024;
             sourceTasksMaximum = 128;
@@ -524,6 +527,22 @@ in
                 "/etc/ssh"
               ];
             };
+            sourceAdmissionHardening = commonHardening // {
+              CapabilityBoundingSet = [
+                "CAP_DAC_OVERRIDE"
+                "CAP_FOWNER"
+              ];
+              AmbientCapabilities = [
+                "CAP_DAC_OVERRIDE"
+                "CAP_FOWNER"
+              ];
+              NoNewPrivileges = false;
+              ReadWritePaths = [ settings.sourcePath ];
+              MemoryMax = sourceMemoryMaximum;
+              CPUQuota = sourceCpuQuota;
+              TasksMax = sourceTasksMaximum;
+              TimeoutStartSec = serviceStartTimeout;
+            };
             hostHardening = commonHardening // {
               InaccessiblePaths = commonHardening.InaccessiblePaths ++ [
                 "/var/lib/radicle"
@@ -705,45 +724,39 @@ in
               description = "Admit the exact read-only Seaglass repository view for ${runtimeName}";
               after = [ "radicle-node.service" ];
               before = [ latticeUnit ];
-              serviceConfig = {
+              serviceConfig = sourceAdmissionHardening // {
                 Type = "oneshot";
                 ExecStart = lib.getExe sourceAdmission;
                 RemainAfterExit = true;
-                PrivateDevices = true;
-                PrivateNetwork = true;
-                PrivateTmp = true;
-                ProtectClock = true;
-                ProtectControlGroups = true;
-                ProtectHome = true;
-                ProtectHostname = true;
-                ProtectKernelLogs = true;
-                ProtectKernelModules = true;
-                ProtectKernelTunables = true;
-                ProtectSystem = "strict";
-                ReadWritePaths = [ settings.sourcePath ];
-                CapabilityBoundingSet = [
-                  "CAP_DAC_OVERRIDE"
-                  "CAP_FOWNER"
-                ];
-                AmbientCapabilities = [
-                  "CAP_DAC_OVERRIDE"
-                  "CAP_FOWNER"
-                ];
-                NoNewPrivileges = false;
-                RemoveIPC = true;
-                RestrictNamespaces = true;
-                RestrictRealtime = true;
-                RestrictSUIDSGID = true;
-                SystemCallArchitectures = "native";
-                MemoryMax = sourceMemoryMaximum;
-                CPUQuota = sourceCpuQuota;
-                TasksMax = sourceTasksMaximum;
-                TimeoutStartSec = serviceStartTimeout;
-                InaccessiblePaths = [
-                  "/run/secrets"
-                  "/root"
-                  "/home"
-                  "/etc/ssh"
+                User = "root";
+                Group = "root";
+              };
+            };
+
+            # r[impl onix.radicle_ci.aspen_authority.source_readiness]
+            systemd.services.${sourceRefreshServiceName} = lib.mkIf settings.enable {
+              description = "Refresh Seaglass source-view admission after repository mutation for ${runtimeName}";
+              after = [ sourceUnit ];
+              requires = [ sourceUnit ];
+              serviceConfig = sourceAdmissionHardening // {
+                Type = "oneshot";
+                ExecStart = lib.getExe sourceAdmission;
+                User = "root";
+                Group = "root";
+              };
+            };
+
+            systemd.paths.${sourceRefreshServiceName} = lib.mkIf settings.enable {
+              description = "Watch admitted Seaglass objects and refs for ${runtimeName}";
+              wantedBy = [ "multi-user.target" ];
+              after = [ sourceUnit ];
+              wants = [ sourceUnit ];
+              pathConfig = {
+                Unit = sourceRefreshUnit;
+                PathModified = [
+                  "${settings.sourcePath}/objects/pack"
+                  "${settings.sourcePath}/refs/heads/master"
+                  "${settings.sourcePath}/refs/namespaces/${sourceOwnerNodeId}/refs/heads/master"
                 ];
               };
             };

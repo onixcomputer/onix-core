@@ -10,6 +10,7 @@ let
   hostServiceName = "${runtimeName}-host";
   latticeServiceName = "${runtimeName}-lattice";
   sourceServiceName = "${runtimeName}-source-admission";
+  sourceRefreshServiceName = "${runtimeName}-source-refresh";
   shadowServiceName = "${runtimeName}-shadow";
   authorityProbeServiceName = "${runtimeName}-authority-probe";
   hostUnit = "${hostServiceName}.service";
@@ -18,11 +19,15 @@ let
   hostService = desktopConfig.systemd.services.${hostServiceName};
   latticeService = desktopConfig.systemd.services.${latticeServiceName};
   sourceService = desktopConfig.systemd.services.${sourceServiceName};
+  sourceRefreshService = desktopConfig.systemd.services.${sourceRefreshServiceName};
+  sourceRefreshPath = desktopConfig.systemd.paths.${sourceRefreshServiceName};
   shadowService = desktopConfig.systemd.services.${shadowServiceName};
   authorityProbeService = desktopConfig.systemd.services.${authorityProbeServiceName};
   hostConfig = hostService.serviceConfig;
   latticeConfig = latticeService.serviceConfig;
   sourceConfig = sourceService.serviceConfig;
+  sourceRefreshConfig = sourceRefreshService.serviceConfig;
+  sourceRefreshPathConfig = sourceRefreshPath.pathConfig;
   shadowConfig = shadowService.serviceConfig;
   authorityProbeConfig = authorityProbeService.serviceConfig;
   hostUser = "${runtimeName}-host";
@@ -35,6 +40,13 @@ let
   quarantineDirectory = "/var/lib/kiln-aspen-radicle-ci/quarantine";
   latticeState = "/var/lib/kiln-aspen-radicle-ci/lattice";
   sourcePath = "/var/lib/radicle/storage/z3xXXCQXCTquvAawh41YYs8yC8xmk";
+  sourceOwnerNodeId = "z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
+  sourceRefreshUnit = "${sourceRefreshServiceName}.service";
+  expectedSourceRefreshPaths = [
+    "${sourcePath}/objects/pack"
+    "${sourcePath}/refs/heads/master"
+    "${sourcePath}/refs/namespaces/${sourceOwnerNodeId}/refs/heads/master"
+  ];
   sourceView = "/var/lib/kiln-aspen-radicle-ci/source/seaglass.git";
   reportPath = "/var/lib/radicle-ci/reports/aspen";
   reportView = "/var/lib/kiln-aspen-radicle-ci/report-view";
@@ -190,12 +202,27 @@ let
       ]
     && latticeConfig.BindReadOnlyPaths == [ "${sourcePath}:${sourceView}" ]
     && latticeConfig.BindPaths == [ "${reportPath}:${reportView}" ]
+    && sourceConfig.User == "root"
+    && sourceConfig.Group == "root"
+    && sourceConfig.PrivateNetwork
     && sourceConfig.ReadWritePaths == [ sourcePath ]
     &&
       sourceConfig.CapabilityBoundingSet == [
         "CAP_DAC_OVERRIDE"
         "CAP_FOWNER"
       ]
+    && sourceRefreshConfig.User == "root"
+    && sourceRefreshConfig.Group == "root"
+    && sourceRefreshConfig.PrivateNetwork
+    && sourceRefreshConfig.ReadWritePaths == [ sourcePath ]
+    && sourceRefreshConfig.CapabilityBoundingSet == sourceConfig.CapabilityBoundingSet
+    && builtins.elem sourceUnit sourceRefreshService.after
+    && builtins.elem sourceUnit sourceRefreshService.requires
+    && sourceRefreshPath.wantedBy == [ "multi-user.target" ]
+    && builtins.elem sourceUnit sourceRefreshPath.after
+    && builtins.elem sourceUnit sourceRefreshPath.wants
+    && sourceRefreshPathConfig.Unit == sourceRefreshUnit
+    && sourceRefreshPathConfig.PathModified == expectedSourceRefreshPaths
     &&
       hostGroups == [
         ingressGroup
@@ -315,6 +342,7 @@ in
   checks = {
     # r[verify onix.radicle_ci.aspen_composition.accepted]
     # r[verify onix.radicle_ci.aspen_authority.accepted]
+    # r[verify onix.radicle_ci.aspen_authority.source_readiness]
     kiln-aspen-radicle-ci-module =
       assert lib.assertMsg machinePolicyValid
         "Kiln Aspen production users, sockets, service order, state roots, or authority bounds drifted";
