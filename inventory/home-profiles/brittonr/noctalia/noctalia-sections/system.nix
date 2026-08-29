@@ -63,7 +63,7 @@ config: {
       schedulingMode
       generationMethod
       ;
-    predefinedScheme = "Onix";
+    predefinedScheme = "Adwaita";
     manualSunrise = "06:30";
     manualSunset = "18:30";
     monitorForColors = "";

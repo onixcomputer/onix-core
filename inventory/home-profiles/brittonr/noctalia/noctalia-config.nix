@@ -13,7 +13,7 @@ let
   system = import ./noctalia-sections/system.nix config;
   extras = import ./noctalia-sections/extras.nix config;
 
-  # NCL theme → Material 3 color mapping for the generated Onix.json palette.
+  # NCL theme → Material 3 color mapping for the generated Adwaita.json palette.
   mkM3Colors = t: {
     mPrimary = t.accent.hex;
     mOnPrimary = t.bg.hex;
@@ -66,7 +66,7 @@ let
   mkVariant = t: mkM3Colors t // { terminal = mkTerminalColors t; };
 
   # Generated from adwaita-dark.ncl / adwaita-light.ncl — single source of truth.
-  onixColorscheme = builtins.toJSON {
+  adwaitaColorscheme = builtins.toJSON {
     dark = mkVariant config.theme.allData."adwaita-dark";
     light = mkVariant config.theme.allData."adwaita-light";
   };
@@ -81,7 +81,7 @@ in
     # older noctalia-shell module shape.
     validateConfig = false;
 
-    customPalettes.Onix = builtins.fromJSON onixColorscheme;
+    customPalettes.Adwaita = builtins.fromJSON adwaitaColorscheme;
 
     # Merge all section settings.
     settings = bar // general // notifications // wallpaper // launcher // session // system // extras;
@@ -91,6 +91,6 @@ in
     # Force-overwrite Noctalia configs — runtime writes can turn managed
     # symlinks into regular files, leaving .hm-bak files that block deploys.
     "noctalia/config.toml".force = true;
-    "noctalia/palettes/Onix.json".force = true;
+    "noctalia/palettes/Adwaita.json".force = true;
   };
 }
