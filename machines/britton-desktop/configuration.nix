@@ -479,6 +479,9 @@ in
 
     radicle.ci.broker = {
       enable = true;
+      package = pkgs.radicle-ci-broker.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ [ ./radicle-ci-broker-announce-namespace.patch ];
+      });
       settings = {
         max_run_time = kilnMaxRunTime;
         concurrent_adapters = kilnConcurrentAdapters;

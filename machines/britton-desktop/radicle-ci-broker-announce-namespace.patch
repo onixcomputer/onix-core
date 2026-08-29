@@ -1,0 +1,12 @@
+--- a/src/cob.rs
++++ b/src/cob.rs
+@@ -276,7 +276,8 @@
+             unsynced,
+         ))
+         .map_err(|_| JobError::Announcer)?;
+-        node.announce(repo_id, [], TIMEOUT, announcer, |_, _| ())
++        let namespace = node.nid().map_err(JobError::announce)?;
++        node.announce(repo_id, [namespace], TIMEOUT, announcer, |_, _| ())
+             .map_err(JobError::announce)?;
+     }
+ 

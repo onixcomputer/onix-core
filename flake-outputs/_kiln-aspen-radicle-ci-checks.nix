@@ -49,6 +49,7 @@ let
   statusSyncPathConfig = statusSyncPath.pathConfig;
   statusSyncUnit = "${statusSyncServiceName}.service";
   ciStatusNamespaceNodeId = "z6MkkQCj5EczNiVzDzCkX9ewHNJ7NDEXSKbuRiS1x7o72yeG";
+  brokerPackage = desktopConfig.services.radicle.ci.broker.package;
   radicleStateDirectory = "/var/lib/radicle";
   expectedStatusSyncPaths = [
     "${sourcePath}/refs/namespaces/${ciStatusNamespaceNodeId}/refs/rad/sigrefs"
@@ -268,6 +269,8 @@ let
     && !(builtins.elem sourceGroup radicleGroups)
     && !(builtins.elem reportGroup hostGroups)
     && !(builtins.elem sourceGroup hostGroups)
+    && builtins.length brokerPackage.patches == 1
+    && builtins.match ".*announce-namespace.*" (toString (builtins.elemAt brokerPackage.patches 0)) != null
     && quarantineTmpfile.user == "root"
     && quarantineTmpfile.group == "root"
     && reportTmpfile.user == "radicle"
