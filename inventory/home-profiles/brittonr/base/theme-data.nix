@@ -23,8 +23,8 @@ let
   themesDir = ../../shared/desktop/themes;
   themeNames = [
     "tokyo-night"
-    "onix-dark"
-    "onix-light"
+    "adwaita-dark"
+    "adwaita-light"
     "everblush"
     "solarized-dark"
   ];
@@ -36,7 +36,7 @@ in
   options.theme = {
     active = lib.mkOption {
       type = lib.types.enum themeNames;
-      default = "onix-dark";
+      default = "adwaita-dark";
       description = "The active theme name";
     };
 

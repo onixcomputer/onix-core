@@ -38,7 +38,7 @@ let
       };
     };
 
-    onix-dark = {
+    adwaita-dark = {
       gtk.theme = {
         name = "Adwaita-dark";
         package = pkgs.gnome-themes-extra;
@@ -49,7 +49,7 @@ let
       };
     };
 
-    onix-light = {
+    adwaita-light = {
       gtk.theme = {
         name = "Adwaita";
         package = pkgs.gnome-themes-extra;

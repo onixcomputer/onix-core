@@ -65,10 +65,10 @@ let
   # Full colorscheme variant: M3 colors + terminal palette.
   mkVariant = t: mkM3Colors t // { terminal = mkTerminalColors t; };
 
-  # Generated from onix-dark.ncl / onix-light.ncl — single source of truth.
+  # Generated from adwaita-dark.ncl / adwaita-light.ncl — single source of truth.
   onixColorscheme = builtins.toJSON {
-    dark = mkVariant config.theme.allData."onix-dark";
-    light = mkVariant config.theme.allData."onix-light";
+    dark = mkVariant config.theme.allData."adwaita-dark";
+    light = mkVariant config.theme.allData."adwaita-light";
   };
 
 in
