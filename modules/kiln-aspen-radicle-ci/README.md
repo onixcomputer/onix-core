@@ -51,6 +51,14 @@ Rollback is an explicit `routeMode = "legacy"` deployment. Do not select it from
 
 The provider wrapper polls only the admitted source view for the exact event commit. The source-refresh path grants read access to new pack files without exposing Radicle identity or network authority. If the wait expires, stop the broker and retain that failed state. Do not bypass the source view.
 
+### Status propagation
+
+The broker writes job status COBs into the seed storage and announces them, but its announce step fails with `no refs were announced` on status updates. The `kiln-aspen-ci-status-sync.path` unit watches the bot namespace signed-refs file and runs one bounded `rad sync` for the admitted repository after each write, so peers fetch the new status without operator action. If the sync unit fails, run `sudo -u radicle env HOME=/var/lib/radicle RAD_HOME=/var/lib/radicle rad sync <rid>` manually and inspect the unit before retrying. This propagation does not prove remote CI correctness or release eligibility.
+
+### Radicle CLI profile repair
+
+The Radicle CLI needs a loadable profile, but the node binds its public key and reads its secret key through systemd credentials, and fresh state leaves empty stubs at `/var/lib/radicle/keys/radicle`, `keys/radicle.pub`, and `config.json`. If `rad` reports `ssh keygen: length invalid` or a config parse error, restore the profile: install the node private key from the secrets store at mode `0600` owned by `radicle`, derive the public key with `ssh-keygen -y`, and copy the pinned node config from its store path to `/var/lib/radicle/config.json` at mode `0644`. Verify with `rad self` as the `radicle` user. The fingerprint must match `/var/lib/radicle/node/fingerprint`.
+
 ## Claim boundary
 
 Machine evaluation and direct shadow runs do not prove CI correctness, source trust, host sandboxing, external provider truth, storage-device persistence, distributed exactly-once execution, production availability, or release eligibility. Live evidence remains bounded to its exact closure, event, state roots, and reports.

@@ -89,6 +89,14 @@ in
             sourceCpuQuota = "200%";
             shadowCpuQuota = "100%";
             sourceOwnerNodeId = "z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
+            ciStatusNamespaceNodeId = "z6MkkQCj5EczNiVzDzCkX9ewHNJ7NDEXSKbuRiS1x7o72yeG";
+            radicleStateDir = "/var/lib/radicle";
+            statusSyncServiceName = "${runtimeName}-status-sync";
+            statusSyncUnit = "${statusSyncServiceName}.service";
+            statusSyncTimeout = "45s";
+            statusSyncMaximumRuntime = "3m";
+            statusSyncMemoryMaximum = "128M";
+            statusSyncCpuQuota = "20%";
             hostTasksMaximum = 512;
             latticeTasksMaximum = 1024;
             sourceTasksMaximum = 128;
@@ -757,6 +765,50 @@ in
                   "${settings.sourcePath}/objects/pack"
                   "${settings.sourcePath}/refs/heads/master"
                   "${settings.sourcePath}/refs/namespaces/${sourceOwnerNodeId}/refs/heads/master"
+                ];
+              };
+            };
+
+            # r[impl onix.radicle_ci.status_sync]
+            systemd.services.${statusSyncServiceName} = lib.mkIf settings.enable {
+              description = "Propagate admitted CI status to connected peers for ${runtimeName}";
+              after = [ "radicle-node.service" ];
+              serviceConfig = {
+                Type = "oneshot";
+                ExecStart = lib.escapeShellArgs [
+                  "/run/current-system/sw/bin/rad"
+                  "sync"
+                  "--timeout"
+                  statusSyncTimeout
+                  settings.repository
+                ];
+                User = "radicle";
+                Group = "radicle";
+                Environment = {
+                  HOME = radicleStateDir;
+                  RAD_HOME = radicleStateDir;
+                };
+                RuntimeMaxSec = statusSyncMaximumRuntime;
+                MemoryMax = statusSyncMemoryMaximum;
+                CPUQuota = statusSyncCpuQuota;
+                NoNewPrivileges = true;
+                PrivateTmp = true;
+                PrivateDevices = true;
+                ProtectSystem = "strict";
+                ProtectHome = true;
+                RestrictAddressFamilies = [ "AF_UNIX" ];
+                ReadWritePaths = [ "${radicleStateDir}/.cache" ];
+              };
+            };
+
+            systemd.paths.${statusSyncServiceName} = lib.mkIf settings.enable {
+              description = "Watch CI status signed refs for ${runtimeName}";
+              wantedBy = [ "multi-user.target" ];
+              after = [ "radicle-node.service" ];
+              pathConfig = {
+                Unit = statusSyncUnit;
+                PathChanged = [
+                  "${settings.sourcePath}/refs/namespaces/${ciStatusNamespaceNodeId}/refs/rad/sigrefs"
                 ];
               };
             };

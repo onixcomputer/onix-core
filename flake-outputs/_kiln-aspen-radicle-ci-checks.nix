@@ -42,6 +42,17 @@ let
   sourcePath = "/var/lib/radicle/storage/z3xXXCQXCTquvAawh41YYs8yC8xmk";
   sourceOwnerNodeId = "z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
   sourceRefreshUnit = "${sourceRefreshServiceName}.service";
+  statusSyncServiceName = "${runtimeName}-status-sync";
+  statusSyncService = desktopConfig.systemd.services.${statusSyncServiceName};
+  statusSyncPath = desktopConfig.systemd.paths.${statusSyncServiceName};
+  statusSyncConfig = statusSyncService.serviceConfig;
+  statusSyncPathConfig = statusSyncPath.pathConfig;
+  statusSyncUnit = "${statusSyncServiceName}.service";
+  ciStatusNamespaceNodeId = "z6MkkQCj5EczNiVzDzCkX9ewHNJ7NDEXSKbuRiS1x7o72yeG";
+  radicleStateDirectory = "/var/lib/radicle";
+  expectedStatusSyncPaths = [
+    "${sourcePath}/refs/namespaces/${ciStatusNamespaceNodeId}/refs/rad/sigrefs"
+  ];
   expectedSourceRefreshPaths = [
     "${sourcePath}/objects/pack"
     "${sourcePath}/refs/heads/master"
@@ -223,6 +234,21 @@ let
     && builtins.elem sourceUnit sourceRefreshPath.wants
     && sourceRefreshPathConfig.Unit == sourceRefreshUnit
     && sourceRefreshPathConfig.PathModified == expectedSourceRefreshPaths
+    && statusSyncPath.wantedBy == [ "multi-user.target" ]
+    && builtins.elem "radicle-node.service" statusSyncPath.after
+    && statusSyncPathConfig.Unit == statusSyncUnit
+    && statusSyncPathConfig.PathChanged == expectedStatusSyncPaths
+    && statusSyncConfig.Type == "oneshot"
+    && statusSyncConfig.User == "radicle"
+    && statusSyncConfig.Group == "radicle"
+    && statusSyncConfig.Environment.HOME == radicleStateDirectory
+    && statusSyncConfig.Environment.RAD_HOME == radicleStateDirectory
+    && statusSyncConfig.RuntimeMaxSec == "3m"
+    && statusSyncConfig.RestrictAddressFamilies == [ "AF_UNIX" ]
+    && !(builtins.elem "AF_INET" statusSyncConfig.RestrictAddressFamilies)
+    && !(builtins.elem "AF_INET6" statusSyncConfig.RestrictAddressFamilies)
+    && builtins.elem "radicle-node.service" statusSyncService.after
+    && builtins.match ".*rad sync --timeout 45s rad:z3xXXCQXCTquvAawh41YYs8yC8xmk" statusSyncConfig.ExecStart != null
     &&
       hostGroups == [
         ingressGroup
