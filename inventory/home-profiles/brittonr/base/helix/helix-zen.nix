@@ -137,7 +137,7 @@ let
     ];
 
     settings = {
-      theme = "zen-dark";
+      theme = "noctalia";
 
       editor = {
         # Minimal, distraction-free cursor
@@ -399,9 +399,10 @@ let
       };
     };
 
-    themes.zen-dark = config.helixZenTheme.dark;
-
-    themes.zen-light = config.helixZenTheme.light;
+    # Same runtime theme pattern as the hx wrapper: Noctalia's built-in helix
+    # template owns ~/.config/helix/themes/noctalia.toml and the mode hook
+    # reloads running editors via SIGUSR1, so zen follows dark/light too.
+    themes."noctalia" = config.helixZenTheme.dark;
   };
 
   # Extract only the zen binary to avoid collision with main helix wrapper

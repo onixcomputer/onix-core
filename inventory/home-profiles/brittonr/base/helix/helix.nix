@@ -142,7 +142,7 @@ in
       ];
 
       settings = {
-        theme = "adwaita-dark";
+        theme = "noctalia";
         editor = {
           cursor-shape = {
             insert = "bar";
@@ -384,9 +384,13 @@ in
         };
       };
 
-      themes."adwaita-dark" = config.helixTheme.dark;
-
-      themes."adwaita-light" = config.helixTheme.light;
+      # Runtime theme owned by Noctalia: its built-in helix template writes
+      # ~/.config/helix/themes/noctalia.toml with the current scheme on every
+      # color change, and the theme overlay links that mutable file over this
+      # immutable seed. The Noctalia mode hook sends SIGUSR1 to running helix
+      # processes, which triggers a live config + theme reload (helix handles
+      # SIGUSR1 by refreshing its configuration).
+      themes."noctalia" = config.helixTheme.dark;
     }).wrapper
   ];
 

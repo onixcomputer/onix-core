@@ -526,6 +526,45 @@ let
       condition = neovimConfig.withPython3 == false;
     }
     {
+      name = "positive: Noctalia enables the built-in helix, kitty, and wezterm templates";
+      condition =
+        let
+          noctaliaSettings = desktopHome.programs.noctalia.settings or { };
+          templates = noctaliaSettings.theme.templates or { };
+        in
+        templates.enable_builtin_templates == true
+        && lib.all (t: lib.elem t (templates.builtin_ids or [ ])) [
+          "helix"
+          "kitty"
+          "wezterm"
+        ];
+    }
+    {
+      name = "positive: Noctalia mode hooks reload helix via SIGUSR1 after colors change";
+      condition =
+        let
+          noctaliaSettings = desktopHome.programs.noctalia.settings or { };
+          hooks = noctaliaSettings.hooks or { };
+          cmds = hooks.colors_changed or [ ];
+          hasReload =
+            c:
+            builtins.isString c
+            && builtins.match ".*\\.hx-wrapped.*" c != null
+            && builtins.match ".*USR1.*" c != null;
+        in
+        builtins.isList cmds && builtins.any hasReload cmds;
+    }
+    {
+      name = "negative: Noctalia template config no longer uses the legacy activeTemplates key";
+      condition =
+        let
+          noctaliaSettings = desktopHome.programs.noctalia.settings or { };
+        in
+        !(noctaliaSettings.templates or { } ? activeTemplates)
+        && (noctaliaSettings.theme.templates or { }).enable_builtin_templates == true
+        && builtins.elem "helix" ((noctaliaSettings.theme.templates or { }).builtin_ids or [ ]);
+    }
+    {
       name = "negative: Home Manager stateVersion no longer matches legacy ${legacyHomeStateVersion}";
       condition = actualHomeStateVersion != legacyHomeStateVersion;
     }

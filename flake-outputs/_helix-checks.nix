@@ -151,10 +151,11 @@ in
       assert_contains '${hxOilBin} subdir collapse' "$hx_config_root"
       assert_contains '${hxOilBin} subdir refresh' "$hx_config_root"
 
-      # Default Adwaita themes, no legacy onix theme names.
-      assert_contains 'theme = "adwaita-dark"' "$hx_config_root"
-      test -f "$hx_config_root/helix/themes/adwaita-dark.toml"
-      test -f "$hx_config_root/helix/themes/adwaita-light.toml"
+      # Noctalia runtime theme: helix must default to the `noctalia` theme
+      # (written live at ~/.config/helix/themes/noctalia.toml by Noctalia and
+      # overlaid over this immutable seed), with no legacy onix names.
+      assert_contains 'theme = "noctalia"' "$hx_config_root"
+      test -f "$hx_config_root/helix/themes/noctalia.toml"
       if grep -R -F 'onix-dark' "$hx_config_root" >/dev/null; then
         echo "unexpected onix-dark in $hx_config_root" >&2
         exit 1
@@ -165,6 +166,7 @@ in
       fi
 
       assert_contains '${helixPkgs.steelix}/bin' "$zen_script"
+      assert_contains 'theme = "noctalia"' "$zen_config_root"
       assert_contains '${hxOilPath}' "$zen_script"
       assert_contains '${hxOilBin} render --from' "$zen_config_root"
       assert_contains '${hxOilBin} apply' "$zen_config_root"
