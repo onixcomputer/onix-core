@@ -250,8 +250,9 @@ in
     for target in "$wezterm_dir/wezterm.lua" "$wezterm_dir/colors/Noctalia.toml"; do
       if [ -L "$target" ]; then
         mkdir -p "$(dirname "$target")"
-        cp -L "$target" "$target.hm-new"
-        mv -f "$target.hm-new" "$target"
+        content=$(cat "$target")
+        rm "$target"
+        printf '%s\n' "$content" > "$target"
       fi
     done
   '';
