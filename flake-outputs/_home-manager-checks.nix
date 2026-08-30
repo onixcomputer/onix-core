@@ -572,6 +572,10 @@ let
         && desktopHome.xdg.configFile."wezterm/colors/Noctalia.toml".force;
     }
     {
+      name = "negative: wezterm fallback colors exclude duplicate hash prefixes";
+      condition = !lib.hasInfix "##" desktopHome.xdg.configFile."wezterm/colors/Noctalia.toml".text;
+    }
+    {
       name = "positive: Noctalia mode hooks reload helix via SIGUSR1 after colors change";
       condition =
         let

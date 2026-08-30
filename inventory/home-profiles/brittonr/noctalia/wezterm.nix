@@ -45,34 +45,34 @@ in
       name = "Noctalia"
 
       [colors]
-      background = '#${theme.bg.hex}'
-      foreground = '#${theme.fg.hex}'
-      cursor_bg = '#${theme.fg.hex}'
-      cursor_fg = '#${theme.bg.hex}'
-      cursor_border = '#${theme.fg.hex}'
-      selection_bg = '#${theme.accent.hex}'
-      selection_fg = '#${theme.bg.hex}'
-      scrollbar_thumb = '#${theme.bg_highlight.hex}'
+      background = '${theme.bg.hex}'
+      foreground = '${theme.fg.hex}'
+      cursor_bg = '${theme.fg.hex}'
+      cursor_fg = '${theme.bg.hex}'
+      cursor_border = '${theme.fg.hex}'
+      selection_bg = '${theme.accent.hex}'
+      selection_fg = '${theme.bg.hex}'
+      scrollbar_thumb = '${theme.bg_highlight.hex}'
 
       ansi = [
-        '#${theme.term_black.hex}',
-        '#${theme.term_red.hex}',
-        '#${theme.term_green.hex}',
-        '#${theme.term_yellow.hex}',
-        '#${theme.term_blue.hex}',
-        '#${theme.term_magenta.hex}',
-        '#${theme.term_cyan.hex}',
-        '#${theme.term_white.hex}',
+        '${theme.term_black.hex}',
+        '${theme.term_red.hex}',
+        '${theme.term_green.hex}',
+        '${theme.term_yellow.hex}',
+        '${theme.term_blue.hex}',
+        '${theme.term_magenta.hex}',
+        '${theme.term_cyan.hex}',
+        '${theme.term_white.hex}',
       ]
       brights = [
-        '#${theme.term_bright_black.hex}',
-        '#${theme.term_bright_red.hex}',
-        '#${theme.term_bright_green.hex}',
-        '#${theme.term_bright_yellow.hex}',
-        '#${theme.term_bright_blue.hex}',
-        '#${theme.term_bright_magenta.hex}',
-        '#${theme.term_bright_cyan.hex}',
-        '#${theme.term_bright_white.hex}',
+        '${theme.term_bright_black.hex}',
+        '${theme.term_bright_red.hex}',
+        '${theme.term_bright_green.hex}',
+        '${theme.term_bright_yellow.hex}',
+        '${theme.term_bright_blue.hex}',
+        '${theme.term_bright_magenta.hex}',
+        '${theme.term_bright_cyan.hex}',
+        '${theme.term_bright_white.hex}',
       ]
     '';
   };

@@ -427,7 +427,7 @@ in
       # ── Make Noctalia's config writable ────────────────────────────────
       # The Noctalia HM module writes config.toml as a nix-store symlink.
       # Noctalia mutates this file at runtime, so convert it to a writable
-      # file after linkGeneration. Remove the retired managed Adwaita palette;
+      # file after linkGeneration. Remove the retired managed custom palettes;
       # built-in Kanagawa now owns the default palette.
       makeNoctaliaConfigMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
         noctalia_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/noctalia"
@@ -437,7 +437,11 @@ in
           rm "$target"
           printf '%s\n' "$content" > "$target"
         fi
-        rm -f "$noctalia_dir/palettes/Adwaita.json"
+        rm -f \
+          "$noctalia_dir/palettes/Adwaita.json" \
+          "$noctalia_dir/palettes/Adwaita.json.hm-bak" \
+          "$noctalia_dir/palettes/Onix.json" \
+          "$noctalia_dir/palettes/Onix.json.hm-bak"
       '';
     };
 
