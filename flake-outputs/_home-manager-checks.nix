@@ -566,14 +566,12 @@ let
         && lib.hasInfix "config.color_scheme = 'Noctalia'" desktopHome.programs.wezterm.extraConfig;
     }
     {
-      name = "positive: Home Manager force-replaces Noctalia's mutable wezterm files";
-      condition =
-        desktopHome.xdg.configFile."wezterm/wezterm.lua".force
-        && desktopHome.xdg.configFile."wezterm/colors/Noctalia.toml".force;
+      name = "positive: Home Manager force-replaces wezterm's mutable config";
+      condition = desktopHome.xdg.configFile."wezterm/wezterm.lua".force;
     }
     {
-      name = "negative: wezterm fallback colors exclude duplicate hash prefixes";
-      condition = !lib.hasInfix "##" desktopHome.xdg.configFile."wezterm/colors/Noctalia.toml".text;
+      name = "negative: Home Manager does not own Noctalia's wezterm runtime palette";
+      condition = !builtins.hasAttr "wezterm/colors/Noctalia.toml" desktopHome.xdg.configFile;
     }
     {
       name = "positive: Noctalia mode hooks reload helix via SIGUSR1 after colors change";

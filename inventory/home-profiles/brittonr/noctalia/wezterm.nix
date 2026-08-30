@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   theme = config.theme.data;
   k = config.keymap;
@@ -31,53 +36,48 @@ let
     mapping.${key} or key;
 
   ta = k.terminalActions;
+  runtimeThemeFileMode = "644";
+
+  # Valid fallback for the first login. Noctalia becomes the sole owner of
+  # the runtime file after its wezterm template runs.
+  initialNoctaliaColors = pkgs.writeText "wezterm-noctalia-fallback.toml" ''
+    [metadata]
+    name = "Noctalia"
+
+    [colors]
+    background = '${theme.bg.hex}'
+    foreground = '${theme.fg.hex}'
+    cursor_bg = '${theme.fg.hex}'
+    cursor_fg = '${theme.bg.hex}'
+    cursor_border = '${theme.fg.hex}'
+    selection_bg = '${theme.accent.hex}'
+    selection_fg = '${theme.bg.hex}'
+    scrollbar_thumb = '${theme.bg_highlight.hex}'
+
+    ansi = [
+      '${theme.term_black.hex}',
+      '${theme.term_red.hex}',
+      '${theme.term_green.hex}',
+      '${theme.term_yellow.hex}',
+      '${theme.term_blue.hex}',
+      '${theme.term_magenta.hex}',
+      '${theme.term_cyan.hex}',
+      '${theme.term_white.hex}',
+    ]
+    brights = [
+      '${theme.term_bright_black.hex}',
+      '${theme.term_bright_red.hex}',
+      '${theme.term_bright_green.hex}',
+      '${theme.term_bright_yellow.hex}',
+      '${theme.term_bright_blue.hex}',
+      '${theme.term_bright_magenta.hex}',
+      '${theme.term_bright_cyan.hex}',
+      '${theme.term_bright_white.hex}',
+    ]
+  '';
 in
 {
-  # Seed color scheme used by `color_scheme = 'Noctalia'`. Noctalia's
-  # built-in wezterm template overwrites the same path whenever colors
-  # change, and the activation below converts the managed symlink into a
-  # writable file so the runtime write cannot fail on a read-only store
-  # symlink.
-  xdg.configFile."wezterm/colors/Noctalia.toml" = {
-    force = true;
-    text = ''
-      [metadata]
-      name = "Noctalia"
-
-      [colors]
-      background = '${theme.bg.hex}'
-      foreground = '${theme.fg.hex}'
-      cursor_bg = '${theme.fg.hex}'
-      cursor_fg = '${theme.bg.hex}'
-      cursor_border = '${theme.fg.hex}'
-      selection_bg = '${theme.accent.hex}'
-      selection_fg = '${theme.bg.hex}'
-      scrollbar_thumb = '${theme.bg_highlight.hex}'
-
-      ansi = [
-        '${theme.term_black.hex}',
-        '${theme.term_red.hex}',
-        '${theme.term_green.hex}',
-        '${theme.term_yellow.hex}',
-        '${theme.term_blue.hex}',
-        '${theme.term_magenta.hex}',
-        '${theme.term_cyan.hex}',
-        '${theme.term_white.hex}',
-      ]
-      brights = [
-        '${theme.term_bright_black.hex}',
-        '${theme.term_bright_red.hex}',
-        '${theme.term_bright_green.hex}',
-        '${theme.term_bright_yellow.hex}',
-        '${theme.term_bright_blue.hex}',
-        '${theme.term_bright_magenta.hex}',
-        '${theme.term_bright_cyan.hex}',
-        '${theme.term_bright_white.hex}',
-      ]
-    '';
-  };
-
-  # Home Manager must replace the mutable copy from the prior activation.
+  # Home Manager must replace the mutable config from the prior activation.
   xdg.configFile."wezterm/wezterm.lua".force = true;
 
   programs.wezterm = {
@@ -248,19 +248,23 @@ in
     '';
   };
 
-  # Noctalia's wezterm apply script must be able to touch wezterm.lua to
-  # trigger a wezterm config reload, and to overwrite colors/Noctalia.toml
-  # with the new scheme. Convert those managed symlinks into real files.
+  # Noctalia's wezterm template owns colors/Noctalia.toml. Seed it only when
+  # missing. Keep wezterm.lua writable because the template touches it to
+  # trigger an automatic config reload.
   home.activation.makeWeztermConfigMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     wezterm_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/wezterm"
-    rm -f "$wezterm_dir/wezterm.lua.hm-bak" "$wezterm_dir/colors/Noctalia.toml.hm-bak"
-    for target in "$wezterm_dir/wezterm.lua" "$wezterm_dir/colors/Noctalia.toml"; do
-      if [ -L "$target" ]; then
-        mkdir -p "$(dirname "$target")"
-        content=$(cat "$target")
-        rm "$target"
-        printf '%s\n' "$content" > "$target"
-      fi
-    done
+    colors_file="$wezterm_dir/colors/Noctalia.toml"
+    mkdir -p "$wezterm_dir/colors"
+    rm -f "$wezterm_dir/wezterm.lua.hm-bak" "$colors_file.hm-bak"
+    if [ ! -f "$colors_file" ]; then
+      install -m ${runtimeThemeFileMode} ${initialNoctaliaColors} "$colors_file"
+    fi
+
+    target="$wezterm_dir/wezterm.lua"
+    if [ -L "$target" ]; then
+      content=$(cat "$target")
+      rm "$target"
+      printf '%s\n' "$content" > "$target"
+    fi
   '';
 }
