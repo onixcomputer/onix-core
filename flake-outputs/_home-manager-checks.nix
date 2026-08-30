@@ -526,6 +526,29 @@ let
       condition = neovimConfig.withPython3 == false;
     }
     {
+      name = "positive: Noctalia selects the Adwaita custom palette via the v5 theme keys";
+      condition =
+        let
+          noctaliaSettings = desktopHome.programs.noctalia.settings or { };
+          theme = noctaliaSettings.theme or { };
+        in
+        theme.source == "custom"
+        && theme.custom_palette == "Adwaita"
+        && lib.elem (theme.mode or "dark") [
+          "dark"
+          "light"
+          "auto"
+        ];
+    }
+    {
+      name = "negative: Noctalia theme no longer uses the legacy colorSchemes key";
+      condition =
+        let
+          noctaliaSettings = desktopHome.programs.noctalia.settings or { };
+        in
+        !(noctaliaSettings ? colorSchemes) && (noctaliaSettings.theme or { }).source == "custom";
+    }
+    {
       name = "positive: Noctalia enables the built-in helix, kitty, and wezterm templates";
       condition =
         let

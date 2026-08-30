@@ -23,24 +23,29 @@ let
   niriReload = "niri msg action load-config-file";
 in
 {
-  # -- Templates --
-  # Built-in templates generate per-app config fragments whenever colors
-  # change. The helix wrapper overlays ~/.config/helix/themes/ over its
-  # immutable store config, so Noctalia's built-in helix template (which
-  # writes ~/.config/helix/themes/noctalia.toml) applies at runtime.
-  # kitty and wezterm templates write their own scheme fragments and the
-  # kitty apply script reloads live instances itself.
-  theme.templates = {
-    enable_builtin_templates = true;
-    builtin_ids = [
-      "niri"
-      "kitty"
-      "btop"
-      "helix"
-      "wezterm"
-    ];
-    enable_community_templates = false;
-    community_ids = [ ];
+  theme = {
+    # Noctalia v5 selects the custom palette via `source` + `custom_palette`.
+    # The legacy `colorSchemes` keys were not part of the v5 schema and were
+    # ignored, which is why the default blueberry palette applied. `mode`
+    # fixes the current appearance; the theme-mode-toggle keybind switches
+    # dark/light and the colors_changed hook propagates the switch to
+    # terminals and editors. Set `mode` to "auto" to enable time-of-day
+    # scheduling instead.
+    mode = "dark";
+    source = "custom";
+    custom_palette = "Adwaita";
+    templates = {
+      enable_builtin_templates = true;
+      builtin_ids = [
+        "niri"
+        "kitty"
+        "btop"
+        "helix"
+        "wezterm"
+      ];
+      enable_community_templates = false;
+      community_ids = [ ];
+    };
   };
 
   # -- Hooks --
