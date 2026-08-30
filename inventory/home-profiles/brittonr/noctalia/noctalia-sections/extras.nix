@@ -24,16 +24,13 @@ let
 in
 {
   theme = {
-    # Noctalia v5 selects the custom palette via `source` + `custom_palette`.
-    # The legacy `colorSchemes` keys were not part of the v5 schema and were
-    # ignored, which is why the default blueberry palette applied. `mode`
-    # fixes the current appearance; the theme-mode-toggle keybind switches
-    # dark/light and the colors_changed hook propagates the switch to
-    # terminals and editors. Set `mode` to "auto" to enable time-of-day
-    # scheduling instead.
+    # Noctalia is the runtime palette authority. Its built-in Kanagawa
+    # palette feeds every enabled template, while the colors_changed hook
+    # reloads applications after Noctalia writes their generated files.
+    # Set `mode` to "auto" to enable time-of-day scheduling instead.
     mode = "dark";
-    source = "custom";
-    custom_palette = "Adwaita";
+    source = "builtin";
+    builtin = "Kanagawa";
     templates = {
       enable_builtin_templates = true;
       builtin_ids = [

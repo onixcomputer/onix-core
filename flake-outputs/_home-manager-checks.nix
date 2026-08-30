@@ -526,27 +526,24 @@ let
       condition = neovimConfig.withPython3 == false;
     }
     {
-      name = "positive: Noctalia selects the Adwaita custom palette via the v5 theme keys";
+      name = "positive: Noctalia selects built-in Kanagawa as the dark default";
       condition =
         let
           noctaliaSettings = desktopHome.programs.noctalia.settings or { };
           theme = noctaliaSettings.theme or { };
         in
-        theme.source == "custom"
-        && theme.custom_palette == "Adwaita"
-        && lib.elem (theme.mode or "dark") [
-          "dark"
-          "light"
-          "auto"
-        ];
+        theme.source == "builtin" && theme.builtin == "Kanagawa" && theme.mode == "dark";
     }
     {
-      name = "negative: Noctalia theme no longer uses the legacy colorSchemes key";
+      name = "negative: Noctalia excludes legacy and custom palette selection";
       condition =
         let
-          noctaliaSettings = desktopHome.programs.noctalia.settings or { };
+          noctalia = desktopHome.programs.noctalia;
+          noctaliaSettings = noctalia.settings or { };
+          theme = noctaliaSettings.theme or { };
+          customPalettes = noctalia.customPalettes or { };
         in
-        !(noctaliaSettings ? colorSchemes) && (noctaliaSettings.theme or { }).source == "custom";
+        !(noctaliaSettings ? colorSchemes) && !(theme ? custom_palette) && !(customPalettes ? Adwaita);
     }
     {
       name = "positive: Noctalia enables the built-in helix, kitty, and wezterm templates";
@@ -561,6 +558,12 @@ let
           "kitty"
           "wezterm"
         ];
+    }
+    {
+      name = "positive: kitty and wezterm consume Noctalia runtime theme outputs";
+      condition =
+        lib.hasInfix "include themes/noctalia.conf" desktopHome.programs.kitty.extraConfig
+        && lib.hasInfix "config.color_scheme = 'Noctalia'" desktopHome.programs.wezterm.extraConfig;
     }
     {
       name = "positive: Noctalia mode hooks reload helix via SIGUSR1 after colors change";
