@@ -38,41 +38,47 @@ in
   # change, and the activation below converts the managed symlink into a
   # writable file so the runtime write cannot fail on a read-only store
   # symlink.
-  xdg.configFile."wezterm/colors/Noctalia.toml".text = ''
-    [metadata]
-    name = "Noctalia"
+  xdg.configFile."wezterm/colors/Noctalia.toml" = {
+    force = true;
+    text = ''
+      [metadata]
+      name = "Noctalia"
 
-    [colors]
-    background = '#${theme.bg.hex}'
-    foreground = '#${theme.fg.hex}'
-    cursor_bg = '#${theme.fg.hex}'
-    cursor_fg = '#${theme.bg.hex}'
-    cursor_border = '#${theme.fg.hex}'
-    selection_bg = '#${theme.accent.hex}'
-    selection_fg = '#${theme.bg.hex}'
-    scrollbar_thumb = '#${theme.bg_highlight.hex}'
+      [colors]
+      background = '#${theme.bg.hex}'
+      foreground = '#${theme.fg.hex}'
+      cursor_bg = '#${theme.fg.hex}'
+      cursor_fg = '#${theme.bg.hex}'
+      cursor_border = '#${theme.fg.hex}'
+      selection_bg = '#${theme.accent.hex}'
+      selection_fg = '#${theme.bg.hex}'
+      scrollbar_thumb = '#${theme.bg_highlight.hex}'
 
-    ansi = [
-      '#${theme.term_black.hex}',
-      '#${theme.term_red.hex}',
-      '#${theme.term_green.hex}',
-      '#${theme.term_yellow.hex}',
-      '#${theme.term_blue.hex}',
-      '#${theme.term_magenta.hex}',
-      '#${theme.term_cyan.hex}',
-      '#${theme.term_white.hex}',
-    ]
-    brights = [
-      '#${theme.term_bright_black.hex}',
-      '#${theme.term_bright_red.hex}',
-      '#${theme.term_bright_green.hex}',
-      '#${theme.term_bright_yellow.hex}',
-      '#${theme.term_bright_blue.hex}',
-      '#${theme.term_bright_magenta.hex}',
-      '#${theme.term_bright_cyan.hex}',
-      '#${theme.term_bright_white.hex}',
-    ]
-  '';
+      ansi = [
+        '#${theme.term_black.hex}',
+        '#${theme.term_red.hex}',
+        '#${theme.term_green.hex}',
+        '#${theme.term_yellow.hex}',
+        '#${theme.term_blue.hex}',
+        '#${theme.term_magenta.hex}',
+        '#${theme.term_cyan.hex}',
+        '#${theme.term_white.hex}',
+      ]
+      brights = [
+        '#${theme.term_bright_black.hex}',
+        '#${theme.term_bright_red.hex}',
+        '#${theme.term_bright_green.hex}',
+        '#${theme.term_bright_yellow.hex}',
+        '#${theme.term_bright_blue.hex}',
+        '#${theme.term_bright_magenta.hex}',
+        '#${theme.term_bright_cyan.hex}',
+        '#${theme.term_bright_white.hex}',
+      ]
+    '';
+  };
+
+  # Home Manager must replace the mutable copy from the prior activation.
+  xdg.configFile."wezterm/wezterm.lua".force = true;
 
   programs.wezterm = {
     enable = true;
@@ -247,6 +253,7 @@ in
   # with the new scheme. Convert those managed symlinks into real files.
   home.activation.makeWeztermConfigMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     wezterm_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/wezterm"
+    rm -f "$wezterm_dir/wezterm.lua.hm-bak" "$wezterm_dir/colors/Noctalia.toml.hm-bak"
     for target in "$wezterm_dir/wezterm.lua" "$wezterm_dir/colors/Noctalia.toml"; do
       if [ -L "$target" ]; then
         mkdir -p "$(dirname "$target")"
