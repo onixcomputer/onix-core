@@ -103,6 +103,7 @@ let
   invalidSecretSpecPackageName = "secretspec-bogus";
   kliPackageName = "kli";
   invalidKliPackageName = "kli-bogus";
+  libreWolfPackageName = "librewolf";
   packageName = package: package.pname or (lib.getName package);
   packagePriority = package: package.meta.priority or lib.meta.defaultPriority;
   findHomePackageNamed =
@@ -117,6 +118,12 @@ let
     server = aspen1Home;
   };
   homePackages = desktopHome.home.packages;
+  aspen3LibreWolfPackage = findHomePackageNamed libreWolfPackageName aspen3Home;
+  aspen3LibreWolfExecutable =
+    if aspen3LibreWolfPackage == null then
+      "/missing-librewolf/bin/librewolf"
+    else
+      "${aspen3LibreWolfPackage}/bin/librewolf";
   ghzingaPackage = lib.findFirst (package: (package.pname or null) == "ghzinga") null homePackages;
   ghzingaPackageVersion = if ghzingaPackage == null then "missing" else ghzingaPackage.version;
   ghzingaPackagePath = if ghzingaPackage == null then "/missing-ghzinga" else toString ghzingaPackage;
@@ -174,6 +181,62 @@ let
   ) aspen3Home.gestures.lisgd.bindings;
 
   boolString = value: if value then "true" else "false";
+
+  libreWolfSearchConfiguration =
+    pkgs.runCommand "librewolf-search-configuration"
+      { libreWolfExecutable = aspen3LibreWolfExecutable; }
+      ''
+        set -eu
+
+        if [ ! -x "$libreWolfExecutable" ]; then
+          echo "positive: aspen3 must install the managed LibreWolf executable" >&2
+          exit 1
+        fi
+
+        browser_binary="$(${pkgs.gnused}/bin/sed -n 's|^exec \(/nix/store/[^ ]*/bin/librewolf\) "\$@"$|\1|p' "$libreWolfExecutable")"
+        if [ -z "$browser_binary" ]; then
+          echo "positive: the LibreWolf launcher must reference its configured browser" >&2
+          exit 1
+        fi
+
+        browser_root="''${browser_binary%/bin/librewolf}"
+        preferences="$browser_root/lib/librewolf/mozilla.cfg"
+        policies="$browser_root/lib/librewolf/distribution/policies.json"
+
+        if ! ${pkgs.gnugrep}/bin/grep -Fq 'librewolf.services.settings.allowedCollectionsFromDump' "$preferences"; then
+          echo "positive: LibreWolf must preserve its Remote Settings dump allowlist" >&2
+          exit 1
+        fi
+        if ! ${pkgs.gnugrep}/bin/grep -Fq 'main/search-config-v2' "$preferences"; then
+          echo "positive: LibreWolf must admit its packaged search engine data" >&2
+          exit 1
+        fi
+        if ! ${pkgs.jq}/bin/jq -e '
+          .policies.SearchEngines.Default == "Kagi"
+          and any(.policies.SearchEngines.Add[]; .Name == "Kagi")
+        ' "$policies" >/dev/null; then
+          echo "positive: LibreWolf must install Kagi as its search policy" >&2
+          exit 1
+        fi
+        if ! ${pkgs.jq}/bin/jq -e '.policies.DisableTelemetry == true' "$policies" >/dev/null; then
+          echo "positive: LibreWolf must preserve its upstream privacy policy" >&2
+          exit 1
+        fi
+        if ! ${pkgs.jq}/bin/jq -e '
+          .policies.ExtensionSettings["*"].installation_mode == "blocked"
+        ' "$policies" >/dev/null; then
+          echo "negative: upstream policies must not weaken managed extension blocking" >&2
+          exit 1
+        fi
+
+        cat > "$out" <<EOF
+        LibreWolf search configuration check
+        positive: packaged search engine data is admitted
+        positive: Kagi remains the configured search engine
+        positive: upstream privacy policy is present
+        negative: manual extension installation remains blocked
+        EOF
+      '';
 
   kacheWrapperWorkspaceWrapperBypass = pkgs.runCommand "kache-wrapper-workspace-wrapper-bypass" { } ''
     set -eu
@@ -816,6 +879,7 @@ in
       else
         throw "aspen3-input-palm-rejection failed: ${failedPalmNames}";
 
+    librewolf-search-configuration = libreWolfSearchConfiguration;
     kache-wrapper-workspace-wrapper-bypass = kacheWrapperWorkspaceWrapperBypass;
     herdr-pueue-dashboard = herdrPueueDashboard;
     herdr-workflow-plugins = herdrWorkflowPlugins;
