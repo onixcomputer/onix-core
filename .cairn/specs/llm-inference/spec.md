@@ -176,3 +176,53 @@ r[onix.aspen1.qwen_flash.validation.negative]
 - WHEN the probe result is evaluated
 - THEN the deployment is recorded as failed
 - AND successful weight load alone is not accepted as health evidence
+
+### Requirement: Aspen2 serves uncensored Qwen3.8 Flash Next
+
+r[onix.aspen2.qwen_flash.serving] `aspen2` MUST serve the same revision-pinned OrcaRouter Qwen3.8 Flash Next Uncensored IQ4_XS GGUF and multimodal projector as `aspen1`. The direct server MUST bind to loopback port 13305. The `aspen2` mesh-llm joiner MUST route to that service.
+
+#### Scenario: Inventory wires the Aspen2 Qwen service
+
+r[onix.aspen2.qwen_flash.serving.inventory]
+- GIVEN the evaluated `aspen2` NixOS configuration
+- WHEN the `llamacpp-server-qwen38-flash-next-aspen2` unit and mesh-llm joiner settings are inspected
+- THEN the model revision is `d2e41a316ee631cf17f83c8827800c836d30cbe6`
+- AND the model is the three-shard IQ4_XS quantization
+- AND the F16 multimodal projector is present
+- AND the direct server binds only to `127.0.0.1:13305`
+- AND the mesh-llm `backendUnit` is `llamacpp-server-qwen38-flash-next-aspen2.service`
+
+### Requirement: Aspen2 Qwen inference memory exclusivity
+
+r[onix.aspen2.qwen_flash.exclusivity] `aspen2` MUST NOT run Lemonade alongside Qwen3.8 Flash Next because both model services compete for the same unified-memory capacity.
+
+#### Scenario: Lemonade is absent
+
+r[onix.aspen2.qwen_flash.exclusivity.no_competitors]
+- GIVEN the evaluated `aspen2` NixOS configuration
+- WHEN its systemd services are inspected
+- THEN the Qwen llama.cpp service is configured
+- AND no `lemonade.service` unit is configured
+
+### Requirement: Aspen2 Qwen3.8 Flash Next live validation
+
+r[onix.aspen2.qwen_flash.validation] The deployment MUST include positive and negative live validation of the Qwen3.8 Flash Next service on `aspen2`.
+
+#### Scenario: Text and vision probes succeed
+
+r[onix.aspen2.qwen_flash.validation.positive]
+- GIVEN the deployed server answered a health probe
+- WHEN bounded text and image chat completions run
+- THEN both responses contain useful content
+- AND the model identity is `Qwen3.8-Flash-Next-Uncensored`
+- AND runtime metrics report successful prompt and decode work
+
+#### Scenario: Private and fail-closed behavior is verified
+
+r[onix.aspen2.qwen_flash.validation.negative]
+- GIVEN the Qwen service is deployed on `aspen2`
+- WHEN direct Tailnet access, malformed authorization, competing services, and service restarts are inspected
+- THEN direct Tailnet access to port 13305 fails
+- AND malformed authorization fails before model download
+- AND Lemonade is inactive
+- AND the Qwen service remains healthy without a restart loop

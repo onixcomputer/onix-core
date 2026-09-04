@@ -45,12 +45,25 @@ let
     meshAddress = "100.100.103.95";
     backendUnit = "llamacpp-server-qwen38-flash-next-aspen1.service";
   };
+  aspen2QwenServiceName = "llamacpp-server-qwen38-flash-next-aspen2";
+  aspen2QwenBackendUnit = "${aspen2QwenServiceName}.service";
+  aspen2QwenTokenGeneratorName = "${aspen2QwenServiceName}-huggingface";
   aspen2Node = mkNode {
     label = "Aspen2";
     machineName = "aspen2";
     meshAddress = "100.125.64.121";
-    backendUnit = "lemonade.service";
+    backendUnit = aspen2QwenBackendUnit;
   };
+  aspen2HasQwenBackend = builtins.hasAttr aspen2QwenServiceName aspen2Node.config.systemd.services;
+  aspen2QwenCommand =
+    if aspen2HasQwenBackend then
+      aspen2Node.config.systemd.services.${aspen2QwenServiceName}.serviceConfig.ExecStart
+    else
+      "";
+  aspen2QwenIsPrivate =
+    lib.hasInfix "--host 127.0.0.1" aspen2QwenCommand && lib.hasInfix "--port 13305" aspen2QwenCommand;
+  aspen2HasQwenTokenGenerator = builtins.hasAttr aspen2QwenTokenGeneratorName aspen2Node.config.clan.core.vars.generators;
+  aspen2LacksLemonade = !(builtins.hasAttr "lemonade" aspen2Node.config.systemd.services);
   aspen3Node = mkNode {
     label = "Aspen3";
     machineName = "aspen3";
@@ -270,6 +283,22 @@ in
           ''}
           ${lib.optionalString (!(lib.all ordersAfterBackend meshNodes)) ''
             echo "Mesh-LLM sidecars must start after their local inference backends" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!aspen2HasQwenBackend) ''
+            echo "Aspen2 must provide its dedicated Qwen backend" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!aspen2QwenIsPrivate) ''
+            echo "Aspen2 Qwen must bind only to loopback port 13305" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!aspen2HasQwenTokenGenerator) ''
+            echo "Aspen2 Qwen must use its gated Hugging Face token generator" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!aspen2LacksLemonade) ''
+            echo "Aspen2 must not configure Lemonade beside Qwen" >&2
             exit 1
           ''}
           ${lib.optionalString (!(lib.all hasJoinCredential joinerNodes)) ''
