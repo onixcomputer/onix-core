@@ -551,6 +551,7 @@ in
 
       ${serviceName} = {
         description = "llama.cpp OpenAI-compatible server (${instanceName})";
+        path = lib.optionals hasMultimodalProjector [ pkgs.ffmpeg-headless ];
         after = [
           "network-online.target"
           "${pullServiceName}.service"
@@ -565,6 +566,7 @@ in
           ExecStart = lib.escapeShellArgs serverArgs;
           Restart = "on-failure";
           RestartSec = serverRestartDelay;
+          TimeoutStartSec = infiniteTimeout;
           User = "root";
           Group = "root";
           StateDirectory = stateDirectory;
