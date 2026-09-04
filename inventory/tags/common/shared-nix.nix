@@ -23,6 +23,8 @@ in
         llamacpp-rocm-rpc = self.packages.${pkgs.stdenv.hostPlatform.system}.llamacpp-rocm-rpc or null;
         llamacpp-rocm-dspark =
           self.packages.${pkgs.stdenv.hostPlatform.system}.llamacpp-rocm-dspark or null;
+        llamacpp-rocm-qwen4exp =
+          self.packages.${pkgs.stdenv.hostPlatform.system}.llamacpp-rocm-qwen4exp or null;
         deepseek-v4-dspark-draft =
           self.packages.${pkgs.stdenv.hostPlatform.system}.deepseek-v4-dspark-draft or null;
         lemonade-server = self.packages.${pkgs.stdenv.hostPlatform.system}.lemonade-server or null;

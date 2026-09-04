@@ -25,6 +25,7 @@ in
       {
         nixosModule =
           {
+            config,
             inputs,
             pkgs,
             lib,
@@ -36,6 +37,7 @@ in
           in
           import ./mk-nixos-config.nix {
             inherit
+              config
               inputs
               instanceName
               lib
