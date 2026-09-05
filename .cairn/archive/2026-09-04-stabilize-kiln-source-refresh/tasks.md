@@ -18,11 +18,11 @@
 
 ## Phase 4: Deploy and replay
 
-- [ ] [serial] T4.1 Deploy the reviewed system closure to `britton-desktop`. r[onix.radicle_ci.aspen_authority.refresh_quiescence.scenario.current]
-- [ ] [serial] T4.2 Reset and start the source-refresh service and path. r[onix.radicle_ci.aspen_authority.refresh_quiescence.scenario.current]
-- [ ] [serial] T4.3 Replay the blocked Seaglass revision and observe source visibility, terminal status, report publication, and an empty queue. r[onix.radicle_ci.aspen_authority.refresh_quiescence.scenario.missing-entry]
+- [x] [serial] T4.1 Deploy the reviewed system closure to `britton-desktop`. r[onix.radicle_ci.aspen_authority.refresh_quiescence.scenario.current]
+- [x] [serial] T4.2 Reset and start the source-refresh service and path. r[onix.radicle_ci.aspen_authority.refresh_quiescence.scenario.current]
+- [x] [serial] T4.3 Replay the blocked Seaglass revision and observe source visibility, terminal status, report publication, and an empty queue. r[onix.radicle_ci.aspen_authority.refresh_quiescence.scenario.missing-entry]
 
 ## Phase 5: Closeout
 
-- [ ] [serial] T5.1 Record bounded verification evidence and sync the accepted spec. r[onix.radicle_ci.aspen_authority.refresh_quiescence]
-- [ ] [serial] T5.2 Archive only after the deployed path remains active and the replay completes without source-readiness exhaustion. r[onix.radicle_ci.aspen_authority.refresh_quiescence.scenario.self-trigger]
+- [x] [serial] T5.1 Record bounded verification evidence and sync the accepted spec. r[onix.radicle_ci.aspen_authority.refresh_quiescence]
+- [x] [serial] T5.2 Archive only after the deployed path remains active and the replay completes without source-readiness exhaustion. r[onix.radicle_ci.aspen_authority.refresh_quiescence.scenario.self-trigger]
