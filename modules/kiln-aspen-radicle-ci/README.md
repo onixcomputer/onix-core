@@ -49,7 +49,11 @@ Rollback is an explicit `routeMode = "legacy"` deployment. Do not select it from
 
 ### Source visibility
 
-The provider wrapper polls only the admitted source view for the exact event commit. The source-refresh path grants read access to new pack files without exposing Radicle identity or network authority. If the wait expires, stop the broker and retain that failed state. Do not bypass the source view.
+The provider wrapper polls only the admitted source view for the exact event commit. The source-refresh path grants read access to new pack files without exposing Radicle identity or network authority.
+
+The admission command reads current ACLs and updates only missing group entries. It must not rewrite current ACLs because attribute writes retrigger `PathModified`. One settling refresh can follow a repository update, but that run must make no further ACL changes.
+
+If the path reaches its start limit, deploy the fixed closure before recovery. Then reset the failed service and path, start the admission service once, and start the path. If the provider wait expires, stop the broker and retain that failed state. Do not bypass the source view.
 
 ### Status propagation
 

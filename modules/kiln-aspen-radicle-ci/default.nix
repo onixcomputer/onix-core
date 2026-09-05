@@ -395,6 +395,7 @@ in
               socketPath = latticeSocket;
               socketOwner = "Lattice";
             };
+            # r[impl onix.radicle_ci.aspen_authority.refresh_quiescence]
             sourceAdmission = pkgs.writeShellApplication {
               name = "${runtimeName}-admit-source";
               runtimeInputs = [
@@ -416,10 +417,36 @@ in
                   echo "Seaglass source view contains an unsupported file type" >&2
                   exit 1
                 fi
-                find "$source" -type d \
-                  -exec setfacl -m "g:$group:r-x,d:g:$group:r-x" {} +
-                find "$source" -type f \
-                  -exec setfacl -m "g:$group:r--" {} +
+                directory_acl="group:$group:r-x"
+                default_directory_acl="default:group:$group:r-x"
+                file_acl="group:$group:r--"
+
+                directory_acl_is_current() {
+                  local path="$1"
+                  local acl
+                  acl="$(getfacl -cp -- "$path")"
+                  printf '%s\n' "$acl" | grep -Fqx "$directory_acl" \
+                    && printf '%s\n' "$acl" | grep -Fqx "$default_directory_acl"
+                }
+
+                file_acl_is_current() {
+                  local path="$1"
+                  local acl
+                  acl="$(getfacl -cp -- "$path")"
+                  printf '%s\n' "$acl" | grep -Fqx "$file_acl"
+                }
+
+                while IFS= read -r -d "" path; do
+                  if ! directory_acl_is_current "$path"; then
+                    setfacl -m "g:$group:r-x,d:g:$group:r-x" "$path"
+                  fi
+                done < <(find "$source" -type d -print0)
+
+                while IFS= read -r -d "" path; do
+                  if ! file_acl_is_current "$path"; then
+                    setfacl -m "g:$group:r--" "$path"
+                  fi
+                done < <(find "$source" -type f -print0)
               '';
             };
             shadowTrigger = pkgs.writeText "${runtimeName}-shadow-trigger.json" (

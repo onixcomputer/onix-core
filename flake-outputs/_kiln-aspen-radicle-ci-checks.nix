@@ -377,6 +377,10 @@ in
     # r[verify onix.radicle_ci.aspen_composition.accepted]
     # r[verify onix.radicle_ci.aspen_authority.accepted]
     # r[verify onix.radicle_ci.aspen_authority.source_readiness]
+    # r[verify onix.radicle_ci.aspen_authority.refresh_quiescence]
+    # r[verify onix.radicle_ci.aspen_authority.refresh_quiescence.scenario.current]
+    # r[verify onix.radicle_ci.aspen_authority.refresh_quiescence.scenario.missing-entry]
+    # r[verify onix.radicle_ci.aspen_authority.refresh_quiescence.scenario.self-trigger]
     kiln-aspen-radicle-ci-module =
       assert lib.assertMsg machinePolicyValid
         "Kiln Aspen production users, sockets, service order, state roots, or authority bounds drifted";
@@ -464,6 +468,13 @@ in
           grep -F -- ${lib.escapeShellArg sourcePath} ${lib.escapeShellArg sourceAdmissionCommand} >/dev/null
           grep -F -- 'type l' ${lib.escapeShellArg sourceAdmissionCommand} >/dev/null
           grep -F -- 'd:g:$group:r-x' ${lib.escapeShellArg sourceAdmissionCommand} >/dev/null
+          grep -F -- 'getfacl -cp' ${lib.escapeShellArg sourceAdmissionCommand} >/dev/null
+          grep -F -- 'if ! directory_acl_is_current' ${lib.escapeShellArg sourceAdmissionCommand} >/dev/null
+          grep -F -- 'if ! file_acl_is_current' ${lib.escapeShellArg sourceAdmissionCommand} >/dev/null
+          if grep -F -- '-exec setfacl' ${lib.escapeShellArg sourceAdmissionCommand} >/dev/null; then
+            echo "source admission still rewrites every ACL unconditionally" >&2
+            exit 1
+          fi
           if grep -E -- 'curl|wget|ssh ' ${lib.escapeShellArg sourceAdmissionCommand} >/dev/null; then
             echo "source admission gained network tooling" >&2
             exit 1
