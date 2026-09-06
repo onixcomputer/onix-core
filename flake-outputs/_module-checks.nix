@@ -434,6 +434,8 @@ let
   niks3SemanticPositiveErrors = niks3SettingsTests.positiveErrors;
   niks3MissingNegativeCases = niks3SettingsTests.missingNegativeCases;
 
+  # Contract validation for the llm-agents `packages` setting
+  # (r[verify onix.hermes_agent.validation.inventory]).
   llmAgentsPositiveErrors = llmAgentsValidation.role_positive;
   llmAgentsNegativeErrors = llmAgentsValidation.role_negative;
   expectedLlmAgentsNegativeFields = [
@@ -442,26 +444,6 @@ let
   missingLlmAgentsNegativeFields = builtins.filter (
     field: !(lib.any (error: lib.hasInfix field error) llmAgentsNegativeErrors)
   ) expectedLlmAgentsNegativeFields;
-
-  # Machine scoping for the hermes-desktop install (r[impl onix.hermes_desktop.install]).
-  hermesDesktopPackageName = "hermes-desktop";
-  aspen3SystemPackages = self.nixosConfigurations.aspen3.config.environment.systemPackages;
-  brittonDesktopSystemPackages =
-    self.nixosConfigurations.britton-desktop.config.environment.systemPackages;
-  aspen3HermesDesktopPresent = lib.any (
-    p: lib.getName p == hermesDesktopPackageName
-  ) aspen3SystemPackages;
-  brittonDesktopHermesDesktopPresent = lib.any (
-    p: lib.getName p == hermesDesktopPackageName
-  ) brittonDesktopSystemPackages;
-  brittonDesktopCliPackages = [
-    "pi"
-    "openspec"
-    "hermes-agent"
-  ];
-  brittonDesktopCliMissing = builtins.filter (
-    name: !(lib.any (p: lib.getName p == name) brittonDesktopSystemPackages)
-  ) brittonDesktopCliPackages;
 
   kacheRustfsMachines = [
     "aspen1"
@@ -1106,6 +1088,24 @@ in
       touch $out
     '';
 
+    # r[verify onix.hermes_agent.validation.negative]
+    # r[verify onix.hermes_agent.validation.inventory]
+    llm-agents-settings = pkgs.runCommand "llm-agents-settings" { } ''
+      ${lib.optionalString (llmAgentsPositiveErrors != [ ]) ''
+        echo "Valid llm-agents settings produced unexpected errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" llmAgentsPositiveErrors)}
+        exit 1
+      ''}
+      ${lib.optionalString (missingLlmAgentsNegativeFields != [ ]) ''
+        echo "Invalid llm-agents settings did not report expected fields:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" missingLlmAgentsNegativeFields)}
+        echo "Actual errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" llmAgentsNegativeErrors)}
+        exit 1
+      ''}
+      touch $out
+    '';
+
     # r[verify onix.rustfs_build_caches.kache]
     kache-rustfs-generated = pkgs.runCommand "kache-rustfs-generated" { } ''
       ${lib.optionalString (!kacheRustfsGeneratedValid) ''
@@ -1127,40 +1127,6 @@ in
       ''}
       grep -Fq 'node="%s"' ${niks3Aspen1.systemd.services.niks3-queue-metrics.serviceConfig.ExecStart}
       ! grep -Fq 'node=%s' ${niks3Aspen1.systemd.services.niks3-queue-metrics.serviceConfig.ExecStart}
-      touch $out
-    '';
-
-    # Positive and negative settings coverage for
-    # r[verify onix.hermes_desktop.validation.positive],
-    # r[verify onix.hermes_desktop.validation.negative],
-    # r[verify onix.hermes_desktop.install.aspen3],
-    # r[verify onix.hermes_desktop.install.scope], and
-    # r[verify onix.hermes_desktop.install].
-    llm-agents-settings = pkgs.runCommand "llm-agents-settings" { } ''
-      ${lib.optionalString (llmAgentsPositiveErrors != [ ]) ''
-        echo "Valid llm-agents settings produced unexpected errors:"
-        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" llmAgentsPositiveErrors)}
-        exit 1
-      ''}
-      ${lib.optionalString (missingLlmAgentsNegativeFields != [ ]) ''
-        echo "Invalid llm-agents settings did not report expected fields:"
-        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" missingLlmAgentsNegativeFields)}
-        echo "Actual errors:"
-        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" llmAgentsNegativeErrors)}
-        exit 1
-      ''}
-      ${lib.optionalString (!aspen3HermesDesktopPresent) ''
-        echo "aspen3 is missing ${hermesDesktopPackageName} in environment.systemPackages"
-        exit 1
-      ''}
-      ${lib.optionalString brittonDesktopHermesDesktopPresent ''
-        echo "britton-desktop unexpectedly contains ${hermesDesktopPackageName}"
-        exit 1
-      ''}
-      ${lib.optionalString (brittonDesktopCliMissing != [ ]) ''
-        echo "britton-desktop lost shared llm-client packages: ${lib.concatStringsSep ", " brittonDesktopCliMissing}"
-        exit 1
-      ''}
       touch $out
     '';
 

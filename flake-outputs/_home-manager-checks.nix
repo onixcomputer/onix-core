@@ -111,6 +111,55 @@ let
   usesUploadedCairnArtifactInput =
     package: packageName package == cairnPackageName && (package.usesUploadedArtifactInput or false);
   hasHomePackageNamed = expectedName: home: findHomePackageNamed expectedName home != null;
+
+  # Official Hermes Agent (Nous Research) install scoping. aspen3 receives
+  # the Hermes CLI and the Hermes Desktop application through the upstream
+  # home-manager module; every other machine must remain unaffected.
+  # r[impl onix.hermes_agent.install]
+  # r[impl onix.hermes_agent.install.desktop]
+  # r[impl onix.hermes_agent.install.cli]
+  officialHermesDesktopName = "hermes-desktop";
+  officialHermesAgentName = "hermes-agent";
+  aspen3HermesDesktopPackage = findHomePackageNamed officialHermesDesktopName aspen3Home;
+  aspen3HermesAgentPackage = findHomePackageNamed officialHermesAgentName aspen3Home;
+  aspen3HermesDesktopLauncher =
+    if aspen3HermesDesktopPackage == null then
+      "/missing-hermes-desktop/share/applications/hermes.desktop"
+    else
+      "${aspen3HermesDesktopPackage}/share/applications/hermes.desktop";
+  aspen3HermesDesktopExecutable =
+    if aspen3HermesDesktopPackage == null then
+      "/missing-hermes-desktop/bin/hermes-desktop"
+    else
+      "${aspen3HermesDesktopPackage}/bin/hermes-desktop";
+  aspen3HermesCliExecutable =
+    if aspen3HermesAgentPackage == null then
+      "/missing-hermes-agent/bin/hermes"
+    else
+      "${aspen3HermesAgentPackage}/bin/hermes";
+  aspen3HermesHomeSetting = aspen3Home.home.sessionVariables.HERMES_HOME or "";
+  desktopHasHomeHermesDesktop = hasHomePackageNamed officialHermesDesktopName desktopHome;
+  desktopHasHomeHermesAgent = hasHomePackageNamed officialHermesAgentName desktopHome;
+  aspen2Config = self.nixosConfigurations.aspen2.config;
+  llmClientSharedCliNames = [
+    "pi"
+    "openspec"
+    "hermes-agent"
+  ];
+  missingLlMClientCli =
+    machinePackages:
+    builtins.filter (
+      name: !(lib.any (package: packageName package == name) machinePackages)
+    ) llmClientSharedCliNames;
+  aspen1MissingSharedCli = missingLlMClientCli aspen1Config.environment.systemPackages;
+  aspen2MissingSharedCli = missingLlMClientCli aspen2Config.environment.systemPackages;
+  desktopMissingSharedCli = missingLlMClientCli desktopConfig.environment.systemPackages;
+  aspen3SystemHermesDesktopPresent = lib.any (
+    package: packageName package == officialHermesDesktopName
+  ) aspen3Config.environment.systemPackages;
+  aspen3SystemHermesAgentPresent = lib.any (
+    package: packageName package == officialHermesAgentName
+  ) aspen3Config.environment.systemPackages;
   brittonrDevHomes = {
     desktop = desktopHome;
     laptop = aspen3Home;
@@ -508,6 +557,70 @@ let
     touch "$out"
   '';
 
+  # Positive and negative coverage for
+  # r[verify onix.hermes_agent.install.desktop],
+  # r[verify onix.hermes_agent.install.cli],
+  # r[verify onix.hermes_agent.scope.britton_desktop],
+  # r[verify onix.hermes_agent.scope.system],
+  # r[verify onix.hermes_agent.scope.llm_client], and
+  # r[verify onix.hermes_agent.validation].
+  hermesAgentDesktop = pkgs.runCommand "hermes-agent-desktop" { } ''
+    set -eu
+
+    desktop_launcher=${lib.escapeShellArg aspen3HermesDesktopLauncher}
+    desktop_bin=${lib.escapeShellArg aspen3HermesDesktopExecutable}
+    cli_bin=${lib.escapeShellArg aspen3HermesCliExecutable}
+    if [ ! -f "$desktop_launcher" ]; then
+      echo "positive: aspen3 must install the Hermes Desktop launcher entry" >&2
+      exit 1
+    fi
+    if [ ! -x "$desktop_bin" ]; then
+      echo "positive: aspen3 must install the Hermes Desktop executable" >&2
+      exit 1
+    fi
+    if [ ! -x "$cli_bin" ]; then
+      echo "positive: aspen3 must install the official hermes CLI" >&2
+      exit 1
+    fi
+    if [ "${aspen3HermesHomeSetting}" != "/home/brittonr/.hermes" ]; then
+      echo "positive: aspen3 must export HERMES_HOME for brittonr" >&2
+      exit 1
+    fi
+
+    ${lib.optionalString desktopHasHomeHermesDesktop ''
+      echo "negative: britton-desktop home must not carry Hermes Desktop" >&2
+      exit 1
+    ''}
+    ${lib.optionalString desktopHasHomeHermesAgent ''
+      echo "negative: britton-desktop home must not carry the official Hermes CLI" >&2
+      exit 1
+    ''}
+
+    ${lib.optionalString aspen3SystemHermesDesktopPresent ''
+      echo "negative: aspen3 system packages must not contain hermes-desktop" >&2
+      exit 1
+    ''}
+    ${lib.optionalString aspen3SystemHermesAgentPresent ''
+      echo "negative: aspen3 system packages must not contain the role hermes-agent" >&2
+      exit 1
+    ''}
+
+    ${lib.optionalString (aspen1MissingSharedCli != [ ]) ''
+      echo "positive: aspen1 lost shared llm-client packages: ${lib.concatStringsSep ", " aspen1MissingSharedCli}" >&2
+      exit 1
+    ''}
+    ${lib.optionalString (aspen2MissingSharedCli != [ ]) ''
+      echo "positive: aspen2 lost shared llm-client packages: ${lib.concatStringsSep ", " aspen2MissingSharedCli}" >&2
+      exit 1
+    ''}
+    ${lib.optionalString (desktopMissingSharedCli != [ ]) ''
+      echo "positive: britton-desktop lost shared llm-client packages: ${lib.concatStringsSep ", " desktopMissingSharedCli}" >&2
+      exit 1
+    ''}
+
+    touch "$out"
+  '';
+
   assertions = [
     {
       name = "positive: britton-desktop Home Manager stateVersion is ${targetHomeStateVersion}";
@@ -746,5 +859,6 @@ in
     kache-wrapper-workspace-wrapper-bypass = kacheWrapperWorkspaceWrapperBypass;
     herdr-pueue-dashboard = herdrPueueDashboard;
     herdr-workflow-plugins = herdrWorkflowPlugins;
+    hermes-agent-desktop = hermesAgentDesktop;
   };
 }

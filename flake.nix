@@ -87,6 +87,12 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Official Hermes Agent (Nous Research) — supplies the Hermes Desktop app
+    # and its Home Manager module for brittonr on aspen3.
+    hermes-agent = {
+      url = "github:NousResearch/hermes-agent";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     clan-core = {
       url = "git+https://git.clan.lol/clan/clan-core?ref=main&shallow=1";
       inputs = {
