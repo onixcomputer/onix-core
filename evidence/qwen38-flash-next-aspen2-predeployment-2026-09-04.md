@@ -4,6 +4,9 @@ Date: 2026-09-04
 
 Host: `aspen2`
 
+Later status: [NixOS installation on 2026-09-06](aspen2-nixos-install-2026-09-06.md) passed boot and SSH checks.
+Qwen GPU allocation and Tailscale login still block live service acceptance.
+
 ## Prepared configuration
 
 r[verify onix.aspen2.qwen_flash.serving.inventory]
