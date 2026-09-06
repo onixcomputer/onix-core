@@ -1043,6 +1043,11 @@ in
       roles.default = {
         tags."llm-client" = {},
         settings.packages = ["pi", "openspec", "hermes-agent"],
+        # aspen3 is brittonr's interactive Niri desktop. The list-typed
+        # packages setting concatenates with the role-level list, so this
+        # machine delta adds the GUI companion without affecting any other
+        # llm-client host. r[impl onix.hermes_desktop.install]
+        machines.aspen3.settings.packages = ["hermes-desktop"],
       },
     },
 
