@@ -103,6 +103,8 @@ let durable_file_publication_rid = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM" in
 let koiterminal_rid = "rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ" in
 # r[impl onix.campaign_source.policy]
 let campaign_rid = "rad:z2scC9MCm3pxk9mX4FEidRKabQ5LN" in
+let campaign_publisher : String = "z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx" in
+let campaign_https_publishers | { _ : String } = { "%{campaign_rid}" = campaign_publisher } in
 let radicle_private_pilot_rid = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg" in
 let radicle_seaglass_rid = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk" in
 let kiln_aspen_canary_host_uid = 970 in
@@ -838,6 +840,7 @@ in
         httpsOriginListenAddress = "127.0.0.1",
         httpsOriginListenPort = radicle_https_origin_port,
         httpsGitRepositories = radicle_source_rids,
+        httpsGitPublishers = campaign_https_publishers,
         backupEnabled = true,
         backupTargetHost = radicle_backup_target_host,
         backupTargetAddress = radicle_backup_target_address,

@@ -126,6 +126,10 @@ let
 in
 {
   checks.radicle-campaign-source-scope =
+    assert import ../modules/radicle-node/publisher-route-tests.nix {
+      inherit lib packageVersion;
+      settings = primary;
+    };
     assert lib.assertMsg (
       moduleDiagnostics actual == [ ]
     ) "actual module validators rejected Campaign admission";
@@ -137,6 +141,7 @@ in
       negativeSeeds ++ negativeRoutes
     )) "unsafe Campaign source scope passed admission";
     pkgs.writeText "radicle-campaign-source-scope" ''
+      publisher_route_controls=accepted
       declared_source_scope=accepted
       negative_seed_cases=${toString (builtins.length negativeSeeds)}
       negative_route_cases=${toString (builtins.length negativeRoutes)}

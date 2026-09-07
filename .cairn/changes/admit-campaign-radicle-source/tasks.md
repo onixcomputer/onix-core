@@ -17,6 +17,9 @@
 
 ## Acquisition and closure
 
+- [ ] [serial] r[onix.campaign_source.policy] Admit only the reviewed Campaign publisher namespace with positive and negative route controls.
+- [ ] [serial] r[onix.campaign_source.acquisition] Deploy the bounded namespace routes and prove fresh locked Cargo acquisition without cache preloading.
+
 - [x] [depends:onix.campaign_source.deployment] r[onix.campaign_source.acquisition] Verify native replication and fresh exact-revision HTTPS acquisition. Evidence: `evidence/public-acquisition-2026-09-07.md`.
 - [x] [parallel] r[onix.campaign_source.acquisition] Verify unknown-repository and write-route rejection. All three denial probes returned 404. Evidence: `evidence/aspen1-deployment-2026-09-07.md`.
 - [ ] [serial] r[onix.campaign_source.acquisition] Record bounded evidence, sync accepted requirements, and archive only after acceptance.

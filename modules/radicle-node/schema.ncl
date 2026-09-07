@@ -25,6 +25,7 @@ let default_https_origin_port = 8081 in
     httpsOriginListenAddress = { type = "string", default = "127.0.0.1", description = "Loopback Nginx origin address used only by Cloudflare Tunnel" },
     httpsOriginListenPort = { type = "port", default = default_https_origin_port, description = "Loopback Nginx origin port used only by Cloudflare Tunnel" },
     httpsGitRepositories = { type = "array_string", default = [], description = "Canonical public Radicle repository IDs admitted to exact read-only HTTPS Git routes" },
+    httpsGitPublishers = { type = "record", default = {}, description = "Reviewed public RID to publisher NID bindings for exact read-only namespace routes" },
     backupEnabled = { type = "bool", default = false, description = "Enable encrypted complete-state backup to the reviewed independent target" },
     backupTargetHost = { type = "nullable_string", default = null, description = "Reviewed machine receiving only the encrypted restricted Borg repository" },
     backupTargetAddress = { type = "nullable_string", default = null, description = "Explicit target address used by the source backup job" },

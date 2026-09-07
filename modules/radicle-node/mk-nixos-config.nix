@@ -27,6 +27,7 @@ let
   httpsGitLocations = mkHttpsGitLocations {
     backend = httpBackend;
     repositoryIds = settings.httpsGitRepositories;
+    publishers = settings.httpsGitPublishers or { };
   };
   policyCommand = lib.escapeShellArgs (
     [

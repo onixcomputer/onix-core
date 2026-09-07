@@ -33,6 +33,15 @@ let
   koiterminalRepository = "rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ";
   # r[impl onix.campaign_source.policy]
   campaignRepository = "rad:z2scC9MCm3pxk9mX4FEidRKabQ5LN";
+  campaignPublisher = "z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
+  publishers = settings.httpsGitPublishers or { };
+  validPublishers =
+    publishers == { }
+    || (
+      settings.httpsEnabled
+      && builtins.elem campaignRepository settings.httpsGitRepositories
+      && publishers == { ${campaignRepository} = campaignPublisher; }
+    );
   governedRepositories = [
     boundedExecRepository
     artifactAuthRepository
@@ -207,6 +216,7 @@ lib.concatLists [
   (rejectUnless validHttpsTransport "httpsTransport must be direct-acme or cloudflare-tunnel")
   (rejectUnless validHttpsOriginAddress "httpsOriginListenAddress must remain loopback-only")
   (rejectUnless validHttpsAdmission "public HTTPS activation requires a server name and non-empty HTTPS Git repository allowlist, and an allowlist requires activation")
+  (rejectUnless validPublishers "httpsGitPublishers must be empty or bind only the admitted Campaign RID to its reviewed publisher while HTTPS is enabled")
   (rejectUnless validHttpsGitRepositoryIds "httpsGitRepositories must contain only canonical public rad:z repository IDs")
   (rejectUnless uniqueHttpsGitRepositoryIds "httpsGitRepositories must not contain duplicate repository IDs")
   (rejectUnless httpsGitRepositoriesAreSeeded "httpsGitRepositories must be a subset of seedRepositories")

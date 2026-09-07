@@ -81,6 +81,8 @@ let
   durableFilePublicationRepository = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM";
   koiterminalRepository = "rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ";
   campaignRepository = "rad:z2scC9MCm3pxk9mX4FEidRKabQ5LN";
+  campaignPublisher = "z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx";
+  campaignPublisherPath = "${lib.removePrefix "rad:" campaignRepository}.git/${campaignPublisher}";
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   privateSeaglassRepository = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
   privateHardenedWasmtimeRepository = "rad:z3hRCegTsS8jpJVgxYfb9psEzxHpG";
@@ -1016,7 +1018,11 @@ let
   productionHttpsVhost = fixtureConfig.services.nginx.virtualHosts.${productionHttpsServerName};
   productionHttpsLocations = productionHttpsVhost.locations;
   productionExpectedLocationNames = lib.sort builtins.lessThan (
-    [ "/" ]
+    [
+      "/"
+      "= /${campaignPublisherPath}/info/refs"
+      "= /${campaignPublisherPath}/git-upload-pack"
+    ]
     ++ lib.concatMap (
       repository:
       let
@@ -1193,6 +1199,7 @@ let
     "httpsOriginListenAddress"
     "httpsOriginListenPort"
     "httpsGitRepositories"
+    "httpsGitPublishers"
     "backupEnabled"
     "backupTargetHost"
     "backupTargetAddress"
