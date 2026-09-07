@@ -63,6 +63,7 @@ let
     "harmonia" = import ./harmonia (schemaArgs ./harmonia);
     "hermes-gateway" = import ./hermes-gateway (schemaArgs ./hermes-gateway);
     "hister" = import ./hister (schemaArgs ./hister);
+    "searxng" = import ./searxng (schemaArgs ./searxng);
     "llamacpp-rpc" = import ./llamacpp-rpc (schemaArgs ./llamacpp-rpc);
     "llamacpp-server" = import ./llamacpp-server (schemaArgs ./llamacpp-server);
     "syncthing" = import ./syncthing (schemaArgs ./syncthing);

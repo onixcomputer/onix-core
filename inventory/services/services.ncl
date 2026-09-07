@@ -1195,6 +1195,15 @@ in
       },
     },
 
+    "searxng-aspen1" = {
+      module = { name = "searxng", input = "self" },
+      roles.server.machines.aspen1.settings = {
+        baseUrl = "https://aspen1.bison-tailor.ts.net/",
+        instanceName = "Onix Search",
+        enableKagi = true,
+      },
+    },
+
     "hister-desktop" = {
       module = { name = "hister", input = "self" },
       roles.server.machines.britton-desktop.settings = {

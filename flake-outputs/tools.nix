@@ -12,7 +12,9 @@ let
 
   buildbot-pr-check = pkgs.callPackage ../pkgs/buildbot-pr-check { };
   ghzingaPackage = pkgs.callPackage ../pkgs/ghzinga { };
+  colliePackage = pkgs.callPackage ../pkgs/collie-herdr { };
   herdrPackage = pkgs.callPackage ../pkgs/herdr {
+    collie = colliePackage;
     ghzinga = ghzingaPackage;
     herdr = self.inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr;
     wrapperLib = self.inputs.wrappers.lib;
@@ -57,6 +59,7 @@ in
     bookshelf = pkgs.callPackage ../pkgs/bookshelf { };
     branchfs = pkgs.callPackage ../pkgs/branchfs { };
     celld = pkgs.callPackage ../pkgs/celld { };
+    collie-herdr = colliePackage;
     herdr = herdrPackage;
     horizon = pkgs.callPackage ../pkgs/horizon { horizon-src = self.inputs.horizon; };
     iroh-ssh = pkgs.callPackage ../pkgs/iroh-ssh { };

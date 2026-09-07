@@ -3,3 +3,5 @@ modules/grafana/email-templates/*.html
 pkgs/rwkv-layer-harness/fixtures/ttwkv7-device-2/*
 pkgs/rwkv-ttwkv7-persistent-evidence/fixtures/ttwkv7-persistent-device-3/**
 pkgs/rwkv-ttwkv7-persistent-passed-evidence/fixtures/ttwkv7-persistent-device-4/**
+# Keep the pinned Collie frontend build byte-identical.
+pkgs/collie-herdr/dist/**

@@ -44,6 +44,7 @@ let schemas = {
   "radicle-node" = import "../../modules/radicle-node/schema.ncl",
   "radicle-seed-replica" = import "../../modules/radicle-seed-replica/schema.ncl",
   "rustfs" = import "../../modules/rustfs/schema.ncl",
+  "searxng" = import "../../modules/searxng/schema.ncl",
   "sglang-diffusion" = import "../../modules/sglang-diffusion/schema.ncl",
   "speaches" = import "../../modules/speaches/schema.ncl",
   "static-server" = import "../../modules/static-server/schema.ncl",

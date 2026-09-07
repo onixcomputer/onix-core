@@ -53,6 +53,7 @@ let
   kilnAspenCanaryChecks = (import ./_kiln-aspen-canary-checks.nix) innerArgs;
   kilnAspenRadicleCiChecks = (import ./_kiln-aspen-radicle-ci-checks.nix) innerArgs;
   multiverseChecks = (import ./_multiverse-checks.nix) innerArgs;
+  searxngChecks = (import ./_searxng-checks.nix) innerArgs;
 
   packageChecks = lib.mapAttrs' (n: lib.nameValuePair "package-${n}") self'.packages;
   devShellChecks = lib.mapAttrs' (n: lib.nameValuePair "devShell-${n}") self'.devShells;
@@ -89,6 +90,7 @@ in
     // (kilnAspenCanaryChecks.checks or { })
     // (kilnAspenRadicleCiChecks.checks or { })
     // (multiverseChecks.checks or { })
+    // (searxngChecks.checks or { })
     // packageChecks
     // devShellChecks;
 }

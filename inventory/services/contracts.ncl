@@ -51,6 +51,7 @@ let self_modules = [
   "radicle-node",
   "radicle-seed-replica",
   "rustfs",
+  "searxng",
   "sglang-diffusion",
   "speaches",
   "static-server",

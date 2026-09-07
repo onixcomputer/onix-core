@@ -1,6 +1,8 @@
 {
   lib,
   bash,
+  bun,
+  collie,
   docker-client,
   fetchFromGitHub,
   ghzinga,
@@ -176,6 +178,12 @@ let
       $out/target/release/herdr-plugin-pueue
   '';
 
+  # r[impl onix.britton-desktop.herdr.collie.plugin]
+  # The Collie plugin root contains the prebuilt web UI and Bun bridge.
+  # Its actions call the managed scripts/collie-ctl.sh entry point.
+  # The restricted manifest has no mutable build step.
+  colliePlugin = collie;
+
   # r[impl onix.britton-desktop.herdr.wrapper.registry]
   patchedHerdr = herdr.overrideAttrs (old: {
     patches = (old.patches or [ ]) ++ [ ./static-plugin-registry.patch ];
@@ -196,6 +204,7 @@ let
     mirrorPlugin
     jjWorkspacePlugin
     pueuePlugin
+    colliePlugin
   ];
   pluginSources = [
     {
@@ -226,6 +235,10 @@ let
       source = "../herdr-plugin-pueue";
       revision = "29b2ba060297ec15909e06ef1311200c17965cbe";
     }
+    {
+      source = "umakers/collie-herdr";
+      revision = "b2d2803b3f691e9abca74f3f15bbc37307a2026e";
+    }
   ];
   expectedPluginIds = [
     "herdr-file-viewer"
@@ -235,6 +248,7 @@ let
     "mirror"
     "nathanflurry.jj-workspace"
     "dev.herdr.pueue"
+    "herdr.collie"
   ];
   requiredPluginArtifacts = [
     "${fileViewerPlugin}/target/release/herdr-file-viewer"
@@ -244,6 +258,8 @@ let
     "${mirrorPlugin}/target/release/herdr-mirror"
     "${jjWorkspacePlugin}/target/release/jj-workspace"
     "${pueuePlugin}/target/release/herdr-plugin-pueue"
+    "${colliePlugin}/web/dist/index.html"
+    "${colliePlugin}/scripts/collie-ctl.sh"
   ];
   expectedPluginIdsJson = builtins.toJSON (builtins.sort builtins.lessThan expectedPluginIds);
   expectedPluginCount = builtins.length expectedPluginIds;
@@ -269,6 +285,7 @@ let
 
   runtimePackages = [
     bash
+    bun
     docker-client
     ghzinga
     git

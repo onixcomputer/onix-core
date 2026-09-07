@@ -60,6 +60,10 @@ let
       source = "../herdr-plugin-pueue";
       revision = "29b2ba060297ec15909e06ef1311200c17965cbe";
     }
+    {
+      source = "umakers/collie-herdr";
+      revision = "b2d2803b3f691e9abca74f3f15bbc37307a2026e";
+    }
   ];
   workflowPluginBindings = [
     {
@@ -621,6 +625,32 @@ let
     touch "$out"
   '';
 
+  # r[verify onix.britton-desktop.herdr.collie.plugin]
+  # r[verify onix.britton-desktop.herdr.collie.config]
+  # r[verify onix.britton-desktop.herdr.collie.service]
+  # r[verify onix.britton-desktop.herdr.collie.serve]
+  collieIntegration = import ../pkgs/collie-herdr/integration-check.nix {
+    inherit
+      pkgs
+      lib
+      desktopConfig
+      desktopHome
+      aspen3Home
+      aspen1Home
+      ;
+    collie = self.packages.${system}.collie-herdr;
+  };
+  collieManagedController = import ../pkgs/collie-herdr/tests.nix {
+    inherit pkgs lib;
+    collie = self.packages.${system}.collie-herdr;
+  };
+  collieRemoteSessions = pkgs.runCommand "collie-remote-sessions" { } ''
+    export HOME="$TMPDIR/home"
+    mkdir -p "$HOME"
+    ${pkgs.bun}/bin/bun test ${self.packages.${system}.collie-herdr}/bridge/remote-sessions.test.ts
+    touch "$out"
+  '';
+
   assertions = [
     {
       name = "positive: britton-desktop Home Manager stateVersion is ${targetHomeStateVersion}";
@@ -860,5 +890,8 @@ in
     herdr-pueue-dashboard = herdrPueueDashboard;
     herdr-workflow-plugins = herdrWorkflowPlugins;
     hermes-agent-desktop = hermesAgentDesktop;
+    collie-integration = collieIntegration;
+    collie-managed-controller = collieManagedController;
+    collie-remote-sessions = collieRemoteSessions;
   };
 }

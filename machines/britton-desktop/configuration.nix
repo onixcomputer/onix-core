@@ -294,6 +294,7 @@ in
 {
   imports = [
     ./build-storage.nix
+    ./collie-serve.nix
     inputs.tenstorrent-nix.nixosModules.default
   ];
 

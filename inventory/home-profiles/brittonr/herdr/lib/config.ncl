@@ -153,6 +153,12 @@ let SidebarRow = Array SidebarToken in
         version = "0.1.0",
         revision = "29b2ba060297ec15909e06ef1311200c17965cbe",
       },
+      {
+        name = "collie-herdr",
+        source = "umakers/collie-herdr",
+        version = "0.24.1",
+        revision = "b2d2803b3f691e9abca74f3f15bbc37307a2026e",
+      },
     ],
 
   plugins

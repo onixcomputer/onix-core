@@ -16,7 +16,12 @@ Read [`docs/rustfs-build-caches.md`](docs/rustfs-build-caches.md) for private Ka
 
 Read [`docs/site-celld.md`](docs/site-celld.md) for the private Site fleet, publisher credential boundary, deployment, and activation.
 
+Read [`modules/searxng/README.md`](modules/searxng/README.md) for the private SearXNG service.
+
 ## References
+- [umakers/collie-herdr](https://github.com/umakers/collie-herdr) — phone access to Herdr. See [the package and trust boundaries](pkgs/collie-herdr/UPSTREAM.md).
+- [searxng/searxng](https://github.com/searxng/searxng) — metasearch engine from the locked NixOS package.
+- [czottmann/kagi-ken](https://github.com/czottmann/kagi-ken/tree/2d29014586a1f7fc012c4073890adc6987711d6f) — protocol and selector reference for the private Kagi session engine. See [its credential boundary](modules/searxng/KAGI.md).
 - [BlinkDL/RWKV-LM](https://github.com/BlinkDL/RWKV-LM) — pinned official RWKV-7 model, byte-tokenizer, and PyTorch recurrence equations used by the real-weight, stateful-decode, bounded-prompt, and CPU equation-reference harnesses.
 - [fla-org/flash-linear-attention](https://github.com/fla-org/flash-linear-attention) — pinned v0.3.0 checkpoint naming, cross-layer value mixing, recurrent cache, model normalization, and untied language-model head wiring used to decode and independently compare the Hugging Face model format.
 - [denoland/celld](https://github.com/denoland/celld) — pinned self-hosted Durable Objects runtime used by the private RustFS-backed Celld fleet.
