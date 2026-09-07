@@ -1188,6 +1188,8 @@ in
         baseUrl = "https://aspen1.bison-tailor.ts.net/",
         instanceName = "Onix Search",
         enableKagi = true,
+        kagiDefault = true,
+        kagiHealthCheck = true,
       },
     },
 
