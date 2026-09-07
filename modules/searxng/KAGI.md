@@ -88,7 +88,9 @@ Its session cookie is Secure, HttpOnly, host-only, and SameSite=Strict.
 Missing, incorrect, or cross-session form tokens fail without changing access.
 Explicit cross-origin headers also fail. Browsers such as Obscura can omit those headers without bypassing the session-bound check.
 Neither the account session token nor the engine access token enters the form-protection cookie.
-An unlocked engine appears as `kagi-private` under Engines → General → web.
+Before authorization, `kagi-private` appears at the top of Engines → General as **Locked**.
+Its **Unlock Kagi** link opens the access form. The locked row has no enable control.
+After authorization, the normal engine row appears under Engines → General → web.
 The Kagi autocomplete option is separate and does not activate this engine.
 
 ## Session rotation and rollback

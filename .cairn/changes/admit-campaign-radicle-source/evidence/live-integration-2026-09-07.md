@@ -40,6 +40,16 @@ The imported Kagi baseline failed a raw HTML whitespace assertion. The integrati
 
 Deadnix, Statix, and treefmt pass. Retained operator logs include `live-integrated-frozen-checks.log`, `kagi-latest-baseline.log`, and `live-latest-hooks.log`.
 
+## Later live UI update
+
+A later live comparison found the new locked-engine row in Aspen1. The earlier candidate did not contain that row, so deployment did not proceed.
+
+Tree `b29f965e139a3ff20642f3606addaed972688766` captures that source update. It also replaces raw HTML assertions with DOM assertions. Both positive and negative message checks remain.
+
+Frozen tree `9b347b47fc96c3b457cfa80a68448d02500f0e88` passes the same sixteen checks and the Aspen1 system build. The Kagi check now runs 36 Python tests and four JavaScript tests. The new control checks that the locked row has no enable control.
+
+The built system is `/nix/store/0dq373wying446jahqg1l2l90fpyd159-nixos-system-aspen1-26.11.20260819.afe3d8a`. The retained build log is `forge-ui-final-checks.log`.
+
 ## Remaining limits
 
 This checkpoint does not prove deployment, complete flake acceptance, native replication, public Campaign acquisition, or lifecycle completion. Host build, live comparison, deployment, and runtime checks remain required.

@@ -12,6 +12,7 @@ import pytest
 import searx
 from flask import Flask
 from jinja2 import Environment, FileSystemLoader
+from lxml import html
 from searx.engines import kagi_session as engine
 from searx.engines import load_engine
 from searx.exceptions import (
@@ -242,11 +243,11 @@ class AccessNoticeTests(unittest.TestCase):
                 "/kagi-access" if endpoint == "kagi_unlock" else "/preferences"
             ),
         )
-        # HTML layout whitespace does not change attributes or displayed text.
-        normalized = " ".join(rendered.split())
-        assert 'method="post" action="/kagi-access"' in normalized
-        assert 'type="password"' in normalized
-        assert "did not return the saved cookie" in normalized
+        document = html.fromstring(rendered)
+        rendered_text = " ".join(document.text_content().split())
+        assert document.xpath('//form[@method="post" and @action="/kagi-access"]')
+        assert document.xpath('//input[@type="password"]')
+        assert "did not return the saved cookie" in rendered_text
         rejected = template.render(
             kagi_engine_available=True,
             kagi_access_allowed=False,
@@ -254,8 +255,32 @@ class AccessNoticeTests(unittest.TestCase):
             kagi_unlock_attempt="rejected",
             url_for=lambda _endpoint, **_kwargs: "/preferences",
         )
-        assert "was not accepted" in rejected
-        assert "did not return the saved cookie" not in " ".join(rejected.split())
+        rejected_text = " ".join(html.fromstring(rejected).text_content().split())
+        assert "was not accepted" in rejected_text
+        assert "did not return the saved cookie" not in rejected_text
+
+    def test_locked_engine_is_visible_but_has_no_enable_control(self):
+        template_root = Path(searx.__file__).parent / "templates"
+        template = Environment(
+            loader=FileSystemLoader(template_root), autoescape=True
+        ).get_template("simple/kagi-locked-engine.html")
+        for available in (True, False):
+            rendered = template.render(
+                categ="general",
+                kagi_access_allowed=False,
+                kagi_engine_available=available,
+                enable_metrics=True,
+            )
+            document = html.fromstring("<table>" + rendered + "</table>")
+            assert document.xpath('//*[@id="kagi-locked-engine"]')
+            assert "kagi-private" in document.text_content()
+            assert ("Locked" if available else "Unavailable") in document.text_content()
+            assert not document.xpath("//input")
+            assert document.xpath('//a[@href="#kagi-access-status"]')
+        for category, allowed in (("general", True), ("images", False)):
+            assert not template.render(
+                categ=category, kagi_access_allowed=allowed
+            ).strip()
 
     def test_access_states_do_not_echo_credentials(self):
         template_root = Path(searx.__file__).parent / "templates"
