@@ -44,7 +44,12 @@ endif %}
     The Kagi engine did not load on this server. Other engines remain available.
   </p>
   {% endif %} {% if kagi_state in ['missing', 'rejected'] %}
-  <form method="post" action="{{ url_for('kagi_unlock') }}" autocomplete="off">
+  <form
+    method="post"
+    action="{{ url_for('kagi_unlock') }}"
+    data-preferences-url="{{ url_for('preferences') }}"
+    autocomplete="off"
+  >
     <input type="hidden" name="kagi_form_nonce" value="{{ kagi_form_nonce }}" />
     <p><label for="kagi-engine-token">Clan engine access token</label></p>
     <p>
@@ -57,11 +62,16 @@ endif %}
       />
     </p>
     <p><button type="submit">Unlock Kagi</button></p>
+    <p id="kagi-unlock-feedback" role="status"></p>
     <p>
       This form preserves your other preferences. It accepts the separate engine
       access token, not the Kagi session token.
     </p>
   </form>
+  <script
+    src="{{ url_for('static', filename='kagi-unlock.js') }}"
+    defer
+  ></script>
   {% endif %}
   <p>
     <a href="{{ url_for('preferences') }}">Open Preferences</a>. Never share a

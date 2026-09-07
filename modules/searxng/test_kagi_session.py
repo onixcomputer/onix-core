@@ -78,8 +78,10 @@ class UnlockTests(unittest.TestCase):
 
         self.client = self.app.test_client()
 
-    def post_token(self, candidate, origin=TEST_ORIGIN, fetch_site=None):
+    def post_token(self, candidate, origin=TEST_ORIGIN, fetch_site=None, accept=None):
         headers = {} if origin is None else {"Origin": origin}
+        if accept is not None:
+            headers["Accept"] = accept
         if fetch_site is not None:
             headers["Sec-Fetch-Site"] = fetch_site
         nonce = self.client.get("/preferences", base_url=TEST_ORIGIN).get_json()[
@@ -148,6 +150,16 @@ class UnlockTests(unittest.TestCase):
         response = self.post_token(FIXTURE_ACCESS, "null", "same-origin")
         assert response.status_code == HTTPStatus.SEE_OTHER
         assert "kagi_unlock=saved" in response.location
+
+    def test_json_unlock_reports_only_outcome_and_keeps_denials(self):
+        response = self.post_token(
+            FIXTURE_ACCESS, origin=None, accept="application/json"
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.get_json() == {"outcome": "saved"}
+        response = self.post_token("wrong", origin=None, accept="application/json")
+        assert response.get_json() == {"outcome": "rejected"}
+        assert not response.headers.getlist("Set-Cookie")
 
     def test_headerless_obscura_form_accepts_session_bound_nonce(self):
         response = self.post_token(FIXTURE_ACCESS, origin=None)
@@ -226,20 +238,21 @@ class AccessNoticeTests(unittest.TestCase):
             kagi_access_allowed=False,
             kagi_has_tokens=False,
             kagi_unlock_attempt="saved",
-            url_for=lambda endpoint: (
+            url_for=lambda endpoint, **_kwargs: (
                 "/kagi-access" if endpoint == "kagi_unlock" else "/preferences"
             ),
         )
-        assert 'method="post" action="/kagi-access"' in rendered
-        assert 'type="password"' in rendered
-        # HTML layout whitespace does not change the displayed message.
-        assert "did not return the saved cookie" in " ".join(rendered.split())
+        # HTML layout whitespace does not change attributes or displayed text.
+        normalized = " ".join(rendered.split())
+        assert 'method="post" action="/kagi-access"' in normalized
+        assert 'type="password"' in normalized
+        assert "did not return the saved cookie" in normalized
         rejected = template.render(
             kagi_engine_available=True,
             kagi_access_allowed=False,
             kagi_has_tokens=False,
             kagi_unlock_attempt="rejected",
-            url_for=lambda _endpoint: "/preferences",
+            url_for=lambda _endpoint, **_kwargs: "/preferences",
         )
         assert "was not accepted" in rejected
         assert "did not return the saved cookie" not in " ".join(rejected.split())
@@ -263,7 +276,7 @@ class AccessNoticeTests(unittest.TestCase):
                 kagi_has_tokens=has_tokens,
                 session_token=FIXTURE_SESSION,
                 access_token=FIXTURE_ACCESS,
-                url_for=lambda _endpoint: "/preferences",
+                url_for=lambda _endpoint, **_kwargs: "/preferences",
             )
             assert f'data-state="{expected}"' in rendered
             assert FIXTURE_SESSION not in rendered

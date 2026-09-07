@@ -46,7 +46,44 @@ let ornith_35b_bf16_model = "user.Ornith-1.0-35B-BF16" in
 let radicle_node_address = "100.100.103.95" in
 let radicle_desktop_replica_address = "100.110.43.11" in
 let radicle_aspen3_replica_address = "100.108.13.4" in
-let mesh_openai_endpoint_url = "http://127.0.0.1:13305/v1" in
+let qwen_flash_backend_port = 13305 in
+let qwen_flash_context_size = 32768 in
+let qwen_flash_settings = {
+  backend = "rocm-qwen4exp",
+  host = "127.0.0.1",
+  port = qwen_flash_backend_port,
+  modelRepo = "orcarouter/Qwen3.8-Flash-Next-Uncensored-GGUF",
+  modelRevision = "d2e41a316ee631cf17f83c8827800c836d30cbe6",
+  modelFile = "Qwen3.8-Flash-Next-Uncensored-IQ4_XS-00001-of-00003.gguf",
+  modelSha256 = "50dc0856abd4a8ecea97a47ffa197bde3ea8d7d0f49d0e1fea7f71c97e8a70d1",
+  extraModelFiles = [
+    "Qwen3.8-Flash-Next-Uncensored-IQ4_XS-00002-of-00003.gguf",
+    "Qwen3.8-Flash-Next-Uncensored-IQ4_XS-00003-of-00003.gguf",
+  ],
+  extraModelSha256 = [
+    "2a309e0b112fde96ba3bcba5a6b58cc05e5df7bb7fad5a990eaa51df335b0e43",
+    "ebc43c58e2eaeba1d5bdf62c8cb1f0eac198c4dc01941f771921edeebf574bc3",
+  ],
+  multimodalProjectorFile = "mmproj-Qwen3.8-Flash-Next-Uncensored-F16.gguf",
+  multimodalProjectorSha256 = "f0f352a97a62a057f3aecdb597cac664762cea2ca23f7b16ec92eee28c5572d9",
+  huggingFaceTokenRequired = true,
+  modelAlias = "Qwen3.8-Flash-Next-Uncensored",
+  contextSize = qwen_flash_context_size,
+  parallelSlots = 1,
+  cacheTypeK = "q8_0",
+  cacheTypeV = "q8_0",
+  flashAttention = true,
+  gpuPerformanceLock = true,
+  noMmap = false,
+  extraArgs = [
+    "--fit",
+    "off",
+    "--jinja",
+    "--no-ui",
+  ],
+}
+in
+let mesh_openai_endpoint_url = "http://127.0.0.1:%{qwen_flash_backend_port}/v1" in
 let mesh_desktop_openai_endpoint_url = "http://127.0.0.1:8000/v1" in
 let mesh_aspen1_address = radicle_node_address in
 let mesh_aspen2_address = "100.125.64.121" in
@@ -732,75 +769,22 @@ in
       },
     },
 
-    # r[impl onix.aspen1.deepseek.serving]
-    # r[impl onix.aspen1.deepseek.exclusivity]
-    # DeepSeek-V4-Flash-0731 needs ~114 GiB resident on aspen1, so the
-    # Lemonade service (Ornith + kokoro) is removed from this host.
-    "deepseek-v4-flash-aspen1" = {
+    # r[impl onix.aspen1.qwen_flash.serving]
+    # r[impl onix.aspen1.qwen_flash.exclusivity]
+    # Qwen3.8 Flash Next occupies most of aspen1 unified memory. Keep this
+    # direct server exclusive and route external requests through mesh-llm.
+    "qwen38-flash-next-aspen1" = {
       module = { name = "llamacpp-server", input = "self" },
-      roles.server.machines.aspen1.settings = {
-        backend = "rocm-dspark",
-        host = "0.0.0.0",
-        port = 13305,
-        modelRepo = "unsloth/DeepSeek-V4-Flash-0731-GGUF",
-        modelFile = "UD-IQ3_XXS/DeepSeek-V4-Flash-0731-UD-IQ3_XXS-00001-of-00004.gguf",
-        extraModelFiles = [
-          "UD-IQ3_XXS/DeepSeek-V4-Flash-0731-UD-IQ3_XXS-00002-of-00004.gguf",
-          "UD-IQ3_XXS/DeepSeek-V4-Flash-0731-UD-IQ3_XXS-00003-of-00004.gguf",
-          "UD-IQ3_XXS/DeepSeek-V4-Flash-0731-UD-IQ3_XXS-00004-of-00004.gguf",
-        ],
-        # Ready-made drafters fail on the pinned runtime (unknown arch or
-        # no_vocab tokenizer metadata), so the draft is converted from the
-        # official checkpoint by the deepseek-v4-dspark-draft package.
-        draftModelSource = "package",
-        draftModelFile = "DeepSeek-V4-Flash-0731-DSpark-llamacpp-MXFP4-Q8_0.gguf",
-        modelAlias = "DeepSeek-V4-Flash-0731",
-        contextSize = 8192,
-        parallelSlots = 1,
-        cacheTypeK = "q8_0",
-        cacheTypeV = "q8_0",
-        flashAttention = true,
-        gpuPerformanceLock = true,
-        noMmap = false,
-        extraArgs = [
-          "-ngld",
-          "all",
-          "--fit",
-          "off",
-          "--spec-type",
-          "draft-dspark",
-          "--spec-draft-n-max",
-          "3",
-          "-ctkd",
-          "q8_0",
-          "-ctvd",
-          "q8_0",
-          "--load-mode",
-          "dio",
-          "--no-ui",
-        ],
-      },
+      roles.server.machines.aspen1.settings = qwen_flash_settings,
     },
 
-    "lemonade-aspen2" = {
-      module = { name = "lemonade", input = "self" },
-      roles.default.machines.aspen2.settings = {
-        backend = "rocm",
-        customModels = {
-          "Ornith-1.0-9B-Q8_0" = ornith_9b_q8,
-          "Ornith-1.0-35B-Q4_K_M" = ornith_35b_q4,
-          "Qwen3.6-35B-A3B" = {
-            checkpoint = "unsloth/Qwen3.6-35B-A3B-GGUF:Q8_0",
-            recipe = "llamacpp",
-            size = 35,
-          },
-        },
-        models = ["user.Qwen3.6-35B-A3B", "Whisper-Large-v3-Turbo", ornith_9b_q8_model, ornith_35b_q4_model],
-        contextSize = 131072,
-        globalTimeout = 0,
-        clusterRpcWorker = true,
-        extraArgs = "--no-mmap -fa on --cache-type-k q8_0 --cache-type-v q8_0 -b 8192 -ub 4096 -np 1",
-      },
+    # r[impl onix.aspen2.qwen_flash.serving]
+    # r[impl onix.aspen2.qwen_flash.exclusivity]
+    # Aspen2 uses the same reviewed artifact plan as Aspen1. Keep its direct
+    # server exclusive and route external requests through mesh-llm.
+    "qwen38-flash-next-aspen2" = {
+      module = { name = "llamacpp-server", input = "self" },
+      roles.server.machines.aspen2.settings = qwen_flash_settings,
     },
 
     "lemonade-aspen3" = {
@@ -1006,13 +990,13 @@ in
           mode = "seed",
           endpointUrl = mesh_openai_endpoint_url,
           meshBindAddress = mesh_aspen1_address,
-          backendUnit = "llamacpp-server-deepseek-v4-flash-aspen1.service",
+          backendUnit = "llamacpp-server-qwen38-flash-next-aspen1.service",
         },
         aspen2.settings = {
           mode = "joiner",
           endpointUrl = mesh_openai_endpoint_url,
           meshBindAddress = mesh_aspen2_address,
-          backendUnit = "lemonade.service",
+          backendUnit = "llamacpp-server-qwen38-flash-next-aspen2.service",
         },
         aspen3.settings = {
           mode = "joiner",

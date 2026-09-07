@@ -55,20 +55,6 @@ config: {
     disableDiscoverability = false;
   };
 
-  # -- Color Schemes --
-  colorSchemes = {
-    inherit (config.colorScheme)
-      useWallpaperColors
-      darkMode
-      schedulingMode
-      generationMethod
-      ;
-    predefinedScheme = "Adwaita";
-    manualSunrise = "06:30";
-    manualSunset = "18:30";
-    monitorForColors = "";
-  };
-
   # -- Night Light --
   nightLight = {
     enabled = false;

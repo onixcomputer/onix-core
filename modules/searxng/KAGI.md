@@ -77,11 +77,17 @@ Preferences and HTML search results show a **Kagi access** panel.
 The panel distinguishes an unlocked engine, a missing token, a rejected token, and an engine that did not load.
 It uses the server's existing access decision. It never prints a credential or removes the private-engine check.
 The dedicated **Unlock Kagi** form verifies one issued engine token before it saves the token cookie.
+Its button sends an explicit same-origin POST with the engine key and session-bound form token.
+The JSON response contains only `saved` or `rejected`. The page then reloads Preferences.
+This avoids the native form-submission failure reproduced in Obscura 0.2.0.
 It trims surrounding whitespace and preserves other engine tokens and preferences.
 A rejected token leaves existing cookies unchanged.
 After a successful submission, the panel reports whether the browser returned the saved cookie.
-The endpoint requires a same-origin form. Under SearXNG's `no-referrer` policy, Chromium sends `Origin: null`.
-That case also requires `Sec-Fetch-Site: same-origin`. Cross-site and same-site-only submissions remain rejected.
+The form includes an unpredictable token bound to a signed browser session.
+Its session cookie is Secure, HttpOnly, host-only, and SameSite=Strict.
+Missing, incorrect, or cross-session form tokens fail without changing access.
+Explicit cross-origin headers also fail. Browsers such as Obscura can omit those headers without bypassing the session-bound check.
+Neither the account session token nor the engine access token enters the form-protection cookie.
 An unlocked engine appears as `kagi-private` under Engines → General → web.
 The Kagi autocomplete option is separate and does not activate this engine.
 

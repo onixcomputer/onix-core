@@ -6,83 +6,7 @@
 }:
 let
   k = config.keymap;
-  hxOil = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.hx-oil;
   nixfmt-rs = inputs.nixfmt-rs.packages.${pkgs.stdenv.hostPlatform.system}.default;
-  rememberAlternateShell = ''
-    current="%{file_path_absolute}"; case "$current" in *.hxoil) ${hxOil}/bin/hx-oil remember-alternate "$current" >/dev/null ;; esac;
-  '';
-  openDirectoryBufferCmd = ''
-    :open %sh{${rememberAlternateShell} path="%{file_path_absolute}"; if [ -n "$path" ]; then path=$(dirname "$path"); else path="%{current_working_directory}"; fi; ${hxOil}/bin/hx-oil render --from "$path"}
-  '';
-  applyDirectoryBufferCmd = [
-    ":write"
-    ":sh ${hxOil}/bin/hx-oil apply \"%{file_path_absolute}\""
-    ":reload"
-  ];
-  refreshDirectoryBufferCmd = [
-    ":sh ${hxOil}/bin/hx-oil refresh \"%{file_path_absolute}\""
-    ":reload"
-  ];
-  openDirectoryEntryCmd = ''
-    :open %sh{${rememberAlternateShell} ${hxOil}/bin/hx-oil open-at-line "%{file_path_absolute}" %{cursor_line}}
-  '';
-  openParentDirectoryCmd = ''
-    :open %sh{${rememberAlternateShell} ${hxOil}/bin/hx-oil parent "%{file_path_absolute}"}
-  '';
-  toggleDirectoryMarkCmd = [
-    ":sh ${hxOil}/bin/hx-oil mark-toggle \"%{file_path_absolute}\" %{cursor_line}"
-    ":reload"
-  ];
-  toggleDirectoryDeleteFlagCmd = [
-    ":sh ${hxOil}/bin/hx-oil flag-delete \"%{file_path_absolute}\" %{cursor_line}"
-    ":reload"
-  ];
-  clearDirectoryMarksCmd = [
-    ":sh ${hxOil}/bin/hx-oil clear-marks \"%{file_path_absolute}\""
-    ":reload"
-  ];
-  previewDirectoryCopyCmd = ":sh ${hxOil}/bin/hx-oil op copy \"%{file_path_absolute}\"";
-  applyDirectoryCopyCmd = [
-    ":sh ${hxOil}/bin/hx-oil op copy \"%{file_path_absolute}\" --execute"
-    ":reload"
-  ];
-  previewDirectoryMoveCmd = ":sh ${hxOil}/bin/hx-oil op move \"%{file_path_absolute}\"";
-  applyDirectoryMoveCmd = [
-    ":sh ${hxOil}/bin/hx-oil op move \"%{file_path_absolute}\" --execute"
-    ":reload"
-  ];
-  previewDirectorySymlinkCmd = ":sh ${hxOil}/bin/hx-oil op symlink \"%{file_path_absolute}\"";
-  applyDirectorySymlinkCmd = [
-    ":sh ${hxOil}/bin/hx-oil op symlink \"%{file_path_absolute}\" --execute"
-    ":reload"
-  ];
-  previewDirectoryRelativeSymlinkCmd = ":sh ${hxOil}/bin/hx-oil op relative-symlink \"%{file_path_absolute}\"";
-  applyDirectoryRelativeSymlinkCmd = [
-    ":sh ${hxOil}/bin/hx-oil op relative-symlink \"%{file_path_absolute}\" --execute"
-    ":reload"
-  ];
-  previewDirectoryLowerCmd = ":sh ${hxOil}/bin/hx-oil transform lower \"%{file_path_absolute}\"";
-  applyDirectoryLowerCmd = [
-    ":sh ${hxOil}/bin/hx-oil transform lower \"%{file_path_absolute}\" --execute"
-    ":reload"
-  ];
-  previewDirectoryUpperCmd = ":sh ${hxOil}/bin/hx-oil transform upper \"%{file_path_absolute}\"";
-  applyDirectoryUpperCmd = [
-    ":sh ${hxOil}/bin/hx-oil transform upper \"%{file_path_absolute}\" --execute"
-    ":reload"
-  ];
-  insertDirectorySubdirCmd = [
-    ":sh ${hxOil}/bin/hx-oil subdir insert \"%{file_path_absolute}\" %{cursor_line}"
-    ":reload"
-  ];
-  collapseDirectorySubdirCmd = [
-    ":sh ${hxOil}/bin/hx-oil subdir collapse \"%{file_path_absolute}\" %{cursor_line}"
-    ":reload"
-  ];
-  refreshDirectorySubdirCmd = [
-    ":sh ${hxOil}/bin/hx-oil subdir refresh \"%{file_path_absolute}\" %{cursor_line}"
-    ":reload"
-  ];
 
   # Runtime theme overlay: on launch, create a merged config dir that
   # includes both the immutable store themes and any mutable themes
@@ -138,11 +62,10 @@ in
         ltex-ls
         libxml2
         lemminx
-        hxOil
       ];
 
       settings = {
-        theme = "adwaita-dark";
+        theme = "noctalia";
         editor = {
           cursor-shape = {
             insert = "bar";
@@ -155,29 +78,6 @@ in
             ${k.leaderActions.filePicker} = "file_picker";
             ${k.leaderActions.save} = ":w";
             ${k.leaderActions.quit} = ":q";
-            ${k.leaderActions.directoryBuffer} = openDirectoryBufferCmd;
-            ${k.leaderActions.directoryApply} = applyDirectoryBufferCmd;
-            ${k.leaderActions.directoryRefresh} = refreshDirectoryBufferCmd;
-            ${k.leaderActions.directoryOpenEntry} = openDirectoryEntryCmd;
-            ${k.leaderActions.directoryParent} = openParentDirectoryCmd;
-            ${k.leaderActions.directoryMarkToggle} = toggleDirectoryMarkCmd;
-            ${k.leaderActions.directoryFlagDelete} = toggleDirectoryDeleteFlagCmd;
-            ${k.leaderActions.directoryClearMarks} = clearDirectoryMarksCmd;
-            ${k.leaderActions.directoryCopyPreview} = previewDirectoryCopyCmd;
-            ${k.leaderActions.directoryCopyApply} = applyDirectoryCopyCmd;
-            ${k.leaderActions.directoryMovePreview} = previewDirectoryMoveCmd;
-            ${k.leaderActions.directoryMoveApply} = applyDirectoryMoveCmd;
-            ${k.leaderActions.directorySymlinkPreview} = previewDirectorySymlinkCmd;
-            ${k.leaderActions.directorySymlinkApply} = applyDirectorySymlinkCmd;
-            ${k.leaderActions.directoryRelativeSymlinkPreview} = previewDirectoryRelativeSymlinkCmd;
-            ${k.leaderActions.directoryRelativeSymlinkApply} = applyDirectoryRelativeSymlinkCmd;
-            ${k.leaderActions.directoryTransformLowerPreview} = previewDirectoryLowerCmd;
-            ${k.leaderActions.directoryTransformLowerApply} = applyDirectoryLowerCmd;
-            ${k.leaderActions.directoryTransformUpperPreview} = previewDirectoryUpperCmd;
-            ${k.leaderActions.directoryTransformUpperApply} = applyDirectoryUpperCmd;
-            ${k.leaderActions.directorySubdirInsert} = insertDirectorySubdirCmd;
-            ${k.leaderActions.directorySubdirCollapse} = collapseDirectorySubdirCmd;
-            ${k.leaderActions.directorySubdirRefresh} = refreshDirectorySubdirCmd;
           };
         };
       };
@@ -384,9 +284,13 @@ in
         };
       };
 
-      themes."adwaita-dark" = config.helixTheme.dark;
-
-      themes."adwaita-light" = config.helixTheme.light;
+      # Runtime theme owned by Noctalia: its built-in helix template writes
+      # ~/.config/helix/themes/noctalia.toml with the current scheme on every
+      # color change, and the theme overlay links that mutable file over this
+      # immutable seed. The Noctalia mode hook sends SIGUSR1 to running helix
+      # processes, which triggers a live config + theme reload (helix handles
+      # SIGUSR1 by refreshing its configuration).
+      themes."noctalia" = config.helixTheme.dark;
     }).wrapper
   ];
 

@@ -9,7 +9,7 @@ from http import HTTPStatus
 from secrets import compare_digest, token_urlsafe
 from typing import Any
 
-from flask import Flask, Response, redirect, session, url_for
+from flask import Flask, Response, jsonify, redirect, session, url_for
 from searx.extended_types import sxng_request
 from searx.kagi_session_core import admit_access_token
 
@@ -77,10 +77,13 @@ def install_kagi_unlock(app: Flask, engines: Mapping[str, Any]) -> None:
         )
         accepted = updated is not None and not tokens.locked
         outcome = "saved" if accepted else "rejected"
-        response = redirect(
-            url_for("preferences", kagi_unlock=outcome),
-            code=HTTPStatus.SEE_OTHER,
-        )
+        if sxng_request.accept_mimetypes.best == "application/json":
+            response = jsonify(outcome=outcome)
+        else:
+            response = redirect(
+                url_for("preferences", kagi_unlock=outcome),
+                code=HTTPStatus.SEE_OTHER,
+            )
         response.headers["Cache-Control"] = "no-store"
         if accepted:
             assert updated is not None

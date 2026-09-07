@@ -66,6 +66,7 @@ in
     dgx-machine = dgxMachinePackage;
     llamacpp-rocm-rpc = pkgs.callPackage ../pkgs/llamacpp-rocm-rpc { };
     llamacpp-rocm-dspark = pkgs.callPackage ../pkgs/llamacpp-rocm-dspark { };
+    llamacpp-rocm-qwen4exp = pkgs.callPackage ../pkgs/llamacpp-rocm-qwen4exp { };
     deepseek-v4-dspark-draft = pkgs.callPackage ../pkgs/deepseek-v4-dspark-draft { };
     lemonade-server = pkgs.callPackage ../pkgs/lemonade { };
     mesh-llm = pkgs.callPackage ../pkgs/mesh-llm { };

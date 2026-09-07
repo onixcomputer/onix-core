@@ -1,4 +1,5 @@
 {
+  config,
   inputs,
   instanceName,
   lib,
@@ -15,6 +16,10 @@ let
     modelRevision
     modelSha256
     extraModelFiles
+    extraModelSha256
+    multimodalProjectorFile
+    multimodalProjectorSha256
+    huggingFaceTokenRequired
     draftModelSource
     draftModelRepo
     draftModelFile
@@ -47,14 +52,31 @@ let
   modelsDir = "${stateDir}/models";
   modelPath = "${modelsDir}/${modelFile}";
   modelUrl = "https://huggingface.co/${modelRepo}/resolve/${modelRevision}/${modelFile}";
+  hasMultimodalProjector = multimodalProjectorFile != null;
+  multimodalProjectorPath =
+    if hasMultimodalProjector then "${modelsDir}/${multimodalProjectorFile}" else null;
+  multimodalProjectorUrl =
+    if hasMultimodalProjector then
+      "https://huggingface.co/${modelRepo}/resolve/${modelRevision}/${multimodalProjectorFile}"
+    else
+      null;
   draftModelPath = "${modelsDir}/${draftModelFile}";
   draftModelUrl = "https://huggingface.co/${draftModelRepo}/resolve/${draftModelRevision}/${draftModelFile}";
   hasDraftModel = draftModelFile != "";
   draftFromPackage = hasDraftModel && draftModelSource == "package";
+  generatorName = "${serviceName}-huggingface";
+  envFile = config.clan.core.vars.generators.${generatorName}.files."env-file".path;
+  modelAccessProbeUrl = "https://huggingface.co/${modelRepo}/resolve/${modelRevision}/.gitattributes";
 
-  # r[impl onix.aspen1.deepseek.module]
+  # r[impl onix.aspen1.qwen_flash.download]
   # Pure download plan: every file the pull service must fetch, including
   # GGUF shards that live in a subdirectory of the repository.
+  extraModelDownloads = lib.imap0 (index: file: {
+    inherit file;
+    url = "https://huggingface.co/${modelRepo}/resolve/${modelRevision}/${file}";
+    sha256 =
+      if index < builtins.length extraModelSha256 then lib.elemAt extraModelSha256 index else null;
+  }) extraModelFiles;
   modelDownloads = [
     {
       file = modelFile;
@@ -62,17 +84,23 @@ let
       sha256 = modelSha256;
     }
   ]
-  ++ map (file: {
-    inherit file;
-    url = "https://huggingface.co/${modelRepo}/resolve/${modelRevision}/${file}";
-    sha256 = null;
-  }) extraModelFiles
+  ++ extraModelDownloads
+  ++ lib.optional hasMultimodalProjector {
+    file = multimodalProjectorFile;
+    url = multimodalProjectorUrl;
+    sha256 = multimodalProjectorSha256;
+  }
   ++ lib.optional (hasDraftModel && !draftFromPackage) {
     file = draftModelFile;
     url = draftModelUrl;
     sha256 = null;
   };
-  modelFilePaths = [ modelFile ] ++ extraModelFiles ++ lib.optional hasDraftModel draftModelFile;
+  modelFilePaths = [
+    modelFile
+  ]
+  ++ extraModelFiles
+  ++ lib.optional hasMultimodalProjector multimodalProjectorFile
+  ++ lib.optional hasDraftModel draftModelFile;
   isSafeRelativeModelPath =
     path:
     path != ""
@@ -84,13 +112,18 @@ let
 
   stateDirectoryMode = "0755";
   modelFileMode = "0644";
+  secretFileMode = "0400";
+  temporarySecretMode = "0600";
   partialSuffix = ".partial";
   pullRestartDelay = "60s";
   serverRestartDelay = "10s";
   infiniteTimeout = "infinity";
   curlRetryCount = 5;
   curlRetryDelaySeconds = 10;
+  accessProbeTimeoutSeconds = 30;
   disabledNumericOption = 0;
+  stockSopsPlaceholder = "Welcome to SOPS! Edit this file as you please!";
+  huggingFaceTokenPrefix = "hf_";
   radeonDeviceIndex = 0;
   metaliumBackendName = "metalium";
   metaliumBackendEnabled = backend == metaliumBackendName;
@@ -130,6 +163,8 @@ let
       pkgs.llamacpp-rocm-rpc
     else if selectedBackend == "rocm-dspark" then
       pkgs.llamacpp-rocm-dspark
+    else if selectedBackend == "rocm-qwen4exp" then
+      pkgs.llamacpp-rocm-qwen4exp
     else
       pkgs.llama-cpp.override {
         cudaSupport = selectedBackend == "cuda";
@@ -175,6 +210,10 @@ let
     "--model-draft"
     draftModelPath
   ]
+  ++ optionalArgs hasMultimodalProjector [
+    "--mmproj"
+    multimodalProjectorPath
+  ]
   ++ optionalArgs flashAttention [
     "--flash-attn"
     "on"
@@ -207,6 +246,58 @@ let
       model_dir=${lib.escapeShellArg modelsDir}
       mkdir -p "$model_dir"
 
+      curl_auth_args=()
+      auth_header_file=""
+      cleanup_auth_header() {
+        if [ -n "$auth_header_file" ]; then
+          rm -f "$auth_header_file"
+        fi
+      }
+      trap cleanup_auth_header EXIT
+
+      ${lib.optionalString huggingFaceTokenRequired ''
+        token="''${HF_TOKEN:-}"
+        if [ -z "$token" ] || [ "$token" = ${lib.escapeShellArg stockSopsPlaceholder} ]; then
+          echo "Hugging Face token for ${serviceName} is unset" >&2
+          exit 1
+        fi
+        case "$token" in
+          ${huggingFaceTokenPrefix}*) ;;
+          *)
+            echo "Hugging Face token for ${serviceName} is malformed" >&2
+            exit 1
+            ;;
+        esac
+        token_body="''${token#${huggingFaceTokenPrefix}}"
+        case "$token_body" in
+          ""|*[![:alnum:]]*)
+            echo "Hugging Face token for ${serviceName} contains an invalid token body" >&2
+            exit 1
+            ;;
+          *) ;;
+        esac
+
+        auth_header_file="$(mktemp)"
+        chmod ${temporarySecretMode} "$auth_header_file"
+        printf 'Authorization: Bearer %s\n' "$token" > "$auth_header_file"
+        curl_auth_args=(--header "@$auth_header_file")
+        unset HF_TOKEN token token_body
+
+        if ! curl \
+          --fail \
+          --head \
+          --location \
+          --max-time ${toString accessProbeTimeoutSeconds} \
+          --silent \
+          --show-error \
+          "''${curl_auth_args[@]}" \
+          ${lib.escapeShellArg modelAccessProbeUrl} \
+          > /dev/null; then
+          echo "Hugging Face has not authorized access to ${modelRepo}" >&2
+          exit 1
+        fi
+      ''}
+
       download_file() {
         local file="$1"
         local url="$2"
@@ -237,6 +328,7 @@ let
           --retry-delay ${toString curlRetryDelaySeconds} \
           --continue-at - \
           --output "$partial" \
+          "''${curl_auth_args[@]}" \
           "$url"
 
         if ! verify_file "$partial"; then
@@ -269,7 +361,6 @@ let
     '';
   };
 
-  # r[verify onix.aspen1.deepseek.module]
   checkModelFiles = pkgs.writeShellScript "${serviceName}-check-models" (
     lib.concatMapStringsSep "\n" (
       download:
@@ -304,6 +395,25 @@ in
     {
       assertion = modelSha256 == null || builtins.match "[0-9a-f]{64}" modelSha256 != null;
       message = "llamacpp-server ${instanceName}: modelSha256 must be a lowercase SHA-256 value";
+    }
+    {
+      assertion =
+        extraModelSha256 == [ ] || builtins.length extraModelSha256 == builtins.length extraModelFiles;
+      message = "llamacpp-server ${instanceName}: extraModelSha256 must be empty or align with extraModelFiles";
+    }
+    {
+      assertion = lib.all (hash: builtins.match "[0-9a-f]{64}" hash != null) extraModelSha256;
+      message = "llamacpp-server ${instanceName}: extraModelSha256 values must be lowercase SHA-256 values";
+    }
+    {
+      assertion =
+        multimodalProjectorSha256 == null
+        || builtins.match "[0-9a-f]{64}" multimodalProjectorSha256 != null;
+      message = "llamacpp-server ${instanceName}: multimodalProjectorSha256 must be a lowercase SHA-256 value";
+    }
+    {
+      assertion = multimodalProjectorSha256 == null || hasMultimodalProjector;
+      message = "llamacpp-server ${instanceName}: multimodalProjectorSha256 requires multimodalProjectorFile";
     }
     {
       assertion = lib.all isSafeRelativeModelPath modelFilePaths;
@@ -365,6 +475,48 @@ in
 
   environment.systemPackages = [ llamaCppPackage ];
 
+  # r[impl onix.aspen1.qwen_flash.download]
+  clan.core.vars.generators = lib.mkIf huggingFaceTokenRequired {
+    ${generatorName} = {
+      files."env-file" = {
+        secret = true;
+        deploy = true;
+        owner = "root";
+        group = "root";
+        mode = secretFileMode;
+      };
+      prompts.huggingface-token = {
+        description = "Hugging Face read token authorized for ${modelRepo}";
+        type = "hidden";
+        persist = true;
+      };
+      runtimeInputs = [ pkgs.coreutils ];
+      script = ''
+        token="$(tr -d '\r\n' < "$prompts/huggingface-token")"
+        if [ -z "$token" ] || [ "$token" = ${lib.escapeShellArg stockSopsPlaceholder} ]; then
+          echo "Hugging Face token for ${serviceName} is unset" >&2
+          exit 1
+        fi
+        case "$token" in
+          ${huggingFaceTokenPrefix}*) ;;
+          *)
+            echo "Hugging Face token for ${serviceName} is malformed" >&2
+            exit 1
+            ;;
+        esac
+        token_body="''${token#${huggingFaceTokenPrefix}}"
+        case "$token_body" in
+          ""|*[![:alnum:]]*)
+            echo "Hugging Face token for ${serviceName} contains an invalid token body" >&2
+            exit 1
+            ;;
+          *) ;;
+        esac
+        printf 'HF_TOKEN=%s\n' "$token" > "$out/env-file"
+      '';
+    };
+  };
+
   systemd = {
     tmpfiles.rules = [
       "d ${modelsDir} ${stateDirectoryMode} root root -"
@@ -391,11 +543,15 @@ in
           StateDirectory = stateDirectory;
           StateDirectoryMode = stateDirectoryMode;
           ExecStart = lib.getExe downloadModel;
+        }
+        // lib.optionalAttrs huggingFaceTokenRequired {
+          EnvironmentFile = envFile;
         };
       };
 
       ${serviceName} = {
         description = "llama.cpp OpenAI-compatible server (${instanceName})";
+        path = lib.optionals hasMultimodalProjector [ pkgs.ffmpeg-headless ];
         after = [
           "network-online.target"
           "${pullServiceName}.service"
@@ -410,6 +566,7 @@ in
           ExecStart = lib.escapeShellArgs serverArgs;
           Restart = "on-failure";
           RestartSec = serverRestartDelay;
+          TimeoutStartSec = infiniteTimeout;
           User = "root";
           Group = "root";
           StateDirectory = stateDirectory;

@@ -1,5 +1,5 @@
-# Verify wrapped Helix and zen wire hx-oil into their generated wrappers
-# and that the helper emits .hxoil manifests.
+# Verify wrapped Helix and zen keep their language and theme integrations
+# without retaining the removed hx-oil directory-buffer integration.
 {
   self,
   pkgs,
@@ -59,13 +59,10 @@ let
 
   hxWrapper = builtins.head hxModule.home.packages;
   zenOnly = builtins.head zenModule.home.packages;
-  hxOil = self.packages.${system}.hx-oil;
-  hxOilPath = "${hxOil}/bin";
-  hxOilBin = "${hxOil}/bin/hx-oil";
 in
 {
   checks = lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
-    helix-directory-buffer-integration = pkgs.runCommand "helix-directory-buffer-integration" { } ''
+    helix-wrapper-integration = pkgs.runCommand "helix-wrapper-integration" { } ''
       set -euo pipefail
 
       assert_contains() {
@@ -86,6 +83,23 @@ in
         fi
       }
 
+      assert_not_contains() {
+        local needle="$1"
+        local target="$2"
+        if [ -d "$target" ]; then
+          if grep -R -F "$needle" "$target" >/dev/null; then
+            echo "unexpected [$needle] in $target" >&2
+            exit 1
+          fi
+        else
+          if grep -F "$needle" "$target" >/dev/null; then
+            echo "unexpected [$needle] in $target" >&2
+            sed -n '1,200p' "$target" >&2 || true
+            exit 1
+          fi
+        fi
+      }
+
       config_root_from_script() {
         sed -n 's/^export XDG_CONFIG_HOME="\(.*\)"$/\1/p' "$1" | head -n1
       }
@@ -98,7 +112,6 @@ in
       assert_contains '${helixPkgs.steelix}/bin' "$hx_script"
       assert_contains '${helixPkgs.steel}/bin' "$hx_script"
       assert_contains '${helixPkgs.steel-language-server}/bin' "$hx_script"
-      assert_contains '${hxOilPath}' "$hx_script"
       assert_contains '${helixPkgs.libxml2}/bin' "$hx_script"
       assert_contains '${helixPkgs.lemminx}/bin' "$hx_script"
       assert_contains '${helixPkgs.taplo}/bin' "$hx_script"
@@ -132,29 +145,15 @@ in
       assert_contains 'name = "scheme"' "$hx_config_root"
       assert_contains 'language-servers = ["steel-language-server"]' "$hx_config_root"
       assert_contains 'command = "${helixPkgs.steel-language-server}/bin/steel-language-server"' "$hx_config_root"
-      assert_contains '${hxOilBin} render --from' "$hx_config_root"
-      assert_contains '${hxOilBin} apply' "$hx_config_root"
-      assert_contains '${hxOilBin} refresh' "$hx_config_root"
-      assert_contains '${hxOilBin} open-at-line' "$hx_config_root"
-      assert_contains '${hxOilBin} parent' "$hx_config_root"
-      assert_contains '${hxOilBin} remember-alternate' "$hx_config_root"
-      assert_contains '${hxOilBin} mark-toggle' "$hx_config_root"
-      assert_contains '${hxOilBin} flag-delete' "$hx_config_root"
-      assert_contains '${hxOilBin} clear-marks' "$hx_config_root"
-      assert_contains '${hxOilBin} op copy' "$hx_config_root"
-      assert_contains '${hxOilBin} op move' "$hx_config_root"
-      assert_contains '${hxOilBin} op symlink' "$hx_config_root"
-      assert_contains '${hxOilBin} op relative-symlink' "$hx_config_root"
-      assert_contains '${hxOilBin} transform lower' "$hx_config_root"
-      assert_contains '${hxOilBin} transform upper' "$hx_config_root"
-      assert_contains '${hxOilBin} subdir insert' "$hx_config_root"
-      assert_contains '${hxOilBin} subdir collapse' "$hx_config_root"
-      assert_contains '${hxOilBin} subdir refresh' "$hx_config_root"
+      assert_not_contains 'hx-oil' "$hx_script"
+      assert_not_contains 'hx-oil' "$hx_config_root"
+      assert_not_contains '.hxoil' "$hx_config_root"
 
-      # Default Adwaita themes, no legacy onix theme names.
-      assert_contains 'theme = "adwaita-dark"' "$hx_config_root"
-      test -f "$hx_config_root/helix/themes/adwaita-dark.toml"
-      test -f "$hx_config_root/helix/themes/adwaita-light.toml"
+      # Noctalia runtime theme: helix must default to the `noctalia` theme
+      # (written live at ~/.config/helix/themes/noctalia.toml by Noctalia and
+      # overlaid over this immutable seed), with no legacy onix names.
+      assert_contains 'theme = "noctalia"' "$hx_config_root"
+      test -f "$hx_config_root/helix/themes/noctalia.toml"
       if grep -R -F 'onix-dark' "$hx_config_root" >/dev/null; then
         echo "unexpected onix-dark in $hx_config_root" >&2
         exit 1
@@ -165,54 +164,10 @@ in
       fi
 
       assert_contains '${helixPkgs.steelix}/bin' "$zen_script"
-      assert_contains '${hxOilPath}' "$zen_script"
-      assert_contains '${hxOilBin} render --from' "$zen_config_root"
-      assert_contains '${hxOilBin} apply' "$zen_config_root"
-      assert_contains '${hxOilBin} refresh' "$zen_config_root"
-      assert_contains '${hxOilBin} open-at-line' "$zen_config_root"
-      assert_contains '${hxOilBin} parent' "$zen_config_root"
-      assert_contains '${hxOilBin} remember-alternate' "$zen_config_root"
-      assert_contains '${hxOilBin} mark-toggle' "$zen_config_root"
-      assert_contains '${hxOilBin} flag-delete' "$zen_config_root"
-      assert_contains '${hxOilBin} clear-marks' "$zen_config_root"
-      assert_contains '${hxOilBin} op copy' "$zen_config_root"
-      assert_contains '${hxOilBin} op move' "$zen_config_root"
-      assert_contains '${hxOilBin} op symlink' "$zen_config_root"
-      assert_contains '${hxOilBin} op relative-symlink' "$zen_config_root"
-      assert_contains '${hxOilBin} transform lower' "$zen_config_root"
-      assert_contains '${hxOilBin} transform upper' "$zen_config_root"
-      assert_contains '${hxOilBin} subdir insert' "$zen_config_root"
-      assert_contains '${hxOilBin} subdir collapse' "$zen_config_root"
-      assert_contains '${hxOilBin} subdir refresh' "$zen_config_root"
-
-      export XDG_STATE_HOME="$TMPDIR/state"
-      mkdir -p "$TMPDIR/root/target"
-      touch "$TMPDIR/root/keep.txt"
-      manifest="$(${hxOilBin} render --from "$TMPDIR/root")"
-      case "$manifest" in
-        *.hxoil) ;;
-        *)
-          echo "expected .hxoil manifest path, got: $manifest" >&2
-          exit 1
-          ;;
-      esac
-      [ -f "$manifest" ]
-      grep -F '# hx-oil root: ' "$manifest" >/dev/null
-      grep -F '  keep.txt' "$manifest" >/dev/null
-
-      ${hxOilBin} mark-toggle "$manifest" 4 >/dev/null
-      grep -F '* keep.txt' "$manifest" >/dev/null
-      ${hxOilBin} clear-marks "$manifest" >/dev/null
-      grep -F '  keep.txt' "$manifest" >/dev/null
-      ${hxOilBin} flag-delete "$manifest" 4 >/dev/null
-      grep -F 'D keep.txt' "$manifest" >/dev/null
-      ${hxOilBin} flag-delete "$manifest" 4 >/dev/null
-      ${hxOilBin} mark-toggle "$manifest" 4 >/dev/null
-
-      target_manifest="$(${hxOilBin} render --from "$TMPDIR/root/target")"
-      ${hxOilBin} remember-alternate "$target_manifest" >/dev/null
-      ${hxOilBin} op copy "$manifest" | grep -F "TARGET $TMPDIR/root/target" >/dev/null
-      ${hxOilBin} transform upper "$manifest" | grep -F 'TRANSFORM FILE keep.txt -> KEEP.TXT' >/dev/null
+      assert_contains 'theme = "noctalia"' "$zen_config_root"
+      assert_not_contains 'hx-oil' "$zen_script"
+      assert_not_contains 'hx-oil' "$zen_config_root"
+      assert_not_contains '.hxoil' "$zen_config_root"
 
       touch "$out"
     '';

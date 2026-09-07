@@ -94,49 +94,135 @@ r[onix.aspen1.deepseek.module.missing_draft]
 - THEN the server service does not start
 - AND the failed startup is visible in the unit status
 
-### Requirement: Aspen1 serves DeepSeek-V4-Flash-0731 with DSpark
+### Requirement: Aspen1 Qwen3.8 Flash Next runtime
 
-r[onix.aspen1.deepseek.serving] `aspen1` MUST serve `DeepSeek-V4-Flash-0731` as UD-IQ3_XXS with a `dflash`-architecture DSpark drafter through `llamacpp-server` on port 13305, and the aspen1 mesh-llm seed MUST route to that service.
+r[onix.aspen1.qwen_flash.runtime] The system MUST provide a separate llama.cpp ROCm runtime pinned to upstream commit `427291b5b34cd914a31b3fd3b61a68f6184f4b9f` for Qwen4Exp on HIP `gfx1151`, without changing the DeepSeek or Lemonade runtime packages.
 
-#### Scenario: Inventory wires the verified configuration
+#### Scenario: Pinned Qwen4Exp package builds
 
-r[onix.aspen1.deepseek.serving.inventory]
+r[onix.aspen1.qwen_flash.runtime.package]
+- GIVEN the custom `llamacpp-rocm-qwen4exp` package is evaluated
+- WHEN it builds
+- THEN its source revision is `427291b5b34cd914a31b3fd3b61a68f6184f4b9f`
+- AND it targets HIP `gfx1151`
+- AND it provides `llama-server`
+- AND the existing DeepSeek and Lemonade package pins remain unchanged
+
+### Requirement: Gated multimodal GGUF downloads remain private
+
+r[onix.aspen1.qwen_flash.download] The `llamacpp-server` module MUST support revision-pinned, hash-checked GGUF shards and a multimodal projector from a gated Hugging Face repository. It MUST keep the access token out of the Nix store, command line, and logs.
+
+#### Scenario: Authorized model files are downloaded
+
+r[onix.aspen1.qwen_flash.download.authorized]
+- GIVEN a valid deployed Hugging Face token and matching artifact hashes
+- WHEN the model pull service runs
+- THEN it authenticates through a temporary root-only header file
+- AND it downloads every model shard and the multimodal projector
+- AND it rejects any file whose SHA-256 value does not match
+
+#### Scenario: Missing authorization fails closed
+
+r[onix.aspen1.qwen_flash.download.denied]
+- GIVEN the token is absent, malformed, or unauthorized for the gated repository
+- WHEN the model pull service starts
+- THEN it exits before any model download
+- AND the inference service does not start
+
+### Requirement: Aspen1 serves uncensored Qwen3.8 Flash Next
+
+r[onix.aspen1.qwen_flash.serving] `aspen1` MUST serve the OrcaRouter Qwen3.8 Flash Next Uncensored IQ4_XS GGUF with its multimodal projector through `llamacpp-server` on loopback port 13305. The aspen1 mesh-llm seed MUST route to that service.
+
+#### Scenario: Inventory wires the Qwen service
+
+r[onix.aspen1.qwen_flash.serving.inventory]
 - GIVEN the evaluated `aspen1` NixOS configuration
-- WHEN the `llamacpp-server-deepseek-v4-flash-aspen1` unit and mesh-llm seed settings are inspected
-- THEN the model is the unsloth `UD-IQ3_XXS` first shard with three extra shards
-- AND the draft model is `DeepSeek-V4-Flash-0731-DSpark-llamacpp-MXFP4-Q8_0.gguf` converted from the official checkpoint
-- AND the server arguments include `--spec-type draft-dspark` and `--spec-draft-n-max 3`
-- AND the port is 13305
-- AND the aspen1 mesh-llm `backendUnit` is `llamacpp-server-deepseek-v4-flash-aspen1.service`
+- WHEN the `llamacpp-server-qwen38-flash-next-aspen1` unit and mesh-llm seed settings are inspected
+- THEN the model revision is `d2e41a316ee631cf17f83c8827800c836d30cbe6`
+- AND the model is the three-shard IQ4_XS quantization
+- AND the F16 multimodal projector is present
+- AND the direct server binds only to `127.0.0.1:13305`
+- AND the aspen1 mesh-llm `backendUnit` is `llamacpp-server-qwen38-flash-next-aspen1.service`
 
-### Requirement: Aspen1 inference memory exclusivity
+### Requirement: Aspen1 Qwen inference memory exclusivity
 
-r[onix.aspen1.deepseek.exclusivity] `aspen1` MUST NOT run Lemonade alongside the 0731 server, because the verified deployment needs about 120 GiB free at startup and about 114 GiB resident.
+r[onix.aspen1.qwen_flash.exclusivity] `aspen1` MUST NOT run DeepSeek or Lemonade alongside Qwen3.8 Flash Next because these model services compete for the same unified-memory capacity.
 
-#### Scenario: Lemonade is absent from aspen1
+#### Scenario: Competing inference services are absent
 
-r[onix.aspen1.deepseek.exclusivity.no_lemonade]
+r[onix.aspen1.qwen_flash.exclusivity.no_competitors]
 - GIVEN the evaluated `aspen1` NixOS configuration
 - WHEN its systemd services are inspected
-- THEN no `lemonade.service` unit is present
-- AND kokoro-v1 and aspen1 Ornith endpoints are no longer served on aspen1
+- THEN no DeepSeek llama.cpp service is configured
+- AND no `lemonade.service` unit is configured
 
-### Requirement: DeepSeek live validation
+### Requirement: Qwen3.8 Flash Next live validation
 
-r[onix.aspen1.deepseek.validation] The change MUST include positive and negative live validation of the deployed 0731 server on aspen1.
+r[onix.aspen1.qwen_flash.validation] The deployment MUST include positive and negative live validation of the Qwen3.8 Flash Next service on aspen1.
 
-#### Scenario: Chat probe succeeds with speculative decode
+#### Scenario: Text and vision probes succeed
 
-r[onix.aspen1.deepseek.validation.positive]
-- GIVEN the deployed server answered a health check
-- WHEN a live chat completion asks `What is 2+2?`
-- THEN the response content contains `4`
-- AND the server reports DSpark speculative decoding activity
+r[onix.aspen1.qwen_flash.validation.positive]
+- GIVEN the deployed server answered a health probe
+- WHEN bounded text and image chat completions run
+- THEN both responses contain useful content
+- AND the model identity is `Qwen3.8-Flash-Next-Uncensored`
+- AND runtime metrics report successful prompt and decode work
 
-#### Scenario: Load without generation is not accepted
+#### Scenario: Load without useful generation is rejected
 
-r[onix.aspen1.deepseek.validation.negative]
-- GIVEN a deployment where the model loads but generation fails, loops, or the unit restarts
+r[onix.aspen1.qwen_flash.validation.negative]
+- GIVEN a deployment where the model loads but generation fails, loops, or restarts the unit
 - WHEN the probe result is evaluated
 - THEN the deployment is recorded as failed
 - AND successful weight load alone is not accepted as health evidence
+
+### Requirement: Aspen2 serves uncensored Qwen3.8 Flash Next
+
+r[onix.aspen2.qwen_flash.serving] `aspen2` MUST serve the same revision-pinned OrcaRouter Qwen3.8 Flash Next Uncensored IQ4_XS GGUF and multimodal projector as `aspen1`. The direct server MUST bind to loopback port 13305. The `aspen2` mesh-llm joiner MUST route to that service.
+
+#### Scenario: Inventory wires the Aspen2 Qwen service
+
+r[onix.aspen2.qwen_flash.serving.inventory]
+- GIVEN the evaluated `aspen2` NixOS configuration
+- WHEN the `llamacpp-server-qwen38-flash-next-aspen2` unit and mesh-llm joiner settings are inspected
+- THEN the model revision is `d2e41a316ee631cf17f83c8827800c836d30cbe6`
+- AND the model is the three-shard IQ4_XS quantization
+- AND the F16 multimodal projector is present
+- AND the direct server binds only to `127.0.0.1:13305`
+- AND the mesh-llm `backendUnit` is `llamacpp-server-qwen38-flash-next-aspen2.service`
+
+### Requirement: Aspen2 Qwen inference memory exclusivity
+
+r[onix.aspen2.qwen_flash.exclusivity] `aspen2` MUST NOT run Lemonade alongside Qwen3.8 Flash Next because both model services compete for the same unified-memory capacity.
+
+#### Scenario: Lemonade is absent
+
+r[onix.aspen2.qwen_flash.exclusivity.no_competitors]
+- GIVEN the evaluated `aspen2` NixOS configuration
+- WHEN its systemd services are inspected
+- THEN the Qwen llama.cpp service is configured
+- AND no `lemonade.service` unit is configured
+
+### Requirement: Aspen2 Qwen3.8 Flash Next live validation
+
+r[onix.aspen2.qwen_flash.validation] The deployment MUST include positive and negative live validation of the Qwen3.8 Flash Next service on `aspen2`.
+
+#### Scenario: Text and vision probes succeed
+
+r[onix.aspen2.qwen_flash.validation.positive]
+- GIVEN the deployed server answered a health probe
+- WHEN bounded text and image chat completions run
+- THEN both responses contain useful content
+- AND the model identity is `Qwen3.8-Flash-Next-Uncensored`
+- AND runtime metrics report successful prompt and decode work
+
+#### Scenario: Private and fail-closed behavior is verified
+
+r[onix.aspen2.qwen_flash.validation.negative]
+- GIVEN the Qwen service is deployed on `aspen2`
+- WHEN direct Tailnet access, malformed authorization, competing services, and service restarts are inspected
+- THEN direct Tailnet access to port 13305 fails
+- AND malformed authorization fails before model download
+- AND Lemonade is inactive
+- AND the Qwen service remains healthy without a restart loop

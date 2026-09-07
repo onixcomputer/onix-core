@@ -6,6 +6,7 @@ pkgs.searxng.overrideAttrs (old: {
     cp ${./kagi_session_core.py} searx/kagi_session_core.py
     cp ${./kagi_unlock.py} searx/kagi_unlock.py
     cp ${./kagi-access.html} searx/templates/simple/kagi-access.html
+    cp ${./kagi-unlock.js} searx/static/kagi-unlock.js
     substituteInPlace searx/templates/simple/base.html \
       --replace-fail '{% block content %}' \
       "{% if endpoint in ['preferences', 'results'] %}{% include 'simple/kagi-access.html' %}{% endif %}{% block content %}"

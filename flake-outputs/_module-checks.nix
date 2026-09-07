@@ -58,6 +58,10 @@ let
   expectedLlamacppNegativeFields = [
     "backend"
     "modelSha256"
+    "extraModelSha256"
+    "multimodalProjectorFile"
+    "multimodalProjectorSha256"
+    "huggingFaceTokenRequired"
     "metaliumDeviceId"
     "metaliumInspectorPort"
     "metaliumTrace"

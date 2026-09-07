@@ -1,5 +1,6 @@
 {
   inputs,
+  lib,
   pkgs,
   config,
   ...
@@ -37,111 +38,124 @@ let
   lw = config.librewolf;
   ff = config.firefox;
 
+  configuredFirefox = inputs.wrappers.wrapperModules.firefox.apply {
+    inherit pkgs;
+
+    # LibreWolf keeps the command, desktop entry, and Wayland app-id aligned
+    # with the profile's browser defaults while allowing managed extensions.
+    browser = pkgs.librewolf-unwrapped;
+
+    extensions = [
+      tridactyl
+      ublock-origin
+      bitwarden
+      alby
+    ];
+
+    nativeMessagingHosts = [ pkgs.tridactyl-native ];
+
+    settings = {
+      # --- LibreWolf overrides (source: librewolf.ncl) ---
+
+      # Fingerprinting
+      "privacy.resistFingerprinting" = lw.fingerprinting.resistFingerprinting;
+      "privacy.fingerprintingProtection" = lw.fingerprinting.protection;
+      "privacy.fingerprintingProtection.overrides" = lw.fingerprinting.protectionOverrides;
+
+      # WebGL
+      "webgl.disabled" = lw.webgl.disabled;
+
+      # GPU / video acceleration
+      "gfx.webrender.all" = lw.acceleration.webrender;
+      "layers.acceleration.force-enabled" = lw.acceleration.forceLayers;
+      "media.hardware-video-decoding.force-enabled" = lw.acceleration.hardwareVideoDecode;
+      "media.rdd-ffmpeg.enabled" = lw.acceleration.rddFfmpeg;
+      "widget.dmabuf.force-enabled" = lw.acceleration.forceDmabuf;
+      "gfx.x11-egl.force-enabled" = lw.acceleration.forceX11Egl;
+
+      # UI chrome
+      "browser.compactmode.show" = lw.ui.compactMode;
+      "browser.uidensity" = ff.ui.density;
+
+      # New tab page
+      "browser.newtabpage.activity-stream.feeds.topsites" = lw.newTab.topSites;
+      "browser.newtabpage.activity-stream.showSponsoredTopSites" = lw.newTab.sponsoredTopSites;
+      "browser.newtabpage.activity-stream.feeds.section.topstories" = lw.newTab.topStories;
+
+      # Cookie banners (source: base/firefox.ncl)
+      "cookiebanners.service.mode" = ff.privacy.cookieBannerMode;
+      "cookiebanners.service.mode.privateBrowsing" = ff.privacy.cookieBannerMode;
+
+      # URL bar
+      "browser.urlbar.suggest.calculator" = lw.urlbar.calculator;
+      "browser.urlbar.unitConversion.enabled" = lw.urlbar.unitConversion;
+
+      # Onboarding
+      "browser.aboutwelcome.enabled" = lw.onboarding.welcome;
+      "browser.uitour.enabled" = lw.onboarding.tour;
+      "browser.discovery.enabled" = lw.onboarding.discovery;
+      "extensions.getAddons.showPane" = lw.onboarding.addonsPane;
+
+      # Canvas acceleration cache (source: base/firefox.ncl)
+      "gfx.canvas.accelerated.cache-items" = ff.cache.canvasItems;
+      "gfx.canvas.accelerated.cache-size" = ff.cache.canvasSize;
+
+      # DNS cache (source: base/firefox.ncl)
+      "network.dnsCacheEntries" = ff.dns.cacheEntries;
+      "network.dnsCacheExpiration" = ff.dns.cacheExpiration;
+
+      # Connection limits (source: base/firefox.ncl)
+      "network.http.max-connections" = ff.network.maxConnections;
+      "network.http.max-persistent-connections-per-server" = ff.network.maxPersistentPerServer;
+      "network.http.max-urgent-start-excessive-connections-per-host" =
+        ff.network.maxUrgentStartExcessivePerHost;
+      "network.http.speculative-parallel-limit" = ff.network.speculativeParallelLimit;
+
+      # Network prefetch overrides (source: librewolf.ncl)
+      "network.predictor.enabled" = lw.network.predictor;
+      "network.prefetch-next" = lw.network.prefetchNext;
+      "network.dns.disablePrefetch" = !lw.network.dnsPrefetch;
+
+      # Cache strategy (source: librewolf.ncl)
+      "browser.cache.memory.enable" = lw.cache.memory;
+      "browser.cache.disk.enable" = lw.cache.disk;
+    };
+
+    extraPolicies = {
+      SearchEngines = {
+        Default = "Kagi";
+        Add = [
+          {
+            Name = "Kagi";
+            URLTemplate = "https://kagi.com/search?q={searchTerms}";
+            Method = "GET";
+            IconURL = "https://assets.kagi.com/v2/favicon-32x32.png";
+            Description = "Kagi Search";
+          }
+        ];
+        Remove = [
+          "Google"
+          "Bing"
+          "Amazon.com"
+          "DuckDuckGo"
+          "Wikipedia (en)"
+        ];
+      };
+    };
+  };
+
+  # The wrappers module calls wrapFirefox directly, so it must explicitly
+  # preserve the preference and policy files carried by librewolf-unwrapped.
+  # Without these files, LibreWolf blocks its own search-config-v2 dump.
   wrappedFirefox =
-    (inputs.wrappers.wrapperModules.firefox.apply {
-      inherit pkgs;
-
-      # LibreWolf keeps the command, desktop entry, and Wayland app-id aligned
-      # with the profile's browser defaults while allowing managed extensions.
-      browser = pkgs.librewolf-unwrapped;
-
-      extensions = [
-        tridactyl
-        ublock-origin
-        bitwarden
-        alby
-      ];
-
-      nativeMessagingHosts = [ pkgs.tridactyl-native ];
-
-      settings = {
-        # --- LibreWolf overrides (source: librewolf.ncl) ---
-
-        # Fingerprinting
-        "privacy.resistFingerprinting" = lw.fingerprinting.resistFingerprinting;
-        "privacy.fingerprintingProtection" = lw.fingerprinting.protection;
-        "privacy.fingerprintingProtection.overrides" = lw.fingerprinting.protectionOverrides;
-
-        # WebGL
-        "webgl.disabled" = lw.webgl.disabled;
-
-        # GPU / video acceleration
-        "gfx.webrender.all" = lw.acceleration.webrender;
-        "layers.acceleration.force-enabled" = lw.acceleration.forceLayers;
-        "media.hardware-video-decoding.force-enabled" = lw.acceleration.hardwareVideoDecode;
-        "media.rdd-ffmpeg.enabled" = lw.acceleration.rddFfmpeg;
-        "widget.dmabuf.force-enabled" = lw.acceleration.forceDmabuf;
-        "gfx.x11-egl.force-enabled" = lw.acceleration.forceX11Egl;
-
-        # UI chrome
-        "browser.compactmode.show" = lw.ui.compactMode;
-        "browser.uidensity" = ff.ui.density;
-
-        # New tab page
-        "browser.newtabpage.activity-stream.feeds.topsites" = lw.newTab.topSites;
-        "browser.newtabpage.activity-stream.showSponsoredTopSites" = lw.newTab.sponsoredTopSites;
-        "browser.newtabpage.activity-stream.feeds.section.topstories" = lw.newTab.topStories;
-
-        # Cookie banners (source: base/firefox.ncl)
-        "cookiebanners.service.mode" = ff.privacy.cookieBannerMode;
-        "cookiebanners.service.mode.privateBrowsing" = ff.privacy.cookieBannerMode;
-
-        # URL bar
-        "browser.urlbar.suggest.calculator" = lw.urlbar.calculator;
-        "browser.urlbar.unitConversion.enabled" = lw.urlbar.unitConversion;
-
-        # Onboarding
-        "browser.aboutwelcome.enabled" = lw.onboarding.welcome;
-        "browser.uitour.enabled" = lw.onboarding.tour;
-        "browser.discovery.enabled" = lw.onboarding.discovery;
-        "extensions.getAddons.showPane" = lw.onboarding.addonsPane;
-
-        # Canvas acceleration cache (source: base/firefox.ncl)
-        "gfx.canvas.accelerated.cache-items" = ff.cache.canvasItems;
-        "gfx.canvas.accelerated.cache-size" = ff.cache.canvasSize;
-
-        # DNS cache (source: base/firefox.ncl)
-        "network.dnsCacheEntries" = ff.dns.cacheEntries;
-        "network.dnsCacheExpiration" = ff.dns.cacheExpiration;
-
-        # Connection limits (source: base/firefox.ncl)
-        "network.http.max-connections" = ff.network.maxConnections;
-        "network.http.max-persistent-connections-per-server" = ff.network.maxPersistentPerServer;
-        "network.http.max-urgent-start-excessive-connections-per-host" =
-          ff.network.maxUrgentStartExcessivePerHost;
-        "network.http.speculative-parallel-limit" = ff.network.speculativeParallelLimit;
-
-        # Network prefetch overrides (source: librewolf.ncl)
-        "network.predictor.enabled" = lw.network.predictor;
-        "network.prefetch-next" = lw.network.prefetchNext;
-        "network.dns.disablePrefetch" = !lw.network.dnsPrefetch;
-
-        # Cache strategy (source: librewolf.ncl)
-        "browser.cache.memory.enable" = lw.cache.memory;
-        "browser.cache.disk.enable" = lw.cache.disk;
-      };
-
-      extraPolicies = {
-        SearchEngines = {
-          Default = "Kagi";
-          Add = [
-            {
-              Name = "Kagi";
-              URLTemplate = "https://kagi.com/search?q={searchTerms}";
-              Method = "GET";
-              IconURL = "https://assets.kagi.com/v2/favicon-32x32.png";
-              Description = "Kagi Search";
-            }
-          ];
-          Remove = [
-            "Google"
-            "Bing"
-            "Amazon.com"
-            "DuckDuckGo"
-            "Wikipedia (en)"
-          ];
-        };
-      };
+    (configuredFirefox.apply {
+      package = lib.mkForce (
+        configuredFirefox.package.override (old: {
+          extraPrefsFiles = (pkgs.librewolf-unwrapped.extraPrefsFiles or [ ]) ++ (old.extraPrefsFiles or [ ]);
+          extraPoliciesFiles =
+            (pkgs.librewolf-unwrapped.extraPoliciesFiles or [ ]) ++ (old.extraPoliciesFiles or [ ]);
+        })
+      );
     }).wrapper;
 in
 {

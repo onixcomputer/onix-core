@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   theme = config.theme.data;
   k = config.keymap;
@@ -31,65 +36,49 @@ let
     mapping.${key} or key;
 
   ta = k.terminalActions;
+  runtimeThemeFileMode = "644";
+
+  # Valid fallback for the first login. Noctalia becomes the sole owner of
+  # the runtime file after its wezterm template runs.
+  initialNoctaliaColors = pkgs.writeText "wezterm-noctalia-fallback.toml" ''
+    [metadata]
+    name = "Noctalia"
+
+    [colors]
+    background = '${theme.bg.hex}'
+    foreground = '${theme.fg.hex}'
+    cursor_bg = '${theme.fg.hex}'
+    cursor_fg = '${theme.bg.hex}'
+    cursor_border = '${theme.fg.hex}'
+    selection_bg = '${theme.accent.hex}'
+    selection_fg = '${theme.bg.hex}'
+    scrollbar_thumb = '${theme.bg_highlight.hex}'
+
+    ansi = [
+      '${theme.term_black.hex}',
+      '${theme.term_red.hex}',
+      '${theme.term_green.hex}',
+      '${theme.term_yellow.hex}',
+      '${theme.term_blue.hex}',
+      '${theme.term_magenta.hex}',
+      '${theme.term_cyan.hex}',
+      '${theme.term_white.hex}',
+    ]
+    brights = [
+      '${theme.term_bright_black.hex}',
+      '${theme.term_bright_red.hex}',
+      '${theme.term_bright_green.hex}',
+      '${theme.term_bright_yellow.hex}',
+      '${theme.term_bright_blue.hex}',
+      '${theme.term_bright_magenta.hex}',
+      '${theme.term_bright_cyan.hex}',
+      '${theme.term_bright_white.hex}',
+    ]
+  '';
 in
 {
-  xdg.configFile."wezterm/colors.lua".text = ''
-    return {
-      background = '${theme.bg.hex}',
-      foreground = '${theme.fg.hex}',
-      cursor_bg = '${theme.fg.hex}',
-      cursor_fg = '${theme.bg.hex}',
-      cursor_border = '${theme.fg.hex}',
-      selection_bg = '${theme.accent.hex}',
-      selection_fg = '${theme.bg.hex}',
-      scrollbar_thumb = '${theme.bg_highlight.hex}',
-
-      ansi = {
-        '${theme.term_black.hex}',
-        '${theme.term_red.hex}',
-        '${theme.term_green.hex}',
-        '${theme.term_yellow.hex}',
-        '${theme.term_blue.hex}',
-        '${theme.term_magenta.hex}',
-        '${theme.term_cyan.hex}',
-        '${theme.term_white.hex}',
-      },
-      brights = {
-        '${theme.term_bright_black.hex}',
-        '${theme.term_bright_red.hex}',
-        '${theme.term_bright_green.hex}',
-        '${theme.term_bright_yellow.hex}',
-        '${theme.term_bright_blue.hex}',
-        '${theme.term_bright_magenta.hex}',
-        '${theme.term_bright_cyan.hex}',
-        '${theme.term_bright_white.hex}',
-      },
-
-      tab_bar = {
-        background = '${theme.bg_dark.hex}',
-        active_tab = {
-          bg_color = '${theme.accent.hex}',
-          fg_color = '${theme.bg.hex}',
-        },
-        inactive_tab = {
-          bg_color = '${theme.bg_highlight.hex}',
-          fg_color = '${theme.fg_dim.hex}',
-        },
-        inactive_tab_hover = {
-          bg_color = '${theme.bg_highlight.hex}',
-          fg_color = '${theme.fg.hex}',
-        },
-        new_tab = {
-          bg_color = '${theme.bg_dark.hex}',
-          fg_color = '${theme.fg_dim.hex}',
-        },
-        new_tab_hover = {
-          bg_color = '${theme.bg_highlight.hex}',
-          fg_color = '${theme.fg.hex}',
-        },
-      },
-    }
-  '';
+  # Home Manager must replace the mutable config from the prior activation.
+  xdg.configFile."wezterm/wezterm.lua".force = true;
 
   programs.wezterm = {
     enable = true;
@@ -158,15 +147,12 @@ in
       -- Disable update checks
       config.check_for_updates = false
 
-      -- Colors: prefer Noctalia runtime colors (updated on wallpaper/mode
-      -- change), fall back to Nix-generated build-time defaults.
-      -- Wezterm auto-reloads when dofile'd paths change on disk.
-      local noctalia_ok, noctalia_colors = pcall(dofile, wezterm.home_dir .. '/.config/wezterm/noctalia-colors.lua')
-      if noctalia_ok and noctalia_colors then
-        config['colors'] = noctalia_colors
-      else
-        config['colors'] = dofile(wezterm.home_dir .. '/.config/wezterm/colors.lua')
-      end
+      -- Live theme: Noctalia's built-in wezterm template writes
+      -- ~/.config/wezterm/colors/Noctalia.toml with the current scheme and
+      -- touches this file to trigger an automatic config reload, so the
+      -- terminal follows dark/light mode. The scheme file is seeded at
+      -- build time (see below) and overwritten by Noctalia at runtime.
+      config.color_scheme = 'Noctalia'
 
       -- Keybindings
       local act = wezterm.action
@@ -261,4 +247,24 @@ in
       return config
     '';
   };
+
+  # Noctalia's wezterm template owns colors/Noctalia.toml. Seed it only when
+  # missing. Keep wezterm.lua writable because the template touches it to
+  # trigger an automatic config reload.
+  home.activation.makeWeztermConfigMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    wezterm_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/wezterm"
+    colors_file="$wezterm_dir/colors/Noctalia.toml"
+    mkdir -p "$wezterm_dir/colors"
+    rm -f "$wezterm_dir/wezterm.lua.hm-bak" "$colors_file.hm-bak"
+    if [ ! -f "$colors_file" ]; then
+      install -m ${runtimeThemeFileMode} ${initialNoctaliaColors} "$colors_file"
+    fi
+
+    target="$wezterm_dir/wezterm.lua"
+    if [ -L "$target" ]; then
+      content=$(cat "$target")
+      rm "$target"
+      printf '%s\n' "$content" > "$target"
+    fi
+  '';
 }

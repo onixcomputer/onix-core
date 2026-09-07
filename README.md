@@ -61,4 +61,5 @@ Read [`modules/searxng/README.md`](modules/searxng/README.md) for the private Se
 - [cachix/secretspec](https://github.com/cachix/secretspec) — declarative secret resolver used by the DGX installation bootstrap boundary.
 - [Mesh-LLM/mesh-llm](https://github.com/Mesh-LLM/mesh-llm) — private inference mesh patched to read invite tokens from credential files.
 - [Hister installing docs](https://hister.org/docs/installing) — upstream installing documentation for the Hister self-hosted search server and terminal client, covering prebuilt binaries, builds from source, Docker, Nix package and flake modules, and Proxmox installs.
+- [zvec-ai/zvec-grep](https://github.com/zvec-ai/zvec-grep) — local-first search layer that unifies ripgrep, BM25, and vector search behind one interface; npm package requiring Node.js 22 or newer, with CLI, MCP, and agent integrations.
 

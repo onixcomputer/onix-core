@@ -424,21 +424,24 @@ in
         done
       '';
 
-      # ── Make noctalia config files writable ────────────────────────────
-      # The Noctalia HM module writes config.toml and palette files as
-      # nix-store symlinks. Noctalia mutates these files at runtime for live
-      # palette updates and UI settings, so convert managed symlinks to real
-      # writable files after linkGeneration.
+      # ── Make Noctalia's config writable ────────────────────────────────
+      # The Noctalia HM module writes config.toml as a nix-store symlink.
+      # Noctalia mutates this file at runtime, so convert it to a writable
+      # file after linkGeneration. Remove the retired managed custom palettes;
+      # built-in Kanagawa now owns the default palette.
       makeNoctaliaConfigMutable = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
         noctalia_dir="''${XDG_CONFIG_HOME:-$HOME/.config}/noctalia"
-        for f in config.toml palettes/Adwaita.json; do
-          target="$noctalia_dir/$f"
-          if [ -L "$target" ]; then
-            content=$(cat "$target")
-            rm "$target"
-            printf '%s\n' "$content" > "$target"
-          fi
-        done
+        target="$noctalia_dir/config.toml"
+        if [ -L "$target" ]; then
+          content=$(cat "$target")
+          rm "$target"
+          printf '%s\n' "$content" > "$target"
+        fi
+        rm -f \
+          "$noctalia_dir/palettes/Adwaita.json" \
+          "$noctalia_dir/palettes/Adwaita.json.hm-bak" \
+          "$noctalia_dir/palettes/Onix.json" \
+          "$noctalia_dir/palettes/Onix.json.hm-bak"
       '';
     };
 
@@ -529,8 +532,6 @@ in
   };
 
   # Enable portals for file pickers, screencasting, etc.
-  # force=true on configFile lets HM replace the previous real file on each
-  # activation, before the activation script converts it back to a writable copy.
   xdg = {
     portal = {
       enable = true;
@@ -552,10 +553,6 @@ in
           "org.freedesktop.impl.portal.ScreenCast" = [ "gnome" ];
         };
       };
-    };
-    configFile = {
-      "noctalia/config.toml".force = true;
-      "noctalia/palettes/Adwaita.json".force = true;
     };
   };
 

@@ -221,12 +221,17 @@ in
   checks.searxng-kagi-session =
     pkgs.runCommand "searxng-kagi-session"
       {
-        nativeBuildInputs = [ kagiPython ];
+        nativeBuildInputs = [
+          kagiPython
+          pkgs.nodejs
+        ];
+        KAGI_UNLOCK_SCRIPT = "${kagiPackage}/${pkgs.python3.sitePackages}/searx/static/kagi-unlock.js";
         SEARXNG_SETTINGS_PATH = kagiTestSettings;
       }
       ''
         export HOME="$TMPDIR"
         python ${../modules/searxng/test_kagi_session.py} -v
+         node --test ${../modules/searxng/test_kagi_unlock.cjs}
         touch "$out"
       '';
 }
