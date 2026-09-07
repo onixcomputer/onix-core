@@ -15,6 +15,8 @@
 let
   # --- treefmt ---
   treefmtEval = inputs'.treefmt-nix.lib.evalModule pkgs {
+    # Linked worktrees have a .git file. Do not walk into the parent repository.
+    projectRootFile = "flake.nix";
     programs = {
       # Nix — priority: deadnix (1) → statix (2) → nixfmt (3)
       # deadnix removes unused code, statix catches anti-patterns, nixfmt formats.
@@ -274,7 +276,36 @@ in
   formatter = treefmtWrapper;
 
   # pre-commit check
-  checks.pre-commit = preCommitEval.run;
+  checks = {
+    pre-commit = preCommitEval.run;
+
+    # A linked worktree has a .git file, not a .git/config directory.
+    formatter-worktree-root =
+      pkgs.runCommand "formatter-worktree-root"
+        {
+          nativeBuildInputs = [
+            treefmtWrapper
+            pkgs.coreutils
+          ];
+        }
+        ''
+          mkdir -p parent/.git parent/linked
+          printf '%s\n' '[core]' > parent/.git/config
+          printf '%s\n' 'gitdir: ../.git/worktrees/linked' > parent/linked/.git
+          printf '%s\n' '{parent=true;}' > parent/flake.nix
+          cp parent/flake.nix parent-before
+          printf '%s\n' '{x=true;}' > parent/linked/flake.nix
+          cp parent/linked/flake.nix child-before
+          (cd parent/linked && treefmt --walk=filesystem --no-cache)
+          cmp parent/flake.nix parent-before
+          if cmp -s parent/linked/flake.nix child-before; then
+            echo 'formatter did not process the linked worktree' >&2
+            exit 1
+          fi
+          (cd parent/linked && treefmt --walk=filesystem --no-cache --fail-on-change)
+          printf '%s\n' 'child=formatted' 'parent=unchanged' > "$out"
+        '';
+  };
 
   devShells = {
     # Full development environment with all tools

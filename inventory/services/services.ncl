@@ -64,6 +64,8 @@ let execution_graph_rid = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a" in
 let choregraph_rid = "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF" in
 let durable_file_publication_rid = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM" in
 let koiterminal_rid = "rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ" in
+# r[impl onix.campaign_source.policy]
+let campaign_rid = "rad:z2scC9MCm3pxk9mX4FEidRKabQ5LN" in
 let radicle_private_pilot_rid = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg" in
 let radicle_seaglass_rid = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk" in
 let kiln_aspen_canary_host_uid = 970 in
@@ -93,6 +95,7 @@ let radicle_source_rids = [
   choregraph_rid,
   durable_file_publication_rid,
   koiterminal_rid,
+  campaign_rid,
 ]
 in
 let radicle_private_source_rids = [

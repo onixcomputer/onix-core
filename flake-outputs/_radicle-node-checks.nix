@@ -12,7 +12,17 @@
 }:
 let
   privateStateDirectoryMode = "0700";
+  # Keep the historical receipt and minimum protocol version separate from the package.
   reviewedNodeVersion = "1.9.1";
+  # Review: evidence/radicle/node-package-review-1.10.1.md.
+  reviewedNodeCommit = "71f39fb195068d598d75f7cd606d41a4f8ad4b10";
+  reviewedNodeIdentity = {
+    version = "1.10.1";
+    url = "https://seed.radicle.dev/z3gqcJUoA1n9HaHKufZs5FCSGazv5.git";
+    revCustom = "refs/tags/releases/1.10.1";
+    outputHash = "sha256-F+64o9z/al0iaLFyQHAYk/3jjf5T0FdgqaU3nEWIheg=";
+    cargoHash = "sha256-TLffetbkVwIbUDoI+96T99+lfYu2SIpGtwC0DbuJXnU=";
+  };
   reviewedHttpdVersion = "0.27.0";
   reviewedHttpdSourceUrl = "https://seed.radicle.dev/z4V1sjrXqjvFdnCUbxPFqd5p4DtH5.git";
   reviewedHttpdSourceRevision = "refs/tags/releases/0.27.0";
@@ -70,6 +80,7 @@ let
   choregraphRepository = "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF";
   durableFilePublicationRepository = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM";
   koiterminalRepository = "rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ";
+  campaignRepository = "rad:z2scC9MCm3pxk9mX4FEidRKabQ5LN";
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   privateSeaglassRepository = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
   privateHardenedWasmtimeRepository = "rad:z3hRCegTsS8jpJVgxYfb9psEzxHpG";
@@ -85,6 +96,7 @@ let
     choregraphRepository
     durableFilePublicationRepository
     koiterminalRepository
+    campaignRepository
   ];
   privateRepositories = [
     privatePilotRepository
@@ -98,6 +110,15 @@ let
 
   nodePackage = self.packages.${system}.radicle-node;
   httpdPackage = self.packages.${system}.radicle-httpd;
+  observedNodeIdentity = {
+    inherit (nodePackage) version cargoHash;
+    inherit (nodePackage.src) url revCustom outputHash;
+  };
+  nodeIdentityMatchesReview = identity: identity == reviewedNodeIdentity;
+  reviewedNodeIdentityValid = nodeIdentityMatchesReview observedNodeIdentity;
+  unreviewedNodeIdentitiesRejected = lib.all (
+    field: !(nodeIdentityMatchesReview (reviewedNodeIdentity // { ${field} = "unreviewed"; }))
+  ) (builtins.attrNames reviewedNodeIdentity);
   httpdIdentityMatchesReview =
     identity:
     identity.version == reviewedHttpdVersion
@@ -1229,10 +1250,13 @@ in
               ;;
           esac
 
-          ${lib.optionalString (nodePackage.version != reviewedNodeVersion) ''
-            echo "radicle-node version changed without updating the reviewed package identity" >&2
+          ${lib.optionalString (!reviewedNodeIdentityValid || !unreviewedNodeIdentitiesRejected) ''
+            echo "radicle-node source, dependency, or version identity review failed" >&2
             exit 1
           ''}
+          read -r source_commit < ${nodePackage.src}/.git_head
+          test "$source_commit" = ${lib.escapeShellArg reviewedNodeCommit}
+          test "$(${nodePackage}/bin/rad --version)" = ${lib.escapeShellArg "rad ${reviewedNodeIdentity.version} (${reviewedNodeCommit})"}
           ${lib.optionalString (!reviewedHttpdIdentityValid || !unreviewedHttpdIdentityRejected) ''
             echo "radicle-httpd source, dependency, or version identity review failed" >&2
             exit 1

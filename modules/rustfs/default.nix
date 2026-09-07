@@ -296,85 +296,87 @@ in
           {
             inherit (evaluated) assertions;
 
-            systemd.tmpfiles.rules = [
-              "d ${settings.targetDir} ${directoryMode} root root - -"
-              "d ${snapshotRoot} ${directoryMode} root root - -"
-            ];
+            systemd = {
+              tmpfiles.rules = [
+                "d ${settings.targetDir} ${directoryMode} root root - -"
+                "d ${snapshotRoot} ${directoryMode} root root - -"
+              ];
 
-            # r[impl onix.rustfs_build_caches.recovery.backup]
-            systemd.services."rustfs-authority-backup-${instanceName}" = {
-              description = "Back up authoritative RustFS buckets";
-              path = [ pkgs.getent ];
-              after = [
-                "network-online.target"
-                "tailscaled.service"
-              ];
-              wants = [
-                "network-online.target"
-                "tailscaled.service"
-              ];
-              unitConfig.RequiresMountsFor = [ settings.targetDir ];
-              serviceConfig = {
-                Type = "oneshot";
-                ExecStart = backupScript;
-                EnvironmentFile = adminEnvironmentFile;
-                UMask = serviceUmask;
-                NoNewPrivileges = true;
-                PrivateTmp = true;
-                ProtectHome = true;
-                ProtectSystem = "strict";
-                ReadWritePaths = [ settings.targetDir ];
-                CapabilityBoundingSet = "";
-                AmbientCapabilities = "";
-                LockPersonality = true;
-                RestrictAddressFamilies = [
-                  "AF_UNIX"
-                  "AF_INET"
-                  "AF_INET6"
+              # r[impl onix.rustfs_build_caches.recovery.backup]
+              services."rustfs-authority-backup-${instanceName}" = {
+                description = "Back up authoritative RustFS buckets";
+                path = [ pkgs.getent ];
+                after = [
+                  "network-online.target"
+                  "tailscaled.service"
                 ];
+                wants = [
+                  "network-online.target"
+                  "tailscaled.service"
+                ];
+                unitConfig.RequiresMountsFor = [ settings.targetDir ];
+                serviceConfig = {
+                  Type = "oneshot";
+                  ExecStart = backupScript;
+                  EnvironmentFile = adminEnvironmentFile;
+                  UMask = serviceUmask;
+                  NoNewPrivileges = true;
+                  PrivateTmp = true;
+                  ProtectHome = true;
+                  ProtectSystem = "strict";
+                  ReadWritePaths = [ settings.targetDir ];
+                  CapabilityBoundingSet = "";
+                  AmbientCapabilities = "";
+                  LockPersonality = true;
+                  RestrictAddressFamilies = [
+                    "AF_UNIX"
+                    "AF_INET"
+                    "AF_INET6"
+                  ];
+                };
               };
-            };
-            systemd.timers."rustfs-authority-backup-${instanceName}" = {
-              description = "Schedule authoritative RustFS bucket backups";
-              wantedBy = [ "timers.target" ];
-              timerConfig = {
-                OnCalendar = settings.schedule;
-                Persistent = true;
-                Unit = "rustfs-authority-backup-${instanceName}.service";
+              timers."rustfs-authority-backup-${instanceName}" = {
+                description = "Schedule authoritative RustFS bucket backups";
+                wantedBy = [ "timers.target" ];
+                timerConfig = {
+                  OnCalendar = settings.schedule;
+                  Persistent = true;
+                  Unit = "rustfs-authority-backup-${instanceName}.service";
+                };
               };
-            };
 
-            # r[impl onix.rustfs_build_caches.recovery.restore]
-            systemd.services."rustfs-authority-restore-probe-${instanceName}" = {
-              description = "Verify one bounded RustFS object restore";
-              path = [ pkgs.getent ];
-              after = [
-                "network-online.target"
-                "tailscaled.service"
-              ];
-              wants = [
-                "network-online.target"
-                "tailscaled.service"
-              ];
-              unitConfig.RequiresMountsFor = [ settings.targetDir ];
-              serviceConfig = {
-                Type = "oneshot";
-                ExecStart = restoreProbeScript;
-                EnvironmentFile = adminEnvironmentFile;
-                UMask = serviceUmask;
-                NoNewPrivileges = true;
-                PrivateTmp = true;
-                ProtectHome = true;
-                ProtectSystem = "strict";
-                ReadOnlyPaths = [ settings.targetDir ];
-                CapabilityBoundingSet = "";
-                AmbientCapabilities = "";
-                LockPersonality = true;
-                RestrictAddressFamilies = [
-                  "AF_UNIX"
-                  "AF_INET"
-                  "AF_INET6"
+              # r[impl onix.rustfs_build_caches.recovery.restore]
+              services."rustfs-authority-restore-probe-${instanceName}" = {
+                description = "Verify one bounded RustFS object restore";
+                path = [ pkgs.getent ];
+                after = [
+                  "network-online.target"
+                  "tailscaled.service"
                 ];
+                wants = [
+                  "network-online.target"
+                  "tailscaled.service"
+                ];
+                unitConfig.RequiresMountsFor = [ settings.targetDir ];
+                serviceConfig = {
+                  Type = "oneshot";
+                  ExecStart = restoreProbeScript;
+                  EnvironmentFile = adminEnvironmentFile;
+                  UMask = serviceUmask;
+                  NoNewPrivileges = true;
+                  PrivateTmp = true;
+                  ProtectHome = true;
+                  ProtectSystem = "strict";
+                  ReadOnlyPaths = [ settings.targetDir ];
+                  CapabilityBoundingSet = "";
+                  AmbientCapabilities = "";
+                  LockPersonality = true;
+                  RestrictAddressFamilies = [
+                    "AF_UNIX"
+                    "AF_INET"
+                    "AF_INET6"
+                  ];
+                };
               };
             };
           };
