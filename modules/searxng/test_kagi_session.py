@@ -224,6 +224,88 @@ class UnlockTests(unittest.TestCase):
         assert existing == frozenset({"other-engine-access"})
 
 
+class HealthTests(unittest.TestCase):
+    def test_canary_categories_and_no_token_in_output(self):
+        from searx.kagi_health import DEFAULT_TIMEOUT_SECONDS, Reply, probe
+
+        def reply(body, status):
+            return lambda _token, _timeout: Reply(
+                body, status, SEARCH_ENDPOINT, "text/html"
+            )
+
+        assert (
+            probe(
+                FIXTURE_SESSION,
+                DEFAULT_TIMEOUT_SECONDS,
+                reply(result_html(), HTTPStatus.OK),
+            )
+            == "healthy"
+        )
+        cases = (
+            (b"", HTTPStatus.UNAUTHORIZED, "session_rejected"),
+            (b"", HTTPStatus.TOO_MANY_REQUESTS, "rate_limited"),
+            (b"", HTTPStatus.SERVICE_UNAVAILABLE, "upstream_error"),
+            (b"unknown page", HTTPStatus.OK, "unrecognized_response"),
+        )
+        for body, code, expected in cases:
+            status = probe(FIXTURE_SESSION, DEFAULT_TIMEOUT_SECONDS, reply(body, code))
+            assert status == expected
+            assert FIXTURE_SESSION not in status
+
+        def timeout(_token, _timeout):
+            raise TimeoutError(FIXTURE_SESSION)
+
+        assert (
+            probe(FIXTURE_SESSION, DEFAULT_TIMEOUT_SECONDS, timeout)
+            == "transport_or_probe_error"
+        )
+
+    def test_invalid_configuration_never_fetches(self):
+        from searx.kagi_health import (
+            DEFAULT_TIMEOUT_SECONDS,
+            MAX_TIMEOUT_SECONDS,
+            probe,
+        )
+
+        def forbidden_fetch(_token, _timeout):
+            self.fail("Invalid configuration reached the HTTP port")
+
+        for token in ("", "https://kagi.com/search?token=fixture", None):
+            assert (
+                probe(token, DEFAULT_TIMEOUT_SECONDS, forbidden_fetch)
+                == "invalid_session_configuration"
+            )
+        for timeout in (0, -1, MAX_TIMEOUT_SECONDS + 1, None, True, "slow"):
+            assert probe(FIXTURE_SESSION, timeout, forbidden_fetch) == "invalid_timeout"
+
+    def test_transport_is_bounded_and_cannot_follow_redirects(self):
+        from unittest.mock import MagicMock, patch
+
+        from searx.kagi_health import DEFAULT_TIMEOUT_SECONDS, NoRedirect, fetch_session
+        from searx.kagi_session_core import MAX_HTML_BYTES
+
+        response = MagicMock()
+        response.__enter__.return_value = response
+        response.status = HTTPStatus.OK
+        response.read.return_value = result_html()
+        response.geturl.return_value = SEARCH_ENDPOINT
+        response.headers.get.return_value = "text/html"
+        with patch("searx.kagi_health.build_opener") as build:
+            build.return_value.open.return_value = response
+            fetch_session(FIXTURE_SESSION, DEFAULT_TIMEOUT_SECONDS)
+            request = build.return_value.open.call_args.args[0]
+            assert FIXTURE_SESSION not in request.full_url
+            assert request.get_header("Cookie") == "kagi_session=" + FIXTURE_SESSION
+            assert isinstance(build.call_args.args[0], NoRedirect)
+            response.read.assert_called_once_with(MAX_HTML_BYTES + 1)
+        assert (
+            NoRedirect().redirect_request(
+                None, None, HTTPStatus.FOUND, "", {}, "https://foreign.invalid/"
+            )
+            is None
+        )
+
+
 class AccessNoticeTests(unittest.TestCase):
     def test_packaged_webapp_compiles(self):
         webapp = Path(searx.__file__).parent / "webapp.py"
@@ -281,6 +363,32 @@ class AccessNoticeTests(unittest.TestCase):
             assert not template.render(
                 categ=category, kagi_access_allowed=allowed
             ).strip()
+
+    def test_results_hide_only_the_unlocked_panel(self):
+        template_root = Path(searx.__file__).parent / "templates"
+        template = Environment(
+            loader=FileSystemLoader(template_root), autoescape=True
+        ).get_template("simple/kagi-access.html")
+        cases = (
+            (True, True, True, "ready"),
+            (True, False, False, "missing"),
+            (True, False, True, "rejected"),
+            (False, False, True, "unavailable"),
+        )
+        for endpoint in ("results", "preferences"):
+            for available, accepted, has_tokens, expected in cases:
+                with self.subTest(endpoint=endpoint, state=expected):
+                    rendered = template.render(
+                        endpoint=endpoint,
+                        kagi_engine_available=available,
+                        kagi_access_allowed=accepted,
+                        kagi_has_tokens=has_tokens,
+                        url_for=lambda _endpoint, **_kwargs: "/preferences",
+                    )
+                    if endpoint == "results" and expected == "ready":
+                        assert not rendered.strip()
+                    else:
+                        assert f'data-state="{expected}"' in rendered
 
     def test_access_states_do_not_echo_credentials(self):
         template_root = Path(searx.__file__).parent / "templates"

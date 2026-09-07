@@ -41,6 +41,10 @@ The `baseUrl` default is `null`, which leaves URL detection to SearXNG.
 
 Read [KAGI.md](KAGI.md) for the opt-in session engine, private engine token, and activation procedure.
 It uses a personal Kagi subscription session, not the official search API.
+Aspen1 enables Kagi for ordinary searches after browser authorization with `kagiDefault = true`.
+The private engine token remains required. Other installations keep Kagi disabled in ordinary searches by default.
+`kagiHealthCheck = true` adds a daily session canary and Prometheus rules.
+The canary makes one Kagi query per day. HTTP availability probes use `/healthz` without a Kagi query.
 
 ## Secrets and runtime
 

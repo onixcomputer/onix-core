@@ -57,6 +57,24 @@ let
   defaults = node { };
   kagi = node { enableKagi = true; };
   kagiEngine = builtins.head kagi.services.searx.settings.engines;
+  kagiDefaults = node {
+    enableKagi = true;
+    kagiDefault = true;
+    kagiHealthCheck = true;
+  };
+  monitoredKagi =
+    nodeWith
+      {
+        enableKagi = true;
+        kagiHealthCheck = true;
+        baseUrl = "https://search.example.net/";
+      }
+      [
+        {
+          services.prometheus.enable = true;
+          services.prometheus.exporters.blackbox.enable = true;
+        }
+      ];
   kagiGenerator = kagi.clan.core.vars.generators.searxng-fixture-kagi;
   kagiGeneratorScript = pkgs.writeShellScript "searxng-kagi-secret-fixture" kagiGenerator.script;
   kagiPackage = import ../modules/searxng/kagi-package.nix { inherit pkgs; };
@@ -92,6 +110,29 @@ let
   results = {
     kagiOptIn = kagiEngine.disabled && kagiEngine.shortcut == "kg";
     kagiPrivate = kagiEngine.tokens == [ "$KAGI_ENGINE_TOKEN" ];
+    kagiDefaultEnabledAndPrivate =
+      !(builtins.head kagiDefaults.services.searx.settings.engines).disabled
+      && (builtins.head kagiDefaults.services.searx.settings.engines).tokens == kagiEngine.tokens;
+    kagiDailyHealth = kagiDefaults.systemd.timers.searxng-kagi-health.timerConfig.OnCalendar == "daily";
+    kagiHealthUsesRuntimeSecret =
+      kagiDefaults.systemd.services.searxng-kagi-health.serviceConfig.EnvironmentFile == kagiSecretPath;
+    kagiHealthDefaultOff = !(defaults.systemd.services ? searxng-kagi-health);
+    availabilityProbe = lib.any (
+      job:
+      job.job_name == "searxng-health"
+      && (builtins.head job.static_configs).targets == [ "https://search.example.net/healthz" ]
+    ) monitoredKagi.services.prometheus.scrapeConfigs;
+    noAvailabilityProbeWithoutExporter =
+      !(lib.any (job: job.job_name == "searxng-health") kagiDefaults.services.prometheus.scrapeConfigs);
+    healthAlerts = lib.any (
+      rule: lib.hasInfix "KagiSessionCheckFailed" rule && lib.hasInfix "SearxngUnavailable" rule
+    ) monitoredKagi.services.prometheus.rules;
+    rejectKagiDefaultWithoutEngine = lib.any (
+      a: !a.assertion && lib.hasPrefix "Kagi defaults" a.message
+    ) (node { kagiDefault = true; }).assertions;
+    rejectKagiHealthWithoutEngine = lib.any (
+      a: !a.assertion && lib.hasPrefix "Kagi defaults" a.message
+    ) (node { kagiHealthCheck = true; }).assertions;
     kagiSessionReference = kagiEngine.session_token == "$KAGI_SESSION_TOKEN";
     kagiTimeout = kagiEngine.timeout == schema.server.kagiTimeoutSeconds.default;
     kagiRuntimeSecrets =

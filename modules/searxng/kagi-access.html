@@ -1,7 +1,7 @@
 {% if not kagi_engine_available %} {% set kagi_state = 'unavailable' %} {% elif
 kagi_access_allowed %} {% set kagi_state = 'ready' %} {% elif kagi_has_tokens %}
 {% set kagi_state = 'rejected' %} {% else %} {% set kagi_state = 'missing' %} {%
-endif %}
+endif %} {% if endpoint != 'results' or kagi_state != 'ready' %}
 <fieldset id="kagi-access-status" data-state="{{ kagi_state }}">
   <legend>Kagi access</legend>
   {% if kagi_unlock_attempt == 'saved' and kagi_state != 'ready' %}
@@ -78,3 +78,4 @@ endif %}
     token or Session Link in chat.
   </p>
 </fieldset>
+{% endif %}

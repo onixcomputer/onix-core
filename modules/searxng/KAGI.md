@@ -31,8 +31,10 @@ The engine has two separate credentials:
 - **Engine access token:** grants access to `kagi-private` through SearXNG. Only your client needs it.
 
 Other Tailnet users cannot use the engine without the engine access token.
-The engine remains disabled by default in search preferences. After authorization, `!kg query` selects it explicitly.
-Ordinary searches continue to use the other engines.
+Aspen1 sets `kagiDefault = true`, so authorized browsers include Kagi in ordinary general searches.
+Other engines remain unchanged. `!kg query` still selects Kagi explicitly.
+Saved browser preferences can override the default. Enable `kagi-private` in Preferences if you previously disabled it.
+Other installations keep the default-off setting unless they opt in.
 
 Clan generates a separate private environment file. The runtime YAML renderer consumes it with the existing SearXNG secret file.
 Only variable references enter the Nix store. Neither credential belongs in chat, a URL, source control, or a command argument.
@@ -73,7 +75,7 @@ A client with no engine token, or a wrong engine token, must not make a Kagi req
 
 ### Browser access status
 
-Preferences and HTML search results show a **Kagi access** panel.
+Preferences shows the **Kagi access** panel. Search results show it only when access is not ready.
 The panel distinguishes an unlocked engine, a missing token, a rejected token, and an engine that did not load.
 It uses the server's existing access decision. It never prints a credential or removes the private-engine check.
 The dedicated **Unlock Kagi** form verifies one issued engine token before it saves the token cookie.
@@ -93,6 +95,39 @@ Its **Unlock Kagi** link opens the access form. The locked row has no enable con
 After authorization, the normal engine row appears under Engines → General → web.
 The Kagi autocomplete option is separate and does not activate this engine.
 
+## Browser setup
+
+Aspen3's managed LibreWolf configuration selects **Onix Search** as its default search provider.
+The URL contains only the search query, never a credential. Direct Kagi remains an optional provider.
+Other machines keep their existing browser search default.
+Restart LibreWolf after its managed package changes so the new policy loads.
+
+Unlock each browser separately. A successful test in another browser does not grant access to yours.
+Private windows and cleared cookies require another unlock. Never use a Kagi Session Link in the engine access field.
+
+## Health checks
+
+Aspen1 sets `kagiHealthCheck = true`.
+The existing Prometheus blackbox exporter probes `/healthz` without credentials or a Kagi query.
+`SearxngUnavailable` reports an HTTP probe failure.
+
+`searxng-kagi-health.timer` runs a private session canary once per day, with a small randomized delay.
+Each run makes one general search for `SearXNG` against the fixed Kagi HTML endpoint.
+It uses the existing runtime secret file, verifies TLS, rejects redirects, and bounds the body read and timeout.
+It does not use the paid API or a browser profile.
+
+The journal contains only a fixed category: healthy, rejected session, rate limit, upstream error, unrecognized response, or probe error.
+A rejection can indicate an expired or revoked session. It is not proof of a specific expiry cause.
+`KagiSessionCheckFailed` reports the failed systemd unit through Prometheus.
+These rules do not configure a new email or Matrix notification destination.
+
+To run the check after rotation:
+
+```console
+ssh root@aspen1.local systemctl start searxng-kagi-health.service
+ssh root@aspen1.local journalctl -u searxng-kagi-health.service --no-pager
+```
+
 ## Session rotation and rollback
 
 Signing out of the source Kagi session invalidates its token. Kagi also expires sessions after prolonged inactivity.
@@ -101,7 +136,8 @@ Then run the generation command with `--regenerate` to rebuild its environment f
 Regeneration also rotates the engine access token, so the client token needs an update.
 After the secret deployment, restart `searx-init.service` and then `uwsgi.service` to reload the private runtime YAML.
 
-To stop Kagi requests, set `enableKagi = false` and redeploy. Other engines remain available.
+To stop Kagi requests, set `enableKagi`, `kagiDefault`, and `kagiHealthCheck` to `false`, then redeploy.
+Other engines remain available.
 To invalidate a leaked session token, sign out of its Kagi session immediately.
 
 ## Verification scope

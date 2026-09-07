@@ -5,6 +5,7 @@ pkgs.searxng.overrideAttrs (old: {
     cp ${./kagi_session.py} searx/engines/kagi_session.py
     cp ${./kagi_session_core.py} searx/kagi_session_core.py
     cp ${./kagi_unlock.py} searx/kagi_unlock.py
+    cp ${./kagi_health.py} searx/kagi_health.py
     cp ${./kagi-access.html} searx/templates/simple/kagi-access.html
     cp ${./kagi-locked-engine.html} searx/templates/simple/kagi-locked-engine.html
     cp ${./kagi-unlock.js} searx/static/kagi-unlock.js
