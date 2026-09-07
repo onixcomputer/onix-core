@@ -1,0 +1,22 @@
+[Unit]
+Description=Iroh transport for the authenticated DeepSeek API
+Requires=deepseek-api-gateway.service
+After=deepseek-api-gateway.service
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.ds-iroh/dumbpipe.env
+ExecStart=%h/.local/share/deepseek-access/dumbpipe/dumbpipe listen-tcp --host 127.0.0.1:18888 --ipv4-addr 192.168.1.244:47917
+WorkingDirectory=%h/.ds-iroh
+StandardOutput=append:%h/.ds-iroh/dumbpipe.log
+StandardError=append:%h/.ds-iroh/dumbpipe.log
+UMask=0077
+Restart=on-failure
+RestartSec=10s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,10 @@
+{
+  "model": "deepseek-v4-flash-0731-ablit-100",
+  "messages": [
+    { "role": "user", "content": "Reply with exactly SPARK-IROH-OK." }
+  ],
+  "max_tokens": 32,
+  "temperature": 0,
+  "stream": true,
+  "chat_template_kwargs": { "enable_thinking": false }
+}
