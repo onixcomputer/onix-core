@@ -18,7 +18,7 @@
 ## Acquisition and closure
 
 - [x] [serial] r[onix.campaign_source.policy] Admit only the reviewed Campaign publisher namespace with positive and negative route controls. See `evidence/namespace-deployment-2026-09-07.md`.
-- [ ] [serial] r[onix.campaign_source.acquisition] Deploy the bounded namespace routes and prove fresh locked Cargo acquisition without cache preloading. Deployment passed, but Cargo reported missing HEAD. A newer host deployment then removed the route. See `evidence/namespace-deployment-2026-09-07.md`.
+- [x] [serial] r[onix.campaign_source.acquisition] Deploy the bounded namespace routes and prove fresh locked Cargo acquisition without cache preloading. The preserved current host and scoped client profile pass fresh acquisition. See `evidence/cargo-acquisition-2026-09-07.md`.
 
 - [x] [depends:onix.campaign_source.deployment] r[onix.campaign_source.acquisition] Verify native replication and fresh exact-revision HTTPS acquisition. Evidence: `evidence/public-acquisition-2026-09-07.md`.
 - [x] [parallel] r[onix.campaign_source.acquisition] Verify unknown-repository and write-route rejection. All three denial probes returned 404. Evidence: `evidence/aspen1-deployment-2026-09-07.md`.
