@@ -12,7 +12,9 @@ let
 
   buildbot-pr-check = pkgs.callPackage ../pkgs/buildbot-pr-check { };
   ghzingaPackage = pkgs.callPackage ../pkgs/ghzinga { };
+  colliePackage = pkgs.callPackage ../pkgs/collie-herdr { };
   herdrPackage = pkgs.callPackage ../pkgs/herdr {
+    collie = colliePackage;
     ghzinga = ghzingaPackage;
     herdr = self.inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr;
     wrapperLib = self.inputs.wrappers.lib;
@@ -22,16 +24,42 @@ let
     machineInventory = ../inventory/dgx/generated/machines.json;
   };
 
-  wasmPluginsWithHostImports =
-    self.inputs.onix-wasm.packages.${pkgs.stdenv.hostPlatform.system}.wasm-plugins.overrideAttrs
-      (old: {
-        RUSTFLAGS = lib.concatStringsSep " " (
-          lib.filter (flag: flag != "") [
-            (old.RUSTFLAGS or "")
-            "-Clink-arg=--allow-undefined"
-          ]
-        );
+  wasmPackages = self.inputs.onix-wasm.packages.${pkgs.stdenv.hostPlatform.system};
+  wasmHostImportFlags = old: {
+    RUSTFLAGS = lib.concatStringsSep " " (
+      lib.filter (flag: flag != "") [
+        (old.RUSTFLAGS or "")
+        "-Clink-arg=--allow-undefined"
+      ]
+    );
+  };
+  withWasmHostImports =
+    package:
+    package.overrideAttrs (
+      old:
+      wasmHostImportFlags old
+      // {
+        # Keep the dependency artifacts and the plugin on the same compiler flags.
+        cargoArtifacts = old.cargoArtifacts.overrideAttrs wasmHostImportFlags;
+      }
+    );
+  # The bundle only copies files. Apply linker flags before preinitialization.
+  wasmPluginsWithHostImports = wasmPackages.wasm-plugins.override (previous: {
+    plugins = wasmPackages.wasm-plugins-uninitialized.override {
+      nickelPlugin = withWasmHostImports wasmPackages.nickel-plugin;
+      yamlPlugin = withWasmHostImports wasmPackages.yaml-plugin;
+      iniPlugin = withWasmHostImports wasmPackages.ini-plugin;
+    };
+    callPackage =
+      file: args:
+      (previous.callPackage file args).overrideAttrs (old: {
+        # Wizer requires an equals sign for this optional Boolean argument.
+        buildCommand =
+          assert lib.assertMsg (lib.hasInfix "--keep-init-func false" old.buildCommand)
+            "The Wizer compatibility override no longer matches the pinned preinitializer.";
+          lib.replaceStrings [ "--keep-init-func false" ] [ "--keep-init-func=false" ] old.buildCommand;
       });
+  });
 in
 {
   packages = {
@@ -57,6 +85,7 @@ in
     bookshelf = pkgs.callPackage ../pkgs/bookshelf { };
     branchfs = pkgs.callPackage ../pkgs/branchfs { };
     celld = pkgs.callPackage ../pkgs/celld { };
+    collie-herdr = colliePackage;
     herdr = herdrPackage;
     horizon = pkgs.callPackage ../pkgs/horizon { horizon-src = self.inputs.horizon; };
     iroh-ssh = pkgs.callPackage ../pkgs/iroh-ssh { };

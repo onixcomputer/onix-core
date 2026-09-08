@@ -9,7 +9,7 @@ let
   cargoTargetQuota = "1500G";
   gitDataset = "datapool/git";
   gitRoot = "/home/brittonr/git";
-  gitWorkspaceQuota = "600G";
+  gitWorkspaceQuota = "800G";
   kacheDataset = "datapool/kache-nix";
   kacheQuota = "64G";
   userHome = "/home/brittonr";
@@ -79,11 +79,11 @@ let
   };
 in
 {
-  services.journald.extraConfig = ''
-    SystemMaxUse=1G
-    RuntimeMaxUse=512M
-    MaxRetentionSec=14day
-  '';
+  services.journald.settings.Journal = {
+    SystemMaxUse = "1G";
+    RuntimeMaxUse = "512M";
+    MaxRetentionSec = "14day";
+  };
 
   system.activationScripts.build-storage-zfs-properties = ''
     if ${zfs} list -H -o name ${lib.escapeShellArg gitDataset} >/dev/null 2>&1; then

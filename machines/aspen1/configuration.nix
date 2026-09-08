@@ -5,6 +5,7 @@
 }:
 {
   imports = [
+    ./searxng-serve.nix
     inputs.nixos-hardware.nixosModules.framework-desktop-amd-ai-max-300-series
   ];
 

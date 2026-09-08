@@ -1,0 +1,94 @@
+<!doctype html>
+<!-- No theme class here: `color-scheme: light dark` in index.css follows the OS, and
+     public/theme-init.js stamps `light`/`dark` before first paint only when the user has pinned
+     one. The cascade decides, not the markup. --><html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <!-- Blocking, and first: the pin class must be on <html> before anything paints. Same-origin,
+         so `script-src 'self'` already allows it. -->
+    <script src="/theme-init.js"></script>
+    <!-- Browser chrome follows the OS for System users. useTheme rewrites these at runtime for
+         someone who has pinned the opposite of their OS. -->
+    <meta name="theme-color" content="#f5f5f5" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Collie" />
+    <title>Collie</title>
+    <!-- The web manifest <link> is injected by vite-plugin-pwa at build time. -->
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <!-- First-paint splash: the galloping Collie shown the instant the PWA opens, bridging the OS
+         launch splash and React mount (createRoot replaces #root, so it clears itself). Critical CSS
+         is inlined here so it paints and animates before the app bundle/index.css load — pure CSS,
+         no JS. It mirrors routes/root.tsx's BootSplash (same sprite, 4rem, copy) so the hand-off is
+         seamless. Sprite math matches .dog-gallop in index.css: dog-gallop.png is a 768×128 strip of
+         six 128px frames, stepped with steps(6). -->
+    <style>
+      /* index.css has not loaded at this point, so the splash declares `color-scheme` itself —
+         otherwise light-dark() below has nothing to resolve against and every value falls to its
+         light branch. These three rules mirror index.css exactly; keep them in step. */
+      :root {
+        color-scheme: light dark;
+      }
+      :root.light {
+        color-scheme: light;
+      }
+      :root.dark {
+        color-scheme: dark;
+      }
+      .boot-splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        /* --background / --muted-foreground rasterized, because index.css has not loaded yet:
+           oklch(0.97)/oklch(0.48) light, oklch(0.145)/oklch(0.708) dark. The light pair used to be
+           #ffffff/#8a8a8a, which is neither token — the page stepped from white to rgb(245) on
+           hand-off to React, and the caption sat at 3.45:1. Keep in step with index.css. */
+        background: light-dark(#f5f5f5, #0a0a0a);
+        color: light-dark(#5d5d5d, #a1a1a1);
+        font: 500 0.875rem/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .boot-splash__dog {
+        --dog-size: 4rem;
+        --dog-frames: 6;
+        width: var(--dog-size);
+        height: var(--dog-size);
+        background: url("/dog-gallop.png") no-repeat 0 0;
+        background-size: calc(var(--dog-frames) * var(--dog-size)) var(--dog-size);
+        animation: boot-dog-gallop 0.6s steps(6) infinite;
+      }
+      @keyframes boot-dog-gallop {
+        to {
+          background-position: calc(-1 * var(--dog-frames) * var(--dog-size)) 0;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .boot-splash__dog {
+          animation: none;
+        }
+      }
+    </style>
+    <script type="module" crossorigin src="/assets/index-D189_3HS.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DhTa6hcV.css">
+  <link rel="manifest" href="/manifest.webmanifest"></head>
+  <body>
+    <div id="root">
+      <div class="boot-splash" role="status" aria-label="Loading Collie">
+        <span class="boot-splash__dog" aria-hidden="true"></span>
+        <span>Connecting to the herd…</span>
+      </div>
+    </div>
+  </body>
+</html>

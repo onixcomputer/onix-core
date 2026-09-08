@@ -514,20 +514,6 @@ in
               subdomain = "home",
               public = false,
             },
-            test = {
-              port = 8888,
-              subdomain = "test",
-              public = true,
-            },
-            demo = {
-              port = 8889,
-              public = false,
-            },
-            wiki = {
-              port = 3000,
-              subdomain = "wiki",
-              public = false,
-            },
           },
           additionalSubdomains = ["ci"],
           tailscaleSSH = true,
@@ -1160,6 +1146,19 @@ in
         port = 6767,
         user = "brittonr",
         group = "brittonr",
+      },
+    },
+
+    "searxng-aspen1" = {
+      module = { name = "searxng", input = "self" },
+      roles.server.machines.aspen1.settings = {
+        baseUrl = "https://aspen1.bison-tailor.ts.net/",
+        instanceName = "Onix Search",
+        enableTidal = true,
+        enableDeveloperEngines = true,
+        enableKagi = true,
+        kagiDefault = true,
+        kagiHealthCheck = true,
       },
     },
 

@@ -16,6 +16,10 @@ Read [`docs/rustfs-build-caches.md`](docs/rustfs-build-caches.md) for private Ka
 
 Read [`docs/site-celld.md`](docs/site-celld.md) for the private Site fleet, publisher credential boundary, deployment, and activation.
 
+Read [`modules/searxng/README.md`](modules/searxng/README.md) for the SearXNG Clan service and its private listener defaults.
+
+Read [`docs/factorseal.md`](docs/factorseal.md) for the opt-in Factorseal prototype and its production-secret restrictions.
+
 ## References
 - [BlinkDL/RWKV-LM](https://github.com/BlinkDL/RWKV-LM) — pinned official RWKV-7 model, byte-tokenizer, and PyTorch recurrence equations used by the real-weight, stateful-decode, bounded-prompt, and CPU equation-reference harnesses.
 - [fla-org/flash-linear-attention](https://github.com/fla-org/flash-linear-attention) — pinned v0.3.0 checkpoint naming, cross-layer value mixing, recurrent cache, model normalization, and untied language-model head wiring used to decode and independently compare the Hugging Face model format.
@@ -57,4 +61,11 @@ Read [`docs/site-celld.md`](docs/site-celld.md) for the private Site fleet, publ
 - [Mesh-LLM/mesh-llm](https://github.com/Mesh-LLM/mesh-llm) — private inference mesh patched to read invite tokens from credential files.
 - [Hister installing docs](https://hister.org/docs/installing) — upstream installing documentation for the Hister self-hosted search server and terminal client, covering prebuilt binaries, builds from source, Docker, Nix package and flake modules, and Proxmox installs.
 - [zvec-ai/zvec-grep](https://github.com/zvec-ai/zvec-grep) — local-first search layer that unifies ripgrep, BM25, and vector search behind one interface; npm package requiring Node.js 22 or newer, with CLI, MCP, and agent integrations.
+- [umakers/collie-herdr](https://github.com/umakers/collie-herdr) — phone PWA for Herdr over Tailscale, with a Bun bridge and a React frontend. See the [package and trust boundaries](pkgs/collie-herdr/UPSTREAM.md).
+- [searxng/searxng](https://github.com/searxng/searxng) — metasearch engine used by the SearXNG Clan service through the locked NixOS package.
+- [czottmann/kagi-ken](https://github.com/czottmann/kagi-ken/tree/2d29014586a1f7fc012c4073890adc6987711d6f) — protocol and HTML selector reference for the private Kagi session engine. See [its credential and validation boundaries](modules/searxng/KAGI.md).
+- [cachix/factorseal](https://github.com/cachix/factorseal/tree/848c0ceb9f500b7be5d6a15e63d8113ddcde619a) — pinned Linux vault packages and NixOS module for disposable evaluation secrets only.
+- [NixOS/nixos-search](https://github.com/NixOS/nixos-search/tree/3a7f0dcc6d2071602e90616a62422bdea9094e62) — public options-search protocol for NixOS and Home Manager.
+- [nix-community/noogle](https://github.com/nix-community/noogle/tree/bdba2c8085ab4756f3bbb789574c705cab8f42a1) — public function catalog used by the [specialist search engines](modules/searxng/DEVELOPERS.md).
+- [brittonr/drift](https://github.com/brittonr/drift/tree/bb8c23f97c37bb48775d96699a2a1b8dbe26f8be) — protocol and credential-schema reference for [Tidal catalog search](modules/searxng/TIDAL.md).
 

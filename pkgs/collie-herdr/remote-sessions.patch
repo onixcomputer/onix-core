@@ -1,0 +1,85 @@
+diff --git a/bridge/config.ts b/bridge/config.ts
+index 96483c0..6e0ecd6 100644
+--- a/bridge/config.ts
++++ b/bridge/config.ts
+@@ -3,6 +3,7 @@ import { join } from "node:path";
+ 
+ import type { DialMode } from "./dial.ts";
+ import type { JournalRoots } from "./journal/registry.ts";
++import { parseRemoteSessionNames } from "./remote-sessions.ts";
+ 
+ // All bridge configuration, resolved once at startup. Env-driven so the systemd unit and the
+ // plugin launcher can configure it without code changes. Defaults are safe for a single-user,
+@@ -169,6 +170,8 @@ export interface Config {
+    * already-discovered session; they never build a filesystem path.
+    */
+   multiSession: boolean;
++  /** Session aliases whose sockets reach another host, without a shared filesystem. */
++  remoteSessions?: readonly string[];
+   /**
+    * Whether `tailscale serve` is bypassed (COLLIE_SKIP_SERVE=1) because an operator-run reverse
+    * proxy (Caddy/Nginx) fronts the loopback bridge instead. The bridge itself handles every request
+@@ -242,6 +245,7 @@ export function loadConfig(): Config {
+     vapidSubject: process.env.COLLIE_VAPID_SUBJECT ?? "mailto:admin@example.com",
+     stateDir,
+     multiSession: envBool("COLLIE_MULTI_SESSION", true),
++    remoteSessions: parseRemoteSessionNames(process.env.COLLIE_REMOTE_SESSIONS),
+     skipServe: envBool("COLLIE_SKIP_SERVE", false),
+   };
+ }
+diff --git a/bridge/server.ts b/bridge/server.ts
+index 29a5e6c..22732b4 100644
+--- a/bridge/server.ts
++++ b/bridge/server.ts
+@@ -14,6 +14,7 @@ import {
+ } from "./prompt-binding.ts";
+ import type { Push, PushSubscription } from "./push.ts";
+ import { herdTagFor, type SessionRegistry } from "./sessions.ts";
++import { hasLocalSessionFiles, REMOTE_FILES_UNAVAILABLE_STATUS } from "./remote-sessions.ts";
+ import type { Snooze } from "./snooze.ts";
+ import type { UpdateMonitor } from "./update.ts";
+ import type { StateEngine } from "./state-engine.ts";
+@@ -180,6 +181,8 @@ export function startServer(opts: {
+         const rt = registry.get(sessionName);
+         if (!rt) return unknownSession();
+         const { agents, shellPanes, workspaces, tabs, bridge } = rt.engine.current();
++        const hasSessionJournal = (agent: string) =>
++          hasLocalSessionFiles(rt.name, cfg.remoteSessions) && hasJournal(agent);
+         const device = deviceAuth(req, cfg);
+         // Attach each pane's activity timestamps. Done here rather than in the state engine so the
+         // engine stays a pure Herdr-poller with no knowledge of the ledger — and so the two numbers
+@@ -201,8 +204,8 @@ export function startServer(opts: {
+             // journal for doesn't advertise a History button that can only ever come back empty.
+             // withActivity runs FIRST: it returns an AgentView, which is what toPaneWire consumes,
+             // and the two timestamps then ride through its rest-spread onto the wire shape.
+-            agents: agents.map((p) => toPaneWire(withActivity(p), hasJournal)),
+-            shellPanes: shellPanes.map((p) => toPaneWire(withActivity(p), hasJournal)),
++            agents: agents.map((p) => toPaneWire(withActivity(p), hasSessionJournal)),
++            shellPanes: shellPanes.map((p) => toPaneWire(withActivity(p), hasSessionJournal)),
+             workspaces,
+             tabs,
+             sessions: registry.list(),
+@@ -258,6 +261,7 @@ export function startServer(opts: {
+         const rt = registry.get(sessionName);
+         if (!rt) return unknownSession();
+         const { herdr, name: session } = rt;
++        const localFiles = hasLocalSessionFiles(session, cfg.remoteSessions);
+         // You are in this pane: reading it, replying, sending keys, browsing its history. That is
+         // the whole definition of "seen" (.adr/0003), and this is the one place every such request
+         // passes through. It cannot false-positive from background polling — the dashboard loader
+@@ -275,10 +279,13 @@ export function startServer(opts: {
+ 
+         if (!action && req.method === "GET") return readPane(herdr, cfg, paneId, url, req);
+         if (action === "history" && req.method === "GET")
+-          return paneHistory(cfg, journals, transcripts, rt.engine, paneId, url, req);
++          return paneHistory(cfg, localFiles ? journals : null, localFiles ? transcripts : null, rt.engine, paneId, url, req);
+         if (action === "reply" && req.method === "POST") return replyPane(herdr, cfg, paneId, req, audit, device, session);
+         if (action === "keys" && req.method === "POST") return keysPane(herdr, cfg, paneId, req, audit, device, session);
+-        if (action === "upload" && req.method === "POST") return uploadPane(cfg, paneId, req, audit, device, session);
++        if (action === "upload" && req.method === "POST") {
++          if (!localFiles) return jsonError("Image uploads are unavailable for remote sessions.", REMOTE_FILES_UNAVAILABLE_STATUS, req.headers.get("accept-encoding"));
++          return uploadPane(cfg, paneId, req, audit, device, session);
++        }
+         if (action === "close" && req.method === "POST") return closePane(herdr, paneId, req, audit, device, session);
+         if (action === "rename" && req.method === "POST") return renamePane(herdr, paneId, req, audit, device, session);
+         return text("method not allowed", 405);

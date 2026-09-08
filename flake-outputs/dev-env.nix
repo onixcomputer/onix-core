@@ -162,6 +162,7 @@ let
         # vendored sources mirror their origin repositories byte for byte;
         # the origin toolchain owns their formatting
         "pkgs/herdr/vendor/**"
+        "pkgs/collie-herdr/dist/**"
 
       ];
 
@@ -300,7 +301,7 @@ in
             self'.packages.claude-md
             # Query the nixpkgs-multiverse index and maintain multiverse.lock
             # (offline; see AGENTS.md "Package pinning")
-            inputs'.multiverse.packages.mvs
+            inputs'.multiverse.mvs
           ]
           ++ lib.optionals (self'.packages ? tracey) [ self'.packages.tracey ]
           ++ [

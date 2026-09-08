@@ -71,7 +71,7 @@
 
   security = {
     apparmor.enable = true;
-    unprivilegedUsernsClone = true; # For rootless containers
+    allowUserNamespaces = true; # For rootless containers
   };
 
   systemd = {

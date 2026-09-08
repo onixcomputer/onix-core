@@ -1,0 +1,4 @@
+# Enable the full catalog from the immutable Octet input in flake.nix.
+[octet]
+# Report encoding and UEFI operations belong to the imperative shell.
+core_source_scopes = ["src/domain.rs"]

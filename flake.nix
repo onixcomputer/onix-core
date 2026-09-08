@@ -68,6 +68,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Unaudited vault prototype: opt-in only, never a default keyring.
+    factorseal = {
+      url = "github:cachix/factorseal/848c0ceb9f500b7be5d6a15e63d8113ddcde619a";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     fast-nix-gc = {
       url = "github:Mic92/fast-nix-gc";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -246,7 +252,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     drift = {
-      url = "github:brittonr/drift";
+      url = "github:brittonr/drift/bb8c23f97c37bb48775d96699a2a1b8dbe26f8be";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         rust-overlay.follows = "rust-overlay";
@@ -308,6 +314,7 @@
         ./flake-outputs/dev-env.nix # formatter, pre-commit, devShells, MCP
         ./flake-outputs/tools.nix # CLI tools (acl, vars, tags, merge-when-green, etc.)
         ./flake-outputs/ttwkv7.nix # Unfree standalone TT-Metalium operator package
+        ./flake-outputs/factorseal.nix # Opt-in hardware vault prototype
       ];
       flake =
         (import ./flake-outputs/clan.nix {

@@ -1,6 +1,14 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  osConfig ? { },
+  ...
+}:
 let
   inherit (config) mpdConfig;
+  remote = osConfig.services.drift-rustfs or { };
+  storageOverrides = lib.optionalAttrs (remote.enable or false) remote.clientConfig;
 
   # TOML generation — nix attrs → drift config.toml
   driftConfig = {
@@ -58,30 +66,14 @@ let
       metadata_cache_ttl_minutes = 60;
       wal_max_entries = 1000;
       wal_max_age_days = 7;
-    };
+    }
+    // storageOverrides;
   };
 
-  # Convert nix attrs to TOML format
-  tomlValue =
-    v:
-    if builtins.isBool v then
-      (if v then "true" else "false")
-    else if builtins.isInt v then
-      toString v
-    else if builtins.isString v then
-      ''"${v}"''
-    else
-      toString v;
-
-  tomlSection =
-    name: attrs:
-    "[${name}]\n"
-    + lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: "${k} = ${tomlValue v}") attrs);
-
-  configToml = lib.concatStringsSep "\n\n" (lib.mapAttrsToList tomlSection driftConfig);
+  configToml = (pkgs.formats.toml { }).generate "drift-config.toml" driftConfig;
 in
 {
   xdg.configFile."drift/config.toml" = {
-    text = configToml;
+    source = configToml;
   };
 }

@@ -97,6 +97,7 @@ let { Machines, .. } = import "contracts.ncl" in
       system = "x86_64-linux",
       addresses.lan = "10.10.10.1",
       tags = [
+        "llm-client",
         "hm-server",
         "boot-partition-gc",
         "minimal-docs",

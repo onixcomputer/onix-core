@@ -49,9 +49,12 @@ let
   radicleSeedReplicaChecks = (import ./_radicle-seed-replica-checks.nix) innerArgs;
   radicleSourceAdmissionChecks = (import ./_radicle-source-admission-checks.nix) innerArgs;
   seaglassKilnCiChecks = (import ./_seaglass-kiln-ci-checks.nix) innerArgs;
+  desktopTailnetProxyChecks = (import ./_desktop-tailnet-proxy-checks.nix) innerArgs;
   kilnAspenCanaryChecks = (import ./_kiln-aspen-canary-checks.nix) innerArgs;
   kilnAspenRadicleCiChecks = (import ./_kiln-aspen-radicle-ci-checks.nix) innerArgs;
   multiverseChecks = (import ./_multiverse-checks.nix) innerArgs;
+  searxngChecks = (import ./_searxng-checks.nix) innerArgs;
+  driftRustfsChecks = (import ./_drift-rustfs-checks.nix) innerArgs;
 
   packageChecks = lib.mapAttrs' (n: lib.nameValuePair "package-${n}") self'.packages;
   devShellChecks = lib.mapAttrs' (n: lib.nameValuePair "devShell-${n}") self'.devShells;
@@ -70,6 +73,7 @@ in
     // (grafanaChecks.checks or { })
     // (helixChecks.checks or { })
     // (homeManagerChecks.checks or { })
+    // driftRustfsChecks.checks
     // (kacheNixRustChecks.checks or { })
     // (meshLlmChecks.checks or { })
     // (dgxSparkPowerChecks.checks or { })
@@ -84,9 +88,11 @@ in
     // (radicleSeedReplicaChecks.checks or { })
     // (radicleSourceAdmissionChecks.checks or { })
     // (seaglassKilnCiChecks.checks or { })
+    // (desktopTailnetProxyChecks.checks or { })
     // (kilnAspenCanaryChecks.checks or { })
     // (kilnAspenRadicleCiChecks.checks or { })
     // (multiverseChecks.checks or { })
+    // (searxngChecks.checks or { })
     // packageChecks
     // devShellChecks;
 }

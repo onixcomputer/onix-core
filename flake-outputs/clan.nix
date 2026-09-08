@@ -27,6 +27,9 @@ in
   clan = clanModule.config;
 
   nixosModules.dgxMachine = ../modules/dgx-machine;
+  nixosModules.factorseal = import ../modules/factorseal/nixos.nix {
+    inherit (inputs) factorseal;
+  };
 
   lib = {
     # Wasm plugin library — call with a system string to get evalNickelFile, fromYAML, etc.

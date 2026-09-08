@@ -49,6 +49,24 @@ let
   statusSyncUnit = "${statusSyncServiceName}.service";
   ciStatusNamespaceNodeId = "z6MkkQCj5EczNiVzDzCkX9ewHNJ7NDEXSKbuRiS1x7o72yeG";
   brokerPackage = desktopConfig.services.radicle.ci.broker.package;
+  brokerSource = builtins.readFile "${brokerPackage.src}/src/cob.rs";
+  brokerNamespaceDeclaration = "let namespace = node.nid().map_err(JobError::announce)?;";
+  brokerNamespaceCall = "node.announce(repo_id, [namespace], TIMEOUT, announcer, |_, _| ())";
+  brokerEmptyNamespaceCall = "node.announce(repo_id, [], TIMEOUT, announcer, |_, _| ())";
+  brokerAnnouncesNamespace =
+    source:
+    lib.hasInfix brokerNamespaceDeclaration source
+    && lib.hasInfix brokerNamespaceCall source
+    && !(lib.hasInfix brokerEmptyNamespaceCall source);
+  brokerNamespaceChecksValid =
+    brokerAnnouncesNamespace brokerSource
+    && !(brokerAnnouncesNamespace "")
+    && !(brokerAnnouncesNamespace (
+      builtins.replaceStrings [ brokerNamespaceCall ] [ brokerEmptyNamespaceCall ] brokerSource
+    ))
+    && !(brokerAnnouncesNamespace (
+      builtins.replaceStrings [ brokerNamespaceDeclaration ] [ "" ] brokerSource
+    ));
   radicleStateDirectory = "/var/lib/radicle";
   expectedStatusSyncPaths = [
     "${sourcePath}/refs/namespaces/${ciStatusNamespaceNodeId}/refs/rad/sigrefs"
@@ -271,9 +289,7 @@ let
     && !(builtins.elem sourceGroup radicleGroups)
     && !(builtins.elem reportGroup hostGroups)
     && !(builtins.elem sourceGroup hostGroups)
-    && builtins.length brokerPackage.patches == 1
-    &&
-      builtins.match ".*announce-namespace.*" (toString (builtins.elemAt brokerPackage.patches 0)) != null
+    && brokerNamespaceChecksValid
     && quarantineTmpfile.user == "root"
     && quarantineTmpfile.group == "root"
     && reportTmpfile.user == "radicle"
