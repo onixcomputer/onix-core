@@ -482,169 +482,177 @@ in
               }
             ];
 
-            users.groups.${socketGroup} = lib.mkIf settings.enable { };
-            users.users.${hostUser} = lib.mkIf settings.enable {
-              isSystemUser = true;
-              uid = settings.hostUid;
-              group = socketGroup;
-              home = settings.hostStateDir;
-              createHome = false;
-            };
-            users.users.${latticeUser} = lib.mkIf settings.enable {
-              isSystemUser = true;
-              uid = settings.latticeUid;
-              group = socketGroup;
-              home = settings.latticeStateDir;
-              createHome = false;
-            };
-
-            systemd.tmpfiles.settings."10-${runtimeName}" = lib.mkIf settings.enable {
-              ${settings.hostStateDir}.d = {
-                mode = privateDirectoryMode;
-                user = hostUser;
-                group = socketGroup;
-              };
-              ${receiptDirectory}.d = {
-                mode = privateDirectoryMode;
-                user = hostUser;
-                group = socketGroup;
-              };
-              ${settings.latticeStateDir}.d = {
-                mode = privateDirectoryMode;
-                user = latticeUser;
-                group = socketGroup;
-              };
-              ${runtimeDirectory}.d = {
-                mode = runtimeDirectoryMode;
-                user = latticeUser;
-                group = socketGroup;
+            users = {
+              groups.${socketGroup} = lib.mkIf settings.enable { };
+              users = {
+                ${hostUser} = lib.mkIf settings.enable {
+                  isSystemUser = true;
+                  uid = settings.hostUid;
+                  group = socketGroup;
+                  home = settings.hostStateDir;
+                  createHome = false;
+                };
+                ${latticeUser} = lib.mkIf settings.enable {
+                  isSystemUser = true;
+                  uid = settings.latticeUid;
+                  group = socketGroup;
+                  home = settings.latticeStateDir;
+                  createHome = false;
+                };
               };
             };
 
-            # r[impl onix.kiln_aspen_canary.composition.accepted]
-            systemd.services.${latticeServiceName} = lib.mkIf settings.enable {
-              description = "Exact Lattice workflow exchange for ${runtimeName}";
-              wantedBy = [ "multi-user.target" ];
-              before = [ hostUnit ];
-              serviceConfig = commonHardening // {
-                Type = "exec";
-                User = latticeUser;
-                Group = socketGroup;
-                WorkingDirectory = settings.latticeStateDir;
-                ExecStartPre = [
-                  (lib.getExe removeStaleLatticeSocket)
-                  (lib.getExe latticePrepare)
-                ];
-                ExecStart = lib.escapeShellArgs [
-                  latticeExecutable
-                  "--config"
-                  (toString latticeConfig)
-                  "workflow-exchange"
-                  "serve"
-                  "--profile"
-                  (toString latticeHandlerProfile)
-                ];
-                ExecStartPost = lib.getExe grantLatticeSocket;
-                ReadWritePaths = [
-                  settings.latticeStateDir
-                  runtimeDirectory
-                ];
-                MemoryMax = latticeMemoryMaximum;
-                CPUQuota = latticeCpuQuota;
-                TasksMax = latticeTasksMaximum;
-                Restart = "on-failure";
-                RestartSec = serviceRestartDelay;
-                TimeoutStopSec = serviceStopTimeout;
+            systemd = {
+              tmpfiles.settings."10-${runtimeName}" = lib.mkIf settings.enable {
+                ${settings.hostStateDir}.d = {
+                  mode = privateDirectoryMode;
+                  user = hostUser;
+                  group = socketGroup;
+                };
+                ${receiptDirectory}.d = {
+                  mode = privateDirectoryMode;
+                  user = hostUser;
+                  group = socketGroup;
+                };
+                ${settings.latticeStateDir}.d = {
+                  mode = privateDirectoryMode;
+                  user = latticeUser;
+                  group = socketGroup;
+                };
+                ${runtimeDirectory}.d = {
+                  mode = runtimeDirectoryMode;
+                  user = latticeUser;
+                  group = socketGroup;
+                };
               };
-            };
 
-            # r[impl onix.kiln_aspen_canary.completion.accepted]
-            systemd.services.${hostServiceName} = lib.mkIf settings.enable {
-              description = "Kiln semantics hosted by Aspen for ${runtimeName}";
-              wantedBy = [ "multi-user.target" ];
-              after = [ latticeUnit ];
-              requires = [ latticeUnit ];
-              serviceConfig = commonHardening // {
-                Type = "exec";
-                User = hostUser;
-                Group = socketGroup;
-                WorkingDirectory = settings.hostStateDir;
-                ExecStartPre = lib.getExe removeStaleAspenSocket;
-                ExecStart = lib.escapeShellArgs [
-                  hostExecutable
-                  "--aspen-profile"
-                  (toString aspenProfile)
-                  "--radicle-profile"
-                  (toString radicleProfile)
-                  "--socket"
-                  aspenSocket
-                  "--extension"
-                  extensionExecutable
-                  "--state-root"
-                  settings.hostStateDir
-                  "--max-requests"
-                  (toString settings.maximumRequests)
-                  "--timeout-ms"
-                  (toString settings.timeoutMilliseconds)
-                ];
-                ReadWritePaths = [
-                  settings.hostStateDir
-                  runtimeDirectory
-                ];
-                MemoryMax = hostMemoryMaximum;
-                CPUQuota = hostCpuQuota;
-                TasksMax = hostTasksMaximum;
-                Restart = "no";
-                TimeoutStopSec = serviceStopTimeout;
-              };
-            };
+              services = {
+                # r[impl onix.kiln_aspen_canary.composition.accepted]
+                ${latticeServiceName} = lib.mkIf settings.enable {
+                  description = "Exact Lattice workflow exchange for ${runtimeName}";
+                  wantedBy = [ "multi-user.target" ];
+                  before = [ hostUnit ];
+                  serviceConfig = commonHardening // {
+                    Type = "exec";
+                    User = latticeUser;
+                    Group = socketGroup;
+                    WorkingDirectory = settings.latticeStateDir;
+                    ExecStartPre = [
+                      (lib.getExe removeStaleLatticeSocket)
+                      (lib.getExe latticePrepare)
+                    ];
+                    ExecStart = lib.escapeShellArgs [
+                      latticeExecutable
+                      "--config"
+                      (toString latticeConfig)
+                      "workflow-exchange"
+                      "serve"
+                      "--profile"
+                      (toString latticeHandlerProfile)
+                    ];
+                    ExecStartPost = lib.getExe grantLatticeSocket;
+                    ReadWritePaths = [
+                      settings.latticeStateDir
+                      runtimeDirectory
+                    ];
+                    MemoryMax = latticeMemoryMaximum;
+                    CPUQuota = latticeCpuQuota;
+                    TasksMax = latticeTasksMaximum;
+                    Restart = "on-failure";
+                    RestartSec = serviceRestartDelay;
+                    TimeoutStopSec = serviceStopTimeout;
+                  };
+                };
 
-            # Operator-only units have no wantedBy target and cannot receive broker events.
-            systemd.services."${runtimeName}-accepted" = lib.mkIf settings.enable (mkOperatorService {
-              description = "Run one accepted Kiln-on-Aspen private canary";
-              executable = acceptedClient;
-              requiresHost = true;
-            });
-            systemd.services."${runtimeName}-rejected" = lib.mkIf settings.enable (mkOperatorService {
-              description = "Run one denied Kiln-on-Aspen private canary";
-              executable = rejectedClient;
-              requiresHost = true;
-            });
-            systemd.services."${runtimeName}-unavailable" = lib.mkIf settings.enable (mkOperatorService {
-              description = "Prove an unavailable Aspen endpoint fails without fallback";
-              executable = unavailableClient;
-              requiresHost = false;
-            });
-            systemd.services."${runtimeName}-rollback-lattice" = lib.mkIf settings.enable (mkOperatorService {
-              description = "Run the explicit operator-selected Lattice rollback path";
-              executable = rollbackClient;
-              requiresHost = false;
-            });
+                # r[impl onix.kiln_aspen_canary.completion.accepted]
+                ${hostServiceName} = lib.mkIf settings.enable {
+                  description = "Kiln semantics hosted by Aspen for ${runtimeName}";
+                  wantedBy = [ "multi-user.target" ];
+                  after = [ latticeUnit ];
+                  requires = [ latticeUnit ];
+                  serviceConfig = commonHardening // {
+                    Type = "exec";
+                    User = hostUser;
+                    Group = socketGroup;
+                    WorkingDirectory = settings.hostStateDir;
+                    ExecStartPre = lib.getExe removeStaleAspenSocket;
+                    ExecStart = lib.escapeShellArgs [
+                      hostExecutable
+                      "--aspen-profile"
+                      (toString aspenProfile)
+                      "--radicle-profile"
+                      (toString radicleProfile)
+                      "--socket"
+                      aspenSocket
+                      "--extension"
+                      extensionExecutable
+                      "--state-root"
+                      settings.hostStateDir
+                      "--max-requests"
+                      (toString settings.maximumRequests)
+                      "--timeout-ms"
+                      (toString settings.timeoutMilliseconds)
+                    ];
+                    ReadWritePaths = [
+                      settings.hostStateDir
+                      runtimeDirectory
+                    ];
+                    MemoryMax = hostMemoryMaximum;
+                    CPUQuota = hostCpuQuota;
+                    TasksMax = hostTasksMaximum;
+                    Restart = "no";
+                    TimeoutStopSec = serviceStopTimeout;
+                  };
+                };
 
-            # r[impl onix.kiln_aspen_canary.failure.unknown]
-            systemd.services."${runtimeName}-uncertain" = lib.mkIf settings.enable {
-              description = "Prove disconnect after provider request write remains Unknown";
-              after = [
-                latticeUnit
-                hostUnit
-              ];
-              requires = [
-                latticeUnit
-                hostUnit
-              ];
-              serviceConfig = commonHardening // {
-                Type = "oneshot";
-                User = hostUser;
-                Group = socketGroup;
-                ExecStart = lib.getExe uncertainClient;
-                ReadWritePaths = [
-                  settings.hostStateDir
-                  runtimeDirectory
-                ];
-                MemoryMax = hostMemoryMaximum;
-                CPUQuota = hostCpuQuota;
-                TasksMax = hostTasksMaximum;
-                TimeoutStartSec = serviceStopTimeout;
+                # Operator-only units have no wantedBy target and cannot receive broker events.
+                "${runtimeName}-accepted" = lib.mkIf settings.enable (mkOperatorService {
+                  description = "Run one accepted Kiln-on-Aspen private canary";
+                  executable = acceptedClient;
+                  requiresHost = true;
+                });
+                "${runtimeName}-rejected" = lib.mkIf settings.enable (mkOperatorService {
+                  description = "Run one denied Kiln-on-Aspen private canary";
+                  executable = rejectedClient;
+                  requiresHost = true;
+                });
+                "${runtimeName}-unavailable" = lib.mkIf settings.enable (mkOperatorService {
+                  description = "Prove an unavailable Aspen endpoint fails without fallback";
+                  executable = unavailableClient;
+                  requiresHost = false;
+                });
+                "${runtimeName}-rollback-lattice" = lib.mkIf settings.enable (mkOperatorService {
+                  description = "Run the explicit operator-selected Lattice rollback path";
+                  executable = rollbackClient;
+                  requiresHost = false;
+                });
+
+                # r[impl onix.kiln_aspen_canary.failure.unknown]
+                "${runtimeName}-uncertain" = lib.mkIf settings.enable {
+                  description = "Prove disconnect after provider request write remains Unknown";
+                  after = [
+                    latticeUnit
+                    hostUnit
+                  ];
+                  requires = [
+                    latticeUnit
+                    hostUnit
+                  ];
+                  serviceConfig = commonHardening // {
+                    Type = "oneshot";
+                    User = hostUser;
+                    Group = socketGroup;
+                    ExecStart = lib.getExe uncertainClient;
+                    ReadWritePaths = [
+                      settings.hostStateDir
+                      runtimeDirectory
+                    ];
+                    MemoryMax = hostMemoryMaximum;
+                    CPUQuota = hostCpuQuota;
+                    TasksMax = hostTasksMaximum;
+                    TimeoutStartSec = serviceStopTimeout;
+                  };
+                };
               };
             };
           };

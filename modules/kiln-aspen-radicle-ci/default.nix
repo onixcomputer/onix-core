@@ -618,320 +618,330 @@ in
               }
             ];
 
-            users.groups = lib.mkIf settings.enable {
-              ${hostUser} = { };
-              ${latticeUser} = { };
-              ${ingressGroup} = { };
-              ${internalGroup} = { };
-              ${sourceGroup} = { };
-              ${reportGroup} = { };
-            };
-            users.users.${hostUser} = lib.mkIf settings.enable {
-              isSystemUser = true;
-              uid = settings.hostUid;
-              group = hostUser;
-              extraGroups = [
-                ingressGroup
-                internalGroup
-              ];
-              home = settings.hostStateDir;
-              createHome = false;
-            };
-            users.users.${latticeUser} = lib.mkIf settings.enable {
-              isSystemUser = true;
-              uid = settings.latticeUid;
-              group = latticeUser;
-              extraGroups = [
-                internalGroup
-                sourceGroup
-                reportGroup
-              ];
-              home = settings.latticeStateDir;
-              createHome = false;
-            };
-            users.users.radicle.extraGroups = lib.mkIf settings.enable [
-              ingressGroup
-              reportGroup
-            ];
-
-            systemd.tmpfiles.settings."10-${runtimeName}" = lib.mkIf settings.enable {
-              "/var/lib/kiln-aspen-radicle-ci".d = {
-                mode = traversalDirectoryMode;
-                user = "root";
-                group = "root";
+            users = {
+              groups = lib.mkIf settings.enable {
+                ${hostUser} = { };
+                ${latticeUser} = { };
+                ${ingressGroup} = { };
+                ${internalGroup} = { };
+                ${sourceGroup} = { };
+                ${reportGroup} = { };
               };
-              ${settings.hostStateDir}.d = {
-                mode = privateDirectoryMode;
-                user = hostUser;
-                group = hostUser;
-              };
-              ${quarantineDirectory}.d = {
-                mode = privateDirectoryMode;
-                user = "root";
-                group = "root";
-              };
-              ${settings.latticeStateDir}.d = {
-                mode = privateDirectoryMode;
-                user = latticeUser;
-                group = latticeUser;
-              };
-              ${providerWorkDirectory}.d = {
-                mode = privateDirectoryMode;
-                user = latticeUser;
-                group = latticeUser;
-              };
-              ${builtins.dirOf settings.sourceView}.d = {
-                mode = sourceViewMode;
-                user = "root";
-                group = sourceGroup;
-              };
-              ${settings.sourceView}.d = {
-                mode = sourceViewMode;
-                user = "root";
-                group = sourceGroup;
-              };
-              ${settings.reportPath}.d = {
-                mode = sharedDirectoryMode;
-                user = "radicle";
-                group = reportGroup;
-              };
-              "${settings.reportPath}/${settings.reportNamespace}".d = {
-                mode = sharedDirectoryMode;
-                user = "radicle";
-                group = reportGroup;
-              };
-              ${settings.reportView}.d = {
-                mode = sharedDirectoryMode;
-                user = latticeUser;
-                group = reportGroup;
-              };
-              ${reportNamespacePath}.d = {
-                mode = sharedDirectoryMode;
-                user = latticeUser;
-                group = reportGroup;
-              };
-              ${runtimeDirectory}.d = {
-                mode = traversalDirectoryMode;
-                user = "root";
-                group = "root";
-              };
-              ${ingressDirectory}.d = {
-                mode = sharedDirectoryMode;
-                user = hostUser;
-                group = ingressGroup;
-              };
-              ${internalDirectory}.d = {
-                mode = sharedDirectoryMode;
-                user = latticeUser;
-                group = internalGroup;
-              };
-            };
-
-            systemd.services.${sourceServiceName} = lib.mkIf settings.enable {
-              description = "Admit the exact read-only Seaglass repository view for ${runtimeName}";
-              after = [ "radicle-node.service" ];
-              before = [ latticeUnit ];
-              serviceConfig = sourceAdmissionHardening // {
-                Type = "oneshot";
-                ExecStart = lib.getExe sourceAdmission;
-                RemainAfterExit = true;
-                User = "root";
-                Group = "root";
-              };
-            };
-
-            # r[impl onix.radicle_ci.aspen_authority.source_readiness]
-            systemd.services.${sourceRefreshServiceName} = lib.mkIf settings.enable {
-              description = "Refresh Seaglass source-view admission after repository mutation for ${runtimeName}";
-              after = [ sourceUnit ];
-              requires = [ sourceUnit ];
-              serviceConfig = sourceAdmissionHardening // {
-                Type = "oneshot";
-                ExecStart = lib.getExe sourceAdmission;
-                User = "root";
-                Group = "root";
-              };
-            };
-
-            systemd.paths.${sourceRefreshServiceName} = lib.mkIf settings.enable {
-              description = "Watch admitted Seaglass objects and refs for ${runtimeName}";
-              wantedBy = [ "multi-user.target" ];
-              after = [ sourceUnit ];
-              wants = [ sourceUnit ];
-              pathConfig = {
-                Unit = sourceRefreshUnit;
-                PathModified = [
-                  "${settings.sourcePath}/objects/pack"
-                  "${settings.sourcePath}/refs/heads/master"
-                  "${settings.sourcePath}/refs/namespaces/${sourceOwnerNodeId}/refs/heads/master"
+              users = {
+                ${hostUser} = lib.mkIf settings.enable {
+                  isSystemUser = true;
+                  uid = settings.hostUid;
+                  group = hostUser;
+                  extraGroups = [
+                    ingressGroup
+                    internalGroup
+                  ];
+                  home = settings.hostStateDir;
+                  createHome = false;
+                };
+                ${latticeUser} = lib.mkIf settings.enable {
+                  isSystemUser = true;
+                  uid = settings.latticeUid;
+                  group = latticeUser;
+                  extraGroups = [
+                    internalGroup
+                    sourceGroup
+                    reportGroup
+                  ];
+                  home = settings.latticeStateDir;
+                  createHome = false;
+                };
+                radicle.extraGroups = lib.mkIf settings.enable [
+                  ingressGroup
+                  reportGroup
                 ];
               };
             };
 
-            # r[impl onix.radicle_ci.status_sync]
-            systemd.services.${statusSyncServiceName} = lib.mkIf settings.enable {
-              description = "Propagate admitted CI status to connected peers for ${runtimeName}";
-              after = [ "radicle-node.service" ];
-              serviceConfig = {
-                Type = "oneshot";
-                ExecStart = lib.escapeShellArgs [
-                  "/run/current-system/sw/bin/rad"
-                  "sync"
-                  "--timeout"
-                  statusSyncTimeout
-                  settings.repository
-                ];
-                User = "radicle";
-                Group = "radicle";
-                Environment = [
-                  "HOME=${radicleStateDir}"
-                  "RAD_HOME=${radicleStateDir}"
-                ];
-                RuntimeMaxSec = statusSyncMaximumRuntime;
-                MemoryMax = statusSyncMemoryMaximum;
-                CPUQuota = statusSyncCpuQuota;
-                NoNewPrivileges = true;
-                PrivateTmp = true;
-                PrivateDevices = true;
-                ProtectSystem = "strict";
-                ProtectHome = true;
-                RestrictAddressFamilies = [ "AF_UNIX" ];
-                ReadWritePaths = [ "${radicleStateDir}/.cache" ];
+            systemd = {
+              tmpfiles.settings."10-${runtimeName}" = lib.mkIf settings.enable {
+                "/var/lib/kiln-aspen-radicle-ci".d = {
+                  mode = traversalDirectoryMode;
+                  user = "root";
+                  group = "root";
+                };
+                ${settings.hostStateDir}.d = {
+                  mode = privateDirectoryMode;
+                  user = hostUser;
+                  group = hostUser;
+                };
+                ${quarantineDirectory}.d = {
+                  mode = privateDirectoryMode;
+                  user = "root";
+                  group = "root";
+                };
+                ${settings.latticeStateDir}.d = {
+                  mode = privateDirectoryMode;
+                  user = latticeUser;
+                  group = latticeUser;
+                };
+                ${providerWorkDirectory}.d = {
+                  mode = privateDirectoryMode;
+                  user = latticeUser;
+                  group = latticeUser;
+                };
+                ${builtins.dirOf settings.sourceView}.d = {
+                  mode = sourceViewMode;
+                  user = "root";
+                  group = sourceGroup;
+                };
+                ${settings.sourceView}.d = {
+                  mode = sourceViewMode;
+                  user = "root";
+                  group = sourceGroup;
+                };
+                ${settings.reportPath}.d = {
+                  mode = sharedDirectoryMode;
+                  user = "radicle";
+                  group = reportGroup;
+                };
+                "${settings.reportPath}/${settings.reportNamespace}".d = {
+                  mode = sharedDirectoryMode;
+                  user = "radicle";
+                  group = reportGroup;
+                };
+                ${settings.reportView}.d = {
+                  mode = sharedDirectoryMode;
+                  user = latticeUser;
+                  group = reportGroup;
+                };
+                ${reportNamespacePath}.d = {
+                  mode = sharedDirectoryMode;
+                  user = latticeUser;
+                  group = reportGroup;
+                };
+                ${runtimeDirectory}.d = {
+                  mode = traversalDirectoryMode;
+                  user = "root";
+                  group = "root";
+                };
+                ${ingressDirectory}.d = {
+                  mode = sharedDirectoryMode;
+                  user = hostUser;
+                  group = ingressGroup;
+                };
+                ${internalDirectory}.d = {
+                  mode = sharedDirectoryMode;
+                  user = latticeUser;
+                  group = internalGroup;
+                };
               };
-            };
 
-            systemd.paths.${statusSyncServiceName} = lib.mkIf settings.enable {
-              description = "Watch CI status signed refs for ${runtimeName}";
-              wantedBy = [ "multi-user.target" ];
-              after = [ "radicle-node.service" ];
-              pathConfig = {
-                Unit = statusSyncUnit;
-                PathChanged = [
-                  "${settings.sourcePath}/refs/namespaces/${ciStatusNamespaceNodeId}/refs/rad/sigrefs"
-                ];
+              services = {
+                ${sourceServiceName} = lib.mkIf settings.enable {
+                  description = "Admit the exact read-only Seaglass repository view for ${runtimeName}";
+                  after = [ "radicle-node.service" ];
+                  before = [ latticeUnit ];
+                  serviceConfig = sourceAdmissionHardening // {
+                    Type = "oneshot";
+                    ExecStart = lib.getExe sourceAdmission;
+                    RemainAfterExit = true;
+                    User = "root";
+                    Group = "root";
+                  };
+                };
+
+                # r[impl onix.radicle_ci.aspen_authority.source_readiness]
+                ${sourceRefreshServiceName} = lib.mkIf settings.enable {
+                  description = "Refresh Seaglass source-view admission after repository mutation for ${runtimeName}";
+                  after = [ sourceUnit ];
+                  requires = [ sourceUnit ];
+                  serviceConfig = sourceAdmissionHardening // {
+                    Type = "oneshot";
+                    ExecStart = lib.getExe sourceAdmission;
+                    User = "root";
+                    Group = "root";
+                  };
+                };
+
+                # r[impl onix.radicle_ci.status_sync]
+                ${statusSyncServiceName} = lib.mkIf settings.enable {
+                  description = "Propagate admitted CI status to connected peers for ${runtimeName}";
+                  after = [ "radicle-node.service" ];
+                  serviceConfig = {
+                    Type = "oneshot";
+                    ExecStart = lib.escapeShellArgs [
+                      "/run/current-system/sw/bin/rad"
+                      "sync"
+                      "--timeout"
+                      statusSyncTimeout
+                      settings.repository
+                    ];
+                    User = "radicle";
+                    Group = "radicle";
+                    Environment = [
+                      "HOME=${radicleStateDir}"
+                      "RAD_HOME=${radicleStateDir}"
+                    ];
+                    RuntimeMaxSec = statusSyncMaximumRuntime;
+                    MemoryMax = statusSyncMemoryMaximum;
+                    CPUQuota = statusSyncCpuQuota;
+                    NoNewPrivileges = true;
+                    PrivateTmp = true;
+                    PrivateDevices = true;
+                    ProtectSystem = "strict";
+                    ProtectHome = true;
+                    RestrictAddressFamilies = [ "AF_UNIX" ];
+                    ReadWritePaths = [ "${radicleStateDir}/.cache" ];
+                  };
+                };
+
+                # r[impl onix.radicle_ci.status_sync]
+                ${latticeServiceName} = lib.mkIf settings.enable {
+                  description = "Exact production Lattice workflow exchange for ${runtimeName}";
+                  wantedBy = [ "multi-user.target" ];
+                  after = [ sourceUnit ];
+                  requires = [ sourceUnit ];
+                  before = [ hostUnit ];
+                  serviceConfig = latticeHardening // {
+                    Type = "exec";
+                    User = latticeUser;
+                    Group = latticeUser;
+                    WorkingDirectory = settings.latticeStateDir;
+                    ExecStartPre = [
+                      (lib.getExe removeStaleLatticeSocket)
+                      (lib.getExe latticePrepare)
+                    ];
+                    ExecStart = lib.escapeShellArgs [
+                      latticeExecutable
+                      "--config"
+                      (toString latticeConfig)
+                      "workflow-exchange"
+                      "serve"
+                      "--profile"
+                      (toString latticeHandlerProfile)
+                    ];
+                    ExecStartPost = lib.getExe grantLatticeSocket;
+                    ReadOnlyPaths = [ settings.sourceView ];
+                    ReadWritePaths = [
+                      settings.latticeStateDir
+                      internalDirectory
+                      settings.reportView
+                    ];
+                    MemoryMax = latticeMemoryMaximum;
+                    CPUQuota = latticeCpuQuota;
+                    TasksMax = latticeTasksMaximum;
+                    Restart = "on-failure";
+                    RestartSec = serviceRestartDelay;
+                    TimeoutStartSec = serviceStartTimeout;
+                    TimeoutStopSec = serviceStopTimeout;
+                  };
+                };
+
+                ${hostServiceName} = lib.mkIf settings.enable {
+                  description = "Durable production Kiln semantics hosted by Aspen for ${runtimeName}";
+                  wantedBy = [ "multi-user.target" ];
+                  after = [ latticeUnit ];
+                  wants = [ latticeUnit ];
+                  serviceConfig = hostHardening // {
+                    Type = "exec";
+                    User = hostUser;
+                    Group = hostUser;
+                    WorkingDirectory = settings.hostStateDir;
+                    ExecStartPre = lib.getExe removeStaleAspenSocket;
+                    ExecStart = lib.escapeShellArgs [
+                      hostExecutable
+                      "--aspen-profile"
+                      (toString aspenProfile)
+                      "--radicle-profile"
+                      (toString radicleProfile)
+                      "--socket"
+                      aspenSocket
+                      "--extension"
+                      extensionExecutable
+                      "--state-root"
+                      settings.hostStateDir
+                      "--max-requests"
+                      (toString settings.maximumRequests)
+                      "--timeout-ms"
+                      (toString settings.requestTimeoutMilliseconds)
+                      "--poll-interval-ms"
+                      (toString observationPollIntervalMilliseconds)
+                    ];
+                    ExecStartPost = lib.getExe grantAspenSocket;
+                    ReadWritePaths = [
+                      settings.hostStateDir
+                      ingressDirectory
+                      internalDirectory
+                    ];
+                    MemoryMax = hostMemoryMaximum;
+                    CPUQuota = hostCpuQuota;
+                    TasksMax = hostTasksMaximum;
+                    Restart = "always";
+                    RestartSec = serviceRestartDelay;
+                    TimeoutStartSec = serviceStartTimeout;
+                    TimeoutStopSec = serviceStopTimeout;
+                  };
+                };
+
+                # Operator-only direct shadow. It has no wantedBy target and publishes no Radicle status.
+                ${shadowServiceName} = lib.mkIf settings.enable {
+                  description = "Run one direct production Kiln Aspen shadow request";
+                  after = [ hostUnit ];
+                  requires = [ hostUnit ];
+                  serviceConfig = shadowHardening // {
+                    Type = "oneshot";
+                    User = "radicle";
+                    Group = "radicle";
+                    ExecStart = lib.getExe shadowClient;
+                    MemoryMax = shadowMemoryMaximum;
+                    CPUQuota = shadowCpuQuota;
+                    TasksMax = shadowTasksMaximum;
+                    TimeoutStartSec = shadowStartTimeout;
+                  };
+                };
+
+                # Operator-only least-authority probe. It runs with the Lattice mount namespace policy.
+                ${authorityProbeServiceName} = lib.mkIf settings.enable {
+                  description = "Verify the production Lattice source, report, and hidden-path boundary";
+                  after = [ latticeUnit ];
+                  requires = [ latticeUnit ];
+                  serviceConfig = latticeHardening // {
+                    Type = "oneshot";
+                    User = latticeUser;
+                    Group = latticeUser;
+                    ExecStart = lib.getExe authorityProbe;
+                    ReadOnlyPaths = [ settings.sourceView ];
+                    ReadWritePaths = [ settings.reportView ];
+                    MemoryMax = shadowMemoryMaximum;
+                    CPUQuota = shadowCpuQuota;
+                    TasksMax = shadowTasksMaximum;
+                    TimeoutStartSec = serviceStartTimeout;
+                  };
+                };
               };
-            };
 
-            systemd.services.${latticeServiceName} = lib.mkIf settings.enable {
-              description = "Exact production Lattice workflow exchange for ${runtimeName}";
-              wantedBy = [ "multi-user.target" ];
-              after = [ sourceUnit ];
-              requires = [ sourceUnit ];
-              before = [ hostUnit ];
-              serviceConfig = latticeHardening // {
-                Type = "exec";
-                User = latticeUser;
-                Group = latticeUser;
-                WorkingDirectory = settings.latticeStateDir;
-                ExecStartPre = [
-                  (lib.getExe removeStaleLatticeSocket)
-                  (lib.getExe latticePrepare)
-                ];
-                ExecStart = lib.escapeShellArgs [
-                  latticeExecutable
-                  "--config"
-                  (toString latticeConfig)
-                  "workflow-exchange"
-                  "serve"
-                  "--profile"
-                  (toString latticeHandlerProfile)
-                ];
-                ExecStartPost = lib.getExe grantLatticeSocket;
-                ReadOnlyPaths = [ settings.sourceView ];
-                ReadWritePaths = [
-                  settings.latticeStateDir
-                  internalDirectory
-                  settings.reportView
-                ];
-                MemoryMax = latticeMemoryMaximum;
-                CPUQuota = latticeCpuQuota;
-                TasksMax = latticeTasksMaximum;
-                Restart = "on-failure";
-                RestartSec = serviceRestartDelay;
-                TimeoutStartSec = serviceStartTimeout;
-                TimeoutStopSec = serviceStopTimeout;
-              };
-            };
-
-            systemd.services.${hostServiceName} = lib.mkIf settings.enable {
-              description = "Durable production Kiln semantics hosted by Aspen for ${runtimeName}";
-              wantedBy = [ "multi-user.target" ];
-              after = [ latticeUnit ];
-              wants = [ latticeUnit ];
-              serviceConfig = hostHardening // {
-                Type = "exec";
-                User = hostUser;
-                Group = hostUser;
-                WorkingDirectory = settings.hostStateDir;
-                ExecStartPre = lib.getExe removeStaleAspenSocket;
-                ExecStart = lib.escapeShellArgs [
-                  hostExecutable
-                  "--aspen-profile"
-                  (toString aspenProfile)
-                  "--radicle-profile"
-                  (toString radicleProfile)
-                  "--socket"
-                  aspenSocket
-                  "--extension"
-                  extensionExecutable
-                  "--state-root"
-                  settings.hostStateDir
-                  "--max-requests"
-                  (toString settings.maximumRequests)
-                  "--timeout-ms"
-                  (toString settings.requestTimeoutMilliseconds)
-                  "--poll-interval-ms"
-                  (toString observationPollIntervalMilliseconds)
-                ];
-                ExecStartPost = lib.getExe grantAspenSocket;
-                ReadWritePaths = [
-                  settings.hostStateDir
-                  ingressDirectory
-                  internalDirectory
-                ];
-                MemoryMax = hostMemoryMaximum;
-                CPUQuota = hostCpuQuota;
-                TasksMax = hostTasksMaximum;
-                Restart = "always";
-                RestartSec = serviceRestartDelay;
-                TimeoutStartSec = serviceStartTimeout;
-                TimeoutStopSec = serviceStopTimeout;
-              };
-            };
-
-            # Operator-only direct shadow. It has no wantedBy target and publishes no Radicle status.
-            systemd.services.${shadowServiceName} = lib.mkIf settings.enable {
-              description = "Run one direct production Kiln Aspen shadow request";
-              after = [ hostUnit ];
-              requires = [ hostUnit ];
-              serviceConfig = shadowHardening // {
-                Type = "oneshot";
-                User = "radicle";
-                Group = "radicle";
-                ExecStart = lib.getExe shadowClient;
-                MemoryMax = shadowMemoryMaximum;
-                CPUQuota = shadowCpuQuota;
-                TasksMax = shadowTasksMaximum;
-                TimeoutStartSec = shadowStartTimeout;
-              };
-            };
-
-            # Operator-only least-authority probe. It runs with the Lattice mount namespace policy.
-            systemd.services.${authorityProbeServiceName} = lib.mkIf settings.enable {
-              description = "Verify the production Lattice source, report, and hidden-path boundary";
-              after = [ latticeUnit ];
-              requires = [ latticeUnit ];
-              serviceConfig = latticeHardening // {
-                Type = "oneshot";
-                User = latticeUser;
-                Group = latticeUser;
-                ExecStart = lib.getExe authorityProbe;
-                ReadOnlyPaths = [ settings.sourceView ];
-                ReadWritePaths = [ settings.reportView ];
-                MemoryMax = shadowMemoryMaximum;
-                CPUQuota = shadowCpuQuota;
-                TasksMax = shadowTasksMaximum;
-                TimeoutStartSec = serviceStartTimeout;
+              paths = {
+                ${sourceRefreshServiceName} = lib.mkIf settings.enable {
+                  description = "Watch admitted Seaglass objects and refs for ${runtimeName}";
+                  wantedBy = [ "multi-user.target" ];
+                  after = [ sourceUnit ];
+                  wants = [ sourceUnit ];
+                  pathConfig = {
+                    Unit = sourceRefreshUnit;
+                    PathModified = [
+                      "${settings.sourcePath}/objects/pack"
+                      "${settings.sourcePath}/refs/heads/master"
+                      "${settings.sourcePath}/refs/namespaces/${sourceOwnerNodeId}/refs/heads/master"
+                    ];
+                  };
+                };
+                ${statusSyncServiceName} = lib.mkIf settings.enable {
+                  description = "Watch CI status signed refs for ${runtimeName}";
+                  wantedBy = [ "multi-user.target" ];
+                  after = [ "radicle-node.service" ];
+                  pathConfig = {
+                    Unit = statusSyncUnit;
+                    PathChanged = [
+                      "${settings.sourcePath}/refs/namespaces/${ciStatusNamespaceNodeId}/refs/rad/sigrefs"
+                    ];
+                  };
+                };
               };
             };
 
@@ -942,20 +952,20 @@ in
                   env = lib.mkForce { };
                 };
 
-            environment.systemPackages = lib.mkIf settings.enable [
-              aspenAdapter
-              providerPackage
-              shadowClient
-            ];
-            environment.etc."${runtimeName}/aspen-profile.json".source = lib.mkIf settings.enable aspenProfile;
-            environment.etc."${runtimeName}/radicle-profile.json".source =
-              lib.mkIf settings.enable radicleProfile;
-            environment.etc."${runtimeName}/provider-profile.json".source =
-              lib.mkIf settings.enable providerProfile;
-            environment.etc."${runtimeName}/lattice-handler.ncl".source =
-              lib.mkIf settings.enable latticeHandlerProfile;
-            environment.etc."${runtimeName}/lattice-workflow.ncl".source =
-              lib.mkIf settings.enable latticeWorkflow;
+            environment = {
+              systemPackages = lib.mkIf settings.enable [
+                aspenAdapter
+                providerPackage
+                shadowClient
+              ];
+              etc = {
+                "${runtimeName}/aspen-profile.json".source = lib.mkIf settings.enable aspenProfile;
+                "${runtimeName}/radicle-profile.json".source = lib.mkIf settings.enable radicleProfile;
+                "${runtimeName}/provider-profile.json".source = lib.mkIf settings.enable providerProfile;
+                "${runtimeName}/lattice-handler.ncl".source = lib.mkIf settings.enable latticeHandlerProfile;
+                "${runtimeName}/lattice-workflow.ncl".source = lib.mkIf settings.enable latticeWorkflow;
+              };
+            };
           };
       };
   };

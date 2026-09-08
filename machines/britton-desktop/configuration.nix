@@ -294,8 +294,12 @@ in
 {
   imports = [
     ./build-storage.nix
+    ./collie-serve.nix
+    ../../modules/drift-rustfs/nixos.nix
     inputs.tenstorrent-nix.nixosModules.default
   ];
+
+  services.drift-rustfs.enable = true;
 
   hardware = {
     # r[impl onix.tenstorrent.p150x2_qwen.deployment]
@@ -343,7 +347,6 @@ in
 
   time.timeZone = "America/New_York";
   time.hardwareClockInLocalTime = true; # Prevent time sync issues with Windows
-  services.chrony.enable = true;
 
   users.users.brittonr = {
     linger = true;
@@ -412,6 +415,8 @@ in
   };
 
   services = {
+    chrony.enable = true;
+
     # Override greeter session for niri
     greetd.settings.default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd /etc/profiles/per-user/brittonr/bin/niri-session";
 
@@ -479,9 +484,8 @@ in
 
     radicle.ci.broker = {
       enable = true;
-      package = pkgs.radicle-ci-broker.overrideAttrs (old: {
-        patches = (old.patches or [ ]) ++ [ ./radicle-ci-broker-announce-namespace.patch ];
-      });
+      # The pinned broker already includes the namespace announcement fix.
+      package = pkgs.radicle-ci-broker;
       settings = {
         max_run_time = kilnMaxRunTime;
         concurrent_adapters = kilnConcurrentAdapters;

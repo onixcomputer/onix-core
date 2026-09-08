@@ -204,16 +204,175 @@ in
             };
 
             # r[impl onix.site_celld_fleet.isolation]
-            systemd.tmpfiles.settings."10-${runtimeName}" = {
-              ${settings.stateDir}.d = {
-                mode = privateDirectoryMode;
-                user = celldUser;
-                group = celldGroup;
+            # r[impl onix.site_celld_fleet.isolation]
+            systemd = {
+              tmpfiles.settings."10-${runtimeName}" = {
+                ${settings.stateDir}.d = {
+                  mode = privateDirectoryMode;
+                  user = celldUser;
+                  group = celldGroup;
+                };
+                ${provisionStateDirectory}.d = lib.mkIf settings.provisionStorage {
+                  mode = privateDirectoryMode;
+                  user = "root";
+                  group = "root";
+                };
               };
-              ${provisionStateDirectory}.d = lib.mkIf settings.provisionStorage {
-                mode = privateDirectoryMode;
-                user = "root";
-                group = "root";
+
+              services = {
+                ${provisionServiceName} = lib.mkIf settings.provisionStorage {
+                  description = "Provision bucket-scoped RustFS storage for ${runtimeName}";
+                  wantedBy = [ "multi-user.target" ];
+                  before = [ "${runtimeName}.service" ];
+                  after = [
+                    "network-online.target"
+                    "rustfs.service"
+                    "tailscaled.service"
+                  ];
+                  wants = [
+                    "network-online.target"
+                    "rustfs.service"
+                    "tailscaled.service"
+                  ];
+                  path = [ pkgs.getent ];
+                  serviceConfig = {
+                    Type = "oneshot";
+                    RemainAfterExit = true;
+                    ExecStart = provisionStorage;
+                    EnvironmentFile = [
+                      rustfsAdminEnvironmentFile
+                      credentialEnvironmentFile
+                    ];
+                    UMask = serviceUmask;
+                    NoNewPrivileges = true;
+                    PrivateTmp = true;
+                    ProtectHome = true;
+                    ProtectSystem = "strict";
+                    ReadWritePaths = [ provisionStateDirectory ];
+                    CapabilityBoundingSet = "";
+                    AmbientCapabilities = "";
+                    LockPersonality = true;
+                    RestrictAddressFamilies = [
+                      "AF_UNIX"
+                      "AF_INET"
+                      "AF_INET6"
+                    ];
+                    RestrictRealtime = true;
+                    RestrictSUIDSGID = true;
+                    SystemCallArchitectures = "native";
+                  };
+                };
+
+                # r[impl onix.celld_rustfs.composition]
+                # r[impl onix.celld_rustfs.runtime]
+                # r[impl onix.site_celld_fleet.isolation]
+                ${runtimeName} = {
+                  description = "Self-hosted Durable Objects node ${runtimeName}";
+                  wantedBy = [ "multi-user.target" ];
+                  after = [
+                    "network-online.target"
+                    "tailscaled.service"
+                  ]
+                  ++ lib.optional settings.provisionStorage "${provisionServiceName}.service";
+                  wants = [
+                    "network-online.target"
+                    "tailscaled.service"
+                  ];
+                  requires = lib.optional settings.provisionStorage "${provisionServiceName}.service";
+                  environment = {
+                    CELLD_BUCKET = evaluated.bucketUri;
+                    CELLD_ADDR = evaluated.publicListener;
+                    CELLD_INTERNAL_ADDR = evaluated.internalListener;
+                    CELLD_ADVERTISE = evaluated.internalListener;
+                    CELLD_WATCH = settings.stateDir;
+                    CELLD_STORAGE_PROBE = "1";
+                    CELLD_TTL_MS = toString settings.leaseTtlMilliseconds;
+                    CELLD_SHUTDOWN_DRAIN_MS = toString settings.shutdownDrainMilliseconds;
+                    CELLD_DURABILITY = "fleet";
+                    CELLD_OUTPUT_GATE = "1";
+                    S3_ENDPOINT = settings.storageEndpoint;
+                    AWS_REGION = settings.region;
+                    RUST_LOG = "info";
+                  };
+                  serviceConfig = {
+                    Type = "simple";
+                    ExecStart = celldExecutable;
+                    EnvironmentFile = credentialEnvironmentFile;
+                    User = celldUser;
+                    Group = celldGroup;
+                    WorkingDirectory = settings.stateDir;
+                    Restart = "always";
+                    RestartSec = settings.restartDelaySeconds;
+                    TimeoutStopSec = timeoutStopSeconds;
+                    UMask = serviceUmask;
+                    NoNewPrivileges = true;
+                    PrivateDevices = true;
+                    PrivateTmp = true;
+                    ProtectClock = true;
+                    ProtectControlGroups = true;
+                    ProtectHome = true;
+                    ProtectKernelLogs = true;
+                    ProtectKernelModules = true;
+                    ProtectKernelTunables = true;
+                    ProtectSystem = "strict";
+                    ReadWritePaths = [ settings.stateDir ];
+                    CapabilityBoundingSet = "";
+                    AmbientCapabilities = "";
+                    LockPersonality = true;
+                    RemoveIPC = true;
+                    RestrictAddressFamilies = [
+                      "AF_UNIX"
+                      "AF_INET"
+                      "AF_INET6"
+                    ];
+                    RestrictNamespaces = true;
+                    RestrictRealtime = true;
+                    RestrictSUIDSGID = true;
+                    SystemCallArchitectures = "native";
+                  };
+                };
+
+                # r[impl onix.site_celld_fleet.runtime]
+                ${ingressServiceName} = lib.mkIf settings.stripTrailingSlashProxy {
+                  description = "Trailing-slash compatibility ingress for ${runtimeName}";
+                  wantedBy = [ "multi-user.target" ];
+                  after = [ "${runtimeName}.service" ];
+                  requires = [ "${runtimeName}.service" ];
+                  serviceConfig = {
+                    Type = "simple";
+                    ExecStart = "${lib.getExe pkgs.nginx} -c ${ingressConfig} -p /run/${ingressRuntimeDirectory} -g 'daemon off;'";
+                    User = ingressServiceName;
+                    Group = ingressServiceName;
+                    DynamicUser = true;
+                    RuntimeDirectory = ingressRuntimeDirectory;
+                    Restart = "always";
+                    RestartSec = settings.restartDelaySeconds;
+                    UMask = serviceUmask;
+                    NoNewPrivileges = true;
+                    PrivateDevices = true;
+                    PrivateTmp = true;
+                    ProtectClock = true;
+                    ProtectControlGroups = true;
+                    ProtectHome = true;
+                    ProtectKernelLogs = true;
+                    ProtectKernelModules = true;
+                    ProtectKernelTunables = true;
+                    ProtectSystem = "strict";
+                    CapabilityBoundingSet = "";
+                    AmbientCapabilities = "";
+                    LockPersonality = true;
+                    RemoveIPC = true;
+                    RestrictAddressFamilies = [
+                      "AF_UNIX"
+                      "AF_INET"
+                      "AF_INET6"
+                    ];
+                    RestrictNamespaces = true;
+                    RestrictRealtime = true;
+                    RestrictSUIDSGID = true;
+                    SystemCallArchitectures = "native";
+                  };
+                };
               };
             };
 
@@ -223,160 +382,6 @@ in
                 settings.publicPort
                 settings.internalPort
               ];
-            };
-
-            systemd.services.${provisionServiceName} = lib.mkIf settings.provisionStorage {
-              description = "Provision bucket-scoped RustFS storage for ${runtimeName}";
-              wantedBy = [ "multi-user.target" ];
-              before = [ "${runtimeName}.service" ];
-              after = [
-                "network-online.target"
-                "rustfs.service"
-                "tailscaled.service"
-              ];
-              wants = [
-                "network-online.target"
-                "rustfs.service"
-                "tailscaled.service"
-              ];
-              path = [ pkgs.getent ];
-              serviceConfig = {
-                Type = "oneshot";
-                RemainAfterExit = true;
-                ExecStart = provisionStorage;
-                EnvironmentFile = [
-                  rustfsAdminEnvironmentFile
-                  credentialEnvironmentFile
-                ];
-                UMask = serviceUmask;
-                NoNewPrivileges = true;
-                PrivateTmp = true;
-                ProtectHome = true;
-                ProtectSystem = "strict";
-                ReadWritePaths = [ provisionStateDirectory ];
-                CapabilityBoundingSet = "";
-                AmbientCapabilities = "";
-                LockPersonality = true;
-                RestrictAddressFamilies = [
-                  "AF_UNIX"
-                  "AF_INET"
-                  "AF_INET6"
-                ];
-                RestrictRealtime = true;
-                RestrictSUIDSGID = true;
-                SystemCallArchitectures = "native";
-              };
-            };
-
-            # r[impl onix.celld_rustfs.composition]
-            # r[impl onix.celld_rustfs.runtime]
-            # r[impl onix.site_celld_fleet.isolation]
-            systemd.services.${runtimeName} = {
-              description = "Self-hosted Durable Objects node ${runtimeName}";
-              wantedBy = [ "multi-user.target" ];
-              after = [
-                "network-online.target"
-                "tailscaled.service"
-              ]
-              ++ lib.optional settings.provisionStorage "${provisionServiceName}.service";
-              wants = [
-                "network-online.target"
-                "tailscaled.service"
-              ];
-              requires = lib.optional settings.provisionStorage "${provisionServiceName}.service";
-              environment = {
-                CELLD_BUCKET = evaluated.bucketUri;
-                CELLD_ADDR = evaluated.publicListener;
-                CELLD_INTERNAL_ADDR = evaluated.internalListener;
-                CELLD_ADVERTISE = evaluated.internalListener;
-                CELLD_WATCH = settings.stateDir;
-                CELLD_STORAGE_PROBE = "1";
-                CELLD_TTL_MS = toString settings.leaseTtlMilliseconds;
-                CELLD_SHUTDOWN_DRAIN_MS = toString settings.shutdownDrainMilliseconds;
-                CELLD_DURABILITY = "fleet";
-                CELLD_OUTPUT_GATE = "1";
-                S3_ENDPOINT = settings.storageEndpoint;
-                AWS_REGION = settings.region;
-                RUST_LOG = "info";
-              };
-              serviceConfig = {
-                Type = "simple";
-                ExecStart = celldExecutable;
-                EnvironmentFile = credentialEnvironmentFile;
-                User = celldUser;
-                Group = celldGroup;
-                WorkingDirectory = settings.stateDir;
-                Restart = "always";
-                RestartSec = settings.restartDelaySeconds;
-                TimeoutStopSec = timeoutStopSeconds;
-                UMask = serviceUmask;
-                NoNewPrivileges = true;
-                PrivateDevices = true;
-                PrivateTmp = true;
-                ProtectClock = true;
-                ProtectControlGroups = true;
-                ProtectHome = true;
-                ProtectKernelLogs = true;
-                ProtectKernelModules = true;
-                ProtectKernelTunables = true;
-                ProtectSystem = "strict";
-                ReadWritePaths = [ settings.stateDir ];
-                CapabilityBoundingSet = "";
-                AmbientCapabilities = "";
-                LockPersonality = true;
-                RemoveIPC = true;
-                RestrictAddressFamilies = [
-                  "AF_UNIX"
-                  "AF_INET"
-                  "AF_INET6"
-                ];
-                RestrictNamespaces = true;
-                RestrictRealtime = true;
-                RestrictSUIDSGID = true;
-                SystemCallArchitectures = "native";
-              };
-            };
-
-            # r[impl onix.site_celld_fleet.runtime]
-            systemd.services.${ingressServiceName} = lib.mkIf settings.stripTrailingSlashProxy {
-              description = "Trailing-slash compatibility ingress for ${runtimeName}";
-              wantedBy = [ "multi-user.target" ];
-              after = [ "${runtimeName}.service" ];
-              requires = [ "${runtimeName}.service" ];
-              serviceConfig = {
-                Type = "simple";
-                ExecStart = "${lib.getExe pkgs.nginx} -c ${ingressConfig} -p /run/${ingressRuntimeDirectory} -g 'daemon off;'";
-                User = ingressServiceName;
-                Group = ingressServiceName;
-                DynamicUser = true;
-                RuntimeDirectory = ingressRuntimeDirectory;
-                Restart = "always";
-                RestartSec = settings.restartDelaySeconds;
-                UMask = serviceUmask;
-                NoNewPrivileges = true;
-                PrivateDevices = true;
-                PrivateTmp = true;
-                ProtectClock = true;
-                ProtectControlGroups = true;
-                ProtectHome = true;
-                ProtectKernelLogs = true;
-                ProtectKernelModules = true;
-                ProtectKernelTunables = true;
-                ProtectSystem = "strict";
-                CapabilityBoundingSet = "";
-                AmbientCapabilities = "";
-                LockPersonality = true;
-                RemoveIPC = true;
-                RestrictAddressFamilies = [
-                  "AF_UNIX"
-                  "AF_INET"
-                  "AF_INET6"
-                ];
-                RestrictNamespaces = true;
-                RestrictRealtime = true;
-                RestrictSUIDSGID = true;
-                SystemCallArchitectures = "native";
-              };
             };
           };
       };

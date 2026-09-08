@@ -305,48 +305,6 @@ in
               };
             };
 
-            systemd.services.niks3-storage-provision = lib.mkIf settings.provisionStorage {
-              description = "Provision bucket-scoped RustFS storage for niks3";
-              wantedBy = [ "multi-user.target" ];
-              before = [ "niks3.service" ];
-              after = [
-                "network-online.target"
-                storageServiceUnit
-                "tailscaled.service"
-              ];
-              wants = [
-                "network-online.target"
-                storageServiceUnit
-                "tailscaled.service"
-              ];
-              path = [ pkgs.getent ];
-              serviceConfig = {
-                Type = "oneshot";
-                RemainAfterExit = true;
-                ExecStart = provisionStorage;
-                EnvironmentFile = [
-                  rustfsAdminEnvironmentFile
-                  storageEnvironmentFile
-                ];
-                UMask = serviceUmask;
-                NoNewPrivileges = true;
-                PrivateTmp = true;
-                ProtectHome = true;
-                ProtectSystem = "strict";
-                CapabilityBoundingSet = "";
-                AmbientCapabilities = "";
-                LockPersonality = true;
-                RestrictAddressFamilies = [
-                  "AF_UNIX"
-                  "AF_INET"
-                  "AF_INET6"
-                ];
-                RestrictRealtime = true;
-                RestrictSUIDSGID = true;
-                SystemCallArchitectures = "native";
-              };
-            };
-
             # r[impl onix.rustfs_build_caches.recovery.backup]
             services.postgresqlBackup = lib.mkIf settings.metadataBackupEnabled {
               enable = true;
@@ -358,89 +316,135 @@ in
               pgdumpOptions = "--no-owner --no-privileges";
             };
 
-            systemd.services.niks3-metadata-backup-provision = lib.mkIf settings.metadataBackupEnabled {
-              description = "Provision narrow RustFS storage for niks3 metadata backups";
-              wantedBy = [ "multi-user.target" ];
-              before = [ "postgresqlBackup-niks3.service" ];
-              after = [
-                "network-online.target"
-                "rustfs.service"
-                "tailscaled.service"
-              ];
-              wants = [
-                "network-online.target"
-                "rustfs.service"
-                "tailscaled.service"
-              ];
-              path = [ pkgs.getent ];
-              serviceConfig = {
-                Type = "oneshot";
-                RemainAfterExit = true;
-                ExecStart = provisionMetadataBackup;
-                EnvironmentFile = [
-                  metadataBackupAdminEnvironmentFile
-                  metadataBackupEnvironmentFile
-                ];
-                UMask = serviceUmask;
-                NoNewPrivileges = true;
-                PrivateTmp = true;
-                ProtectHome = true;
-                ProtectSystem = "strict";
-                CapabilityBoundingSet = "";
-                AmbientCapabilities = "";
-                LockPersonality = true;
-                RestrictAddressFamilies = [
-                  "AF_UNIX"
-                  "AF_INET"
-                  "AF_INET6"
-                ];
-              };
-            };
+            systemd = {
+              services = {
+                niks3-storage-provision = lib.mkIf settings.provisionStorage {
+                  description = "Provision bucket-scoped RustFS storage for niks3";
+                  wantedBy = [ "multi-user.target" ];
+                  before = [ "niks3.service" ];
+                  after = [
+                    "network-online.target"
+                    storageServiceUnit
+                    "tailscaled.service"
+                  ];
+                  wants = [
+                    "network-online.target"
+                    storageServiceUnit
+                    "tailscaled.service"
+                  ];
+                  path = [ pkgs.getent ];
+                  serviceConfig = {
+                    Type = "oneshot";
+                    RemainAfterExit = true;
+                    ExecStart = provisionStorage;
+                    EnvironmentFile = [
+                      rustfsAdminEnvironmentFile
+                      storageEnvironmentFile
+                    ];
+                    UMask = serviceUmask;
+                    NoNewPrivileges = true;
+                    PrivateTmp = true;
+                    ProtectHome = true;
+                    ProtectSystem = "strict";
+                    CapabilityBoundingSet = "";
+                    AmbientCapabilities = "";
+                    LockPersonality = true;
+                    RestrictAddressFamilies = [
+                      "AF_UNIX"
+                      "AF_INET"
+                      "AF_INET6"
+                    ];
+                    RestrictRealtime = true;
+                    RestrictSUIDSGID = true;
+                    SystemCallArchitectures = "native";
+                  };
+                };
 
-            systemd.services.postgresqlBackup-niks3 = lib.mkIf settings.metadataBackupEnabled {
-              after = [ "niks3-metadata-backup-provision.service" ];
-              requires = [ "niks3-metadata-backup-provision.service" ];
-              unitConfig.OnSuccess = [ "niks3-metadata-backup-upload.service" ];
-            };
+                niks3-metadata-backup-provision = lib.mkIf settings.metadataBackupEnabled {
+                  description = "Provision narrow RustFS storage for niks3 metadata backups";
+                  wantedBy = [ "multi-user.target" ];
+                  before = [ "postgresqlBackup-niks3.service" ];
+                  after = [
+                    "network-online.target"
+                    "rustfs.service"
+                    "tailscaled.service"
+                  ];
+                  wants = [
+                    "network-online.target"
+                    "rustfs.service"
+                    "tailscaled.service"
+                  ];
+                  path = [ pkgs.getent ];
+                  serviceConfig = {
+                    Type = "oneshot";
+                    RemainAfterExit = true;
+                    ExecStart = provisionMetadataBackup;
+                    EnvironmentFile = [
+                      metadataBackupAdminEnvironmentFile
+                      metadataBackupEnvironmentFile
+                    ];
+                    UMask = serviceUmask;
+                    NoNewPrivileges = true;
+                    PrivateTmp = true;
+                    ProtectHome = true;
+                    ProtectSystem = "strict";
+                    CapabilityBoundingSet = "";
+                    AmbientCapabilities = "";
+                    LockPersonality = true;
+                    RestrictAddressFamilies = [
+                      "AF_UNIX"
+                      "AF_INET"
+                      "AF_INET6"
+                    ];
+                  };
+                };
 
-            systemd.services.niks3-metadata-backup-upload = lib.mkIf settings.metadataBackupEnabled {
-              description = "Upload a BLAKE3-bound niks3 metadata backup";
-              path = [ pkgs.getent ];
-              after = [
-                "network-online.target"
-                "niks3-metadata-backup-provision.service"
-              ];
-              wants = [ "network-online.target" ];
-              requires = [ "niks3-metadata-backup-provision.service" ];
-              serviceConfig = {
-                Type = "oneshot";
-                ExecStart = uploadMetadataBackup;
-                EnvironmentFile = metadataBackupEnvironmentFile;
-                UMask = serviceUmask;
-                NoNewPrivileges = true;
-                PrivateTmp = true;
-                ProtectHome = true;
-                ProtectSystem = "strict";
-                ReadOnlyPaths = [ metadataBackupDump ];
-                CapabilityBoundingSet = [ "CAP_DAC_READ_SEARCH" ];
-                AmbientCapabilities = [ "CAP_DAC_READ_SEARCH" ];
-                LockPersonality = true;
-                RestrictAddressFamilies = [
-                  "AF_UNIX"
-                  "AF_INET"
-                  "AF_INET6"
-                ];
-              };
-            };
+                postgresqlBackup-niks3 = lib.mkIf settings.metadataBackupEnabled {
+                  after = [ "niks3-metadata-backup-provision.service" ];
+                  requires = [ "niks3-metadata-backup-provision.service" ];
+                  unitConfig.OnSuccess = [ "niks3-metadata-backup-upload.service" ];
+                };
 
-            systemd.services.niks3 = {
-              after = lib.optional settings.provisionStorage "niks3-storage-provision.service";
-              requires = lib.optional settings.provisionStorage "niks3-storage-provision.service";
-              serviceConfig = {
-                CPUQuota = backgroundCpuQuota;
-                CPUWeight = backgroundResourceWeight;
-                IOWeight = backgroundResourceWeight;
-                Nice = backgroundNice;
+                niks3-metadata-backup-upload = lib.mkIf settings.metadataBackupEnabled {
+                  description = "Upload a BLAKE3-bound niks3 metadata backup";
+                  path = [ pkgs.getent ];
+                  after = [
+                    "network-online.target"
+                    "niks3-metadata-backup-provision.service"
+                  ];
+                  wants = [ "network-online.target" ];
+                  requires = [ "niks3-metadata-backup-provision.service" ];
+                  serviceConfig = {
+                    Type = "oneshot";
+                    ExecStart = uploadMetadataBackup;
+                    EnvironmentFile = metadataBackupEnvironmentFile;
+                    UMask = serviceUmask;
+                    NoNewPrivileges = true;
+                    PrivateTmp = true;
+                    ProtectHome = true;
+                    ProtectSystem = "strict";
+                    ReadOnlyPaths = [ metadataBackupDump ];
+                    CapabilityBoundingSet = [ "CAP_DAC_READ_SEARCH" ];
+                    AmbientCapabilities = [ "CAP_DAC_READ_SEARCH" ];
+                    LockPersonality = true;
+                    RestrictAddressFamilies = [
+                      "AF_UNIX"
+                      "AF_INET"
+                      "AF_INET6"
+                    ];
+                  };
+                };
+
+                niks3 = {
+                  after = lib.optional settings.provisionStorage "niks3-storage-provision.service";
+                  requires = lib.optional settings.provisionStorage "niks3-storage-provision.service";
+                  serviceConfig = {
+                    CPUQuota = backgroundCpuQuota;
+                    CPUWeight = backgroundResourceWeight;
+                    IOWeight = backgroundResourceWeight;
+                    Nice = backgroundNice;
+                  };
+                };
               };
             };
           };
@@ -562,49 +566,52 @@ in
               inherit (settings) verifyS3Integrity;
             };
 
-            # r[impl onix.rustfs_build_caches.uploaders.disabled]
-            systemd.sockets.niks3-auto-upload.wantedBy = lib.mkIf (!settings.automaticUploads) (
-              lib.mkForce [ ]
-            );
-
-            # r[impl onix.rustfs_build_caches.uploaders.maintenance]
-            systemd.services.niks3-auto-upload = lib.mkIf (!settings.automaticUploads) {
-              unitConfig.ConditionPathExists = settings.maintenanceMarker;
-              serviceConfig = {
-                ExecStartPre = maintenanceGuard;
-                TimeoutStopSec = "${toString maintenanceStopTimeoutSeconds}s";
-              };
-            };
-
             # r[impl onix.rustfs_build_caches.monitoring]
             services.prometheus.exporters.node.extraFlags =
               lib.mkIf config.services.prometheus.exporters.node.enable
                 [ "--collector.textfile.directory=${queueMetricDirectory}" ];
-            systemd.tmpfiles.rules = lib.mkIf config.services.prometheus.exporters.node.enable [
-              "d ${queueMetricDirectory} ${queueMetricDirectoryMode} root root - -"
-            ];
-            systemd.services.niks3-queue-metrics = lib.mkIf config.services.prometheus.exporters.node.enable {
-              description = "Export durable niks3 queue depth";
-              serviceConfig = {
-                Type = "oneshot";
-                ExecStart = lib.getExe queueMetricWriter;
-                NoNewPrivileges = true;
-                PrivateTmp = true;
-                ProtectHome = true;
-                ProtectSystem = "strict";
-                ReadWritePaths = [ queueMetricDirectory ];
-                CapabilityBoundingSet = "";
-                LockPersonality = true;
-                RestrictAddressFamilies = [ "AF_UNIX" ];
+
+            systemd = {
+              # r[impl onix.rustfs_build_caches.uploaders.disabled]
+              sockets.niks3-auto-upload.wantedBy = lib.mkIf (!settings.automaticUploads) (lib.mkForce [ ]);
+
+              # r[impl onix.rustfs_build_caches.uploaders.maintenance]
+              services.niks3-auto-upload = lib.mkIf (!settings.automaticUploads) {
+                unitConfig.ConditionPathExists = settings.maintenanceMarker;
+                serviceConfig = {
+                  ExecStartPre = maintenanceGuard;
+                  TimeoutStopSec = "${toString maintenanceStopTimeoutSeconds}s";
+                };
               };
-            };
-            systemd.timers.niks3-queue-metrics = lib.mkIf config.services.prometheus.exporters.node.enable {
-              description = "Refresh durable niks3 queue depth";
-              wantedBy = [ "timers.target" ];
-              timerConfig = {
-                OnBootSec = "${toString queueMetricIntervalSeconds}s";
-                OnUnitActiveSec = "${toString queueMetricIntervalSeconds}s";
-                Unit = "niks3-queue-metrics.service";
+
+              tmpfiles.rules = lib.mkIf config.services.prometheus.exporters.node.enable [
+                "d ${queueMetricDirectory} ${queueMetricDirectoryMode} root root - -"
+              ];
+
+              services.niks3-queue-metrics = lib.mkIf config.services.prometheus.exporters.node.enable {
+                description = "Export durable niks3 queue depth";
+                serviceConfig = {
+                  Type = "oneshot";
+                  ExecStart = lib.getExe queueMetricWriter;
+                  NoNewPrivileges = true;
+                  PrivateTmp = true;
+                  ProtectHome = true;
+                  ProtectSystem = "strict";
+                  ReadWritePaths = [ queueMetricDirectory ];
+                  CapabilityBoundingSet = "";
+                  LockPersonality = true;
+                  RestrictAddressFamilies = [ "AF_UNIX" ];
+                };
+              };
+
+              timers.niks3-queue-metrics = lib.mkIf config.services.prometheus.exporters.node.enable {
+                description = "Refresh durable niks3 queue depth";
+                wantedBy = [ "timers.target" ];
+                timerConfig = {
+                  OnBootSec = "${toString queueMetricIntervalSeconds}s";
+                  OnUnitActiveSec = "${toString queueMetricIntervalSeconds}s";
+                  Unit = "niks3-queue-metrics.service";
+                };
               };
             };
           };

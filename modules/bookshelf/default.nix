@@ -117,115 +117,119 @@ in
               description = "Bookshelf service account";
             };
 
-            systemd.tmpfiles.rules = [
-              "d ${settings.sourceDir} ${privateDirectoryMode} ${serviceUser} ${serviceGroup} -"
-              "d ${settings.libraryDir} ${privateDirectoryMode} ${serviceUser} ${serviceGroup} -"
-            ];
-
             environment.systemPackages = [ importTool ];
 
-            # r[impl onix.bookshelf.runtime]
-            # r[impl onix.bookshelf.network]
-            systemd.services.bookshelf = {
-              description = "Private Bookshelf ebook library";
-              wantedBy = [ "multi-user.target" ];
-              after = [
-                "network-online.target"
-                "tailscaled.service"
+            systemd = {
+              tmpfiles.rules = [
+                "d ${settings.sourceDir} ${privateDirectoryMode} ${serviceUser} ${serviceGroup} -"
+                "d ${settings.libraryDir} ${privateDirectoryMode} ${serviceUser} ${serviceGroup} -"
               ];
-              wants = [ "network-online.target" ];
-              unitConfig.RequiresMountsFor = [ settings.libraryDir ];
-              environment = {
-                BOOKSHELF_DIRECTORY = settings.libraryDir;
-                BOOKSHELF_PROVIDER = "fs";
-                BOOKSHELF_READ_ONLY = if settings.readOnly then "1" else "0";
-                BOOKSHELF_SITE_URL = settings.siteUrl;
-                HOSTNAME = settings.bindAddress;
-                NEXT_TELEMETRY_DISABLED = "1";
-                NODE_ENV = "production";
-                PORT = toString settings.port;
-              };
-              path = [ pkgs.nodejs_24 ];
-              serviceConfig = {
-                ExecStartPre = prepareRuntime;
-                ExecStart = runServer;
-                User = serviceUser;
-                Group = serviceGroup;
-                UMask = serviceUmask;
-                RuntimeDirectory = runtimeDirectory;
-                RuntimeDirectoryMode = privateDirectoryMode;
-                WorkingDirectory = runtimeRoot;
-                Restart = "on-failure";
-                RestartSec = settings.restartDelaySeconds;
-                ReadWritePaths = [ settings.libraryDir ];
-                PrivateDevices = true;
-                PrivateTmp = true;
-                ProtectClock = true;
-                ProtectControlGroups = true;
-                ProtectHome = true;
-                ProtectHostname = true;
-                ProtectKernelLogs = true;
-                ProtectKernelModules = true;
-                ProtectKernelTunables = true;
-                ProtectProc = "invisible";
-                ProtectSystem = "strict";
-                CapabilityBoundingSet = "";
-                AmbientCapabilities = "";
-                LockPersonality = true;
-                NoNewPrivileges = true;
-                RestrictAddressFamilies = [
-                  "AF_UNIX"
-                  "AF_INET"
-                  "AF_INET6"
-                ];
-                RestrictNamespaces = true;
-                RestrictRealtime = true;
-                RestrictSUIDSGID = true;
-                SystemCallArchitectures = "native";
-              };
-            };
 
-            # r[impl onix.bookshelf.publish]
-            systemd.services.bookshelf-publish = {
-              description = "Publish owned books into the private Bookshelf library";
-              after = [ "local-fs.target" ];
-              unitConfig.RequiresMountsFor = [
-                settings.sourceDir
-                settings.libraryDir
-              ];
-              serviceConfig = {
-                Type = "oneshot";
-                ExecStart = "${bookshelfPackage}/bin/bookshelf-sync";
-                User = serviceUser;
-                Group = serviceGroup;
-                UMask = serviceUmask;
-                WorkingDirectory = configurationDirectory;
-                CacheDirectory = syncCacheDirectory;
-                CacheDirectoryMode = privateDirectoryMode;
-                ReadOnlyPaths = [ settings.sourceDir ];
-                ReadWritePaths = [
-                  settings.libraryDir
-                  syncCachePath
-                ];
-                PrivateDevices = true;
-                PrivateTmp = true;
-                ProtectClock = true;
-                ProtectControlGroups = true;
-                ProtectHome = true;
-                ProtectHostname = true;
-                ProtectKernelLogs = true;
-                ProtectKernelModules = true;
-                ProtectKernelTunables = true;
-                ProtectSystem = "strict";
-                CapabilityBoundingSet = "";
-                AmbientCapabilities = "";
-                LockPersonality = true;
-                NoNewPrivileges = true;
-                RestrictAddressFamilies = [ "AF_UNIX" ];
-                RestrictNamespaces = true;
-                RestrictRealtime = true;
-                RestrictSUIDSGID = true;
-                SystemCallArchitectures = "native";
+              services = {
+                # r[impl onix.bookshelf.runtime]
+                # r[impl onix.bookshelf.network]
+                bookshelf = {
+                  description = "Private Bookshelf ebook library";
+                  wantedBy = [ "multi-user.target" ];
+                  after = [
+                    "network-online.target"
+                    "tailscaled.service"
+                  ];
+                  wants = [ "network-online.target" ];
+                  unitConfig.RequiresMountsFor = [ settings.libraryDir ];
+                  environment = {
+                    BOOKSHELF_DIRECTORY = settings.libraryDir;
+                    BOOKSHELF_PROVIDER = "fs";
+                    BOOKSHELF_READ_ONLY = if settings.readOnly then "1" else "0";
+                    BOOKSHELF_SITE_URL = settings.siteUrl;
+                    HOSTNAME = settings.bindAddress;
+                    NEXT_TELEMETRY_DISABLED = "1";
+                    NODE_ENV = "production";
+                    PORT = toString settings.port;
+                  };
+                  path = [ pkgs.nodejs_24 ];
+                  serviceConfig = {
+                    ExecStartPre = prepareRuntime;
+                    ExecStart = runServer;
+                    User = serviceUser;
+                    Group = serviceGroup;
+                    UMask = serviceUmask;
+                    RuntimeDirectory = runtimeDirectory;
+                    RuntimeDirectoryMode = privateDirectoryMode;
+                    WorkingDirectory = runtimeRoot;
+                    Restart = "on-failure";
+                    RestartSec = settings.restartDelaySeconds;
+                    ReadWritePaths = [ settings.libraryDir ];
+                    PrivateDevices = true;
+                    PrivateTmp = true;
+                    ProtectClock = true;
+                    ProtectControlGroups = true;
+                    ProtectHome = true;
+                    ProtectHostname = true;
+                    ProtectKernelLogs = true;
+                    ProtectKernelModules = true;
+                    ProtectKernelTunables = true;
+                    ProtectProc = "invisible";
+                    ProtectSystem = "strict";
+                    CapabilityBoundingSet = "";
+                    AmbientCapabilities = "";
+                    LockPersonality = true;
+                    NoNewPrivileges = true;
+                    RestrictAddressFamilies = [
+                      "AF_UNIX"
+                      "AF_INET"
+                      "AF_INET6"
+                    ];
+                    RestrictNamespaces = true;
+                    RestrictRealtime = true;
+                    RestrictSUIDSGID = true;
+                    SystemCallArchitectures = "native";
+                  };
+                };
+
+                # r[impl onix.bookshelf.publish]
+                bookshelf-publish = {
+                  description = "Publish owned books into the private Bookshelf library";
+                  after = [ "local-fs.target" ];
+                  unitConfig.RequiresMountsFor = [
+                    settings.sourceDir
+                    settings.libraryDir
+                  ];
+                  serviceConfig = {
+                    Type = "oneshot";
+                    ExecStart = "${bookshelfPackage}/bin/bookshelf-sync";
+                    User = serviceUser;
+                    Group = serviceGroup;
+                    UMask = serviceUmask;
+                    WorkingDirectory = configurationDirectory;
+                    CacheDirectory = syncCacheDirectory;
+                    CacheDirectoryMode = privateDirectoryMode;
+                    ReadOnlyPaths = [ settings.sourceDir ];
+                    ReadWritePaths = [
+                      settings.libraryDir
+                      syncCachePath
+                    ];
+                    PrivateDevices = true;
+                    PrivateTmp = true;
+                    ProtectClock = true;
+                    ProtectControlGroups = true;
+                    ProtectHome = true;
+                    ProtectHostname = true;
+                    ProtectKernelLogs = true;
+                    ProtectKernelModules = true;
+                    ProtectKernelTunables = true;
+                    ProtectSystem = "strict";
+                    CapabilityBoundingSet = "";
+                    AmbientCapabilities = "";
+                    LockPersonality = true;
+                    NoNewPrivileges = true;
+                    RestrictAddressFamilies = [ "AF_UNIX" ];
+                    RestrictNamespaces = true;
+                    RestrictRealtime = true;
+                    RestrictSUIDSGID = true;
+                    SystemCallArchitectures = "native";
+                  };
+                };
               };
             };
 
