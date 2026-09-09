@@ -70,6 +70,7 @@ let
   # Serve the ptyZZZ web terminal on the tailscale address only — the page is
   # a full interactive shell, so it must not touch the LAN interface.
   ptyzzzListenAddress = "100.108.13.4";
+  ptyzzzPackage = self.packages.${pkgs.stdenv.hostPlatform.system}.ptyzzz;
   # serve.nu + vendored fonts from the pinned ptyZZZ source; HERE-relative
   # paths resolve inside this store path.
   ptyzzzServeEnv =
@@ -315,8 +316,15 @@ in
         Restart = "on-failure";
         RestartSec = 2;
         ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p %h/.local/state/ptyzzz/store";
-        # The xs service closures spawn `ptyZZZ` and `nu` by name.
-        Environment = "PATH=${pkgs.nushell}/bin:$PATH";
+        # serve.nu resolves `ptyZZZ` via PATH, and the xs service closures
+        # spawn `ptyZZZ` and `nu` by name. Keep the system profile appended
+        # so the interactive shells have the usual commands.
+        Environment = "PATH=${
+          lib.makeBinPath [
+            ptyzzzPackage
+            pkgs.nushell
+          ]
+        }:/run/current-system/sw/bin";
       };
       Install.WantedBy = [ "default.target" ];
     };
