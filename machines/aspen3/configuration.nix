@@ -315,7 +315,6 @@ in
         Restart = "on-failure";
         RestartSec = 2;
         ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p %h/.local/state/ptyzzz/store";
-        WorkingDirectory = "%h/.local/state/ptyzzz";
         # The xs service closures spawn `ptyZZZ` and `nu` by name.
         Environment = "PATH=${pkgs.nushell}/bin:$PATH";
       };
