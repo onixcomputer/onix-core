@@ -67,6 +67,19 @@ let
     desktopSocket = radicleDesktopSocket;
     nodeListenAddress = radicleDesktopNodeListenAddress;
   };
+  # Serve the ptyZZZ web terminal on the tailscale address only — the page is
+  # a full interactive shell, so it must not touch the LAN interface.
+  ptyzzzListenAddress = "100.108.13.4";
+  # serve.nu + vendored fonts from the pinned ptyZZZ source; HERE-relative
+  # paths resolve inside this store path.
+  ptyzzzServeEnv =
+    pkgs.runCommand "ptyzzz-serve"
+      { src = self.packages.${pkgs.stdenv.hostPlatform.system}.ptyzzz.src; }
+      ''
+        mkdir -p $out/share/ptyzzz
+        cp $src/serve.nu $out/share/ptyzzz/serve.nu
+        cp -r $src/static $out/share/ptyzzz/static
+      '';
 in
 {
   imports = [
@@ -264,6 +277,9 @@ in
     # while still allowing screen dimming and DPMS power-off.
     onix.idle.suspend.enable = false;
 
+    # ptyZZZ web terminal: server-side-emulated shells streamed as HTML over
+    # SSE. ptyZZZ runs the ptys, http-nu (nixpkgs) serves the page and the
+    # single /sse connection, nushell is the service closure the spawner uses.
     home.packages = with pkgs; [
       easyeffects
       evtest
@@ -276,7 +292,35 @@ in
       rnote
       wev
       xournalpp
+      self.packages.${pkgs.stdenv.hostPlatform.system}.ptyzzz
+      http-nu
+      nushell
     ];
+
+    systemd.user.services.ptyzzz-web = {
+      Unit = {
+        Description = "ptyZZZ web terminal (http-nu + server-side ptys)";
+        After = [ "network.target" ];
+      };
+      Service = {
+        Type = "simple";
+        ExecStart = lib.concatStringsSep " " [
+          "${pkgs.http-nu}/bin/http-nu"
+          "--datastar"
+          "--services"
+          "--store %h/.local/state/ptyzzz/store"
+          "${ptyzzzListenAddress}:5111"
+          "${ptyzzzServeEnv}/share/ptyzzz/serve.nu"
+        ];
+        Restart = "on-failure";
+        RestartSec = 2;
+        ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p %h/.local/state/ptyzzz/store";
+        WorkingDirectory = "%h/.local/state/ptyzzz";
+        # The xs service closures spawn `ptyZZZ` and `nu` by name.
+        Environment = "PATH=${pkgs.nushell}/bin:$PATH";
+      };
+      Install.WantedBy = [ "default.target" ];
+    };
 
     home.sessionVariables = {
       RAD_HOME = radicleDesktopHome;

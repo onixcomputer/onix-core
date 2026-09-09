@@ -98,6 +98,7 @@ in
     mesh-llm = pkgs.callPackage ../pkgs/mesh-llm { };
     radicle-ci-runner = pkgs.callPackage ../pkgs/radicle-ci-runner { };
     ssh-clipboard = pkgs.callPackage ../pkgs/ssh-clipboard { };
+    ptyzzz = pkgs.callPackage ../pkgs/ptyzzz { };
     inherit (pkgs) radicle-node;
     inherit (pkgs) radicle-httpd;
   }
