@@ -97,6 +97,7 @@ in
     lemonade-server = pkgs.callPackage ../pkgs/lemonade { };
     mesh-llm = pkgs.callPackage ../pkgs/mesh-llm { };
     radicle-ci-runner = pkgs.callPackage ../pkgs/radicle-ci-runner { };
+    ssh-clipboard = pkgs.callPackage ../pkgs/ssh-clipboard { };
     inherit (pkgs) radicle-node;
     inherit (pkgs) radicle-httpd;
   }
