@@ -72,13 +72,20 @@ let
   ptyzzzListenAddress = "100.108.13.4";
   ptyzzzPackage = self.packages.${pkgs.stdenv.hostPlatform.system}.ptyzzz;
   # serve.nu + vendored fonts from the pinned ptyZZZ source; HERE-relative
-  # paths resolve inside this store path.
+  # paths resolve inside this store path. The line-height patch fixes the
+  # demo's row geometry: the CSS used an 18px (1.2857em) line-height while
+  # rows, cursor placement, and the resize fit all assume 1.2em, so the grid
+  # drifted visually once scrollback grew past a screenful.
   ptyzzzServeEnv =
     pkgs.runCommand "ptyzzz-serve"
-      { src = self.packages.${pkgs.stdenv.hostPlatform.system}.ptyzzz.src; }
+      {
+        src = self.packages.${pkgs.stdenv.hostPlatform.system}.ptyzzz.src;
+        nativeBuildInputs = [ pkgs.gnused ];
+      }
       ''
         mkdir -p $out/share/ptyzzz
-        cp $src/serve.nu $out/share/ptyzzz/serve.nu
+        sed 's|font:14px/18px|font:14px/1.2|' $src/serve.nu > $out/share/ptyzzz/serve.nu
+        chmod +x $out/share/ptyzzz/serve.nu
         cp -r $src/static $out/share/ptyzzz/static
       '';
 in
