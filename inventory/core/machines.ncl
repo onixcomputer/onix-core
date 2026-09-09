@@ -147,7 +147,9 @@ let { Machines, .. } = import "contracts.ncl" in
         "thunderbolt-link",
         "vllm-cluster-network",
       ],
-      deploy.targetHost = "root@aspen2",
+      # The bare aspen2 name no longer resolves; the live tailscale device is
+      # aspen2-1. Pin the deploy target to its tailscale address like aspen3.
+      deploy.targetHost = "root@100.82.25.30",
       deploy.buildHost = "britton-desktop",
     },
 
