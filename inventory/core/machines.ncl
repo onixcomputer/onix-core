@@ -117,6 +117,10 @@ let { Machines, .. } = import "contracts.ncl" in
         "vllm-cluster-network",
       ],
       deploy.targetHost = "root@aspen1.local",
+      # Build here instead of on the target: the target's root cannot fetch
+      # GitHub-SSH cargo deps (octet's bounded-exec) during eval, while this
+      # host has GitHub SSH access and already builds every aspen closure.
+      deploy.buildHost = "britton-desktop",
     },
 
     aspen2 = {
@@ -144,6 +148,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "vllm-cluster-network",
       ],
       deploy.targetHost = "root@aspen2",
+      deploy.buildHost = "britton-desktop",
     },
 
     aspen3 = {
@@ -188,6 +193,7 @@ let { Machines, .. } = import "contracts.ncl" in
       # name does not resolve to this host on the deploy LAN. Pin the deploy
       # target to the same tailscale address the service mesh uses.
       deploy.targetHost = "root@100.108.13.4",
+      deploy.buildHost = "britton-desktop",
     },
 
     # ========== Desktop ==========
