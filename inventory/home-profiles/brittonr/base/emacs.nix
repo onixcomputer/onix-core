@@ -38,7 +38,16 @@ let
 
     (meow-leader-define-key
      '("?" . meow-cheatsheet)
-     '("SPC" . meow-keypad))
+     '("SPC" . meow-keypad)
+     ;; Helix muscle memory: SPC is the command leader, so the :o/:v/:hsplit
+     ;; and buffer verbs live here.
+     '("wd" . delete-window)
+     '("wo" . delete-other-windows)
+     '("wv" . split-window-right)
+     '("ws" . split-window-below)
+     '("bd" . kill-buffer)
+     '("bb" . switch-to-buffer)
+     '("fs" . save-buffer))
 
     (meow-normal-define-key
      '("h" . meow-left)
