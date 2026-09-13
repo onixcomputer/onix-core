@@ -92,6 +92,7 @@ in
 {
   imports = [
     ./disko.nix
+    ../../modules/pi-branchfs/nixos.nix
     inputs.nixos-hardware.nixosModules.asus-flow-gv302x-amdgpu
   ];
 

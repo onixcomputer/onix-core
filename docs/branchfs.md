@@ -49,6 +49,42 @@ The initial installation uses the user Nix profile on each host. The host
 configuration also declares the package for the next system deployment.
 No full system deployment occurred for this installation.
 
+## Pi integration
+
+Both hosts load the global `branchfs` extension and `branchfs-workspaces` skill.
+The sources live in `modules/pi-branchfs/`. The host module declares their
+Home Manager paths. Live installations use a rooted Nix store copy.
+
+For an existing Pi session, use `/reload`. New sessions load the extension
+automatically. `/branchfs-status` shows whether the tool is active.
+`/skill:branchfs-workspaces` loads the complete workflow.
+
+Pi now prefers BranchFS for temporary edit workspaces. Explicit repository
+requirements for real worktrees still apply. The extension does not change
+Pi or Pueue working directories, migrate existing worktrees, or clean mounts
+on session exit. The skill explains review, base conflicts, metadata limits,
+and explicit cleanup.
+
+Run the pure and adapter checks with:
+
+```sh
+node --test modules/pi-branchfs/tests.mjs
+nix build .#checks.x86_64-linux.pi-branchfs
+```
+
+The live check uses the installed Pi runtime, the global extension, and FUSE.
+It creates disposable files under the home directory without a model call:
+
+```sh
+pi --mode rpc --no-session -e modules/pi-branchfs/live-check.ts < /dev/null
+```
+
+A successful run prints `PI_BRANCHFS_LIVE_PASS`. A failed run retains its
+workspace for inspection. Do not remove that workspace until its mount is closed.
+
 Aspen3 was reachable at `100.108.13.4`, but its LAN address was unavailable.
 Its `/tmp` was full. The live checks and profile installation used a temporary
 directory under the home directory instead. No unrelated files were removed.
+For Pi, its user-owned `/tmp/jiti` cache moved to `~/.cache/pi-jiti-aspen3`,
+with a symlink at the original path. This permits extension loading without
+a temporary-directory override. A reboot can clear the temporary symlink.

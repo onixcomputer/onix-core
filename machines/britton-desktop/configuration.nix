@@ -295,6 +295,7 @@ in
   imports = [
     ./build-storage.nix
     ./collie-serve.nix
+    ../../modules/pi-branchfs/nixos.nix
     ../../modules/drift-rustfs/nixos.nix
     inputs.tenstorrent-nix.nixosModules.default
   ];

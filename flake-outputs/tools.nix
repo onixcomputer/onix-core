@@ -129,6 +129,11 @@ in
   )
   // (sopsViz.packages or { });
 
+  checks.pi-branchfs = pkgs.runCommand "pi-branchfs-tests" { nativeBuildInputs = [ pkgs.nodejs ]; } ''
+    node --test ${../modules/pi-branchfs}/tests.mjs
+    touch "$out"
+  '';
+
   apps = lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
     dgx-machine = {
       type = "app";
