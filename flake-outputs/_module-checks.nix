@@ -357,6 +357,10 @@ let
     package: lib.getName package == "bookshelf-import"
   ) bookshelfDesktopConfig.environment.systemPackages;
   bookshelfImportToolPresent = builtins.length bookshelfImportTools == 1;
+  bookshelfFetchTools = builtins.filter (
+    package: lib.getName package == "bookshelf-fetch"
+  ) bookshelfDesktopConfig.environment.systemPackages;
+  bookshelfFetchToolPresent = builtins.length bookshelfFetchTools == 1;
   bookshelfEnvironmentValid =
     bookshelfService.environment.BOOKSHELF_PROVIDER == "fs"
     && bookshelfService.environment.BOOKSHELF_DIRECTORY == bookshelfLibraryDirectory
@@ -1015,6 +1019,16 @@ in
       ${lib.optionalString bookshelfImportToolPresent ''
         if ${lib.getExe (builtins.head bookshelfImportTools)} >/dev/null 2>&1; then
           echo "Bookshelf import command accepted missing input"
+          exit 1
+        fi
+      ''}
+      ${lib.optionalString (!bookshelfFetchToolPresent) ''
+        echo "Bookshelf operator fetch command is missing or duplicated"
+        exit 1
+      ''}
+      ${lib.optionalString bookshelfFetchToolPresent ''
+        if ${lib.getExe (builtins.head bookshelfFetchTools)} --help >/dev/null 2>&1; then
+          echo "Bookshelf fetch command accepted no provider"
           exit 1
         fi
       ''}

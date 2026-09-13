@@ -101,6 +101,172 @@ in
                 systemctl start --wait bookshelf-publish.service
               '';
             };
+            # r[impl onix.bookshelf.fetch]
+            # Download an owned EPUB from a catalog into the source directory and
+            # publish it. Project Gutenberg works keyless. Anna's Archive delegates to
+            # the external 'annas-mcp' CLI and needs ANNAS_SECRET_KEY for downloads.
+            fetchTool = pkgs.writeShellApplication {
+              name = "bookshelf-fetch";
+              runtimeInputs = [
+                pkgs.coreutils
+                pkgs.curl
+                pkgs.gawk
+                pkgs.gnused
+                pkgs.jq
+                pkgs.systemd
+              ];
+              text = ''
+                set -euo pipefail
+
+                source_dir='${lib.escapeShellArg settings.sourceDir}'
+                service_user='${serviceUser}'
+                service_group='${serviceGroup}'
+                source_mode='${sourceFileMode}'
+
+                usage() {
+                  cat >&2 <<'EOF'
+                usage: sudo bookshelf-fetch gutenberg "search terms" [--match N]
+                       sudo bookshelf-fetch anna "search terms" [--md5 MD5]
+
+                gutenberg downloads and publishes a Project Gutenberg EPUB (no key
+                required). anna searches Anna's Archive through the 'annas-mcp' CLI;
+                downloads need ANNAS_SECRET_KEY set (donation API key).
+                EOF
+                }
+
+                if [ "$#" -eq 0 ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+                  usage
+                  exit 1
+                fi
+                if [ "$(id -u)" -ne 0 ]; then
+                  echo "bookshelf-fetch must run as root" >&2
+                  exit 1
+                fi
+
+                provider="$1"; shift
+
+                publish() {
+                  systemctl start --wait bookshelf-publish.service
+                }
+
+                sanitize_name() {
+                  printf '%s' "$1" \
+                    | tr '[:upper:]' '[:lower:]' \
+                    | sed -E 's/[^[:alnum:]]+/-/g; s/^-+//; s/-+$//'
+                }
+
+                gutenberg_fetch() {
+                  local query="$1" match="''${MATCH:-1}"
+                  local encoded q_file results n=0 line id title author dest name
+                  encoded="$(printf '%s' "$query" | jq -sRr @uri)"
+                  q_file="$(mktemp)"
+                  results="$(mktemp)"
+                  curl -fsSL --max-time 60 -A 'Mozilla/5.0 (bookshelf-fetch)' \
+                    "https://www.gutenberg.org/ebooks/search/?query=$encoded" -o "$q_file"
+                  awk '
+                    BEGIN { RS="<li class=\"booklink\""; OFS="|" }
+                    NR==1 { next }
+                    {
+                      id=""; title=""; author=""
+                      if (match($0, /href="\/ebooks\/[0-9]+"/)) {
+                        s=substr($0,RSTART,RLENGTH); gsub(/[^0-9]/,"",s); id=s
+                      }
+                      if (match($0, /<span class="title">[^<]*<\/span>/)) {
+                        t=substr($0,RSTART,RLENGTH); gsub(/<[^>]+>/,"",t); title=t
+                      }
+                      if (match($0, /<span class="subtitle">[^<]*<\/span>/)) {
+                        a=substr($0,RSTART,RLENGTH); gsub(/<[^>]+>/,"",a); author=a
+                      }
+                      if (id != "") print id "|" title "|" author
+                    }
+                  ' "$q_file" > "$results"
+                  if [ ! -s "$results" ]; then
+                    echo "gutenberg: no results for '$query'" >&2
+                    exit 1
+                  fi
+                  echo "gutenberg results:"
+                  while IFS='|' read -r id title author; do
+                    [ -n "$id" ] || continue
+                    n=$((n+1))
+                    printf '  %d) %s by %s\n' "$n" "$title" "$author"
+                  done < "$results"
+                  if [ "$match" -lt 1 ] || [ "$match" -gt "$n" ]; then
+                    echo "gutenberg: --match $match out of range (1..$n)" >&2
+                    exit 1
+                  fi
+                  line="$(sed -n "''${match}p" "$results")"
+                  id="''${line%%|*}"
+                  title="$(printf '%s' "''${line#*|}" | cut -d'|' -f1)"
+                  name="$(sanitize_name "$title").epub"
+                  dest="''${source_dir}/''${name}"
+                  echo "downloading Gutenberg #$id -> $name"
+                  if [ -e "$dest" ]; then
+                    echo "already present, skipping: $dest"
+                  else
+                    curl -fsSL --max-time 120 -A 'Mozilla/5.0 (bookshelf-fetch)' \
+                      "https://www.gutenberg.org/cache/epub/''${id}/pg''${id}.epub" \
+                      -o "/tmp/.bookshelf-fetch-''${name}"
+                    install -o "$service_user" -g "$service_group" -m "$source_mode" -- \
+                      "/tmp/.bookshelf-fetch-''${name}" "$dest"
+                    rm -f "/tmp/.bookshelf-fetch-''${name}"
+                  fi
+                  rm -f "$q_file" "$results"
+                  publish
+                }
+
+                anna_fetch() {
+                  local query="$1" md5="''${MD5:-}"
+                  if ! command -v annas-mcp >/dev/null 2>&1; then
+                    echo "anna provider requires the 'annas-mcp' CLI on PATH" >&2
+                    exit 1
+                  fi
+                  if [ -z "$md5" ]; then
+                    export ANNAS_DOWNLOAD_PATH="$source_dir"
+                    if ! annas-mcp book-search "$query"; then
+                      annas-mcp search "$query"
+                    fi
+                  else
+                    if [ -z "''${ANNAS_SECRET_KEY:-}" ]; then
+                      echo "warning: ANNAS_SECRET_KEY unset; anna download may fail" >&2
+                    fi
+                    export ANNAS_DOWNLOAD_PATH="$source_dir"
+                    if ! annas-mcp book-download "$md5" "$query.epub"; then
+                      annas-mcp download "$md5" "$query.epub"
+                    fi
+                    publish
+                  fi
+                }
+
+                case "$provider" in
+                  gutenberg)
+                    query="$1"; shift || true
+                    MATCH=1
+                    while [ "$#" -gt 0 ]; do
+                      case "$1" in
+                        --match) MATCH="$2"; shift 2 || true ;;
+                        *) shift ;;
+                      esac
+                    done
+                    gutenberg_fetch "$query"
+                    ;;
+                  anna)
+                    query="$1"; shift || true
+                    MD5=
+                    while [ "$#" -gt 0 ]; do
+                      case "$1" in
+                        --md5) MD5="$2"; shift 2 || true ;;
+                        *) shift ;;
+                      esac
+                    done
+                    anna_fetch "$query"
+                    ;;
+                  *)
+                    usage
+                    exit 1
+                    ;;
+                esac
+              '';
+            };
           in
           {
             assertions = [
@@ -117,7 +283,10 @@ in
               description = "Bookshelf service account";
             };
 
-            environment.systemPackages = [ importTool ];
+            environment.systemPackages = [
+              importTool
+              fetchTool
+            ];
 
             systemd = {
               tmpfiles.rules = [
