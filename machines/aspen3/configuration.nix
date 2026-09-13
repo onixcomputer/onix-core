@@ -346,6 +346,7 @@ in
 
   environment.systemPackages = with pkgs; [
     alsa-utils
+    self.packages.${pkgs.stdenv.hostPlatform.system}.branchfs
     nvme-cli
     pciutils
     opentofu

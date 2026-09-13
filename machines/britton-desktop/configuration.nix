@@ -831,6 +831,7 @@ in
 
   environment.systemPackages = with pkgs; [
     bpftrace
+    self.packages.${pkgs.stdenv.hostPlatform.system}.branchfs
     imagemagick
     nirius
     prismlauncher
