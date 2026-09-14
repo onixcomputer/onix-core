@@ -12,11 +12,15 @@ Installed memory differs between the two hosts: `MemTotal` is 125 GiB on `aspen1
 
 **Rationale:** The values answer "how much system memory may the GPU map", which is an APU question and follows installed memory. `iommu=pt`, `pci=realloc`, and `pcie_aspm=off` answer "make an add-in RoCE card behave", which is an E810 question. One tag that owns both cannot be assigned honestly on a host that has one and not the other.
 
-### 2. Preserve the values the workloads were sized against
+### 2. Size the aperture from installed memory
 
-**Choice:** Keep `amdgpu.gttsize=126976` and `ttm.pages_limit=32505856` for both hosts, moved into the new tag, and record the `aspen2` mismatch as an open decision.
+**Choice:** Each host entry states its installed memory, and the tag computes the aperture as three quarters of it (a quarter stays with the OS and CPU workloads). `aspen1` therefore renders 96 GiB of aperture and 25165824 TTM pages, and `aspen2` renders 48 GiB and 12582912 pages.
 
-**Rationale:** `aspen1` had 73 GiB of memory in use while serving inference, so lowering its cap is a behaviour change that needs a measurement, not a refactor. `aspen2` clamps the aperture to installed memory, so its value is inert. Changing either value belongs to a tuning change with inference evidence.
+**Rationale:** A copied value is what produced the defect: both hosts claimed a 124 GiB cap, which exceeds the 64 GiB that `aspen2` has installed and leaves about 4 GiB to the OS on `aspen1`. A reserve stated once, in a divisor, keeps the relationship visible and reviewable for the next host added to the tag.
+
+**Evidence for the values:** `MemTotal` reads 125 GiB on `aspen1` and 62.6 GiB on `aspen2`. The hardware inventory holds one memory device per host (32 GiB and 64 GiB), so it cannot supply the installed total and the entries state it directly. `aspen1` had 73 GiB in use while serving inference, which the 96 GiB aperture still covers.
+
+**Deferred measurement:** the change reaches the kernel at the next boot. Inference throughput must be compared against the current 124 GiB passthrough baseline after that boot, because a smaller aperture can refuse an allocation that previously succeeded.
 
 ### 3. The RDMA tag fails closed
 
@@ -32,7 +36,8 @@ Installed memory differs between the two hosts: `MemTotal` is 125 GiB on `aspen1
 
 ## Verification results (2026-09-14)
 
-- Evaluation on both hosts renders `amdgpu.gttsize=126976`, `ttm.pages_limit=32505856`, and `options ttm pages_limit=32505856`, and renders no `iommu=`, `pci=`, or `pcie_aspm=` parameter.
+- Evaluation on both hosts renders `amdgpu.gttsize=98304`, `ttm.pages_limit=25165824`, and `options ttm pages_limit=25165824` on `aspen1`, and `49152`/`12582912` on `aspen2`. Neither host renders an `iommu=`, `pci=`, or `pcie_aspm=` parameter.
+- The boot entry carries the new values (`/run/current-system/kernel-params`), while the running kernel keeps `iommu=pt` and the 126976 MiB aperture until the next reboot.
 - The cluster env still renders `VLLM_CLUSTER_BACKEND=thunderbolt` and `VLLM_CLUSTER_INTERFACE=br-tbt` on both hosts.
 - Both top-level closures build.
 - The RDMA assertion rejects a tagged host without a controller, and the tag registry accepts the new tag.

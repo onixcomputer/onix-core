@@ -16,6 +16,7 @@ The memory tuning in the tag also contradicted the repository's own documentatio
 
 - **Files**: `lib/rdma-hardware.nix`, `inventory/tags/gpu-unified-memory.nix`, `inventory/tags/rdma-cluster.nix`, `inventory/tags/vllm-cluster-network.nix`, `inventory/core/contracts.ncl`, `inventory/core/machines.ncl`, and the `thunderbolt-link` specification delta.
 - **Risk**: The aspen hosts lose `iommu=pt`, `pci=realloc`, and `pcie_aspm=off` at the next boot, and the IOMMU returns to its default translation mode. GPU and NVMe DMA performance must be re-measured after that boot.
-- **Non-goals**: Do not change the GTT and TTM values the inference workloads are sized against. Do not remove the `rdma-cluster` tag itself, because a host that gains an E810 still needs it. Do not reboot the hosts in this change.
+- **Non-goals**: Do not remove the `rdma-cluster` tag itself, because a host that gains an E810 still needs it. Do not reboot the hosts in this change.
+- **Tuning change**: the tag now derives the aperture as three quarters of each host's installed memory, so `aspen1` moves from a 124 GiB to a 96 GiB aperture and `aspen2` from an over-RAM 124 GiB to 48 GiB. Both reach the kernel at the next boot and need a post-reboot performance comparison.
 - **Testing**: Nix evaluation of both hosts for the rendered kernel parameters and the segment env, a top-level closure build for both hosts, and a deploy that verifies the live boot entry and the unchanged memory parameters.
 - **Spec supersession**: the accepted `rdma-cluster` specification still documents memory tuning under the RDMA tag (`tag.memory_tuning`). That requirement is superseded by `r[onix.gpu_unified_memory.sizing]` and needs a delta before the spec is archived.

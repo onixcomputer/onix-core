@@ -3,42 +3,49 @@
 # On an APU the GPU shares system memory. Two module parameters decide how much
 # of that memory the GPU may map: `amdgpu.gttsize` sets the GTT aperture and
 # `ttm.pages_limit` caps how many 4 KiB pages TTM hands to the GPU. Both follow
-# installed memory, so the sizes are per host and the tag fails closed for a host
-# that has no size.
+# installed memory, so the tag sizes them from a per-host memory entry and fails
+# closed for a host that has no entry.
+#
+# The hardware inventory in machines/<host>/facter.json reports one populated
+# memory device per host, so it does not carry the installed total. Each entry
+# below states the installed total, and `MemTotal` on the host confirms it.
 {
   config,
   lib,
   ...
 }:
 let
-  # GTT aperture in MiB. Size each entry from installed memory: the aperture is
-  # system memory that the GPU maps, so leave room for the OS and the CPU
-  # workloads. The values below are the ones the inference workloads were sized
-  # against.
-  gttSizeMiB = {
-    aspen1 = 126976;
-    aspen2 = 126976;
+  # Installed memory per host, in MiB.
+  installedMemoryMiB = {
+    aspen1 = 131072; # 128 GiB installed; MemTotal reports 125 GiB usable
+    aspen2 = 65536; # 64 GiB installed; MemTotal reports 62.6 GiB usable
   };
+
+  # Share of installed memory kept for the OS and CPU workloads. The aperture is
+  # system memory that the GPU maps, so this reserve is what stops GPU
+  # allocations from consuming the whole machine.
+  osReserveDivisor = 4;
 
   pageBytes = 4096;
   bytesPerMiB = 1024 * 1024;
   pagesPerMiB = bytesPerMiB / pageBytes;
 
   hostname = config.networking.hostName;
-  gttMiB = gttSizeMiB.${hostname} or null;
-  pagesLimit = gttMiB * pagesPerMiB;
+  installedMiB = installedMemoryMiB.${hostname} or null;
+  gttMiB = if installedMiB == null then null else installedMiB - installedMiB / osReserveDivisor;
+  pagesLimit = if gttMiB == null then null else gttMiB * pagesPerMiB;
 in
 {
   config = lib.mkMerge [
     {
       assertions = [
         {
-          assertion = gttMiB != null;
+          assertion = installedMiB != null;
           message = ''
-            The gpu-unified-memory tag requires a GTT size for ${hostname}.
-            Add the host to gttSizeMiB in inventory/tags/gpu-unified-memory.nix before
-            assigning the tag. Size it from installed memory, because the aperture is
-            system memory that the GPU maps.
+            The gpu-unified-memory tag requires the installed memory of ${hostname}.
+            Add the host to installedMemoryMiB in inventory/tags/gpu-unified-memory.nix
+            before assigning the tag. Take the value from `MemTotal` on the host and
+            round it to the installed size.
           '';
         }
       ];

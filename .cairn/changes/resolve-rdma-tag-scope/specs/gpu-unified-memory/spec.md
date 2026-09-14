@@ -8,23 +8,32 @@ Define how an APU inference host sizes the memory that the GPU may map from syst
 
 ### Requirement: Per-host unified-memory sizing
 
-r[onix.gpu_unified_memory.sizing] The system MUST set the GTT aperture and the TTM page limit from a per-host size, and MUST fail closed for a tagged host that has no size.
+r[onix.gpu_unified_memory.sizing] The system MUST size the GTT aperture from the host's installed memory, leaving a stated reserve for the OS and CPU workloads, and MUST fail closed for a tagged host that has no memory entry.
 
 #### Scenario: Tagged host receives its memory parameters
 
 r[onix.gpu_unified_memory.sizing.tagged]
-- GIVEN a machine is tagged `gpu-unified-memory` and is listed with a GTT size
+- GIVEN a machine is tagged `gpu-unified-memory` and is listed with its installed memory
 - WHEN its NixOS configuration is evaluated
-- THEN `amdgpu.gttsize` and `ttm.pages_limit` carry that host's values
-- AND the TTM page limit equals the GTT size in MiB multiplied by the page count that a MiB holds
+- THEN `amdgpu.gttsize` carries the installed memory minus the stated reserve
+- AND `ttm.pages_limit` equals the aperture in MiB multiplied by the page count that a MiB holds
+- AND the aperture is smaller than the memory installed in the host
 - AND the modprobe option for the TTM page limit overrides the default that the `amd-gpu` tag sets
 
 #### Scenario: Unlisted host fails closed
 
 r[onix.gpu_unified_memory.sizing.unlisted]
-- GIVEN a machine is tagged `gpu-unified-memory` but has no GTT size
+- GIVEN a machine is tagged `gpu-unified-memory` but has no memory entry
 - WHEN its NixOS configuration is evaluated
 - THEN evaluation fails with a diagnostic that names the sizing map
+
+#### Scenario: Aperture stays inside installed memory
+
+r[onix.gpu_unified_memory.sizing.within_memory]
+- GIVEN two hosts on the tag have different installed memory
+- WHEN their configurations are evaluated
+- THEN each aperture follows its own host's memory
+- AND no host renders an aperture that exceeds its installed memory
 
 ### Requirement: Tag registration
 
