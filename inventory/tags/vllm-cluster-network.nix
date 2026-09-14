@@ -8,6 +8,8 @@
   ...
 }:
 let
+  rdmaHardware = import ../../lib/rdma-hardware.nix { inherit lib; };
+
   envRelativePath = "vllm-cluster/network.env";
   envAbsolutePath = "/etc/${envRelativePath}";
   headHost = "aspen1";
@@ -55,29 +57,9 @@ let
   # follows the hardware inventory, because an interface that does not exist
   # cannot transport Ray, gloo, or NCCL traffic. A host that is tagged for RDMA
   # without an RDMA-capable network controller falls through to the USB4 link.
-  facterFile = "${self}/machines/${hostname}/facter.json";
-  facter =
-    if builtins.pathExists facterFile then builtins.fromJSON (builtins.readFile facterFile) else { };
-  networkControllers = facter.hardware.network_controller or [ ];
-  controllerDriver = controller: controller.driver_module or controller.driver or "";
-  rdmaCapableDrivers = [
-    "bnxt_re"
-    "efa"
-    "erdma"
-    "ib_qib"
-    "ice"
-    "irdma"
-    "mana_ib"
-    "mlx4_core"
-    "mlx5_core"
-    "qedr"
-    "rxe"
-    "siw"
-    "vmw_pvrdma"
-  ];
-  hasRdmaHardware = builtins.any (
-    controller: builtins.elem (controllerDriver controller) rdmaCapableDrivers
-  ) networkControllers;
+  # The rdma-cluster tag fails closed without a controller; this check also
+  # covers a host that keeps the tag after its controller is removed.
+  hasRdmaHardware = rdmaHardware.hasRdmaController { inherit self hostname; };
   rdmaWithoutHardware = hasRdmaNetwork && !hasRdmaHardware;
   rdmaWithoutHardwareWarning = ''
     vllm-cluster-network: ${hostname} is tagged rdma-cluster but its hardware

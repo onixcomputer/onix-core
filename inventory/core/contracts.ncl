@@ -21,6 +21,7 @@ let tag_file_tags = [
   "dgx-spark",
   "docker",
   "gaming",
+  "gpu-unified-memory",
   "greeter",
   "grub-theme",
   "initrd-ssh",
