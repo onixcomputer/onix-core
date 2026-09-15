@@ -1016,6 +1016,19 @@ in
       },
     },
 
+    # oh-my-pi's `omp` is a large self-contained agent build, so it widens the
+    # llm-client CLI set on the two workstations that run it instead of
+    # loading it onto every llm-client host. The instance is machine-scoped,
+    # and the packages setting is list-typed, so each listed machine receives
+    # exactly the agent named here. r[impl onix.llm_agents.omp.scope]
+    "omp-agents" = {
+      module = { name = "llm-agents", input = "self" },
+      roles.default.machines = {
+        britton-desktop.settings.packages = ["omp"],
+        aspen3.settings.packages = ["omp"],
+      },
+    },
+
     "qwen-code-agents" = {
       module = { name = "llm-agents", input = "self" },
       roles.default = {
