@@ -36,6 +36,7 @@ let
   helixChecks = (import ./_helix-checks.nix) innerArgs;
   homeManagerChecks = (import ./_home-manager-checks.nix) innerArgs;
   kacheNixRustChecks = (import ./_kache-nix-rust-checks.nix) innerArgs;
+  llmAgentsChecks = (import ./_llm-agents-checks.nix) innerArgs;
   meshLlmChecks = (import ./_mesh-llm-checks.nix) innerArgs;
   dgxSparkPowerChecks = (import ./_dgx-spark-power-checks.nix) innerArgs;
   dgxDevenvChecks = (import ./_dgx-devenv-checks.nix) innerArgs;
@@ -75,6 +76,7 @@ in
     // (homeManagerChecks.checks or { })
     // driftRustfsChecks.checks
     // (kacheNixRustChecks.checks or { })
+    // (llmAgentsChecks.checks or { })
     // (meshLlmChecks.checks or { })
     // (dgxSparkPowerChecks.checks or { })
     // (dgxDevenvChecks.checks or { })
