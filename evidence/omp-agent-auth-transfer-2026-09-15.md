@@ -62,6 +62,36 @@ Live non-interactive requests, one per credential family:
 `~/.omp/agent/{agent.db,config.yml,models.yml}` are mode 0600 on both
 hosts. Temporary import directories were removed on both hosts.
 
+## Default model
+
+Both hosts default to the dspark-hosted DeepSeek V4.1 Flash at the top
+thinking level:
+
+```yaml
+enabledModels: [openai-codex/gpt-6-astra, zai/glm-5.3, zai/glm-5.3-flash, local-dspark/deepseek-v4.1-flash]
+defaultThinkingLevel: max
+modelRoles:
+  default: local-dspark/deepseek-v4.1-flash
+```
+
+pi carried that endpoint's thinking over `chatTemplateKwargs` with
+`thinkingFormat: chat-template`, which omp's schema rejects. omp's equivalent
+for the vLLM path is `qwen-chat-template`, which rides the same
+`chat_template_kwargs` channel, so the transferred `deepseek-v4.1-flash` entry
+carries `compat.thinkingFormat: qwen-chat-template`. The endpoint honoured the
+kwargs: the same prompt that used 14 prompt tokens without them used 40 with
+`{thinking: true, reasoning_effort: max}`.
+
+Verified by running the default model on both hosts:
+
+```text
+provider=local-dspark model=deepseek-v4.1-flash
+content=[thinking "Simple. 17*23 = 391.", text "391"]
+```
+
+`defaultThinkingLevel` and `modelRoles.default` are identical in
+`~/.omp/agent/config.yml` on `britton-desktop` and `aspen3`.
+
 ## Limits
 
 The quota, credit, and model-availability responses prove the credentials
