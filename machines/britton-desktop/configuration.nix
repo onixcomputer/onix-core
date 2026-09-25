@@ -555,6 +555,10 @@ in
 
   systemd = {
     services = {
+      # Paused for now: masked so both P150s stay free. Boot, deployments, and
+      # mesh-llm's Wants= can no longer start it. Delete this line to restore.
+      ${qwenServiceName}.enable = false;
+
       radicle-ci-broker.serviceConfig = {
         MemoryMax = kilnMemoryMax;
         CPUQuota = kilnCpuQuota;
@@ -801,6 +805,11 @@ in
     `http://${qwenListenAddress}:${toString qwenApiPort}`. Prompt plus generation
     is limited to ${toString qwenMaximumSequenceLength} tokens. One request can
     generate at most ${toString qwenMaximumGenerationTokens} tokens.
+
+    The unit is masked on this host for now, so neither boot, a deployment, nor
+    another unit's `Wants=` starts it, and both P150 devices stay free. Delete
+    `systemd.services.${qwenServiceName}.enable = false` in
+    `machines/britton-desktop/configuration.nix` to restore it.
 
     The retired `${vibeThinkerUnitName}` and `${p150LlamaUnitName}` units are
     absent from the generated host configuration. The Qwen unit also declares
