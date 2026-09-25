@@ -142,6 +142,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     multiverse.url = "github:fzakaria/nixpkgs-multiverse";
+    # Packages only; inventory/tags/omnibin.nix explains why its module is not used.
+    omnibin = {
+      url = "github:fzakaria/omnibin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     nix-index-database = {
       url = "github:nix-community/nix-index-database";

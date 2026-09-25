@@ -29,6 +29,7 @@ let tag_file_tags = [
   "media",
   "minimal-docs",
   "nvidia",
+  "omnibin",
   "openpgp",
   "password-manager",
   "perf-tuning",

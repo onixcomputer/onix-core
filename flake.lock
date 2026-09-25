@@ -4767,6 +4767,26 @@
         "type": "github"
       }
     },
+    "omnibin": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790310733,
+        "narHash": "sha256-pxnuS1OSU/eoTb7/9NWgawTAUdsituIqqX3C0RQ5eB4=",
+        "owner": "fzakaria",
+        "repo": "omnibin",
+        "rev": "b3acd8773a92b9acac9adc80997fac56ef9bac6b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "fzakaria",
+        "repo": "omnibin",
+        "type": "github"
+      }
+    },
     "onix-wasm": {
       "inputs": {
         "crane": "crane_9",
@@ -4947,6 +4967,7 @@
         "nixpkgs": "nixpkgs_17",
         "noctalia": "noctalia",
         "noctalia-plugins": "noctalia-plugins",
+        "omnibin": "omnibin",
         "onix-wasm": "onix-wasm",
         "pinenote-nixos": "pinenote-nixos",
         "pre-commit-hooks-nix": "pre-commit-hooks-nix",
