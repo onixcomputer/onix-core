@@ -210,6 +210,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "perf-tuning",
         "printing",
         "dev",
+        "omnibin",
         "desktop",
         "laptop-input",
         "greeter",
