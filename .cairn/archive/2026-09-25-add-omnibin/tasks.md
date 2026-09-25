@@ -10,5 +10,7 @@
 
 ## Phase 3: Deployment
 
-- [ ] [serial] Deploy `britton-desktop` from its deployed lineage after comparing closures with the running system. r[onix.omnibin.deployment]
-- [ ] [serial] Resolve both commands on the target, repeat the shell run there, and record the evidence. r[onix.omnibin.deployment.path] r[onix.omnibin.namespace.host_store]
+- [x] [serial] Deploy `britton-desktop` from its deployed lineage after comparing closures with the running system. r[onix.omnibin.deployment]
+- [x] [serial] Resolve both commands on the target, repeat the shell run there, and record the evidence. r[onix.omnibin.deployment.path] r[onix.omnibin.namespace.host_store]
+
+Evidence: `evidence/omnibin-2026-09-25.md`.
