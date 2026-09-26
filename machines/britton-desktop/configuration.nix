@@ -316,10 +316,12 @@ in
       qwen38 = {
         enable = true;
         package = qwenPackages.qwen38;
-        # Sampled requests (temperature above zero) serve through the fused
-        # GDN path under the distributional admission gate; greedy requests
-        # keep the exact-parity path.
-        sampledFusion = true;
+        # Sampled requests use the fused GDN decode step with host sampling.
+        # The sampled-fusion kernel fits at most 4 users per replay on the
+        # shared TT-Metal runtime (4 x 24 heads on 110 cores). With it on,
+        # startup warms that route at widths 5-16, hits "num_heads exceeds the
+        # available compute grid", and leaves prefill untraced.
+        sampledFusion = false;
         modelPath = qwenModelPath;
         modelAlias = "Qwen3.8-27B";
         listenAddress = qwenListenAddress;
