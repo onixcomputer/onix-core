@@ -36,6 +36,8 @@ in
             agentPkgs = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
           in
           {
+            imports = [ (import ./underclass.nix { settings = cfg; }) ];
+
             environment.systemPackages = map (name: agentPkgs.${name}) cfg.packages;
           };
       };

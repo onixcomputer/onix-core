@@ -79,6 +79,7 @@ in
     verify-deploy = pkgs.callPackage ../pkgs/verify-deploy { };
     ki-editor = self.inputs.ki-editor.packages.${pkgs.stdenv.hostPlatform.system}.default;
     mercury-cli = self.inputs.mercury-cli.packages.${pkgs.stdenv.hostPlatform.system}.mercury-cli;
+    underclass = self.inputs.underclass.packages.${pkgs.stdenv.hostPlatform.system}.underclass;
     prime-agent = pkgs.callPackage ../pkgs/prime-agent { };
   }
   // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
@@ -96,6 +97,8 @@ in
     deepseek-v4-dspark-draft = pkgs.callPackage ../pkgs/deepseek-v4-dspark-draft { };
     lemonade-server = pkgs.callPackage ../pkgs/lemonade { };
     mesh-llm = pkgs.callPackage ../pkgs/mesh-llm { };
+    mesh-research = pkgs.callPackage ../pkgs/mesh-research { };
+    underclass-mesh-gateway = pkgs.callPackage ../pkgs/underclass-mesh-gateway { };
     radicle-ci-runner = pkgs.callPackage ../pkgs/radicle-ci-runner { };
     ssh-clipboard = pkgs.callPackage ../pkgs/ssh-clipboard { };
     ptyzzz = pkgs.callPackage ../pkgs/ptyzzz { };

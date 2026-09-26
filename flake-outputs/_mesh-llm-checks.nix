@@ -117,7 +117,7 @@ let
   dgxFixtureServiceName = "mesh-llm-${dgxFixtureInstanceName}";
   dgxFixtureBackendUnit = "fixture-openai-backend.service";
   dgxFixtureJoinTokenPath = "/run/dgx-fixture-join-token";
-  dgxFixtureSettings = {
+  dgxFixtureSettings = lib.mapAttrs (_: field: field.default) meshSchema.default // {
     mode = "joiner";
     endpointUrl = meshEndpointUrl;
     inherit
@@ -207,6 +207,16 @@ let
     item: !item.assertion && lib.hasInfix "requires backendUnit" item.message
   ) invalidDgxBackendModuleConfig.assertions;
 
+  shadowedEndpointModuleMerge = mkDgxFixtureModuleConfig (
+    dgxFixtureSettings
+    // {
+      extraEndpoints."openai-endpoint" = "http://127.0.0.1:13306/v1";
+    }
+  );
+  rejectsPrimaryEndpointShadowing = lib.any (
+    item: !item.assertion
+  ) (builtins.head shadowedEndpointModuleMerge.contents).assertions;
+
   meshPackage = self.packages.${pkgs.stdenv.hostPlatform.system}.mesh-llm;
   armMeshPackage = self.packages.aarch64-linux.mesh-llm;
   armMeshTarget = "aarch64-unknown-linux-gnu";
@@ -258,6 +268,10 @@ in
           ''}
           ${lib.optionalString (!dgxFixtureRejectsMissingBackend) ''
             echo "Mesh-LLM accepted an unowned loopback backend" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!rejectsPrimaryEndpointShadowing) ''
+            echo "Mesh-LLM accepted an extra endpoint that replaces its primary backend" >&2
             exit 1
           ''}
 

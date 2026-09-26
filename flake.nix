@@ -200,6 +200,14 @@
         systems.follows = "systems";
       };
     };
+    underclass = {
+      url = "github:ghuntley/underclass";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        systems.follows = "systems";
+        devenv.follows = "devenv";
+      };
+    };
     tenstorrent-nix = {
       url = "git+ssh://git@github.com/OnixResearch/tenstorrent.nix.git";
       inputs = {

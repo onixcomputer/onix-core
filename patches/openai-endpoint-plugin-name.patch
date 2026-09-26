@@ -1,0 +1,28 @@
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -15,6 +15,16 @@
+         .unwrap_or_else(|| DEFAULT_BASE_URL.to_string())
+ }
+ 
++/// Mesh-LLM rejects a plugin whose initialize response names anything other
++/// than its configured entry, and passes that name as `MESH_LLM_PLUGIN_NAME`.
++/// Reporting it lets several named entries share this binary.
++fn plugin_name(assigned: Option<String>) -> String {
++    assigned
++        .map(|value| value.trim().to_string())
++        .filter(|value| !value.is_empty())
++        .unwrap_or_else(|| PLUGIN_ID.to_string())
++}
++
+ fn build_plugin(name: String) -> mesh_llm_plugin::SimplePlugin {
+     let base_url = base_url();
+     let health_url = base_url.clone();
+@@ -59,7 +69,7 @@
+     builder.enable_all();
+     let runtime = builder.build().expect("build tokio runtime");
+     runtime.block_on(async move {
+-        match run_plugin(PLUGIN_ID.to_string()).await {
++        match run_plugin(plugin_name(std::env::var("MESH_LLM_PLUGIN_NAME").ok())).await {
+             Ok(()) => 0,
+             Err(err) => {
+                 eprintln!("{err:#}");

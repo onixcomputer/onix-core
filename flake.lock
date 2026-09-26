@@ -4979,6 +4979,7 @@
         "tigerstyle": "tigerstyle",
         "treefmt-nix": "treefmt-nix_5",
         "tt-kmd": "tt-kmd",
+        "underclass": "underclass",
         "upmpdcli": "upmpdcli",
         "wl-walls": "wl-walls",
         "wrappers": "wrappers"
@@ -6506,6 +6507,32 @@
         "owner": "tenstorrent",
         "ref": "ttkmd-2.10.0",
         "repo": "tt-kmd",
+        "type": "github"
+      }
+    },
+    "underclass": {
+      "inputs": {
+        "devenv": [
+          "devenv"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "systems": [
+          "systems"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790328094,
+        "narHash": "sha256-2ETQeWY2YyOUbJKGlX4bmRNu3wGRceKdaVLtRG6dm3c=",
+        "owner": "ghuntley",
+        "repo": "underclass",
+        "rev": "033928363862a1b216e86d59b4c1f1a44c6edf4a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ghuntley",
+        "repo": "underclass",
         "type": "github"
       }
     },

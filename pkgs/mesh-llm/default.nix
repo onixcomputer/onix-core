@@ -132,6 +132,10 @@ let
     version = pluginVersion;
     src = openaiEndpointSource;
 
+    # r[impl onix.underclass.mesh.route]
+    # Upstream always reports its default plugin name, so Mesh-LLM rejects
+    # every additional named entry. This patch reports the configured name.
+    patches = [ ../../patches/openai-endpoint-plugin-name.patch ];
     cargoHash = "sha256-KCNv9oI7+CvvV7AXHaM2ZRdSiztSlNCDkqA0Avmu77Y=";
 
     nativeBuildInputs = [ pkg-config ];

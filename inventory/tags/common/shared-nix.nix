@@ -29,6 +29,7 @@ in
           self.packages.${pkgs.stdenv.hostPlatform.system}.deepseek-v4-dspark-draft or null;
         lemonade-server = self.packages.${pkgs.stdenv.hostPlatform.system}.lemonade-server or null;
         mesh-llm = self.packages.${pkgs.stdenv.hostPlatform.system}.mesh-llm or null;
+        mesh-research = self.packages.${pkgs.stdenv.hostPlatform.system}.mesh-research or null;
         radicle-node = self.packages.${pkgs.stdenv.hostPlatform.system}.radicle-node or null;
         radicle-httpd = self.packages.${pkgs.stdenv.hostPlatform.system}.radicle-httpd or null;
       }
