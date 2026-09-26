@@ -35,7 +35,7 @@ Mesh-LLM 0.72.2 behavior, from the `v0.72.2` source:
 
 **Choice:** Keep `--mesh-discovery-mode mdns`, `--bind-ip <tailnet address>` and the fixed UDP port.
 
-**Rationale:** This split is a bootstrap problem, not a transport problem. iroh relays would still need a reachable invite, and `r[onix.mesh_llm.private]` forbids public relays and STUN.
+**Rationale:** This split is a bootstrap problem, not a transport problem. iroh relays would still need a reachable invite, and the private-mesh requirement (`onix.mesh_llm.private` in the `mesh-llm-sidecar` spec) forbids public relays and STUN.
 
 ## Risks / Trade-offs
 
