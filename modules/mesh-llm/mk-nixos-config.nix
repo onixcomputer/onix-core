@@ -4,7 +4,8 @@
   lib,
   instanceName,
   settings,
-  joinTokenPath ? null,
+  # Invite tokens in join order: [ { name = <credential name>; path = <runtime secret path>; } ].
+  joinTokens ? [ ],
   package ? pkgs.mesh-llm,
 }:
 let
@@ -35,18 +36,15 @@ let
     "::"
   ];
   dynamicMeshBindAddressPlaceholder = "__mesh_bind_address__";
-  dynamicJoinTokenFilePlaceholder = "__mesh_join_token_file__";
-  joinCredentialName = "join-token";
-  systemdJoinTokenFile = "%d/${joinCredentialName}";
+  dynamicJoinTokenFilePlaceholder = name: "__mesh_join_token_file_${name}__";
+  joinCredentialNames = map (token: token.name) joinTokens;
   hasStaticMeshBindAddress = !(builtins.elem meshBindAddress wildcardMeshBindAddresses);
   hasMeshBindInterface = meshBindInterface != null && meshBindInterface != "";
   effectiveMeshBindAddress =
     if hasMeshBindInterface then dynamicMeshBindAddressPlaceholder else meshBindAddress;
-  effectiveJoinTokenFile =
-    if isJoiner then
-      if hasMeshBindInterface then dynamicJoinTokenFilePlaceholder else systemdJoinTokenFile
-    else
-      null;
+  effectiveJoinTokenFiles = map (
+    name: if hasMeshBindInterface then dynamicJoinTokenFilePlaceholder name else "%d/${name}"
+  ) joinCredentialNames;
   effectiveNodeName =
     if nodeName == null || nodeName == "" then config.networking.hostName else nodeName;
 
@@ -133,17 +131,17 @@ let
     configPath = configFile;
     nodeName = effectiveNodeName;
     meshBindAddress = effectiveMeshBindAddress;
-    joinTokenFile = effectiveJoinTokenFile;
+    joinTokenFiles = effectiveJoinTokenFiles;
   };
   launchCommandTemplate = lib.escapeShellArgs launchArgs;
   interfaceLauncherPlaceholders = [
     (lib.escapeShellArg dynamicMeshBindAddressPlaceholder)
   ]
-  ++ lib.optionals isJoiner [ (lib.escapeShellArg dynamicJoinTokenFilePlaceholder) ];
+  ++ map (name: lib.escapeShellArg (dynamicJoinTokenFilePlaceholder name)) joinCredentialNames;
   interfaceLauncherValues = [
     ''"$mesh_bind_address"''
   ]
-  ++ lib.optionals isJoiner [ ''"$join_token_file"'' ];
+  ++ map (name: ''"$credentials_directory"/${lib.escapeShellArg name}'') joinCredentialNames;
   interfaceLauncher =
     if hasMeshBindInterface then
       pkgs.writeShellApplication {
@@ -162,8 +160,8 @@ let
             echo "${serviceName}: interface $mesh_interface has no global IPv4 address" >&2
             exit 1
           fi
-          ${lib.optionalString isJoiner ''
-            join_token_file="''${CREDENTIALS_DIRECTORY:?systemd credentials are unavailable}/${joinCredentialName}"
+          ${lib.optionalString (joinTokens != [ ]) ''
+            credentials_directory="''${CREDENTIALS_DIRECTORY:?systemd credentials are unavailable}"
           ''}
           exec ${
             lib.replaceStrings interfaceLauncherPlaceholders interfaceLauncherValues launchCommandTemplate
@@ -252,8 +250,20 @@ in
       message = "${serviceName}: a loopback backend requires backendUnit or explicit external ownership.";
     }
     {
-      assertion = !isJoiner || (joinTokenPath != null && joinTokenPath != "");
-      message = "${serviceName}: joiner mode requires a runtime join-token path.";
+      assertion = !isJoiner || joinTokens != [ ];
+      message = "${serviceName}: joiner mode requires at least one runtime invite token path.";
+    }
+    {
+      assertion = isJoiner || joinTokens == [ ];
+      message = "${serviceName}: a seed originates the mesh ID and must not receive invite tokens.";
+    }
+    {
+      assertion =
+        lib.all (
+          token: token.path != "" && builtins.match "^[a-zA-Z0-9_.-]+$" token.name != null
+        ) joinTokens
+        && lib.length (lib.unique joinCredentialNames) == lib.length joinCredentialNames;
+      message = "${serviceName}: invite tokens need distinct credential names and non-empty paths.";
     }
     {
       assertion = proxyActivationModel != "";
@@ -303,7 +313,7 @@ in
       StateDirectoryMode = "0700";
       WorkingDirectory = statePath;
       ExecStart = launchCommand;
-      LoadCredential = lib.optionals isJoiner [ "${joinCredentialName}:${joinTokenPath}" ];
+      LoadCredential = map (token: "${token.name}:${token.path}") joinTokens;
       Restart = "on-failure";
       RestartSec = restartDelay;
       TimeoutStopSec = stopTimeout;

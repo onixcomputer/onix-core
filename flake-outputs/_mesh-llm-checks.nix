@@ -30,6 +30,7 @@ let
     {
       inherit
         label
+        machineName
         meshAddress
         backendUnit
         config
@@ -51,7 +52,7 @@ let
   aspen2Node = mkNode {
     label = "Aspen2";
     machineName = "aspen2";
-    meshAddress = "100.125.64.121";
+    meshAddress = "100.82.25.30";
     backendUnit = aspen2QwenBackendUnit;
   };
   aspen2HasQwenBackend = builtins.hasAttr aspen2QwenServiceName aspen2Node.config.systemd.services;
@@ -98,11 +99,35 @@ let
     && lib.hasInfix "--ctx-size ${toString proxyActivationContextSize}" node.command;
   deniesHostDevices = node: node.service.serviceConfig.PrivateDevices;
   ordersAfterBackend = node: builtins.elem node.backendUnit node.service.after;
-  hasJoinCredential =
-    node: lib.any (credential: lib.hasPrefix "join-token:" credential) node.credentials;
-  hasJoinFileArgument =
-    node: lib.hasInfix "--join-file" node.command && lib.hasInfix "%d/join-token" node.command;
-  hasJoinGenerator = node: builtins.hasAttr generatorName node.config.clan.core.vars.generators;
+  invitesGeneratorName = "${serviceName}-invites";
+  meshNodeNames = lib.sort lib.lessThan (map (node: node.machineName) meshNodes);
+  # A joiner loads an invite for every other node: joiners first, in name order, then the seed.
+  expectedInvitePeers =
+    node:
+    lib.sort lib.lessThan (
+      map (peer: peer.machineName) (lib.filter (peer: peer.machineName != node.machineName) joinerNodes)
+    )
+    ++ [ aspen1Node.machineName ];
+  loadsInvitesInOrder =
+    node:
+    map (credential: builtins.head (lib.splitString ":" credential)) node.credentials
+    == map (peer: "invite-${peer}") (expectedInvitePeers node);
+  joinsInvitesInOrder =
+    node:
+    lib.hasInfix (lib.concatMapStringsSep " " (peer: "--join-file %d/invite-${peer}") (
+      expectedInvitePeers node
+    )) node.command
+    && lib.length (lib.splitString "--join-file" node.command) - 1
+      == lib.length (expectedInvitePeers node);
+  hasInviteGenerator =
+    node:
+    let
+      generators = node.config.clan.core.vars.generators;
+    in
+    generators ? ${invitesGeneratorName}
+    && generators.${invitesGeneratorName}.share
+    && lib.sort lib.lessThan (lib.attrNames generators.${invitesGeneratorName}.files) == meshNodeNames;
+  hasRetiredJoinGenerator = node: node.config.clan.core.vars.generators ? ${generatorName};
   tcpIsPrivate =
     node:
     !(builtins.elem apiPort node.config.networking.firewall.allowedTCPPorts)
@@ -117,6 +142,8 @@ let
   dgxFixtureServiceName = "mesh-llm-${dgxFixtureInstanceName}";
   dgxFixtureBackendUnit = "fixture-openai-backend.service";
   dgxFixtureJoinTokenPath = "/run/dgx-fixture-join-token";
+  dgxFixtureSeedName = "fixture-seed";
+  dgxFixtureInviteName = "invite-${dgxFixtureSeedName}";
   dgxFixtureSettings = lib.mapAttrs (_: field: field.default) meshSchema.default // {
     mode = "joiner";
     endpointUrl = meshEndpointUrl;
@@ -136,7 +163,7 @@ let
   };
   dgxFixtureConfig = {
     networking.hostName = dgxFixtureInstanceName;
-    clan.core.vars.generators.${dgxFixtureServiceName}.files."join-token".path =
+    clan.core.vars.generators."${dgxFixtureServiceName}-invites".files.${dgxFixtureSeedName}.path =
       dgxFixtureJoinTokenPath;
   };
   meshServiceDefinition = (import ../modules/mesh-llm { schema = meshSchema; }) { inherit lib; };
@@ -146,6 +173,14 @@ let
       perInstance = meshServiceDefinition.roles.default.perInstance {
         instanceName = dgxFixtureInstanceName;
         extendSettings = _defaults: resolvedSettings;
+        machine = {
+          name = dgxFixtureInstanceName;
+          roles = [ "default" ];
+        };
+        roles.default.machines = {
+          ${dgxFixtureInstanceName}.settings.mode = "joiner";
+          ${dgxFixtureSeedName}.settings.mode = "seed";
+        };
       };
     in
     perInstance.nixosModule {
@@ -164,7 +199,12 @@ let
     config = dgxFixtureConfig;
     instanceName = dgxFixtureInstanceName;
     settings = dgxFixtureSettings;
-    joinTokenPath = dgxFixtureJoinTokenPath;
+    joinTokens = [
+      {
+        name = dgxFixtureInviteName;
+        path = dgxFixtureJoinTokenPath;
+      }
+    ];
     package = meshPackage;
   };
   invalidDgxFixtureModuleMerge = mkDgxFixtureModuleConfig (
@@ -239,7 +279,7 @@ in
           ${meshPackage}/bin/mesh-llm --help > "$TMPDIR/help"
           grep -F -- '--join-file <PATH>' "$TMPDIR/help"
           test -x ${dgxFixtureExecStart}
-          grep -F -- '--join-file "$join_token_file"' ${dgxFixtureExecStart}
+          grep -F -- '--join-file "$credentials_directory"/${dgxFixtureInviteName}' ${dgxFixtureExecStart}
           grep -F 'CREDENTIALS_DIRECTORY' ${dgxFixtureExecStart}
 
           ${lib.optionalString (!armMeshPackageSupported) ''
@@ -315,24 +355,28 @@ in
             echo "Aspen2 must not configure Lemonade beside Qwen" >&2
             exit 1
           ''}
-          ${lib.optionalString (!(lib.all hasJoinCredential joinerNodes)) ''
-            echo "Mesh-LLM joiners must load the join credential" >&2
+          ${lib.optionalString (!(lib.all loadsInvitesInOrder joinerNodes)) ''
+            echo "Mesh-LLM joiners must load an invite for every other node, joiners first and the seed last" >&2
             exit 1
           ''}
-          ${lib.optionalString (!(lib.all hasJoinFileArgument joinerNodes)) ''
-            echo "Mesh-LLM joiners must pass only the systemd credential path" >&2
+          ${lib.optionalString (!(lib.all joinsInvitesInOrder joinerNodes)) ''
+            echo "Mesh-LLM joiners must pass each invite as a systemd credential path, in the same order" >&2
             exit 1
           ''}
-          ${lib.optionalString (!(lib.all hasJoinGenerator joinerNodes)) ''
-            echo "Mesh-LLM join credential generators are absent" >&2
+          ${lib.optionalString (!(lib.all hasInviteGenerator joinerNodes)) ''
+            echo "Mesh-LLM joiners must share one invite generator that covers every node" >&2
             exit 1
           ''}
-          ${lib.optionalString (hasJoinGenerator aspen1Node) ''
-            echo "Aspen1 seed must not require a join credential generator" >&2
+          ${lib.optionalString (lib.any hasRetiredJoinGenerator meshNodes) ''
+            echo "The single-seed join-token generator must be retired" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (aspen1Node.config.clan.core.vars.generators ? ${invitesGeneratorName}) ''
+            echo "Aspen1 seed must not require invites" >&2
             exit 1
           ''}
           ${lib.optionalString (lib.hasInfix "--join-file" aspen1Node.command) ''
-            echo "Aspen1 seed must not receive a join credential file" >&2
+            echo "Aspen1 seed must not receive invite files" >&2
             exit 1
           ''}
           ${lib.optionalString (!(lib.all tcpIsPrivate meshNodes)) ''

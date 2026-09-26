@@ -5,7 +5,9 @@
   configPath,
   nodeName,
   meshBindAddress ? settings.meshBindAddress,
-  joinTokenFile ? null,
+  # Invite token files in join order; mesh-llm tries them in turn at startup
+  # and re-dials every one of them each minute afterwards.
+  joinTokenFiles ? [ ],
 }:
 [
   "${package}/bin/mesh-llm"
@@ -33,7 +35,7 @@
   "--log-format"
   "json"
 ]
-++ lib.optionals (settings.mode == "joiner") [
+++ lib.concatMap (file: [
   "--join-file"
-  joinTokenFile
-]
+  file
+]) joinTokenFiles
