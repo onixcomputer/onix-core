@@ -163,6 +163,8 @@ let
   supraModelFileMode = "0644";
 
   tenstorrentPackages = inputs.tenstorrent-nix.packages.${pkgs.stdenv.hostPlatform.system};
+  # The Qwen service's module and package come from their own pin (see flake.nix).
+  qwenPackages = inputs.tenstorrent-nix-qwen.packages.${pkgs.stdenv.hostPlatform.system};
   ttMetaliumPackage = tenstorrentPackages.llama-cpp-metalium;
   ttMetalPackage = tenstorrentPackages.tt-metal;
   ttMetaliumRuntimeRoot = "${ttMetalPackage}/libexec/tt-metalium";
@@ -296,7 +298,7 @@ in
     ./build-storage.nix
     ./collie-serve.nix
     ../../modules/drift-rustfs/nixos.nix
-    inputs.tenstorrent-nix.nixosModules.default
+    inputs.tenstorrent-nix-qwen.nixosModules.default
   ];
 
   services.drift-rustfs.enable = true;
@@ -313,7 +315,7 @@ in
       meshName = "p150_x2";
       qwen38 = {
         enable = true;
-        package = tenstorrentPackages.qwen36;
+        package = qwenPackages.qwen38;
         # Sampled requests (temperature above zero) serve through the fused
         # GDN path under the distributional admission gate; greedy requests
         # keep the exact-parity path.
@@ -799,7 +801,8 @@ in
     greedy OpenAI-compatible endpoint at
     `http://${qwenListenAddress}:${toString qwenApiPort}`. Prompt plus generation
     is limited to ${toString qwenMaximumSequenceLength} tokens. One request can
-    generate at most ${toString qwenMaximumGenerationTokens} tokens.
+    generate at most ${toString qwenMaximumGenerationTokens} tokens. The same
+    service answers Jev-style structured decisions at `POST /v1/systemone`.
 
     The retired `${vibeThinkerUnitName}` and `${p150LlamaUnitName}` units are
     absent from the generated host configuration. The Qwen unit also declares

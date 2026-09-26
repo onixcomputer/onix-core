@@ -123,7 +123,7 @@ let
   qwenConditionPaths = qwenService.unitConfig.ConditionPathExists or [ ];
   qwenUnsetEnvironment = qwenServiceConfig.UnsetEnvironment or [ ];
   qwenHasExpectedCommand =
-    lib.hasInfix "/bin/qwen36-p150x2-serve" qwenExecStart
+    lib.hasInfix "/bin/qwen38-p150x2-serve" qwenExecStart
     && lib.hasInfix "--host ${qwenListenAddress}" qwenExecStart
     && lib.hasInfix "--port ${toString qwenApiPort}" qwenExecStart
     && lib.hasInfix "--model-path ${qwenModelPath}" qwenExecStart

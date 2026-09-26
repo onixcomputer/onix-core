@@ -217,6 +217,11 @@
         systems.follows = "systems";
       };
     };
+    # britton-desktop's Qwen P150x2 module and package only. It keeps
+    # tenstorrent.nix's own nixpkgs, so the service runs the exact store path
+    # measured on the cards; the other Tenstorrent packages stay on
+    # tenstorrent-nix.
+    tenstorrent-nix-qwen.url = "git+ssh://git@github.com/OnixResearch/tenstorrent.nix.git";
     tt-kmd = {
       url = "github:tenstorrent/tt-kmd/ttkmd-2.10.0";
       inputs = {
