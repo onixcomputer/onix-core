@@ -87,73 +87,78 @@ let
   octetStandards = octetPkgs.octet-standards;
 in
 {
-  home.packages = with pkgs; [
-    # Search and file tools
-    ripgrep
-    fd
-    bat
-    nixos-generators
-    glow
-    comma
-    warp-terminal
-    nh
-    nix-search-tv
-    deadnix
-    statix
-    dix
-    nvd
-    flake-edit
-    nurl
-    nil
-    nix-init
-    terranix
-    nix-index
-    nix-prefetch
-    android-tools
+  # kuna and prime-agent have no aarch64-linux build. Skipping packages that
+  # are unavailable on the host keeps pine and utm-vm evaluating.
+  home.packages = lib.filter (lib.meta.availableOn pkgs.stdenv.hostPlatform) (
+    with pkgs;
+    [
+      # Search and file tools
+      ripgrep
+      fd
+      bat
+      nixos-generators
+      glow
+      comma
+      warp-terminal
+      nh
+      nix-search-tv
+      deadnix
+      statix
+      dix
+      nvd
+      flake-edit
+      nurl
+      nil
+      nix-init
+      terranix
+      nix-index
+      nix-prefetch
+      android-tools
 
-    # Archive tools
-    unzip
+      # Archive tools
+      unzip
 
-    # Network tools
-    wget
+      # Network tools
+      wget
 
-    # Debug and system tools
-    lsof
-    ast-grep
-    graphicsmagick
-    tea
-    sysdig
+      # Debug and system tools
+      lsof
+      ast-grep
+      graphicsmagick
+      tea
+      sysdig
 
-    # Code quality tools
-    shellcheck
-    ruff
-    mypy
+      # Code quality tools
+      shellcheck
+      ruff
+      mypy
 
-    # Parser and formatter tools
-    tree-sitter
-    stylua
+      # Parser and formatter tools
+      tree-sitter
+      stylua
 
-    # TUI tools
-    tuicr
+      # TUI tools
+      tuicr
 
-    # AI/dev tooling
-    cairn
-    devenv
-    (lib.lowPrio secretspec)
-    tracey
-    kuna
-    kli
-    prime-agent
+      # AI/dev tooling
+      cairn
+      devenv
+      (lib.lowPrio secretspec)
+      tracey
+      kuna
+      kli
+      prime-agent
 
-    # Iroh P2P tools
-    dumbpipe
-    sendme
+      # Iroh P2P tools
+      dumbpipe
+      sendme
 
-    # Flake inputs
-    nixdelta
-    kiEditor
-    mercuryCli
-    octetPkgs.cargo-octet
-    octetStandards
-  ];
+      # Flake inputs
+      nixdelta
+      kiEditor
+      mercuryCli
+      octetPkgs.cargo-octet
+      octetStandards
+    ]
+  );
 }
