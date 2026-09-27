@@ -186,6 +186,49 @@ let
   backendOwned = backendUnits != [ ] || backendExternallyManaged;
   restartDelay = "10s";
   stopTimeout = "30s";
+
+  # mesh-llm 0.72.2 on britton-desktop once dropped its API listener while the process
+  # kept running (2026-09-27): the console answered, 127.0.0.1:apiPort refused every
+  # connection, and systemd saw nothing wrong. The watchdog restarts the sidecar after
+  # consecutive refused checks. A sidecar that is not active, or that started less than
+  # the grace period ago (the API binds about two minutes after start), is left alone.
+  watchdogName = "${serviceName}-api-watchdog";
+  watchdogStartupGraceSeconds = 300;
+  watchdogFailureLimit = 3;
+  watchdogScript = pkgs.writeShellApplication {
+    name = watchdogName;
+    runtimeInputs = [
+      pkgs.bash
+      pkgs.coreutils
+      pkgs.systemd
+    ];
+    text = ''
+      unit=${serviceName}.service
+      failures_file=/run/${watchdogName}/failures
+      if [ "$(systemctl show -p ActiveState --value "$unit")" != active ]; then
+        rm -f "$failures_file"
+        exit 0
+      fi
+      read -r uptime _ < /proc/uptime
+      started=$(( $(systemctl show -p ActiveEnterTimestampMonotonic --value "$unit") / 1000000 ))
+      if [ $(( ''${uptime%.*} - started )) -lt ${toString watchdogStartupGraceSeconds} ]; then
+        exit 0
+      fi
+      if timeout 5 bash -c 'exec 3<>/dev/tcp/127.0.0.1/${toString apiPort}' 2>/dev/null; then
+        rm -f "$failures_file"
+        exit 0
+      fi
+      failures=$(( $(cat "$failures_file" 2>/dev/null || echo 0) + 1 ))
+      if [ "$failures" -lt ${toString watchdogFailureLimit} ]; then
+        echo "$failures" > "$failures_file"
+        echo "API listener 127.0.0.1:${toString apiPort} refused a connection ($failures/${toString watchdogFailureLimit})"
+        exit 0
+      fi
+      rm -f "$failures_file"
+      echo "API listener 127.0.0.1:${toString apiPort} refused ${toString watchdogFailureLimit} checks in a row; restarting $unit"
+      systemctl restart "$unit"
+    '';
+  };
 in
 {
   assertions = [
@@ -342,6 +385,26 @@ in
       RestrictSUIDSGID = true;
       SystemCallArchitectures = "native";
       UMask = "0077";
+    };
+  };
+
+  systemd.services.${watchdogName} = {
+    description = "Restart ${serviceName} when its API listener disappears";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = lib.getExe watchdogScript;
+      RuntimeDirectory = watchdogName;
+      RuntimeDirectoryPreserve = "yes";
+    };
+  };
+
+  systemd.timers.${watchdogName} = {
+    description = "Check the ${serviceName} API listener every minute";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "2min";
+      OnUnitActiveSec = "1min";
+      AccuracySec = "10s";
     };
   };
 
