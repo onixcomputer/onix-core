@@ -83,6 +83,8 @@ let
     desktopNode
   ];
   meshNodes = [ aspen1Node ] ++ joinerNodes;
+  watchdogExecStart =
+    node: node.config.systemd.services."${serviceName}-api-watchdog".serviceConfig.ExecStart;
 
   usesDedicatedUser = node: node.service.serviceConfig.User == "mesh-llm";
   hasPrivateLaunchFlags =
@@ -281,6 +283,11 @@ in
           test -x ${dgxFixtureExecStart}
           grep -F -- '--join-file "$credentials_directory"/${dgxFixtureInviteName}' ${dgxFixtureExecStart}
           grep -F 'CREDENTIALS_DIRECTORY' ${dgxFixtureExecStart}
+          # A joiner that lost every peer rejoins its invites; the seed only guards its API.
+          ${lib.concatMapStringsSep "\n" (
+            node: "grep -F 'join its invites again' ${watchdogExecStart node}"
+          ) joinerNodes}
+          ! grep -F 'join its invites again' ${watchdogExecStart aspen1Node}
 
           ${lib.optionalString (!armMeshPackageSupported) ''
             echo "Mesh-LLM must select the pinned ARM64 Linux release and source-built plugin" >&2

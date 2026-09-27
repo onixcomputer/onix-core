@@ -192,40 +192,78 @@ let
   # connection, and systemd saw nothing wrong. The watchdog restarts the sidecar after
   # consecutive refused checks. A sidecar that is not active, or that started less than
   # the grace period ago (the API binds about two minutes after start), is left alone.
+  #
+  # A joiner also reads its invites only at start. On 2026-09-27 britton-desktop missed
+  # two heartbeats to aspen3 (17:11 UTC), dropped the peer, and then only retried mDNS
+  # rediscovery, which cannot see the tailnet hosts; the mesh stayed split until the
+  # sidecar was restarted an hour later. A joiner with no peer for peerLossLimit checks
+  # in a row is restarted so it joins its invites again, at most once per backoff.
   watchdogName = "${serviceName}-api-watchdog";
   watchdogStartupGraceSeconds = 300;
   watchdogFailureLimit = 3;
+  watchdogPeerLossLimit = 5;
+  watchdogPeerRestartBackoffSeconds = 1800;
   watchdogScript = pkgs.writeShellApplication {
     name = watchdogName;
     runtimeInputs = [
       pkgs.bash
       pkgs.coreutils
+      pkgs.curl
+      pkgs.jq
       pkgs.systemd
     ];
     text = ''
       unit=${serviceName}.service
       failures_file=/run/${watchdogName}/failures
       if [ "$(systemctl show -p ActiveState --value "$unit")" != active ]; then
-        rm -f "$failures_file"
+        rm -f "$failures_file" /run/${watchdogName}/peer-loss
         exit 0
       fi
       read -r uptime _ < /proc/uptime
+      now=''${uptime%.*}
       started=$(( $(systemctl show -p ActiveEnterTimestampMonotonic --value "$unit") / 1000000 ))
-      if [ $(( ''${uptime%.*} - started )) -lt ${toString watchdogStartupGraceSeconds} ]; then
+      if [ $(( now - started )) -lt ${toString watchdogStartupGraceSeconds} ]; then
         exit 0
       fi
-      if timeout 5 bash -c 'exec 3<>/dev/tcp/127.0.0.1/${toString apiPort}' 2>/dev/null; then
+      if ! timeout 5 bash -c 'exec 3<>/dev/tcp/127.0.0.1/${toString apiPort}' 2>/dev/null; then
+        failures=$(( $(cat "$failures_file" 2>/dev/null || echo 0) + 1 ))
+        if [ "$failures" -lt ${toString watchdogFailureLimit} ]; then
+          echo "$failures" > "$failures_file"
+          echo "API listener 127.0.0.1:${toString apiPort} refused a connection ($failures/${toString watchdogFailureLimit})"
+          exit 0
+        fi
         rm -f "$failures_file"
-        exit 0
-      fi
-      failures=$(( $(cat "$failures_file" 2>/dev/null || echo 0) + 1 ))
-      if [ "$failures" -lt ${toString watchdogFailureLimit} ]; then
-        echo "$failures" > "$failures_file"
-        echo "API listener 127.0.0.1:${toString apiPort} refused a connection ($failures/${toString watchdogFailureLimit})"
+        echo "API listener 127.0.0.1:${toString apiPort} refused ${toString watchdogFailureLimit} checks in a row; restarting $unit"
+        systemctl restart "$unit"
         exit 0
       fi
       rm -f "$failures_file"
-      echo "API listener 127.0.0.1:${toString apiPort} refused ${toString watchdogFailureLimit} checks in a row; restarting $unit"
+    ''
+    + lib.optionalString isJoiner ''
+      peer_loss_file=/run/${watchdogName}/peer-loss
+      peer_restart_file=/run/${watchdogName}/peer-restart
+      # An unanswered console says nothing about peers; only a reported empty list counts.
+      if ! peers=$(curl -fsS -m 5 http://127.0.0.1:${toString consolePort}/api/status | jq -e '.peers | length'); then
+        exit 0
+      fi
+      if [ "$peers" -gt 0 ]; then
+        rm -f "$peer_loss_file"
+        exit 0
+      fi
+      losses=$(( $(cat "$peer_loss_file" 2>/dev/null || echo 0) + 1 ))
+      if [ "$losses" -lt ${toString watchdogPeerLossLimit} ]; then
+        echo "$losses" > "$peer_loss_file"
+        echo "joiner has no mesh peer ($losses/${toString watchdogPeerLossLimit})"
+        exit 0
+      fi
+      last_restart=$(cat "$peer_restart_file" 2>/dev/null || echo 0)
+      if [ "$last_restart" -gt 0 ] && [ $(( now - last_restart )) -lt ${toString watchdogPeerRestartBackoffSeconds} ]; then
+        echo "joiner has no mesh peer; the last rejoin restart was $(( now - last_restart )) s ago"
+        exit 0
+      fi
+      rm -f "$peer_loss_file"
+      echo "$now" > "$peer_restart_file"
+      echo "joiner had no mesh peer for ${toString watchdogPeerLossLimit} checks in a row; restarting $unit to join its invites again"
       systemctl restart "$unit"
     '';
   };
@@ -389,7 +427,7 @@ in
   };
 
   systemd.services.${watchdogName} = {
-    description = "Restart ${serviceName} when its API listener disappears";
+    description = "Restart ${serviceName} when its API listener disappears or a joiner loses every peer";
     serviceConfig = {
       Type = "oneshot";
       ExecStart = lib.getExe watchdogScript;
