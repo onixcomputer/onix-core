@@ -322,6 +322,11 @@ in
         # only temperature 0. The sampled kernel fits 4 users per step here, so
         # the service caps sampled batches at 4.
         sampledFusion = true;
+        # Agents are the main clients: a finished request's slot is refilled at
+        # the next 16-step boundary instead of waiting for the whole batch. Live
+        # streams pause while a refill's prompt is prefilled beside them. The
+        # tenstorrent.nix receipt of 2026-09-27 admits this scheduler profile.
+        continuousSlotScheduler = true;
         modelPath = qwenModelPath;
         modelAlias = "Qwen3.8-27B";
         listenAddress = qwenListenAddress;
