@@ -9,11 +9,10 @@
   ...
 }:
 let
-  system = pkgs.stdenv.hostPlatform.system;
   plugins = inputs.self.packages.x86_64-linux.wasm-plugins;
   wasm = import "${inputs.self}/lib/wasm.nix" { inherit plugins; };
   profileData = wasm.evalNickelFile ./lib/config.ncl;
-  ghzinga = inputs.self.packages.${system}.ghzinga;
+  inherit (pkgs) ghzinga;
   vimHerdrNavigationSource = pkgs.fetchFromGitHub {
     owner = "paulbkim-dev";
     repo = "vim-herdr-navigation";
@@ -26,7 +25,7 @@ let
   # The package controller changes runtime state without rewriting either owner.
   # This profile also applies to Aspen3, but this deployment is desktop-only.
   collieEnabled = (osConfig.networking.hostName or null) == "britton-desktop";
-  collie = inputs.self.packages.${system}.collie-herdr;
+  collie = pkgs.collie-herdr;
   inherit (pkgs) bun;
   collieEnv = ./collie.env;
 

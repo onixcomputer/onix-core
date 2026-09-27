@@ -16,8 +16,8 @@ let
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILYzh3yIsSTOYXkJMFHBKzkakoDfonm3/RED5rqMqhIO britton@framework"
   ];
 
-  sendmePackage = pkgs.callPackage ../../pkgs/sendme { };
-  meshLlmPackage = pkgs.callPackage ../../pkgs/mesh-llm { };
+  sendmePackage = pkgs.sendme;
+  meshLlmPackage = pkgs.mesh-llm;
   rwkvProfile = import ./rwkv7-profile.nix;
   localBackendInstanceName = "dgx-local";
   localBackendUnit = "llamacpp-server-${localBackendInstanceName}.service";
@@ -227,6 +227,10 @@ in
           message = "The DGX machine module requires ${requiredSystem}; got ${actualSystem}.";
         }
       ];
+
+      # DGX devenv machines import only this module, so it brings the package
+      # overlay itself; nixpkgs also ships a different sendme.
+      nixpkgs.overlays = [ inputs.onixpkgs.overlays.default ];
 
       hardware.dgx-spark.enable = true;
       services.openssh.enable = true;

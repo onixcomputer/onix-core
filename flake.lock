@@ -2843,11 +2843,11 @@
     "horizon": {
       "flake": false,
       "locked": {
-        "lastModified": 1788875117,
-        "narHash": "sha256-dAKP9RZ4b7m7y07wbXUUp8Zn35GbZdqEqgvrlRkJ8IA=",
+        "lastModified": 1790372577,
+        "narHash": "sha256-5syktyE+ygDT3+lz4z2fnR2ReqBaHbVHFPctE/IsoBs=",
         "owner": "peters",
         "repo": "horizon",
-        "rev": "3296dc847c4c7579dc33da49d6b2a7691e0f0d69",
+        "rev": "138c5571a5efc9506f6e2a2c4d33e9f5ebb8067b",
         "type": "github"
       },
       "original": {
@@ -4810,6 +4810,36 @@
         "type": "github"
       }
     },
+    "onixpkgs": {
+      "inputs": {
+        "horizon": "horizon",
+        "llm-agents": [
+          "llm-agents"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "treefmt-nix": [
+          "treefmt-nix"
+        ],
+        "wrappers": [
+          "wrappers"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790535271,
+        "narHash": "sha256-QCw7rczCkqtuK2VzJYOFRF6keQB1Vs0KU7R/kqZ7nPo=",
+        "ref": "refs/heads/main",
+        "rev": "99ab271ba38a9935feb692778d4e1e96481f7427",
+        "revCount": 3,
+        "type": "git",
+        "url": "ssh://git@github.com/OnixResearch/onixpkgs.git"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/OnixResearch/onixpkgs.git"
+      }
+    },
     "pinenote-nixos": {
       "inputs": {
         "nixpkgs": [
@@ -4942,7 +4972,6 @@
         "grub2-themes": "grub2-themes",
         "hercules-ci-effects": "hercules-ci-effects_2",
         "home-manager": "home-manager",
-        "horizon": "horizon",
         "ki-editor": "ki-editor",
         "kiln": "kiln",
         "kiln-canary": "kiln-canary",
@@ -4969,6 +4998,7 @@
         "noctalia-plugins": "noctalia-plugins",
         "omnibin": "omnibin",
         "onix-wasm": "onix-wasm",
+        "onixpkgs": "onixpkgs",
         "pinenote-nixos": "pinenote-nixos",
         "pre-commit-hooks-nix": "pre-commit-hooks-nix",
         "rust-overlay": "rust-overlay_15",

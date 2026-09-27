@@ -3,7 +3,6 @@
   inputs,
   lib,
   pkgs,
-  self,
   ...
 }:
 let
@@ -70,7 +69,7 @@ let
   # Serve the ptyZZZ web terminal on the tailscale address only — the page is
   # a full interactive shell, so it must not touch the LAN interface.
   ptyzzzListenAddress = "100.108.13.4";
-  ptyzzzPackage = self.packages.${pkgs.stdenv.hostPlatform.system}.ptyzzz;
+  ptyzzzPackage = pkgs.ptyzzz;
   # serve.nu + vendored fonts from the pinned ptyZZZ source; HERE-relative
   # paths resolve inside this store path. The line-height patch fixes the
   # demo's row geometry: the CSS used an 18px (1.2857em) line-height while
@@ -79,7 +78,7 @@ let
   ptyzzzServeEnv =
     pkgs.runCommand "ptyzzz-serve"
       {
-        src = self.packages.${pkgs.stdenv.hostPlatform.system}.ptyzzz.src;
+        src = pkgs.ptyzzz.src;
         nativeBuildInputs = [ pkgs.gnused ];
       }
       ''
@@ -301,7 +300,7 @@ in
       rnote
       wev
       xournalpp
-      self.packages.${pkgs.stdenv.hostPlatform.system}.ptyzzz
+      ptyzzz
       http-nu
       nushell
     ];
@@ -347,13 +346,13 @@ in
 
   environment.systemPackages = with pkgs; [
     alsa-utils
-    self.packages.${pkgs.stdenv.hostPlatform.system}.branchfs
+    branchfs
     nvme-cli
     pciutils
     opentofu
     # Keep the wrapped Herdr base on the accepted llm-agents provider so the
     # interactive terminal gets the same plugin set as britton-desktop.
     # r[impl onix.aspen3.herdr.wrapper.install]
-    self.packages.${pkgs.stdenv.hostPlatform.system}.herdr
+    herdr
   ];
 }

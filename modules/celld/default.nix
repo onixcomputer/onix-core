@@ -27,14 +27,13 @@ in
             config,
             lib,
             pkgs,
-            inputs,
             ...
           }:
           let
             ms = import ../../lib/mk-settings.nix { inherit lib; };
             settings = extendSettings (ms.mkDefaults schema.server);
             evaluated = import ./settings.nix { inherit lib; } settings;
-            celldPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.celld;
+            celldPackage = pkgs.celld;
             credentialGeneratorName = "celld-${instanceName}";
             credentialEnvironmentFile =
               config.clan.core.vars.generators.${credentialGeneratorName}.files."aws-env".path;

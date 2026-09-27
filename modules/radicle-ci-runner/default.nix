@@ -51,7 +51,7 @@ in
             hydratorHome = "${runnerState}/hydrator-home";
             botListenAddress = "127.0.0.1";
             botAlias = "aspen1-ci-bot";
-            runnerPackage = pkgs.callPackage ../../pkgs/radicle-ci-runner { };
+            runnerPackage = pkgs.radicle-ci-runner;
             nodePackage = pkgs.radicle-node;
             policyReconciler = import ../radicle-node/policy-reconciler.nix { inherit pkgs; };
             identityFiles = config.clan.core.vars.generators.${generatorName}.files;

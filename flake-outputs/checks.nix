@@ -7,12 +7,18 @@
   self,
   self',
   inputs',
-  pkgs,
   lib,
   system,
   ...
 }:
 let
+  # Harnesses evaluate modules outside a machine, so give them the same
+  # onixpkgs packages that shared-nix.nix overlays onto every machine.
+  pkgs = import self.inputs.nixpkgs {
+    inherit system;
+    overlays = [ self.inputs.onixpkgs.overlays.default ];
+    config = { };
+  };
   innerArgs = {
     inherit
       self

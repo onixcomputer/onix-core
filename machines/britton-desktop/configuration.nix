@@ -841,7 +841,7 @@ in
 
   environment.systemPackages = with pkgs; [
     bpftrace
-    self.packages.${pkgs.stdenv.hostPlatform.system}.branchfs
+    branchfs
     imagemagick
     nirius
     prismlauncher
@@ -852,12 +852,12 @@ in
     # r[verify onix.tenstorrent.native_runtime.rwkv7_p150x2.production_observation]
     rwkv7P150x2Runtime
     rwkv7P150x2Evidence
-    self.packages.${pkgs.stdenv.hostPlatform.system}.opendeck
+    opendeck
     self.packages.${pkgs.stdenv.hostPlatform.system}.ttsim
     # Keep the wrapped Herdr base on the accepted llm-agents provider.
     # r[impl onix.britton-desktop.herdr.wrapper.install]
     # r[impl onix.britton-desktop.herdr.wrapper.install.provider]
-    self.packages.${pkgs.stdenv.hostPlatform.system}.herdr
+    herdr
   ];
 
   # ZFS on the 4TB data drive

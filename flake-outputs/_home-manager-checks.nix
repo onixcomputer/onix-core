@@ -595,7 +595,8 @@ let
   # r[verify onix.britton-desktop.herdr.collie.config]
   # r[verify onix.britton-desktop.herdr.collie.service]
   # r[verify onix.britton-desktop.herdr.collie.serve]
-  collieIntegration = import ../pkgs/collie-herdr/integration-check.nix {
+  # The package-level Collie tests run in onixpkgs.
+  collieIntegration = import ./_collie-herdr-integration-check.nix {
     inherit
       pkgs
       lib
@@ -604,18 +605,8 @@ let
       aspen3Home
       aspen1Home
       ;
-    collie = self.packages.${system}.collie-herdr;
+    collie = pkgs.collie-herdr;
   };
-  collieManagedController = import ../pkgs/collie-herdr/tests.nix {
-    inherit pkgs lib;
-    collie = self.packages.${system}.collie-herdr;
-  };
-  collieRemoteSessions = pkgs.runCommand "collie-remote-sessions" { } ''
-    export HOME="$TMPDIR/home"
-    mkdir -p "$HOME"
-    ${pkgs.bun}/bin/bun test ${self.packages.${system}.collie-herdr}/bridge/remote-sessions.test.ts
-    touch "$out"
-  '';
 
   assertions = [
     {
@@ -932,7 +923,5 @@ in
     herdr-pueue-dashboard = herdrPueueDashboard;
     herdr-workflow-plugins = herdrWorkflowPlugins;
     collie-integration = collieIntegration;
-    collie-managed-controller = collieManagedController;
-    collie-remote-sessions = collieRemoteSessions;
   };
 }

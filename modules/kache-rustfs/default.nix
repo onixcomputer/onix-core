@@ -21,7 +21,6 @@ in
         nixosModule =
           {
             config,
-            inputs,
             lib,
             pkgs,
             ...
@@ -30,7 +29,7 @@ in
             ms = import ../../lib/mk-settings.nix { inherit lib; };
             settings = extendSettings (ms.mkDefaults schema.client);
             evaluated = import ./settings.nix { inherit lib; } settings;
-            kachePackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.kache;
+            kachePackage = pkgs.kache;
             policyLib = import ../../lib/rustfs-bucket-policy.nix { inherit lib; };
             credentialGeneratorName = "kache-rustfs-${instanceName}";
             credentialEnvironmentFile =

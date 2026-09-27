@@ -1,7 +1,7 @@
 # BranchFS on Aspen3 and britton-desktop
 
-Both host configurations install the existing pinned BranchFS package from
-`pkgs/branchfs/default.nix`. The source revision is
+Both host configurations install the pinned BranchFS package `pkgs.branchfs`
+from onixpkgs `pkgs/branchfs/default.nix`. The source revision is
 `d7f672f370c759cf3eba914fd21cc2d764950d7a`.
 
 BranchFS runs as `brittonr` through the existing FUSE helpers. It needs no root

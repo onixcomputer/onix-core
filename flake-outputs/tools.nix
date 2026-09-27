@@ -1,6 +1,7 @@
 # CLI tools, analysis utilities, and workflow helpers.
 #
-# Inline package definitions (formerly in parts/) plus sops-viz import.
+# Shared packages come from the onixpkgs overlay. The packages here depend on
+# onix-core's own inputs, DGX inventory, or Nix fork.
 {
   pkgs,
   lib,
@@ -10,15 +11,6 @@
 let
   sopsViz = (import ./_sops-viz.nix) { inherit pkgs; };
 
-  buildbot-pr-check = pkgs.callPackage ../pkgs/buildbot-pr-check { };
-  ghzingaPackage = pkgs.callPackage ../pkgs/ghzinga { };
-  colliePackage = pkgs.callPackage ../pkgs/collie-herdr { };
-  herdrPackage = pkgs.callPackage ../pkgs/herdr {
-    collie = colliePackage;
-    ghzinga = ghzingaPackage;
-    herdr = self.inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr;
-    wrapperLib = self.inputs.wrappers.lib;
-  };
   dgxMachinePackage = pkgs.callPackage ../pkgs/dgx-machine {
     devenv = self.inputs.devenv-machines.packages.${pkgs.stdenv.hostPlatform.system}.devenv;
     machineInventory = ../inventory/dgx/generated/machines.json;
@@ -64,69 +56,14 @@ in
 {
   packages = {
     wasm-plugins = wasmPluginsWithHostImports;
-    nix-eval-warnings = pkgs.callPackage ../pkgs/nix-eval-warnings { };
-    claude-md = pkgs.python3.pkgs.callPackage ../pkgs/claude-md { };
-    hx-oil = pkgs.callPackage ../pkgs/hx-oil { };
-    tuicr = pkgs.callPackage ../pkgs/tuicr { };
-    updater = pkgs.callPackage ../pkgs/updater { };
-    inherit buildbot-pr-check;
-    merge-when-green = pkgs.callPackage ../pkgs/merge-when-green { inherit buildbot-pr-check; };
-    dumbpipe = pkgs.callPackage ../pkgs/dumbpipe { };
-    sendme = pkgs.callPackage ../pkgs/sendme { };
-    crw = pkgs.callPackage ../pkgs/crw { };
-    ghzinga = ghzingaPackage;
-    kache = pkgs.callPackage ../pkgs/kache { };
-    verify-deploy = pkgs.callPackage ../pkgs/verify-deploy { };
     ki-editor = self.inputs.ki-editor.packages.${pkgs.stdenv.hostPlatform.system}.default;
     mercury-cli = self.inputs.mercury-cli.packages.${pkgs.stdenv.hostPlatform.system}.mercury-cli;
-    prime-agent = pkgs.callPackage ../pkgs/prime-agent { };
   }
   // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
-    bookshelf = pkgs.callPackage ../pkgs/bookshelf { };
-    branchfs = pkgs.callPackage ../pkgs/branchfs { };
-    celld = pkgs.callPackage ../pkgs/celld { };
-    collie-herdr = colliePackage;
-    herdr = herdrPackage;
-    horizon = pkgs.callPackage ../pkgs/horizon { horizon-src = self.inputs.horizon; };
-    iroh-ssh = pkgs.callPackage ../pkgs/iroh-ssh { };
     dgx-machine = dgxMachinePackage;
-    llamacpp-rocm-rpc = pkgs.callPackage ../pkgs/llamacpp-rocm-rpc { };
-    llamacpp-rocm-dspark = pkgs.callPackage ../pkgs/llamacpp-rocm-dspark { };
-    llamacpp-rocm-qwen4exp = pkgs.callPackage ../pkgs/llamacpp-rocm-qwen4exp { };
-    deepseek-v4-dspark-draft = pkgs.callPackage ../pkgs/deepseek-v4-dspark-draft { };
-    lemonade-server = pkgs.callPackage ../pkgs/lemonade { };
-    mesh-llm = pkgs.callPackage ../pkgs/mesh-llm { };
-    radicle-ci-runner = pkgs.callPackage ../pkgs/radicle-ci-runner { };
-    ssh-clipboard = pkgs.callPackage ../pkgs/ssh-clipboard { };
-    ptyzzz = pkgs.callPackage ../pkgs/ptyzzz { };
     inherit (pkgs) radicle-node;
     inherit (pkgs) radicle-httpd;
   }
-  // lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") {
-    sone = pkgs.callPackage ../pkgs/sone { };
-    opendeck = pkgs.callPackage ../pkgs/opendeck { };
-    open-notebook = pkgs.callPackage ../pkgs/open-notebook { };
-    openbubbles = pkgs.callPackage ../pkgs/openbubbles { };
-  }
-  // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
-    rbw-pinentry = pkgs.callPackage ../pkgs/rbw-pinentry { };
-  }
-  // (
-    let
-      traceyPkg = pkgs.callPackage ../pkgs/tracey { };
-    in
-    lib.optionalAttrs (builtins.elem pkgs.stdenv.hostPlatform.system (
-      traceyPkg.meta.platforms or [ ]
-    )) { tracey = traceyPkg; }
-  )
-  // (
-    let
-      kunaPkg = pkgs.callPackage ../pkgs/kuna { };
-    in
-    lib.optionalAttrs (builtins.elem pkgs.stdenv.hostPlatform.system (kunaPkg.meta.platforms or [ ])) {
-      kuna = kunaPkg;
-    }
-  )
   // (sopsViz.packages or { });
 
   checks.pi-branchfs = pkgs.runCommand "pi-branchfs-tests" { nativeBuildInputs = [ pkgs.nodejs ]; } ''

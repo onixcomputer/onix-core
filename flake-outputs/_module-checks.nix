@@ -836,7 +836,7 @@ in
 
     # r[verify onix.celld_rustfs.package]
     celld-package = pkgs.runCommand "celld-package" { } ''
-      actual="$(${lib.getExe self.packages.${pkgs.stdenv.hostPlatform.system}.celld} --version)"
+      actual="$(${lib.getExe pkgs.celld} --version)"
       test "$actual" = "celld 0.3.0"
       touch $out
     '';
@@ -955,9 +955,9 @@ in
 
     # r[verify onix.bookshelf.package]
     bookshelf-package = pkgs.runCommand "bookshelf-package" { } ''
-      test -x ${lib.escapeShellArg "${self.packages.${pkgs.stdenv.hostPlatform.system}.bookshelf}/bin/bookshelf-server"}
-      test -x ${lib.escapeShellArg "${self.packages.${pkgs.stdenv.hostPlatform.system}.bookshelf}/bin/bookshelf-sync"}
-      test -f ${lib.escapeShellArg "${self.packages.${pkgs.stdenv.hostPlatform.system}.bookshelf}/share/doc/bookshelf/LICENSE"}
+      test -x ${lib.escapeShellArg "${pkgs.bookshelf}/bin/bookshelf-server"}
+      test -x ${lib.escapeShellArg "${pkgs.bookshelf}/bin/bookshelf-sync"}
+      test -f ${lib.escapeShellArg "${pkgs.bookshelf}/share/doc/bookshelf/LICENSE"}
       touch $out
     '';
 
@@ -1036,21 +1036,18 @@ in
     '';
 
     # r[verify onix.rustfs_build_caches.kache]
-    kache-package =
-      pkgs.runCommand "kache-package"
-        { nativeBuildInputs = [ self.packages.${pkgs.stdenv.hostPlatform.system}.kache ]; }
-        ''
-          actual="$(kache --version)"
-          if [ "$actual" != "kache 0.16.0" ]; then
-            echo "Unexpected Kache version: $actual"
-            exit 1
-          fi
-          if kache unsupported-command >/dev/null 2>&1; then
-            echo "Kache accepted an unsupported command"
-            exit 1
-          fi
-          touch $out
-        '';
+    kache-package = pkgs.runCommand "kache-package" { nativeBuildInputs = [ pkgs.kache ]; } ''
+      actual="$(kache --version)"
+      if [ "$actual" != "kache 0.16.0" ]; then
+        echo "Unexpected Kache version: $actual"
+        exit 1
+      fi
+      if kache unsupported-command >/dev/null 2>&1; then
+        echo "Kache accepted an unsupported command"
+        exit 1
+      fi
+      touch $out
+    '';
 
     # r[verify onix.rustfs_build_caches.verification]
     kache-rustfs-settings = pkgs.runCommand "kache-rustfs-settings" { } ''

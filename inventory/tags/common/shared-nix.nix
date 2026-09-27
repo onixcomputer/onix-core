@@ -14,21 +14,12 @@ let
   flake = import "${self}/flake.nix";
 in
 {
-  # Override nixVersions.latest with our wasm-enabled build so srvos
-  # (which sets nix.package = nixVersions.latest) picks it up automatically.
   nixpkgs.overlays = [
+    # Shared Onix packages (mesh-llm, lemonade-server, llamacpp-rocm-*, herdr, ...).
+    inputs.onixpkgs.overlays.default
     (
       _final: _prev:
       {
-        llamacpp-rocm-rpc = self.packages.${pkgs.stdenv.hostPlatform.system}.llamacpp-rocm-rpc or null;
-        llamacpp-rocm-dspark =
-          self.packages.${pkgs.stdenv.hostPlatform.system}.llamacpp-rocm-dspark or null;
-        llamacpp-rocm-qwen4exp =
-          self.packages.${pkgs.stdenv.hostPlatform.system}.llamacpp-rocm-qwen4exp or null;
-        deepseek-v4-dspark-draft =
-          self.packages.${pkgs.stdenv.hostPlatform.system}.deepseek-v4-dspark-draft or null;
-        lemonade-server = self.packages.${pkgs.stdenv.hostPlatform.system}.lemonade-server or null;
-        mesh-llm = self.packages.${pkgs.stdenv.hostPlatform.system}.mesh-llm or null;
         radicle-node = self.packages.${pkgs.stdenv.hostPlatform.system}.radicle-node or null;
         radicle-httpd = self.packages.${pkgs.stdenv.hostPlatform.system}.radicle-httpd or null;
       }
@@ -46,6 +37,8 @@ in
         );
       }
     )
+    # Override nixVersions.latest with our wasm-enabled build so srvos
+    # (which sets nix.package = nixVersions.latest) picks it up automatically.
     (
       _final: prev:
       let

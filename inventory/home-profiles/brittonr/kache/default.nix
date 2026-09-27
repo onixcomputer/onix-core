@@ -26,7 +26,7 @@ let
   cargoRustcWrapperBinaryName = "cargo-rustc-kache-wrapper";
   rustcWrapperMissingArgumentMessage = "cargo-rustc-kache-wrapper: expected rustc path as first argument";
 
-  kachePackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.kache;
+  kachePackage = pkgs.kache;
 
   tomlFormat = pkgs.formats.toml { };
 

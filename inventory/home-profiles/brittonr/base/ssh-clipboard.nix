@@ -9,6 +9,6 @@
   # its updater rewrites that binary in place, so home-manager must not claim
   # it: a contested path churns backups and aborts every HM switch.
   home.packages = [
-    (pkgs.callPackage ../../../../pkgs/ssh-clipboard { })
+    pkgs.ssh-clipboard
   ];
 }

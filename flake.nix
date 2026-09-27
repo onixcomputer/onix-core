@@ -15,6 +15,17 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
+    # Shared Onix package overlay. Package definitions live there, not in pkgs/.
+    onixpkgs = {
+      url = "git+ssh://git@github.com/OnixResearch/onixpkgs.git";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        llm-agents.follows = "llm-agents";
+        wrappers.follows = "wrappers";
+        treefmt-nix.follows = "treefmt-nix";
+      };
+    };
+
     devenv = {
       url = "github:cachix/devenv";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -246,10 +257,6 @@
         nixpkgs.follows = "nixpkgs";
         treefmt-nix.follows = "treefmt-nix";
       };
-    };
-    horizon = {
-      url = "github:peters/horizon";
-      flake = false;
     };
 
     rust-overlay = {

@@ -42,7 +42,9 @@
 - `flake-outputs/_multiverse-checks.nix` verifies module wiring offline (plan resolution, install counts, duplicate-claim assertion, pin type check, repository lock parse, lock-version rejection).
 
 ## Packaging
-- `pkgs/lemonade/default.nix` must accept either `lemond` or `lemonade-router` as the daemon binary name. Upstream changed names across releases, so install both aliases for compatibility.
+- Custom packages live in onixpkgs (`/home/brittonr/git/OnixResearch/onixpkgs`). `inventory/tags/common/shared-nix.nix` applies its overlay to every NixOS and darwin machine, `modules/dgx-machine` applies it to DGX machines, and `flake-outputs/checks.nix` applies it to check harnesses. Refer to those packages as `pkgs.<name>`, or as `inputs'.onixpkgs.<name>` in other adios-flake modules, and change their definitions in onixpkgs. Several names (`dumbpipe`, `herdr`, `iroh-ssh`, `sendme`, `sone`, `tuicr`) also exist in nixpkgs, so a package set without the overlay silently falls back to nixpkgs' version.
+- `pkgs/` keeps only packages bound to onix-core: `dgx-machine` (bakes in the DGX inventory), `tenstorrent-compat` (patches the private tenstorrent.nix flake), `nix-grpc-store` (built against the Nix fork), and the standalone `aspen-uma-helper` flake.
+- The `onixpkgs` input fetches `git+ssh://git@github.com/OnixResearch/onixpkgs.git`, like the other OnixResearch inputs. After pushing a package change to onixpkgs `main`, run `nix flake update onixpkgs` here and evaluate the machines that use the package.
 
 ## Niri
 - The `calling import-environment without specifying desired variables is deprecated` startup message comes from upstream `resources/niri-session` (`systemctl --user import-environment`). In this repo, greetd launches `/etc/profiles/per-user/brittonr/bin/niri-session`, so that warning is session-wrapper noise, not proof that `niri.service` crashed.

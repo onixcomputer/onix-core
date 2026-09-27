@@ -19,7 +19,7 @@ let
   publicKeyMode = "0644";
   restartDelay = "10s";
 
-  irohSsh = pkgs.callPackage ../../pkgs/iroh-ssh { };
+  irohSsh = pkgs.iroh-ssh;
   setupKeys = pkgs.writeShellApplication {
     name = "${serviceName}-setup-keys";
     runtimeInputs = [ pkgs.coreutils ];

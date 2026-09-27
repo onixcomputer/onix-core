@@ -83,7 +83,7 @@ let
   boundsProbeCredentialInputs =
     lib.toList (boundsProbeService.serviceConfig.LoadCredential or [ ])
     ++ lib.toList (boundsProbeService.serviceConfig.ImportCredential or [ ]);
-  runnerPackage = self.packages.${system}.radicle-ci-runner;
+  runnerPackage = pkgs.radicle-ci-runner;
   plugins = self.packages.${system}.wasm-plugins;
   wasm = import ../lib/wasm.nix { inherit plugins; };
   schemaValidation = wasm.evalNickelFile ../inventory/services/fixtures/radicle-ci-runner-validation.ncl;
@@ -353,8 +353,8 @@ in
         grep -Fqx 'system-features =' "$nix_conf_dir/nix.conf"
         grep -Fqx 'secret-key-files =' "$nix_conf_dir/nix.conf"
 
-        grep -Fq ${lib.escapeShellArg reviewedCommit} ${../pkgs/radicle-ci-runner/Cargo.lock}
-        grep -Fq 'git+https://git.onix.computer/z2CpqLFpdP36fZXYUK5ZNWxMibpCo.git' ${../pkgs/radicle-ci-runner/Cargo.lock}
+        grep -Fq ${lib.escapeShellArg reviewedCommit} ${runnerPackage.src}/Cargo.lock
+        grep -Fq 'git+https://git.onix.computer/z2CpqLFpdP36fZXYUK5ZNWxMibpCo.git' ${runnerPackage.src}/Cargo.lock
 
         grep -Fq ${lib.escapeShellArg botControlSocket} ${syncCommand}
         grep -Fq ${lib.escapeShellArg "attempts_remaining=${toString nodeReadinessAttempts}"} ${syncCommand}

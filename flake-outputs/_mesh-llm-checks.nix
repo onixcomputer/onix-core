@@ -207,8 +207,8 @@ let
     item: !item.assertion && lib.hasInfix "requires backendUnit" item.message
   ) invalidDgxBackendModuleConfig.assertions;
 
-  meshPackage = self.packages.${pkgs.stdenv.hostPlatform.system}.mesh-llm;
-  armMeshPackage = self.packages.aarch64-linux.mesh-llm;
+  meshPackage = pkgs.mesh-llm;
+  armMeshPackage = self.inputs.onixpkgs.packages.aarch64-linux.mesh-llm;
   armMeshTarget = "aarch64-unknown-linux-gnu";
   expectedLlamaRevision = "86b94708f22478f900b76ca02e316f4f3418faff";
   armMeshPackageSupported =

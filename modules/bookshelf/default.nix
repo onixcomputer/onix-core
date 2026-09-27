@@ -28,7 +28,7 @@ in
             settings = extendSettings (ms.mkDefaults schema.server);
             settingsLib = import ./settings.nix { inherit lib; };
             validationErrors = settingsLib.validate settings;
-            bookshelfPackage = pkgs.callPackage ../../pkgs/bookshelf { };
+            bookshelfPackage = pkgs.bookshelf;
             serviceUser = "bookshelf";
             serviceGroup = "bookshelf";
             privateDirectoryMode = "0700";
