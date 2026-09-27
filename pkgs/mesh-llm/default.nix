@@ -90,8 +90,14 @@ let
     version = meshVersion;
     src = meshSource;
 
-    # Upstream accepts invite tokens in argv. This patch adds a file-backed path.
-    patches = [ ../../patches/mesh-llm-join-file.patch ];
+    patches = [
+      # Upstream accepts invite tokens in argv. This patch adds a file-backed path.
+      ../../patches/mesh-llm-join-file.patch
+      # A request for a plugin model that is briefly missing from the endpoint snapshot
+      # went to the first local runtime (a different model), which answered 404. Answer
+      # 503 instead, and keep an endpoint's models through one missed health probe.
+      ../../patches/mesh-llm-route-named-models-only.patch
+    ];
     cargoHash = "sha256-yQlt4F4T+UVsPJskcvVsf0bSHLsj2RuE4LKE4RybaFU=";
 
     nativeBuildInputs = [
@@ -116,6 +122,7 @@ let
       runHook preCheck
       cargo test --offline -p mesh-llm-cli join_file
       cargo test --offline -p mesh-llm --no-default-features join_token_file
+      cargo test --offline -p mesh-llm-host-runtime --no-default-features healthy_endpoint_degrades_before_becoming_unhealthy
       runHook postCheck
     '';
   };

@@ -1,0 +1,49 @@
+--- a/crates/mesh-llm-host-runtime/src/network/openai/ingress.rs
++++ b/crates/mesh-llm-host-runtime/src/network/openai/ingress.rs
+@@ -542,10 +542,20 @@
+             )
+             .await
+             {
+-                MissingModelRouteResult::Routed => return,
+-                MissingModelRouteResult::Fallback(stream) => tcp_stream = Some(stream),
++                MissingModelRouteResult::Routed => {}
++                MissingModelRouteResult::Fallback(stream) => {
++                    // A request that names a model must never reach another model's runtime,
++                    // which may reject the name or answer as a different model. An endpoint
++                    // missing from the current snapshot returns on a later probe, and clients
++                    // retry a 503.
++                    let _ = proxy::send_503(
++                        stream,
++                        &format!("model '{model_name}' is not currently available; retry later"),
++                    )
++                    .await;
++                }
+             }
+-            first_available_target(ctx.targets)
++            return;
+         } else {
+             if ctx.targets.candidates(model_name).len() > 1 {
+                 request.ensure_body_json();
+--- a/crates/mesh-llm-host-runtime/src/plugin/mod.rs
++++ b/crates/mesh-llm-host-runtime/src/plugin/mod.rs
+@@ -1774,7 +1774,11 @@
+             state: "degraded".into(),
+             available: true,
+             detail: probe.detail,
+-            models: Vec::new(),
++            // One missed probe (a busy upstream answering late) must not withdraw the models
++            // requests are routed by; a second consecutive failure makes it unhealthy.
++            models: previous
++                .map(|state| state.record.models.clone())
++                .unwrap_or_default(),
+         }
+     } else {
+         EndpointHealthRecord {
+@@ -2378,6 +2382,7 @@
+         assert_eq!(degraded.record.state, "degraded");
+         assert!(degraded.record.available);
+         assert_eq!(degraded.consecutive_failures, 1);
++        assert_eq!(degraded.record.models, vec!["demo".to_string()]);
+ 
+         let unhealthy = apply_endpoint_probe(
+             Some(&degraded),
