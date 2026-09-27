@@ -179,8 +179,8 @@ let
   qwenModelPath = "/home/brittonr/models/${qwenModelRevision}";
   qwenListenAddress = "127.0.0.1";
   qwenApiPort = 8000;
-  qwenMaximumSequenceLength = 2048;
-  qwenMaximumGenerationTokens = 64;
+  qwenMaximumSequenceLength = 65536;
+  qwenMaximumGenerationTokens = 8192;
   qwenConflictingUnits = [
     vibeThinkerUnitName
     p150LlamaUnitName
