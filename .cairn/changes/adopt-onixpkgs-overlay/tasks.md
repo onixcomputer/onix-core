@@ -8,7 +8,8 @@
 ## Phase 2: Verification
 
 - [x] [serial] Compare every x86_64-linux machine toplevel, every x86_64-linux check, the dev shells, and the exported packages with the migration base, and explain each difference. r[onix.packages.onixpkgs]
-- [ ] [serial] Compare pine, utm-vm, and britton-air with the migration base on a host that can build aarch64-linux wasm plugins and evaluate aarch64-darwin. r[onix.packages.onixpkgs]
+- [x] [serial] Evaluate pine and utm-vm with the aarch64-linux wasm plugins built through qemu, before and after the migration. r[onix.packages.onixpkgs]
+- [ ] [serial] Evaluate britton-air before and after the migration on a host with an aarch64-darwin builder. r[onix.packages.onixpkgs]
 - [x] [serial] Validate this change with Cairn. r[onix.packages.onixpkgs]
 
 ## Phase 3: Publication
