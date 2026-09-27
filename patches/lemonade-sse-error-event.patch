@@ -1,0 +1,69 @@
+--- a/src/cpp/server/streaming_proxy.cpp
++++ b/src/cpp/server/streaming_proxy.cpp
+@@ -16,11 +16,18 @@
+     bool stream_error = false;
+     bool has_done_marker = false;
+ 
++    // The SSE headers are already sent. A backend that rejects the request
++    // answers with a bare JSON body instead of an event stream, which clients
++    // discard as malformed SSE. Hold back a body that does not start like an
++    // event stream, and send it below as one data event.
++    bool forwarding = false;
++    std::string held;
++
+     // Use HttpClient to stream from backend
+     auto result = utils::HttpClient::post_stream(
+         backend_url,
+         request_body,
+-        [&sink, &telemetry_buffer, &has_done_marker](const char* data, size_t length) {
++        [&sink, &telemetry_buffer, &has_done_marker, &forwarding, &held](const char* data, size_t length) {
+             // Buffer for telemetry parsing
+             telemetry_buffer.append(data, length);
+ 
+@@ -30,8 +37,19 @@
+                 has_done_marker = true;
+             }
+ 
++            if (!forwarding) {
++                held.append(chunk);
++                size_t first = held.find_first_not_of(" \t\r\n");
++                if (first == std::string::npos || held[first] == '{' || held[first] == '[') {
++                    return true; // Not an event stream yet; keep holding
++                }
++                forwarding = true;
++                chunk.swap(held);
++                held.clear();
++            }
++
+             // Forward chunk to client immediately
+-            if (!sink.write(data, length)) {
++            if (!sink.write(chunk.data(), chunk.size())) {
+                 return false; // Client disconnected
+             }
+ 
+@@ -41,6 +59,25 @@
+         timeout_seconds
+     );
+ 
++    if (!held.empty()) {
++        // SSE data lines cannot contain newlines: give each body line its own.
++        std::string event;
++        std::istringstream lines(held);
++        std::string line;
++        while (std::getline(lines, line)) {
++            if (!line.empty() && line.back() == '\r') {
++                line.pop_back();
++            }
++            if (!line.empty()) {
++                event += "data: " + line + "\n";
++            }
++        }
++        if (!event.empty()) {
++            event += "\n";
++            sink.write(event.data(), event.size());
++        }
++    }
++
+     if (result.status_code != 200) {
+         stream_error = true;
+         LOG(ERROR, "StreamingProxy") << "Backend returned error: " << result.status_code << std::endl;

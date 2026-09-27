@@ -32,6 +32,12 @@ pkgs.stdenv.mkDerivation rec {
     hash = "sha256-r6b98zW+guE27HZe26MiQhlHIltfZyNPRN7HIdpKrYI=";
   };
 
+  # A backend that rejects a streamed request answers with bare JSON, which
+  # Lemonade forwarded inside its already-started event stream. Clients such as
+  # mesh-llm discard that as malformed SSE, so the error reached nobody. The
+  # patch sends such a body as one `data:` event.
+  patches = [ ../../patches/lemonade-sse-error-event.patch ];
+
   nativeBuildInputs = with pkgs; [
     cmake
     ninja
