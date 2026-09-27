@@ -52,3 +52,13 @@ The migration base was reproduced as a worktree at `c5001ff2` with the base's un
 - Remaining packages: every `packages.<system>` attribute onix-core still exports keeps its derivation on x86_64-linux, aarch64-linux, and aarch64-darwin.
 - deadnix and statix pass on every touched Nix file, and nixfmt passes on all of them except `flake-outputs/_mesh-llm-checks.nix`, whose unformatted line 114 predates this change.
 - Not evaluated: pine and utm-vm (aarch64-linux) need the aarch64 wasm plugins built through qemu for inventory evaluation. That build ran for an hour without finishing and was stopped. britton-air (aarch64-darwin) needs an aarch64-darwin builder, which this workstation lacks. Across the repository, every use of the six names that nixpkgs also defines refers to a migrated package that previously came from onix-core `pkgs/`: `tuicr`, `dumbpipe`, and `sendme` in the dev tools profile, `sone` in the media tag, `sendme` in the DGX module, and `herdr` on aspen3 and britton-desktop. No configuration previously took these names from nixpkgs.
+
+## Library and Package Updates
+
+onix-core's `lib/kache-nix-rust.nix` moved to onixpkgs as `lib.kacheNixRust`, with the wrapper contract check. The changebot example now takes the library as its `kacheNixRust` argument. `flake-outputs/_kache-nix-rust-checks.nix` keeps the checks that read britton-desktop's configuration and the example check. Relocking onixpkgs to `56a93169` brings iroh-ssh 0.2.12 with the connection-type evidence patch, the repaired horizon, and `mesh-llm-headless`, which onix-core does not use.
+
+Measured against the parent commit `023a7ac3`:
+
+- `flake.lock` changes only the `onixpkgs` and `onixpkgs/horizon` nodes.
+- Machines: bonsai's `iroh-ssh` service moves to iroh-ssh 0.2.12, which also changes its man-page index. aspen1, aspen2, britton-fw, chv-dev1, chv-dev2, and chv-dev3 differ only in `configurationRevision`. aspen3 and britton-desktop fail to evaluate on both commits on the `multiverse.lock` pin `eaad0894`.
+- Checks: `kache-nix-rust-wrapper-contract` is gone, because onixpkgs runs it. `kache-nix-rust-changebot-example` and `kache-nix-rust-sandbox-settings` keep their derivations and build. The other checks that differ read the flake source tree or the commit revision, or are the four `dgx-*` checks that fail on both commits.

@@ -27,3 +27,13 @@ r[onix.packages.onixpkgs] Every NixOS and darwin machine, every DGX devenv machi
 - GIVEN `dgx-machine`, which bakes onix-core's DGX inventory into its build
 - WHEN packages move to onixpkgs
 - THEN `dgx-machine` MUST stay in onix-core
+
+### Requirement: The kache wrapper library comes from onixpkgs
+
+r[onix.packages.kache_library] onix-core MUST build its kache rustc wrappers with onixpkgs' `lib.kacheNixRust` and MUST NOT keep its own copy of the library or of its wrapper contract check. onix-core keeps the checks that read its own machine configuration and its changebot example.
+
+#### Scenario: Changebot example
+
+- GIVEN the changebot example evaluated by `kache-nix-rust-changebot-example`
+- WHEN it builds the rustc wrapper
+- THEN the wrapper MUST come from onixpkgs' `lib.kacheNixRust`

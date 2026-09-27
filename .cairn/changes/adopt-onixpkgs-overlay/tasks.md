@@ -14,3 +14,8 @@
 ## Phase 3: Publication
 
 - [x] [serial] Switch the `onixpkgs` input from the local `git+file` URL to onixpkgs' published remote, `git+ssh://git@github.com/OnixResearch/onixpkgs.git`, and relock it. r[onix.packages.onixpkgs]
+
+## Phase 4: Library and package updates
+
+- [x] [serial] Build the changebot example and the kache checks with onixpkgs' `lib.kacheNixRust`, delete `lib/kache-nix-rust.nix`, and drop the wrapper contract check that onixpkgs now runs. r[onix.packages.kache_library]
+- [x] [serial] Relock onixpkgs for iroh-ssh 0.2.12, the repaired horizon, and the kache library, and compare x86_64-linux machine toplevels and checks with the parent commit. r[onix.packages.onixpkgs] r[onix.packages.kache_library]

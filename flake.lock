@@ -2844,16 +2844,18 @@
       "flake": false,
       "locked": {
         "lastModified": 1790372577,
-        "narHash": "sha256-5syktyE+ygDT3+lz4z2fnR2ReqBaHbVHFPctE/IsoBs=",
-        "owner": "peters",
-        "repo": "horizon",
+        "lfs": true,
+        "narHash": "sha256-XqrSVHdsfuOz+8WBcdMQqEp71vLSVpUc2FB6kbn8DNw=",
+        "ref": "refs/heads/main",
         "rev": "138c5571a5efc9506f6e2a2c4d33e9f5ebb8067b",
-        "type": "github"
+        "revCount": 1112,
+        "type": "git",
+        "url": "https://github.com/peters/horizon"
       },
       "original": {
-        "owner": "peters",
-        "repo": "horizon",
-        "type": "github"
+        "lfs": true,
+        "type": "git",
+        "url": "https://github.com/peters/horizon"
       }
     },
     "kamacite-build-support": {
@@ -4827,11 +4829,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1790535271,
-        "narHash": "sha256-QCw7rczCkqtuK2VzJYOFRF6keQB1Vs0KU7R/kqZ7nPo=",
+        "lastModified": 1790539518,
+        "narHash": "sha256-jOmVibE6UP1Az4O1xqyAnwNaRrMny+1JpGUX9NJA4sU=",
         "ref": "refs/heads/main",
-        "rev": "99ab271ba38a9935feb692778d4e1e96481f7427",
-        "revCount": 3,
+        "rev": "56a93169f4ace2394dc4c474c6d28911c24c35e7",
+        "revCount": 6,
         "type": "git",
         "url": "ssh://git@github.com/OnixResearch/onixpkgs.git"
       },
