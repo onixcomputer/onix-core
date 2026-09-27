@@ -7281,11 +7281,11 @@
         "treefmt-nix": "treefmt-nix_5"
       },
       "locked": {
-        "lastModified": 1790531725,
-        "narHash": "sha256-R5np2RykalnU6I0IhezwCGFaI/4oZQV+1+J+LrknuqU=",
+        "lastModified": 1790546326,
+        "narHash": "sha256-UBDVKY8RxXPGIc+DKcc87K3e0qG7YLLeTj2OZRL5YkI=",
         "ref": "refs/heads/main",
-        "rev": "8f5175d40c128ef8e28e25b1815f14f72d2c7e5c",
-        "revCount": 404,
+        "rev": "99c2a9a40a426e61fcceafb29e240fdb094e98b6",
+        "revCount": 408,
         "type": "git",
         "url": "ssh://git@github.com/OnixResearch/tenstorrent.nix.git"
       },

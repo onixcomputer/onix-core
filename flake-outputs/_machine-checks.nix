@@ -131,7 +131,9 @@ let
     && lib.hasInfix "--max-sequence-length ${toString qwenMaximumSequenceLength}" qwenExecStart
     && lib.hasInfix "--max-generation-tokens ${toString qwenMaximumGenerationTokens}" qwenExecStart
     && lib.hasInfix "--continuous-slot-policy " qwenExecStart
-    && lib.hasInfix "/share/qwen36/continuous-slot-policy.json" qwenExecStart;
+    && lib.hasInfix "/share/qwen36/continuous-slot-policy.json" qwenExecStart
+    && lib.hasInfix "--prefix-cache-policy " qwenExecStart
+    && lib.hasInfix "/share/qwen36/prefix-cache-policy.json" qwenExecStart;
   qwenHasExpectedEnvironment =
     serviceEnvironmentValue qwenServiceName "HF_HUB_OFFLINE" == "1"
     && serviceEnvironmentValue qwenServiceName "HF_MODEL" == qwenModelPath
@@ -316,7 +318,7 @@ let
       exit 1
     ''}
     ${lib.optionalString (!qwenHasExpectedCommand) ''
-      echo "${qwenServiceName} must use the pinned serialized Qwen command, limits and continuous-slot scheduler"
+      echo "${qwenServiceName} must use the pinned serialized Qwen command, limits, continuous-slot scheduler and prefix cache"
       exit 1
     ''}
     ${lib.optionalString (!qwenHasExpectedEnvironment) ''

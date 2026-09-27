@@ -327,6 +327,11 @@ in
         # streams pause while a refill's prompt is prefilled beside them. The
         # tenstorrent.nix receipt of 2026-09-27 admits this scheduler profile.
         continuousSlotScheduler = true;
+        # An agent's next turn resends its whole conversation. The prefix cache
+        # restores the saved state of the longest earlier prefix and prefills only
+        # the rest. The tenstorrent.nix receipt of 2026-09-27 (ABBA re-screen)
+        # admits this cache profile on the pinned package.
+        prefixCache = true;
         modelPath = qwenModelPath;
         modelAlias = "Qwen3.8-27B";
         listenAddress = qwenListenAddress;
