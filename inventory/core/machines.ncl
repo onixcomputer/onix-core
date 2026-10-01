@@ -195,7 +195,11 @@ let { Machines, .. } = import "contracts.ncl" in
       # name does not resolve to this host on the deploy LAN. Pin the deploy
       # target to the same tailscale address the service mesh uses.
       deploy.targetHost = "root@100.108.13.4",
-      deploy.buildHost = "britton-desktop",
+      # Clan resolves a bare buildHost to root@. The desktop's root has no
+      # GitHub key, so evaluation cannot fetch octet's GitHub-SSH cargo deps
+      # (bounded-exec). brittonr's SSH key reaches both GitHub and aspen3's
+      # root for the closure copy.
+      deploy.buildHost = "brittonr@britton-desktop",
     },
 
     # ========== Desktop ==========

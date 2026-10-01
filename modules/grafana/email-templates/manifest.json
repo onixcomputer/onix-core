@@ -77,7 +77,7 @@
   "upstream": {
     "license": "AGPL-3.0-or-later",
     "project": "Grafana",
-    "source": "generated public/emails assets from the reviewed Grafana 13.1.4 package output",
-    "version": "13.1.4"
+    "source": "generated public/emails assets from the reviewed Grafana 13.1.6 package output",
+    "version": "13.1.6"
   }
 }
