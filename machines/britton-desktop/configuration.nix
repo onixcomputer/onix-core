@@ -792,6 +792,8 @@ in
   programs.fuse.userAllowOther = true;
 
   home-manager.users.brittonr.home.packages = with pkgs; [
+    # r[impl onix.agentaps.install]
+    agentaps
     librepods
   ];
 

@@ -289,6 +289,8 @@ in
     # SSE. ptyZZZ runs the ptys, http-nu (nixpkgs) serves the page and the
     # single /sse connection, nushell is the service closure the spawner uses.
     home.packages = with pkgs; [
+      # r[impl onix.agentaps.install]
+      agentaps
       easyeffects
       evtest
       helvum
