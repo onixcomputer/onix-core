@@ -64,6 +64,7 @@ in
             '';
           in
           {
+            imports = [ (import ./underclass.nix { settings = cfg; }) ];
 
             # OMP 18.2 requires Bun >=1.4; keep upstream's compiler/runtime pairing.
             # r[impl onix.llm_agents.bun_compiler]

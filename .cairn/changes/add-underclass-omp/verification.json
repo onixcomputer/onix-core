@@ -1,0 +1,159 @@
+{
+  "change": "add-underclass-omp",
+  "status": "desktop-scoped-runtime-activated-aspen3-clan-deployed-as-shared-pool-client",
+  "source": {
+    "repository": "https://github.com/ghuntley/underclass",
+    "revision": "9244c8169bb1b73492f0c5ad5b693d59d65034da",
+    "nar_hash": "sha256-3HaGGD0jzv2TPkFJrAYoLpUu6+wq0NnOS/nJaqk7aI4=",
+    "new_lock_nodes": [
+      "underclass"
+    ],
+    "changed_existing_lock_nodes": [
+      "root"
+    ],
+    "existing_dependency_revisions_unchanged": true
+  },
+  "builds": {
+    "underclass": "/nix/store/1bjhcqirnawj8mqpyzdcwjn70mkvlz1r-underclass-0.1.0",
+    "both_machine_provider_extensions": "/nix/store/981hqlf8i5z9kq8c5ak55lc9gxdwlqcg-omp-underclass-provider",
+    "both_machine_service_units": "/nix/store/xvcmgwplz7073i9269knl38ywn5vliv7-unit-underclass.service",
+    "unit_limit": "Historical pre-generation isolated unit evaluation used /no-such-path secret placeholders. The later scoped desktop rollout generated three per-machine Clan vars, rebuilt the unit, installed their runtime plaintext under /run, and started the evaluated unit.",
+    "llm-agents-omp-package-list": "/nix/store/vs1wyfh7ifvgrw7namqgng61mf428r2a-llm-agents-omp-package-list",
+    "llm-agents-omp-smoke": "/nix/store/n3y5jdqcmr45bf1fmjgfkxbbb8qmghph-llm-agents-omp-smoke",
+    "omp_smoke_result": "smoke-test: ok"
+  },
+  "configuration": {
+    "enabled": [
+      "britton-desktop",
+      "aspen3"
+    ],
+    "negative_control_disabled": "aspen1",
+    "bind_address": "127.0.0.1:8080",
+    "open_firewall": false,
+    "auto_codex_resets": false,
+    "secret_generator_shared": false,
+    "files": {
+      "env-file": {
+        "secret": true,
+        "deploy": true,
+        "owner": "root",
+        "group": "root",
+        "mode": "0400"
+      },
+      "proxy-key": {
+        "secret": true,
+        "deploy": true,
+        "owner": "brittonr",
+        "group": "root",
+        "mode": "0400"
+      },
+      "ui-token": {
+        "secret": true,
+        "deploy": true,
+        "owner": "brittonr",
+        "group": "root",
+        "mode": "0400"
+      }
+    },
+    "note": "Historical configuration evaluation included both machines; the isolated stage now enables and the scoped runtime activation now runs on both britton-desktop and Aspen3. Neither machine switched its NixOS generation."
+  },
+  "runtime": {
+    "environment": "Fresh temporary HOME, agent directory, working directory, config, state and random test credentials; no production account data",
+    "unauthenticated_models_status": 401,
+    "authenticated_models_status": 200,
+    "admin_with_proxy_key_status": 401,
+    "admin_with_admin_key_status": 200,
+    "configured_accounts": 0,
+    "empty_pool_status": 503,
+    "empty_pool_error_type": "no_accounts",
+    "empty_pool_error_message": "no subscriptions are configured for this model",
+    "utop": "Native PTY displayed LIVE, HEALTHY 0/0 and No accounts configured; q exited with status 0",
+    "omp_version": "18.2.4",
+    "packaged_extension_discovery": "passed through actual compiled OMP CLI",
+    "models": [
+      "underclass/gpt-5.5",
+      "underclass/gpt-5.6-luna",
+      "underclass/gpt-5.6-sol",
+      "underclass/gpt-5.6-terra",
+      "underclass/gpt-6-astra"
+    ],
+    "request_exercise": {
+      "command": "omp --no-extensions -e <isolated-copy-of-managed-extension> --no-session --no-tools --no-lsp --no-skills --no-rules --no-title --model underclass/gpt-6-astra --thinking low --max-time 30s --provider-session-id underclass-omp-smoke --system-prompt 'You are a connectivity check.' --print --mode json 'Reply with exactly UNDERCLASS_OK.'",
+      "capture": "Temporary loopback recording relay forwarded every native request unchanged to the actual built Underclass server; no mock model backend",
+      "observed_requests": 11,
+      "path": "/v1/responses",
+      "all_bearer_keys_matched": true,
+      "all_prompt_cache_keys": "underclass-omp-smoke",
+      "all_store_values": false,
+      "all_stream_values": true,
+      "output_token_caps_omitted": true,
+      "temperature_omitted": true,
+      "previous_response_id_omitted": true,
+      "native_error_status": 503,
+      "native_error_type": "no_accounts",
+      "direct_provider_fallback_observed": false,
+      "exit_status": 1,
+      "exit_explanation": "The empty pool returned the expected real 503. OMP retried normally until the smoke's 30-second bound ended; no generated response is claimed."
+    },
+    "context": "Historical isolated pre-enrollment empty-pool smoke, before the later live britton-desktop account enrollments."
+  },
+  "validation": {
+    "scoped_formatter": "passed; eight files processed, one formatted",
+    "cairn": "valid: true; no issues or change_issues",
+    "cairn_command": "nix run path:/home/brittonr/git/OnixResearch/cairn#cairn -- validate --root /home/brittonr/git/onix-core --policy /home/brittonr/git/OnixResearch/cairn/cairn-policy/generated/cairn-policy.json",
+    "cairn_path_note": "Used the canonical targets of the documented Cairn checkout and policy paths because the checkout alias is a symlink."
+  },
+  "limits": [
+    "The desktop did not switch a NixOS generation; its scoped runtime unit and credentials are lost on reboot, and a later desktop activation already removed its /run secrets while the service kept running. Aspen3 switched through Clan on 2026-09-26 as a shared-pool client without its own service or vars.",
+    "The earlier isolated API/OMP smoke ran locally. Live britton-desktop GPT-5.5 generation succeeded. Aspen3 reaches the desktop pool through its tunnel, but its provider key lookup fails until the desktop proxy key is installed again, so no Aspen3 inference is claimed.",
+    "Each service machine requires fresh browser device authorization after deployment. Existing OMP OAuth refresh tokens must not be copied.",
+    "The isolated empty-pool smoke had no upstream generation. The later three-account pool generated GPT-5.5 successfully via its healthy account; in-flight provider-error failover and the other advertised models were not exercised.",
+    "Existing default model choices, sessions and research extension files were not changed.",
+    "The local monitor socket intentionally exposes account labels and usage to local users, following upstream behavior."
+  ],
+  "runtime_rollout_britton_desktop": {
+    "date": "2026-09-24",
+    "source_worktree": "/home/brittonr/git/onix-core-underclass-stage",
+    "secrets": "Three per-machine Clan vars generated encrypted; only their scoped plaintext installed under /run/secrets/vars/per-machine/britton-desktop/underclass",
+    "activation": "Evaluated Underclass systemd unit linked under /run/systemd/system and started; no machine generation switched",
+    "service": "active; loopback UI HTTP 200, unauthenticated model/admin HTTP 401, authenticated model/admin HTTP 200, monitor socket present",
+    "omp": "Five Underclass models discovered via installed extension; direct Anthropic default returned CLAUDE_DIRECT_OK",
+    "accounts": "Three distinct authorized Codex account IDs match all three currently active OMP OpenAI account IDs; at final check one healthy, two cooling on quota. A fourth distinct stale/disabled OMP OAuth identity remains unenrolled; user identified account 3 as the last account for this pool.",
+    "inference": "OMP underclass/gpt-5.5 returned UNDERCLASS_ACCOUNT1_OK, UNDERCLASS_TWO_ACCOUNT_OK, and UNDERCLASS_THREE_ACCOUNTS_OK after separate account enrollments. The most recent admin request log recorded gpt-5.5 HTTP 200 via Codex on the healthy first account while the other two cooled.",
+    "durability": "Runtime unit and /run secrets disappear on reboot; /var/lib/underclass/pool.db persists; staged Nix out-links retain package and unit",
+    "normal_deployment_blocker": "Isolated full-host evaluation fails because pinned Nixpkgs lacks electron_44 required by T3Code; unrelated dirty onix-core changes were not switched",
+    "anthropic": "Anthropic subscription remains direct in OMP, not routed through Underclass",
+    "coverage": "All three currently active OpenAI Codex identities seen across local/remote OMP inventories were present exactly once in the desktop Underclass pool. One active Anthropic identity on britton-desktop continued using direct OMP OAuth."
+  },
+  "runtime_rollout_aspen3": {
+    "date": "2026-09-24",
+    "source_worktree": "/home/brittonr/git/onix-core-underclass-stage on britton-desktop",
+    "secrets": "Three distinct Aspen3 per-machine Clan vars generated encrypted and checked, installed as 0400 in Aspen3 /run; proxy/ui owned by brittonr:root, environment owned by root:root",
+    "activation": "Aspen3-specific evaluated unit copied to Aspen3 store, linked and enabled under /run/systemd/system; no NixOS generation switched",
+    "service": "active on 127.0.0.1:8080; UI HTTP 200, unauthenticated models HTTP 401, authenticated models HTTP 200, proxy key rejected for admin (401), admin key accepted (200)",
+    "omp": "Aspen3-specific extension linked; current OMP 18.3.0 emitted five Underclass model entries via models --json, but that CLI command did not exit within 75 seconds",
+    "accounts": "Zero Codex accounts at first live check; separate OpenAI account 1 device flow initiated. Local Anthropic OAuth not previously present; direct OMP login initiated and awaits user approval.",
+    "inference": "Pending provider approvals; no successful Aspen3 generation claimed yet",
+    "durability": "Runtime unit and /run secrets disappear on reboot, persistent account database remains under /var/lib/underclass; local Nix closures retained via ~/.local/state/underclass-aspen3 GC roots",
+    "normal_deployment_blocker": "Full-host Aspen3 switch not attempted; its onix-core checkout contains unrelated dirty edits and predates the isolated Underclass stage"
+  },
+  "clan_deployment_aspen3": {
+    "date": "2026-09-26",
+    "change": "restore-aspen3-clan-deploy",
+    "mode": "ompUnderclassRemoteHost = britton-desktop; no Underclass service, generator or vars on Aspen3",
+    "system": "/nix/store/73c859193pzbz0arphk4nlvahkqrhq50-nixos-system-aspen3-26.11.20260924.34ca302",
+    "handover": "Hand-installed tunnel unit, its default.target.wants link and the OMP extension moved to ~brittonr/.local/state/underclass-aspen3/pre-clan-backup/ before the switch",
+    "home_manager": "Extension and underclass-ssh-tunnel.service link into /nix/store/iv2cagrrg5r1578pn77pz2cxbj4spjzc-home-manager-files; no .hm-bak files; tunnel restarted by Home Manager at 10:28:03 EDT",
+    "tunnel": "http://127.0.0.1:8080/ HTTP 200; /v1/models without a key HTTP 401",
+    "provider_key": "ssh britton-desktop cat /run/secrets/vars/per-machine/britton-desktop/underclass/proxy-key fails: No such file or directory",
+    "desktop_vars": "Main-tree desktop Underclass ciphertexts replaced with the isolated worktree's; the committed proxy key matches the running desktop service by SHA-256 comparison"
+  },
+  "britton_desktop_clan_deployment": {
+    "change": "expose-underclass-mesh-llm",
+    "generation": 859,
+    "configurationRevision": "0348b2d3775880a89cccca758e06688276796504",
+    "lineage_branch": "underclass-mesh-desktop",
+    "result": "underclass.service, its three vars and the OMP provider link are now managed by the deployed NixOS generation and Home Manager; the runtime unit, manually installed /run secrets and manually linked extension were removed. The enrolled pool in /var/lib/underclass was retained.",
+    "aspen3": "not deployed by this change"
+  }
+}

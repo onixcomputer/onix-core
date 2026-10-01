@@ -71,6 +71,7 @@ in
     wasm-plugins = wasmPluginsWithHostImports;
     ki-editor = self.inputs.ki-editor.packages.${pkgs.stdenv.hostPlatform.system}.default;
     mercury-cli = self.inputs.mercury-cli.packages.${pkgs.stdenv.hostPlatform.system}.mercury-cli;
+    underclass = self.inputs.underclass.packages.${pkgs.stdenv.hostPlatform.system}.underclass;
   }
   // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
     nix-grpc-store =

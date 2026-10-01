@@ -90,6 +90,7 @@ let mesh_aspen1_address = radicle_node_address in
 let mesh_aspen2_address = "100.82.25.30" in
 let mesh_aspen3_address = radicle_aspen3_replica_address in
 let mesh_desktop_address = radicle_desktop_replica_address in
+let underclass_mesh_gateway_port = 18081 in
 let radicle_node_port = 8776 in
 let radicle_replica_state_quota_gib = 64 in
 let radicle_desktop_replica_node_fingerprint = "SHA256:JHQTPqoMr4kLqBsrAPSRNXUuzETiHAoiKBM/VWftmEg" in
@@ -1082,9 +1083,11 @@ in
           researchLayaAddress = "%{mesh_aspen3_address}:7999",
           researchBackendUnits = ["laya-laya-aspen3.service"],
         },
+        # r[impl onix.underclass.mesh.route]
         britton-desktop.settings = {
           mode = "joiner",
           endpointUrl = mesh_desktop_openai_endpoint_url,
+          extraEndpoints.underclass = "http://127.0.0.1:%{std.to_string underclass_mesh_gateway_port}/v1",
           meshBindAddress = mesh_desktop_address,
           backendUnit = "qwen38-p150x2.service",
           researchMode = "forwarder",
@@ -1124,10 +1127,19 @@ in
       roles.default.machines = {
         britton-desktop.settings = {
           packages = ["omp"],
+          ompUnderclass = true,
+          # The desktop's enrolled Codex pool also serves the private mesh.
+          underclassMeshGateway = true,
+          underclassMeshPort = underclass_mesh_gateway_port,
           ompResearchTools = true,
           ompResearchUrl = "http://%{mesh_desktop_address}:7997",
         },
-        aspen3.settings.packages = ["omp"],
+        # Aspen3 shares the desktop's enrolled pool over SSH instead of running
+        # a second, separately enrolled Underclass service.
+        aspen3.settings = {
+          packages = ["omp"],
+          ompUnderclassRemoteHost = "britton-desktop",
+        },
       },
     },
 
