@@ -594,7 +594,6 @@ let
   # r[verify onix.britton-desktop.herdr.collie.plugin]
   # r[verify onix.britton-desktop.herdr.collie.config]
   # r[verify onix.britton-desktop.herdr.collie.service]
-  # r[verify onix.britton-desktop.herdr.collie.serve]
   # The package-level Collie tests run in onixpkgs.
   collieIntegration = import ./_collie-herdr-integration-check.nix {
     inherit
