@@ -2,7 +2,7 @@
 { lib, ... }:
 let
   mkSettings = import ../../lib/mk-settings.nix { inherit lib; };
-  upstreamVersion = "1.8.0";
+  upstreamVersion = "1.13.0";
   uploaderGroup = "niks3-uploaders";
   secretFileMode = "0400";
   sharedSecretFileMode = "0440";

@@ -57,6 +57,11 @@
       inputs.flake-parts.follows = "flake-parts";
     };
 
+    nix-grpc-store = {
+      url = "github:Mic92/nix-grpc-store/d3b71ce0c7fa61b7b70e8b1e0b5b1245c54c242c";
+      flake = false;
+    };
+
     onix-wasm = {
       url = "github:onixcomputer/onix-wasm";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -131,7 +136,7 @@
       };
     };
     niks3 = {
-      url = "github:Mic92/niks3/v1.8.0";
+      url = "github:Mic92/niks3/e64338d774d97249ce0ace37a59767e72b5b52fb"; # v1.13.0
       inputs = {
         nixpkgs.follows = "nixpkgs";
         treefmt-nix.follows = "treefmt-nix";
@@ -209,6 +214,14 @@
         flake-parts.follows = "flake-parts";
         treefmt-nix.follows = "treefmt-nix";
         systems.follows = "systems";
+      };
+    };
+    underclass = {
+      url = "github:ghuntley/underclass";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        systems.follows = "systems";
+        devenv.follows = "devenv";
       };
     };
     tenstorrent-nix = {
