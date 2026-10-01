@@ -1,0 +1,172 @@
+diff --git a/tt_metal/api/tt-metalium/experimental/fetch_queue_diagnostics.hpp b/tt_metal/api/tt-metalium/experimental/fetch_queue_diagnostics.hpp
+new file mode 100644
+--- /dev/null
++++ b/tt_metal/api/tt-metalium/experimental/fetch_queue_diagnostics.hpp
+@@ -0,0 +1,23 @@
++// SPDX-FileCopyrightText: © 2026 Onix Research
++//
++// SPDX-License-Identifier: Apache-2.0
++
++#pragma once
++
++#include <cstdint>
++
++namespace tt::tt_metal::experimental {
++
++struct FetchQueueDiagnostics {
++    std::uint64_t reserve_calls = 0;
++    std::uint64_t wait_calls = 0;
++    std::uint64_t poll_iterations = 0;
++    std::uint64_t total_wait_nanoseconds = 0;
++    std::uint64_t maximum_wait_nanoseconds = 0;
++};
++
++void reset_fetch_queue_diagnostics();
++
++[[nodiscard]] FetchQueueDiagnostics get_fetch_queue_diagnostics();
++
++}  // namespace tt::tt_metal::experimental
+diff --git a/tt_metal/impl/dispatch/system_memory_manager.cpp b/tt_metal/impl/dispatch/system_memory_manager.cpp
+--- a/tt_metal/impl/dispatch/system_memory_manager.cpp
++++ b/tt_metal/impl/dispatch/system_memory_manager.cpp
+@@ -2,6 +2,7 @@
+ //
+ // SPDX-License-Identifier: Apache-2.0
+ 
++#include <tt-metalium/experimental/fetch_queue_diagnostics.hpp>
+ #include <tt_stl/fmt.hpp>
+ #include "impl/context/metal_context.hpp"
+ #include "system_memory_manager.hpp"
+@@ -15,6 +16,7 @@
+ #include <optional>
+ #include <thread>
+ #include <string>
++#include <string_view>
+ #include <tuple>
+ 
+ #include <tt_stl/assert.hpp>
+@@ -43,6 +45,35 @@ void on_dispatch_timeout_detected();
+ 
+ namespace {
+ 
++constexpr std::string_view kFetchQueueDiagnosticsEnvironment = "TT_METAL_FETCH_QUEUE_DIAGNOSTICS";
++constexpr std::string_view kEnabledEnvironmentValue = "1";
++
++struct FetchQueueDiagnosticCounters {
++    std::atomic<std::uint64_t> reserve_calls = 0;
++    std::atomic<std::uint64_t> wait_calls = 0;
++    std::atomic<std::uint64_t> poll_iterations = 0;
++    std::atomic<std::uint64_t> total_wait_nanoseconds = 0;
++    std::atomic<std::uint64_t> maximum_wait_nanoseconds = 0;
++};
++
++FetchQueueDiagnosticCounters fetch_queue_diagnostics;
++
++bool fetch_queue_diagnostics_enabled() {
++    static const bool enabled = [] {
++        const char* value = std::getenv(kFetchQueueDiagnosticsEnvironment.data());
++        return value != nullptr && std::string_view(value) == kEnabledEnvironmentValue;
++    }();
++    return enabled;
++}
++
++void update_maximum_wait(std::uint64_t wait_nanoseconds) {
++    std::uint64_t maximum = fetch_queue_diagnostics.maximum_wait_nanoseconds.load(std::memory_order_relaxed);
++    while (maximum < wait_nanoseconds &&
++           !fetch_queue_diagnostics.maximum_wait_nanoseconds.compare_exchange_weak(
++               maximum, wait_nanoseconds, std::memory_order_relaxed)) {
++    }
++}
++
+ bool wrap_ge(uint32_t a, uint32_t b) {
+     // Signed Diff uses 2's Complement to handle wrap
+     // Works as long as a and b are 2^31 apart
+@@ -115,6 +146,27 @@ void loop_and_wait_with_timeout(
+ }
+ }  // namespace
+ 
++namespace experimental {
++
++void reset_fetch_queue_diagnostics() {
++    fetch_queue_diagnostics.reserve_calls.store(0, std::memory_order_relaxed);
++    fetch_queue_diagnostics.wait_calls.store(0, std::memory_order_relaxed);
++    fetch_queue_diagnostics.poll_iterations.store(0, std::memory_order_relaxed);
++    fetch_queue_diagnostics.total_wait_nanoseconds.store(0, std::memory_order_relaxed);
++    fetch_queue_diagnostics.maximum_wait_nanoseconds.store(0, std::memory_order_relaxed);
++}
++
++FetchQueueDiagnostics get_fetch_queue_diagnostics() {
++    return {
++        fetch_queue_diagnostics.reserve_calls.load(std::memory_order_relaxed),
++        fetch_queue_diagnostics.wait_calls.load(std::memory_order_relaxed),
++        fetch_queue_diagnostics.poll_iterations.load(std::memory_order_relaxed),
++        fetch_queue_diagnostics.total_wait_nanoseconds.load(std::memory_order_relaxed),
++        fetch_queue_diagnostics.maximum_wait_nanoseconds.load(std::memory_order_relaxed)};
++}
++
++}  // namespace experimental
++
+ bool d2h_uses_hugepage_fallback(const MetalContext& ctx) {
+     return !ctx.hal().get_supports_64_bit_pcie_addressing() && !ctx.get_cluster().is_iommu_enabled();
+ }
+@@ -693,9 +745,14 @@ void SystemMemoryManager::fetch_queue_reserve_back(const uint8_t cq_id) {
+         return;
+     }
+ 
++    const bool record_diagnostics = fetch_queue_diagnostics_enabled();
++    if (record_diagnostics) {
++        fetch_queue_diagnostics.reserve_calls.fetch_add(1, std::memory_order_relaxed);
++    }
++
+     auto& ctx = tt::tt_metal::MetalContext::instance(context_id);
+     const uint32_t prefetch_q_rd_ptr =
+         ctx.dispatch_mem_map().get_device_command_queue_addr(CommandQueueDeviceAddrType::PREFETCH_Q_RD, cq_id);
+ 
+     // Helper to wait for fetch queue space, if needed
+     uint32_t fence;
+@@ -705,10 +762,17 @@ void SystemMemoryManager::fetch_queue_reserve_back(const uint8_t cq_id) {
+         }
+         TTZoneScopedDN(DISPATCH, "wait_for_fetch_q_space");
+ 
++        const auto wait_start =
++            record_diagnostics ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
++        std::uint64_t poll_iterations = 0;
++
+         // Body of the operation
+         auto fetch_operation_body = [&]() {
+             ctx.get_cluster().read_core(&fence, sizeof(uint32_t), this->prefetcher_cores[cq_id], prefetch_q_rd_ptr);
+             this->prefetch_q_dev_fences[cq_id] = fence;
++            if (record_diagnostics) {
++                ++poll_iterations;
++            }
+             // Yield to clock the simulator when running on TTSim; no-op on real hardware.
+             ctx.get_cluster().advance_device_execution(this->device_id);
+         };
+@@ -731,6 +795,16 @@ void SystemMemoryManager::fetch_queue_reserve_back(const uint8_t cq_id) {
+ 
+         loop_and_wait_with_timeout(
+             fetch_operation_body, fetch_wait_condition, fetch_on_timeout, timeout_duration, get_dispatch_progress);
++
++        if (record_diagnostics) {
++            const auto wait_nanoseconds = static_cast<std::uint64_t>(
++                std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - wait_start)
++                    .count());
++            fetch_queue_diagnostics.wait_calls.fetch_add(1, std::memory_order_relaxed);
++            fetch_queue_diagnostics.poll_iterations.fetch_add(poll_iterations, std::memory_order_relaxed);
++            fetch_queue_diagnostics.total_wait_nanoseconds.fetch_add(wait_nanoseconds, std::memory_order_relaxed);
++            update_maximum_wait(wait_nanoseconds);
++        }
+     };
+ 
+     wait_for_fetch_q_space();
+diff --git a/tt_metal/sources.cmake b/tt_metal/sources.cmake
+--- a/tt_metal/sources.cmake
++++ b/tt_metal/sources.cmake
+@@ -26,6 +26,7 @@ set(TT_METAL_PUBLIC_API
+     api/tt-metalium/distributed.hpp
+     api/tt-metalium/distributed_context.hpp
+     api/tt-metalium/distributed_host_buffer.hpp
++    api/tt-metalium/experimental/fetch_queue_diagnostics.hpp
+     api/tt-metalium/experimental/dispatch_telemetry.hpp
+     api/tt-metalium/experimental/context/metal_env.hpp
+     api/tt-metalium/experimental/core_subset_write/buffer_write.hpp

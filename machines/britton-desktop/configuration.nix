@@ -162,7 +162,7 @@ let
   supraStateDirectoryMode = "0755";
   supraModelFileMode = "0644";
 
-  tenstorrentPackages = inputs.tenstorrent-nix.packages.${pkgs.stdenv.hostPlatform.system};
+  tenstorrentPackages = import ../../pkgs/tenstorrent-compat { inherit inputs pkgs; };
   ttMetaliumPackage = tenstorrentPackages.llama-cpp-metalium;
   ttMetalPackage = tenstorrentPackages.tt-metal;
   ttMetaliumRuntimeRoot = "${ttMetalPackage}/libexec/tt-metalium";

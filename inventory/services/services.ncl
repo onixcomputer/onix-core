@@ -368,6 +368,35 @@ let niks3_uploader_settings = fun local_address =>
     verifyS3Integrity = true,
   }
 in
+let farm_clients = ["bonsai", "aspen3", "britton-desktop"] in
+let farm_workers = ["aspen1", "aspen2"] in
+let farm_node_port = 50052 in
+let farm_scheduler = "%{rustfs_aspen1_address}:%{farm_node_port}" in
+let farm_node_settings = fun node_address is_scheduler =>
+  {
+    address = node_address,
+    port = farm_node_port,
+    schedulerAddress = if is_scheduler then "" else farm_scheduler,
+    isScheduler = is_scheduler,
+    maxJobs = 16,
+    minFree = "100G",
+    cacheUrl = niks3_server_url,
+    cacheInstance = "nix-cache",
+    allowedClients = farm_clients,
+    workerNames = farm_workers,
+    balancerNames = ["aspen1"],
+  }
+in
+let farm_client_settings = {
+  hostName = "aspen1.local",
+  hostAddress = rustfs_aspen1_address,
+  port = 50051,
+  systems = ["x86_64-linux"],
+  supportedFeatures = ["nixos-test", "big-parallel", "kvm"],
+  maxJobs = 32,
+  cacheUrl = niks3_server_url,
+}
+in
 {
   instances = {
 
@@ -453,9 +482,37 @@ in
         server.machines.aspen1.settings = niks3_server_settings,
         uploader.machines = {
           aspen1.settings = niks3_uploader_settings rustfs_aspen1_address,
+          # Farm publication is independent of these maintenance-only queues.
+          # Aspen2 has no Celld authority; its manual drain checks Aspen1.
+          aspen2.settings = niks3_uploader_settings rustfs_aspen1_address,
           aspen3.settings = niks3_uploader_settings rustfs_aspen3_address,
           britton-desktop.settings = niks3_uploader_settings rustfs_britton_desktop_address,
         },
+      },
+    },
+
+    # r[impl onix.build_farm.topology]
+    # r[impl onix.build_farm.publication]
+    "nix-build-farm" = {
+      module = { name = "nix-build-farm", input = "self" },
+      roles = {
+        node.machines = {
+          aspen1.settings = farm_node_settings rustfs_aspen1_address true,
+          aspen2.settings = farm_node_settings "100.82.25.30" false,
+        },
+        balancer.machines.aspen1.settings = {
+          hostName = "aspen1.local",
+          port = 50051,
+          schedulerAddress = farm_scheduler,
+          systems = ["x86_64-linux"],
+        },
+        client.machines =
+          std.array.fold_left
+            (fun machines name =>
+              std.record.insert name { settings = farm_client_settings } machines
+            )
+            {}
+            farm_clients,
       },
     },
 

@@ -10,6 +10,10 @@ let
   system = pkgs.stdenv.hostPlatform.system;
   isSupportedSystem = system == supportedSystem;
   tenstorrent = self.inputs.tenstorrent-nix;
+  tenstorrentPackages = import ../pkgs/tenstorrent-compat {
+    inherit (self) inputs;
+    inherit pkgs;
+  };
   # r[impl onix.tenstorrent.native_runtime.rwkv7_p150x2.production_observation]
   # r[verify onix.tenstorrent.native_runtime.rwkv7_p150x2.production_observation]
   packageNames = [
@@ -94,7 +98,7 @@ in
   # r[impl onix.tenstorrent.native_runtime.ttwkv7.single_device_topology]
   # r[impl onix.tenstorrent.native_runtime.dedicated_repository]
   packages = lib.optionalAttrs isSupportedSystem (
-    selectRequired "package" tenstorrent.packages.${system} packageNames
+    selectRequired "package" tenstorrentPackages packageNames
   );
 
   # The dedicated checks are the local verification anchors for external

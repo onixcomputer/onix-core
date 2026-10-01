@@ -73,6 +73,18 @@ in
     mercury-cli = self.inputs.mercury-cli.packages.${pkgs.stdenv.hostPlatform.system}.mercury-cli;
   }
   // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+    nix-grpc-store =
+      let
+        nixInput = self.inputs.nix;
+        system = pkgs.stdenv.hostPlatform.system;
+        # Keep the C++ standard library and dependency headers on the fork's
+        # snapshot too, rather than mixing two nixpkgs ABIs in one process.
+        nixPkgs = import nixInput.inputs.nixpkgs { inherit system; };
+      in
+      nixPkgs.callPackage ../pkgs/nix-grpc-store {
+        nix-grpc-store-src = self.inputs.nix-grpc-store;
+        inherit (nixInput.packages.${system}) nix-store nix-util;
+      };
     dgx-machine = dgxMachinePackage;
     inherit (radicleNodePkgs) radicle-node;
     inherit (pkgs) radicle-httpd;

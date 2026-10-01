@@ -35,6 +35,7 @@ let schemas = {
   "llm" = import "../../modules/llm/schema.ncl",
   "loki" = import "../../modules/loki/schema.ncl",
   "mesh-llm" = import "../../modules/mesh-llm/schema.ncl",
+  "nix-build-farm" = import "../../modules/nix-build-farm/schema.ncl",
   "nix-gc" = import "../../modules/nix-gc/schema.ncl",
   "niks3" = import "../../modules/niks3/schema.ncl",
   "ollama" = import "../../modules/ollama/schema.ncl",

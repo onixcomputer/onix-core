@@ -128,8 +128,7 @@ let
   metaliumBackendName = "metalium";
   metaliumBackendEnabled = backend == metaliumBackendName;
   metaliumTraceEnvironmentValue = if metaliumTrace then "1" else "0";
-  hostSystem = pkgs.stdenv.hostPlatform.system;
-  tenstorrentPackages = inputs.tenstorrent-nix.packages.${hostSystem};
+  tenstorrentPackages = import ../../pkgs/tenstorrent-compat { inherit inputs pkgs; };
   metaliumPackage = tenstorrentPackages.llama-cpp-metalium;
   cudaGpuLayerCount = gpuLayers;
   cpuGpuLayerCount = 0;

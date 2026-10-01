@@ -42,6 +42,7 @@ let self_modules = [
   "llm-agents",
   "loki",
   "mesh-llm",
+  "nix-build-farm",
   "nix-gc",
   "niks3",
   "ollama",

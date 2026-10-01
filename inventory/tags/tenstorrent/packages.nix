@@ -5,7 +5,7 @@
 }:
 let
   hostSystem = pkgs.stdenv.hostPlatform.system;
-  tenstorrentPackagesBase = inputs.tenstorrent-nix.packages.${hostSystem};
+  tenstorrentPackagesBase = import ../../../pkgs/tenstorrent-compat { inherit inputs pkgs; };
   ttFlashPyYamlPinnedRequirement = "pyyaml == 6.0.1";
   ttFlashPyYamlNixRequirement = "pyyaml >= 6.0.1";
   ttFlashTabulatePinnedRequirement = "tabulate == 0.9.0";

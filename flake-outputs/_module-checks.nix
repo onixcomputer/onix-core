@@ -578,6 +578,7 @@ let
   niks3PublicKeyPrefix = "onix-niks3-1:";
   niks3Machines = [
     "aspen1"
+    "aspen2"
     "aspen3"
     "britton-desktop"
   ];
@@ -601,9 +602,6 @@ let
     ||
       machineConfig.systemd.services.niks3-auto-upload.unitConfig.ConditionPathExists
       != niks3MaintenanceMarker
-    || !(lib.hasInfix "niks3-post-build-upload-disabled" (
-      toString machineConfig.nix.settings.post-build-hook
-    ))
     || !(builtins.elem niks3ServerUrl machineConfig.nix.settings.extra-substituters)
     || !(lib.any (
       key: lib.hasPrefix niks3PublicKeyPrefix key
@@ -616,7 +614,6 @@ let
     && !(builtins.elem niks3StoragePort niks3Aspen1.networking.firewall.allowedTCPPorts);
   niks3ServerGeneratedValid =
     niks3ServerSettings.enable
-    && niks3ServerSettings.package.version == "1.8.0"
     && niks3ServerSettings.httpAddr == "100.100.103.95:${toString niks3Port}"
     && niks3ServerSettings.s3.bucket == niks3BucketName
     && niks3ServerSettings.s3.endpoint == "${niks3StorageAddress}:${toString niks3StoragePort}"

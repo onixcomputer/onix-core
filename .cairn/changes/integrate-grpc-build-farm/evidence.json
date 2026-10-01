@@ -1,0 +1,190 @@
+{
+  "recordedAt": "2026-09-23T23:59:25.372193+00:00",
+  "scope": "Repository integration and isolated runtime verification; no production deployment or production credentials generated.",
+  "inputRevisions": {
+    "nix-grpc-store": "d3b71ce0c7fa61b7b70e8b1e0b5b1245c54c242c",
+    "niks3": "e64338d774d97249ce0ace37a59767e72b5b52fb",
+    "nix": "388dea6acc4d45c7d47c9debcc105435ed0a995e"
+  },
+  "runtime": {
+    "nixVersion": "2.36.0",
+    "nixPackage": "/nix/store/k1855sa2ghrc6fii3aqzfb5xhcyj92d2-nix-2.36.0",
+    "grpcPackage": "/nix/store/flxfh4xym8i201q71p69xg684xm86a9h-nix-grpc-store-0.1.0-beta.4",
+    "compatibilityPatch": "pkgs/nix-grpc-store/nix-2.36-full-inputs.patch",
+    "unitGroupsPassed": ["xfcc", "scheduler", "oidc", "farm-client"]
+  },
+  "fleetConfiguration": {
+    "machines": [
+      "aspen1",
+      "aspen2",
+      "aspen3",
+      "bonsai",
+      "britton-desktop",
+      "britton-fw"
+    ],
+    "failedAssertions": {
+      "aspen1": [],
+      "aspen2": [],
+      "aspen3": [],
+      "bonsai": [],
+      "britton-desktop": [],
+      "britton-fw": []
+    },
+    "checksPassed": [
+      "builder-no-self",
+      "module-registry-sync",
+      "niks3-generated",
+      "niks3-settings",
+      "storage-monitoring-generated"
+    ],
+    "serviceUnitsBuilt": [
+      "aspen1:nix-grpc-daemon.service",
+      "aspen2:nix-grpc-daemon.service",
+      "aspen1:envoy.service"
+    ],
+    "envoyConfigurationValidation": "passed"
+  },
+  "pkiSmoke": {
+    "source": "Actual evaluated Clan generator.script, executed via bash -eu with temporary in/out directories and declared OpenSSL runtimeInputs.",
+    "generatedLeaves": [
+      {
+        "machine": "aspen1",
+        "role": "balancer"
+      },
+      {
+        "machine": "aspen1",
+        "role": "node"
+      },
+      {
+        "machine": "aspen2",
+        "role": "node"
+      },
+      {
+        "machine": "aspen3",
+        "role": "client"
+      },
+      {
+        "machine": "bonsai",
+        "role": "client"
+      },
+      {
+        "machine": "britton-desktop",
+        "role": "client"
+      },
+      {
+        "machine": "britton-fw",
+        "role": "client"
+      }
+    ],
+    "checksPassed": [
+      "shared CA script merges once",
+      "CA signing key not deployed",
+      "deployed file metadata owner-only 0400",
+      "exact role CNs",
+      "unique random serials",
+      "worker IP SANs",
+      "aspen1.local ingress DNS SAN",
+      "wrong hostname rejected",
+      "client server-purpose rejected",
+      "CA with insufficient remaining lifetime rejected"
+    ]
+  },
+  "farmSmoke": {
+    "result": "passed",
+    "virtualMachines": 4,
+    "scenarioCount": 21,
+    "scriptSeconds": 280.88,
+    "derivation": "/nix/store/jsh812r3xin1pys8cya33vnwdcv8a919-vm-test-run-nix-grpc-farm.drv",
+    "output": "/nix/store/crfq0gxx7rci99l8in1ri8rlvwrpz364-vm-test-run-nix-grpc-farm",
+    "logCommand": "nix log /nix/store/jsh812r3xin1pys8cya33vnwdcv8a919-vm-test-run-nix-grpc-farm.drv",
+    "command": "nix build --impure --file /tmp/onix-grpc-farm-smoke.nix --out-link /tmp/onix-build-farm-smoke --option allow-import-from-derivation true -L",
+    "expression": "let\n  flake = builtins.getFlake \"path:/home/brittonr/git/onix-core\";\n  system = \"x86_64-linux\";\n  pkgs = import flake.inputs.nixpkgs { inherit system; };\n  source = flake.inputs.nix-grpc-store;\nin\nimport \"${source}/tests/farm.nix\" {\n  inherit pkgs;\n  nixPkgs = flake.inputs.nix.packages.${system} // {\n    nix-everything = flake.nixosConfigurations.aspen1.config.nix.package;\n  };\n  niks3 = flake.inputs.niks3 // {\n    nixosModules.niks3 = {\n      imports = [ flake.inputs.niks3.nixosModules.niks3 ];\n      services.niks3.serverPackage = flake.inputs.niks3.packages.${system}.niks3-server;\n    };\n  };\n  mockOidc = flake.inputs.niks3.packages.${system}.mock-oidc-server;\n  module = {\n    imports = [\n      \"${source}/nixos/server.nix\"\n      \"${source}/nixos/lb.nix\"\n      \"${source}/nixos/client.nix\"\n    ];\n    programs.nix-grpc-store.package = flake.packages.${system}.nix-grpc-store;\n  };\n}\n",
+    "passedScenarios": [
+      {
+        "name": "one node schedules and both builders hold a WorkerSession on it",
+        "seconds": 0.31
+      },
+      {
+        "name": "balancer auth: client cert, bearer token, nothing, unknown CN",
+        "seconds": 10.86
+      },
+      {
+        "name": "DAG build is scheduled across workers and lands in the cache",
+        "seconds": 6.03
+      },
+      {
+        "name": "repeat is answered Cached by the scheduler without building",
+        "seconds": 2.6
+      },
+      {
+        "name": "inputs already in the cache are not sent to the scheduler",
+        "seconds": 3.32
+      },
+      {
+        "name": "outputs read back through any worker carry the cache signature",
+        "seconds": 12.64
+      },
+      {
+        "name": "two clients wanting the same drv build it once",
+        "seconds": 7.48
+      },
+      {
+        "name": "--timeout and --max-silent-time reach the builder",
+        "seconds": 17.14
+      },
+      {
+        "name": "the first client leaving does not fail the second",
+        "seconds": 9.47
+      },
+      {
+        "name": "build hook: nix-daemon with builders = grpc://lb",
+        "seconds": 11.31
+      },
+      {
+        "name": "an input only one worker has still reaches the builder",
+        "seconds": 12.41
+      },
+      {
+        "name": "upload whose reference the worker lacks is completed from the cache",
+        "seconds": 10.88
+      },
+      {
+        "name": "a niks3 restart does not cost the leader its role",
+        "seconds": 8.15
+      },
+      {
+        "name": "scheduler down: the other node takes the lock and keeps it",
+        "seconds": 10.95
+      },
+      {
+        "name": "clean scheduler restart: peers are told, running builds survive, no reconnect noise",
+        "seconds": 10.67
+      },
+      {
+        "name": "scheduler restart mid-build: build finishes, no double build",
+        "seconds": 10.88
+      },
+      {
+        "name": "interrupting the client stops the build on the worker",
+        "seconds": 2.38
+      },
+      {
+        "name": "a deploy mid-build drains: the build finishes, the new generation takes over",
+        "seconds": 12.56
+      },
+      {
+        "name": "queue gauges show a burst while every build blocks",
+        "seconds": 7.83
+      },
+      {
+        "name": "requiredSystemFeatures: placed on the worker that has them, refused when none does",
+        "seconds": 49.2
+      },
+      {
+        "name": "low disk drains a worker and builds go to the other",
+        "seconds": 10.92
+      }
+    ],
+    "scopeDifference": "Reused the complete pinned upstream farm scenario with the exact fleet Nix and packaged plugin, and explicitly pinned Niks3 server. The fixture includes OIDC and two schedulers; production admits exact mTLS identities and has only one scheduler. This is not evidence of production HA or live host activation."
+  }
+}
