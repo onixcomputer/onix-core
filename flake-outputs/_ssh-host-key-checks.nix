@@ -20,9 +20,7 @@ let
   mismatchedPublicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEehqswjtdQwNb4o2/hV7Qg1HCZkpbLZDDbReDoPmf/p";
   mismatchedPublicKeyPath = pkgs.writeText "mismatched-britton-desktop-host-key.pub" mismatchedPublicKey;
 
-  plugins = self.packages.x86_64-linux.wasm-plugins;
-  wasm = import ../lib/wasm.nix { inherit plugins; };
-  inherit ((wasm.evalNickelFile ../inventory/core/machines.ncl)) machines;
+  machines = self.lib.machines.definitions;
   actualDeployTarget = machines.${desktopName}.deploy.targetHost;
 
   desktopConfig = self.nixosConfigurations.${desktopName}.config;

@@ -7,11 +7,17 @@
 let
   modules = import "${self}/modules/default.nix" { inherit inputs; };
 
+  # Share one Nickel evaluation across Clan, tag modules, and all check systems.
+  inventoryWasm = import ../lib/wasm.nix {
+    plugins = self.packages.x86_64-linux.wasm-plugins;
+  };
+  machineDefinitions = (inventoryWasm.evalNickelFile ../inventory/core/machines.ncl).machines;
+
   clanModule = inputs.clan-core.lib.clan {
     inherit self;
     meta.name = "Onix";
     inherit modules;
-    inventory = import "${self}/inventory" { inherit inputs self; };
+    inventory = import "${self}/inventory" { inherit inputs self machineDefinitions; };
     specialArgs = {
       inherit inputs;
       wrappers = inputs.wrappers.wrapperModules;
@@ -40,17 +46,11 @@ in
         plugins = self.packages.${system}.wasm-plugins;
       };
 
-    machines =
-      let
-        wasmLib = import ../lib/wasm.nix {
-          plugins = self.packages.x86_64-linux.wasm-plugins;
-        };
-        machinesDef = (wasmLib.evalNickelFile ../inventory/core/machines.ncl).machines;
-      in
-      {
-        names = builtins.attrNames machinesDef;
-        hasTag = machine: tag: builtins.elem tag (machinesDef.${machine}.tags or [ ]);
-      };
+    machines = {
+      definitions = machineDefinitions;
+      names = builtins.attrNames machineDefinitions;
+      hasTag = machine: tag: builtins.elem tag (machineDefinitions.${machine}.tags or [ ]);
+    };
     tags = {
       all =
         let

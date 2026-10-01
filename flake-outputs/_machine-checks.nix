@@ -11,9 +11,7 @@
   ...
 }:
 let
-  plugins = self.packages.x86_64-linux.wasm-plugins;
-  wasm = import ../lib/wasm.nix { inherit plugins; };
-  machinesDef = (wasm.evalNickelFile ../inventory/core/machines.ncl).machines;
+  machinesDef = self.lib.machines.definitions;
 
   brittonDesktopName = "britton-desktop";
   requiredAcceleratorTag = "tenstorrent";

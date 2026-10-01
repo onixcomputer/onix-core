@@ -20,7 +20,7 @@ let
   leviathanTargetSystem = "aarch64-linux";
   leviathanSshUser = "brittonr";
 
-  allMachines = (wasm.evalNickelFile ../inventory/core/machines.ncl).machines;
+  allMachines = self.lib.machines.definitions;
   builderTargetData = wasm.evalNickelFile ../inventory/tags/builder-targets.ncl;
   invalidBuilderTargetEvaluation = builtins.tryEval (
     builtins.deepSeq (wasm.evalNickelFile ../inventory/tags/fixtures/invalid-builder-target-empty-ssh-host.ncl) true
