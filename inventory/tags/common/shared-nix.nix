@@ -114,6 +114,43 @@ in
         })
       ];
     })
+    (_final: prev: {
+      # GCC 16 compiles C++ as C++20, which deprecates the volatile-qualified
+      # return type of Fv_Vi in ltrace's demangle test (-Wvolatile). DejaGnu
+      # counts any compiler output as a failed test compile, so all of
+      # demangle.exp fails and ltrace 0.7.91 no longer builds (Hydra build
+      # 347155220). The return type is not part of the mangled name, so the
+      # test still exercises the same symbol. Remove this override once
+      # upstream nixpkgs builds ltrace with GCC 16.
+      ltrace = prev.ltrace.overrideAttrs (old: {
+        postPatch = (old.postPatch or "") + ''
+          substituteInPlace testsuite/ltrace.minor/demangle.cpp \
+            --replace-fail 'extern volatile int Fv_Vi(void);' 'extern int Fv_Vi(void);'
+          substituteInPlace testsuite/ltrace.minor/demangle-lib.cpp \
+            --replace-fail 'volatile int Fv_Vi(void)' 'int Fv_Vi(void)'
+        '';
+      });
+    })
+    (_final: prev: {
+      # The zig 0.16.0 build on nixpkgs' GCC 16 stdenv writes compiler_rt.o
+      # with .eh_frame FDEs against section symbols that have no section
+      # (the previous zig 0.16.0 build did not). libghostty-vt bundles that
+      # compiler_rt into its static archive, so herdr's link carries
+      # zero-address FDEs and ld.bfd fails with ".eh_frame_hdr refers to
+      # overlapping FDEs". Rust already links the compiler builtins, so stop
+      # bundling Zig's runtimes on Linux, as nixpkgs' own herdr does
+      # (NixOS/nixpkgs#568618). onixpkgs wraps this base binary as `herdr`.
+      # Remove this override once llm-agents' herdr carries the same change.
+      herdr-unwrapped = prev.herdr-unwrapped.overrideAttrs (old: {
+        postPatch =
+          (old.postPatch or "")
+          + lib.optionalString prev.stdenv.hostPlatform.isLinux ''
+            substituteInPlace vendor/libghostty-vt/src/build/GhosttyLibVt.zig \
+              --replace-fail 'lib.bundle_compiler_rt = true;' 'lib.bundle_compiler_rt = false;' \
+              --replace-fail 'lib.bundle_ubsan_rt = true;' 'lib.bundle_ubsan_rt = false;'
+          '';
+      });
+    })
   ];
 
   nix = {
