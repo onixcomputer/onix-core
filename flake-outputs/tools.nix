@@ -16,6 +16,19 @@ let
     machineInventory = ../inventory/dgx/generated/machines.json;
   };
 
+  # nixpkgs marks radicle-node insecure: node traffic is cleartext and a peer
+  # can claim another node's ID
+  # (https://radicle.dev/2026/09/23/disclosure-of-vulnerability-in-network-protocol).
+  # The fleet accepts that risk, private repositories included, until the
+  # fixed major release. Naming the exact version fails evaluation again when
+  # nixpkgs moves radicle-node. Machines receive this package through the
+  # shared-nix overlay, so their own nixpkgs.config cannot exempt it.
+  # r[impl onix.radicle_node.insecure_exemption]
+  radicleNodePkgs = import pkgs.path {
+    inherit (pkgs.stdenv.hostPlatform) system;
+    config.permittedInsecurePackages = [ "radicle-node-1.10.3" ];
+  };
+
   wasmPackages = self.inputs.onix-wasm.packages.${pkgs.stdenv.hostPlatform.system};
   wasmHostImportFlags = old: {
     RUSTFLAGS = lib.concatStringsSep " " (
@@ -61,7 +74,7 @@ in
   }
   // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
     dgx-machine = dgxMachinePackage;
-    inherit (pkgs) radicle-node;
+    inherit (radicleNodePkgs) radicle-node;
     inherit (pkgs) radicle-httpd;
   }
   // (sopsViz.packages or { });
