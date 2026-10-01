@@ -10,6 +10,7 @@ let sc = import "../../lib/schema-contracts.ncl" in
 
 # --- Module schema imports ---
 let schemas = {
+  "arxiv-corpus" = import "../../modules/arxiv-corpus/schema.ncl",
   "buildbot" = import "../../modules/buildbot/schema.ncl",
   "bookshelf" = import "../../modules/bookshelf/schema.ncl",
   "calibre-server" = import "../../modules/calibre-server/schema.ncl",
@@ -28,6 +29,7 @@ let schemas = {
   "kache-rustfs" = import "../../modules/kache-rustfs/schema.ncl",
   "kiln-aspen-canary" = import "../../modules/kiln-aspen-canary/schema.ncl",
   "kiln-aspen-radicle-ci" = import "../../modules/kiln-aspen-radicle-ci/schema.ncl",
+  "laya" = import "../../modules/laya/schema.ncl",
   "lemonade" = import "../../modules/lemonade/schema.ncl",
   "llamacpp-rpc" = import "../../modules/llamacpp-rpc/schema.ncl",
   "llamacpp-server" = import "../../modules/llamacpp-server/schema.ncl",

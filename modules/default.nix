@@ -33,6 +33,8 @@ let
     "prometheus" = import ./prometheus (schemaArgs ./prometheus);
     "grafana" = import ./grafana (schemaArgs ./grafana);
     "infinity" = import ./infinity (schemaArgs ./infinity);
+    "arxiv-corpus" = import ./arxiv-corpus (schemaArgs ./arxiv-corpus);
+    "laya" = import ./laya (schemaArgs ./laya);
     "loki" = import ./loki (schemaArgs ./loki);
     "vaultwarden" = import ./vaultwarden (schemaArgs ./vaultwarden);
     "homepage-dashboard" = import ./homepage-dashboard (schemaArgs ./homepage-dashboard);

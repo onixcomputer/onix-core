@@ -66,21 +66,21 @@ r[onix.llm_agents.omp.verification.smoke]
 - WHEN that package is built and its smoke test runs
 - THEN the smoke test MUST succeed
 
-### Requirement: The agent is compiled with the bun its template needs
+### Requirement: The agent uses its supported compiler and runtime pairing
 
-r[onix.llm_agents.bun_compiler] The `omp` package MUST be compiled with a
-bun whose runtime matches the template the package pins, independently of
-the nixpkgs bun version. The pinned compiler MUST come from the repository
-package pin, and the bun2nix build hook MUST be rebuilt against the same
-bun.
+r[onix.llm_agents.bun_compiler] The `omp` package MUST use the supported
+compiler and runtime pairing selected by the pinned `llm-agents` package.
+An older repository Bun pin MUST NOT override the compiler required by that
+package. The bun2nix build hook MUST use the matching compiler, and the built
+agent MUST pass its own smoke test.
 
-#### Scenario: nixpkgs ships a newer bun than the template
+#### Scenario: An upstream upgrade requires a newer Bun
 
 r[onix.llm_agents.bun_compiler.pinned]
-- GIVEN the pinned llm-agents `omp` package and a nixpkgs whose bun is
-  newer than the runtime template the package embeds
+- GIVEN the pinned llm-agents `omp` package requires Bun >=1.4
+- AND the repository retains an older Bun pin for other consumers
 - WHEN the agent is built
-- THEN the compile MUST use the pinned bun
+- THEN the compile MUST use the upstream package's supported Bun
 - AND the build hook MUST use that same bun
 - AND the built agent MUST pass its own smoke test
 

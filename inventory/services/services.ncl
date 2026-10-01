@@ -85,8 +85,9 @@ let qwen_flash_settings = {
 in
 let mesh_openai_endpoint_url = "http://127.0.0.1:%{qwen_flash_backend_port}/v1" in
 let mesh_desktop_openai_endpoint_url = "http://127.0.0.1:8000/v1" in
+let mesh_aspen1_openai_endpoint_url = "http://127.0.0.1:8000/v1" in
 let mesh_aspen1_address = radicle_node_address in
-let mesh_aspen2_address = "100.125.64.121" in
+let mesh_aspen2_address = "100.82.25.30" in
 let mesh_aspen3_address = radicle_aspen3_replica_address in
 let mesh_desktop_address = radicle_desktop_replica_address in
 let radicle_node_port = 8776 in
@@ -785,6 +786,31 @@ in
 
     # ========== LLM & AI ==========
 
+    # r[impl onix.research-tools.private-deployment]
+    "arxiv-aspen2" = {
+      module = { name = "arxiv-corpus", input = "self" },
+      roles.server.machines.aspen2.settings.host = mesh_aspen2_address,
+    },
+
+    "laya-aspen1" = {
+      module = { name = "laya", input = "self" },
+      roles.server.machines.aspen1.settings = {
+        backend = "vulkan-compensated-fp32",
+        host = "127.0.0.1",
+        port = 7999,
+      },
+    },
+
+    "laya-aspen2" = {
+      module = { name = "laya", input = "self" },
+      roles.server.machines.aspen2.settings.host = mesh_aspen2_address,
+    },
+
+    "laya-aspen3" = {
+      module = { name = "laya", input = "self" },
+      roles.server.machines.aspen3.settings.host = mesh_aspen3_address,
+    },
+
     llm = {
       module = { name = "llm", input = "self" },
       roles = {
@@ -811,8 +837,8 @@ in
 
     # r[impl onix.aspen1.qwen_flash.serving]
     # r[impl onix.aspen1.qwen_flash.exclusivity]
-    # Qwen3.8 Flash Next occupies most of aspen1 unified memory. Keep this
-    # direct server exclusive and route external requests through mesh-llm.
+    # Retain Aspen1's stopped Qwen backend and model state. diffusion-gemma.nix
+    # masks this unit while DiffusionGemma owns the GPU and mesh route.
     "qwen38-flash-next-aspen1" = {
       module = { name = "llamacpp-server", input = "self" },
       roles.server.machines.aspen1.settings = qwen_flash_settings,
@@ -1026,29 +1052,44 @@ in
     "mesh-llm-private-inference" = {
       module = { name = "mesh-llm", input = "self" },
       roles.default.machines = {
+        # r[impl onix.diffusion-gemma.mesh]
         aspen1.settings = {
           mode = "seed",
-          endpointUrl = mesh_openai_endpoint_url,
+          endpointUrl = mesh_aspen1_openai_endpoint_url,
+          extraEndpoints.spark = "http://127.0.0.1:18999/v1",
           meshBindAddress = mesh_aspen1_address,
-          backendUnit = "llamacpp-server-qwen38-flash-next-aspen1.service",
+          backendUnit = "docker-diffusion-gemma.service",
+          researchMode = "provider",
+          researchLayaAddress = "127.0.0.1:7999",
+          researchBackendUnits = ["laya-laya-aspen1.service"],
         },
         aspen2.settings = {
           mode = "joiner",
           endpointUrl = mesh_openai_endpoint_url,
           meshBindAddress = mesh_aspen2_address,
           backendUnit = "llamacpp-server-qwen38-flash-next-aspen2.service",
+          researchMode = "provider",
+          researchArxivAddress = "%{mesh_aspen2_address}:7998",
+          researchLayaAddress = "%{mesh_aspen2_address}:7999",
+          researchBackendUnits = ["arxiv-corpus-arxiv-aspen2.service", "laya-laya-aspen2.service"],
         },
         aspen3.settings = {
           mode = "joiner",
           endpointUrl = mesh_openai_endpoint_url,
           meshBindAddress = mesh_aspen3_address,
           backendUnit = "lemonade.service",
+          researchMode = "provider",
+          researchLayaAddress = "%{mesh_aspen3_address}:7999",
+          researchBackendUnits = ["laya-laya-aspen3.service"],
         },
         britton-desktop.settings = {
           mode = "joiner",
           endpointUrl = mesh_desktop_openai_endpoint_url,
           meshBindAddress = mesh_desktop_address,
           backendUnit = "qwen38-p150x2.service",
+          researchMode = "forwarder",
+          researchTargetPeer = "78a2aff7b646eacd8a53f073b04c635a6ca38b9123443e0a73539acda302b08a",
+          researchHttpBindAddress = mesh_desktop_address,
         },
       },
     },
@@ -1081,7 +1122,11 @@ in
     "omp-agents" = {
       module = { name = "llm-agents", input = "self" },
       roles.default.machines = {
-        britton-desktop.settings.packages = ["omp"],
+        britton-desktop.settings = {
+          packages = ["omp"],
+          ompResearchTools = true,
+          ompResearchUrl = "http://%{mesh_desktop_address}:7997",
+        },
         aspen3.settings.packages = ["omp"],
       },
     },

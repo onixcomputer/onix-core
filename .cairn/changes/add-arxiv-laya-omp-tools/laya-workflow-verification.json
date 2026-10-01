@@ -1,0 +1,628 @@
+{
+  "requirements": [
+    "onix.research-tools.laya-context-rank",
+    "onix.research-tools.laya-test-relevance",
+    "onix.research-tools.laya-issue-route",
+    "onix.research-tools.laya-review-triage",
+    "onix.research-tools.laya-requirement-conflict"
+  ],
+  "verified_at": "2026-09-23T17:42:42.250Z",
+  "scope": "Five additional native read-only workflow advisory tools; existing routes, services, models and raw operations unchanged.",
+  "tools": [
+    "laya_context_rank",
+    "laya_test_relevance",
+    "laya_issue_route",
+    "laya_review_triage",
+    "laya_requirement_conflict"
+  ],
+  "fixtures": {
+    "sha256_compact_json": "6b7f343e2fe2e2126d362fb2c156c3f4e8fbd524d66e0860cdfa2e69da73733b",
+    "frozen_before_inference": true,
+    "expected_classifications_supplied": false,
+    "inputs": [
+      {
+        "name": "laya_context_rank",
+        "input": {
+          "task": {
+            "id": "login-investigation",
+            "text": "Explain why an expired session can still access protected requests."
+          },
+          "excerpts": [
+            {
+              "id": "auth-check",
+              "text": "Protected routes accept a session only when its expiration time is later than the current time.",
+              "citation": "src/auth.ts:20-31"
+            },
+            {
+              "id": "theme-doc",
+              "text": "The theme settings choose light or dark colors for the navigation bar.",
+              "citation": "docs/theme.md:8-12"
+            },
+            {
+              "id": "session-store",
+              "text": "Session records store a user identifier and an expiration timestamp.",
+              "citation": "src/session-store.ts:5-15"
+            }
+          ]
+        }
+      },
+      {
+        "name": "laya_test_relevance",
+        "input": {
+          "change": {
+            "id": "session-change",
+            "text": "Reject expired sessions before invoking a protected request handler."
+          },
+          "tests": [
+            {
+              "id": "mandatory-build",
+              "text": "Build the public client bundle and check that its exported symbols remain available.",
+              "citation": "tests/build.test.ts:10-22",
+              "required": true
+            },
+            {
+              "id": "expiry-boundary",
+              "text": "An expired session receives HTTP 401 and the protected handler is never invoked.",
+              "citation": "tests/auth.test.ts:30-49",
+              "required": false
+            },
+            {
+              "id": "mandatory-auth",
+              "text": "A valid unexpired session can reach the protected handler.",
+              "citation": "tests/auth.test.ts:50-65",
+              "required": true
+            }
+          ]
+        }
+      },
+      {
+        "name": "laya_issue_route",
+        "input": {
+          "issue": {
+            "id": "issue-42",
+            "text": "An expired login session continues to access protected API endpoints."
+          },
+          "candidates": [
+            {
+              "id": "auth-team",
+              "text": "Owns login sessions, expiration checks and access control for API requests."
+            },
+            {
+              "id": "docs-team",
+              "text": "Owns user documentation, tutorial wording and documentation site layout."
+            },
+            {
+              "id": "platform-team",
+              "text": "Owns shared runtime infrastructure; ownership of session middleware is not specified."
+            }
+          ]
+        }
+      },
+      {
+        "name": "laya_review_triage",
+        "input": {
+          "change": {
+            "id": "review-change",
+            "text": "The request handler now reads a user-provided redirect target and returns a redirect response."
+          },
+          "comments": [
+            {
+              "id": "redirect-concern",
+              "text": "Could this allow a redirect to an untrusted external site? Please check the target before returning the response.",
+              "citation": "review://change-17/comment-8"
+            },
+            {
+              "id": "naming-note",
+              "text": "I prefer the local name destination rather than url.",
+              "citation": "review://change-17/comment-9"
+            },
+            {
+              "id": "clarification",
+              "text": "What behavior should occur when the redirect target is missing?",
+              "citation": "review://change-17/comment-10"
+            }
+          ]
+        }
+      },
+      {
+        "name": "laya_requirement_conflict",
+        "input": {
+          "pairs": [
+            {
+              "id": "timeout-conflict",
+              "left": {
+                "id": "short-timeout",
+                "text": "Every API request must time out after at most five seconds."
+              },
+              "right": {
+                "id": "long-timeout",
+                "text": "Every API request must remain active for at least ten seconds before timing out."
+              }
+            },
+            {
+              "id": "logging-compatible",
+              "left": {
+                "id": "short-timeout",
+                "text": "Every API request must time out after at most five seconds."
+              },
+              "right": {
+                "id": "audit-log",
+                "text": "Rejected API requests must emit an audit record without credentials."
+              }
+            },
+            {
+              "id": "offline-unclear",
+              "left": {
+                "id": "offline",
+                "text": "The application must work offline."
+              },
+              "right": {
+                "id": "fresh-data",
+                "text": "The application must always show current server data."
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "role": "Illustrative integration inputs; not an accuracy, calibration, coverage or authorization benchmark."
+  },
+  "unit_regressions": {
+    "command": "nix run --inputs-from path:/Users/brittonr/git/dots nixpkgs#bun -- test pi/extensions laya/research-tools",
+    "bun_version": "1.3.13",
+    "passed": 245,
+    "failed": 0,
+    "files": 19,
+    "expect_calls": 1375,
+    "initial_plain_bun_attempt": "The shell returned command not found; no tests ran until the repository-pinned Nix Bun invocation."
+  },
+  "native_contracts": {
+    "maximum_predictions_per_tool": 16,
+    "maximum_review_comments": 8,
+    "other_maximum_items": 16,
+    "invalid_inputs_before_io_per_client": 54,
+    "injected_prediction_failures_per_client": 51,
+    "controlled_client_aggregation_cases_per_client": 9,
+    "original_order_and_full_prediction_metadata_preserved": true,
+    "separate_stable_fractional_rankings": true,
+    "required_test_ids_independent_of_relevance": true,
+    "flagged_negative_routing_is_ambiguous": true,
+    "review_kind_and_priority_are_independent": true,
+    "requirement_pair_identities_are_coherent_and_collision_safe": true,
+    "one_shared_deadline_per_call": true,
+    "exact_cancellation_no_retries_or_partial_results": true
+  },
+  "new_native_tool_schemas": [
+    {
+      "name": "laya_context_rank",
+      "description": "Rate 1–16 English cited excerpts independently for relevance to a supplied task under one shared deadline. Retains every excerpt in input order with its citation and full prediction metadata; returns fractional relevance scores and a separate stable context order. Citations are not verified or fetched. Advisory only: not an accuracy, authority or sufficiency verdict, and no automatic context pruning.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "task": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "\\S"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000,
+                "pattern": "\\S"
+              }
+            },
+            "required": [
+              "id",
+              "text"
+            ],
+            "additionalProperties": false
+          },
+          "excerpts": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 16,
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64,
+                  "pattern": "\\S"
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000,
+                  "pattern": "\\S"
+                },
+                "citation": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 512,
+                  "pattern": "\\S"
+                }
+              },
+              "required": [
+                "id",
+                "text",
+                "citation"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "task",
+          "excerpts"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "laya_test_relevance",
+      "description": "Rank the indicated relevance of 1–16 English test descriptions to a supplied change using one score per test under a shared deadline. Preserves all tests, caller references, required flags and full predictions. Returns fractional relevance, a separate stable test order and every caller-required ID in original order regardless of scores or token-limit flags. Advisory only: no execution, coverage measurement, run/skip decision, minimized suite or authorization to skip tests; required:false is not skip permission.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "change": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "\\S"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000,
+                "pattern": "\\S"
+              }
+            },
+            "required": [
+              "id",
+              "text"
+            ],
+            "additionalProperties": false
+          },
+          "tests": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 16,
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64,
+                  "pattern": "\\S"
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000,
+                  "pattern": "\\S"
+                },
+                "citation": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 512,
+                  "pattern": "\\S"
+                },
+                "required": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "text",
+                "citation",
+                "required"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "change",
+          "tests"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "laya_issue_route",
+      "description": "Compare one supplied English issue with 1–16 caller-described components or teams as match, unclear, or no_match. Validates all input before serial inference under one shared deadline, with all-or-error results. Preserves candidate order and complete predictions and provenance. matched_ids contains every match; uncertain_ids contains unclear or token-limit-flagged candidates, including flagged no_match. Routing is ambiguous with any uncertainty or multiple matches, single_match with exactly one match and no uncertainty, otherwise no_match. Does not assign ownership, infer absent owners, or apply confidence thresholds.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "issue": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "\\S"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000,
+                "pattern": "\\S"
+              }
+            },
+            "required": [
+              "id",
+              "text"
+            ],
+            "additionalProperties": false
+          },
+          "candidates": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 16,
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64,
+                  "pattern": "\\S"
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000,
+                  "pattern": "\\S"
+                }
+              },
+              "required": [
+                "id",
+                "text"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "issue",
+          "candidates"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "laya_review_triage",
+      "description": "Classify and independently prioritize 1–8 cited English review comments about one supplied change. Runs classification then ordinal priority for every comment in one sequence under a shared deadline. Preserves every comment, citation and both full predictions; returns fractional priorities and a separate stable review order. Citations are not fetched or verified. Advisory only: no defect or safety verdict, automatic dismissal, resolution, or edits.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "change": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "\\S"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000,
+                "pattern": "\\S"
+              }
+            },
+            "required": [
+              "id",
+              "text"
+            ],
+            "additionalProperties": false
+          },
+          "comments": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 8,
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64,
+                  "pattern": "\\S"
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000,
+                  "pattern": "\\S"
+                },
+                "citation": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 512,
+                  "pattern": "\\S"
+                }
+              },
+              "required": [
+                "id",
+                "text",
+                "citation"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "change",
+          "comments"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "laya_requirement_conflict",
+      "description": "Assess 1–16 caller-supplied English requirement pairs as compatible, conflicting, or underspecified. Validates shared endpoint identities and unordered-unique non-self pairs before serial inference under one shared deadline. Retains every original pair and full prediction in input order; attention_ids includes non-compatible or token-limit-flagged pairs for human review. Advisory only: no rewriting, inferred precedence, global consistency verdict, or satisfiability proof.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "pairs": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 16,
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64,
+                  "pattern": "\\S"
+                },
+                "left": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64,
+                      "pattern": "\\S"
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2000,
+                      "pattern": "\\S"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "text"
+                  ],
+                  "additionalProperties": false
+                },
+                "right": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64,
+                      "pattern": "\\S"
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2000,
+                      "pattern": "\\S"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "text"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "id",
+                "left",
+                "right"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "pairs"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "canonical_helper_sha256": {
+    "laya-context-rank.ts": "7a7e4bf25abdc1128d3524f6022e70f43cc3259f345da27dc106b9bd48b7d8b8",
+    "laya-test-relevance.ts": "da7fd3b8f22f0745e05adfd6e57677e21d419a125d1c2ac2a4b53d3bf6724c06",
+    "laya-issue-route.ts": "c1c41474534661a706a9c2931b15edf1570c1183d2c3b38ac4778f42951a73f1",
+    "laya-review-triage.ts": "a1e552dbf5488c1205748cede85406494780f2f7e4986795143e4ee330ad4a75",
+    "laya-requirement-conflict.ts": "c1a7a5278586c858cd33d58ec87b5bed93c2a69155fbe5284372c02f313fe863"
+  },
+  "clients": {
+    "mac": {
+      "artifact": "laya-workflow-mac-verification.json",
+      "sha256": "c4243dae82409027e131cb78990da05921f28dbf1d6e577b0121e734db4bba72",
+      "omp_version": "omp/18.2.10",
+      "package": "/nix/store/5vgvs8jqls0xc10mkmrji8n93hg9fb9q-omp-research-tools"
+    },
+    "desktop": {
+      "artifact": "laya-workflow-desktop-verification.json",
+      "sha256": "62b84ae48afee7f1d1930aefc3a7a71b47a8b968422955ba9256ef0102a19469",
+      "omp_version": "omp/18.2.4",
+      "package": "/nix/store/h1n275ciddlk06q6h12mqglbjnp3gjc0-omp-research-tools"
+    }
+  },
+  "evidence_preservation": {
+    "previous_index_sections": 37,
+    "previous_index_sha256": "9d07913062cee477a9a6ac670d937fc4aa57882f36cfcfd619d1df05132daf44",
+    "previous_advisory_artifact_sha256": "7ab7f0cbffdfc9c6481504c651178676d4fb35e9c49163059c168bf9b11e0980",
+    "prior_values_unchanged": true,
+    "client_artifact_split_reason": "Keep complete per-client native responses below the SSH reader size cap without dropping prediction metadata or overwriting prior outcomes."
+  },
+  "integration_notes": {
+    "desktop_concurrent_underclass_import_preserved": true,
+    "mac_concurrent_managed_activation": "The active managed link resolved to the unchanged previous co-located package; only the research extension link was refreshed to the scoped profile.",
+    "desktop_initial_native_discovery": "The first desktop snapshot exposed only the nine existing tools; actual native execution rejected the first missing new handler. All five registration blocks were restored in the source, and corrected native discovery now matches all fourteen Mac tool schemas.",
+    "desktop_initial_error": {
+      "error": "AssertionError [ERR_ASSERTION]: undefined == true"
+    },
+    "registration_loss_cause": "Staged text unexpectedly lacked the appended block when later formatted; the precise staging cause was not established. Native discovery, not a source-text assertion, detected the integration error.",
+    "desktop_corrected_execution": "Full native proof passed after restoring registrations and rebuilding the scoped package. The composed entrypoint equals final package source, and all nineteen helper/config neighbors loaded from the initial package are byte-identical to the final package."
+  },
+  "deployment_boundaries": {
+    "full_host_activation_performed": false,
+    "current_user_session_reload_performed": false,
+    "watcher_toggled": false,
+    "services_routes_models_raw_manifests_unchanged": true
+  },
+  "cleanup": {
+    "owned_supervisors_stopped": true,
+    "owned_mac_driver_directory_removed": "/tmp/laya-workflow-smoke.yboH0p",
+    "owned_desktop_driver_directory_removed": "/tmp/laya-workflow-smoke.DaqXgi",
+    "absence_verified": true,
+    "complete_native_outcomes_retained_in_client_artifacts": true,
+    "current_user_sessions_reloaded": false,
+    "watcher_toggled": false
+  },
+  "cairn_validation": {
+    "valid": true,
+    "command": "nix run path:/home/brittonr/git/OnixResearch/cairn#cairn -- validate --root /home/brittonr/git/onix-core --policy /home/brittonr/git/OnixResearch/cairn/cairn-policy/generated/cairn-policy.json",
+    "changes": 23,
+    "specs_validated": 56,
+    "research_tools_requirements": 22,
+    "research_tools_substantive_requirements": 22,
+    "research_tools_scenarios": 90,
+    "all_six_issue_arrays_empty": true,
+    "pre_finalization_receipt_hash": "6ea6803e4be50cd6a968e155fbcdccbc8a57219c95956888bbe56947edc2c797",
+    "receipt_scope": "Observed after all five contracts and corrected deployment were published, before final native outcomes, cleanup and evidence-index metadata were finalized. This hash is not asserted to cover its own publication or subsequent documentation edits.",
+    "structural_only": true,
+    "semantic_review_or_release_approval": false,
+    "sync_or_archive_performed": false
+  },
+  "limitations": [
+    "English-only base checkpoints; probabilities are not calibrated and confidence is not label probability.",
+    "References and required status are supplied, not independently fetched or verified.",
+    "Results do not authorize pruning, skipping required suites, ownership assignment, comment resolution, requirement rewriting, or global consistency/satisfiability claims.",
+    "Controlled reply injections verify client-side behavior, not model classification correctness.",
+    "Cairn structural validation is not semantic review, release, synchronization or archive approval."
+  ]
+}

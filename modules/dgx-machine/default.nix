@@ -115,7 +115,12 @@ let
       inherit config lib pkgs;
       instanceName = meshInstanceName;
       settings = meshSettings;
-      joinTokenPath = secretPath "meshJoinToken";
+      joinTokens = [
+        {
+          name = "join-token";
+          path = secretPath "meshJoinToken";
+        }
+      ];
       package = meshLlmPackage;
     })
     (lib.mkIf (!cfg.services.meshBackendExternallyManaged) localLlamaConfig)
