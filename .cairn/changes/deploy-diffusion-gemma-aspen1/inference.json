@@ -1,0 +1,248 @@
+{
+  "imageId": "sha256:d8f2be55de6fb93123f1bb6495c42f37f0ee750c423086702fc728da44d852b7",
+  "modelRevision": "f7f5b7f5fa82ffc52addd066915886d497f5517b",
+  "textGeneration": {
+    "request": {
+      "model": "diffusiongemma",
+      "messages": [
+        {
+          "role": "user",
+          "content": "What is the capital of France? Answer in one short sentence."
+        }
+      ],
+      "max_tokens": 64,
+      "chat_template_kwargs": {
+        "enable_thinking": false
+      }
+    },
+    "httpStatus": 200,
+    "seconds": 1.359,
+    "response": {
+      "id": "chatcmpl-b4e1e4dc3a18c3e9",
+      "object": "chat.completion",
+      "created": 1789803212,
+      "model": "diffusiongemma",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "The capital of France is Paris.",
+            "refusal": null,
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "reasoning": null
+          },
+          "logprobs": null,
+          "finish_reason": "stop",
+          "stop_reason": 106,
+          "token_ids": null,
+          "routed_experts": null
+        }
+      ],
+      "service_tier": null,
+      "system_fingerprint": "vllm-0.1.dev1+g58eacf242.d20260919-31a12d94",
+      "usage": {
+        "prompt_tokens": 22,
+        "total_tokens": 34,
+        "completion_tokens": 12,
+        "prompt_tokens_details": null,
+        "completion_tokens_details": {
+          "reasoning_tokens": 2
+        }
+      },
+      "prompt_logprobs": null,
+      "prompt_token_ids": null,
+      "prompt_text": null,
+      "kv_transfer_params": null,
+      "ec_transfer_params": null,
+      "metrics": null
+    },
+    "stderr": "Certificate invalid: name is not a listed principal\n"
+  },
+  "structuredDecisions": [
+    {
+      "request": {
+        "model": "diffusiongemma",
+        "state": "The color explicitly mentioned in this message is RED.",
+        "questions": {
+          "color": {
+            "type": "choice",
+            "instructions": "Which color is explicitly named in the message?",
+            "criteria": {
+              "red": "The message explicitly names red.",
+              "blue": "The message explicitly names blue."
+            }
+          }
+        },
+        "samples": 1,
+        "steps": 1
+      },
+      "httpStatus": 200,
+      "seconds": 4.855,
+      "response": {
+        "model": "diffusiongemma",
+        "answers": {
+          "color": {
+            "type": "choice",
+            "choice": "red",
+            "probabilities": {
+              "red": 0.99567636227677,
+              "blue": 0.0043236377232298805
+            },
+            "confidence": 0.99567636227677
+          }
+        },
+        "usage": {
+          "input_tokens": 109,
+          "output_tokens": 8
+        },
+        "diagnostics": {
+          "steps": 1,
+          "stages": [
+            [
+              "color"
+            ]
+          ],
+          "skipped": {},
+          "chunks": [
+            [
+              "color"
+            ]
+          ],
+          "chunk_prompt": "own",
+          "sequential": false,
+          "conditioning": null,
+          "thought": null,
+          "samples": {
+            "n": 1,
+            "tops": [
+              {
+                "color": [
+                  "A",
+                  0.99567636227677,
+                  0.34119679309426815
+                ]
+              }
+            ],
+            "policy": {
+              "mode": "fixed",
+              "n": 1,
+              "extended": null,
+              "first_read_entropy": null
+            }
+          },
+          "timing": {
+            "total_ms": 4744.3578243255615,
+            "reads": 1
+          },
+          "prompt_tokens": 109,
+          "questions": {
+            "color": {
+              "pos": 6,
+              "entropy": [
+                0.34119679309426815
+              ],
+              "label_mass": 0.5576886090555451,
+              "argmax_is_label": true
+            }
+          },
+          "engine": "vllm"
+        }
+      },
+      "stderr": "Certificate invalid: name is not a listed principal\n"
+    },
+    {
+      "request": {
+        "model": "diffusiongemma",
+        "state": "The color explicitly mentioned in this message is BLUE.",
+        "questions": {
+          "color": {
+            "type": "choice",
+            "instructions": "Which color is explicitly named in the message?",
+            "criteria": {
+              "red": "The message explicitly names red.",
+              "blue": "The message explicitly names blue."
+            }
+          }
+        },
+        "samples": 1,
+        "steps": 1
+      },
+      "httpStatus": 200,
+      "seconds": 0.634,
+      "response": {
+        "model": "diffusiongemma",
+        "answers": {
+          "color": {
+            "type": "choice",
+            "choice": "blue",
+            "probabilities": {
+              "red": 0.0008923071725999731,
+              "blue": 0.9991076928274001
+            },
+            "confidence": 0.9991076928274001
+          }
+        },
+        "usage": {
+          "input_tokens": 109,
+          "output_tokens": 8
+        },
+        "diagnostics": {
+          "steps": 1,
+          "stages": [
+            [
+              "color"
+            ]
+          ],
+          "skipped": {},
+          "chunks": [
+            [
+              "color"
+            ]
+          ],
+          "chunk_prompt": "own",
+          "sequential": false,
+          "conditioning": null,
+          "thought": null,
+          "samples": {
+            "n": 1,
+            "tops": [
+              {
+                "color": [
+                  "B",
+                  0.9991076928274001,
+                  0.2064632191175563
+                ]
+              }
+            ],
+            "policy": {
+              "mode": "fixed",
+              "n": 1,
+              "extended": null,
+              "first_read_entropy": null
+            }
+          },
+          "timing": {
+            "total_ms": 523.2408046722412,
+            "reads": 1
+          },
+          "prompt_tokens": 109,
+          "questions": {
+            "color": {
+              "pos": 6,
+              "entropy": [
+                0.2064632191175563
+              ],
+              "label_mass": 0.7704084281886752,
+              "argmax_is_label": true
+            }
+          },
+          "engine": "vllm"
+        }
+      },
+      "stderr": "Certificate invalid: name is not a listed principal\n"
+    }
+  ]
+}

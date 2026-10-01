@@ -1,0 +1,46 @@
+{
+  "imageId": "sha256:d8f2be55de6fb93123f1bb6495c42f37f0ee750c423086702fc728da44d852b7",
+  "importOrder": "vllm before torch",
+  "versions": {
+    "transformers": "5.15.0",
+    "rocm-sdk-device-gfx1151": "7.15.0a20260724",
+    "triton": "3.8.0+git4cff872c.rocm7.15.0a20260724",
+    "rocm-bootstrap": "0.1.0",
+    "torchvision": "0.27.0+rocm7.15.0a20260724",
+    "rocm-sdk-libraries": "7.15.0a20260724",
+    "rocm-sdk-core": "7.15.0a20260724",
+    "torch": "2.12.0+rocm7.15.0a20260724",
+    "rocm": "7.15.0a20260724",
+    "vllm": "0.1.dev1+g58eacf242.d20260919.rocm715",
+    "rocm-sdk-devel": "7.15.0a20260724"
+  },
+  "gpu": "AMD Radeon 8060S Graphics",
+  "hip": "7.15.0",
+  "bfloat16_matmul": [
+    [
+      56.0,
+      62.0,
+      68.0,
+      74.0
+    ],
+    [
+      152.0,
+      174.0,
+      196.0,
+      218.0
+    ],
+    [
+      248.0,
+      286.0,
+      324.0,
+      362.0
+    ],
+    [
+      344.0,
+      398.0,
+      452.0,
+      506.0
+    ]
+  ],
+  "diffusion_architecture_registered": true
+}

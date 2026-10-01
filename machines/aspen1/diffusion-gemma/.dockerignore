@@ -1,0 +1,6 @@
+*
+!Dockerfile
+!rocm-env.sh
+!downloads/
+!downloads/runtime.part01.tar.gz
+!downloads/runtime.part02.tar.gz

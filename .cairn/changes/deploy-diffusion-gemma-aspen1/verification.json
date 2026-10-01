@@ -1,0 +1,341 @@
+{
+  "imageId": "sha256:d8f2be55de6fb93123f1bb6495c42f37f0ee750c423086702fc728da44d852b7",
+  "unitBundle": "/nix/store/9w5gas0nw853irlzz000v06ykf8p1ar6-aspen1-diffusion-gemma-units",
+  "profile": "/nix/var/nix/profiles/diffusion-gemma",
+  "restartBefore": {
+    "docker-diffusion-gemma.service": {
+      "Id": "docker-diffusion-gemma.service",
+      "ActiveState": "active",
+      "InvocationID": "5186b2db1355494c8821572782a6d834",
+      "MainPID": "803760"
+    },
+    "docker-diffusion-gemma-structured.service": {
+      "Id": "docker-diffusion-gemma-structured.service",
+      "ActiveState": "active",
+      "InvocationID": "37908c7db6a54fa6b9bdf282ce1989d9",
+      "MainPID": "803816"
+    }
+  },
+  "restartAfter": {
+    "docker-diffusion-gemma.service": {
+      "Id": "docker-diffusion-gemma.service",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "running",
+      "InvocationID": "79ef89418b344ba8a2f32c405b066834",
+      "MainPID": "807921"
+    },
+    "docker-diffusion-gemma-structured.service": {
+      "Id": "docker-diffusion-gemma-structured.service",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "running",
+      "InvocationID": "59e1bfc0ec4745bb942c3a5145e53b44",
+      "MainPID": "807978"
+    },
+    "llamacpp-server-qwen38-flash-next-aspen1.service": {
+      "Id": "llamacpp-server-qwen38-flash-next-aspen1.service",
+      "LoadState": "masked",
+      "ActiveState": "inactive",
+      "SubState": "dead",
+      "InvocationID": "180e7e7a0f5a4b25b439c0ae1399bd09",
+      "MainPID": "0"
+    },
+    "mesh-llm-mesh-llm-private-inference.service": {
+      "Id": "mesh-llm-mesh-llm-private-inference.service",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "running",
+      "InvocationID": "484c7bafdb044985b6859912b4b5d691",
+      "MainPID": "2203074"
+    },
+    "music-assistant.service": {
+      "Id": "music-assistant.service",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "running",
+      "InvocationID": "cda9fe74818b40f4a021d3e4f6d381d0",
+      "MainPID": "2516"
+    },
+    "docker.service": {
+      "Id": "docker.service",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "running",
+      "InvocationID": "cd373850b5124d2881d973cc3c9db42a",
+      "MainPID": "2507"
+    }
+  },
+  "unchangedServices": [
+    "mesh-llm-mesh-llm-private-inference.service",
+    "music-assistant.service",
+    "docker.service"
+  ],
+  "listeners": [
+    "127.0.0.1:8001",
+    "127.0.0.1:8000"
+  ],
+  "hostMemoryAvailableBytes": 63577620480,
+  "gpuMemory": {
+    "card0": {
+      "GPU use (%)": "0",
+      "VRAM Total Memory (B)": "536870912",
+      "VRAM Total Used Memory (B)": "262504448",
+      "GTT Total Memory (B)": "103079215104",
+      "GTT Total Used Memory (B)": "57049378816"
+    }
+  },
+  "containerStats": [
+    {
+      "BlockIO": "45.4GB / 16.4kB",
+      "CPUPerc": "99.91%",
+      "Container": "diffusion-gemma",
+      "ID": "bd4cd65400c2",
+      "MemPerc": "10.57%",
+      "MemUsage": "9.305GiB / 88GiB",
+      "Name": "diffusion-gemma",
+      "NetIO": "0B / 0B",
+      "PIDs": "189"
+    },
+    {
+      "BlockIO": "84.3MB / 0B",
+      "CPUPerc": "0.00%",
+      "Container": "diffusion-gemma-structured",
+      "ID": "5886651fbb30",
+      "MemPerc": "19.19%",
+      "MemUsage": "786MiB / 4GiB",
+      "Name": "diffusion-gemma-structured",
+      "NetIO": "0B / 0B",
+      "PIDs": "96"
+    }
+  ],
+  "postRestartInference": {
+    "httpStatus": 200,
+    "seconds": 1.295,
+    "response": {
+      "model": "diffusiongemma",
+      "answers": {
+        "color": {
+          "type": "choice",
+          "choice": "red",
+          "probabilities": {
+            "red": 0.99567636227677,
+            "blue": 0.0043236377232298805
+          },
+          "confidence": 0.99567636227677
+        }
+      },
+      "usage": {
+        "input_tokens": 109,
+        "output_tokens": 8
+      },
+      "diagnostics": {
+        "steps": 1,
+        "stages": [
+          [
+            "color"
+          ]
+        ],
+        "skipped": {},
+        "chunks": [
+          [
+            "color"
+          ]
+        ],
+        "chunk_prompt": "own",
+        "sequential": false,
+        "conditioning": null,
+        "thought": null,
+        "samples": {
+          "n": 1,
+          "tops": [
+            {
+              "color": [
+                "A",
+                0.99567636227677,
+                0.34119679309426815
+              ]
+            }
+          ],
+          "policy": {
+            "mode": "fixed",
+            "n": 1,
+            "extended": null,
+            "first_read_entropy": null
+          }
+        },
+        "timing": {
+          "total_ms": 1026.601791381836,
+          "reads": 1
+        },
+        "prompt_tokens": 109,
+        "questions": {
+          "color": {
+            "pos": 6,
+            "entropy": [
+              0.34119679309426815
+            ],
+            "label_mass": 0.5576886090555451,
+            "argmax_is_label": true
+          }
+        },
+        "engine": "vllm"
+      }
+    },
+    "stderr": "Certificate invalid: name is not a listed principal\n"
+  },
+  "directSeededRead": {
+    "httpStatus": 200,
+    "seconds": 0.195,
+    "request": {
+      "model": "diffusiongemma",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Answer a fixed set of questions about the state the user provides. Each question lists its allowed answers; reply with exactly one label per question.\n\nQuestion color: Which color is explicitly named in the message?\n  A: red (The message explicitly names red.)\n  B: blue (The message explicitly names blue.)\n\nReply with one line per question, in this order, formatted as \"id: label\"."
+        },
+        {
+          "role": "user",
+          "content": "The color explicitly mentioned in this message is RED."
+        }
+      ],
+      "max_tokens": 8,
+      "logprobs": true,
+      "top_logprobs": 20,
+      "logprob_token_ids": [
+        562,
+        603
+      ],
+      "return_tokens_as_token_ids": true,
+      "chat_template_kwargs": {
+        "enable_thinking": false
+      },
+      "vllm_xargs": {
+        "diffusion_seed_canvas": [
+          100,
+          45518,
+          107,
+          101,
+          3001,
+          236787,
+          201979,
+          106,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "diffusion_canvas_length": 16,
+        "diffusion_max_steps": 1,
+        "diffusion_read_only": true
+      }
+    },
+    "slot": {
+      "pos": 6,
+      "label_ids": [
+        562,
+        603
+      ]
+    },
+    "returnedLabelLogprobs": {
+      "red": -0.1305881142616272,
+      "blue": -7.3259100914001465
+    },
+    "usage": {
+      "prompt_tokens": 109,
+      "total_tokens": 117,
+      "completion_tokens": 8,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 6
+      }
+    }
+  },
+  "bootWantedUnits": [
+    "docker-diffusion-gemma-structured.service",
+    "docker-diffusion-gemma.service"
+  ],
+  "containerLimits": {
+    "/diffusion-gemma": {
+      "running": "true",
+      "oom_killed": "false",
+      "image": "sha256:d8f2be55de6fb93123f1bb6495c42f37f0ee750c423086702fc728da44d852b7",
+      "memory": "94489280512",
+      "swap": "94489280512",
+      "readonly": "true",
+      "caps": "[\"ALL\"]"
+    },
+    "/diffusion-gemma-structured": {
+      "running": "true",
+      "oom_killed": "false",
+      "image": "sha256:d8f2be55de6fb93123f1bb6495c42f37f0ee750c423086702fc728da44d852b7",
+      "memory": "4294967296",
+      "swap": "4294967296",
+      "readonly": "true",
+      "caps": "[\"ALL\"]"
+    }
+  },
+  "formattedNixBuild": {
+    "command": [
+      "nix",
+      "build",
+      "--impure",
+      "--option",
+      "eval-cache",
+      "false",
+      "--option",
+      "allow-import-from-derivation",
+      "true",
+      "--out-link",
+      "/home/brittonr/git/onix-core/.cache/diffusion-gemma-units",
+      "--print-out-paths",
+      "--expr",
+      "let\n  flake = builtins.getFlake \"path:/home/brittonr/git/onix-core\";\n  machine = flake.nixosConfigurations.aspen1;\n  names = [ \"docker-diffusion-gemma.service\" \"docker-diffusion-gemma-structured.service\" \"llamacpp-server-qwen38-flash-next-aspen1.service\" ];\nin machine.pkgs.symlinkJoin {\n  name = \"aspen1-diffusion-gemma-units\";\n  paths = map (name: machine.config.systemd.units.${name}.unit) names;\n}"
+    ],
+    "unitBundle": "/nix/store/9w5gas0nw853irlzz000v06ykf8p1ar6-aspen1-diffusion-gemma-units",
+    "matchesDeployedUnits": true,
+    "exitCode": 0
+  },
+  "cleanup": {
+    "temporarySshfsUnmounted": true,
+    "temporaryMountDirectoryRemoved": true,
+    "localStagingRemoved": true,
+    "temporaryBuildRootRemoved": true,
+    "logMonitorStopped": true,
+    "backendHealthAfterCleanup": 200
+  },
+  "nativeCairnValidation": {
+    "command": [
+      "nix",
+      "run",
+      "path:/home/brittonr/git/OnixResearch/cairn#cairn",
+      "--",
+      "validate",
+      "--root",
+      "/home/brittonr/git/onix-core",
+      "--policy",
+      "/home/brittonr/git/OnixResearch/cairn/cairn-policy/generated/cairn-policy.json"
+    ],
+    "valid": true,
+    "receiptHash": "306408b87105d6700f1391550d5781aa2675781a1d274e5703b5ec3c98c51608",
+    "issues": [],
+    "taskMetrics": {
+      "checkbox_tasks": 6,
+      "kind": "tasks",
+      "malformed_dependency_markers": 0,
+      "path": "/home/brittonr/git/onix-core/.cairn/changes/deploy-diffusion-gemma-aspen1/tasks.md",
+      "requirement_blocks": 0,
+      "scenario_blocks": 0,
+      "substantive_lines": 6,
+      "substantive_requirement_blocks": 0,
+      "substantive_tasks": 6,
+      "task_done": 6,
+      "task_in_progress": 0,
+      "task_todo": 0
+    }
+  }
+}

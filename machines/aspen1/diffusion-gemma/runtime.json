@@ -1,0 +1,7 @@
+{
+  "imageId": "sha256:d8f2be55de6fb93123f1bb6495c42f37f0ee750c423086702fc728da44d852b7",
+  "imageArchiveSha256": "a293f98f2cf1619776458bd79afeef27299ea41b63db4221efebe7ecb35d9b46",
+  "modelRepository": "google/diffusiongemma-26B-A4B-it",
+  "modelRevision": "f7f5b7f5fa82ffc52addd066915886d497f5517b",
+  "vllmRevision": "58eacf242207c9b9b54abff57e684fc1a7d74548"
+}
