@@ -36,7 +36,26 @@ in
             evaluated = import ./settings.nix { inherit lib; } settings;
             system = pkgs.stdenv.hostPlatform.system;
             kilnPackage = inputs.kiln.packages.${system}.kiln;
-            hostPackage = inputs.kiln.packages.${system}.kiln-aspen-host;
+            patchedHostSource = pkgs.applyPatches {
+              name = "kiln-aspen-host-recovery-source";
+              src = inputs.kiln.outPath + "/runtime/kiln-aspen-host";
+              patches = [ ./kiln-aspen-host-recovery-guard.patch ];
+            };
+            hostPackage = inputs.kiln.packages.${system}.kiln-aspen-host.overrideAttrs (old: {
+              src = patchedHostSource;
+              # The patch adds host edges to redb versions already in the pinned vendor set.
+              # Cargo requires that vendor's lockfile to match the patched standalone lock.
+              cargoDeps = pkgs.runCommandLocal "cargo-vendor-dir" { } ''
+                mkdir -p "$out"
+                for entry in ${old.cargoDeps}/* ${old.cargoDeps}/.cargo; do
+                  case "$entry" in
+                    */Cargo.lock) continue ;;
+                  esac
+                  ln -s "$entry" "$out/$(basename "$entry")"
+                done
+                ln -s ${patchedHostSource}/Cargo.lock "$out/Cargo.lock"
+              '';
+            });
             providerPackage = inputs.kiln.packages.${system}.kiln-radicle-nix-provider;
             latticePackage = inputs.lattice.packages.${system}.lattice;
             hostExecutable = lib.getExe' hostPackage "kiln-aspen-host";
@@ -301,6 +320,7 @@ in
               let base = import ${nclString "${inputs.kiln}/config/aspen-runtime-profile.ncl"} in
               base & {
                 bounds.callback_timeout_millis | force = ${toString workflowTimeoutMilliseconds},
+                native_host.generation | force = ${toString settings.nativeGeneration},
               }
             '';
             aspenProfile =
@@ -603,6 +623,31 @@ in
                 message = "Kiln Aspen production must use the reviewed durable Kiln revision";
               }
               {
+                assertion =
+                  !settings.enable
+                  || settings.routeMode != "aspen"
+                  || (
+                    config.services.radicle.ci.broker.enable
+                    && builtins.attrNames config.services.radicle.ci.broker.settings.adapters == [ "kiln" ]
+                    &&
+                      config.services.radicle.ci.broker.settings.triggers == [
+                        {
+                          adapter = "kiln";
+                          filters = [
+                            {
+                              And = [
+                                { Repository = settings.repository; }
+                                { HasFile = "flake.nix"; }
+                                "DefaultBranch"
+                              ];
+                            }
+                          ];
+                        }
+                      ]
+                  );
+                message = "Binding the broker to the Aspen host requires exactly the Seaglass trigger and adapter";
+              }
+              {
                 assertion = lib.hasInfix latticeContractRevision (builtins.readFile ./profiles/radicle-profile.ncl);
                 message = "Kiln Aspen production Lattice contract revision drifted";
               }
@@ -863,6 +908,12 @@ in
                 User = hostUser;
                 Group = hostUser;
                 WorkingDirectory = settings.hostStateDir;
+                ExecCondition = lib.escapeShellArgs [
+                  hostExecutable
+                  "--preflight"
+                  "--state-root"
+                  settings.hostStateDir
+                ];
                 ExecStartPre = lib.getExe removeStaleAspenSocket;
                 ExecStart = lib.escapeShellArgs [
                   hostExecutable
@@ -893,10 +944,16 @@ in
                 CPUQuota = hostCpuQuota;
                 TasksMax = hostTasksMaximum;
                 Restart = "always";
+                RestartPreventExitStatus = [ 78 ];
                 RestartSec = serviceRestartDelay;
                 TimeoutStartSec = serviceStartTimeout;
                 TimeoutStopSec = serviceStopTimeout;
               };
+            };
+
+            systemd.services.radicle-ci-broker = lib.mkIf (settings.enable && settings.routeMode == "aspen") {
+              bindsTo = [ hostUnit ];
+              after = [ hostUnit ];
             };
 
             # Operator-only direct shadow. It has no wantedBy target and publishes no Radicle status.

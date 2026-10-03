@@ -1,0 +1,2128 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 0763948..3060b5a 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -3596,6 +3596,8 @@ dependencies = [
+  "molten",
+  "nix 0.30.1",
+  "preserves 5.0.0-rc.8",
++ "redb 3.1.3",
++ "redb 4.2.0",
+  "rusqlite",
+  "rustix",
+  "serde",
+diff --git a/Cargo.toml b/Cargo.toml
+index e8d6b18..ceb867c 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -46,7 +46,9 @@ kiln-aspen-extension = { git = "https://seed.radicle.garden/z2wsvXm5S2sJGvuV1k5J
+ kiln-core = { git = "https://seed.radicle.garden/z2wsvXm5S2sJGvuV1k5JHiwi1PbKE.git", rev = "refs/namespaces/z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx/refs/heads/change/productionize-aspen-radicle-host-20260828" }
+ kiln-provider-api = { git = "https://seed.radicle.garden/z2wsvXm5S2sJGvuV1k5JHiwi1PbKE.git", rev = "refs/namespaces/z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx/refs/heads/change/productionize-aspen-radicle-host-20260828" }
+ molten = { git = "https://github.com/brittonr/aspen.git", rev = "22f8ded26ca1907c29948e08b53f35df23080733" }
++lattice_redb = { package = "redb", version = "=3.1.3" }
+ preserves = "=5.0.0-rc.8"
++redb = "=4.2.0"
+ rusqlite = { version = "=0.40.2", default-features = false, features = ["bundled"] }
+ rustix = { version = "1.1", features = ["fs"] }
+ serde = { version = "1.0.228", features = ["derive"] }
+diff --git a/src/cohort.rs b/src/cohort.rs
+index 7cc607b..0b03e22 100644
+--- a/src/cohort.rs
++++ b/src/cohort.rs
+@@ -16,6 +16,7 @@ mod profile;
+ 
+ use execution::{TemplateInput, executable_evidence, execution_template};
+ use profile::{admitted_manifest, execution_profile_descriptor, native_profile};
++pub use profile::MAX_RESTART_ATTEMPTS;
+ 
+ pub type HostExecutionPort = LiveExecutionAdapter<HashingOutputPublisher>;
+ pub type HostService = NativeSystemExtensionService<HostExecutionPort, HostJournal>;
+diff --git a/src/cohort/profile.rs b/src/cohort/profile.rs
+index a9ba5cc..045d489 100644
+--- a/src/cohort/profile.rs
++++ b/src/cohort/profile.rs
+@@ -27,7 +27,7 @@ pub(super) const CALLBACK_POLL_INTERVAL_MS: u64 = 5;
+ pub(super) const CALLBACK_TEARDOWN_TIMEOUT_MS: u64 = 1_000;
+ const CALLBACK_DEADLINE_TICKS: u64 = 100;
+ const SHUTDOWN_GRACE_TICKS: u64 = 100;
+-const MAX_RESTART_ATTEMPTS: u64 = 2;
++pub const MAX_RESTART_ATTEMPTS: u64 = 2;
+ pub(super) const CONCURRENCY_UNITS: u64 = 1;
+ pub(super) const QUEUE_UNITS: u64 = 64;
+ 
+diff --git a/src/durability/ledger.rs b/src/durability/ledger.rs
+index 6260e25..cdb9fe1 100644
+--- a/src/durability/ledger.rs
++++ b/src/durability/ledger.rs
+@@ -25,6 +25,7 @@ const BUSY_TIMEOUT_MILLISECONDS: u64 = 5_000;
+ pub enum LedgerOpenMode {
+     Fresh,
+     Recover,
++    Inspect,
+ }
+ 
+ pub struct OperationLedger {
+@@ -79,13 +80,19 @@ impl OperationLedger {
+                 require_regular_file(path, "operation ledger")?;
+                 OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_FULL_MUTEX
+             }
++            LedgerOpenMode::Inspect => {
++                require_regular_file(path, "operation ledger")?;
++                OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_FULL_MUTEX
++            }
+         };
+         let connection = Connection::open_with_flags(path, flags)
+             .map_err(|error| ledger_io("open operation ledger", error))?;
+         connection
+             .busy_timeout(Duration::from_millis(BUSY_TIMEOUT_MILLISECONDS))
+             .map_err(|error| ledger_io("configure operation ledger timeout", error))?;
+-        configure_connection(&connection)?;
++        if mode != LedgerOpenMode::Inspect {
++            configure_connection(&connection)?;
++        }
+         match mode {
+             LedgerOpenMode::Fresh => {
+                 initialize_schema(&connection, cohort_identity)?;
+@@ -94,7 +101,7 @@ impl OperationLedger {
+                         HostBridgeError::Io(format!("set operation ledger permissions: {error}"))
+                     })?;
+             }
+-            LedgerOpenMode::Recover => {
++            LedgerOpenMode::Recover | LedgerOpenMode::Inspect => {
+                 verify_integrity(&connection)?;
+                 verify_metadata(&connection, cohort_identity)?;
+             }
+diff --git a/src/durability/mod.rs b/src/durability/mod.rs
+index 3f58698..4e99135 100644
+--- a/src/durability/mod.rs
++++ b/src/durability/mod.rs
+@@ -125,6 +125,38 @@ impl HostDurability {
+             values,
+         })
+     }
++
++    pub fn inspect_operations_read_only(
++        state_root: &Path,
++        profile: &AdmittedAspenRuntimeProfile,
++    ) -> Result<Vec<DurableOperationRecord>> {
++        state::require_directory(state_root, "host state root")?;
++        let marker = state::load_marker(&state_root.join(state::STATE_MARKER_FILE))?;
++        if marker != state::expected_marker(&marker.cohort_identity) {
++            return Err(HostBridgeError::State("offline host marker schema differs".to_string()));
++        }
++        for leaf in [
++            state::LEDGER_DIRECTORY,
++            state::NATIVE_JOURNAL_DIRECTORY,
++            state::CALLBACK_VALUE_DIRECTORY,
++        ] {
++            state::require_directory(&state_root.join(leaf), leaf)?;
++        }
++        state::require_regular_file(
++            &state_root.join(state::NATIVE_JOURNAL_DIRECTORY).join(state::NATIVE_JOURNAL_FILE),
++            "native host journal",
++        )?;
++        let ledger = OperationLedger::open(
++            &state_root.join(state::LEDGER_DIRECTORY).join(state::LEDGER_FILE),
++            ledger::LedgerOpenMode::Inspect,
++            &marker.cohort_identity,
++            u64::try_from(profile.profile.bounds.max_records)
++                .map_err(|_| HostBridgeError::Admission("ledger record count does not fit u64".to_string()))?,
++            u64::try_from(ledger_record_bound(profile)?)
++                .map_err(|_| HostBridgeError::Admission("ledger record byte bound does not fit u64".to_string()))?,
++        )?;
++        ledger.load_all()
++    }
+ }
+ 
+ fn ledger_record_bound(profile: &AdmittedAspenRuntimeProfile) -> Result<usize> {
+diff --git a/src/error.rs b/src/error.rs
+index c8d8d9f..37c7001 100644
+--- a/src/error.rs
++++ b/src/error.rs
+@@ -1,5 +1,10 @@
+ #[derive(Debug, Clone, Eq, PartialEq)]
+ pub enum HostBridgeError {
++    RecoveryBlocked {
++        phase: &'static str,
++        restart_attempts: u64,
++        maximum_restart_attempts: u64,
++    },
+     Admission(String),
+     Io(String),
+     Protocol(String),
+@@ -10,6 +15,14 @@ pub enum HostBridgeError {
+ impl std::fmt::Display for HostBridgeError {
+     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+         match self {
++            Self::RecoveryBlocked {
++                phase,
++                restart_attempts,
++                maximum_restart_attempts,
++            } => write!(
++                formatter,
++                "host recovery blocked by native supervision policy: phase={phase}, restart_attempts={restart_attempts}, maximum_restart_attempts={maximum_restart_attempts}; operator transition required"
++            ),
+             Self::Admission(message) => write!(formatter, "host admission failed: {message}"),
+             Self::Io(message) => write!(formatter, "host I/O failed: {message}"),
+             Self::Protocol(message) => write!(formatter, "host protocol failed: {message}"),
+diff --git a/src/lib.rs b/src/lib.rs
+index 27e45f2..477cdd9 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -14,4 +14,6 @@ pub mod durability;
+ pub mod effect;
+ pub mod error;
+ pub mod runtime;
++pub mod recovery_preflight;
++pub mod retirement;
+ pub mod server;
+diff --git a/src/main.rs b/src/main.rs
+index acd59bf..f5381da 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -23,6 +23,8 @@ use kiln_aspen_host::effect::{
+ use kiln_aspen_host::error::{HostBridgeError, Result};
+ use kiln_aspen_host::runtime::KilnAspenHostRuntime;
+ use kiln_aspen_host::server::{ServerConfig, serve};
++use kiln_aspen_host::recovery_preflight;
++use kiln_aspen_host::retirement;
+ 
+ #[path = "main/arguments.rs"]
+ mod arguments;
+@@ -32,6 +34,7 @@ use arguments::parse_arguments;
+ const PROFILE_MAXIMUM_BYTES: u64 = 1_048_576;
+ const PROFILE_OVERFLOW_SENTINEL_BYTES: u64 = 1;
+ const INPUT_OUTPUT_EXIT_CODE: i32 = 1;
++const RECOVERY_BLOCKED_EXIT_CODE: i32 = 78;
+ 
+ #[derive(Debug)]
+ struct RuntimeProfileBinding {
+@@ -47,12 +50,56 @@ struct RuntimeProfileBinding {
+ fn main() {
+     let arguments = std::env::args().skip(1);
+     if let Err(error) = run(arguments) {
++        let exit_code = match error {
++            HostBridgeError::RecoveryBlocked { .. } => RECOVERY_BLOCKED_EXIT_CODE,
++            _ => INPUT_OUTPUT_EXIT_CODE,
++        };
+         eprintln!("{error}");
+-        std::process::exit(INPUT_OUTPUT_EXIT_CODE);
++        std::process::exit(exit_code);
+     }
+ }
+ 
+ fn run(arguments: impl Iterator<Item = String>) -> Result<()> {
++    let mut arguments = arguments.peekable();
++    if arguments.next_if(|argument| argument == "--preflight").is_some() {
++        if arguments.next().as_deref() != Some("--state-root") {
++            return Err(HostBridgeError::Protocol(
++                "native preflight requires --state-root".to_string(),
++            ));
++        }
++        let state_root = arguments.next().ok_or_else(|| {
++            HostBridgeError::Protocol("native preflight requires a state-root path".to_string())
++        })?;
++        if arguments.next().is_some() {
++            return Err(HostBridgeError::Protocol(
++                "native preflight accepts only one state root".to_string(),
++            ));
++        }
++        return recovery_preflight::check(std::path::Path::new(&state_root));
++    }
++    if arguments.next_if(|argument| argument == "--retire").is_some() {
++        if arguments.next().as_deref() != Some("--plan") {
++            return Err(HostBridgeError::Protocol(
++                "operator retirement requires --plan".to_string(),
++            ));
++        }
++        let plan_path = arguments.next().ok_or_else(|| {
++            HostBridgeError::Protocol("operator retirement requires a plan path".to_string())
++        })?;
++        let dry_run = arguments.next_if(|argument| argument == "--dry-run").is_some();
++        if arguments.next().is_some() {
++            return Err(HostBridgeError::Protocol(
++                "operator retirement accepts only --plan PATH [--dry-run]".to_string(),
++            ));
++        }
++        let plan = retirement::load_plan(std::path::Path::new(&plan_path))?;
++        let RuntimeProfileBinding { path, profile } = load_aspen_profile(&plan.aspen_profile)?;
++        return if dry_run {
++            retirement::audit_offline_copy(&plan, profile, path)
++        } else {
++            retirement::retire(&plan, profile, path)
++        };
++    }
+     let arguments = parse_arguments(arguments)?;
+     let RuntimeProfileBinding {
+         path: runtime_profile,
+diff --git a/src/recovery_preflight.rs b/src/recovery_preflight.rs
+new file mode 100644
+index 0000000..aacdcc2
+--- /dev/null
++++ b/src/recovery_preflight.rs
+@@ -0,0 +1,147 @@
++use std::io::Read;
++use std::path::Path;
++
++use molten::system_extension::{
++    LifecyclePhase, NATIVE_INSTANCE_STATE_SCHEMA, decode_native_instance_record,
++};
++use redb::{ReadableDatabase, ReadableTable};
++
++use crate::cohort::MAX_RESTART_ATTEMPTS;
++use crate::durability::{DURABLE_HOST_STATE_SCHEMA, DurableHostStateMarker};
++use crate::error::{HostBridgeError, Result};
++
++const STATE_MARKER_FILE: &str = "host-state.json";
++const NATIVE_JOURNAL_FILE: &str = "native-journal/fabric-durability.redb";
++const OPERATION_LEDGER_FILE: &str = "operation-ledger/operations.sqlite";
++const MARKER_MAXIMUM_BYTES: u64 = 4_096;
++const MACHINE_LOSS_DURABILITY: u8 = 2;
++const LENGTH_PREFIX_BYTES: usize = std::mem::size_of::<u64>();
++const NATIVE_LOG: redb::TableDefinition<u64, &[u8]> =
++    redb::TableDefinition::new("fabric_durable_log_v1");
++
++pub fn check(state_root: &Path) -> Result<()> {
++    if !state_root.is_dir() {
++        return Err(HostBridgeError::State("native preflight requires an existing state root".to_string()));
++    }
++    let marker_path = state_root.join(STATE_MARKER_FILE);
++    let journal_path = state_root.join(NATIVE_JOURNAL_FILE);
++    let ledger_path = state_root.join(OPERATION_LEDGER_FILE);
++    let marker_metadata = match std::fs::symlink_metadata(&marker_path) {
++        Ok(metadata) => metadata,
++        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
++            if std::fs::symlink_metadata(&journal_path).is_ok()
++                || std::fs::symlink_metadata(&ledger_path).is_ok()
++            {
++                return Err(HostBridgeError::State(
++                    "native preflight refuses a missing marker with existing durable state".to_string(),
++                ));
++            }
++            return Ok(());
++        }
++        Err(error) => return Err(HostBridgeError::Io(format!("inspect native marker: {error}"))),
++    };
++    if !marker_metadata.is_file() {
++        return Err(HostBridgeError::State("native preflight marker is not a regular file".to_string()));
++    }
++    let mut marker_bytes = Vec::new();
++    std::fs::File::open(&marker_path)
++        .map_err(|error| HostBridgeError::Io(format!("open native marker: {error}")))?
++        .take(MARKER_MAXIMUM_BYTES + 1)
++        .read_to_end(&mut marker_bytes)
++        .map_err(|error| HostBridgeError::Io(format!("read native marker: {error}")))?;
++    if marker_bytes.len() as u64 > MARKER_MAXIMUM_BYTES {
++        return Err(HostBridgeError::State("native preflight marker exceeds its bound".to_string()));
++    }
++    let marker: DurableHostStateMarker = serde_json::from_slice(&marker_bytes)
++        .map_err(|error| HostBridgeError::State(format!("decode native marker: {error}")))?;
++    if marker.schema != DURABLE_HOST_STATE_SCHEMA
++        || marker.native_journal_schema != NATIVE_INSTANCE_STATE_SCHEMA
++    {
++        return Err(HostBridgeError::State("native preflight marker schema differs from pinned host".to_string()));
++    }
++    if !std::fs::symlink_metadata(&journal_path)
++        .map_err(|error| HostBridgeError::Io(format!("inspect native journal: {error}")))?
++        .is_file()
++    {
++        return Err(HostBridgeError::State("native preflight journal is not a regular file".to_string()));
++    }
++    let database = redb::Database::builder()
++        .open_read_only(&journal_path)
++        .map_err(|error| HostBridgeError::State(format!("open native journal read-only: {error}")))?;
++    let transaction = database.begin_read()
++        .map_err(|error| HostBridgeError::State(format!("read native journal: {error}")))?;
++    let table = transaction.open_table(NATIVE_LOG)
++        .map_err(|error| HostBridgeError::State(format!("read native log: {error}")))?;
++    let (_sequence, value) = table.last()
++        .map_err(|error| HostBridgeError::State(format!("read latest native record: {error}")))?
++        .ok_or_else(|| HostBridgeError::State("native journal has no instance".to_string()))?;
++    let instance = decode_latest(value.value())?;
++    if matches!(instance.lifecycle.phase,
++        LifecyclePhase::Quarantined | LifecyclePhase::Draining | LifecyclePhase::Drained
++        | LifecyclePhase::ShuttingDown | LifecyclePhase::Stopped | LifecyclePhase::Removed
++    )
++        || matches!(instance.lifecycle.phase, LifecyclePhase::Running | LifecyclePhase::Failed)
++            && instance.lifecycle.restart_attempts >= MAX_RESTART_ATTEMPTS
++    {
++        return Err(HostBridgeError::RecoveryBlocked {
++            phase: instance.lifecycle.phase.as_str(),
++            restart_attempts: instance.lifecycle.restart_attempts,
++            maximum_restart_attempts: MAX_RESTART_ATTEMPTS,
++        });
++    }
++    Ok(())
++}
++
++pub(crate) fn native_log_snapshot(path: &Path) -> Result<molten::system_extension::NativeInstanceRecord> {
++    let database = redb::Database::builder()
++        .open_read_only(path)
++        .map_err(|error| HostBridgeError::State(format!("open native journal read-only: {error}")))?;
++    let transaction = database.begin_read()
++        .map_err(|error| HostBridgeError::State(format!("read native journal: {error}")))?;
++    let table = transaction.open_table(NATIVE_LOG)
++        .map_err(|error| HostBridgeError::State(format!("read native log: {error}")))?;
++    let mut expected_sequence = 0u64;
++    let mut latest = None;
++    for row in table.iter().map_err(|error| HostBridgeError::State(format!("scan native journal: {error}")))? {
++        let (sequence, value) = row
++            .map_err(|error| HostBridgeError::State(format!("read native record: {error}")))?;
++        if sequence.value() != expected_sequence {
++            return Err(HostBridgeError::State("native record sequence is discontinuous".to_string()));
++        }
++        latest = Some(decode_latest(value.value())?);
++        expected_sequence = expected_sequence.checked_add(1)
++            .ok_or_else(|| HostBridgeError::State("native record sequence overflow".to_string()))?;
++    }
++    latest.ok_or_else(|| HostBridgeError::State("native journal has no instance".to_string()))
++}
++
++fn decode_latest(bytes: &[u8]) -> Result<molten::system_extension::NativeInstanceRecord> {
++    if bytes.first().copied() != Some(MACHINE_LOSS_DURABILITY) {
++        return Err(HostBridgeError::State("native record lacks machine-loss durability".to_string()));
++    }
++    let mut offset = 1;
++    let expected_ref = take_blob(bytes, &mut offset)?;
++    let canonical = take_blob(bytes, &mut offset)?;
++    if offset != bytes.len() || expected_ref != format!("blake3:{}", blake3::hash(canonical).to_hex()).as_bytes() {
++        return Err(HostBridgeError::State("native record has invalid canonical identity".to_string()));
++    }
++    decode_native_instance_record(canonical)
++        .map_err(|error| HostBridgeError::State(format!("decode latest native instance: {error}")))
++}
++
++fn take_blob<'a>(bytes: &'a [u8], offset: &mut usize) -> Result<&'a [u8]> {
++    let prefix_end = offset.checked_add(LENGTH_PREFIX_BYTES)
++        .ok_or_else(|| HostBridgeError::State("native record prefix overflow".to_string()))?;
++    let length: [u8; LENGTH_PREFIX_BYTES] = bytes.get(*offset..prefix_end)
++        .ok_or_else(|| HostBridgeError::State("native record prefix is truncated".to_string()))?
++        .try_into()
++        .map_err(|_| HostBridgeError::State("native record prefix has invalid width".to_string()))?;
++    let length = usize::try_from(u64::from_be_bytes(length))
++        .map_err(|_| HostBridgeError::State("native record length overflow".to_string()))?;
++    let end = prefix_end.checked_add(length)
++        .ok_or_else(|| HostBridgeError::State("native record offset overflow".to_string()))?;
++    let blob = bytes.get(prefix_end..end)
++        .ok_or_else(|| HostBridgeError::State("native record blob is truncated".to_string()))?;
++    *offset = end;
++    Ok(blob)
++}
+diff --git a/src/retirement.rs b/src/retirement.rs
+new file mode 100644
+index 0000000..3452102
+--- /dev/null
++++ b/src/retirement.rs
+@@ -0,0 +1,1081 @@
++use std::collections::{BTreeMap, BTreeSet};
++use std::io::Read;
++use std::path::{Path, PathBuf};
++use std::process::Command;
++
++use kiln_adapter_aspen::profile::AdmittedAspenRuntimeProfile;
++use lattice_redb::{ReadableDatabase, ReadableTable, ReadableTableMetadata};
++use molten::system_extension::{LifecyclePhase, NativeHostJournal};
++use rusqlite::OpenFlags;
++use serde::Deserialize;
++use serde_json::Value;
++
++use crate::cohort::{HostCohort, HostPaths, MAX_RESTART_ATTEMPTS};
++use crate::durability::{DurableOperationRecord, DurableOperationState, HostStateMode};
++use crate::error::{HostBridgeError, Result};
++
++const BROKER_UNIT: &str = "radicle-ci-broker.service";
++const HOST_UNIT: &str = "kiln-aspen-ci-host.service";
++const LATTICE_UNIT: &str = "kiln-aspen-ci-lattice.service";
++const LATTICE_EXCHANGES: lattice_redb::TableDefinition<&str, &[u8]> =
++    lattice_redb::TableDefinition::new("workflow_exchange_executions_v1");
++const LATTICE_REQUESTS: lattice_redb::TableDefinition<&str, &str> =
++    lattice_redb::TableDefinition::new("workflow_exchange_request_index_v1");
++const LATTICE_IDEMPOTENCY: lattice_redb::TableDefinition<&str, &str> =
++    lattice_redb::TableDefinition::new("workflow_exchange_idempotency_index_v1");
++const MAXIMUM_REPORT_FILES: usize = 256;
++const MAXIMUM_PLAN_BYTES: usize = 65_536;
++const MAXIMUM_REPORT_JSON_BYTES: usize = 1_048_576;
++const DIGEST_BUFFER_BYTES: usize = 8_192;
++
++#[derive(Clone, Debug, Deserialize)]
++#[serde(deny_unknown_fields)]
++pub struct ArchivedReportEvidence {
++    pub revision: String,
++    pub report_blake3: String,
++    pub log_blake3: String,
++    pub broker_run_id: String,
++    pub broker_job_id: String,
++    pub origin: HistoricalReportOrigin,
++}
++
++#[derive(Clone, Debug, Deserialize)]
++#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
++pub enum HistoricalReportOrigin {
++    Legacy {
++        report: PathBuf,
++        log: PathBuf,
++        report_blake3: String,
++        log_blake3: String,
++    },
++    Aspen {
++        operation_ledger: PathBuf,
++        expected_ledger_blake3: String,
++    },
++}
++
++#[derive(Clone, Debug, Deserialize)]
++#[serde(deny_unknown_fields)]
++pub struct RepairedLatticeEvidence {
++    pub stopped_backup_database: PathBuf,
++    pub repaired_clone_database: PathBuf,
++    pub expected_repaired_clone_blake3: String,
++}
++
++#[derive(Clone, Debug, Deserialize)]
++#[serde(deny_unknown_fields)]
++pub struct RetirementPlan {
++    pub aspen_profile: PathBuf,
++    pub extension: PathBuf,
++    pub state_root: PathBuf,
++    pub host_socket: PathBuf,
++    pub lattice_socket: PathBuf,
++    pub broker_database: PathBuf,
++    pub lattice_database: PathBuf,
++    pub report_namespace: PathBuf,
++    pub preserved_report_root: PathBuf,
++    pub repository: String,
++    pub expected_native_journal_blake3: String,
++    pub expected_host_ledger_blake3: String,
++    pub expected_broker_blake3: String,
++    pub expected_lattice_blake3: String,
++    pub repaired_lattice: Option<RepairedLatticeEvidence>,
++    pub expected_preserved_report_root_blake3: String,
++    pub approved_unlinked_reports: Vec<ArchivedReportEvidence>,
++}
++
++#[derive(Debug)]
++pub struct VerifiedExternalState {
++    exchange_revisions: BTreeMap<String, String>,
++    report_revisions: BTreeSet<String>,
++}
++
++#[derive(Debug)]
++pub struct VerifiedNativeJournal {
++    latest_instance: molten::system_extension::NativeInstanceRecord,
++}
++
++impl VerifiedNativeJournal {
++    fn require_same_instance(&self, cohort: &HostCohort) -> Result<()> {
++        let latest = cohort.journal.lock()
++            .map_err(|_| HostBridgeError::State("native retirement journal lock unavailable".to_string()))?
++            .latest_instance(&self.latest_instance.instance_id)
++            .map_err(|error| HostBridgeError::State(format!("read native retirement instance: {error:?}")))?;
++        if latest.as_ref() != Some(&self.latest_instance) {
++            return Err(HostBridgeError::State("native instance changed since journal snapshot verification".to_string()));
++        }
++        Ok(())
++    }
++}
++
++pub fn verify_journal_snapshot(plan: &RetirementPlan) -> Result<VerifiedNativeJournal> {
++    let path = plan.state_root.join("native-journal/fabric-durability.redb");
++    require_digest(&path, &plan.expected_native_journal_blake3)?;
++    let latest_instance = crate::recovery_preflight::native_log_snapshot(&path)?;
++    require_digest(&path, &plan.expected_native_journal_blake3)?;
++    Ok(VerifiedNativeJournal { latest_instance })
++}
++
++pub fn load_plan(path: &Path) -> Result<RetirementPlan> {
++    let mut bytes = Vec::new();
++    std::fs::File::open(path)
++        .map_err(|error| HostBridgeError::Io(format!("open retirement plan: {error}")))?
++        .take((MAXIMUM_PLAN_BYTES + 1) as u64)
++        .read_to_end(&mut bytes)
++        .map_err(|error| HostBridgeError::Io(format!("read retirement plan: {error}")))?;
++    if bytes.len() > MAXIMUM_PLAN_BYTES {
++        return Err(HostBridgeError::Admission("retirement plan exceeds its byte bound".to_string()));
++    }
++    let plan: RetirementPlan = serde_json::from_slice(&bytes)
++        .map_err(|error| HostBridgeError::Admission(format!("decode retirement plan: {error}")))?;
++    for path in [
++        &plan.aspen_profile, &plan.extension, &plan.state_root, &plan.host_socket,
++        &plan.lattice_socket, &plan.broker_database, &plan.lattice_database,
++        &plan.report_namespace, &plan.preserved_report_root,
++    ] {
++        if !path.is_absolute() || path.components().any(|component| {
++            matches!(component, std::path::Component::ParentDir | std::path::Component::CurDir)
++        }) {
++            return Err(HostBridgeError::Admission("retirement paths must be absolute without dot components".to_string()));
++        }
++    }
++    if plan.repaired_lattice.as_ref().is_some_and(|evidence| {
++        !valid_plan_path(&evidence.stopped_backup_database)
++            || !valid_plan_path(&evidence.repaired_clone_database)
++            || !is_blake3_hex(&evidence.expected_repaired_clone_blake3)
++    }) {
++        return Err(HostBridgeError::Admission("repaired Lattice evidence path or digest is invalid".to_string()));
++    }
++    if plan.repository.is_empty()
++        || plan.approved_unlinked_reports.len() > MAXIMUM_REPORT_FILES
++        || plan.approved_unlinked_reports.iter().any(|evidence| {
++            if evidence.revision.is_empty()
++                || evidence.broker_run_id.is_empty()
++                || evidence.broker_job_id.is_empty()
++            {
++                return true;
++            }
++            match &evidence.origin {
++                HistoricalReportOrigin::Legacy { report, log, report_blake3, log_blake3 } => {
++                    [report, log].iter().any(|path| !valid_plan_path(path))
++                        || !is_blake3_hex(report_blake3)
++                        || !is_blake3_hex(log_blake3)
++                }
++                HistoricalReportOrigin::Aspen { operation_ledger, expected_ledger_blake3 } => {
++                    !valid_plan_path(operation_ledger) || !is_blake3_hex(expected_ledger_blake3)
++                }
++            }
++        })
++        || [
++            &plan.expected_native_journal_blake3,
++            &plan.expected_host_ledger_blake3,
++            &plan.expected_broker_blake3,
++            &plan.expected_lattice_blake3,
++            &plan.expected_preserved_report_root_blake3,
++        ].into_iter().chain(
++            plan.approved_unlinked_reports.iter()
++                .flat_map(|evidence| [&evidence.report_blake3, &evidence.log_blake3])
++        ).any(|hash| !is_blake3_hex(hash))
++    {
++        return Err(HostBridgeError::Admission("retirement plan identity or digest is invalid".to_string()));
++    }
++    Ok(plan)
++}
++
++fn valid_plan_path(path: &Path) -> bool {
++    path.is_absolute() && !path.components().any(|component| {
++        matches!(component, std::path::Component::ParentDir | std::path::Component::CurDir)
++    })
++}
++
++pub fn retire(plan: &RetirementPlan, profile: AdmittedAspenRuntimeProfile, runtime_profile: PathBuf) -> Result<()> {
++    let (cohort, external, native_snapshot) = prepare_retirement(plan, profile, runtime_profile)?;
++    retire_native(cohort, external, &native_snapshot)
++}
++
++pub fn audit_offline_copy(plan: &RetirementPlan, profile: AdmittedAspenRuntimeProfile, _runtime_profile: PathBuf) -> Result<()> {
++    require_services_stopped(&plan.host_socket)?;
++    require_socket_absent(&plan.host_socket)?;
++    require_socket_absent(&plan.lattice_socket)?;
++    let snapshot = verify_journal_snapshot(plan)?;
++    require_retirability(&snapshot.latest_instance)?;
++    let records = crate::durability::HostDurability::inspect_operations_read_only(&plan.state_root, &profile)?;
++    require_terminal_records(&records)?;
++    let external = verify_external(plan, &records)?;
++    require_services_stopped(&plan.host_socket)?;
++    require_socket_absent(&plan.host_socket)?;
++    require_socket_absent(&plan.lattice_socket)?;
++    let final_snapshot = verify_journal_snapshot(plan)?;
++    if final_snapshot.latest_instance != snapshot.latest_instance {
++        return Err(HostBridgeError::State("native instance changed during read-only retirement audit".to_string()));
++    }
++    println!("offline retirement evidence audited without opening the native cohort: host_operations={}, lattice_exchanges={}, published_reports={}", records.len(), external.exchange_revisions.len(), external.report_revisions.len());
++    Ok(())
++}
++
++fn prepare_retirement(
++    plan: &RetirementPlan, profile: AdmittedAspenRuntimeProfile, runtime_profile: PathBuf,
++) -> Result<(HostCohort, VerifiedExternalState, VerifiedNativeJournal)> {
++    require_services_stopped(&plan.host_socket)?;
++    require_socket_absent(&plan.host_socket)?;
++    require_socket_absent(&plan.lattice_socket)?;
++    require_broker_exclusive(&plan.broker_database)?;
++    let native_snapshot = verify_journal_snapshot(plan)?;
++    require_retirability(&native_snapshot.latest_instance)?;
++    require_digest(&plan.state_root.join("operation-ledger/operations.sqlite"), &plan.expected_host_ledger_blake3)?;
++    require_digest(&plan.broker_database, &plan.expected_broker_blake3)?;
++    require_digest(&plan.lattice_database, &plan.expected_lattice_blake3)?;
++    let cohort = HostCohort::build(
++        profile,
++        &HostPaths {
++            extension_executable: plan.extension.clone(),
++            runtime_profile,
++            workspace: plan.state_root.clone(),
++        },
++    )?;
++    let records = require_terminal_host_operations(&cohort)?;
++    let external = verify_external(plan, &records)?;
++    require_services_stopped(&plan.host_socket)?;
++    require_socket_absent(&plan.host_socket)?;
++    require_socket_absent(&plan.lattice_socket)?;
++    native_snapshot.require_same_instance(&cohort)?;
++    require_broker_exclusive(&plan.broker_database)?;
++    require_digest(&plan.broker_database, &plan.expected_broker_blake3)?;
++    require_digest(&plan.lattice_database, &plan.expected_lattice_blake3)?;
++    require_digest(&plan.state_root.join("operation-ledger/operations.sqlite"), &plan.expected_host_ledger_blake3)?;
++    Ok((cohort, external, native_snapshot))
++}
++
++fn require_services_stopped(host_socket: &Path) -> Result<()> {
++    for unit in [BROKER_UNIT, HOST_UNIT, LATTICE_UNIT] {
++        let result = Command::new("systemctl")
++            .args([
++                "show", unit, "--property=LoadState", "--property=ActiveState",
++                "--property=SubState", "--property=MainPID", "--property=ControlPID",
++                "--property=ControlGroup",
++            ])
++            .output()
++            .map_err(|error| HostBridgeError::State(format!("inspect {unit}: {error}")))?;
++        let output = std::str::from_utf8(&result.stdout)
++            .map_err(|_| HostBridgeError::State(format!("decode {unit} status")))?;
++        if !result.status.success() || !stopped_unit_status(output, unit == HOST_UNIT) {
++            return Err(HostBridgeError::State(format!("operator retirement requires stopped {unit}")));
++        }
++        if unit == HOST_UNIT && output.lines().any(|line| line == "ActiveState=failed") {
++            require_socket_absent(host_socket)?;
++        }
++    }
++    Ok(())
++}
++
++fn stopped_unit_status(output: &str, allow_failed_host: bool) -> bool {
++    let present = |required: &str| output.lines().any(|line| line == required);
++    present("LoadState=loaded")
++        && present("MainPID=0")
++        && present("ControlPID=0")
++        && present("ControlGroup=")
++        && ((present("ActiveState=inactive") && present("SubState=dead"))
++            || (allow_failed_host && present("ActiveState=failed") && present("SubState=failed")))
++}
++
++fn require_socket_absent(path: &Path) -> Result<()> {
++    match std::fs::symlink_metadata(path) {
++        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
++        Ok(_) => Err(HostBridgeError::State(format!("operator retirement requires absent socket: {}", path.display()))),
++        Err(error) => Err(HostBridgeError::Io(format!("inspect retirement socket {}: {error}", path.display()))),
++    }
++}
++
++fn open_regular(path: &Path) -> Result<std::fs::File> {
++    let descriptor = rustix::fs::open(
++        path,
++        rustix::fs::OFlags::RDONLY | rustix::fs::OFlags::NOFOLLOW | rustix::fs::OFlags::CLOEXEC,
++        rustix::fs::Mode::empty(),
++    )
++    .map_err(|error| HostBridgeError::Io(format!("open retirement evidence {}: {error}", path.display())))?;
++    let file = std::fs::File::from(descriptor);
++    if !file.metadata().map_err(|error| HostBridgeError::Io(format!("stat retirement evidence: {error}")))?.is_file() {
++        return Err(HostBridgeError::State(format!("retirement evidence is not a regular file: {}", path.display())));
++    }
++    Ok(file)
++}
++
++fn digest_file(path: &Path) -> Result<blake3::Hash> {
++    let mut file = open_regular(path)?;
++    let mut hasher = blake3::Hasher::new();
++    let mut buffer = [0u8; DIGEST_BUFFER_BYTES];
++    loop {
++        let read = file.read(&mut buffer)
++            .map_err(|error| HostBridgeError::Io(format!("hash retirement evidence {}: {error}", path.display())))?;
++        if read == 0 {
++            break;
++        }
++        hasher.update(&buffer[..read]);
++    }
++    Ok(hasher.finalize())
++}
++
++fn require_digest(path: &Path, expected: &str) -> Result<()> {
++    if digest_file(path)?.to_hex().as_str() != expected {
++        return Err(HostBridgeError::State(format!("retirement evidence digest changed: {}", path.display())));
++    }
++    Ok(())
++}
++
++fn is_blake3_hex(value: &str) -> bool {
++    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
++}
++
++fn require_broker_exclusive(path: &Path) -> Result<()> {
++    for suffix in ["-wal", "-shm", "-journal"] {
++        let mut sidecar = path.as_os_str().to_owned();
++        sidecar.push(suffix);
++        match std::fs::symlink_metadata(Path::new(&sidecar)) {
++            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
++            Ok(_) => return Err(HostBridgeError::State(
++                "broker SQLite sidecar exists; main database hash does not cover pending evidence".to_string(),
++            )),
++            Err(error) => return Err(HostBridgeError::Io(format!("inspect broker SQLite sidecar: {error}"))),
++        }
++    }
++    Ok(())
++}
++
++pub fn require_terminal_host_operations(cohort: &HostCohort) -> Result<Vec<DurableOperationRecord>> {
++    if cohort.state_mode != HostStateMode::Recovered {
++        return Err(HostBridgeError::State("retirement requires an existing native cohort".to_string()));
++    }
++    let records = cohort.ledger.lock()
++        .map_err(|_| HostBridgeError::State("retirement ledger lock unavailable".to_string()))?
++        .load_all()?;
++    require_terminal_records(&records)?;
++    Ok(records)
++}
++
++fn require_terminal_records(records: &[DurableOperationRecord]) -> Result<()> {
++    for record in records {
++        if record.state != DurableOperationState::Terminal
++            || record.acknowledgement.is_none()
++            || record.effect_intent.is_none()
++            || record.provider_observation.is_none()
++        {
++            return Err(HostBridgeError::State("retirement requires terminal acknowledged, observed host operations".to_string()));
++        }
++    }
++    Ok(())
++}
++
++fn require_lattice_evidence(plan: &RetirementPlan) -> Result<()> {
++    require_digest(&plan.lattice_database, &plan.expected_lattice_blake3)?;
++    if let Some(evidence) = &plan.repaired_lattice {
++        require_digest(&evidence.stopped_backup_database, &plan.expected_lattice_blake3)?;
++        require_digest(&evidence.repaired_clone_database, &evidence.expected_repaired_clone_blake3)?;
++        if plan.expected_lattice_blake3 == evidence.expected_repaired_clone_blake3 {
++            return Err(HostBridgeError::State("repaired Lattice clone is identical to the stopped source".to_string()));
++        }
++        use std::os::unix::fs::MetadataExt;
++        let source = std::fs::metadata(&plan.lattice_database)
++            .map_err(|error| HostBridgeError::Io(format!("inspect original Lattice inode: {error}")))?;
++        let backup = std::fs::metadata(&evidence.stopped_backup_database)
++            .map_err(|error| HostBridgeError::Io(format!("inspect preserved Lattice inode: {error}")))?;
++        let clone = std::fs::metadata(&evidence.repaired_clone_database)
++            .map_err(|error| HostBridgeError::Io(format!("inspect repaired Lattice inode: {error}")))?;
++        if source.dev() == backup.dev() && source.ino() == backup.ino()
++            || source.dev() == clone.dev() && source.ino() == clone.ino()
++            || backup.dev() == clone.dev() && backup.ino() == clone.ino()
++        {
++            return Err(HostBridgeError::State("stopped, preserved, and repaired Lattice files must have distinct inodes".to_string()));
++        }
++    }
++    Ok(())
++}
++
++pub fn verify_external(plan: &RetirementPlan, records: &[DurableOperationRecord]) -> Result<VerifiedExternalState> {
++    require_digest(&plan.state_root.join("operation-ledger/operations.sqlite"), &plan.expected_host_ledger_blake3)?;
++    require_lattice_evidence(plan)?;
++    require_broker_exclusive(&plan.broker_database)?;
++    let broker = rusqlite::Connection::open_with_flags(
++        &plan.broker_database,
++        OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
++    ).map_err(|error| HostBridgeError::State(format!("open broker database read-only: {error}")))?;
++    let queued: i64 = broker.query_row("SELECT COUNT(*) FROM ci_event_queue", [], |row| row.get(0))
++        .map_err(|error| HostBridgeError::State(format!("read broker queue: {error}")))?;
++    if queued != 0 {
++        return Err(HostBridgeError::State("operator retirement refuses broker queue or lease".to_string()));
++    }
++    let mut broker_runs = BTreeMap::new();
++    let mut runs = broker.prepare("SELECT broker_run_id, json FROM ci_runs")
++        .map_err(|error| HostBridgeError::State(format!("read broker run inventory: {error}")))?;
++    let rows = runs.query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
++        .map_err(|error| HostBridgeError::State(format!("scan broker run inventory: {error}")))?;
++    for row in rows {
++        let (run_id, json) = row.map_err(|error| HostBridgeError::State(format!("broker run: {error}")))?;
++        let value: Value = serde_json::from_str(&json)
++            .map_err(|error| HostBridgeError::State(format!("broker run JSON: {error}")))?;
++        if value["state"].as_str() != Some("finished") {
++            return Err(HostBridgeError::State("operator retirement refuses active broker run or lease".to_string()));
++        }
++        if value["broker_run_id"]["id"].as_str() != Some(run_id.as_str())
++            || broker_runs.insert(run_id, value).is_some()
++        {
++            return Err(HostBridgeError::State("broker run identity is ambiguous".to_string()));
++        }
++    }
++    require_broker_exclusive(&plan.broker_database)?;
++
++    let lattice = match lattice_redb::Database::builder().open_read_only(&plan.lattice_database) {
++        Ok(lattice) if plan.repaired_lattice.is_none() => lattice,
++        Ok(_) => return Err(HostBridgeError::State("repaired Lattice clone is supplied but the original opens without repair".to_string())),
++        Err(lattice_redb::DatabaseError::RepairAborted) => {
++            let evidence = plan.repaired_lattice.as_ref()
++                .ok_or_else(|| HostBridgeError::State("stopped Lattice database needs a separately audited repaired clone; original remains read-only".to_string()))?;
++            require_lattice_evidence(plan)?;
++            lattice_redb::Database::builder()
++                .open_read_only(&evidence.repaired_clone_database)
++                .map_err(|error| HostBridgeError::State(format!("open verified repaired Lattice clone read-only: {error}")))?
++        }
++        Err(error) => return Err(HostBridgeError::State(format!("open original Lattice exchange read-only: {error}"))),
++    };
++    let transaction = lattice.begin_read()
++        .map_err(|error| HostBridgeError::State(format!("read Lattice exchange: {error}")))?;
++    let exchanges = transaction.open_table(LATTICE_EXCHANGES)
++        .map_err(|error| HostBridgeError::State(format!("read Lattice executions: {error}")))?;
++    let requests = transaction.open_table(LATTICE_REQUESTS)
++        .map_err(|error| HostBridgeError::State(format!("read Lattice request index: {error}")))?;
++    let idempotency = transaction.open_table(LATTICE_IDEMPOTENCY)
++        .map_err(|error| HostBridgeError::State(format!("read Lattice idempotency index: {error}")))?;
++    if exchanges.len().map_err(|error| HostBridgeError::State(format!("count Lattice executions: {error}")))?
++        != requests.len().map_err(|error| HostBridgeError::State(format!("count Lattice requests: {error}")))?
++        || exchanges.len().map_err(|error| HostBridgeError::State(format!("count Lattice executions: {error}")))?
++            != idempotency.len().map_err(|error| HostBridgeError::State(format!("count Lattice idempotency: {error}")))?
++    {
++        return Err(HostBridgeError::State("Lattice exchange indexes are incomplete".to_string()));
++    }
++    let mut exchange_revisions = BTreeMap::new();
++    for item in exchanges.iter().map_err(|error| HostBridgeError::State(format!("scan Lattice exchanges: {error}")))? {
++        let (identity, bytes) = item.map_err(|error| HostBridgeError::State(format!("Lattice exchange record: {error}")))?;
++        let item: Value = serde_json::from_slice(bytes.value())
++            .map_err(|error| HostBridgeError::State(format!("Lattice exchange JSON: {error}")))?;
++        if !matches!(item["state"].as_str(), Some("completed" | "failed" | "cancelled"))
++            || item["receipt_identity"].as_str().is_none()
++        {
++            return Err(HostBridgeError::State("operator retirement refuses unresolved Lattice exchange or lease".to_string()));
++        }
++        let revision = item["request"]["source"]["revision"].as_str()
++            .ok_or_else(|| HostBridgeError::State("Lattice exchange lacks source revision".to_string()))?;
++        let request_identity = item["request"]["identity"].as_str()
++            .ok_or_else(|| HostBridgeError::State("Lattice exchange lacks request identity".to_string()))?;
++        let idempotency_identity = item["request"]["idempotency_key"].as_str()
++            .ok_or_else(|| HostBridgeError::State("Lattice exchange lacks idempotency identity".to_string()))?;
++        for index_identity in [
++            requests.get(request_identity).map_err(|error| HostBridgeError::State(format!("Lattice request index: {error}")))?,
++            idempotency.get(idempotency_identity).map_err(|error| HostBridgeError::State(format!("Lattice idempotency index: {error}")))?,
++        ] {
++            if index_identity.as_ref().map(|indexed| indexed.value()) != Some(identity.value()) {
++                return Err(HostBridgeError::State("Lattice exchange index identity mismatch".to_string()));
++            }
++        }
++        exchange_revisions.insert(identity.value().to_string(), revision.to_string());
++    }
++    if exchange_revisions.len() != records.len() {
++        return Err(HostBridgeError::State("host operation count differs from terminal Lattice exchange count".to_string()));
++    }
++    let mut host_revisions = BTreeSet::new();
++    for record in records {
++        let revision = record.ingress.trigger.after.native_id.as_str();
++        let repository = record.ingress.trigger.repository.native_id.as_str();
++        if repository != plan.repository || !host_revisions.insert(revision.to_string()) {
++            return Err(HostBridgeError::State("host operation repository or revision is ambiguous".to_string()));
++        }
++        let execution = record.provider_observation.as_ref()
++            .ok_or_else(|| HostBridgeError::State("host operation lacks provider observation".to_string()))?
++            .execution.native_id.as_str();
++        if exchange_revisions.get(execution).map(String::as_str) != Some(revision) {
++            return Err(HostBridgeError::State("terminal host operation does not match Lattice exchange revision".to_string()));
++        }
++    }
++    let report_revisions = verify_reports(plan, &host_revisions, &broker_runs)?;
++    require_digest(&plan.state_root.join("operation-ledger/operations.sqlite"), &plan.expected_host_ledger_blake3)?;
++    require_lattice_evidence(plan)?;
++    Ok(VerifiedExternalState { exchange_revisions, report_revisions })
++}
++
++fn directory_digest(root: &Path) -> Result<blake3::Hash> {
++    if !std::fs::symlink_metadata(root)
++        .map_err(|error| HostBridgeError::Io(format!("inspect preserved report root: {error}")))?
++        .is_dir()
++    {
++        return Err(HostBridgeError::State("preserved report root is not a directory".to_string()));
++    }
++    let mut files = BTreeMap::new();
++    for entry in std::fs::read_dir(root)
++        .map_err(|error| HostBridgeError::Io(format!("read preserved report root: {error}")))?
++    {
++        let entry = entry.map_err(|error| HostBridgeError::Io(format!("preserved report entry: {error}")))?;
++        let name = entry.file_name().into_string()
++            .map_err(|_| HostBridgeError::State("preserved report name is not UTF-8".to_string()))?;
++        if files.insert(name, entry.path()).is_some() || files.len() > MAXIMUM_REPORT_FILES {
++            return Err(HostBridgeError::State("preserved report inventory is ambiguous or unbounded".to_string()));
++        }
++    }
++    let mut hasher = blake3::Hasher::new();
++    for (name, path) in files {
++        let digest = digest_file(&path)?;
++        hasher.update(&(name.len() as u64).to_be_bytes());
++        hasher.update(name.as_bytes());
++        hasher.update(digest.to_hex().as_bytes());
++    }
++    Ok(hasher.finalize())
++}
++
++fn read_report(path: &Path) -> Result<Vec<u8>> {
++    let mut bytes = Vec::new();
++    open_regular(path)?
++        .take((MAXIMUM_REPORT_JSON_BYTES + 1) as u64)
++        .read_to_end(&mut bytes)
++        .map_err(|error| HostBridgeError::Io(format!("read published report: {error}")))?;
++    if bytes.len() > MAXIMUM_REPORT_JSON_BYTES {
++        return Err(HostBridgeError::State("published report exceeds its byte bound".to_string()));
++    }
++    Ok(bytes)
++}
++
++fn verify_reports(
++    plan: &RetirementPlan,
++    host_revisions: &BTreeSet<String>,
++    broker_runs: &BTreeMap<String, Value>,
++) -> Result<BTreeSet<String>> {
++    let mut report_revisions = BTreeSet::new();
++    let mut report_evidence = BTreeMap::<String, (String, blake3::Hash, blake3::Hash, bool)>::new();
++    let mut log_names = BTreeSet::new();
++    let mut report_names = BTreeSet::new();
++    if !std::fs::symlink_metadata(&plan.report_namespace)
++        .map_err(|error| HostBridgeError::Io(format!("inspect published report root: {error}")))?
++        .is_dir()
++    {
++        return Err(HostBridgeError::State("published report root is not a directory".to_string()));
++    }
++    let entries = std::fs::read_dir(&plan.report_namespace)
++        .map_err(|error| HostBridgeError::Io(format!("open report namespace: {error}")))?;
++    for entry in entries {
++        let entry = entry.map_err(|error| HostBridgeError::Io(format!("report entry: {error}")))?;
++        let name = entry.file_name().into_string()
++            .map_err(|_| HostBridgeError::State("report name is not UTF-8".to_string()))?;
++        if report_names.len() + log_names.len() >= MAXIMUM_REPORT_FILES {
++            return Err(HostBridgeError::State("report inventory exceeds its bound".to_string()));
++        }
++        if !entry.file_type().map_err(|error| HostBridgeError::Io(format!("report file type: {error}")))?.is_file() {
++            return Err(HostBridgeError::State("report inventory contains a non-file".to_string()));
++        }
++        if let Some(stem) = name.strip_suffix(".json") {
++            report_names.insert(stem.to_string());
++            let report_bytes = read_report(&entry.path())?;
++            let report_digest = blake3::hash(&report_bytes);
++            let value: Value = serde_json::from_slice(&report_bytes)
++                .map_err(|error| HostBridgeError::State(format!("decode report: {error}")))?;
++            if value["run_identity"].as_str().and_then(|id| id.strip_prefix("b3:")) != Some(stem)
++                || value["repository"].as_str() != Some(&plan.repository)
++                || !matches!(value["outcome"].as_str(), Some("success" | "failure"))
++            {
++                return Err(HostBridgeError::State("published report identity or outcome is invalid".to_string()));
++            }
++            let revision = value["revision"].as_str()
++                .ok_or_else(|| HostBridgeError::State("published report lacks revision".to_string()))?;
++            if !report_revisions.insert(revision.to_string()) {
++                return Err(HostBridgeError::State("multiple reports name one revision".to_string()));
++            }
++            let log_digest = digest_file(&plan.report_namespace.join(format!("{stem}.log")))?;
++            if value["log_blake3"].as_str() != Some(log_digest.to_hex().as_str()) {
++                return Err(HostBridgeError::State("published report log digest differs".to_string()));
++            }
++            report_evidence.insert(revision.to_string(), (
++                stem.to_string(), report_digest, log_digest, value["outcome"] == "success",
++            ));
++        } else if let Some(stem) = name.strip_suffix(".log") {
++            log_names.insert(stem.to_string());
++        } else {
++            return Err(HostBridgeError::State("report namespace contains an unrecognized artifact".to_string()));
++        }
++    }
++    if report_names != log_names || !host_revisions.is_subset(&report_revisions) {
++        return Err(HostBridgeError::State("published reports do not cover all terminal host operations".to_string()));
++    }
++    if std::fs::canonicalize(&plan.report_namespace)
++        .map_err(|error| HostBridgeError::Io(format!("resolve published report root: {error}")))?
++        == std::fs::canonicalize(&plan.preserved_report_root)
++            .map_err(|error| HostBridgeError::Io(format!("resolve preserved report root: {error}")))?
++        || directory_digest(&plan.preserved_report_root)?.to_hex().as_str()
++            != plan.expected_preserved_report_root_blake3
++    {
++        return Err(HostBridgeError::State("preserved report root is not a separate verified backup".to_string()));
++    }
++    let approved: BTreeSet<_> = plan.approved_unlinked_reports.iter().map(|item| item.revision.clone()).collect();
++    if approved.len() != plan.approved_unlinked_reports.len()
++        || report_revisions.difference(host_revisions).cloned().collect::<BTreeSet<_>>() != approved
++    {
++        return Err(HostBridgeError::State("unlinked published reports lack archived evidence".to_string()));
++    }
++    for evidence in &plan.approved_unlinked_reports {
++        let Some((stem, report_digest, log_digest, succeeded)) = report_evidence.get(&evidence.revision) else {
++            return Err(HostBridgeError::State("approved report revision is absent".to_string()));
++        };
++        let Some(run) = broker_runs.get(&evidence.broker_run_id) else {
++            return Err(HostBridgeError::State("approved historical broker run is absent".to_string()));
++        };
++        if run["whence"]["Branch"]["commit"].as_str() != Some(evidence.revision.as_str())
++            || run["job_id"].as_str() != Some(evidence.broker_job_id.as_str())
++            || run["repo_id"].as_str() != Some(plan.repository.as_str())
++            || run["result"].as_str() != Some(if *succeeded { "success" } else { "failure" })
++            || run["adapter_run_id"]["id"].as_str().is_none_or(str::is_empty)
++        {
++            return Err(HostBridgeError::State("historical broker run does not corroborate published revision and outcome".to_string()));
++        }
++        verify_historical_origin(plan, evidence, run)?;
++        if report_digest.to_hex().as_str() != evidence.report_blake3
++            || log_digest.to_hex().as_str() != evidence.log_blake3
++            || digest_file(&plan.preserved_report_root.join(format!("{stem}.json")))?.to_hex().as_str()
++                != evidence.report_blake3
++            || digest_file(&plan.preserved_report_root.join(format!("{stem}.log")))?.to_hex().as_str()
++                != evidence.log_blake3
++        {
++            return Err(HostBridgeError::State("archived unlinked report evidence differs from published bytes".to_string()));
++        }
++    }
++    Ok(report_revisions)
++}
++
++fn verify_historical_origin(plan: &RetirementPlan, evidence: &ArchivedReportEvidence, run: &Value) -> Result<()> {
++    let adapter_id = run["adapter_run_id"]["id"].as_str()
++        .ok_or_else(|| HostBridgeError::State("historical broker adapter run is absent".to_string()))?;
++    match &evidence.origin {
++        HistoricalReportOrigin::Legacy { report, log, report_blake3, log_blake3 } => {
++            let Some(rid) = plan.repository.strip_prefix("rad:") else {
++                return Err(HostBridgeError::State("historical legacy repository lacks Radicle RID".to_string()));
++            };
++            if !adapter_id.starts_with("kiln-")
++                || adapter_id.starts_with("kiln-aspen-")
++                || !adapter_id.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
++                || report.file_name().and_then(|name| name.to_str()) != Some(format!("{adapter_id}.json").as_str())
++                || log.file_name().and_then(|name| name.to_str()) != Some(format!("{adapter_id}.log").as_str())
++                || report.parent() != log.parent()
++                || run["adapter_info_url"].as_str()
++                    != Some(format!("https://ci.onix.computer/reports/{rid}/{adapter_id}.log").as_str())
++            {
++                return Err(HostBridgeError::State("historical legacy broker URL or artifact lineage is inconsistent".to_string()));
++            }
++            let bytes = read_report(report)?;
++            let legacy: Value = serde_json::from_slice(&bytes)
++                .map_err(|error| HostBridgeError::State(format!("decode historical legacy report: {error}")))?;
++            if legacy["schema"].as_str() != Some("onix.radicle-ci-report.v1")
++                || legacy["run_id"].as_str() != Some(adapter_id)
++                || legacy["repository"].as_str() != Some(plan.repository.as_str())
++                || legacy["revision"].as_str() != Some(evidence.revision.as_str())
++                || legacy["result"].as_str() != run["result"].as_str()
++                || blake3::hash(&bytes).to_hex().as_str() != report_blake3
++                || digest_file(log)?.to_hex().as_str() != log_blake3
++            {
++                return Err(HostBridgeError::State("historical legacy report and log do not corroborate the terminal broker run".to_string()));
++            }
++        }
++        HistoricalReportOrigin::Aspen { operation_ledger, expected_ledger_blake3 } => {
++            if !adapter_id.starts_with("kiln-aspen-run-") {
++                return Err(HostBridgeError::State("historical Aspen origin names a non-Aspen broker run".to_string()));
++            }
++            verify_archived_host_receipt(&plan.repository, evidence, adapter_id, operation_ledger, expected_ledger_blake3, run)?;
++        }
++    }
++    Ok(())
++}
++
++fn verify_archived_host_receipt(
++    repository: &str,
++    evidence: &ArchivedReportEvidence,
++    adapter_id: &str,
++    path: &Path,
++    expected_digest: &str,
++    broker_run: &Value,
++) -> Result<()> {
++    for suffix in ["-wal", "-shm", "-journal"] {
++        let mut sidecar = path.as_os_str().to_os_string();
++        sidecar.push(suffix);
++        match std::fs::symlink_metadata(&sidecar) {
++            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
++            Ok(_) => return Err(HostBridgeError::State("historical host ledger has unaccounted SQLite sidecar".to_string())),
++            Err(error) => return Err(HostBridgeError::Io(format!("inspect historical host ledger sidecar: {error}"))),
++        }
++    }
++    require_digest(path, expected_digest)?;
++    let ledger = rusqlite::Connection::open_with_flags(
++        path, OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
++    ).map_err(|error| HostBridgeError::State(format!("open historical host ledger read-only: {error}")))?;
++    let integrity: String = ledger.query_row("PRAGMA quick_check", [], |row| row.get(0))
++        .map_err(|error| HostBridgeError::State(format!("check historical host ledger: {error}")))?;
++    let schema: String = ledger.query_row("SELECT value FROM metadata WHERE key = 'schema'", [], |row| row.get(0))
++        .map_err(|error| HostBridgeError::State(format!("read historical host ledger schema: {error}")))?;
++    if integrity != "ok" || schema != "kiln.aspen-host.operation-ledger.v1" {
++        return Err(HostBridgeError::State("historical host ledger integrity or schema differs".to_string()));
++    }
++    let mut statement = ledger.prepare(
++        "SELECT operation_key, record_json, record_hash FROM operations ORDER BY operation_key LIMIT 257",
++    ).map_err(|error| HostBridgeError::State(format!("scan historical host ledger: {error}")))?;
++    let rows = statement.query_map([], |row| {
++        Ok((row.get::<_, String>(0)?, row.get::<_, Vec<u8>>(1)?, row.get::<_, String>(2)?))
++    }).map_err(|error| HostBridgeError::State(format!("read historical host ledger: {error}")))?;
++    let mut seen = 0;
++    let mut matched = false;
++    for row in rows {
++        seen += 1;
++        if seen > MAXIMUM_REPORT_FILES {
++            return Err(HostBridgeError::State("historical host ledger exceeds its record bound".to_string()));
++        }
++        let (key, bytes, digest) = row
++            .map_err(|error| HostBridgeError::State(format!("decode historical host record row: {error}")))?;
++        if bytes.len() > MAXIMUM_REPORT_JSON_BYTES || blake3::hash(&bytes).to_hex().as_str() != digest {
++            return Err(HostBridgeError::State("historical host receipt record is oversized or changed".to_string()));
++        }
++        let record: DurableOperationRecord = serde_json::from_slice(&bytes)
++            .map_err(|error| HostBridgeError::State(format!("decode historical host receipt: {error}")))?;
++        record.validate().map_err(HostBridgeError::State)?;
++        if serde_json::to_string(&record.ingress.operation_id).ok().as_deref() != Some(key.as_str()) {
++            return Err(HostBridgeError::State("historical host receipt key differs from its operation".to_string()));
++        }
++        let (Some(ack), Some(observation)) = (
++            record.acknowledgement.as_ref(), record.provider_observation.as_ref(),
++        ) else {
++            return Err(HostBridgeError::State("historical host ledger contains an unobserved or unacknowledged operation".to_string()));
++        };
++        let truthful_result = match ack.decision {
++            kiln_adapter_aspen::transport::AspenServiceDecision::Completed => {
++                observation.successful && observation.outcome == kiln_core::domain::Outcome::Success
++            }
++            kiln_adapter_aspen::transport::AspenServiceDecision::Failed => {
++                !observation.successful && observation.outcome.is_terminal()
++                    && observation.outcome != kiln_core::domain::Outcome::Success
++            }
++            _ => false,
++        };
++        if record.state != DurableOperationState::Terminal || record.effect_intent.is_none()
++            || !observation.state.is_terminal() || !truthful_result
++        {
++            return Err(HostBridgeError::State("historical host ledger has nonterminal or false-success receipt".to_string()));
++        }
++        if ack.run_id.as_ref().is_some_and(|id| id.as_str() == adapter_id) {
++            let result_matches = match broker_run["result"].as_str() {
++                Some("success") => ack.decision == kiln_adapter_aspen::transport::AspenServiceDecision::Completed,
++                Some("failure") => ack.decision == kiln_adapter_aspen::transport::AspenServiceDecision::Failed,
++                _ => false,
++            };
++            if matched || !result_matches
++                || record.ingress.trigger.repository.native_id.as_str() != repository
++                || record.ingress.trigger.after.native_id.as_str() != evidence.revision
++            {
++                return Err(HostBridgeError::State("historical Aspen broker run conflicts with archived terminal host receipt".to_string()));
++            }
++            matched = true;
++        }
++    }
++    if !matched {
++        return Err(HostBridgeError::State("historical Aspen broker run lacks matching archived host receipt".to_string()));
++    }
++    drop(statement);
++    drop(ledger);
++    require_digest(path, expected_digest)
++}
++
++pub fn retire_native(cohort: HostCohort, verified: VerifiedExternalState, native_snapshot: &VerifiedNativeJournal) -> Result<()> {
++    let operations = require_terminal_host_operations(&cohort)?;
++    if operations.len() != verified.exchange_revisions.len()
++        || verified.report_revisions.len() < operations.len()
++    {
++        return Err(HostBridgeError::State("retirement inventory changed before native transition".to_string()));
++    }
++    native_snapshot.require_same_instance(&cohort)?;
++    let mut service = cohort.open_service()?;
++    let instance = service.instance()
++        .map_err(|error| HostBridgeError::State(format!("native retirement instance: {error:?}")))?;
++    if instance != native_snapshot.latest_instance {
++        return Err(HostBridgeError::State("recovered native instance differs from journal snapshot".to_string()));
++    }
++    let phase = instance.lifecycle.phase;
++    require_retirability(&instance)?;
++    if phase == LifecyclePhase::Running {
++        let drain_tick = cohort.ledger.lock()
++            .map_err(|_| HostBridgeError::State("retirement ledger lock unavailable".to_string()))?
++            .next_logical_tick()?;
++        service.drain(drain_tick)
++            .map_err(|error| HostBridgeError::State(format!("explicit native drain: {error:?}")))?;
++        let drained = service.instance()
++            .map_err(|error| HostBridgeError::State(format!("read drained native instance: {error:?}")))?;
++        if drained.lifecycle.phase != LifecyclePhase::Drained || drained.is_accepting_ingress
++            || !drained.unresolved.is_empty() || !drained.usage.is_idle()
++        {
++            return Err(HostBridgeError::State("native drain did not reach idle Drained with closed ingress".to_string()));
++        }
++    }
++    if phase != LifecyclePhase::Stopped {
++        let shutdown_tick = cohort.ledger.lock()
++            .map_err(|_| HostBridgeError::State("retirement ledger lock unavailable".to_string()))?
++            .next_logical_tick()?;
++        service.stop(shutdown_tick)
++            .map_err(|error| HostBridgeError::State(format!("explicit native shutdown: {error:?}")))?;
++        let stopped = service.instance()
++            .map_err(|error| HostBridgeError::State(format!("read stopped native instance: {error:?}")))?;
++        if stopped.lifecycle.phase != LifecyclePhase::Stopped || stopped.is_accepting_ingress
++            || !stopped.unresolved.is_empty() || !stopped.usage.is_idle()
++        {
++            return Err(HostBridgeError::State("native shutdown did not reach idle Stopped with closed ingress".to_string()));
++        }
++    }
++    service.remove()
++        .map_err(|error| HostBridgeError::State(format!("explicit native removal: {error:?}")))?;
++    if service.host().state().phase != LifecyclePhase::Removed
++        || service.instance().map_err(|error| HostBridgeError::State(format!("read retired native instance: {error:?}")))?.is_accepting_ingress
++    {
++        return Err(HostBridgeError::State("native retirement did not persist Removed".to_string()));
++    }
++    println!("native instance retired: phase=removed, restart_attempts={}, host_operations={}, lattice_exchanges={}, published_reports={}; existing state root preserved", instance.lifecycle.restart_attempts, operations.len(), verified.exchange_revisions.len(), verified.report_revisions.len());
++    Ok(())
++}
++
++fn require_retirability(instance: &molten::system_extension::NativeInstanceRecord) -> Result<()> {
++    let phase = instance.lifecycle.phase;
++    if !matches!(phase, LifecyclePhase::Running | LifecyclePhase::Drained | LifecyclePhase::Stopped)
++        || instance.lifecycle.restart_attempts != MAX_RESTART_ATTEMPTS
++        || !instance.unresolved.is_empty()
++        || !instance.usage.is_idle()
++        || (phase != LifecyclePhase::Running && instance.is_accepting_ingress)
++    {
++        return Err(HostBridgeError::State(
++            "retirement requires exhausted Running, Drained, or Stopped native instance with no unresolved work, closed durable ingress after drain, and idle resources".to_string(),
++        ));
++    }
++    Ok(())
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn only_failed_host_without_main_control_process_or_cgroup_is_stopped() {
++        let stopped = "LoadState=loaded\nActiveState=inactive\nSubState=dead\nMainPID=0\nControlPID=0\nControlGroup=\n";
++        assert!(stopped_unit_status(stopped, false));
++        let failed_host = stopped
++            .replace("ActiveState=inactive", "ActiveState=failed")
++            .replace("SubState=dead", "SubState=failed");
++        assert!(stopped_unit_status(&failed_host, true));
++        assert!(!stopped_unit_status(&failed_host, false));
++        for bad in [
++            stopped.replace("SubState=dead", "SubState=failed"),
++            stopped.replace("MainPID=0", "MainPID=412"),
++            stopped.replace("ControlPID=0", "ControlPID=413"),
++            stopped.replace("ControlGroup=", "ControlGroup=/system.slice/kiln-aspen-ci-host.service"),
++            failed_host.replace("MainPID=0", "MainPID=412"),
++            failed_host.replace("ControlPID=0", "ControlPID=413"),
++            failed_host.replace("ControlGroup=", "ControlGroup=/system.slice/kiln-aspen-ci-host.service"),
++        ] {
++            assert!(!stopped_unit_status(&bad, true));
++        }
++    }
++
++    #[test]
++    fn socket_sidecar_symlink_and_changed_digest_block_retirement_evidence() {
++        let directory = tempfile::tempdir().expect("isolated retirement fixture");
++        let socket = directory.path().join("ingress.sock");
++        require_socket_absent(&socket).expect("absent ingress socket");
++        let listener = std::os::unix::net::UnixListener::bind(&socket).expect("fixture ingress");
++        assert!(require_socket_absent(&socket).is_err());
++        drop(listener);
++        std::fs::remove_file(&socket).expect("unlink fixture ingress");
++        let database = directory.path().join("broker.sqlite");
++        std::fs::write(&database, vec![12u8; 1_048_577]).expect("large SQLite evidence");
++        let digest = digest_file(&database).expect("stream digest");
++        require_digest(&database, digest.to_hex().as_str()).expect("unchanged digest");
++        assert!(require_digest(&database, &blake3::hash(b"other").to_hex().to_string()).is_err());
++        std::fs::write(directory.path().join("broker.sqlite-wal"), b"unaccounted")
++            .expect("fixture sidecar");
++        assert!(require_broker_exclusive(&database).is_err());
++        let link = directory.path().join("database-link.sqlite");
++        std::os::unix::fs::symlink(&database, &link).expect("fixture symlink");
++        assert!(require_digest(&link, digest.to_hex().as_str()).is_err());
++    }
++
++    #[test]
++    fn archived_aspen_receipt_requires_matching_run_revision_and_failure_without_sidecars() {
++        use kiln_adapter_aspen::protocol::{AspenEffectKind, CallbackEffectPlan, CALLBACK_EFFECT_SCHEMA};
++        use kiln_adapter_aspen::transport::{
++            AspenServiceAck, AspenServiceDecision, AspenServiceIngress, IngressSource,
++            SERVICE_ACK_SCHEMA, SERVICE_INGRESS_SCHEMA, canonical_trigger_identity,
++        };
++        use kiln_core::domain::Outcome;
++        use kiln_core::types::{
++            AttemptId, CandidateId, ContentId, EffectId, ExternalRef, PipelineRevisionId,
++            PolicyId, ProviderProfileId, RunId,
++        };
++        use kiln_core::workflow::{WorkflowObservation, WorkflowState};
++        use kiln_provider_api::{TriggerEventKind, TriggerRequest};
++        use crate::durability::{DurableEffectIntent, DurableOperationRecord};
++
++        let directory = tempfile::tempdir().expect("isolated archived Aspen receipt");
++        let path = directory.path().join("archived-operations.sqlite");
++        let repository = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
++        let revision = "52513bb8b6e9a1bee7f3ae2984a4b541664f49ed";
++        let adapter_id = "kiln-aspen-run-historical";
++        let reference = |kind, value| ExternalRef::new("radicle", kind, value)
++            .expect("typed archival reference");
++        let trigger = TriggerRequest {
++            repository: reference("repository", repository),
++            actor: reference("actor", "did:key:fixture"),
++            before: None,
++            after: reference("revision", revision),
++            branch: None,
++            patch: None,
++            event: TriggerEventKind::Push,
++        };
++        let ingress = AspenServiceIngress {
++            schema: SERVICE_INGRESS_SCHEMA.to_string(),
++            source: IngressSource::Radicle,
++            service_id: "kiln.aspen".to_string(),
++            generation: 1,
++            profile_identity: ContentId::from_blake3_hex(&"a".repeat(64))
++                .expect("fixture profile identity"),
++            alpn: "kiln".to_string(),
++            framing: "json".to_string(),
++            operation_id: reference("operation", "old-cohort"),
++            idempotency_key: reference("idempotency", "old-cohort"),
++            authority_ref: "authority".to_string(),
++            resource_ref: "resource".to_string(),
++            trigger_identity: canonical_trigger_identity(&trigger, 4096)
++                .expect("canonical historical trigger"),
++            trigger,
++        };
++        let reserved = DurableOperationRecord::reserve(ingress).expect("reserve old cohort");
++        let effect_id = EffectId::new("old-effect").expect("effect identity");
++        let provider_profile = ProviderProfileId::new("lattice").expect("provider profile");
++        let intent = DurableEffectIntent {
++            callback_receipt_ref: "blake3:archived-callback".to_string(),
++            binding_ref: "blake3:archived-binding".to_string(),
++            port_id: "lattice".to_string(),
++            port_version: "v1".to_string(),
++            request_ref: "blake3:archived-request".to_string(),
++            generation: reserved.ingress.generation,
++            output_schema_ref: "blake3:archived-output".to_string(),
++            plan: CallbackEffectPlan {
++                schema: CALLBACK_EFFECT_SCHEMA.to_string(),
++                effect_id: effect_id.clone(),
++                kind: AspenEffectKind::TransportSession,
++                provider_profile: provider_profile.clone(),
++                operation_id: reserved.ingress.operation_id.clone(),
++                idempotency_key: reserved.ingress.idempotency_key.clone(),
++                request_identity: reserved.ingress.trigger_identity.clone(),
++                generation: reserved.ingress.generation,
++                authority_ref: reserved.ingress.authority_ref.clone(),
++                resource_ref: reserved.ingress.resource_ref.clone(),
++            },
++        };
++        let observed = WorkflowObservation {
++            effect_id,
++            attempt_id: AttemptId::new("old-attempt").expect("attempt identity"),
++            candidate_id: CandidateId::new("old-candidate").expect("candidate identity"),
++            pipeline_revision_id: PipelineRevisionId::new("old-pipeline").expect("pipeline identity"),
++            workflow_policy_id: PolicyId::new("old-policy").expect("policy identity"),
++            provider_profile,
++            idempotency_key: reserved.ingress.trigger_identity.clone(),
++            workflow: reference("workflow", "old-workflow"),
++            execution: reference("execution", "old-execution"),
++            sequence: 1,
++            state: WorkflowState::Failed,
++            terminal: true,
++            successful: false,
++            outcome: Outcome::DomainFailure,
++            nodes: Vec::new(),
++            logs: Vec::new(),
++            receipt: None,
++        };
++        let ack = AspenServiceAck {
++            schema: SERVICE_ACK_SCHEMA.to_string(),
++            operation_id: reserved.ingress.operation_id.clone(),
++            generation: reserved.ingress.generation,
++            trigger_identity: reserved.ingress.trigger_identity.clone(),
++            run_id: Some(RunId::new(adapter_id).expect("archived adapter run")),
++            decision: AspenServiceDecision::Failed,
++            receipt_ref: reference("receipt", "historical-failure"),
++        };
++        let record = reserved
++            .with_callback_receipt(&intent.callback_receipt_ref).expect("callback receipt")
++            .with_dispatch_intent(intent).expect("dispatch")
++            .with_provider_observation(observed).expect("terminal observation")
++            .with_acknowledgement(ack).expect("terminal Aspen acknowledgement");
++        let bytes = serde_json::to_vec(&record).expect("archived terminal receipt");
++        let ledger = rusqlite::Connection::open(&path).expect("isolated archival ledger");
++        ledger.execute_batch(
++            "CREATE TABLE metadata(key TEXT PRIMARY KEY, value TEXT);\
++             CREATE TABLE operations(operation_key TEXT PRIMARY KEY, record_json BLOB, record_hash TEXT);\
++             INSERT INTO metadata(key, value) VALUES ('schema', 'kiln.aspen-host.operation-ledger.v1');",
++        ).expect("historical ledger schema");
++        ledger.execute(
++            "INSERT INTO operations(operation_key, record_json, record_hash) VALUES (?1, ?2, ?3)",
++            rusqlite::params![
++                serde_json::to_string(&record.ingress.operation_id).expect("old operation key"),
++                bytes,
++                blake3::hash(&bytes).to_hex().to_string(),
++            ],
++        ).expect("archived host receipt");
++        drop(ledger);
++        let digest = digest_file(&path).expect("archived ledger digest").to_hex().to_string();
++        let evidence = ArchivedReportEvidence {
++            revision: revision.to_string(),
++            report_blake3: blake3::hash(b"historical report").to_hex().to_string(),
++            log_blake3: blake3::hash(b"historical log").to_hex().to_string(),
++            broker_run_id: "historical-broker-run".to_string(),
++            broker_job_id: "historical-job".to_string(),
++            origin: HistoricalReportOrigin::Aspen {
++                operation_ledger: path.clone(),
++                expected_ledger_blake3: digest.clone(),
++            },
++        };
++        let failure = serde_json::json!({ "result": "failure" });
++        verify_archived_host_receipt(repository, &evidence, adapter_id, &path, &digest, &failure)
++            .expect("exact failed historical Aspen receipt");
++        assert!(verify_archived_host_receipt(
++            repository, &evidence, "kiln-aspen-run-forged", &path, &digest, &failure,
++        ).is_err());
++        let mut wrong_revision = evidence.clone();
++        wrong_revision.revision = "forged-revision".to_string();
++        assert!(verify_archived_host_receipt(
++            repository, &wrong_revision, adapter_id, &path, &digest, &failure,
++        ).is_err());
++        assert!(verify_archived_host_receipt(
++            repository, &evidence, adapter_id, &path, &digest,
++            &serde_json::json!({ "result": "success" }),
++        ).is_err());
++        let sidecar = directory.path().join("archived-operations.sqlite-wal");
++        std::fs::write(&sidecar, b"unaccounted").expect("unaccounted archived host WAL");
++        assert!(verify_archived_host_receipt(
++            repository, &evidence, adapter_id, &path, &digest, &failure,
++        ).is_err());
++        std::fs::remove_file(&sidecar).expect("remove own isolated fixture WAL");
++        let mut false_success = record.clone();
++        let observation = false_success.provider_observation.as_mut()
++            .expect("archived provider observation");
++        observation.state = WorkflowState::Completed;
++        observation.successful = true;
++        observation.outcome = Outcome::Success;
++        assert!(false_success.validate().is_ok());
++        let forged_bytes = serde_json::to_vec(&false_success).expect("forged success receipt");
++        let ledger = rusqlite::Connection::open(&path).expect("reopen isolated archived ledger");
++        ledger.execute(
++            "UPDATE operations SET record_json = ?1, record_hash = ?2 WHERE operation_key = ?3",
++            rusqlite::params![
++                forged_bytes,
++                blake3::hash(&forged_bytes).to_hex().to_string(),
++                serde_json::to_string(&record.ingress.operation_id).expect("old operation key"),
++            ],
++        ).expect("forge locally consistent but false-success history");
++        drop(ledger);
++        let forged_digest = digest_file(&path).expect("forged ledger digest").to_hex().to_string();
++        assert!(verify_archived_host_receipt(
++            repository, &evidence, adapter_id, &path, &forged_digest, &failure,
++        ).is_err());
++    }
++}
+diff --git a/src/runtime.rs b/src/runtime.rs
+index 814bc89..fecfa60 100644
+--- a/src/runtime.rs
++++ b/src/runtime.rs
+@@ -6,6 +6,7 @@ use kiln_adapter_aspen::transport::{
+     ServiceTransportOutcome,
+ };
+ use kiln_core::types::ExternalRef;
++use molten::system_extension::LifecyclePhase;
+ 
+ use crate::cohort::{HostCohort, HostService};
+ use crate::durability::{HostStateMode, OperationLedger};
+@@ -53,6 +54,20 @@ impl KilnAspenHostRuntime {
+                 })?;
+             }
+             HostStateMode::Recovered => {
++                let lifecycle = service.host().state();
++                let maximum_restart_attempts =
++                    cohort.admitted.manifest().resources.max_restart_attempts;
++                if recovery_blocked(
++                    lifecycle.phase,
++                    lifecycle.restart_attempts,
++                    maximum_restart_attempts,
++                ) {
++                    return Err(HostBridgeError::RecoveryBlocked {
++                        phase: lifecycle.phase.as_str(),
++                        restart_attempts: lifecycle.restart_attempts,
++                        maximum_restart_attempts,
++                    });
++                }
+                 let restart_tick = next_tick(&ledger)?;
+                 service.restart(restart_tick).map_err(|error| {
+                     HostBridgeError::State(format!("restart recovered native service: {error:?}"))
+@@ -83,6 +98,16 @@ impl KilnAspenHostRuntime {
+     }
+ }
+ 
++fn recovery_blocked(
++    phase: LifecyclePhase,
++    restart_attempts: u64,
++    maximum_restart_attempts: u64,
++) -> bool {
++    phase == LifecyclePhase::Quarantined
++        || matches!(phase, LifecyclePhase::Running | LifecyclePhase::Failed)
++            && restart_attempts >= maximum_restart_attempts
++}
++
+ impl AspenServiceTransport for KilnAspenHostRuntime {
+     // r[impl kiln.aspen_host.transport]
+     fn submit(
+diff --git a/tests/hosted/recovery.rs b/tests/hosted/recovery.rs
+index 7702f25..7c02143 100644
+--- a/tests/hosted/recovery.rs
++++ b/tests/hosted/recovery.rs
+@@ -1,4 +1,9 @@
+ use super::*;
++use kiln_adapter_aspen::profile::AdmittedAspenRuntimeProfile;
++use kiln_aspen_host::error::HostBridgeError;
++use kiln_aspen_host::recovery_preflight;
++use kiln_aspen_host::retirement;
++use lattice_redb::TableDefinition;
+ 
+ #[derive(Debug)]
+ struct RecoveryOnlyHandler;
+@@ -95,6 +100,13 @@ fn accepted_but_unacknowledged_lattice_work_recovers_without_dispatch() {
+     drop(first_runtime);
+     std::fs::remove_file(&lattice_socket)
+         .unwrap_or_else(|_| unreachable!("remove first Lattice socket"));
++    let uncertain_cohort = HostCohort::build(profile.clone(), &host_paths(&directory))
++        .unwrap_or_else(|error| unreachable!("unresolved durable native cohort: {error}"));
++    assert!(matches!(
++        retirement::require_terminal_host_operations(&uncertain_cohort),
++        Err(HostBridgeError::State(_))
++    ));
++    drop(uncertain_cohort);
+ 
+     let second_listener =
+         UnixListener::bind(&lattice_socket).unwrap_or_else(|_| unreachable!("second listener"));
+@@ -144,3 +156,552 @@ fn accepted_but_unacknowledged_lattice_work_recovers_without_dispatch() {
+         .unwrap_or_else(|_| unreachable!("second server report"));
+     assert_eq!(report.completed_exchanges, TEST_MAXIMUM_CONNECTIONS);
+ }
++
++fn recovery_effects(
++    directory: &tempfile::TempDir,
++    profile: &AdmittedAspenRuntimeProfile,
++    cohort: &HostCohort,
++) -> LatticeEffectPort {
++    let radicle = admit_config(radicle_config(
++        directory.path().join("no-lattice-listener.sock"),
++        directory.path().join("lattice-recovery-budget.sqlite"),
++        nix::unistd::getuid().as_raw(),
++    ))
++    .unwrap_or_else(|_| unreachable!("admitted Radicle fixture"));
++    let transport = UnixWorkflowExchange::new(
++        radicle.shell.socket_path.clone(),
++        radicle.transport,
++        radicle.lattice.contract.clone(),
++        radicle.shell.maximum_replay_records,
++    )
++    .unwrap_or_else(|_| unreachable!("admitted Lattice transport"));
++    let lattice = LatticeAdapter::new(radicle.lattice, transport)
++        .unwrap_or_else(|_| unreachable!("admitted Lattice adapter"));
++    LatticeEffectPort::new(LatticeEffectPortOptions {
++        profile: profile.clone(),
++        radicle: radicle.shell,
++        lattice,
++        values: cohort.values.clone(),
++        ledger: cohort.ledger.clone(),
++        observation_poll_interval: std::time::Duration::from_millis(
++            TEST_OBSERVATION_POLL_INTERVAL_MILLISECONDS,
++        ),
++        observation_pacer: Arc::new(ThreadObservationPacer),
++    })
++    .unwrap_or_else(|_| unreachable!("admitted local effect port"))
++}
++
++#[test]
++fn exhausted_native_restart_budget_blocks_recovered_host_without_losing_state() {
++    let directory = tempfile::tempdir().unwrap_or_else(|_| unreachable!("temporary directory"));
++    let profile = admit_profile(&profile_fixture())
++        .unwrap_or_else(|_| unreachable!("Aspen profile"));
++
++    for admission in 0..=3 {
++        let journal_path = directory.path().join("native-journal/fabric-durability.redb");
++        let ledger_path = directory.path().join("operation-ledger/operations.sqlite");
++        let before = (admission > 0).then(|| {
++            (
++                blake3::hash(&std::fs::read(&journal_path)
++                    .unwrap_or_else(|_| unreachable!("existing native journal"))),
++                blake3::hash(&std::fs::read(&ledger_path)
++                    .unwrap_or_else(|_| unreachable!("existing operation ledger"))),
++            )
++        });
++        let preflight = recovery_preflight::check(directory.path());
++        if admission == 3 {
++            assert_eq!(preflight, Err(HostBridgeError::RecoveryBlocked {
++                phase: "running",
++                restart_attempts: 2,
++                maximum_restart_attempts: 2,
++            }));
++        } else {
++            preflight.unwrap_or_else(|error| unreachable!("allowed native preflight: {error}"));
++        }
++        let status = std::process::Command::new(env!("CARGO_BIN_EXE_kiln-aspen-host"))
++            .arg("--preflight")
++            .arg("--state-root")
++            .arg(directory.path())
++            .status()
++            .unwrap_or_else(|_| unreachable!("isolated host preflight binary"));
++        assert_eq!(status.code(), Some(if admission == 3 { 78 } else { 0 }));
++        if let Some((journal_hash, ledger_hash)) = before {
++            assert_eq!(blake3::hash(&std::fs::read(&journal_path)
++                .unwrap_or_else(|_| unreachable!("unchanged native journal"))), journal_hash);
++            assert_eq!(blake3::hash(&std::fs::read(&ledger_path)
++                .unwrap_or_else(|_| unreachable!("unchanged operation ledger"))), ledger_hash);
++        }
++        let cohort = HostCohort::build(profile.clone(), &host_paths(&directory))
++            .unwrap_or_else(|error| unreachable!("durable native cohort: {error}"));
++        let effects = recovery_effects(&directory, &profile, &cohort);
++        if admission < 3 {
++            let result = KilnAspenHostRuntime::start(cohort, effects);
++            let mut runtime = result.unwrap_or_else(|error| {
++                unreachable!("fresh and two supervised recoveries succeed: {error}")
++            });
++            runtime.shutdown().unwrap_or_else(|error| {
++                unreachable!("durable native checkpoint: {error}")
++            });
++        } else {
++            let ledger = cohort.ledger.clone();
++            let tick_before = ledger.lock()
++                .unwrap_or_else(|_| unreachable!("local operation ledger lock"))
++                .logical_tick()
++                .unwrap_or_else(|_| unreachable!("durable logical tick"));
++            let journal = cohort.journal.clone();
++            let native_log_before = {
++                let journal = journal.lock()
++                    .unwrap_or_else(|_| unreachable!("native journal lock before denial"));
++                let log = &journal.adapter().state().durable_log;
++                (log.len(), log.last().cloned())
++            };
++            assert!(native_log_before.1.is_some());
++            let lattice_listener = UnixListener::bind(directory.path().join("no-lattice-listener.sock"))
++                .unwrap_or_else(|_| unreachable!("isolated Lattice exchange listener"));
++            lattice_listener.set_nonblocking(true)
++                .unwrap_or_else(|_| unreachable!("nonblocking exchange listener"));
++            let result = KilnAspenHostRuntime::start(cohort, effects);
++            assert_eq!(
++                result.unwrap_err(),
++                HostBridgeError::RecoveryBlocked {
++                    phase: "running",
++                    restart_attempts: 2,
++                    maximum_restart_attempts: 2,
++                }
++            );
++            let native_log_after = {
++                let journal = journal.lock()
++                    .unwrap_or_else(|_| unreachable!("native journal lock after denial"));
++                let log = &journal.adapter().state().durable_log;
++                (log.len(), log.last().cloned())
++            };
++            assert_eq!(native_log_after, native_log_before);
++            let tick_after = ledger.lock()
++                .unwrap_or_else(|_| unreachable!("local operation ledger lock"))
++                .logical_tick()
++                .unwrap_or_else(|_| unreachable!("unadvanced durable logical tick"));
++            assert_eq!(tick_after, tick_before);
++            assert_eq!(
++                lattice_listener.accept().unwrap_err().kind(),
++                std::io::ErrorKind::WouldBlock
++            );
++        }
++    }
++
++    let cohort = HostCohort::build(profile.clone(), &host_paths(&directory))
++        .unwrap_or_else(|error| unreachable!("unmodified durable cohort after denial: {error}"));
++    let service = cohort.open_service()
++        .unwrap_or_else(|error| unreachable!("recovered native service after denial: {error}"));
++    assert_eq!(service.host().state().phase, molten::system_extension::LifecyclePhase::Running);
++    assert_eq!(service.host().state().restart_attempts, 2);
++    let instance = service.instance()
++        .unwrap_or_else(|error| unreachable!("canonical native instance: {error:?}"));
++    assert!(instance.unresolved.is_empty());
++    assert!(instance.usage.is_idle());
++    drop(service);
++    let broker_database = directory.path().join("retirement-broker.sqlite");
++    let broker = rusqlite::Connection::open(&broker_database)
++        .unwrap_or_else(|_| unreachable!("isolated broker database"));
++    broker.execute_batch(
++        "CREATE TABLE ci_event_queue (id TEXT PRIMARY KEY, timestamp TEXT, event TEXT);\
++         CREATE TABLE ci_runs (broker_run_id TEXT PRIMARY KEY, json TEXT);"
++    ).unwrap_or_else(|_| unreachable!("empty broker inventory"));
++    drop(broker);
++    let lattice_database = directory.path().join("retirement-lattice.redb");
++    let lattice = lattice_redb::Database::create(&lattice_database)
++        .unwrap_or_else(|_| unreachable!("isolated Lattice database"));
++    let transaction = lattice.begin_write()
++        .unwrap_or_else(|_| unreachable!("create Lattice exchange tables"));
++    {
++        transaction.open_table(TableDefinition::<&str, &[u8]>::new("workflow_exchange_executions_v1"))
++            .unwrap_or_else(|_| unreachable!("execution table"));
++        transaction.open_table(TableDefinition::<&str, &str>::new("workflow_exchange_request_index_v1"))
++            .unwrap_or_else(|_| unreachable!("request index"));
++        transaction.open_table(TableDefinition::<&str, &str>::new("workflow_exchange_idempotency_index_v1"))
++            .unwrap_or_else(|_| unreachable!("idempotency index"));
++    }
++    transaction.commit().unwrap_or_else(|_| unreachable!("persist empty exchange inventory"));
++    drop(lattice);
++    let report_namespace = directory.path().join("retirement-reports");
++    std::fs::create_dir(&report_namespace)
++        .unwrap_or_else(|_| unreachable!("isolated report namespace"));
++    let preserved_report_root = directory.path().join("preserved-retirement-reports");
++    std::fs::create_dir(&preserved_report_root)
++        .unwrap_or_else(|_| unreachable!("isolated preserved report root"));
++    let mut plan = retirement::RetirementPlan {
++        aspen_profile: directory.path().join("runtime-profile.json"),
++        extension: std::path::PathBuf::from(env!("CARGO_BIN_EXE_kiln-aspen-host-extension-fixture")),
++        state_root: directory.path().to_path_buf(),
++        host_socket: directory.path().join("no-aspen-ingress.sock"),
++        lattice_socket: directory.path().join("no-lattice-ingress.sock"),
++        broker_database: broker_database.clone(),
++        lattice_database: lattice_database.clone(),
++        report_namespace,
++        preserved_report_root,
++        repository: "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk".to_string(),
++        expected_native_journal_blake3: blake3::hash(&std::fs::read(
++            directory.path().join("native-journal/fabric-durability.redb")
++        ).unwrap_or_else(|_| unreachable!("native fixture journal"))).to_hex().to_string(),
++        expected_host_ledger_blake3: blake3::hash(&std::fs::read(
++            directory.path().join("operation-ledger/operations.sqlite")
++        ).unwrap_or_else(|_| unreachable!("host ledger fixture"))).to_hex().to_string(),
++        expected_broker_blake3: blake3::hash(&std::fs::read(&broker_database)
++            .unwrap_or_else(|_| unreachable!("broker fixture database"))).to_hex().to_string(),
++        expected_lattice_blake3: blake3::hash(&std::fs::read(&lattice_database)
++            .unwrap_or_else(|_| unreachable!("Lattice fixture database"))).to_hex().to_string(),
++        repaired_lattice: None,
++        expected_preserved_report_root_blake3: blake3::hash(b"").to_hex().to_string(),
++        approved_unlinked_reports: Vec::new(),
++    };
++    let operations = retirement::require_terminal_host_operations(&cohort)
++        .unwrap_or_else(|error| unreachable!("empty terminal host inventory: {error}"));
++    let broker = rusqlite::Connection::open(&plan.broker_database)
++        .unwrap_or_else(|_| unreachable!("isolated broker queue negative case"));
++    broker.execute("INSERT INTO ci_event_queue (id, timestamp, event) VALUES ('pending', '', '')", [])
++        .unwrap_or_else(|_| unreachable!("enqueue isolated broker event"));
++    assert!(retirement::verify_external(&plan, &operations).is_err());
++    broker.execute("DELETE FROM ci_event_queue", [])
++        .unwrap_or_else(|_| unreachable!("clear isolated broker event"));
++    broker.execute(
++        "INSERT INTO ci_runs (broker_run_id, json) VALUES ('active', '{\"state\":\"running\"}')", [],
++    ).unwrap_or_else(|_| unreachable!("start isolated broker lease"));
++    assert!(retirement::verify_external(&plan, &operations).is_err());
++    broker.execute("DELETE FROM ci_runs", [])
++        .unwrap_or_else(|_| unreachable!("clear isolated broker lease"));
++    drop(broker);
++    plan.expected_broker_blake3 = blake3::hash(&std::fs::read(&plan.broker_database)
++        .unwrap_or_else(|_| unreachable!("updated broker evidence"))).to_hex().to_string();
++    assert!(retirement::verify_external(&plan, &operations).is_ok());
++    let sidecar = directory.path().join("retirement-broker.sqlite-wal");
++    std::fs::write(&sidecar, b"unaccounted WAL")
++        .unwrap_or_else(|_| unreachable!("create isolated SQLite sidecar"));
++    assert!(retirement::verify_external(&plan, &operations).is_err());
++    std::fs::remove_file(&sidecar)
++        .unwrap_or_else(|_| unreachable!("remove isolated SQLite sidecar"));
++    let legacy_adapter_id = "kiln-historical-run";
++    let legacy_report_root = directory.path().join("historical-legacy-reports");
++    std::fs::create_dir(&legacy_report_root)
++        .unwrap_or_else(|_| unreachable!("historical legacy report namespace"));
++    let legacy_report_path = legacy_report_root.join(format!("{legacy_adapter_id}.json"));
++    let legacy_log_path = legacy_report_root.join(format!("{legacy_adapter_id}.log"));
++    let legacy_log = b"independent historical legacy adapter log\n";
++    let legacy_report = serde_json::json!({
++        "schema": "onix.radicle-ci-report.v1",
++        "run_id": legacy_adapter_id,
++        "repository": plan.repository,
++        "revision": "unlinked-terminal-shadow",
++        "result": "failure",
++    });
++    let legacy_report_bytes = serde_json::to_vec(&legacy_report)
++        .unwrap_or_else(|_| unreachable!("historical legacy report bytes"));
++    std::fs::write(&legacy_report_path, &legacy_report_bytes)
++        .unwrap_or_else(|_| unreachable!("historical legacy report"));
++    std::fs::write(&legacy_log_path, legacy_log)
++        .unwrap_or_else(|_| unreachable!("historical legacy log"));
++    let historical_run = serde_json::json!({
++        "broker_run_id": { "id": "historical-broker-run" },
++        "adapter_run_id": { "id": legacy_adapter_id },
++        "adapter_info_url": format!("https://ci.onix.computer/reports/z3xXXCQXCTquvAawh41YYs8yC8xmk/{legacy_adapter_id}.log"),
++        "job_id": "historical-job",
++        "repo_id": plan.repository,
++        "whence": { "Branch": { "commit": "unlinked-terminal-shadow" } },
++        "result": "failure",
++        "state": "finished"
++    });
++    let broker = rusqlite::Connection::open(&plan.broker_database)
++        .unwrap_or_else(|_| unreachable!("isolated historical run database"));
++    broker.execute(
++        "INSERT INTO ci_runs (broker_run_id, json) VALUES (?1, ?2)",
++        rusqlite::params!["historical-broker-run", historical_run.to_string()],
++    ).unwrap_or_else(|_| unreachable!("persist historical finished broker run"));
++    drop(broker);
++    plan.expected_broker_blake3 = blake3::hash(&std::fs::read(&plan.broker_database)
++        .unwrap_or_else(|_| unreachable!("historical broker evidence"))).to_hex().to_string();
++    let stem = "0".repeat(64);
++    let report_path = plan.report_namespace.join(format!("{stem}.json"));
++    let log_path = plan.report_namespace.join(format!("{stem}.log"));
++    let log = b"terminal archived shadow log\n";
++    std::fs::write(&log_path, log).unwrap_or_else(|_| unreachable!("published shadow log"));
++    let report = serde_json::json!({
++        "run_identity": format!("b3:{stem}"),
++        "repository": plan.repository,
++        "revision": "unlinked-terminal-shadow",
++        "outcome": "failure",
++        "log_blake3": blake3::hash(log).to_hex().to_string(),
++    });
++    let report_bytes = serde_json::to_vec(&report)
++        .unwrap_or_else(|_| unreachable!("terminal shadow report"));
++    std::fs::write(&report_path, &report_bytes)
++        .unwrap_or_else(|_| unreachable!("published shadow report"));
++    assert!(retirement::verify_external(&plan, &operations).is_err());
++    std::fs::copy(&log_path, plan.preserved_report_root.join(format!("{stem}.log")))
++        .unwrap_or_else(|_| unreachable!("independent archived shadow log"));
++    std::fs::copy(&report_path, plan.preserved_report_root.join(format!("{stem}.json")))
++        .unwrap_or_else(|_| unreachable!("independent archived shadow report"));
++    let mut archived = blake3::Hasher::new();
++    for (name, bytes) in [(format!("{stem}.json"), report_bytes.as_slice()), (format!("{stem}.log"), log.as_slice())] {
++        archived.update(&(name.len() as u64).to_be_bytes());
++        archived.update(name.as_bytes());
++        archived.update(blake3::hash(bytes).to_hex().as_bytes());
++    }
++    plan.expected_preserved_report_root_blake3 = archived.finalize().to_hex().to_string();
++    plan.approved_unlinked_reports.push(retirement::ArchivedReportEvidence {
++        revision: "unlinked-terminal-shadow".to_string(),
++        report_blake3: blake3::hash(&report_bytes).to_hex().to_string(),
++        log_blake3: blake3::hash(log).to_hex().to_string(),
++        broker_run_id: "historical-broker-run".to_string(),
++        broker_job_id: "historical-job".to_string(),
++        origin: retirement::HistoricalReportOrigin::Legacy {
++            report: legacy_report_path.clone(),
++            log: legacy_log_path.clone(),
++            report_blake3: blake3::hash(&legacy_report_bytes).to_hex().to_string(),
++            log_blake3: blake3::hash(legacy_log).to_hex().to_string(),
++        },
++    });
++    assert!(retirement::verify_external(&plan, &operations).is_ok());
++    let legacy_origin = std::mem::replace(
++        &mut plan.approved_unlinked_reports[0].origin,
++        retirement::HistoricalReportOrigin::Aspen {
++            operation_ledger: directory.path().join("operation-ledger/operations.sqlite"),
++            expected_ledger_blake3: blake3::hash(&std::fs::read(
++                directory.path().join("operation-ledger/operations.sqlite")
++            ).unwrap_or_else(|_| unreachable!("current host ledger"))).to_hex().to_string(),
++        },
++    );
++    assert!(retirement::verify_external(&plan, &operations).is_err());
++    plan.approved_unlinked_reports[0].origin = legacy_origin;
++    std::fs::write(&legacy_report_path, b"forged legacy report")
++        .unwrap_or_else(|_| unreachable!("forge historical legacy artifact"));
++    assert!(retirement::verify_external(&plan, &operations).is_err());
++    std::fs::write(&legacy_report_path, &legacy_report_bytes)
++        .unwrap_or_else(|_| unreachable!("restore historical legacy artifact"));
++    assert!(retirement::verify_external(&plan, &operations).is_ok());
++    plan.approved_unlinked_reports[0].broker_job_id = "wrong-job".to_string();
++    assert!(retirement::verify_external(&plan, &operations).is_err());
++    plan.approved_unlinked_reports[0].broker_job_id = "historical-job".to_string();
++    std::fs::write(&report_path, vec![b' '; 1_048_577])
++        .unwrap_or_else(|_| unreachable!("oversized published report"));
++    assert!(retirement::verify_external(&plan, &operations).is_err());
++    std::fs::write(&report_path, &report_bytes)
++        .unwrap_or_else(|_| unreachable!("restore bounded report"));
++    std::fs::remove_file(&report_path)
++        .unwrap_or_else(|_| unreachable!("replace published report with symlink"));
++    std::os::unix::fs::symlink(plan.preserved_report_root.join(format!("{stem}.json")), &report_path)
++        .unwrap_or_else(|_| unreachable!("symlink to archived proof"));
++    assert!(retirement::verify_external(&plan, &operations).is_err());
++    std::fs::remove_file(&report_path)
++        .unwrap_or_else(|_| unreachable!("remove report symlink"));
++    std::fs::write(&report_path, &report_bytes)
++        .unwrap_or_else(|_| unreachable!("restore regular report"));
++    std::fs::write(plan.preserved_report_root.join(format!("{stem}.log")), b"changed archived proof")
++        .unwrap_or_else(|_| unreachable!("mutate archived proof"));
++    assert!(retirement::verify_external(&plan, &operations).is_err());
++    std::fs::write(plan.preserved_report_root.join(format!("{stem}.log")), log)
++        .unwrap_or_else(|_| unreachable!("restore archived proof"));
++    plan.approved_unlinked_reports[0].log_blake3 = blake3::hash(b"incorrect").to_hex().to_string();
++    assert!(retirement::verify_external(&plan, &operations).is_err());
++    plan.approved_unlinked_reports[0].log_blake3 = blake3::hash(log).to_hex().to_string();
++    let lattice = lattice_redb::Database::open(&lattice_database)
++        .unwrap_or_else(|_| unreachable!("reopen isolated Lattice database"));
++    let active_exchange = serde_json::to_vec(&serde_json::json!({
++        "state": "running",
++        "receipt_identity": "pending",
++        "request": {
++            "source": { "revision": "unsettled" },
++            "identity": "request",
++            "idempotency_key": "idempotency"
++        }
++    })).unwrap_or_else(|_| unreachable!("unsettled exchange fixture"));
++    let transaction = lattice.begin_write()
++        .unwrap_or_else(|_| unreachable!("insert unsettled Lattice exchange"));
++    {
++        transaction.open_table(TableDefinition::<&str, &[u8]>::new("workflow_exchange_executions_v1"))
++            .unwrap_or_else(|_| unreachable!("Lattice execution table"))
++            .insert("exchange", active_exchange.as_slice())
++            .unwrap_or_else(|_| unreachable!("insert running exchange"));
++        transaction.open_table(TableDefinition::<&str, &str>::new("workflow_exchange_request_index_v1"))
++            .unwrap_or_else(|_| unreachable!("Lattice request index"))
++            .insert("request", "exchange")
++            .unwrap_or_else(|_| unreachable!("insert request index"));
++        transaction.open_table(TableDefinition::<&str, &str>::new("workflow_exchange_idempotency_index_v1"))
++            .unwrap_or_else(|_| unreachable!("Lattice idempotency index"))
++            .insert("idempotency", "exchange")
++            .unwrap_or_else(|_| unreachable!("insert idempotency index"));
++    }
++    transaction.commit().unwrap_or_else(|_| unreachable!("persist unsettled exchange"));
++    assert!(retirement::verify_external(&plan, &operations).is_err());
++    let transaction = lattice.begin_write()
++        .unwrap_or_else(|_| unreachable!("remove unsettled Lattice exchange"));
++    {
++        transaction.open_table(TableDefinition::<&str, &[u8]>::new("workflow_exchange_executions_v1"))
++            .unwrap_or_else(|_| unreachable!("Lattice execution table"))
++            .remove("exchange")
++            .unwrap_or_else(|_| unreachable!("remove running exchange"));
++        transaction.open_table(TableDefinition::<&str, &str>::new("workflow_exchange_request_index_v1"))
++            .unwrap_or_else(|_| unreachable!("Lattice request index"))
++            .remove("request")
++            .unwrap_or_else(|_| unreachable!("remove request index"));
++        transaction.open_table(TableDefinition::<&str, &str>::new("workflow_exchange_idempotency_index_v1"))
++            .unwrap_or_else(|_| unreachable!("Lattice idempotency index"))
++            .remove("idempotency")
++            .unwrap_or_else(|_| unreachable!("remove idempotency index"));
++    }
++    transaction.commit().unwrap_or_else(|_| unreachable!("clear unsettled exchange"));
++    drop(lattice);
++    plan.expected_lattice_blake3 = blake3::hash(&std::fs::read(&lattice_database)
++        .unwrap_or_else(|_| unreachable!("updated Lattice evidence"))).to_hex().to_string();
++    let verified = retirement::verify_external(&plan, &operations)
++        .unwrap_or_else(|error| unreachable!("reconciled empty external inventory: {error}"));
++    let preserved_lattice = directory.path().join("isolated-preserved-lattice.redb");
++    let repaired_lattice = directory.path().join("isolated-repaired-lattice.redb");
++    std::fs::copy(&lattice_database, &preserved_lattice)
++        .unwrap_or_else(|_| unreachable!("independent stopped Lattice fixture"));
++    std::fs::copy(&lattice_database, &repaired_lattice)
++        .unwrap_or_else(|_| unreachable!("separate Lattice repair fixture"));
++    let repaired = lattice_redb::Database::open(&repaired_lattice)
++        .unwrap_or_else(|_| unreachable!("open separate repair fixture"));
++    let transaction = repaired.begin_write()
++        .unwrap_or_else(|_| unreachable!("differentiate repair fixture"));
++    transaction.open_table(TableDefinition::<&str, &str>::new("fixture_repaired_marker"))
++        .unwrap_or_else(|_| unreachable!("persist repair-only marker"));
++    transaction.commit().unwrap_or_else(|_| unreachable!("persist separate repair fixture"));
++    drop(repaired);
++    let original_lattice_bytes = std::fs::read(&lattice_database)
++        .unwrap_or_else(|_| unreachable!("original stopped Lattice fixture bytes"));
++    let repaired_lattice_bytes = std::fs::read(&repaired_lattice)
++        .unwrap_or_else(|_| unreachable!("separately repaired Lattice fixture bytes"));
++    plan.repaired_lattice = Some(retirement::RepairedLatticeEvidence {
++        stopped_backup_database: preserved_lattice.clone(),
++        repaired_clone_database: repaired_lattice.clone(),
++        expected_repaired_clone_blake3: blake3::hash(&repaired_lattice_bytes).to_hex().to_string(),
++    });
++    assert!(retirement::verify_external(&plan, &operations).is_err());
++    std::fs::write(&repaired_lattice, b"changed repaired clone")
++        .unwrap_or_else(|_| unreachable!("tamper isolated repaired clone"));
++    assert!(matches!(
++        retirement::verify_external(&plan, &operations),
++        Err(HostBridgeError::State(message)) if message.contains("digest changed")
++    ));
++    std::fs::write(&repaired_lattice, &repaired_lattice_bytes)
++        .unwrap_or_else(|_| unreachable!("restore repaired clone fixture"));
++    std::fs::write(&lattice_database, b"changed stopped original")
++        .unwrap_or_else(|_| unreachable!("tamper isolated stopped Lattice original"));
++    assert!(matches!(
++        retirement::verify_external(&plan, &operations),
++        Err(HostBridgeError::State(message)) if message.contains("digest changed")
++    ));
++    std::fs::write(&lattice_database, &original_lattice_bytes)
++        .unwrap_or_else(|_| unreachable!("restore original Lattice fixture"));
++    plan.repaired_lattice = None;
++    assert!(retirement::verify_external(&plan, &operations).is_ok());
++    drop(cohort);
++    plan.expected_native_journal_blake3 = blake3::hash(&std::fs::read(
++        directory.path().join("native-journal/fabric-durability.redb")
++    ).unwrap_or_else(|_| unreachable!("closed original native journal"))).to_hex().to_string();
++    let native_snapshot = retirement::verify_journal_snapshot(&plan)
++        .unwrap_or_else(|error| unreachable!("verified original native journal: {error}"));
++    for interrupted_phase in [
++        molten::system_extension::LifecyclePhase::Drained,
++        molten::system_extension::LifecyclePhase::Stopped,
++    ] {
++        let snapshot = tempfile::tempdir().unwrap_or_else(|_| unreachable!("isolated interrupted cohort"));
++        for file in [
++            "host-state.json", "native-journal/fabric-durability.redb",
++            "operation-ledger/operations.sqlite",
++        ] {
++            let destination = snapshot.path().join(file);
++            std::fs::create_dir_all(destination.parent()
++                .unwrap_or_else(|| unreachable!("interrupted snapshot parent")))
++                .unwrap_or_else(|_| unreachable!("create interrupted snapshot directory"));
++            std::fs::copy(directory.path().join(file), &destination)
++                .unwrap_or_else(|_| unreachable!("copy isolated pre-retirement fixture"));
++        }
++        let source_values = directory.path().join("callback-values");
++        let cloned_values = snapshot.path().join("callback-values");
++        std::fs::create_dir(&cloned_values)
++            .unwrap_or_else(|_| unreachable!("isolated callback value directory"));
++        for entry in std::fs::read_dir(&source_values)
++            .unwrap_or_else(|_| unreachable!("source callback receipts"))
++        {
++            let entry = entry.unwrap_or_else(|_| unreachable!("callback value entry"));
++            assert!(entry.file_type().unwrap_or_else(|_| unreachable!("callback value type")).is_file());
++            std::fs::copy(entry.path(), cloned_values.join(entry.file_name()))
++                .unwrap_or_else(|_| unreachable!("copy durable callback value receipt"));
++        }
++        let mut resume_plan = plan.clone();
++        resume_plan.state_root = snapshot.path().to_path_buf();
++        let interrupted = HostCohort::build(profile.clone(), &host_paths(&snapshot))
++            .unwrap_or_else(|error| unreachable!("admit copied native cohort: {error}"));
++        let mut service = interrupted.open_service()
++            .unwrap_or_else(|error| unreachable!("open interrupted native fixture: {error}"));
++        let drain_tick = interrupted.ledger.lock()
++            .unwrap_or_else(|_| unreachable!("interrupted ledger lock"))
++            .next_logical_tick()
++            .unwrap_or_else(|error| unreachable!("drain tick: {error}"));
++        service.drain(drain_tick)
++            .unwrap_or_else(|error| unreachable!("persist interrupted drain: {error:?}"));
++        if interrupted_phase == molten::system_extension::LifecyclePhase::Stopped {
++            let stop_tick = interrupted.ledger.lock()
++                .unwrap_or_else(|_| unreachable!("interrupted ledger lock"))
++                .next_logical_tick()
++                .unwrap_or_else(|error| unreachable!("stop tick: {error}"));
++            service.stop(stop_tick)
++                .unwrap_or_else(|error| unreachable!("persist interrupted stop: {error:?}"));
++        }
++        assert_eq!(service.host().state().phase, interrupted_phase);
++        drop(service);
++        drop(interrupted);
++        assert!(matches!(
++            recovery_preflight::check(snapshot.path()),
++            Err(HostBridgeError::RecoveryBlocked {
++                phase,
++                restart_attempts: 2,
++                maximum_restart_attempts: 2,
++            }) if phase == interrupted_phase.as_str()
++        ));
++        let journal = snapshot.path().join("native-journal/fabric-durability.redb");
++        let durable_hash = blake3::hash(&std::fs::read(&journal)
++            .unwrap_or_else(|_| unreachable!("interrupted journal")));
++        assert_ne!(durable_hash.to_hex().as_str(), resume_plan.expected_native_journal_blake3);
++        assert!(retirement::verify_journal_snapshot(&resume_plan).is_err());
++        assert_eq!(blake3::hash(&std::fs::read(&journal)
++            .unwrap_or_else(|_| unreachable!("journal unchanged by rejected stale plan"))), durable_hash);
++        resume_plan.expected_native_journal_blake3 = durable_hash.to_hex().to_string();
++        resume_plan.expected_host_ledger_blake3 = blake3::hash(&std::fs::read(
++            snapshot.path().join("operation-ledger/operations.sqlite")
++        ).unwrap_or_else(|_| unreachable!("interrupted host ledger"))).to_hex().to_string();
++        let interrupted_snapshot = retirement::verify_journal_snapshot(&resume_plan)
++            .unwrap_or_else(|error| unreachable!("fresh interrupted native evidence: {error}"));
++        let resumed = HostCohort::build(profile.clone(), &host_paths(&snapshot))
++            .unwrap_or_else(|error| unreachable!("readmit interrupted native journal: {error}"));
++        let refreshed = retirement::verify_external(&resume_plan, &operations)
++            .unwrap_or_else(|error| unreachable!("reverified external inventory: {error}"));
++        retirement::retire_native(resumed, refreshed, &interrupted_snapshot)
++            .unwrap_or_else(|error| unreachable!("resume native retirement from {interrupted_phase:?}: {error}"));
++        let retired = HostCohort::build(profile.clone(), &host_paths(&snapshot))
++            .unwrap_or_else(|error| unreachable!("reopen resumed retirement: {error}"));
++        assert_eq!(retired.open_service().unwrap_or_else(|error| unreachable!("retired state: {error}"))
++            .host().state().phase, molten::system_extension::LifecyclePhase::Removed);
++    }
++    let lattice_listener = UnixListener::bind(directory.path().join("retirement-no-provider.sock"))
++        .unwrap_or_else(|_| unreachable!("retirement provider listener"));
++    lattice_listener.set_nonblocking(true)
++        .unwrap_or_else(|_| unreachable!("nonblocking provider listener"));
++    let cohort = HostCohort::build(profile.clone(), &host_paths(&directory))
++        .unwrap_or_else(|error| unreachable!("readmit original native retirement fixture: {error}"));
++    retirement::retire_native(cohort, verified, &native_snapshot)
++        .unwrap_or_else(|error| unreachable!("explicit verified native retirement: {error}"));
++    assert_eq!(
++        lattice_listener.accept().unwrap_err().kind(),
++        std::io::ErrorKind::WouldBlock
++    );
++    let recovered_cohort = HostCohort::build(profile.clone(), &host_paths(&directory))
++        .unwrap_or_else(|error| unreachable!("terminal native cohort: {error}"));
++    let recovered = recovered_cohort.open_service()
++        .unwrap_or_else(|error| unreachable!("terminal native journal recovery: {error}"));
++    assert_eq!(recovered.host().state().phase, molten::system_extension::LifecyclePhase::Removed);
++    assert_eq!(recovered.host().state().restart_attempts, 2);
++    assert!(!recovered.instance()
++        .unwrap_or_else(|error| unreachable!("retired instance: {error:?}"))
++        .is_accepting_ingress);
++}

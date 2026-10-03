@@ -302,6 +302,7 @@ let
     inherit runtimeName;
     routeMode = "aspen";
     hostStateDir = hostState;
+    nativeGeneration = 1;
     latticeStateDir = latticeState;
     inherit
       reportPath
@@ -330,6 +331,16 @@ let
   settingsChecksValid =
     expectedLatticeConnections <= maximumLatticeConnections
     && allAssertionsPass (settingsEvaluator baseSettings)
+    && allAssertionsPass (
+      settingsEvaluator (
+        baseSettings
+        // {
+          nativeGeneration = 2;
+          hostStateDir = "/var/lib/kiln-aspen-radicle-ci/host-generation-2";
+        }
+      )
+    )
+    && anyAssertionFails (settingsEvaluator (baseSettings // { nativeGeneration = 2; }))
     && anyAssertionFails (settingsEvaluator (baseSettings // { routeMode = "fallback"; }))
     && anyAssertionFails (settingsEvaluator (baseSettings // { sourcePath = "/var/lib/radicle"; }))
     && anyAssertionFails (settingsEvaluator (baseSettings // { reportView = sourceView; }))

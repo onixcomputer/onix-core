@@ -3,6 +3,7 @@ settings:
 let
   minimumSystemUid = 100;
   maximumSystemUid = 999;
+  maximumNativeGeneration = 9223372036854775807;
   canaryHostUid = 970;
   canaryLatticeUid = 971;
   maximumRuntimeNameCharacters = 16;
@@ -59,6 +60,21 @@ in
         "legacy"
       ];
       message = "Kiln Aspen production routeMode must select shadow, aspen, or legacy";
+    }
+    {
+      assertion =
+        builtins.isInt settings.nativeGeneration
+        && settings.nativeGeneration >= 1
+        && settings.nativeGeneration <= maximumNativeGeneration;
+      message = "Kiln Aspen native generation must be a positive integer representable by Aspen's u64";
+    }
+    {
+      assertion =
+        settings.nativeGeneration == 1
+        ||
+          settings.hostStateDir
+          == "/var/lib/kiln-aspen-radicle-ci/host-generation-${toString settings.nativeGeneration}";
+      message = "A new Aspen native generation requires its own generation-specific host state root";
     }
     {
       assertion = builtins.match repositoryPattern settings.repository != null;

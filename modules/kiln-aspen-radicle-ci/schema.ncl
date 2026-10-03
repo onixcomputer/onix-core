@@ -34,6 +34,11 @@ let default_stage_collision_attempts = 8 in
       default = "/var/lib/kiln-aspen-radicle-ci/host",
       description = "Private durable Aspen host state root",
     },
+    nativeGeneration = {
+      type = "number",
+      default = 1,
+      description = "Explicit native Aspen cohort generation; increment only for a separately reviewed fresh state root",
+    },
     latticeStateDir = {
       type = "string",
       default = "/var/lib/kiln-aspen-radicle-ci/lattice",
