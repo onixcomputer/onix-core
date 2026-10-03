@@ -36,6 +36,8 @@ let
   sourceGroup = "${runtimeName}-source";
   reportGroup = "${runtimeName}-report";
   hostState = "/var/lib/kiln-aspen-radicle-ci/host";
+  hostGenerationTwoState = "${hostState}-generation-2";
+  machineHostState = hostConfig.WorkingDirectory;
   quarantineDirectory = "/var/lib/kiln-aspen-radicle-ci/quarantine";
   latticeState = "/var/lib/kiln-aspen-radicle-ci/lattice";
   sourcePath = "/var/lib/radicle/storage/z3xXXCQXCTquvAawh41YYs8yC8xmk";
@@ -161,7 +163,11 @@ let
     "/etc/ssh"
   ];
   machinePolicyValid =
-    hostConfig.User == hostUser
+    builtins.elem machineHostState [
+      hostState
+      hostGenerationTwoState
+    ]
+    && hostConfig.User == hostUser
     && hostConfig.Group == hostUser
     && latticeConfig.User == latticeUser
     && latticeConfig.Group == latticeUser
@@ -183,7 +189,7 @@ let
         "/var/lib/radicle"
         "/var/lib/radicle-ci"
         ingressDirectory
-        hostState
+        machineHostState
       ]
     )
     && hostConfig.PrivateNetwork
@@ -192,6 +198,9 @@ let
     && hostConfig.RestrictAddressFamilies == [ "AF_UNIX" ]
     && latticeConfig.RestrictAddressFamilies == [ "AF_UNIX" ]
     && hostConfig.Restart == "always"
+    && hostConfig.ExecCondition
+    == "${builtins.head (lib.splitString " " hostStartCommand)} --preflight --state-root ${machineHostState}"
+    && lib.hasInfix "--state-root ${machineHostState}" hostStartCommand
     && latticeConfig.Restart == "on-failure"
     && builtins.elem latticeUnit hostService.after
     && builtins.elem latticeUnit hostService.wants
@@ -201,7 +210,7 @@ let
     && builtins.elem latticeUnit sourceService.before
     &&
       hostConfig.ReadWritePaths == [
-        hostState
+        machineHostState
         ingressDirectory
         internalDirectory
       ]
@@ -328,19 +337,16 @@ let
   };
   allAssertionsPass = result: builtins.all (assertion: assertion.assertion) result.assertions;
   anyAssertionFails = result: builtins.any (assertion: !assertion.assertion) result.assertions;
+  generationTwoSettings = baseSettings // {
+    nativeGeneration = 2;
+    hostStateDir = hostGenerationTwoState;
+  };
   settingsChecksValid =
     expectedLatticeConnections <= maximumLatticeConnections
     && allAssertionsPass (settingsEvaluator baseSettings)
-    && allAssertionsPass (
-      settingsEvaluator (
-        baseSettings
-        // {
-          nativeGeneration = 2;
-          hostStateDir = "/var/lib/kiln-aspen-radicle-ci/host-generation-2";
-        }
-      )
-    )
+    && allAssertionsPass (settingsEvaluator generationTwoSettings)
     && anyAssertionFails (settingsEvaluator (baseSettings // { nativeGeneration = 2; }))
+    && anyAssertionFails (settingsEvaluator (generationTwoSettings // { nativeGeneration = 3; }))
     && anyAssertionFails (settingsEvaluator (baseSettings // { routeMode = "fallback"; }))
     && anyAssertionFails (settingsEvaluator (baseSettings // { sourcePath = "/var/lib/radicle"; }))
     && anyAssertionFails (settingsEvaluator (baseSettings // { reportView = sourceView; }))
@@ -423,6 +429,14 @@ in
           jq -e \
             --argjson callback_timeout ${toString expectedWorkflowTimeoutMilliseconds} \
             '.bounds.callback_timeout_millis == $callback_timeout' \
+            ${lib.escapeShellArg aspenProfile} >/dev/null
+
+          jq -e \
+            --arg root ${lib.escapeShellArg machineHostState} \
+            --arg gen1 ${lib.escapeShellArg hostState} \
+            --arg gen2 ${lib.escapeShellArg hostGenerationTwoState} \
+            '(.native_host.generation == 1 and $root == $gen1)
+             or (.native_host.generation == 2 and $root == $gen2)' \
             ${lib.escapeShellArg aspenProfile} >/dev/null
 
           jq -e \
