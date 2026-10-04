@@ -28,6 +28,14 @@ let
   latticePreStart = latticeConfig.ExecStartPre;
   latticeStaleSocketGuard = builtins.elemAt latticePreStart 0;
   latticePrepareCommand = builtins.elemAt latticePreStart 1;
+  latticeWorkflowSource = ../modules/kiln-aspen-canary/profiles/lattice-workflow.ncl;
+  latticeWorkflow = pkgs.writeText "${runtimeName}-lattice-workflow.ncl" (
+    builtins.readFile latticeWorkflowSource
+  );
+  latticeWorkflowHash = builtins.hashString "sha256" (builtins.readFile latticeWorkflowSource);
+  latticePrepareClosure = pkgs.closureInfo {
+    rootPaths = [ (builtins.dirOf (builtins.dirOf latticePrepareCommand)) ];
+  };
   hostUser = "${runtimeName}-host";
   latticeUser = "${runtimeName}-lattice";
   hostState = "/var/lib/kiln-aspen-canary/host";
@@ -168,6 +176,24 @@ in
         test -x ${lib.escapeShellArg hostStaleSocketGuard}
         test -x ${lib.escapeShellArg latticeStaleSocketGuard}
         test -x ${lib.escapeShellArg latticePrepareCommand}
+        workflow=${lib.escapeShellArg latticeWorkflow}
+        if ! test -f "$workflow"; then
+          echo "Canary workflow import is missing from the Nix store" >&2
+          exit 1
+        fi
+        if ! printf '%s  %s\n' ${lib.escapeShellArg latticeWorkflowHash} "$workflow" \
+          | sha256sum --check --status; then
+          echo "Canary workflow import differs from the reviewed Nickel file" >&2
+          exit 1
+        fi
+        if ! grep -F -- "$workflow" ${lib.escapeShellArg latticePrepareCommand} >/dev/null; then
+          echo "Canary preparation helper does not use the store-owned workflow" >&2
+          exit 1
+        fi
+        if ! grep -Fx -- "$workflow" ${lib.escapeShellArg "${latticePrepareClosure}/store-paths"} >/dev/null; then
+          echo "Canary preparation helper does not retain the workflow in its closure" >&2
+          exit 1
+        fi
         grep -F -- ${lib.escapeShellArg aspenSocket} ${lib.escapeShellArg hostStaleSocketGuard} >/dev/null
         grep -F -- 'test ! -S "$socket"' ${lib.escapeShellArg hostStaleSocketGuard} >/dev/null
         grep -F -- 'rm -f -- "$socket"' ${lib.escapeShellArg hostStaleSocketGuard} >/dev/null

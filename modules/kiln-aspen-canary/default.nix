@@ -120,7 +120,9 @@ in
                   nickel export --format json \
                     ${inputs.kiln-canary}/config/aspen-runtime-profile.ncl > "$out"
                 '';
-            latticeWorkflow = ./profiles/lattice-workflow.ncl;
+            latticeWorkflow = pkgs.writeText "${runtimeName}-lattice-workflow.ncl" (
+              builtins.readFile ./profiles/lattice-workflow.ncl
+            );
             latticePreparationMarker = "${settings.latticeStateDir}/workflow-revision";
             receiptDirectory = "${settings.hostStateDir}/receipts";
             acceptedTrigger = pkgs.writeText "${runtimeName}-accepted-trigger.json" (
