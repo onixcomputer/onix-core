@@ -44,7 +44,7 @@ The route binds these exact identities:
 
 A changed profile or workflow fails before the provider effect starts.
 
-The reviewed workflow Nickel is copied byte-for-byte into a store-managed output referenced by the Lattice preparation helper. The module check requires that runtime import in the helper's closure, so a checkout or an ephemeral flake source cannot mask a missing deployment dependency.
+The Lattice preparation helper imports a store-managed output containing the reviewed workflow Nickel. Its runtime dependency remains reachable after the ephemeral flake source is garbage-collected.
 
 ## Validation
 
