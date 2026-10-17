@@ -1,0 +1,31 @@
+{
+  "at": "2026-10-17T17:16:19.434Z",
+  "requests": [
+    {
+      "role": "repair",
+      "host": "spark-e442.local",
+      "status": 200,
+      "answer": "42",
+      "started": 1792257378609,
+      "finished": 1792257379409
+    },
+    {
+      "role": "primitives",
+      "host": "spark-a0a0.local",
+      "status": 200,
+      "answer": "42",
+      "started": 1792257378609,
+      "finished": 1792257379434
+    },
+    {
+      "role": "composition",
+      "host": "192.168.1.233",
+      "status": 200,
+      "answer": "42",
+      "started": 1792257378608,
+      "finished": 1792257379422
+    }
+  ],
+  "three_way_request_overlap_ms": 800,
+  "three_real_endpoints": true
+}

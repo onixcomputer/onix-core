@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-17T17:52:12.878Z",
+  "command": "env -u RUST_TOOLCHAIN CARGO_TARGET_DIR=target cargo run --offline --quiet --manifest-path target/nemotron-workers-20261017T162448Z/parent-runtime-smoke/Cargo.toml",
+  "exit": 0,
+  "source": "src/snapshot_integrity.rs",
+  "source_sha256": "14b925d4c621ad58e097619a07bf95110e89defb380dfe4a9e978dea6e322c2e",
+  "execution_scope": "Compiled the actual live source module through vstd and called its public runtime functions; not a copied hash body and not a full-library test.",
+  "observed": {
+    "original_hash": 0,
+    "colliding_hash": 0,
+    "tampered_metadata": "9223372036854775808",
+    "tampered_metadata_accepted": true,
+    "chain_check_also_accepts": true
+  },
+  "caller_source": "#[path = \"/home/brittonr/git/OnixResearch/trellis/src/snapshot_integrity.rs\"]\nmod snapshot_integrity;\n\nuse snapshot_integrity::{compute_integrity, dual_hash, verify_integrity, verify_with_chain_hash};\n\nfn main() {\n    let original = dual_hash(0, 0);\n    let colliding = dual_hash(0, 1_u64 << 63);\n    assert_eq!(original, 0);\n    assert_eq!(colliding, original);\n    let mut integrity = compute_integrity(0, 0, 17);\n    assert!(verify_integrity(&integrity));\n    integrity.meta_hash = 1_u64 << 63;\n    let tampered_metadata_accepted = verify_integrity(&integrity);\n    let chain_check_also_accepts = verify_with_chain_hash(&integrity, 17);\n    assert!(tampered_metadata_accepted);\n    assert!(chain_check_also_accepts);\n    println!(\n        \"{{\\\"original_hash\\\":{original},\\\"colliding_hash\\\":{colliding},\\\"tampered_metadata\\\":{},\\\"tampered_metadata_accepted\\\":{tampered_metadata_accepted},\\\"chain_check_also_accepts\\\":{chain_check_also_accepts}}}\",\n        integrity.meta_hash,\n    );\n}\n",
+  "cargo_manifest": "[package]\nname = \"nemotron-snapshot-consumer-smoke\"\nversion = \"0.0.0\"\nedition = \"2024\"\n\n[workspace]\n\n[dependencies]\nvstd = \"=0.0.0-2026-01-25-0057\"\n"
+}

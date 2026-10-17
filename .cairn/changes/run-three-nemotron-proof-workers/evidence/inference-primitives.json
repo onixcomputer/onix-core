@@ -1,0 +1,94 @@
+{
+  "role": "primitives",
+  "host": "spark-a0a0.local",
+  "port": 18001,
+  "started_at": "2026-10-17T17:16:18.609Z",
+  "finished_at": "2026-10-17T17:16:19.434Z",
+  "status": 200,
+  "models": {
+    "object": "list",
+    "data": [
+      {
+        "id": "nemotron-3.5-super-vl",
+        "object": "model",
+        "created": 1792257378,
+        "owned_by": "vllm",
+        "root": "/models/base",
+        "parent": null,
+        "max_model_len": 65536,
+        "permission": [
+          {
+            "id": "modelperm-9feff5dc4db9e83e",
+            "object": "model_permission",
+            "created": 1792257378,
+            "allow_create_engine": false,
+            "allow_sampling": true,
+            "allow_logprobs": true,
+            "allow_search_indices": false,
+            "allow_view": true,
+            "allow_fine_tuning": false,
+            "organization": "*",
+            "group": null,
+            "is_blocking": false
+          }
+        ]
+      }
+    ]
+  },
+  "request": {
+    "model": "nemotron-3.5-super-vl",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Compute 6 * 7. Reply with only the integer."
+      }
+    ],
+    "temperature": 0,
+    "max_tokens": 1024,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    }
+  },
+  "response": {
+    "id": "chatcmpl-af2b8c7781a7b7a5",
+    "object": "chat.completion",
+    "created": 1792257378,
+    "model": "nemotron-3.5-super-vl",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "42",
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": "The user wants me to compute 6 * 7 and reply with only the integer.\n\n6 * 7 = 42.\n\nI should reply with only \"42\"."
+        },
+        "logprobs": null,
+        "finish_reason": "stop",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.32.0rc1.dev190+g3f1bcfd82-b3a2a49c",
+    "usage": {
+      "prompt_tokens": 29,
+      "total_tokens": 69,
+      "completion_tokens": 40,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 36
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

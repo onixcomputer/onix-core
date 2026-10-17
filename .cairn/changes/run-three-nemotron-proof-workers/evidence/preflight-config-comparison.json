@@ -1,0 +1,44 @@
+[
+  {
+    "host": "spark-e442.local",
+    "at": "2026-10-17T17:02:25.749Z",
+    "id": "d240dfa3f9f058a9e141e4db6e01d5fda71587ab557ada4fea9be1cd00fc6360",
+    "running": true,
+    "matches": {
+      "launcher": true,
+      "Id": true,
+      "Image": true,
+      "Config": true,
+      "HostConfig": true,
+      "Mounts": true
+    }
+  },
+  {
+    "host": "spark-a0a0.local",
+    "at": "2026-10-17T17:02:26.002Z",
+    "id": "186945078da3c923db6651041d7de69ce78da5ecbd846518d311a3efdbb48f3c",
+    "running": true,
+    "matches": {
+      "launcher": true,
+      "Id": true,
+      "Image": true,
+      "Config": true,
+      "HostConfig": true,
+      "Mounts": true
+    }
+  },
+  {
+    "host": "192.168.1.233",
+    "at": "2026-10-17T17:02:25.799Z",
+    "id": "9399f8762b505194c63052a284f4e15c4517f899d803fe7253e9b38c242a8a5f",
+    "running": true,
+    "matches": {
+      "launcher": true,
+      "Id": true,
+      "Image": true,
+      "Config": true,
+      "HostConfig": true,
+      "Mounts": true
+    }
+  }
+]

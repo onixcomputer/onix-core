@@ -1,0 +1,19 @@
+{
+  "role": "repair",
+  "at": "2026-10-17T16:31:25.652281+00:00",
+  "argv": [
+    "bash",
+    "/home/brittonr/git/OnixResearch/trellis/scripts/verus.sh",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-workers-20261017T162448Z/repair/work/src/lib.rs",
+    "--rlimit",
+    "20",
+    "--triggers-mode",
+    "silent"
+  ],
+  "exit": 0,
+  "changed_sha256": {},
+  "frozen_inputs_unchanged": true,
+  "requires_parent_contract_review": true,
+  "log": "verify-1792254685652275148.log",
+  "baseline_identity": "f454bdf03e5a0882e0e363db54cd0626cda5fc01222559b3d727d648039bc497"
+}

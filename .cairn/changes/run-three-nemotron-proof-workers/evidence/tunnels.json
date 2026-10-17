@@ -1,0 +1,25 @@
+{
+  "at": "2026-10-17T16:46:46.858Z",
+  "bind": "127.0.0.1",
+  "tunnels": [
+    {
+      "role": "repair",
+      "port": 18000,
+      "process": "NemotronThreeRepairTunnel",
+      "pid": 383041
+    },
+    {
+      "role": "primitives",
+      "port": 18001,
+      "process": "NemotronThreePrimitiveTunnel",
+      "pid": 383042
+    },
+    {
+      "role": "composition",
+      "port": 18002,
+      "process": "NemotronThreeCompositionTunnel",
+      "pid": 383043
+    }
+  ],
+  "claim": "Local SSH tunnel listeners are ready; no claim of model/API readiness."
+}

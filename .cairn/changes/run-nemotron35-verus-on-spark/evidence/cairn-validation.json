@@ -1,0 +1,18 @@
+{
+  "command": "nix run git+file:///home/brittonr/git/OnixResearch/cairn#cairn -- validate --root /home/brittonr/git/onix-core --policy /home/brittonr/git/OnixResearch/cairn/cairn-policy/generated/cairn-policy.json",
+  "exit_status": 0,
+  "valid": true,
+  "policy": "cairn-default",
+  "policy_selection": {
+    "blake3": "7a67802377005c18ebded42899e7f564f5d87087b6c14ca70464b35886f340a9",
+    "installation_receipt": false,
+    "locator": "/home/brittonr/git/OnixResearch/cairn/cairn-policy/generated/cairn-policy.json",
+    "source": "explicit"
+  },
+  "receipt_hash": "893e0ecc2b2bc3411ace62c5a7819972589753a12b8c04d349e68e73708451e2",
+  "issues": [],
+  "change_issues": [],
+  "findings": [],
+  "spec_issues": [],
+  "substance_issues": []
+}

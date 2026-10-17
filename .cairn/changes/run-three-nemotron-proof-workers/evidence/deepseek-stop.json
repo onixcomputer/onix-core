@@ -1,0 +1,23 @@
+[
+  {
+    "host": "spark-e442.local",
+    "stdout": "d240dfa3f9f058a9e141e4db6e01d5fda71587ab557ada4fea9be1cd00fc6360\n",
+    "stderr": "",
+    "exit": 0,
+    "at": "2026-10-17T17:02:40.741Z"
+  },
+  {
+    "host": "spark-a0a0.local",
+    "stdout": "186945078da3c923db6651041d7de69ce78da5ecbd846518d311a3efdbb48f3c\n",
+    "stderr": "",
+    "exit": 0,
+    "at": "2026-10-17T17:02:54.753Z"
+  },
+  {
+    "host": "192.168.1.233",
+    "stdout": "9399f8762b505194c63052a284f4e15c4517f899d803fe7253e9b38c242a8a5f\n",
+    "stderr": "",
+    "exit": 0,
+    "at": "2026-10-17T17:02:54.543Z"
+  }
+]

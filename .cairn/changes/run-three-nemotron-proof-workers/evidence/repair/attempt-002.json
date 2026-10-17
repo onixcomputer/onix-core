@@ -1,0 +1,8 @@
+{
+  "role": "repair",
+  "exit": 0,
+  "events": 24,
+  "tool_calls": 9,
+  "transcript": "transcript-002.jsonl",
+  "model_text": "model-text-002.md"
+}

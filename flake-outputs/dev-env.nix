@@ -163,6 +163,10 @@ let
         # the origin toolchain owns their formatting
         "pkgs/herdr/vendor/**"
 
+        # Recorded evidence is hash-bound to the executed inputs and outputs.
+        ".cairn/**/evidence/**"
+        "evidence/**"
+
       ];
 
       formatter = {

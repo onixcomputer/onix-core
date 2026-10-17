@@ -1,0 +1,20 @@
+{
+  "role": "primitives",
+  "verification_status": "No production Verus invocation: discovery-only role, no source implementation or proof-body changes",
+  "production_verus_logs": [],
+  "model_attempt_receipts": [
+    {"attempt": "001", "exit": 1, "events": 17, "tool_calls": 7, "status": "ContextOverflowError; retained; no shortlist", "receipt": "attempt-001.json", "transcript": "transcript-001.jsonl"},
+    {"attempt": "002", "exit": 0, "events": 55, "tool_calls": 22, "status": "Initial three-item report; not accepted without substantive review", "receipt": "attempt-002.json", "transcript": "transcript-002.jsonl"},
+    {"attempt": "003", "exit": 0, "events": 27, "tool_calls": 14, "status": "Actual-model semantic/novelty correction; all original candidates rejected or retracted", "receipt": "attempt-003.json", "transcript": "transcript-003.jsonl"}
+  ],
+  "actually_exercised_facilitator_checks": [
+    {"check": "Exact proposal-3 arithmetic counterexample", "input": {"limit": 100, "carry_cap": 10, "used": 100, "carry": 10, "request": 1}, "observed": {"available": 10, "admitted": true, "used_after": 101, "invariant_used_le_limit": false}, "method": "Python 3 direct evaluation of proposed formulas; not a production implementation"},
+    {"check": "Capped carry/refill arithmetic comparison", "cases": 1111, "mismatches": [], "domain": "carry=0..10, unused=0..100, cap=10; refill elapsed_ms=1000, rate_per_sec=unused", "method": "Python 3 finite arithmetic exploration; not Verus proof"},
+    {"check": "Frozen snapshot SHA-256 identities after correction", "inventoried_files": 854, "rust_files": 810, "changed_or_missing": []},
+    {"check": "Original model findings preservation", "original_findings_002_preserved": true, "method": "Compared work/findings.md with actual tool-results-002.json write-event content"},
+    {"check": "Corrected report extraction", "corrected_extraction_byte_identical": true, "method": "Compared findings.md with model-text-003.md bytes"},
+    {"check": "Final configuration parse/deny-list facts", "config_valid_json": true, "read_allowlist_entries": 21, "global_document_reads_allowed": false, "runtime_enforcement_claim": "None: allowlist was narrowed after attempt-003 launch; its already-loaded permissions were not retroactively proven changed"}
+  ],
+  "baseline_attribution": "Main reported fresh full production baseline 11146 verified, 0 errors. Not run by this facilitator and not proof of any proposed primitive.",
+  "full_suite_checks_run_by_facilitator": false
+}

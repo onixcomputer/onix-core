@@ -1,0 +1,32 @@
+{
+  "at": "2026-10-17T17:52:12.879Z",
+  "accepted_source_changes": [],
+  "model_full_corpus_receipts": [
+    {
+      "log": "verify-1792257723838479813.log",
+      "verified": 11146,
+      "errors": 0
+    },
+    {
+      "log": "verify-1792258197269336968.log",
+      "verified": 11146,
+      "errors": 0
+    }
+  ],
+  "accepted_findings": [
+    {
+      "source": "src/snapshot_integrity.rs:49-71,92-147",
+      "finding": "Different metadata inputs collide and the actual runtime accepts the tampered integrity record.",
+      "evidence": "parent-runtime-smoke.json"
+    },
+    {
+      "source": "src/nix_version.rs:755-840",
+      "finding": "The public API has no admission precondition: its exact comparison postcondition is conditional on finite-model admission; the out-of-model external-body fallback promises only a normalized ordering. This is proof-coverage limitation, not an observed comparison bug."
+    }
+  ],
+  "rejected_model_claims": [
+    "A documented trust boundary and green solver result do not establish absence of meaningful gaps.",
+    "The model report assertion of internal consistency is not accepted: an injective mapping from all pairs of u64 values into one u64 is impossible by finite cardinality. Solver success under trusted axioms is not a consistency certificate."
+  ],
+  "acceptance": "No source candidate to integrate. Preserve actual model reports unchanged, including overclaims and all denied calls, with these parent corrections."
+}

@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-17T18:32:33.972Z",
+  "witness_sha256": "c8a8dfb8ae472fb0ab04e06381f2fe99ffc5db8b04e3ef8db53c730a95efc531",
+  "dependencies": {
+    "algebraic.rs": "e6b5ee402bfc5017cafd4e5fcbed7615c5f6a806f39a490cb25ca0043430b0b5",
+    "ordering.rs": "b21e410ea6cc77f6ba87bdefbd1dfb1be338f890d3461ec7ebc9c5ab97c0c02e",
+    "pointwise.rs": "3b4b313bccab4957d6749d000503e7c28444d5f331fe3e18c162ef8ffde3f33a",
+    "vector_clock.rs": "af01095e82eee17b737520180cf6fb103c6d02f9ca5cf182b2e5ea4886cfd7c9",
+    "causal_order.rs": "8ea4abf69e318a963971ea836042b37a4f428dc700e40f496b098b486ed35e7d"
+  },
+  "scope": "Complete named dependency closure only; excludes unrelated cryptographic/version/codec trust boundaries. No existing source changed."
+}

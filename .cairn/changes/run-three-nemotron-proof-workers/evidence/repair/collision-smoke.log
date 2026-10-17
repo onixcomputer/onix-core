@@ -1,0 +1,10 @@
+Facilitator standalone exact-body smoke (not a library integration test and not Verus proof)
+Source: work/src/snapshot_integrity.rs:66-71, copied verbatim except ordinary Rust return-type syntax outside Verus.
+Command: rustc --edition=2021 collision-smoke.rs -o collision-smoke && ./collision-smoke
+Exit: 0
+Observed stdout:
+dual_hash(0, 0) = 0
+dual_hash(0, 9223372036854775808) = 0
+different_meta_same_combined_hash = true
+
+The actual local Nemotron derived this collision in model-text-002.md / work/findings.md before this smoke was run. The throwaway source and executable were removed after recording this result. No live or snapshot source was modified. This run confirms the copied executable arithmetic only; it does not establish cryptographic properties or model consistency.

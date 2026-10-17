@@ -1,0 +1,29 @@
+{
+  "at": "2026-10-17T18:50:19.514Z",
+  "frozen_input_files": 854,
+  "rust_source_files": 810,
+  "changed_inputs": [
+    {
+      "path": "docs/verified-logic-consumer-profile.md",
+      "expected": "eb541c10b517cf52e938f8c530db91459de301b3f1524512fb308bd887f7b304",
+      "actual": "ed2a400b21b54640bb0f854c698a3d33d011b7f4ea9d4a358318cb83f8b2555f"
+    },
+    {
+      "path": "docs/nickel-export-cutover.md",
+      "expected": "e1e3282dbf3f640793d1ef0cc783f29bc7213dd68832b43497fb35030239d8b3",
+      "actual": "a20caec7a95ffa37917ed21bf232f90421ebebd4336531c370d494575cd8e12f"
+    },
+    {
+      "path": "README.md",
+      "expected": "f1cd440fc448d632d469a1a7c875b78b804c05bad91e24fdb7eeab1d103b2ff2",
+      "actual": "a7138896ba1712ffd88b20b0ce8137f93986b3f53bff77e0c2d2f9ec655f46d3"
+    },
+    {
+      "path": "Cargo.toml",
+      "expected": "08800d75a565b3bdedade6f90b8ba0399418534873fdeef99d93ea6ed96d6b9b",
+      "actual": "74db101de5cd7a3d825c39fa9c95205cd744e092d615f2b1d36d4d77d569fbdf"
+    }
+  ],
+  "baseline_applies": false,
+  "note": "Identity comparison after all model sessions and runtime checks; no verifier rerun and no live source integration."
+}

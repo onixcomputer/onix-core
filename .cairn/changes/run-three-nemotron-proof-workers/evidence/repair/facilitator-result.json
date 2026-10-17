@@ -1,0 +1,42 @@
+{
+  "role": "repair",
+  "status": "complete_no_admissible_source_repair_with_confirmed_trust_gap",
+  "endpoint": {
+    "base_url": "http://127.0.0.1:18000/v1",
+    "host": "spark-e442.local",
+    "model": "nemotron/nemotron-3.5-super-vl",
+    "client": "/run/current-system/sw/bin/opencode",
+    "authorization": "Parent ENDPOINTS_READY received before either inference invocation; parent reported overlapping real HTTP 200 completions on all three replicas. No facilitator endpoint probes."
+  },
+  "actual_model_attempts": [
+    {"attempt": "001", "exit": 0, "events": 32, "tool_calls": 15, "prompt": "prompt-001.txt", "invocation": "invocation-001.json", "transcript": "transcript-001.jsonl", "tool_results": "tool-results-001.json", "model_text": "model-text-001.md"},
+    {"attempt": "002", "exit": 0, "events": 24, "tool_calls": 9, "prompt": "prompt-002.txt", "invocation": "invocation-002.json", "transcript": "transcript-002.jsonl", "tool_results": "tool-results-002.json", "model_text": "model-text-002.md", "guided_followup": "Facilitator rejected attempt 001's inference that documenting trust means no meaningful gap. Guided the same real model to inspect the actual snapshot arithmetic and qualify Nix proof coverage. The model derived the concrete collision and revised its report."}
+  ],
+  "model_findings": {"path": "work/findings.md", "sha256": "db68cad9000604c05f3a880525acc0ef39f7bc32db4498b703f9932a54ebf7a9", "authorship": "Actual local Nemotron; not facilitator rewritten. Earlier report retained in attempt 001 transcript and extracted text."},
+  "verification": [
+    {"attempt": "001", "model_command": "./verify", "receipt": "verify-1792257723838479813.json", "log": "verify-1792257723838479813.log", "exit": 0, "verified": 11146, "errors": 0, "changed_sha256": {}, "frozen_inputs_unchanged": true},
+    {"attempt": "002", "model_command": "./verify", "receipt": "verify-1792258197269336968.json", "log": "verify-1792258197269336968.log", "exit": 0, "verified": 11146, "errors": 0, "changed_sha256": {}, "frozen_inputs_unchanged": true}
+  ],
+  "verification_scope": "Both actual model calls used the fixed parent-owned wrapper: bash /home/brittonr/git/OnixResearch/trellis/scripts/verus.sh <isolated-work>/src/lib.rs --rlimit 20 --triggers-mode silent. This repair wrapper verifies the full isolated crate rather than selecting one module. No generic build/lint/test/formatter was run. Nonfatal warnings remain in exact logs. Parent's earlier receipt verify-1792254685652275148.json is separate and is not counted as a model call.",
+  "investigated_targets": [
+    {"source": "work/src/markov.rs:19-140", "result": "Exact integer confidence specification and overflow-avoiding executable path verified under existing preconditions. No proof failure found; old approximate/external-body comments are not evidence of a missing proof."},
+    {"source": "work/src/nix_version.rs:709-840,920-930", "result": "Admitted modeled comparison has exact spec equality; out-of-model external_body fallback has only a range guarantee. The unqualified requirement at docs/requirements.md:1984-1985 is not fully established by this finite-domain proof. No runtime fallback repair proposed or claimed."},
+    {"source": "work/src/chain.rs:840-863", "result": "Collision freedom is an explicit idealized external_body axiom, not a proved cryptographic property. No admissible proof repair found."},
+    {"source": "work/src/snapshot_integrity.rs:33-71,149-243", "result": "Meaningful model-to-runtime trust gap: runtime dual_hash is a two-round wrapping u64 mix, not the Blake3 described by its comment. The real model derived dual_hash(0,0) = dual_hash(0,9223372036854775808) = 0. Tamper-detection proofs rely on the collision-freedom axiom plus trusted exec/spec bridge; green verification does not establish runtime collision resistance."}
+  ],
+  "facilitator_smoke": {"log": "collision-smoke.log", "command": "rustc --edition=2021 collision-smoke.rs -o collision-smoke && ./collision-smoke", "exit": 0, "observed": ["dual_hash(0, 0) = 0", "dual_hash(0, 9223372036854775808) = 0", "different_meta_same_combined_hash = true"], "scope": "Standalone Rust compilation of the verbatim dual_hash executable body after the actual model derived the witness; not a whole-library integration test or Verus proof. Throwaway source and binary removed."},
+  "source_changes": {"changed_files": [], "candidate_diff": null, "integration": "None; live Trellis untouched.", "final_integrity_check": "All 854 frozen inputs, including 810 Rust files, still match frozen-inputs.json."},
+  "denied_attempts": [
+    {"attempt": "001", "command": "ls -la", "outcome": "Sandbox denied; not executed."},
+    {"attempt": "002", "command": "ls -la ./verify 2>&1; echo \"---\"; ls verify 2>&1", "outcome": "Sandbox denied; not executed."},
+    {"attempt": "002", "command": "python3 -c <collision arithmetic script>", "outcome": "Sandbox denied; not executed. The model explicitly reported its collision as a source derivation, not an executed runtime test."}
+  ],
+  "facilitator_review_limits": [
+    "No independently justified repair compatible with preserving existing signatures, preconditions, meaningful postconditions, algorithms and trust boundaries was produced. No weakened or newly trusted candidate was accepted.",
+    "Attempt 001's global no-gap conclusion is superseded, not accepted. Attempt 002's wording that the idealized model is internally consistent is also not established by a green verifier: universal injectivity from two u64 inputs into one u64 output is impossible by finite cardinality. The proof receipt establishes only discharged obligations under the supplied trusted axioms; it is not a consistency certificate.",
+    "Attempt 002's findings summarize only the initial listing denial, but the actual tool audit above retains all three denied calls. Their presence must not be represented as clean instruction compliance.",
+    "Bounded source investigation is not an exhaustive corpus or security audit. The snapshot runtime collision is confirmed for the copied body; no new production theorem, cryptographic guarantee or source repair is claimed."
+  ],
+  "blockers": [],
+  "handoff": "Complete role evidence for parent independent acceptance. No source candidate to integrate; retain the concrete snapshot trust-gap finding and Nix proof-coverage limitation as research findings."
+}

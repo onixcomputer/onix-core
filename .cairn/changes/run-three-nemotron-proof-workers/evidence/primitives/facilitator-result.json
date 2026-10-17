@@ -1,0 +1,56 @@
+{
+  "role": "primitives",
+  "status": "completed_with_no_admissible_new_primitives",
+  "acceptance_route": "Explicit source-backed evidence why fewer than three survive non-duplication review; zero survivors, not a claim that the corpus contains no other opportunities",
+  "endpoint_identity": {
+    "base_url": "http://127.0.0.1:18001/v1",
+    "assigned_host": "spark-a0a0.local",
+    "provider_model": "nemotron/nemotron-3.5-super-vl",
+    "client": "Installed /run/current-system/sw/bin/opencode via parent-owned run_worker.py",
+    "readiness": "Invoked only after Main's explicit ENDPOINTS_READY; Main attested overlapping HTTP 200 real completions from pinned replicas",
+    "identity_evidence": ["opencode.json", "invocation-001.json", "invocation-002.json", "invocation-003.json"],
+    "limitation": "Facilitator did not independently attest remote weights or service lifecycle"
+  },
+  "actual_model_output": {
+    "prompts": ["prompt-001.txt", "prompt-002.txt", "prompt-003.txt"],
+    "transcripts": ["transcript-001.jsonl", "transcript-002.jsonl", "transcript-003.jsonl"],
+    "tool_receipts": ["tool-results-001.json", "tool-results-002.json", "tool-results-003.json"],
+    "attempt_receipts": ["attempt-001.json", "attempt-002.json", "attempt-003.json"],
+    "original_findings": "work/findings.md",
+    "corrected_findings": "findings.md",
+    "corrected_model_text": "model-text-003.md",
+    "extraction": "Corrected findings are byte-identical to actual model-text-003.md; original attempt-002 findings remain unchanged",
+    "failed_attempt": "001 exited 1 after a denied root-directory read and unbounded context growth ending in ContextOverflowError; all records retained",
+    "guided_followups": "002 corrected context discipline; 003 corrected substantive novelty/contract defects identified during independent source review, not merely the old overflow"
+  },
+  "candidate_dispositions": [
+    {"original_rank": 1, "name": "Bounded guided retry with attempt-context overflow", "model_disposition": "rejected", "facilitator_check": "Gate reads context length, not record contents; unsupported guided-history claim. Scalar retry predicate already exists; no substantiated new essential invariant.", "sources": ["src/retry.rs:24-34", "src/job_retry.rs:20-22,38-44,65-70", "src/fenced_attempt/model.rs:4-6"]},
+    {"original_rank": 2, "name": "Bounded FIFO dedup/admission window", "model_disposition": "rejected_as_wrapper_or_composition", "facilitator_check": "Original report missed exact u64 membership and duplicate/fresh APIs. Conservative conclusion: novelty not established. Model's broader assertion that complete FIFO dedup semantics already follow from public contracts is NOT accepted as a mechanically established theorem.", "sources": ["src/job_idempotency.rs:18-25,51-64", "src/seq_set.rs:21-28,572-582", "src/ring_buffer.rs:38-45,86-117", "src/ucan_replay_admission.rs:1-7,42-48,80-85"]},
+    {"original_rank": 3, "name": "Bounded carryover quota with overflow loss", "model_disposition": "retracted", "facilitator_check": "Exact exercised counterexample admits used'=101 against limit100. Repeated idle can re-credit unchanged capacity. Capped-add arithmetic is already supplied by token-bucket refill; consumption rejects unchanged.", "sources": ["src/quota.rs:21-30,49-64,84-95", "src/rate_limit.rs:20-30,104-117"]}
+  ],
+  "facilitator_checks": {
+    "detailed_review": "facilitator-review-002.json",
+    "execution_and_identity_receipts": "verification-receipt.json",
+    "frozen_inputs": {"inventoried_files": 854, "rust_files": 810, "changed_or_missing": []},
+    "production_source_or_proof_changes": false,
+    "configuration_change": "Narrow read allowlist now denies giant global docs/src/lib.rs/README. Changed after 003 launched; no retroactive runtime-enforcement claim.",
+    "correction_audit": "003 used 13 bounded source/report reads and one focused grep, no shell, writes, or global full-document dump. One source read requested 120 lines despite <=90 prompt; it did not cause overflow.",
+    "source_read_claim_caveat": "003's methods paragraph lists job_retry.rs and fenced_attempt/model.rs as correction reads, but those were directly read in 002, not re-read in 003. Original 002 citations to vote_tally/bitfield/eviction/tiered_rate_limit were not direct source reads; model explicitly retracted that method claim.",
+    "wording_caveat": "Model report's 'source observations (verified)' means inspected source facts here, not a new Verus acceptance result. No new primitive was implemented or verified."
+  },
+  "sources": {
+    "initial_packet": "facilitator-source-packet.json",
+    "primary_corpus": "Frozen work/src and work/docs, checked against frozen-inputs.json",
+    "external_primary_sources": [],
+    "search_limitation": "Semantic find route rejected all upstream judgments; used targeted literal grep/glob. OpenCode file-valued grep path widened to containing directory in early attempts; preserved and reported to automated tool QA. Correction used directory plus include filename."
+  },
+  "unverified_proposals": {
+    "surviving_shortlist": [],
+    "retracted_or_demoted_proposals_retained_at": "work/findings.md",
+    "consumers": "All proposed consumers were hypotheses; no confirmed demand established",
+    "verification_status": "No production Verus invocation: read-only discovery generated no production implementation/proof changes. Arithmetic counterexample/exploration are facilitator checks only.",
+    "limitations": "Zero survivors is limited to the actual three proposals researched and corrected. Ring-buffer public contracts do not expose a complete logical FIFO-sequence/whole-state frame theorem; this review does not prove all strengthened dedup contracts already compose. No claim about global novelty completeness, durable exactly-once, downstream security, or consumer readiness."
+  },
+  "remaining_blockers": [],
+  "parent_acceptance": "Parent retains final acceptance and live-source integration responsibility; no production integration proposed"
+}

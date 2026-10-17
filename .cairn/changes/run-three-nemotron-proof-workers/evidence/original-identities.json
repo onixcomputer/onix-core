@@ -1,0 +1,29 @@
+{
+  "spark-e442.local": {
+    "container_id": "d240dfa3f9f058a9e141e4db6e01d5fda71587ab557ada4fea9be1cd00fc6360",
+    "image_id": "sha256:de1580fb368afce748227ddd77b3625cf9d628ff384bcc386ea76f20297c2163",
+    "restart_policy": {
+      "Name": "unless-stopped",
+      "MaximumRetryCount": 0
+    },
+    "running_before": true
+  },
+  "spark-a0a0.local": {
+    "container_id": "186945078da3c923db6651041d7de69ce78da5ecbd846518d311a3efdbb48f3c",
+    "image_id": "sha256:de1580fb368afce748227ddd77b3625cf9d628ff384bcc386ea76f20297c2163",
+    "restart_policy": {
+      "Name": "unless-stopped",
+      "MaximumRetryCount": 0
+    },
+    "running_before": true
+  },
+  "192.168.1.233": {
+    "container_id": "9399f8762b505194c63052a284f4e15c4517f899d803fe7253e9b38c242a8a5f",
+    "image_id": "sha256:008d95698b6828c49f9111e0e5ca7bb789a267e0dea0f2aff818855ee54375c3",
+    "restart_policy": {
+      "Name": "unless-stopped",
+      "MaximumRetryCount": 0
+    },
+    "running_before": true
+  }
+}

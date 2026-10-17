@@ -1,0 +1,22 @@
+{
+  "role": "primitives",
+  "scope": "Facilitator orientation only; not model discovery output",
+  "snapshot": "work/; no source edits permitted",
+  "endpoint_config": {
+    "base_url": "http://127.0.0.1:18001/v1",
+    "host_as_assigned": "spark-a0a0.local",
+    "provider_model": "nemotron/nemotron-3.5-super-vl"
+  },
+  "grounding": [
+    {"path": "work/docs/module-index.md", "lines": "5-9", "observation": "Generated inventory reports 625 public modules and 591 requirement-covered modules; labels are not proof-strength scores."},
+    {"path": "work/docs/module-scope.md", "lines": "25-39,63-99", "observation": "Substantial arithmetic, interval, concurrency, reclamation and conservation surfaces already exist; novelty requires inspecting exact source contracts."},
+    {"path": "work/src/merkle.rs", "lines": "28-43,85-88", "observation": "verify_proof_spec recursively folds a sibling path; verify_proof ensures exact equality with that predicate."},
+    {"path": "work/docs/verified-logic-consumer-profile.md", "lines": "80-93", "observation": "Consumer integration and whole-system security remain outside imported primitive claims."}
+  ],
+  "search_limitations": [
+    "Descriptive semantic find was attempted first; all 24 upstream judgment requests were rejected by the account route. Followed with focused literal grep and filename glob.",
+    "No external primary source excerpts supplied initially; model may fetch primary sources with citations if useful."
+  ],
+  "baseline_attribution": "Main reported fresh complete production baseline 11146 verified, 0 errors; facilitator did not run it and this is not discovery proof evidence.",
+  "inference_gate": "Awaiting explicit ENDPOINTS_READY; no inference invoked at packet preparation time"
+}

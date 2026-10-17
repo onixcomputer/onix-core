@@ -1,0 +1,48 @@
+{
+  "verified": true,
+  "lemma": "count_matching_all_from",
+  "source": "/home/brittonr/git/OnixResearch/trellis/src/seq_fold.rs",
+  "source_sha256": "2582e9ad8ef79185ad948dee72d733ec3ec849a6e255b4ba115cbad5727ec9b0",
+  "trellis_lock_sha256": "3d4f18672fdcfa886ea523fe69ec6f97f9ef947985b24b3b4eae1211f12e50c6",
+  "verus_root": "/nix/store/cb02jr7r1a2k8k2hlahmk8c90421czvq-octet-production-verus-0.2026.05.17.e479cce",
+  "opencode_status": 0,
+  "candidate_sha256": "61f890df07f6ed01461a4d7d4e003d077ba65911568e655c3a64957831ab3a72",
+  "artifact_directory": "/tmp/onix-nemotron-verus-cyq6ty_4",
+  "completed_tools": [
+    {
+      "tool": "read",
+      "input": {
+        "filePath": "/tmp/onix-nemotron-verus-cyq6ty_4/work/proof.rs"
+      },
+      "exit": null
+    },
+    {
+      "tool": "bash",
+      "input": {
+        "command": "./verify",
+        "workdir": "/tmp/onix-nemotron-verus-cyq6ty_4/work",
+        "timeout": 300000
+      },
+      "exit": 1
+    },
+    {
+      "tool": "edit",
+      "input": {
+        "filePath": "/tmp/onix-nemotron-verus-cyq6ty_4/work/proof.rs",
+        "oldString": "    // Repair only this body. Prove the unchanged postcondition.\n}",
+        "newString": "    if from < s.len() {\n        assert(p(s[from]));\n        reveal(count_matching_from_spec);\n        count_matching_all_from(s, p, from + 1);\n        assert(count_matching_from_spec(s, p, from) as int == 1 + count_matching_from_spec(s, p, from + 1) as int);\n        assert(count_matching_from_spec(s, p, from) as int == s.len() - from);\n    }\n}"
+      },
+      "exit": null
+    },
+    {
+      "tool": "bash",
+      "input": {
+        "command": "./verify",
+        "timeout": 300000,
+        "workdir": "/tmp/onix-nemotron-verus-cyq6ty_4/work"
+      },
+      "exit": 0
+    }
+  ],
+  "trellis_source_and_lock_unchanged": true
+}

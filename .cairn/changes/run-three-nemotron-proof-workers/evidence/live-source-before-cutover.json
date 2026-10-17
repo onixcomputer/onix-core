@@ -1,0 +1,7 @@
+{
+  "at": "2026-10-17T16:44:55.752801+00:00",
+  "frozen_input_files": 854,
+  "changed_inputs": [],
+  "baseline_applies": true,
+  "note": "Identity comparison only; no verifier rerun and no source changes."
+}

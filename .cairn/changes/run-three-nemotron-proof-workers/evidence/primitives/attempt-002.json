@@ -1,0 +1,8 @@
+{
+  "role": "primitives",
+  "exit": 0,
+  "events": 55,
+  "tool_calls": 22,
+  "transcript": "transcript-002.jsonl",
+  "model_text": "model-text-002.md"
+}

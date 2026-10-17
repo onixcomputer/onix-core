@@ -1,0 +1,8 @@
+{
+  "role": "composition",
+  "exit": 1,
+  "events": 27,
+  "tool_calls": 12,
+  "transcript": "transcript-001.jsonl",
+  "model_text": "model-text-001.md"
+}

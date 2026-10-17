@@ -1,0 +1,59 @@
+{
+  "status": "completed",
+  "replicas": {
+    "count": 3,
+    "real_simultaneous_inference": "simultaneous-inference.json",
+    "roles": ["repair", "primitives", "composition"],
+    "isolation": "Separate Spark replicas, authenticated loopback tunnels, source snapshots, and client state."
+  },
+  "baseline": {
+    "receipt": "baseline.json",
+    "verified": 11146,
+    "errors": 0,
+    "rust_source_files": 810,
+    "scope": "Complete frozen campaign crate; not blanket verification of the subsequently changed live workspace."
+  },
+  "repair": {
+    "review": "repair/parent-review.json",
+    "accepted_source_changes": [],
+    "runtime_counterexample": "repair/parent-runtime-smoke.json",
+    "unresolved": [
+      "snapshot_integrity accepts tampered metadata through a concrete dual_hash collision; no repair was proposed or integrated.",
+      "Version comparison outside finite-model admission remains an external-body proof boundary, not an observed ordering bug.",
+      "The trusted pair-to-u64 injectivity claim cannot establish consistency: there are more u64 pairs than u64 values."
+    ]
+  },
+  "primitives": {
+    "review": "primitives/facilitator-result.json",
+    "accepted_new_primitives": 0,
+    "disposition": "Retry-context and dedup-window novelty not substantiated; carryover-quota transition violates its declared invariant.",
+    "all_original_and_corrected_attempts_retained": true
+  },
+  "composition": {
+    "review": "composition/parent-review.json",
+    "accepted_witness": "composition/accepted-witness.rs",
+    "sha256": "c8a8dfb8ae472fb0ab04e06381f2fe99ffc5db8b04e3ef8db53c730a95efc531",
+    "contract": "Causal readiness implies local happens-before merge(local, message), for arbitrary equal-length finite clocks and a valid sender.",
+    "independent_verified": 69,
+    "independent_errors": 0,
+    "scope": "Both model proofs and their complete five-module dependency closure; no module filter or new domain trust escapes.",
+    "runtime_receipt": "composition/parent-runtime-smoke.json",
+    "production_integration": false
+  },
+  "final_source_identity": {
+    "receipt": "live-source-after-campaign.json",
+    "frozen_rust_sources_unchanged": true,
+    "changed_documentation_or_manifest_inputs": 4,
+    "changed_inputs_left_intact": true
+  },
+  "restoration": {
+    "receipt": "restoration.json",
+    "original_containers_restored": 3,
+    "original_identity_image_config_hostconfig_mounts_match": true,
+    "real_deepseek_completion": "deepseek-after.json",
+    "answer": "42",
+    "owned_replicas_tunnels_and_log_followers_closed": true
+  },
+  "production_changes": [],
+  "usage": "docs/nemotron-spark.md, Observed three-worker campaign (2026-10-17)"
+}

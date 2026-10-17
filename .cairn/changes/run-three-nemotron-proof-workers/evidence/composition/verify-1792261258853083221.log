@@ -1,0 +1,143 @@
+error[E0425]: cannot find function `is_causally_ready_spec` in this scope
+  --> /home/brittonr/git/OnixResearch/trellis/target/nemotron-workers-20261017T162448Z/composition/work/src/../composition.rs:41:9
+   |
+41 |         is_causally_ready_spec(msg_clock, local_clock, sender),
+   |         ^^^^^^^^^^^^^^^^^^^^^^ not found in this scope
+   |
+help: consider importing this function
+   |
+13 + use crate::causal_order::is_causally_ready_spec;
+   |
+
+error[E0425]: cannot find function `happens_before_spec` in this scope
+  --> /home/brittonr/git/OnixResearch/trellis/target/nemotron-workers-20261017T162448Z/composition/work/src/../composition.rs:43:9
+   |
+43 |         happens_before_spec(local_clock, merge_spec(local_clock, msg_clock))
+   |         ^^^^^^^^^^^^^^^^^^^ not found in this scope
+   |
+help: consider importing this function
+   |
+13 + use crate::vector_clock::happens_before_spec;
+   |
+
+error[E0425]: cannot find function `merge_spec` in this scope
+  --> /home/brittonr/git/OnixResearch/trellis/target/nemotron-workers-20261017T162448Z/composition/work/src/../composition.rs:43:42
+   |
+43 |         happens_before_spec(local_clock, merge_spec(local_clock, msg_clock))
+   |                                          ^^^^^^^^^^ not found in this scope
+   |
+help: consider importing one of these functions
+   |
+13 + use crate::chaoscontrol_coverage::merge_spec;
+   |
+13 + use crate::interval::merge_spec;
+   |
+13 + use crate::nix_attrset::merge_spec;
+   |
+13 + use crate::vector_clock::merge_spec;
+   |
+
+error[E0425]: cannot find function `merge_spec` in this scope
+  --> /home/brittonr/git/OnixResearch/trellis/target/nemotron-workers-20261017T162448Z/composition/work/src/../composition.rs:59:27
+   |
+59 |         local_clock[i] <= merge_spec(local_clock, msg_clock)[i]) by {
+   |                           ^^^^^^^^^^ not found in this scope
+   |
+help: consider importing one of these functions
+   |
+13 + use crate::chaoscontrol_coverage::merge_spec;
+   |
+13 + use crate::interval::merge_spec;
+   |
+13 + use crate::nix_attrset::merge_spec;
+   |
+13 + use crate::vector_clock::merge_spec;
+   |
+
+error[E0425]: cannot find function `max_spec` in this scope
+  --> /home/brittonr/git/OnixResearch/trellis/target/nemotron-workers-20261017T162448Z/composition/work/src/../composition.rs:60:39
+   |
+60 |         assert(forall|x: u64, y: u64| max_spec(x, y) >= x);
+   |                                       ^^^^^^^^ not found in this scope
+   |
+help: consider importing this function
+   |
+13 + use crate::ordering::max_spec;
+   |
+
+error[E0425]: cannot find function `merge_spec` in this scope
+  --> /home/brittonr/git/OnixResearch/trellis/target/nemotron-workers-20261017T162448Z/composition/work/src/../composition.rs:66:12
+   |
+66 |     assert(merge_spec(local_clock, msg_clock)[sender as int] ==
+   |            ^^^^^^^^^^ not found in this scope
+   |
+help: consider importing one of these functions
+   |
+13 + use crate::chaoscontrol_coverage::merge_spec;
+   |
+13 + use crate::interval::merge_spec;
+   |
+13 + use crate::nix_attrset::merge_spec;
+   |
+13 + use crate::vector_clock::merge_spec;
+   |
+
+error[E0425]: cannot find function `merge_spec` in this scope
+  --> /home/brittonr/git/OnixResearch/trellis/target/nemotron-workers-20261017T162448Z/composition/work/src/../composition.rs:72:41
+   |
+72 |     assert(local_clock[sender as int] < merge_spec(local_clock, msg_clock)[sender as int]) by {
+   |                                         ^^^^^^^^^^ not found in this scope
+   |
+help: consider importing one of these functions
+   |
+13 + use crate::chaoscontrol_coverage::merge_spec;
+   |
+13 + use crate::interval::merge_spec;
+   |
+13 + use crate::nix_attrset::merge_spec;
+   |
+13 + use crate::vector_clock::merge_spec;
+   |
+
+error[E0425]: cannot find function `happens_before_spec` in this scope
+  --> /home/brittonr/git/OnixResearch/trellis/target/nemotron-workers-20261017T162448Z/composition/work/src/../composition.rs:93:9
+   |
+93 |         happens_before_spec(
+   |         ^^^^^^^^^^^^^^^^^^^ not found in this scope
+   |
+help: consider importing this function
+   |
+13 + use crate::vector_clock::happens_before_spec;
+   |
+
+error[E0425]: cannot find function `merge_spec` in this scope
+  --> /home/brittonr/git/OnixResearch/trellis/target/nemotron-workers-20261017T162448Z/composition/work/src/../composition.rs:95:13
+   |
+95 |             merge_spec(seq![2u64, 3u64, 1u64], seq![2u64, 4u64, 1u64]),
+   |             ^^^^^^^^^^ not found in this scope
+   |
+help: consider importing one of these functions
+   |
+13 + use crate::chaoscontrol_coverage::merge_spec;
+   |
+13 + use crate::interval::merge_spec;
+   |
+13 + use crate::nix_attrset::merge_spec;
+   |
+13 + use crate::vector_clock::merge_spec;
+   |
+
+error[E0425]: cannot find function `is_causally_ready_spec` in this scope
+  --> /home/brittonr/git/OnixResearch/trellis/target/nemotron-workers-20261017T162448Z/composition/work/src/../composition.rs:99:12
+   |
+99 |     assert(is_causally_ready_spec(seq![2u64, 4u64, 1u64], seq![2u64, 3u64, 1u64], 1)) by {
+   |            ^^^^^^^^^^^^^^^^^^^^^^ not found in this scope
+   |
+help: consider importing this function
+   |
+13 + use crate::causal_order::is_causally_ready_spec;
+   |
+
+error: aborting due to 10 previous errors
+
+For more information about this error, try `rustc --explain E0425`.

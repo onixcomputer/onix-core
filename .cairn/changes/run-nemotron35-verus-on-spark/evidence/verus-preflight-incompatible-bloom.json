@@ -1,0 +1,14 @@
+{
+  "lemma": "no_false_negatives_helper",
+  "verus_root": "/nix/store/cb02jr7r1a2k8k2hlahmk8c90421czvq-octet-production-verus-0.2026.05.17.e479cce",
+  "source_sha256": "12de07ebc7c43f9b838c5d78022dac666627f900c1f24fa926dfa666d69fde66",
+  "integrity_rejections": {
+    "changed_postcondition": "Frozen scaffold changed: only the selected proof body may change",
+    "assumption_added": "Disallowed trust escape or declaration",
+    "scaffold_escape": "Disallowed trust escape or declaration"
+  },
+  "original_verifies": false,
+  "empty_body_verifies": false,
+  "original_output": "error: to dereference a mutable reference parameter in a postcondition, disambiguate by wrapping it in either `old` or `final`\n  --> /tmp/nemotron-verus-preflight-1znxx9re/original.rs:49:9\n   |\n49 |         bits@.len() == old(bits)@.len(),\n   |         ^^^^\n   |\n   = help: For information on the new mutable reference support, see: https://github.com/verus-lang/verus/blob/main/source/docs/migration-mut-ref.md\n\nerror: aborting due to 1 previous error\n\n",
+  "empty_body_output": "error: to dereference a mutable reference parameter in a postcondition, disambiguate by wrapping it in either `old` or `final`\n  --> /tmp/nemotron-verus-preflight-1znxx9re/unsolved.rs:49:9\n   |\n49 |         bits@.len() == old(bits)@.len(),\n   |         ^^^^\n   |\n   = help: For information on the new mutable reference support, see: https://github.com/verus-lang/verus/blob/main/source/docs/migration-mut-ref.md\n\nerror: aborting due to 1 previous error\n\n"
+}

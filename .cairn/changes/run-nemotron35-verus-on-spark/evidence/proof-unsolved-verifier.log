@@ -1,0 +1,15 @@
+error: postcondition not satisfied
+  --> /tmp/onix-nemotron-verus-cyq6ty_4/work/proof.rs:95:13
+   |
+89 |   proof fn count_matching_all_from(
+   |  _______-
+90 | |     s: Seq<u64>, p: spec_fn(u64) -> bool, from: int,
+91 | | )
+   | |_- at the end of the function body
+...
+95 |       ensures count_matching_from_spec(s, p, from) as int == s.len() - from
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition
+
+verification results:: 7 verified, 1 errors
+error: aborting due to 1 previous error
+

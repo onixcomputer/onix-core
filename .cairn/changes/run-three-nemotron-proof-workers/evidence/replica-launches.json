@@ -1,0 +1,26 @@
+[
+  {
+    "role": "repair",
+    "host": "spark-e442.local",
+    "at": "2026-10-17T17:03:02.488Z",
+    "stdout": "c14618fd5065aef47a7c2b00caa4abb24355f37be12ad866a91e61289eaae985\nContainer launched; model loading/compilation is not yet API readiness.\nLogs: docker logs --follow onix-nemotron35\nReadiness: curl --fail http://127.0.0.1:8000/v1/models\n",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "role": "primitives",
+    "host": "spark-a0a0.local",
+    "at": "2026-10-17T17:03:02.489Z",
+    "stdout": "24c79cec2d90a8c386ab434232e8f6f64943e20d421897f157c3a5ad3c123789\nContainer launched; model loading/compilation is not yet API readiness.\nLogs: docker logs --follow onix-nemotron35\nReadiness: curl --fail http://127.0.0.1:8000/v1/models\n",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "role": "composition",
+    "host": "192.168.1.233",
+    "at": "2026-10-17T17:03:02.489Z",
+    "stdout": "713207d6432bec2eb6d6eb84cbcab281d8ea63dc11acb41b0d7d79be9c63ea6b\nContainer launched; model loading/compilation is not yet API readiness.\nLogs: docker logs --follow onix-nemotron35\nReadiness: curl --fail http://127.0.0.1:8000/v1/models\n",
+    "stderr": "",
+    "exit": 0
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "verified": 11146,
+  "errors": 0,
+  "complete_crate": true,
+  "rust_source_files": 810,
+  "production_verus_root": "/nix/store/cb02jr7r1a2k8k2hlahmk8c90421czvq-octet-production-verus-0.2026.05.17.e479cce",
+  "resource_limit": 20,
+  "trigger_reporting": "silent",
+  "raw_output": "baseline-verifier.log"
+}

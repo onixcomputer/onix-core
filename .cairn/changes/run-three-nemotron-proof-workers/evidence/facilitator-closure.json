@@ -1,0 +1,11 @@
+{
+  "role": "composition",
+  "actual_model_status": "All three actual attempts, transcripts, tool results, solver receipts and final model findings were retained before closure.",
+  "facilitator_wrapper_status": "Cancelled after model work, independent parent acceptance, runtime verification and service restoration were complete.",
+  "reason": "The facilitator-only wrapper remained active after its substantive model work and parent acceptance were finished. No further inference or research was authorized.",
+  "acceptance_authority": "composition/parent-review.json",
+  "accepted_witness": "composition/accepted-witness.rs",
+  "independent_verification": "composition/parent-verifier.json",
+  "runtime_verification": "composition/parent-runtime-smoke.json",
+  "claims": "No claim that a separate final facilitator-result.json was delivered. The completed real model work and independent parent receipts establish the bounded composition result."
+}

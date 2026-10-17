@@ -1,0 +1,26 @@
+[
+  {
+    "host": "spark-a0a0.local",
+    "order": "worker-before-head",
+    "started_at": "2026-10-17T18:40:03.432Z",
+    "stdout": "186945078da3c923db6651041d7de69ce78da5ecbd846518d311a3efdbb48f3c\n",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "host": "192.168.1.233",
+    "order": "worker-before-head",
+    "started_at": "2026-10-17T18:40:03.433Z",
+    "stdout": "9399f8762b505194c63052a284f4e15c4517f899d803fe7253e9b38c242a8a5f\n",
+    "stderr": "",
+    "exit": 0
+  },
+  {
+    "host": "spark-e442.local",
+    "order": "head-after-both-workers",
+    "started_at": "2026-10-17T18:40:04.216Z",
+    "stdout": "d240dfa3f9f058a9e141e4db6e01d5fda71587ab557ada4fea9be1cd00fc6360\n",
+    "stderr": "",
+    "exit": 0
+  }
+]

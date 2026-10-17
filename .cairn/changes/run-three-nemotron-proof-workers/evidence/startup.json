@@ -1,0 +1,23 @@
+[
+  {
+    "role": "repair",
+    "host": "spark-e442.local",
+    "id": "c14618fd5065aef47a7c2b00caa4abb24355f37be12ad866a91e61289eaae985",
+    "application_startup_complete": true,
+    "log": "startup-repair.log"
+  },
+  {
+    "role": "primitives",
+    "host": "spark-a0a0.local",
+    "id": "24c79cec2d90a8c386ab434232e8f6f64943e20d421897f157c3a5ad3c123789",
+    "application_startup_complete": true,
+    "log": "startup-primitives.log"
+  },
+  {
+    "role": "composition",
+    "host": "192.168.1.233",
+    "id": "713207d6432bec2eb6d6eb84cbcab281d8ea63dc11acb41b0d7d79be9c63ea6b",
+    "application_startup_complete": true,
+    "log": "startup-composition.log"
+  }
+]

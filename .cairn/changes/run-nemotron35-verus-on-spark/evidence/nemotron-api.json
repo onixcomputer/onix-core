@@ -1,0 +1,42 @@
+{
+  "id": "chatcmpl-b122ab3784aa6a79",
+  "object": "chat.completion",
+  "created": 1792216494,
+  "model": "nemotron-3.5-super-vl",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "The roots are \\(x = 2\\) and \\(x = 3\\).",
+        "refusal": null,
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "reasoning": "The user wants real roots of x^2 - 5x + 6 = 0. Factor: (x-2)(x-3)=0, roots x=2, x=3. Need provide final answer. Since thinking_effort low, concise. Ensure final only answer perhaps include brief. Need mention roots in final answer. No issue with x*x notation. Final: 2 and 3."
+      },
+      "logprobs": null,
+      "finish_reason": "stop",
+      "stop_reason": null,
+      "token_ids": null,
+      "routed_experts": null
+    }
+  ],
+  "service_tier": null,
+  "system_fingerprint": "vllm-0.32.0rc1.dev190+g3f1bcfd82-b3a2a49c",
+  "usage": {
+    "prompt_tokens": 49,
+    "total_tokens": 153,
+    "completion_tokens": 104,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+      "reasoning_tokens": 86
+    }
+  },
+  "prompt_logprobs": null,
+  "prompt_token_ids": null,
+  "prompt_text": null,
+  "kv_transfer_params": null,
+  "ec_transfer_params": null,
+  "metrics": null
+}

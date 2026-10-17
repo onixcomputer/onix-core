@@ -1,0 +1,10 @@
+{
+  "lemma": "count_matching_all_from",
+  "source": "src/seq_fold.rs",
+  "verus_root": "/nix/store/cb02jr7r1a2k8k2hlahmk8c90421czvq-octet-production-verus-0.2026.05.17.e479cce",
+  "source_sha256": "2582e9ad8ef79185ad948dee72d733ec3ec849a6e255b4ba115cbad5727ec9b0",
+  "original_verifies": true,
+  "empty_body_verifies": false,
+  "original_output": "verification results:: 8 verified, 0 errors\n",
+  "empty_body_output": "error: postcondition not satisfied\n  --> /tmp/nemotron-verus-sequence-bnmfgp85/unsolved.rs:95:13\n   |\n89 |   proof fn count_matching_all_from(\n   |  _______-\n90 | |     s: Seq<u64>, p: spec_fn(u64) -> bool, from: int,\n91 | | )\n   | |_- at the end of the function body\n...\n95 |       ensures count_matching_from_spec(s, p, from) as int == s.len() - from\n   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ failed this postcondition\n\nverification results:: 7 verified, 1 errors\nerror: aborting due to 1 previous error\n\n"
+}

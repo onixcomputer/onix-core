@@ -1,0 +1,14 @@
+[
+  {
+    "host": "spark-e442.local",
+    "gpu": "NVIDIA GB10, 580.173.02, [N/A]"
+  },
+  {
+    "host": "spark-a0a0.local",
+    "gpu": "NVIDIA GB10, 580.173.02, [N/A]"
+  },
+  {
+    "host": "192.168.1.233",
+    "gpu": "NVIDIA GB10, 580.173.02, [N/A]"
+  }
+]

@@ -1,0 +1,41 @@
+{
+  "at": "2026-10-17T18:37:27.072Z",
+  "accepted_artifact": "accepted-witness.rs",
+  "witness_sha256": "c8a8dfb8ae472fb0ab04e06381f2fe99ffc5db8b04e3ef8db53c730a95efc531",
+  "accepted_contract": "For arbitrary equal-length finite u64 clocks and a valid sender, is_causally_ready_spec(message, local, sender) implies happens_before_spec(local, merge_spec(local, message)).",
+  "proofs": [
+    "ready_merge_advances",
+    "ready_merge_advances_concrete"
+  ],
+  "independent_verification": {
+    "receipt": "parent-verifier.json",
+    "verified": 69,
+    "errors": 0,
+    "scope": "All proofs/executable contracts in the complete five-module dependency closure plus both model proofs; no module filter."
+  },
+  "runtime_evidence": "parent-runtime-smoke.json",
+  "trust_scope": "Hash-matched algebraic, ordering, pointwise, vector_clock and causal_order sources only, plus standard vstd. No new domain trust escapes and no unrelated hash/version/codec axioms.",
+  "parent_corrections": [
+    "The general theorem is not restricted to three processes; the unconditional example is a concrete three-process satisfiability witness.",
+    "Readiness permits a nonsender LOCAL counter to exceed its MESSAGE counterpart, not the other way round. The runtime example demonstrates why merging is necessary.",
+    "No consistent-cut, whole distributed-protocol, network or runtime cryptographic guarantee is claimed."
+  ],
+  "advisory_opportunities": [
+    {
+      "modules": [
+        "lease",
+        "bounded_range"
+      ],
+      "status": "Unverified composition proposal only; named APIs were located in actual source. Empty intervals, resource identity, validity-time scope and interval correspondence remain explicit bridge obligations."
+    },
+    {
+      "modules": [
+        "quorum_cert",
+        "quorum"
+      ],
+      "status": "Unverified composition proposal only; actual APIs located. Tuple counts are not unique authenticated voter sets; n>0, membership, uniqueness and authentication are needed before a count-intersection theorem can support a set-intersection claim."
+    }
+  ],
+  "novelty_limit": "Absence of a direct import or a symbol-name match is not an exhaustive proof of non-duplication. No global novelty claim accepted for the advisory proposals.",
+  "production_integration": "None. This is an independently checked research witness, not a new production-exported API."
+}

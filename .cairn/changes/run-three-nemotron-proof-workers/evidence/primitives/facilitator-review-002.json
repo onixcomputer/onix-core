@@ -1,0 +1,31 @@
+{
+  "scope": "Independent facilitator review of attempt-002 proposals; not production proof verification",
+  "candidate_1": {
+    "finding": "The proposed gate depends on history length but not history record contents; the adjective guided is unsupported.",
+    "report_lines": "work/findings.md:30-38",
+    "nearest_checked_api": "src/retry.rs:24-34 should_retry_spec/should_retry"
+  },
+  "candidate_2": {
+    "finding": "Original review omitted stronger existing exact u64 membership and fresh/duplicate decision contracts; finite-window state invariant still needs careful comparison rather than absence-by-name.",
+    "checked_apis": [
+      "src/job_idempotency.rs:18-25 is_consumed_spec/is_consumed",
+      "src/job_idempotency.rs:51-64 try_execute_spec/try_execute",
+      "src/seq_set.rs:21-28 is_member_spec/is_member",
+      "src/seq_set.rs:572-582 all_distinct_spec/all_distinct",
+      "src/ring_buffer.rs:86-117 push/pop contracts"
+    ],
+    "important_boundary": "Ring-buffer public contracts constrain count, capacity and indexed written/read values but do not expose a complete logical FIFO-sequence invariant or whole-state unchanged-on-rejection. No claim that all desired FIFO dedup semantics already compose is established by this facilitator review."
+  },
+  "candidate_3": {
+    "finding": "Counterexample disproves preservation of the proposed used<=limit invariant.",
+    "actually_exercised": true,
+    "execution": "Python 3 evaluation of the exact model-proposed arithmetic; no Rust implementation and no Verus invocation",
+    "input": {"limit": 100, "carry_cap": 10, "used": 100, "carry": 10, "request": 1},
+    "observed": {"available": 10, "admitted": true, "used_after": 101, "invariant_used_le_limit": false},
+    "additional_objection": "Repeated carry_idle can re-credit unchanged unused capacity without a period transition.",
+    "arithmetic_duplication": "rate_limit::tokens_after_refill_spec(tokens,1000,unused,burst) computes min(tokens+unused,burst), and try_consume_spec already returns unchanged state on insufficient credit.",
+    "checked_source": "src/rate_limit.rs:20-30,104-117; src/quota.rs:21-30,49-64,84-95"
+  },
+  "source_identity_observed_before_correction": {"inventoried_files": 854, "rust_files": 810, "changed_or_missing": []},
+  "correction": "Actual-model prompt-003.txt requests original dispositions, corrected source-read claims, explicit invariants, and fewer proposals if non-duplication cannot be established. Original report remains in work/findings.md and transcript-002/tool-results-002."
+}

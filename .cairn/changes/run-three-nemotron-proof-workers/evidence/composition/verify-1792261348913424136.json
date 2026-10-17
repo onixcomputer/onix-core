@@ -1,0 +1,23 @@
+{
+  "role": "composition",
+  "at": "2026-10-17T18:22:28.913428+00:00",
+  "argv": [
+    "bash",
+    "/home/brittonr/git/OnixResearch/trellis/scripts/verus.sh",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-workers-20261017T162448Z/composition/work/src/lib.rs",
+    "--rlimit",
+    "20",
+    "--triggers-mode",
+    "silent",
+    "--verify-module",
+    "nemotron_composition"
+  ],
+  "exit": 0,
+  "changed_sha256": {
+    "composition.rs": "c8a8dfb8ae472fb0ab04e06381f2fe99ffc5db8b04e3ef8db53c730a95efc531"
+  },
+  "frozen_inputs_unchanged": true,
+  "requires_parent_contract_review": false,
+  "log": "verify-1792261348913424136.log",
+  "baseline_identity": "f454bdf03e5a0882e0e363db54cd0626cda5fc01222559b3d727d648039bc497"
+}

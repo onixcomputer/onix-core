@@ -1,0 +1,534 @@
+warning: use of deprecated method `vstd::prelude::OptionAdditionalFns::is_None`: is_Variant is deprecated - use `->` or `matches` instead: https://verus-lang.github.io/verus/guide/datatypes_enum.html
+  --> src/constraint_consistency.rs:20:145
+   |
+20 | ...nment) requires constraint_relation_assigned_tuple_spec(r,a).is_None() ensures !constraint_consistent_spec(r,a) {}
+   |                                                                 ^^^^^^^
+   |
+   = note: `#[warn(deprecated)]` on by default
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/ability_effect.rs:12:10
+   |
+12 | #[derive(Clone, PartialEq, Eq, Debug)]
+   |          ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/ability_effect.rs:17:10
+   |
+17 | #[derive(Clone, PartialEq, Eq, Debug)]
+   |          ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/ability_effect.rs:28:10
+   |
+28 | #[derive(Clone, PartialEq, Eq, Debug)]
+   |          ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/algebraic_effect.rs:35:10
+   |
+35 | #[derive(Clone, PartialEq, Eq, Debug)]
+   |          ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/algebraic_effect.rs:40:10
+   |
+40 | #[derive(Clone, PartialEq, Eq, Debug)]
+   |          ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/algebraic_effect.rs:45:10
+   |
+45 | #[derive(Clone, PartialEq, Eq, Debug)]
+   |          ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/algebraic_effect.rs:51:10
+   |
+51 | #[derive(Clone, PartialEq, Eq, Debug)]
+   |          ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/beam_process.rs:23:10
+   |
+23 | #[derive(Clone, Debug, PartialEq, Eq)]
+   |          ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/content_addressed_code.rs:25:10
+   |
+25 | #[derive(Clone, PartialEq, Eq, Debug)]
+   |          ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/content_addressed_code.rs:37:10
+   |
+37 | #[derive(Clone, PartialEq, Eq, Debug)]
+   |          ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/remote_computation.rs:25:10
+   |
+25 | #[derive(Clone, PartialEq, Eq, Debug)]
+   |          ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/remote_computation.rs:35:10
+   |
+35 | #[derive(Clone, PartialEq, Eq, Debug)]
+   |          ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/semantic_refactoring.rs:59:10
+   |
+59 | #[derive(Clone, PartialEq, Eq, Debug)]
+   |          ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+   --> src/typed_durable_reference.rs:112:10
+    |
+112 | #[derive(Clone, PartialEq, Eq, Debug)]
+    |          ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/loop_detection.rs:15:17
+   |
+15 | #[derive(Debug, Clone, PartialEq, Eq)]
+   |                 ^^^^^
+
+warning: autoderive Clone impl does not take the form Verus expects; continuing, but without adding a specification for the derived Clone impl
+  --> src/nickel_pattern_coverage.rs:95:17
+   |
+95 | #[derive(Debug, Clone, PartialEq, Eq)]
+   |                 ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/nix_closure.rs:15:10
+   |
+15 | #[derive(Clone, Debug, PartialEq, Eq)]
+   |          ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/nix_drv_serialize.rs:12:10
+   |
+12 | #[derive(Clone)]
+   |          ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/nix_drv_serialize.rs:20:10
+   |
+20 | #[derive(Clone)]
+   |          ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/sel4_ready_queue.rs:16:10
+   |
+16 | #[derive(Clone)]
+   |          ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/sel4_untyped.rs:30:10
+   |
+30 | #[derive(Clone)]
+   |          ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/ssa_construction.rs:41:17
+   |
+41 | #[derive(Debug, Clone, PartialEq, Eq)]
+   |                 ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/ssa_construction.rs:48:17
+   |
+48 | #[derive(Debug, Clone, PartialEq, Eq)]
+   |                 ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/ssa_construction.rs:53:17
+   |
+53 | #[derive(Debug, Clone, PartialEq, Eq)]
+   |                 ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/ssa_construction.rs:59:17
+   |
+59 | #[derive(Debug, Clone, PartialEq, Eq)]
+   |                 ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/ssa_construction.rs:66:17
+   |
+66 | #[derive(Debug, Clone, PartialEq, Eq)]
+   |                 ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/ssa_construction.rs:75:17
+   |
+75 | #[derive(Debug, Clone, PartialEq, Eq)]
+   |                 ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/ssa_construction.rs:81:17
+   |
+81 | #[derive(Debug, Clone, PartialEq, Eq)]
+   |                 ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/ssa_construction.rs:88:17
+   |
+88 | #[derive(Debug, Clone, PartialEq, Eq)]
+   |                 ^^^^^
+
+warning: Verus does not (yet) support autoderive Clone impl when the clone is not a copy; continuing, but without adding a specification for the derived Clone impl
+  --> src/ssa_construction.rs:95:17
+   |
+95 | #[derive(Debug, Clone, PartialEq, Eq)]
+   |                 ^^^^^
+
+warning: using ==> in `assert forall` does not currently assume the antecedent in the body; consider using `implies` instead of `==>`
+   --> src/drop_guard.rs:112:5
+    |
+112 |     assert forall|s: DropGuardState|
+    |     ^^^^^^
+    |
+    = help: If you didn't mean to assume the antecedent, we're very curious to hear why! To tell us, please open an issue on the Verus issue tracker on github with the title `Don't always make assert forall assume the antecedent`. If no one opens such an issue, we'll soon change the behavior of Verus to always assume the antecedent of the outermost implication
+
+WARNING: (17212,4): 'if' cannot be used in patterns.
+WARNING: (17342,5): 'if' cannot be used in patterns.
+WARNING: (19992,4): 'if' cannot be used in patterns.
+WARNING: (20169,1): 'if' cannot be used in patterns.
+verification results:: 11146 verified, 0 errors
+warning: 32 warnings emitted
+
+warning: function `MODE_READ` should have a snake case name
+  --> src/access_mode.rs:26:18
+   |
+26 | pub open spec fn MODE_READ() -> u8 { 0 }
+   |                  ^^^^^^^^^ help: convert the identifier to snake case: `mode_read`
+   |
+   = note: `#[warn(non_snake_case)]` (part of `#[warn(nonstandard_style)]`) on by default
+
+warning: function `MODE_WRITE` should have a snake case name
+  --> src/access_mode.rs:28:18
+   |
+28 | pub open spec fn MODE_WRITE() -> u8 { 1 }
+   |                  ^^^^^^^^^^ help: convert the identifier to snake case: `mode_write`
+
+warning: function `MODE_DELETE` should have a snake case name
+  --> src/access_mode.rs:30:18
+   |
+30 | pub open spec fn MODE_DELETE() -> u8 { 2 }
+   |                  ^^^^^^^^^^^ help: convert the identifier to snake case: `mode_delete`
+
+warning: function `MODE_FULL` should have a snake case name
+  --> src/access_mode.rs:32:18
+   |
+32 | pub open spec fn MODE_FULL() -> u8 { 3 }
+   |                  ^^^^^^^^^ help: convert the identifier to snake case: `mode_full`
+
+warning: function `NO_BUDGET` should have a snake case name
+   --> src/cost_tracker.rs:251:18
+    |
+251 | pub open spec fn NO_BUDGET() -> u8 { 0 }
+    |                  ^^^^^^^^^ help: convert the identifier to snake case: `no_budget`
+
+warning: function `BUDGET_OK` should have a snake case name
+   --> src/cost_tracker.rs:252:18
+    |
+252 | pub open spec fn BUDGET_OK() -> u8 { 1 }
+    |                  ^^^^^^^^^ help: convert the identifier to snake case: `budget_ok`
+
+warning: function `BUDGET_WARNING` should have a snake case name
+   --> src/cost_tracker.rs:253:18
+    |
+253 | pub open spec fn BUDGET_WARNING() -> u8 { 2 }
+    |                  ^^^^^^^^^^^^^^ help: convert the identifier to snake case: `budget_warning`
+
+warning: function `BUDGET_EXCEEDED` should have a snake case name
+   --> src/cost_tracker.rs:254:18
+    |
+254 | pub open spec fn BUDGET_EXCEEDED() -> u8 { 3 }
+    |                  ^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `budget_exceeded`
+
+warning: function `ROLE_SMOL` should have a snake case name
+   --> src/cost_tracker.rs:383:18
+    |
+383 | pub open spec fn ROLE_SMOL() -> u8 { 0 }
+    |                  ^^^^^^^^^ help: convert the identifier to snake case: `role_smol`
+
+warning: function `ROLE_DEFAULT` should have a snake case name
+   --> src/cost_tracker.rs:384:18
+    |
+384 | pub open spec fn ROLE_DEFAULT() -> u8 { 1 }
+    |                  ^^^^^^^^^^^^ help: convert the identifier to snake case: `role_default`
+
+warning: function `ROLE_SLOW` should have a snake case name
+   --> src/cost_tracker.rs:385:18
+    |
+385 | pub open spec fn ROLE_SLOW() -> u8 { 2 }
+    |                  ^^^^^^^^^ help: convert the identifier to snake case: `role_slow`
+
+warning: function `MAX_DELEGATION_DEPTH` should have a snake case name
+  --> src/delegation.rs:19:18
+   |
+19 | pub open spec fn MAX_DELEGATION_DEPTH() -> u64 { 8 }
+   |                  ^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `max_delegation_depth`
+
+warning: function `V_DELEGATE` should have a snake case name
+  --> src/delegation.rs:22:18
+   |
+22 | pub open spec fn V_DELEGATE() -> u8 { 7 }
+   |                  ^^^^^^^^^^ help: convert the identifier to snake case: `v_delegate`
+
+warning: function `FS_PATH_SEG_EMPTY` should have a snake case name
+  --> src/fs_path_segment.rs:12:18
+   |
+12 | pub open spec fn FS_PATH_SEG_EMPTY() -> u8 { 0 }
+   |                  ^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `fs_path_seg_empty`
+
+warning: function `FS_PATH_SEG_CURRENT` should have a snake case name
+  --> src/fs_path_segment.rs:13:18
+   |
+13 | pub open spec fn FS_PATH_SEG_CURRENT() -> u8 { 1 }
+   |                  ^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `fs_path_seg_current`
+
+warning: function `FS_PATH_SEG_PARENT` should have a snake case name
+  --> src/fs_path_segment.rs:14:18
+   |
+14 | pub open spec fn FS_PATH_SEG_PARENT() -> u8 { 2 }
+   |                  ^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `fs_path_seg_parent`
+
+warning: function `FS_PATH_SEG_NORMAL` should have a snake case name
+  --> src/fs_path_segment.rs:15:18
+   |
+15 | pub open spec fn FS_PATH_SEG_NORMAL() -> u8 { 3 }
+   |                  ^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `fs_path_seg_normal`
+
+warning: function `FS_PATH_TRAVERSAL_ALLOW_ALL` should have a snake case name
+  --> src/fs_path_traversal.rs:12:18
+   |
+12 | pub open spec fn FS_PATH_TRAVERSAL_ALLOW_ALL() -> u8 { 0 }
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `fs_path_traversal_allow_all`
+
+warning: function `FS_PATH_TRAVERSAL_REJECT_PARENT` should have a snake case name
+  --> src/fs_path_traversal.rs:13:18
+   |
+13 | pub open spec fn FS_PATH_TRAVERSAL_REJECT_PARENT() -> u8 { 1 }
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `fs_path_traversal_reject_parent`
+
+warning: function `FS_PATH_TRAVERSAL_REJECT_CURRENT` should have a snake case name
+  --> src/fs_path_traversal.rs:14:18
+   |
+14 | pub open spec fn FS_PATH_TRAVERSAL_REJECT_CURRENT() -> u8 { 2 }
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `fs_path_traversal_reject_current`
+
+warning: function `FS_PATH_TRAVERSAL_REJECT_BOTH` should have a snake case name
+  --> src/fs_path_traversal.rs:15:18
+   |
+15 | pub open spec fn FS_PATH_TRAVERSAL_REJECT_BOTH() -> u8 { 3 }
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `fs_path_traversal_reject_both`
+
+warning: function `GEOM_REL_DISJOINT` should have a snake case name
+ --> src/geom_intersection.rs:6:18
+  |
+6 | pub open spec fn GEOM_REL_DISJOINT() -> u8 { 0 }
+  |                  ^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `geom_rel_disjoint`
+
+warning: function `GEOM_REL_TOUCHES` should have a snake case name
+ --> src/geom_intersection.rs:7:18
+  |
+7 | pub open spec fn GEOM_REL_TOUCHES() -> u8 { 1 }
+  |                  ^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `geom_rel_touches`
+
+warning: function `GEOM_REL_OVERLAPS` should have a snake case name
+ --> src/geom_intersection.rs:8:18
+  |
+8 | pub open spec fn GEOM_REL_OVERLAPS() -> u8 { 2 }
+  |                  ^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `geom_rel_overlaps`
+
+warning: function `GEOM_ORIENT_DEGENERATE` should have a snake case name
+ --> src/geom_orientation.rs:6:18
+  |
+6 | pub open spec fn GEOM_ORIENT_DEGENERATE() -> u8 { 0 }
+  |                  ^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `geom_orient_degenerate`
+
+warning: function `GEOM_ORIENT_CLOCKWISE` should have a snake case name
+ --> src/geom_orientation.rs:7:18
+  |
+7 | pub open spec fn GEOM_ORIENT_CLOCKWISE() -> u8 { 1 }
+  |                  ^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `geom_orient_clockwise`
+
+warning: function `GEOM_ORIENT_COUNTERCLOCKWISE` should have a snake case name
+ --> src/geom_orientation.rs:8:18
+  |
+8 | pub open spec fn GEOM_ORIENT_COUNTERCLOCKWISE() -> u8 { 2 }
+  |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `geom_orient_counterclockwise`
+
+warning: function `STAR` should have a snake case name
+  --> src/glob.rs:18:18
+   |
+18 | pub open spec fn STAR() -> u8 { 42 }
+   |                  ^^^^ help: convert the identifier to snake case: `star`
+
+warning: function `WILDCARD` should have a snake case name
+  --> src/pattern.rs:20:18
+   |
+20 | pub open spec fn WILDCARD() -> int { -1 }
+   |                  ^^^^^^^^ help: convert the identifier to snake case: `wildcard`
+
+warning: function `V_READ` should have a snake case name
+  --> src/subsumption.rs:16:18
+   |
+16 | pub open spec fn V_READ() -> u8 { 0 }
+   |                  ^^^^^^ help: convert the identifier to snake case: `v_read`
+
+warning: function `V_WRITE` should have a snake case name
+  --> src/subsumption.rs:18:18
+   |
+18 | pub open spec fn V_WRITE() -> u8 { 1 }
+   |                  ^^^^^^^ help: convert the identifier to snake case: `v_write`
+
+warning: function `V_DELETE` should have a snake case name
+  --> src/subsumption.rs:20:18
+   |
+20 | pub open spec fn V_DELETE() -> u8 { 2 }
+   |                  ^^^^^^^^ help: convert the identifier to snake case: `v_delete`
+
+warning: function `V_WATCH` should have a snake case name
+  --> src/subsumption.rs:22:18
+   |
+22 | pub open spec fn V_WATCH() -> u8 { 3 }
+   |                  ^^^^^^^ help: convert the identifier to snake case: `v_watch`
+
+warning: function `V_FULL` should have a snake case name
+  --> src/subsumption.rs:24:18
+   |
+24 | pub open spec fn V_FULL() -> u8 { 4 }
+   |                  ^^^^^^ help: convert the identifier to snake case: `v_full`
+
+warning: function `V_PROMPT` should have a snake case name
+  --> src/subsumption.rs:26:18
+   |
+26 | pub open spec fn V_PROMPT() -> u8 { 5 }
+   |                  ^^^^^^^^ help: convert the identifier to snake case: `v_prompt`
+
+warning: function `V_TOOL_USE` should have a snake case name
+  --> src/subsumption.rs:28:18
+   |
+28 | pub open spec fn V_TOOL_USE() -> u8 { 6 }
+   |                  ^^^^^^^^^^ help: convert the identifier to snake case: `v_tool_use`
+
+warning: function `V_DELEGATE` should have a snake case name
+  --> src/subsumption.rs:30:18
+   |
+30 | pub open spec fn V_DELEGATE() -> u8 { 7 }
+   |                  ^^^^^^^^^^ help: convert the identifier to snake case: `v_delegate`
+
+warning: function `COLD` should have a snake case name
+  --> src/tier.rs:18:18
+   |
+18 | pub open spec fn COLD() -> u8 { 0 }
+   |                  ^^^^ help: convert the identifier to snake case: `cold`
+
+warning: function `WARM` should have a snake case name
+  --> src/tier.rs:20:18
+   |
+20 | pub open spec fn WARM() -> u8 { 1 }
+   |                  ^^^^ help: convert the identifier to snake case: `warm`
+
+warning: function `HOT` should have a snake case name
+  --> src/tier.rs:22:18
+   |
+22 | pub open spec fn HOT() -> u8 { 2 }
+   |                  ^^^ help: convert the identifier to snake case: `hot`
+
+warning: function `TOKEN_CLOCK_SKEW_SECS` should have a snake case name
+  --> src/token_timestamp.rs:12:18
+   |
+12 | pub open spec fn TOKEN_CLOCK_SKEW_SECS() -> u64 { 60 }
+   |                  ^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `token_clock_skew_secs`
+
+warning: function `MAX_CAPABILITIES_PER_TOKEN` should have a snake case name
+  --> src/token_timestamp.rs:15:18
+   |
+15 | pub open spec fn MAX_CAPABILITIES_PER_TOKEN() -> u64 { 32 }
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `max_capabilities_per_token`
+
+warning: function `TRANSFER_OK` should have a snake case name
+  --> src/transfer.rs:15:18
+   |
+15 | pub open spec fn TRANSFER_OK() -> u8 { 0 }
+   |                  ^^^^^^^^^^^ help: convert the identifier to snake case: `transfer_ok`
+
+warning: function `INSUFFICIENT_FUNDS` should have a snake case name
+  --> src/transfer.rs:17:18
+   |
+17 | pub open spec fn INSUFFICIENT_FUNDS() -> u8 { 1 }
+   |                  ^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `insufficient_funds`
+
+warning: function `INVALID_AMOUNT` should have a snake case name
+  --> src/transfer.rs:19:18
+   |
+19 | pub open spec fn INVALID_AMOUNT() -> u8 { 2 }
+   |                  ^^^^^^^^^^^^^^ help: convert the identifier to snake case: `invalid_amount`
+
+warning: function `RECEIVER_OVERFLOW` should have a snake case name
+  --> src/transfer.rs:21:18
+   |
+21 | pub open spec fn RECEIVER_OVERFLOW() -> u8 { 3 }
+   |                  ^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `receiver_overflow`
+
+warning: function `DUPLICATE_TRANSFER` should have a snake case name
+  --> src/transfer.rs:23:18
+   |
+23 | pub open spec fn DUPLICATE_TRANSFER() -> u8 { 4 }
+   |                  ^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `duplicate_transfer`
+
+warning: function `TYPE_STRING` should have a snake case name
+  --> src/type_lattice.rs:16:18
+   |
+16 | pub open spec fn TYPE_STRING() -> u8 { 0 }
+   |                  ^^^^^^^^^^^ help: convert the identifier to snake case: `type_string`
+
+warning: function `TYPE_INTEGER` should have a snake case name
+  --> src/type_lattice.rs:18:18
+   |
+18 | pub open spec fn TYPE_INTEGER() -> u8 { 1 }
+   |                  ^^^^^^^^^^^^ help: convert the identifier to snake case: `type_integer`
+
+warning: function `TYPE_FLOAT` should have a snake case name
+  --> src/type_lattice.rs:20:18
+   |
+20 | pub open spec fn TYPE_FLOAT() -> u8 { 2 }
+   |                  ^^^^^^^^^^ help: convert the identifier to snake case: `type_float`
+
+warning: function `TYPE_BOOLEAN` should have a snake case name
+  --> src/type_lattice.rs:22:18
+   |
+22 | pub open spec fn TYPE_BOOLEAN() -> u8 { 3 }
+   |                  ^^^^^^^^^^^^ help: convert the identifier to snake case: `type_boolean`
+
+warning: function `TYPE_DATE` should have a snake case name
+  --> src/type_lattice.rs:24:18
+   |
+24 | pub open spec fn TYPE_DATE() -> u8 { 4 }
+   |                  ^^^^^^^^^ help: convert the identifier to snake case: `type_date`
+
+warning: function `TYPE_DATETIME` should have a snake case name
+  --> src/type_lattice.rs:26:18
+   |
+26 | pub open spec fn TYPE_DATETIME() -> u8 { 5 }
+   |                  ^^^^^^^^^^^^^ help: convert the identifier to snake case: `type_datetime`
+
+warning: function `TYPE_ANY` should have a snake case name
+  --> src/type_lattice.rs:28:18
+   |
+28 | pub open spec fn TYPE_ANY() -> u8 { 6 }
+   |                  ^^^^^^^^ help: convert the identifier to snake case: `type_any`
+
+warning: 54 warnings emitted
+
+
+
+Wall time: 89.10 seconds

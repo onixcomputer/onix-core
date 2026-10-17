@@ -10,6 +10,8 @@ If you use direnv, run `direnv allow` once. The `.envrc` file opens the same she
 
 Read [`docs/dgx-machines.md`](docs/dgx-machines.md) for the device-free DGX machine lifecycle.
 
+Read [`docs/nemotron-spark.md`](docs/nemotron-spark.md) for the pinned public Nemotron 3.5 Spark runtime, isolated Trellis proof workflow, and temporary DeepSeek cutover/restoration.
+
 Read [`docs/bookshelf.md`](docs/bookshelf.md) for the private ebook library endpoint, publishing procedure, and backup boundary.
 
 Read [`docs/rustfs-build-caches.md`](docs/rustfs-build-caches.md) for private Kache and niks3 endpoints, authority, operations, and rollback.

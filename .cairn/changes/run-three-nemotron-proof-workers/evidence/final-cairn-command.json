@@ -1,0 +1,16 @@
+{
+  "at": "2026-10-17T18:53:06.797Z",
+  "argv": [
+    "nix",
+    "run",
+    "git+file:///home/brittonr/git/OnixResearch/cairn#cairn",
+    "--",
+    "validate",
+    "--root",
+    "/home/brittonr/git/onix-core",
+    "--policy",
+    "/home/brittonr/git/OnixResearch/cairn/cairn-policy/generated/cairn-policy.json"
+  ],
+  "exit": 0,
+  "stderr": "running auto-GC to free 90629341184 bytes\nwaiting for the big garbage collector lock...\n"
+}

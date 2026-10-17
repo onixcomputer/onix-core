@@ -1,0 +1,31 @@
+{
+  "at": "2026-10-17T18:36:02.451Z",
+  "command": "env -u RUST_TOOLCHAIN CARGO_TARGET_DIR=target cargo run --offline --quiet --manifest-path target/nemotron-workers-20261017T162448Z/parent-composition/Cargo.toml",
+  "exit": 0,
+  "observed": {
+    "causally_ready": true,
+    "raw_happens_before": false,
+    "merged": [
+      2,
+      4,
+      1
+    ],
+    "merged_happens_before": true,
+    "exhausted_sender_ready": false
+  },
+  "caller_source": "#[path = \"../algebraic.rs\"]\nmod algebraic;\n#[path = \"../ordering.rs\"]\nmod ordering;\n#[path = \"../pointwise.rs\"]\nmod pointwise;\n#[path = \"../vector_clock.rs\"]\nmod vector_clock;\n#[path = \"../causal_order.rs\"]\nmod causal_order;\n\nfn main() {\n    let local = vec![2, 3, 1];\n    let message = vec![1, 4, 1];\n    let ready = causal_order::is_causally_ready(&message, &local, 1);\n    let raw_happens_before = vector_clock::happens_before(&local, &message);\n    let merged = vector_clock::merge(&local, &message);\n    let merged_happens_before = vector_clock::happens_before(&local, &merged);\n    let exhausted_sender_ready = causal_order::is_causally_ready(&vec![0], &vec![u64::MAX], 0);\n    assert!(ready);\n    assert!(!raw_happens_before);\n    assert_eq!(merged, vec![2, 4, 1]);\n    assert!(merged_happens_before);\n    assert!(!exhausted_sender_ready);\n    println!(\"{{\\\"causally_ready\\\":{ready},\\\"raw_happens_before\\\":{raw_happens_before},\\\"merged\\\":{merged:?},\\\"merged_happens_before\\\":{merged_happens_before},\\\"exhausted_sender_ready\\\":{exhausted_sender_ready}}}\");\n}\n",
+  "cargo_manifest": "[package]\nname = \"nemotron-causal-composition-smoke\"\nversion = \"0.0.0\"\nedition = \"2024\"\n\n[workspace]\n\n[dependencies]\nvstd = \"=0.0.0-2026-01-25-0057\"\n",
+  "dependencies": {
+    "algebraic.rs": "e6b5ee402bfc5017cafd4e5fcbed7615c5f6a806f39a490cb25ca0043430b0b5",
+    "ordering.rs": "b21e410ea6cc77f6ba87bdefbd1dfb1be338f890d3461ec7ebc9c5ab97c0c02e",
+    "pointwise.rs": "3b4b313bccab4957d6749d000503e7c28444d5f331fe3e18c162ef8ffde3f33a",
+    "vector_clock.rs": "af01095e82eee17b737520180cf6fb103c6d02f9ca5cf182b2e5ea4886cfd7c9",
+    "causal_order.rs": "8ea4abf69e318a963971ea836042b37a4f428dc700e40f496b098b486ed35e7d"
+  },
+  "scope": "Compiled the exact hash-matched runtime modules. A ready message with a locally-ahead nonsender counter need not follow local directly; its merged clock does. Sender u64::MAX is correctly rejected.",
+  "nonfatal_warnings": [
+    "unexpected cfg verus_keep_ghost in the throwaway Cargo project",
+    "unused unrelated runtime functions"
+  ],
+  "setup_failure_retained": "parent-runtime-setup-failure.json"
+}
