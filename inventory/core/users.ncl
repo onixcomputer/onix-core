@@ -91,6 +91,20 @@ let { ValidateUserRefs, .. } = import "user-contracts.ncl" in
       },
     },
 
+    # Aspen3 also gets the official Hermes Agent profile: the Hermes CLI and
+    # the Hermes Desktop application from the upstream NousResearch flake.
+    # The machine-scoped instance keeps the install off every other host.
+    hm-aspen3-hermes = {
+      module = { name = "home-manager-profiles", input = "self" },
+      roles.default = {
+        machines.aspen3 = {},
+        settings = {
+          username = "brittonr",
+          profiles = ["hermes"],
+        },
+      },
+    },
+
     # Apply the managed Cargo Kache wrapper to every RustFS node. The matching
     # machine-level service owns each daemon, configuration, and credential.
     hm-kache-fleet = {

@@ -35,6 +35,7 @@ let
   kacheRustfsSettingsTests = import ../modules/kache-rustfs/settings-tests.nix { inherit lib; };
   niks3Validation = wasm.evalNickelFile ../inventory/services/fixtures/niks3-validation.ncl;
   niks3SettingsTests = import ../modules/niks3/settings-tests.nix { inherit lib; };
+  llmAgentsValidation = wasm.evalNickelFile ../inventory/services/fixtures/llm-agents-validation.ncl;
 
   # Modules registered in contracts.ncl (clan perInstance services only)
   registeredModules = lib.sort lib.lessThan moduleLists.selfModules;
@@ -432,6 +433,17 @@ let
   ) expectedNiks3NegativeFields;
   niks3SemanticPositiveErrors = niks3SettingsTests.positiveErrors;
   niks3MissingNegativeCases = niks3SettingsTests.missingNegativeCases;
+
+  # Contract validation for the llm-agents `packages` setting
+  # (r[verify onix.hermes_agent.validation.inventory]).
+  llmAgentsPositiveErrors = llmAgentsValidation.role_positive;
+  llmAgentsNegativeErrors = llmAgentsValidation.role_negative;
+  expectedLlmAgentsNegativeFields = [
+    "packages"
+  ];
+  missingLlmAgentsNegativeFields = builtins.filter (
+    field: !(lib.any (error: lib.hasInfix field error) llmAgentsNegativeErrors)
+  ) expectedLlmAgentsNegativeFields;
 
   kacheRustfsMachines = [
     "aspen1"
@@ -1071,6 +1083,24 @@ in
       ''}
       ${lib.optionalString (niks3MissingNegativeCases != [ ]) ''
         echo "Invalid niks3 settings did not report expected semantic errors"
+        exit 1
+      ''}
+      touch $out
+    '';
+
+    # r[verify onix.hermes_agent.validation.negative]
+    # r[verify onix.hermes_agent.validation.inventory]
+    llm-agents-settings = pkgs.runCommand "llm-agents-settings" { } ''
+      ${lib.optionalString (llmAgentsPositiveErrors != [ ]) ''
+        echo "Valid llm-agents settings produced unexpected errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" llmAgentsPositiveErrors)}
+        exit 1
+      ''}
+      ${lib.optionalString (missingLlmAgentsNegativeFields != [ ]) ''
+        echo "Invalid llm-agents settings did not report expected fields:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" missingLlmAgentsNegativeFields)}
+        echo "Actual errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" llmAgentsNegativeErrors)}
         exit 1
       ''}
       touch $out
