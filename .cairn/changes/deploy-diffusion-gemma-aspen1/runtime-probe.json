@@ -1,0 +1,45 @@
+{
+  "torch": "2.12.0+rocm7.15.0a20260724",
+  "vllm": "0.25.2.dev0+rocm7.15.0a20260724.g752a3a504.d20260724",
+  "hip": "7.15.0",
+  "gpu": "AMD Radeon 8060S Graphics",
+  "memory": [
+    102806257664,
+    103079215104
+  ],
+  "bf16_matmul": [
+    [
+      56.0,
+      62.0,
+      68.0,
+      74.0
+    ],
+    [
+      152.0,
+      174.0,
+      196.0,
+      218.0
+    ],
+    [
+      248.0,
+      286.0,
+      324.0,
+      362.0
+    ],
+    [
+      344.0,
+      398.0,
+      452.0,
+      506.0
+    ]
+  ],
+  "rocm_packages": {
+    "rocm-sdk-device-gfx1151": "7.15.0a20260724",
+    "triton": "3.8.0+git4cff872c.rocm7.15.0a20260724",
+    "rocm-bootstrap": "0.1.0",
+    "rocm-sdk-libraries": "7.15.0a20260724",
+    "rocm-sdk-core": "7.15.0a20260724",
+    "rocm": "7.15.0a20260724"
+  },
+  "scope": "Native ROCm BF16 matrix execution only; not yet model inference."
+}

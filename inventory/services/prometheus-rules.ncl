@@ -5,6 +5,7 @@
 let queue_critical_path_count = 100 in
 let probe_slow_seconds = 2 in
 let build_storage_minimum_available_ratio = 0.15 in
+let thunderbolt_link_mtu_bytes = 65520 in
 [
   m%"
     groups:
@@ -82,6 +83,15 @@ let build_storage_minimum_available_ratio = 0.15 in
             annotations:
               summary: "Network interface down on {{ $labels.instance }}"
               description: "Network interface {{ $labels.device }} is down"
+
+          - alert: ThunderboltLinkMtuChanged
+            expr: node_network_mtu_bytes{device="br-tbt"} != %{thunderbolt_link_mtu_bytes}
+            for: 10m
+            labels:
+              severity: warning
+            annotations:
+              summary: "USB4 link MTU changed on {{ $labels.instance }}"
+              description: "br-tbt reports MTU {{ $value }} instead of the pinned frame size. The thunderbolt-net driver splits every packet into 4 KiB frames, so a lower MTU costs link throughput."
 
           - alert: HighNetworkTraffic
             expr: (rate(node_network_receive_bytes_total[5m]) + rate(node_network_transmit_bytes_total[5m])) / 1024 / 1024 > 100

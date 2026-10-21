@@ -60,6 +60,10 @@ let
       source = "../herdr-plugin-pueue";
       revision = "29b2ba060297ec15909e06ef1311200c17965cbe";
     }
+    {
+      source = "umakers/collie-herdr";
+      revision = "b2d2803b3f691e9abca74f3f15bbc37307a2026e";
+    }
   ];
   workflowPluginBindings = [
     {
@@ -233,7 +237,10 @@ let
 
   libreWolfSearchConfiguration =
     pkgs.runCommand "librewolf-search-configuration"
-      { libreWolfExecutable = aspen3LibreWolfExecutable; }
+      {
+        libreWolfExecutable = aspen3LibreWolfExecutable;
+        desktopLibreWolfExecutable = "${findHomePackageNamed libreWolfPackageName desktopHome}/bin/librewolf";
+      }
       ''
         set -eu
 
@@ -261,10 +268,12 @@ let
           exit 1
         fi
         if ! ${pkgs.jq}/bin/jq -e '
-          .policies.SearchEngines.Default == "Kagi"
+          .policies.SearchEngines.Default == "Onix Search"
           and any(.policies.SearchEngines.Add[]; .Name == "Kagi")
+          and any(.policies.SearchEngines.Add[]; .Name == "Onix Search" and .URLTemplate == "https://aspen1.bison-tailor.ts.net/search?q={searchTerms}")
+          and all(.policies.SearchEngines.Add[]; (.URLTemplate | contains("token=")) | not)
         ' "$policies" >/dev/null; then
-          echo "positive: LibreWolf must install Kagi as its search policy" >&2
+          echo "positive: Aspen3 must default to credential-free Onix Search and retain direct Kagi" >&2
           exit 1
         fi
         if ! ${pkgs.jq}/bin/jq -e '.policies.DisableTelemetry == true' "$policies" >/dev/null; then
@@ -278,10 +287,21 @@ let
           exit 1
         fi
 
+        desktop_binary="$(${pkgs.gnused}/bin/sed -n 's|^exec \(/nix/store/[^ ]*/bin/librewolf\) "\$@"$|\1|p' "$desktopLibreWolfExecutable")"
+        desktop_root="''${desktop_binary%/bin/librewolf}"
+        if ! ${pkgs.jq}/bin/jq -e '
+          .policies.SearchEngines.Default == "Kagi"
+          and all(.policies.SearchEngines.Add[]; .Name != "Onix Search")
+        ' "$desktop_root/lib/librewolf/distribution/policies.json" >/dev/null; then
+          echo "negative: Aspen3 search policy must not change the desktop browser" >&2
+          exit 1
+        fi
+
         cat > "$out" <<EOF
         LibreWolf search configuration check
         positive: packaged search engine data is admitted
-        positive: Kagi remains the configured search engine
+        positive: Onix Search is the Aspen3 default, with direct Kagi available
+        negative: the desktop browser keeps Kagi and no credential enters a URL
         positive: upstream privacy policy is present
         negative: manual extension installation remains blocked
         EOF
@@ -684,6 +704,22 @@ let
     touch "$out"
   '';
 
+  # r[verify onix.britton-desktop.herdr.collie.plugin]
+  # r[verify onix.britton-desktop.herdr.collie.config]
+  # r[verify onix.britton-desktop.herdr.collie.service]
+  # The package-level Collie tests run in onixpkgs.
+  collieIntegration = import ./_collie-herdr-integration-check.nix {
+    inherit
+      pkgs
+      lib
+      desktopConfig
+      desktopHome
+      aspen3Home
+      aspen1Home
+      ;
+    collie = pkgs.collie-herdr;
+  };
+
   assertions = [
     {
       name = "positive: britton-desktop Home Manager stateVersion is ${targetHomeStateVersion}";
@@ -837,7 +873,9 @@ let
     ]) brittonrDevHomes
   );
   cairnDevToolAssertions =
-    devToolAssertionsFor cairnPackageName invalidCairnPackageName ++ cairnSourceAssertions;
+    devToolAssertionsFor cairnPackageName invalidCairnPackageName
+    ++ cairnSourceAssertions
+    ++ (import ./_cairn-cargo-source-checks.nix { inherit self pkgs lib; });
   octetDevToolAssertions = devToolAssertionsFor octetPackageName invalidOctetPackageName;
   secretSpecPriorityAssertions = lib.mapAttrsToList (
     role: home:
@@ -997,5 +1035,6 @@ in
     herdr-pueue-dashboard = herdrPueueDashboard;
     herdr-workflow-plugins = herdrWorkflowPlugins;
     hermes-agent-desktop = hermesAgentDesktop;
+    collie-integration = collieIntegration;
   };
 }

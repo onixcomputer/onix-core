@@ -162,7 +162,7 @@ let
   supraStateDirectoryMode = "0755";
   supraModelFileMode = "0644";
 
-  tenstorrentPackages = inputs.tenstorrent-nix.packages.${pkgs.stdenv.hostPlatform.system};
+  tenstorrentPackages = import ../../pkgs/tenstorrent-compat { inherit inputs pkgs; };
   ttMetaliumPackage = tenstorrentPackages.llama-cpp-metalium;
   ttMetalPackage = tenstorrentPackages.tt-metal;
   ttMetaliumRuntimeRoot = "${ttMetalPackage}/libexec/tt-metalium";
@@ -294,8 +294,13 @@ in
 {
   imports = [
     ./build-storage.nix
+    ./collie-serve.nix
+    ../../modules/pi-branchfs/nixos.nix
+    ../../modules/drift-rustfs/nixos.nix
     inputs.tenstorrent-nix.nixosModules.default
   ];
+
+  services.drift-rustfs.enable = true;
 
   hardware = {
     # r[impl onix.tenstorrent.p150x2_qwen.deployment]
@@ -343,7 +348,6 @@ in
 
   time.timeZone = "America/New_York";
   time.hardwareClockInLocalTime = true; # Prevent time sync issues with Windows
-  services.chrony.enable = true;
 
   users.users.brittonr = {
     linger = true;
@@ -412,6 +416,8 @@ in
   };
 
   services = {
+    chrony.enable = true;
+
     # Override greeter session for niri
     greetd.settings.default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd /etc/profiles/per-user/brittonr/bin/niri-session";
 
@@ -479,9 +485,8 @@ in
 
     radicle.ci.broker = {
       enable = true;
-      package = pkgs.radicle-ci-broker.overrideAttrs (old: {
-        patches = (old.patches or [ ]) ++ [ ./radicle-ci-broker-announce-namespace.patch ];
-      });
+      # The pinned broker already includes the namespace announcement fix.
+      package = pkgs.radicle-ci-broker;
       settings = {
         max_run_time = kilnMaxRunTime;
         concurrent_adapters = kilnConcurrentAdapters;
@@ -550,6 +555,10 @@ in
 
   systemd = {
     services = {
+      # Paused for now: masked so both P150s stay free. Boot, deployments, and
+      # mesh-llm's Wants= can no longer start it. Delete this line to restore.
+      ${qwenServiceName}.enable = false;
+
       radicle-ci-broker.serviceConfig = {
         MemoryMax = kilnMemoryMax;
         CPUQuota = kilnCpuQuota;
@@ -783,6 +792,8 @@ in
   programs.fuse.userAllowOther = true;
 
   home-manager.users.brittonr.home.packages = with pkgs; [
+    # r[impl onix.agentaps.install]
+    agentaps
     librepods
   ];
 
@@ -796,6 +807,11 @@ in
     `http://${qwenListenAddress}:${toString qwenApiPort}`. Prompt plus generation
     is limited to ${toString qwenMaximumSequenceLength} tokens. One request can
     generate at most ${toString qwenMaximumGenerationTokens} tokens.
+
+    The unit is masked on this host for now, so neither boot, a deployment, nor
+    another unit's `Wants=` starts it, and both P150 devices stay free. Delete
+    `systemd.services.${qwenServiceName}.enable = false` in
+    `machines/britton-desktop/configuration.nix` to restore it.
 
     The retired `${vibeThinkerUnitName}` and `${p150LlamaUnitName}` units are
     absent from the generated host configuration. The Qwen unit also declares
@@ -827,6 +843,7 @@ in
 
   environment.systemPackages = with pkgs; [
     bpftrace
+    branchfs
     imagemagick
     nirius
     prismlauncher
@@ -837,12 +854,12 @@ in
     # r[verify onix.tenstorrent.native_runtime.rwkv7_p150x2.production_observation]
     rwkv7P150x2Runtime
     rwkv7P150x2Evidence
-    self.packages.${pkgs.stdenv.hostPlatform.system}.opendeck
+    opendeck
     self.packages.${pkgs.stdenv.hostPlatform.system}.ttsim
     # Keep the wrapped Herdr base on the accepted llm-agents provider.
     # r[impl onix.britton-desktop.herdr.wrapper.install]
     # r[impl onix.britton-desktop.herdr.wrapper.install.provider]
-    self.packages.${pkgs.stdenv.hostPlatform.system}.herdr
+    herdr
   ];
 
   # ZFS on the 4TB data drive

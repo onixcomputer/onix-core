@@ -1,0 +1,20 @@
+--- a/searx/webapp.py
++++ b/searx/webapp.py
+@@ -49,1 +49,2 @@
+ from searx.extended_types import sxng_request
++from searx.kagi_unlock import install_kagi_unlock
+@@ -145,1 +146,2 @@
+ app = Flask(__name__, static_folder=None, template_folder=templates_path)
++install_kagi_unlock(app, engines)
+@@ -390,6 +392,11 @@
+     client_settings = get_client_settings()
+     kwargs['client_settings'] = base64.b64encode(json.dumps(client_settings).encode('utf-8')).decode('utf-8')
+     kwargs['preferences'] = sxng_request.preferences
++    kagi_engine = engines.get('kagi-private')
++    kwargs['kagi_engine_available'] = kagi_engine is not None
++    kwargs['kagi_access_allowed'] = kagi_engine is not None and sxng_request.preferences.validate_token(kagi_engine)
++    kwargs['kagi_has_tokens'] = bool(sxng_request.preferences.tokens.values)
++    kwargs['kagi_unlock_attempt'] = sxng_request.args.get('kagi_unlock')
+     kwargs.update(client_settings)
+ 
+     # values from the HTTP requests

@@ -8,8 +8,8 @@
 #   let cfg = wasm.evalNickelFile ./config.ncl;
 #   in { services.foo.port = cfg.port; }
 #
-# `nclMachines` provides the pre-evaluated machines.ncl data, avoiding
-# redundant WASM evaluations across tag modules.
+# `nclMachines` shares the flake's machine definitions across tag modules
+# and machines without another WASM evaluation.
 #
 { self, pkgs, ... }:
 let
@@ -20,6 +20,6 @@ in
 {
   _module.args = {
     inherit wasm;
-    nclMachines = (wasm.evalNickelFile ../../core/machines.ncl).machines;
+    nclMachines = self.lib.machines.definitions;
   };
 }

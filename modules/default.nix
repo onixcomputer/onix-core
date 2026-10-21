@@ -33,6 +33,8 @@ let
     "prometheus" = import ./prometheus (schemaArgs ./prometheus);
     "grafana" = import ./grafana (schemaArgs ./grafana);
     "infinity" = import ./infinity (schemaArgs ./infinity);
+    "arxiv-corpus" = import ./arxiv-corpus (schemaArgs ./arxiv-corpus);
+    "laya" = import ./laya (schemaArgs ./laya);
     "loki" = import ./loki (schemaArgs ./loki);
     "vaultwarden" = import ./vaultwarden (schemaArgs ./vaultwarden);
     "homepage-dashboard" = import ./homepage-dashboard (schemaArgs ./homepage-dashboard);
@@ -41,6 +43,7 @@ let
     "celld" = import ./celld (schemaArgs ./celld);
     "llm" = import ./llm (schemaArgs ./llm);
     "upmpdcli" = import ./upmpdcli (schemaArgs ./upmpdcli);
+    "nix-build-farm" = import ./nix-build-farm (schemaArgs ./nix-build-farm);
     "nix-gc" = import ./nix-gc ({ inherit inputs; } // schemaArgs ./nix-gc);
     "niks3" = import ./niks3 (schemaArgs ./niks3);
     "kache-nix-rust" = import ./kache-nix-rust (schemaArgs ./kache-nix-rust);
@@ -63,6 +66,7 @@ let
     "harmonia" = import ./harmonia (schemaArgs ./harmonia);
     "hermes-gateway" = import ./hermes-gateway (schemaArgs ./hermes-gateway);
     "hister" = import ./hister (schemaArgs ./hister);
+    "searxng" = import ./searxng (schemaArgs ./searxng);
     "llamacpp-rpc" = import ./llamacpp-rpc (schemaArgs ./llamacpp-rpc);
     "llamacpp-server" = import ./llamacpp-server (schemaArgs ./llamacpp-server);
     "syncthing" = import ./syncthing (schemaArgs ./syncthing);

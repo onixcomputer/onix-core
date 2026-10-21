@@ -1,0 +1,18 @@
+{
+  "model": "google/diffusiongemma-26B-A4B-it",
+  "revision": "f7f5b7f5fa82ffc52addd066915886d497f5517b",
+  "weight_shards": 11,
+  "file_bytes": 51647701024,
+  "payload_bytes": 51647562456,
+  "tensor_counts": {
+    "BF16": 1047
+  },
+  "parameter_counts": {
+    "BF16": 25823781228
+  },
+  "architectures": [
+    "DiffusionGemmaForBlockDiffusion"
+  ],
+  "model_type": "diffusion_gemma",
+  "config_sha256": "13b11d2fe87302cc2332c64eb9eb4ac305d9b8a123ffe9c5cb5b1920fc70c506"
+}

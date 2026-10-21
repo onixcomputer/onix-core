@@ -97,6 +97,7 @@ let { Machines, .. } = import "contracts.ncl" in
       system = "x86_64-linux",
       addresses.lan = "10.10.10.1",
       tags = [
+        "llm-client",
         "hm-server",
         "boot-partition-gc",
         "minimal-docs",
@@ -111,11 +112,15 @@ let { Machines, .. } = import "contracts.ncl" in
         "amd-gpu",
         "initrd-ssh",
         "remote-builders",
-        "rdma-cluster",
+        "gpu-unified-memory",
         "thunderbolt-link",
         "vllm-cluster-network",
       ],
       deploy.targetHost = "root@aspen1.local",
+      # Build here instead of on the target: the target's root cannot fetch
+      # GitHub-SSH cargo deps (octet's bounded-exec) during eval, while this
+      # host has GitHub SSH access and already builds every aspen closure.
+      deploy.buildHost = "britton-desktop",
     },
 
     aspen2 = {
@@ -138,11 +143,14 @@ let { Machines, .. } = import "contracts.ncl" in
         "initrd-ssh",
         "remote-builders",
         "backup",
-        "rdma-cluster",
+        "gpu-unified-memory",
         "thunderbolt-link",
         "vllm-cluster-network",
       ],
-      deploy.targetHost = "root@aspen2",
+      # The bare aspen2 name no longer resolves; the live tailscale device is
+      # aspen2-1. Pin the deploy target to its tailscale address like aspen3.
+      deploy.targetHost = "root@100.82.25.30",
+      deploy.buildHost = "britton-desktop",
     },
 
     aspen3 = {
@@ -187,6 +195,11 @@ let { Machines, .. } = import "contracts.ncl" in
       # name does not resolve to this host on the deploy LAN. Pin the deploy
       # target to the same tailscale address the service mesh uses.
       deploy.targetHost = "root@100.108.13.4",
+      # Clan resolves a bare buildHost to root@. The desktop's root has no
+      # GitHub key, so evaluation cannot fetch octet's GitHub-SSH cargo deps
+      # (bounded-exec). brittonr's SSH key reaches both GitHub and aspen3's
+      # root for the closure copy.
+      deploy.buildHost = "brittonr@britton-desktop",
     },
 
     # ========== Desktop ==========
@@ -201,6 +214,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "perf-tuning",
         "printing",
         "dev",
+        "omnibin",
         "desktop",
         "laptop-input",
         "greeter",

@@ -1,7 +1,6 @@
 {
   pkgs,
   lib,
-  self,
   inputs,
   ...
 }:
@@ -106,7 +105,7 @@
     inputs.drift.packages.${pkgs.stdenv.hostPlatform.system}.default
 
     # TIDAL
-    self.packages.${pkgs.stdenv.hostPlatform.system}.sone
+    pkgs.sone
 
     # TUI clients
     rmpc # Modern Rust-based MPD client with album art

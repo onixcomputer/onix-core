@@ -46,12 +46,51 @@ let ornith_35b_bf16_model = "user.Ornith-1.0-35B-BF16" in
 let radicle_node_address = "100.100.103.95" in
 let radicle_desktop_replica_address = "100.110.43.11" in
 let radicle_aspen3_replica_address = "100.108.13.4" in
-let mesh_openai_endpoint_url = "http://127.0.0.1:13305/v1" in
+let qwen_flash_backend_port = 13305 in
+let qwen_flash_context_size = 32768 in
+let qwen_flash_settings = {
+  backend = "rocm-qwen4exp",
+  host = "127.0.0.1",
+  port = qwen_flash_backend_port,
+  modelRepo = "orcarouter/Qwen3.8-Flash-Next-Uncensored-GGUF",
+  modelRevision = "d2e41a316ee631cf17f83c8827800c836d30cbe6",
+  modelFile = "Qwen3.8-Flash-Next-Uncensored-IQ4_XS-00001-of-00003.gguf",
+  modelSha256 = "50dc0856abd4a8ecea97a47ffa197bde3ea8d7d0f49d0e1fea7f71c97e8a70d1",
+  extraModelFiles = [
+    "Qwen3.8-Flash-Next-Uncensored-IQ4_XS-00002-of-00003.gguf",
+    "Qwen3.8-Flash-Next-Uncensored-IQ4_XS-00003-of-00003.gguf",
+  ],
+  extraModelSha256 = [
+    "2a309e0b112fde96ba3bcba5a6b58cc05e5df7bb7fad5a990eaa51df335b0e43",
+    "ebc43c58e2eaeba1d5bdf62c8cb1f0eac198c4dc01941f771921edeebf574bc3",
+  ],
+  multimodalProjectorFile = "mmproj-Qwen3.8-Flash-Next-Uncensored-F16.gguf",
+  multimodalProjectorSha256 = "f0f352a97a62a057f3aecdb597cac664762cea2ca23f7b16ec92eee28c5572d9",
+  huggingFaceTokenRequired = true,
+  modelAlias = "Qwen3.8-Flash-Next-Uncensored",
+  contextSize = qwen_flash_context_size,
+  parallelSlots = 1,
+  cacheTypeK = "q8_0",
+  cacheTypeV = "q8_0",
+  flashAttention = true,
+  gpuPerformanceLock = true,
+  noMmap = false,
+  extraArgs = [
+    "--fit",
+    "off",
+    "--jinja",
+    "--no-ui",
+  ],
+}
+in
+let mesh_openai_endpoint_url = "http://127.0.0.1:%{qwen_flash_backend_port}/v1" in
 let mesh_desktop_openai_endpoint_url = "http://127.0.0.1:8000/v1" in
+let mesh_aspen1_openai_endpoint_url = "http://127.0.0.1:8000/v1" in
 let mesh_aspen1_address = radicle_node_address in
-let mesh_aspen2_address = "100.125.64.121" in
+let mesh_aspen2_address = "100.82.25.30" in
 let mesh_aspen3_address = radicle_aspen3_replica_address in
 let mesh_desktop_address = radicle_desktop_replica_address in
+let underclass_mesh_gateway_port = 18081 in
 let radicle_node_port = 8776 in
 let radicle_replica_state_quota_gib = 64 in
 let radicle_desktop_replica_node_fingerprint = "SHA256:JHQTPqoMr4kLqBsrAPSRNXUuzETiHAoiKBM/VWftmEg" in
@@ -331,6 +370,35 @@ let niks3_uploader_settings = fun local_address =>
     verifyS3Integrity = true,
   }
 in
+let farm_clients = ["bonsai", "aspen3", "britton-desktop"] in
+let farm_workers = ["aspen1", "aspen2"] in
+let farm_node_port = 50052 in
+let farm_scheduler = "%{rustfs_aspen1_address}:%{farm_node_port}" in
+let farm_node_settings = fun node_address is_scheduler =>
+  {
+    address = node_address,
+    port = farm_node_port,
+    schedulerAddress = if is_scheduler then "" else farm_scheduler,
+    isScheduler = is_scheduler,
+    maxJobs = 16,
+    minFree = "100G",
+    cacheUrl = niks3_server_url,
+    cacheInstance = "nix-cache",
+    allowedClients = farm_clients,
+    workerNames = farm_workers,
+    balancerNames = ["aspen1"],
+  }
+in
+let farm_client_settings = {
+  hostName = "aspen1.local",
+  hostAddress = rustfs_aspen1_address,
+  port = 50051,
+  systems = ["x86_64-linux"],
+  supportedFeatures = ["nixos-test", "big-parallel", "kvm"],
+  maxJobs = 32,
+  cacheUrl = niks3_server_url,
+}
+in
 {
   instances = {
 
@@ -416,9 +484,37 @@ in
         server.machines.aspen1.settings = niks3_server_settings,
         uploader.machines = {
           aspen1.settings = niks3_uploader_settings rustfs_aspen1_address,
+          # Farm publication is independent of these maintenance-only queues.
+          # Aspen2 has no Celld authority; its manual drain checks Aspen1.
+          aspen2.settings = niks3_uploader_settings rustfs_aspen1_address,
           aspen3.settings = niks3_uploader_settings rustfs_aspen3_address,
           britton-desktop.settings = niks3_uploader_settings rustfs_britton_desktop_address,
         },
+      },
+    },
+
+    # r[impl onix.build_farm.topology]
+    # r[impl onix.build_farm.publication]
+    "nix-build-farm" = {
+      module = { name = "nix-build-farm", input = "self" },
+      roles = {
+        node.machines = {
+          aspen1.settings = farm_node_settings rustfs_aspen1_address true,
+          aspen2.settings = farm_node_settings "100.82.25.30" false,
+        },
+        balancer.machines.aspen1.settings = {
+          hostName = "aspen1.local",
+          port = 50051,
+          schedulerAddress = farm_scheduler,
+          systems = ["x86_64-linux"],
+        },
+        client.machines =
+          std.array.fold_left
+            (fun machines name =>
+              std.record.insert name { settings = farm_client_settings } machines
+            )
+            {}
+            farm_clients,
       },
     },
 
@@ -475,20 +571,6 @@ in
           services = {
             homepage = {
               subdomain = "home",
-              public = false,
-            },
-            test = {
-              port = 8888,
-              subdomain = "test",
-              public = true,
-            },
-            demo = {
-              port = 8889,
-              public = false,
-            },
-            wiki = {
-              port = 3000,
-              subdomain = "wiki",
               public = false,
             },
           },
@@ -705,6 +787,31 @@ in
 
     # ========== LLM & AI ==========
 
+    # r[impl onix.research-tools.private-deployment]
+    "arxiv-aspen2" = {
+      module = { name = "arxiv-corpus", input = "self" },
+      roles.server.machines.aspen2.settings.host = mesh_aspen2_address,
+    },
+
+    "laya-aspen1" = {
+      module = { name = "laya", input = "self" },
+      roles.server.machines.aspen1.settings = {
+        backend = "vulkan-compensated-fp32",
+        host = "127.0.0.1",
+        port = 7999,
+      },
+    },
+
+    "laya-aspen2" = {
+      module = { name = "laya", input = "self" },
+      roles.server.machines.aspen2.settings.host = mesh_aspen2_address,
+    },
+
+    "laya-aspen3" = {
+      module = { name = "laya", input = "self" },
+      roles.server.machines.aspen3.settings.host = mesh_aspen3_address,
+    },
+
     llm = {
       module = { name = "llm", input = "self" },
       roles = {
@@ -729,75 +836,22 @@ in
       },
     },
 
-    # r[impl onix.aspen1.deepseek.serving]
-    # r[impl onix.aspen1.deepseek.exclusivity]
-    # DeepSeek-V4-Flash-0731 needs ~114 GiB resident on aspen1, so the
-    # Lemonade service (Ornith + kokoro) is removed from this host.
-    "deepseek-v4-flash-aspen1" = {
+    # r[impl onix.aspen1.qwen_flash.serving]
+    # r[impl onix.aspen1.qwen_flash.exclusivity]
+    # Retain Aspen1's stopped Qwen backend and model state. diffusion-gemma.nix
+    # masks this unit while DiffusionGemma owns the GPU and mesh route.
+    "qwen38-flash-next-aspen1" = {
       module = { name = "llamacpp-server", input = "self" },
-      roles.server.machines.aspen1.settings = {
-        backend = "rocm-dspark",
-        host = "0.0.0.0",
-        port = 13305,
-        modelRepo = "unsloth/DeepSeek-V4-Flash-0731-GGUF",
-        modelFile = "UD-IQ3_XXS/DeepSeek-V4-Flash-0731-UD-IQ3_XXS-00001-of-00004.gguf",
-        extraModelFiles = [
-          "UD-IQ3_XXS/DeepSeek-V4-Flash-0731-UD-IQ3_XXS-00002-of-00004.gguf",
-          "UD-IQ3_XXS/DeepSeek-V4-Flash-0731-UD-IQ3_XXS-00003-of-00004.gguf",
-          "UD-IQ3_XXS/DeepSeek-V4-Flash-0731-UD-IQ3_XXS-00004-of-00004.gguf",
-        ],
-        # Ready-made drafters fail on the pinned runtime (unknown arch or
-        # no_vocab tokenizer metadata), so the draft is converted from the
-        # official checkpoint by the deepseek-v4-dspark-draft package.
-        draftModelSource = "package",
-        draftModelFile = "DeepSeek-V4-Flash-0731-DSpark-llamacpp-MXFP4-Q8_0.gguf",
-        modelAlias = "DeepSeek-V4-Flash-0731",
-        contextSize = 8192,
-        parallelSlots = 1,
-        cacheTypeK = "q8_0",
-        cacheTypeV = "q8_0",
-        flashAttention = true,
-        gpuPerformanceLock = true,
-        noMmap = false,
-        extraArgs = [
-          "-ngld",
-          "all",
-          "--fit",
-          "off",
-          "--spec-type",
-          "draft-dspark",
-          "--spec-draft-n-max",
-          "3",
-          "-ctkd",
-          "q8_0",
-          "-ctvd",
-          "q8_0",
-          "--load-mode",
-          "dio",
-          "--no-ui",
-        ],
-      },
+      roles.server.machines.aspen1.settings = qwen_flash_settings,
     },
 
-    "lemonade-aspen2" = {
-      module = { name = "lemonade", input = "self" },
-      roles.default.machines.aspen2.settings = {
-        backend = "rocm",
-        customModels = {
-          "Ornith-1.0-9B-Q8_0" = ornith_9b_q8,
-          "Ornith-1.0-35B-Q4_K_M" = ornith_35b_q4,
-          "Qwen3.6-35B-A3B" = {
-            checkpoint = "unsloth/Qwen3.6-35B-A3B-GGUF:Q8_0",
-            recipe = "llamacpp",
-            size = 35,
-          },
-        },
-        models = ["user.Qwen3.6-35B-A3B", "Whisper-Large-v3-Turbo", ornith_9b_q8_model, ornith_35b_q4_model],
-        contextSize = 131072,
-        globalTimeout = 0,
-        clusterRpcWorker = true,
-        extraArgs = "--no-mmap -fa on --cache-type-k q8_0 --cache-type-v q8_0 -b 8192 -ub 4096 -np 1",
-      },
+    # r[impl onix.aspen2.qwen_flash.serving]
+    # r[impl onix.aspen2.qwen_flash.exclusivity]
+    # Aspen2 uses the same reviewed artifact plan as Aspen1. Keep its direct
+    # server exclusive and route external requests through mesh-llm.
+    "qwen38-flash-next-aspen2" = {
+      module = { name = "llamacpp-server", input = "self" },
+      roles.server.machines.aspen2.settings = qwen_flash_settings,
     },
 
     "lemonade-aspen3" = {
@@ -999,29 +1053,46 @@ in
     "mesh-llm-private-inference" = {
       module = { name = "mesh-llm", input = "self" },
       roles.default.machines = {
+        # r[impl onix.diffusion-gemma.mesh]
         aspen1.settings = {
           mode = "seed",
-          endpointUrl = mesh_openai_endpoint_url,
+          endpointUrl = mesh_aspen1_openai_endpoint_url,
+          extraEndpoints.spark = "http://127.0.0.1:18999/v1",
           meshBindAddress = mesh_aspen1_address,
-          backendUnit = "llamacpp-server-deepseek-v4-flash-aspen1.service",
+          backendUnit = "docker-diffusion-gemma.service",
+          researchMode = "provider",
+          researchLayaAddress = "127.0.0.1:7999",
+          researchBackendUnits = ["laya-laya-aspen1.service"],
         },
         aspen2.settings = {
           mode = "joiner",
           endpointUrl = mesh_openai_endpoint_url,
           meshBindAddress = mesh_aspen2_address,
-          backendUnit = "lemonade.service",
+          backendUnit = "llamacpp-server-qwen38-flash-next-aspen2.service",
+          researchMode = "provider",
+          researchArxivAddress = "%{mesh_aspen2_address}:7998",
+          researchLayaAddress = "%{mesh_aspen2_address}:7999",
+          researchBackendUnits = ["arxiv-corpus-arxiv-aspen2.service", "laya-laya-aspen2.service"],
         },
         aspen3.settings = {
           mode = "joiner",
           endpointUrl = mesh_openai_endpoint_url,
           meshBindAddress = mesh_aspen3_address,
           backendUnit = "lemonade.service",
+          researchMode = "provider",
+          researchLayaAddress = "%{mesh_aspen3_address}:7999",
+          researchBackendUnits = ["laya-laya-aspen3.service"],
         },
+        # r[impl onix.underclass.mesh.route]
         britton-desktop.settings = {
           mode = "joiner",
           endpointUrl = mesh_desktop_openai_endpoint_url,
+          extraEndpoints.underclass = "http://127.0.0.1:%{std.to_string underclass_mesh_gateway_port}/v1",
           meshBindAddress = mesh_desktop_address,
           backendUnit = "qwen38-p150x2.service",
+          researchMode = "forwarder",
+          researchTargetPeer = "78a2aff7b646eacd8a53f073b04c635a6ca38b9123443e0a73539acda302b08a",
+          researchHttpBindAddress = mesh_desktop_address,
         },
       },
     },
@@ -1055,6 +1126,32 @@ in
           aspen1.settings.packages = ["hermes-agent"],
           aspen2.settings.packages = ["hermes-agent"],
           britton-desktop.settings.packages = ["hermes-agent"],
+        },
+      },
+    },
+
+    # oh-my-pi's `omp` is a large self-contained agent build, so it widens the
+    # llm-client CLI set on the two workstations that run it instead of
+    # loading it onto every llm-client host. The instance is machine-scoped,
+    # and the packages setting is list-typed, so each listed machine receives
+    # exactly the agent named here. r[impl onix.llm_agents.omp.scope]
+    "omp-agents" = {
+      module = { name = "llm-agents", input = "self" },
+      roles.default.machines = {
+        britton-desktop.settings = {
+          packages = ["omp"],
+          ompUnderclass = true,
+          # The desktop's enrolled Codex pool also serves the private mesh.
+          underclassMeshGateway = true,
+          underclassMeshPort = underclass_mesh_gateway_port,
+          ompResearchTools = true,
+          ompResearchUrl = "http://%{mesh_desktop_address}:7997",
+        },
+        # Aspen3 shares the desktop's enrolled pool over SSH instead of running
+        # a second, separately enrolled Underclass service.
+        aspen3.settings = {
+          packages = ["omp"],
+          ompUnderclassRemoteHost = "britton-desktop",
         },
       },
     },
@@ -1189,6 +1286,19 @@ in
         port = 6767,
         user = "brittonr",
         group = "brittonr",
+      },
+    },
+
+    "searxng-aspen1" = {
+      module = { name = "searxng", input = "self" },
+      roles.server.machines.aspen1.settings = {
+        baseUrl = "https://aspen1.bison-tailor.ts.net/",
+        instanceName = "Onix Search",
+        enableTidal = true,
+        enableDeveloperEngines = true,
+        enableKagi = true,
+        kagiDefault = true,
+        kagiHealthCheck = true,
       },
     },
 

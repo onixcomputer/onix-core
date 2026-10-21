@@ -4,16 +4,19 @@
 
 ## Run the wrapped example locally
 
+The kache wrapper library is onixpkgs' `lib.kacheNixRust`, and the kache package comes from onixpkgs:
+
 ```nix
 let
-  onix = builtins.getFlake "path:/home/brittonr/git/onix-core";
+  onixpkgs = builtins.getFlake "git+ssh://git@github.com/OnixResearch/onixpkgs.git";
   changebot = builtins.getFlake "path:/home/brittonr/git/changebot";
   system = builtins.currentSystem;
-  pkgs = import onix.inputs.nixpkgs { inherit system; };
+  pkgs = import onixpkgs.inputs.nixpkgs { inherit system; };
 in
 import /home/brittonr/git/onix-core/examples/kache-nix-rust/changebot-crane-pilot.nix {
   inherit pkgs;
-  onixPackages = onix.packages.${system};
+  inherit (onixpkgs.lib) kacheNixRust;
+  onixPackages = onixpkgs.packages.${system};
   changebotPackage = changebot.packages.${system}.default;
 }
 ```
@@ -22,17 +25,16 @@ The enabled example sets `RUSTC_WRAPPER` to the Nix-owned kache wrapper and `KAC
 
 ## Validation evidence
 
-Focused checks cover the pilot contract:
+Focused checks in onix-core cover the machine wiring and the example:
 
 ```sh
 nix build \
-  .#checks.x86_64-linux.kache-nix-rust-wrapper-contract \
   .#checks.x86_64-linux.kache-nix-rust-sandbox-settings \
   .#checks.x86_64-linux.kache-nix-rust-changebot-example \
   --no-link -L
 ```
 
-The wrapper check proves positive and negative paths:
+onixpkgs runs the wrapper contract as `checks.x86_64-linux.kache-nix-rust-wrapper-contract`. It proves positive and negative paths:
 
 - enabled wrapper invokes kache and records rustc, cache directory, and key-salt telemetry;
 - `KACHE_NIX_DISABLED=1` bypasses kache explicitly;

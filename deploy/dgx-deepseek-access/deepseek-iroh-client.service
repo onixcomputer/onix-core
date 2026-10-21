@@ -1,0 +1,20 @@
+[Unit]
+Description=Local OpenAI endpoint for DeepSeek through Iroh
+
+[Service]
+Type=simple
+EnvironmentFile=/home/brittonr/git/.runtime/deepseek-iroh/client.env
+ExecStart=/home/brittonr/git/.runtime/deepseek-iroh/dumbpipe connect-tcp --addr 127.0.0.1:9338 ${IROH_TICKET}
+WorkingDirectory=/home/brittonr/git/.runtime/deepseek-iroh
+StandardOutput=append:/home/brittonr/git/.runtime/deepseek-iroh/dumbpipe-client.log
+StandardError=append:/home/brittonr/git/.runtime/deepseek-iroh/dumbpipe-client.log
+UMask=0077
+Restart=on-failure
+RestartSec=10s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+
+[Install]
+WantedBy=default.target

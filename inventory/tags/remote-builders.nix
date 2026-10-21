@@ -86,9 +86,12 @@ let
       lan = m.addresses.lan or null;
       target = builderTargetsByName.${name} or null;
       explicitSshHost = if target == null then null else target.sshHost or null;
+      deployTarget = m.deploy.targetHost or null;
+      deployHost = if deployTarget == null then null else getSshHost deployTarget;
       hostKey = getHostKey name;
       hostNames = lib.unique (
         lib.optional (explicitSshHost != null) explicitSshHost
+        ++ lib.optional (deployHost != null) deployHost
         ++ lib.optional (lan != null) lan
         ++ lib.optional (name != (if lan != null then lan else "")) name
       );

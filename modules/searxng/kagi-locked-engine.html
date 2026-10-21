@@ -1,0 +1,23 @@
+{% if categ == 'general' and not kagi_access_allowed %}
+<tr id="kagi-locked-engine">
+  <td>{% if kagi_engine_available %}Locked{% else %}Unavailable{% endif %}</td>
+  <th class="name">
+    kagi-private<br />
+    <a href="#kagi-access-status"
+      >{% if kagi_engine_available %}Unlock Kagi{% else %}Kagi status{% endif
+      %}</a
+    >
+  </th>
+  <td class="shortcut"><span class="bang">!kg</span></td>
+  <td>—</td>
+  <td>—</td>
+  <td>—</td>
+  {% if enable_metrics %}
+  <td>—</td>
+  {% endif %}
+  <td>—</td>
+  {% if enable_metrics %}
+  <td>—</td>
+  {% endif %}
+</tr>
+{% endif %}

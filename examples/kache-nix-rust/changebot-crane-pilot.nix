@@ -1,21 +1,24 @@
 # Wrap a changebot/remora Crane package with the Nix-owned kache rustc wrapper.
 #
-# The caller supplies `changebotPackage`, usually from ../changebot:
+# The caller supplies `changebotPackage`, usually from ../changebot, and the
+# kache wrapper library from onixpkgs:
 #
 #   let
-#     onix = builtins.getFlake "path:/home/brittonr/git/onix-core";
+#     onixpkgs = builtins.getFlake "git+ssh://git@github.com/OnixResearch/onixpkgs.git";
 #     changebot = builtins.getFlake "path:/home/brittonr/git/changebot";
 #     system = builtins.currentSystem;
-#     pkgs = import onix.inputs.nixpkgs { inherit system; };
+#     pkgs = import onixpkgs.inputs.nixpkgs { inherit system; };
 #   in
 #   import /home/brittonr/git/onix-core/examples/kache-nix-rust/changebot-crane-pilot.nix {
 #     inherit pkgs;
-#     onixPackages = onix.packages.${system};
+#     inherit (onixpkgs.lib) kacheNixRust;
+#     onixPackages = onixpkgs.packages.${system};
 #     changebotPackage = changebot.packages.${system}.default;
 #   }
 {
   pkgs,
   lib ? pkgs.lib,
+  kacheNixRust,
   onixPackages,
   changebotPackage,
   enableKache ? true,
@@ -23,7 +26,7 @@
   keySalt ? "changebot-crane-pilot-v1",
 }:
 let
-  kacheLib = import ../../lib/kache-nix-rust.nix {
+  kacheLib = kacheNixRust {
     inherit lib pkgs;
     kachePackage = onixPackages.kache;
   };

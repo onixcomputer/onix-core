@@ -1,0 +1,19 @@
+[Unit]
+Description=API-key and route checks for DeepSeek over Iroh
+
+[Service]
+Type=simple
+ExecStartPre=%h/.local/share/deepseek-access/nginx/bin/nginx -e stderr -t -c %h/.local/share/deepseek-access/nginx.conf -p %h/.ds-iroh
+ExecStart=%h/.local/share/deepseek-access/nginx/bin/nginx -e stderr -c %h/.local/share/deepseek-access/nginx.conf -p %h/.ds-iroh
+WorkingDirectory=%h/.ds-iroh
+UMask=0077
+Restart=on-failure
+RestartSec=10s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=%h/.ds-iroh
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=default.target

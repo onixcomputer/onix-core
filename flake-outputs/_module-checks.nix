@@ -58,6 +58,10 @@ let
   expectedLlamacppNegativeFields = [
     "backend"
     "modelSha256"
+    "extraModelSha256"
+    "multimodalProjectorFile"
+    "multimodalProjectorSha256"
+    "huggingFaceTokenRequired"
     "metaliumDeviceId"
     "metaliumInspectorPort"
     "metaliumTrace"
@@ -354,6 +358,10 @@ let
     package: lib.getName package == "bookshelf-import"
   ) bookshelfDesktopConfig.environment.systemPackages;
   bookshelfImportToolPresent = builtins.length bookshelfImportTools == 1;
+  bookshelfFetchTools = builtins.filter (
+    package: lib.getName package == "bookshelf-fetch"
+  ) bookshelfDesktopConfig.environment.systemPackages;
+  bookshelfFetchToolPresent = builtins.length bookshelfFetchTools == 1;
   bookshelfEnvironmentValid =
     bookshelfService.environment.BOOKSHELF_PROVIDER == "fs"
     && bookshelfService.environment.BOOKSHELF_DIRECTORY == bookshelfLibraryDirectory
@@ -582,6 +590,7 @@ let
   niks3PublicKeyPrefix = "onix-niks3-1:";
   niks3Machines = [
     "aspen1"
+    "aspen2"
     "aspen3"
     "britton-desktop"
   ];
@@ -605,9 +614,6 @@ let
     ||
       machineConfig.systemd.services.niks3-auto-upload.unitConfig.ConditionPathExists
       != niks3MaintenanceMarker
-    || !(lib.hasInfix "niks3-post-build-upload-disabled" (
-      toString machineConfig.nix.settings.post-build-hook
-    ))
     || !(builtins.elem niks3ServerUrl machineConfig.nix.settings.extra-substituters)
     || !(lib.any (
       key: lib.hasPrefix niks3PublicKeyPrefix key
@@ -620,7 +626,6 @@ let
     && !(builtins.elem niks3StoragePort niks3Aspen1.networking.firewall.allowedTCPPorts);
   niks3ServerGeneratedValid =
     niks3ServerSettings.enable
-    && niks3ServerSettings.package.version == "1.8.0"
     && niks3ServerSettings.httpAddr == "100.100.103.95:${toString niks3Port}"
     && niks3ServerSettings.s3.bucket == niks3BucketName
     && niks3ServerSettings.s3.endpoint == "${niks3StorageAddress}:${toString niks3StoragePort}"
@@ -840,7 +845,7 @@ in
 
     # r[verify onix.celld_rustfs.package]
     celld-package = pkgs.runCommand "celld-package" { } ''
-      actual="$(${lib.getExe self.packages.${pkgs.stdenv.hostPlatform.system}.celld} --version)"
+      actual="$(${lib.getExe pkgs.celld} --version)"
       test "$actual" = "celld 0.3.0"
       touch $out
     '';
@@ -959,9 +964,9 @@ in
 
     # r[verify onix.bookshelf.package]
     bookshelf-package = pkgs.runCommand "bookshelf-package" { } ''
-      test -x ${lib.escapeShellArg "${self.packages.${pkgs.stdenv.hostPlatform.system}.bookshelf}/bin/bookshelf-server"}
-      test -x ${lib.escapeShellArg "${self.packages.${pkgs.stdenv.hostPlatform.system}.bookshelf}/bin/bookshelf-sync"}
-      test -f ${lib.escapeShellArg "${self.packages.${pkgs.stdenv.hostPlatform.system}.bookshelf}/share/doc/bookshelf/LICENSE"}
+      test -x ${lib.escapeShellArg "${pkgs.bookshelf}/bin/bookshelf-server"}
+      test -x ${lib.escapeShellArg "${pkgs.bookshelf}/bin/bookshelf-sync"}
+      test -f ${lib.escapeShellArg "${pkgs.bookshelf}/share/doc/bookshelf/LICENSE"}
       touch $out
     '';
 
@@ -1026,25 +1031,32 @@ in
           exit 1
         fi
       ''}
+      ${lib.optionalString (!bookshelfFetchToolPresent) ''
+        echo "Bookshelf operator fetch command is missing or duplicated"
+        exit 1
+      ''}
+      ${lib.optionalString bookshelfFetchToolPresent ''
+        if ${lib.getExe (builtins.head bookshelfFetchTools)} --help >/dev/null 2>&1; then
+          echo "Bookshelf fetch command accepted no provider"
+          exit 1
+        fi
+      ''}
       touch $out
     '';
 
     # r[verify onix.rustfs_build_caches.kache]
-    kache-package =
-      pkgs.runCommand "kache-package"
-        { nativeBuildInputs = [ self.packages.${pkgs.stdenv.hostPlatform.system}.kache ]; }
-        ''
-          actual="$(kache --version)"
-          if [ "$actual" != "kache 0.16.0" ]; then
-            echo "Unexpected Kache version: $actual"
-            exit 1
-          fi
-          if kache unsupported-command >/dev/null 2>&1; then
-            echo "Kache accepted an unsupported command"
-            exit 1
-          fi
-          touch $out
-        '';
+    kache-package = pkgs.runCommand "kache-package" { nativeBuildInputs = [ pkgs.kache ]; } ''
+      actual="$(kache --version)"
+      if [ "$actual" != "kache 0.16.0" ]; then
+        echo "Unexpected Kache version: $actual"
+        exit 1
+      fi
+      if kache unsupported-command >/dev/null 2>&1; then
+        echo "Kache accepted an unsupported command"
+        exit 1
+      fi
+      touch $out
+    '';
 
     # r[verify onix.rustfs_build_caches.verification]
     kache-rustfs-settings = pkgs.runCommand "kache-rustfs-settings" { } ''

@@ -21,7 +21,6 @@ in
         nixosModule =
           {
             config,
-            inputs,
             lib,
             pkgs,
             ...
@@ -30,7 +29,7 @@ in
             ms = import ../../lib/mk-settings.nix { inherit lib; };
             settings = extendSettings (ms.mkDefaults schema.client);
             evaluated = import ./settings.nix { inherit lib; } settings;
-            kachePackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.kache;
+            kachePackage = pkgs.kache;
             policyLib = import ../../lib/rustfs-bucket-policy.nix { inherit lib; };
             credentialGeneratorName = "kache-rustfs-${instanceName}";
             credentialEnvironmentFile =
@@ -144,103 +143,107 @@ in
               systemPackages = [ syncTool ];
             };
 
-            systemd.tmpfiles.rules = [
-              "d ${settings.cacheDir} ${cacheDirectoryMode} ${settings.serviceUser} users -"
-            ];
+            systemd = {
+              tmpfiles.rules = [
+                "d ${settings.cacheDir} ${cacheDirectoryMode} ${settings.serviceUser} users -"
+              ];
 
-            systemd.services.kache-rustfs-storage-provision = lib.mkIf settings.provisionStorage {
-              description = "Provision bucket-scoped RustFS storage for Kache";
-              wantedBy = [ "multi-user.target" ];
-              before = [ "kache-rustfs.service" ];
-              after = [
-                "network-online.target"
-                "rustfs.service"
-                "tailscaled.service"
-              ];
-              wants = [
-                "network-online.target"
-                "rustfs.service"
-                "tailscaled.service"
-              ];
-              path = [ pkgs.getent ];
-              serviceConfig = {
-                Type = "oneshot";
-                RemainAfterExit = true;
-                ExecStart = provisionStorage;
-                EnvironmentFile = [
-                  rustfsAdminEnvironmentFile
-                  credentialEnvironmentFile
-                ];
-                UMask = serviceUmask;
-                NoNewPrivileges = true;
-                PrivateTmp = true;
-                ProtectHome = true;
-                ProtectSystem = "strict";
-                CapabilityBoundingSet = "";
-                AmbientCapabilities = "";
-                LockPersonality = true;
-                RestrictAddressFamilies = [
-                  "AF_UNIX"
-                  "AF_INET"
-                  "AF_INET6"
-                ];
-                RestrictRealtime = true;
-                RestrictSUIDSGID = true;
-                SystemCallArchitectures = "native";
-              };
-            };
+              services = {
+                kache-rustfs-storage-provision = lib.mkIf settings.provisionStorage {
+                  description = "Provision bucket-scoped RustFS storage for Kache";
+                  wantedBy = [ "multi-user.target" ];
+                  before = [ "kache-rustfs.service" ];
+                  after = [
+                    "network-online.target"
+                    "rustfs.service"
+                    "tailscaled.service"
+                  ];
+                  wants = [
+                    "network-online.target"
+                    "rustfs.service"
+                    "tailscaled.service"
+                  ];
+                  path = [ pkgs.getent ];
+                  serviceConfig = {
+                    Type = "oneshot";
+                    RemainAfterExit = true;
+                    ExecStart = provisionStorage;
+                    EnvironmentFile = [
+                      rustfsAdminEnvironmentFile
+                      credentialEnvironmentFile
+                    ];
+                    UMask = serviceUmask;
+                    NoNewPrivileges = true;
+                    PrivateTmp = true;
+                    ProtectHome = true;
+                    ProtectSystem = "strict";
+                    CapabilityBoundingSet = "";
+                    AmbientCapabilities = "";
+                    LockPersonality = true;
+                    RestrictAddressFamilies = [
+                      "AF_UNIX"
+                      "AF_INET"
+                      "AF_INET6"
+                    ];
+                    RestrictRealtime = true;
+                    RestrictSUIDSGID = true;
+                    SystemCallArchitectures = "native";
+                  };
+                };
 
-            systemd.services.kache-rustfs = {
-              description = "Interactive Kache daemon with RustFS remote storage";
-              wantedBy = [ "multi-user.target" ];
-              after = [
-                "network-online.target"
-                "tailscaled.service"
-              ]
-              ++ lib.optional settings.provisionStorage "kache-rustfs-storage-provision.service";
-              wants = [
-                "network-online.target"
-                "tailscaled.service"
-              ];
-              requires = lib.optional settings.provisionStorage "kache-rustfs-storage-provision.service";
-              unitConfig.RequiresMountsFor = [ settings.cacheDir ];
-              environment = {
-                KACHE_CONFIG = systemConfigPath;
-                KACHE_CACHE_DIR = settings.cacheDir;
-                KACHE_DAEMON_IDLE_TIMEOUT = toString daemonIdleTimeoutSeconds;
-                KACHE_LOCAL_ONLY = "0";
-                KACHE_LOG = "kache=info";
-              };
-              serviceConfig = {
-                ExecStartPre = "-${lib.getExe kachePackage} daemon stop";
-                ExecStart = "${lib.getExe kachePackage} daemon run";
-                User = settings.serviceUser;
-                Group = "users";
-                EnvironmentFile = credentialEnvironmentFile;
-                Restart = "always";
-                RestartSec = settings.restartDelaySeconds;
-                UMask = serviceUmask;
-                ReadWritePaths = [ settings.cacheDir ];
-                NoNewPrivileges = true;
-                PrivateDevices = true;
-                PrivateTmp = true;
-                ProtectHome = true;
-                ProtectSystem = "strict";
-                ProtectControlGroups = true;
-                ProtectKernelModules = true;
-                ProtectKernelTunables = true;
-                CapabilityBoundingSet = "";
-                AmbientCapabilities = "";
-                LockPersonality = true;
-                RestrictAddressFamilies = [
-                  "AF_UNIX"
-                  "AF_INET"
-                  "AF_INET6"
-                ];
-                RestrictNamespaces = true;
-                RestrictRealtime = true;
-                RestrictSUIDSGID = true;
-                SystemCallArchitectures = "native";
+                kache-rustfs = {
+                  description = "Interactive Kache daemon with RustFS remote storage";
+                  wantedBy = [ "multi-user.target" ];
+                  after = [
+                    "network-online.target"
+                    "tailscaled.service"
+                  ]
+                  ++ lib.optional settings.provisionStorage "kache-rustfs-storage-provision.service";
+                  wants = [
+                    "network-online.target"
+                    "tailscaled.service"
+                  ];
+                  requires = lib.optional settings.provisionStorage "kache-rustfs-storage-provision.service";
+                  unitConfig.RequiresMountsFor = [ settings.cacheDir ];
+                  environment = {
+                    KACHE_CONFIG = systemConfigPath;
+                    KACHE_CACHE_DIR = settings.cacheDir;
+                    KACHE_DAEMON_IDLE_TIMEOUT = toString daemonIdleTimeoutSeconds;
+                    KACHE_LOCAL_ONLY = "0";
+                    KACHE_LOG = "kache=info";
+                  };
+                  serviceConfig = {
+                    ExecStartPre = "-${lib.getExe kachePackage} daemon stop";
+                    ExecStart = "${lib.getExe kachePackage} daemon run";
+                    User = settings.serviceUser;
+                    Group = "users";
+                    EnvironmentFile = credentialEnvironmentFile;
+                    Restart = "always";
+                    RestartSec = settings.restartDelaySeconds;
+                    UMask = serviceUmask;
+                    ReadWritePaths = [ settings.cacheDir ];
+                    NoNewPrivileges = true;
+                    PrivateDevices = true;
+                    PrivateTmp = true;
+                    ProtectHome = true;
+                    ProtectSystem = "strict";
+                    ProtectControlGroups = true;
+                    ProtectKernelModules = true;
+                    ProtectKernelTunables = true;
+                    CapabilityBoundingSet = "";
+                    AmbientCapabilities = "";
+                    LockPersonality = true;
+                    RestrictAddressFamilies = [
+                      "AF_UNIX"
+                      "AF_INET"
+                      "AF_INET6"
+                    ];
+                    RestrictNamespaces = true;
+                    RestrictRealtime = true;
+                    RestrictSUIDSGID = true;
+                    SystemCallArchitectures = "native";
+                  };
+                };
               };
             };
           };

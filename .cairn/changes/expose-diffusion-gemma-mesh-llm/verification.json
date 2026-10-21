@@ -1,0 +1,641 @@
+{
+  "model": "diffusiongemma",
+  "peer": "britton-desktop",
+  "meshApi": "http://127.0.0.1:9337/v1",
+  "unitBundle": "/nix/store/c472s2rqqz2qr40w55s17hq9px0p8bbn-aspen1-diffusion-gemma-units",
+  "profile": "/nix/var/nix/profiles/diffusion-gemma",
+  "compiledConfigPath": "/nix/store/lxsgmwrxq16m3nr89ygpnrc806bqwrx6-mesh-llm-mesh-llm-private-inference-config.toml",
+  "plugins": [
+    {
+      "name": "openai-endpoint",
+      "command": "/nix/store/555n1s4cvvv48083rpmwsvbdr9x33lj4-mesh-llm-0.72.2/bin/openai-endpoint",
+      "url": "http://127.0.0.1:8000/v1"
+    },
+    {
+      "name": "spark",
+      "command": "/nix/store/555n1s4cvvv48083rpmwsvbdr9x33lj4-mesh-llm-0.72.2/bin/openai-endpoint",
+      "url": "http://127.0.0.1:18999/v1"
+    }
+  ],
+  "previousProviderConfig": "version = 1\n\n[[plugin]]\nname = \"openai-endpoint\"\ncommand = \"/nix/store/sr14bsincfbawbl17560dapk5v7hrj2y-mesh-llm-0.72.2/bin/openai-endpoint\"\nurl = \"http://127.0.0.1:13305/v1\"\n\n[[plugin]]\nname = \"spark\"\ncommand = \"/nix/store/sr14bsincfbawbl17560dapk5v7hrj2y-mesh-llm-0.72.2/bin/openai-endpoint\"\nurl = \"http://127.0.0.1:18999/v1\"\n",
+  "retiredRuntimeDropIn": {
+    "path": "/run/systemd/system/mesh-llm-mesh-llm-private-inference.service.d/99-dsv41.conf",
+    "sha256": "e12c011978819be495ee9dd6bf81be7d185815356029745982d09e1d1d17618c"
+  },
+  "aspenBefore": {
+    "mesh-llm-mesh-llm-private-inference.service": {
+      "Id": "mesh-llm-mesh-llm-private-inference.service",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "running",
+      "FragmentPath": "/etc/systemd/system/mesh-llm-mesh-llm-private-inference.service",
+      "InvocationID": "484c7bafdb044985b6859912b4b5d691",
+      "MainPID": "2203074"
+    },
+    "docker-diffusion-gemma.service": {
+      "Id": "docker-diffusion-gemma.service",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "running",
+      "FragmentPath": "/etc/systemd/system.attached/docker-diffusion-gemma.service",
+      "InvocationID": "79ef89418b344ba8a2f32c405b066834",
+      "MainPID": "807921"
+    },
+    "docker-diffusion-gemma-structured.service": {
+      "Id": "docker-diffusion-gemma-structured.service",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "running",
+      "FragmentPath": "/etc/systemd/system.attached/docker-diffusion-gemma-structured.service",
+      "InvocationID": "59e1bfc0ec4745bb942c3a5145e53b44",
+      "MainPID": "807978"
+    },
+    "music-assistant.service": {
+      "Id": "music-assistant.service",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "running",
+      "FragmentPath": "/etc/systemd/system/music-assistant.service",
+      "InvocationID": "cda9fe74818b40f4a021d3e4f6d381d0",
+      "MainPID": "2516"
+    },
+    "docker.service": {
+      "Id": "docker.service",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "running",
+      "FragmentPath": "/etc/systemd/system/docker.service",
+      "InvocationID": "cd373850b5124d2881d973cc3c9db42a",
+      "MainPID": "2507"
+    }
+  },
+  "aspenAfter": {
+    "mesh-llm-mesh-llm-private-inference.service": {
+      "Id": "mesh-llm-mesh-llm-private-inference.service",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "running",
+      "FragmentPath": "/etc/systemd/system.control/mesh-llm-mesh-llm-private-inference.service",
+      "InvocationID": "f27b069fdf844b85b8f751514512091d",
+      "MainPID": "902893"
+    },
+    "docker-diffusion-gemma.service": {
+      "Id": "docker-diffusion-gemma.service",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "running",
+      "FragmentPath": "/etc/systemd/system.attached/docker-diffusion-gemma.service",
+      "InvocationID": "79ef89418b344ba8a2f32c405b066834",
+      "MainPID": "807921"
+    },
+    "docker-diffusion-gemma-structured.service": {
+      "Id": "docker-diffusion-gemma-structured.service",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "running",
+      "FragmentPath": "/etc/systemd/system.attached/docker-diffusion-gemma-structured.service",
+      "InvocationID": "59e1bfc0ec4745bb942c3a5145e53b44",
+      "MainPID": "807978"
+    },
+    "llamacpp-server-qwen38-flash-next-aspen1.service": {
+      "Id": "llamacpp-server-qwen38-flash-next-aspen1.service",
+      "LoadState": "masked",
+      "ActiveState": "inactive",
+      "SubState": "dead",
+      "FragmentPath": "/etc/systemd/system.control/llamacpp-server-qwen38-flash-next-aspen1.service",
+      "InvocationID": "180e7e7a0f5a4b25b439c0ae1399bd09",
+      "MainPID": "0"
+    },
+    "music-assistant.service": {
+      "Id": "music-assistant.service",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "running",
+      "FragmentPath": "/etc/systemd/system/music-assistant.service",
+      "InvocationID": "cda9fe74818b40f4a021d3e4f6d381d0",
+      "MainPID": "2516"
+    },
+    "docker.service": {
+      "Id": "docker.service",
+      "LoadState": "loaded",
+      "ActiveState": "active",
+      "SubState": "running",
+      "FragmentPath": "/etc/systemd/system/docker.service",
+      "InvocationID": "cd373850b5124d2881d973cc3c9db42a",
+      "MainPID": "2507"
+    }
+  },
+  "desktopBefore": {
+    "mesh-llm-mesh-llm-private-inference.service": {
+      "Id": "mesh-llm-mesh-llm-private-inference.service",
+      "ActiveState": "active",
+      "SubState": "running",
+      "InvocationID": "7f8d217a3d8b46ef96d52bc68c17579a",
+      "MainPID": "1914880"
+    },
+    "qwen38-p150x2.service": {
+      "Id": "qwen38-p150x2.service",
+      "ActiveState": "active",
+      "SubState": "running",
+      "InvocationID": "035e2d49a6454da8932dcd13d3b151e7",
+      "MainPID": "1088992"
+    }
+  },
+  "desktopAfter": {
+    "mesh-llm-mesh-llm-private-inference.service": {
+      "Id": "mesh-llm-mesh-llm-private-inference.service",
+      "ActiveState": "active",
+      "SubState": "running",
+      "InvocationID": "7f8d217a3d8b46ef96d52bc68c17579a",
+      "MainPID": "1914880"
+    },
+    "qwen38-p150x2.service": {
+      "Id": "qwen38-p150x2.service",
+      "ActiveState": "active",
+      "SubState": "running",
+      "InvocationID": "035e2d49a6454da8932dcd13d3b151e7",
+      "MainPID": "1088992"
+    }
+  },
+  "loopbackListeners": [
+    "127.0.0.1:9337",
+    "127.0.0.1:8001",
+    "127.0.0.1:8000",
+    "127.0.0.1:3131"
+  ],
+  "bootWantedUnits": [
+    "docker-diffusion-gemma-structured.service",
+    "docker-diffusion-gemma.service",
+    "mesh-llm-mesh-llm-private-inference.service"
+  ],
+  "modelIdsBefore": [
+    "Qwen3.8-27B",
+    "Whisper-Large-v3-Turbo",
+    "mesh",
+    "unsloth/Qwen3-0.6B-GGUF:Q4_K_M",
+    "user.Ornith-1.0-35B-Q4_K_M",
+    "user.Ornith-1.0-9B-Q8_0",
+    "user.Qwen3.6-35B-A3B",
+    "user.VibeThinker-3B"
+  ],
+  "modelIdsAfter": [
+    "Qwen3.8-27B",
+    "Whisper-Large-v3-Turbo",
+    "diffusiongemma",
+    "mesh",
+    "unsloth/Qwen3-0.6B-GGUF:Q4_K_M",
+    "user.Ornith-1.0-35B-Q4_K_M",
+    "user.Ornith-1.0-9B-Q8_0",
+    "user.Qwen3.6-35B-A3B",
+    "user.VibeThinker-3B"
+  ],
+  "discoveryAttempts": 1,
+  "chat": {
+    "request": {
+      "model": "diffusiongemma",
+      "messages": [
+        {
+          "role": "user",
+          "content": "What is the capital of France? Answer in one short sentence."
+        }
+      ],
+      "max_tokens": 64,
+      "chat_template_kwargs": {
+        "enable_thinking": false
+      },
+      "stream": false
+    },
+    "httpStatus": 200,
+    "seconds": 1.609,
+    "response": {
+      "choices": [
+        {
+          "finish_reason": "stop",
+          "index": 0,
+          "logprobs": null,
+          "message": {
+            "annotations": null,
+            "audio": null,
+            "content": "The capital of France is Paris.",
+            "function_call": null,
+            "reasoning": null,
+            "refusal": null,
+            "role": "assistant"
+          },
+          "routed_experts": null,
+          "stop_reason": 106,
+          "token_ids": null
+        }
+      ],
+      "created": 1789817785,
+      "ec_transfer_params": null,
+      "id": "chatcmpl-8fdcfd35dbd60477",
+      "kv_transfer_params": null,
+      "metrics": null,
+      "model": "diffusiongemma",
+      "object": "chat.completion",
+      "prompt_logprobs": null,
+      "prompt_text": null,
+      "prompt_token_ids": null,
+      "service_tier": null,
+      "system_fingerprint": "vllm-0.1.dev1+g58eacf242.d20260919-31a12d94",
+      "usage": {
+        "completion_tokens": 12,
+        "completion_tokens_details": {
+          "reasoning_tokens": 2
+        },
+        "prompt_tokens": 22,
+        "prompt_tokens_details": null,
+        "total_tokens": 34
+      }
+    }
+  },
+  "stream": {
+    "request": {
+      "model": "diffusiongemma",
+      "messages": [
+        {
+          "role": "user",
+          "content": "What is the capital of Japan? Answer in one short sentence."
+        }
+      ],
+      "max_tokens": 64,
+      "chat_template_kwargs": {
+        "enable_thinking": false
+      },
+      "stream": true
+    },
+    "httpStatus": 200,
+    "seconds": 1.594,
+    "content": "The capital of Japan is Tokyo.",
+    "done": true,
+    "events": [
+      {
+        "choices": [
+          {
+            "delta": {
+              "content": "",
+              "role": "assistant"
+            },
+            "finish_reason": null,
+            "index": 0,
+            "logprobs": null
+          }
+        ],
+        "created": 1789817786,
+        "id": "chatcmpl-bde22e7ec26347de",
+        "model": "diffusiongemma",
+        "object": "chat.completion.chunk",
+        "prompt_text": null,
+        "prompt_token_ids": null
+      },
+      {
+        "choices": [
+          {
+            "delta": {
+              "content": "The capital of Japan is Tokyo.",
+              "reasoning": null
+            },
+            "finish_reason": "stop",
+            "index": 0,
+            "logprobs": null,
+            "stop_reason": 106,
+            "token_ids": null
+          }
+        ],
+        "created": 1789817786,
+        "id": "chatcmpl-bde22e7ec26347de",
+        "model": "diffusiongemma",
+        "object": "chat.completion.chunk",
+        "system_fingerprint": "vllm-0.1.dev1+g58eacf242.d20260919-31a12d94"
+      }
+    ]
+  },
+  "canvas": {
+    "request": {
+      "model": "diffusiongemma",
+      "messages": [
+        {
+          "role": "system",
+          "content": "Answer a fixed set of questions about the state the user provides. Each question lists its allowed answers; reply with exactly one label per question.\n\nQuestion color: Which color is explicitly named in the message?\n  A: red (The message explicitly names red.)\n  B: blue (The message explicitly names blue.)\n\nReply with one line per question, in this order, formatted as \"id: label\"."
+        },
+        {
+          "role": "user",
+          "content": "The color explicitly mentioned in this message is RED."
+        }
+      ],
+      "max_tokens": 8,
+      "logprobs": true,
+      "top_logprobs": 20,
+      "logprob_token_ids": [
+        562,
+        603
+      ],
+      "return_tokens_as_token_ids": true,
+      "chat_template_kwargs": {
+        "enable_thinking": false
+      },
+      "vllm_xargs": {
+        "diffusion_seed_canvas": [
+          100,
+          45518,
+          107,
+          101,
+          3001,
+          236787,
+          201979,
+          106,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "diffusion_canvas_length": 16,
+        "diffusion_max_steps": 1,
+        "diffusion_read_only": true
+      }
+    },
+    "httpStatus": 200,
+    "seconds": 0.898,
+    "returnedLabelLogprobs": {
+      "562": -0.1305881142616272,
+      "603": -7.325910091400147
+    },
+    "fingerprint": "vllm-0.1.dev1+g58eacf242.d20260919-31a12d94"
+  },
+  "unsupportedSampling": {
+    "httpStatus": 400,
+    "response": {
+      "error": {
+        "message": "The temperature, min_p, seed, min_tokens, logit_bias, bad_words, and allowed_token_ids sampling parameters are not yet supported with diffusion models.",
+        "type": "BadRequestError",
+        "param": null,
+        "code": 400
+      }
+    }
+  },
+  "sparkForwarderHealthy": true,
+  "targetedCheck": {
+    "command": [
+      "nix",
+      "build",
+      "--no-link",
+      "--option",
+      "eval-cache",
+      "false",
+      "--option",
+      "allow-import-from-derivation",
+      "true",
+      "path:/home/brittonr/git/onix-core#checks.x86_64-linux.mesh-llm-sidecars"
+    ],
+    "exitCode": 0
+  },
+  "formattedSources": [
+    "inventory/services/services.ncl",
+    "machines/aspen1/diffusion-gemma.nix",
+    "flake-outputs/_mesh-llm-checks.nix",
+    "modules/mesh-llm/schema.ncl",
+    "modules/mesh-llm/mk-nixos-config.nix"
+  ],
+  "cleanup": {
+    "supersededTomlRemoved": true,
+    "obsoleteRuntimeDropInDirectoryRemoved": true,
+    "existingMergeProxyScriptPreserved": true,
+    "readOnlyBridgeClosed": true,
+    "temporaryMountDirectoryRemoved": true,
+    "temporaryBuildRootRemoved": true,
+    "temporarySourceSnapshotsRemoved": true
+  },
+  "postCleanupInference": {
+    "httpStatus": 200,
+    "content": "The capital of France is Paris.",
+    "fingerprint": "vllm-0.1.dev1+g58eacf242.d20260919-31a12d94"
+  },
+  "nativeCairnValidation": {
+    "command": [
+      "nix",
+      "run",
+      "path:/home/brittonr/git/OnixResearch/cairn#cairn",
+      "--",
+      "validate",
+      "--root",
+      "/home/brittonr/git/onix-core",
+      "--policy",
+      "/home/brittonr/git/OnixResearch/cairn/cairn-policy/generated/cairn-policy.json"
+    ],
+    "valid": true,
+    "receiptHash": "651e9ce08599687c5e799bc73d914b844c41bc9ce83b1fa65f19794dfb3f467d",
+    "issues": [],
+    "taskMetrics": {
+      "checkbox_tasks": 6,
+      "kind": "tasks",
+      "malformed_dependency_markers": 0,
+      "path": "/home/brittonr/git/onix-core/.cairn/changes/expose-diffusion-gemma-mesh-llm/tasks.md",
+      "requirement_blocks": 0,
+      "scenario_blocks": 0,
+      "substantive_lines": 6,
+      "substantive_requirement_blocks": 0,
+      "substantive_tasks": 6,
+      "task_done": 6,
+      "task_in_progress": 0,
+      "task_todo": 0
+    }
+  },
+  "omp_model_discovery": {
+    "host": "britton-desktop",
+    "endpoint": "http://127.0.0.1:9337/v1",
+    "initial_omp_version": "18.1.19",
+    "configured_omp_version": "18.2.4",
+    "refresh_seconds": 30,
+    "discovery_timeout_ms": 5000,
+    "enabled_model_pattern": "mesh/**",
+    "initial_live_catalog_parity": [
+      "Qwen3.8-27B",
+      "Whisper-Large-v3-Turbo",
+      "diffusiongemma",
+      "mesh",
+      "unsloth/Qwen3-0.6B-GGUF:Q4_K_M",
+      "user.Ornith-1.0-35B-Q4_K_M",
+      "user.Ornith-1.0-9B-Q8_0",
+      "user.Qwen3.6-35B-A3B",
+      "user.VibeThinker-3B"
+    ],
+    "pre_upgrade_reproduction": {
+      "case": "successful provider membership replacement with warm cache",
+      "expected": [
+        "mesh/refresh-periodic",
+        "mesh/refresh-stable",
+        "other/keep"
+      ],
+      "observed": [
+        "mesh/refresh-old",
+        "mesh/refresh-periodic",
+        "mesh/refresh-stable",
+        "other/keep"
+      ],
+      "failure": "mesh/refresh-old remained selectable after successful online discovery"
+    },
+    "upstream_fix": "18.2.4 ModelRegistry replaces configured runtime and cached membership, including an empty catalog, when discovery returns a provider result",
+    "local_core_patch_retained": false,
+    "checks": [
+      {
+        "case": "startup_refresh_bypasses_fresh_cache",
+        "selectors": [
+          "mesh/refresh-stable",
+          "mesh/refresh-startup-fixed",
+          "other/keep"
+        ],
+        "passed": true,
+        "note": "RPC ready may expose cached rows until background startup refresh settles"
+      },
+      {
+        "case": "live_rpc_catalog_parity",
+        "mesh_models": [
+          "Qwen3.8-27B",
+          "Whisper-Large-v3-Turbo",
+          "diffusiongemma",
+          "mesh",
+          "unsloth/Qwen3-0.6B-GGUF:Q4_K_M",
+          "user.Ornith-1.0-35B-Q4_K_M",
+          "user.Ornith-1.0-9B-Q8_0",
+          "user.Qwen3.6-35B-A3B",
+          "user.VibeThinker-3B"
+        ],
+        "default_unchanged": "zai/glm-5.3",
+        "passed": true
+      },
+      {
+        "case": "periodic-membership-replacement",
+        "http_status": 200,
+        "selectors": [
+          "mesh/refresh-periodic-fixed",
+          "mesh/refresh-stable",
+          "other/keep"
+        ],
+        "passed": true
+      },
+      {
+        "case": "outage-preserves-last-good-catalog",
+        "http_status": 503,
+        "selectors": [
+          "mesh/refresh-periodic-fixed",
+          "mesh/refresh-stable",
+          "other/keep"
+        ],
+        "passed": true
+      },
+      {
+        "case": "successful-empty-catalog-removes-all-mesh-models",
+        "http_status": 200,
+        "selectors": [
+          "other/keep"
+        ],
+        "passed": true
+      },
+      {
+        "case": "catalog-recovers-without-session-restart",
+        "http_status": 200,
+        "selectors": [
+          "mesh/refresh-recovered",
+          "other/keep"
+        ],
+        "passed": true
+      }
+    ],
+    "compiler_correction": {
+      "old_override": "Bun 1.3.13",
+      "pinned_source_requires": "bun@>=1.4",
+      "decision": "Remove the obsolete override and use the upstream packaged compiler/runtime pairing",
+      "failed_smoke": "TypeError: Expected CommonJS module to have a function wrapper",
+      "verified_bun": "1.4.2"
+    },
+    "activated_package": "/nix/store/bb9446mm6qbvngc0s028hy05p42xbzxc-omp-18.2.4",
+    "user_profile": {
+      "elements": {
+        "branchfs": {
+          "active": true,
+          "priority": 5,
+          "storePaths": [
+            "/nix/store/hwhnq0i8grjzl6i37dawv0r2paf5j9n8-branchfs-0-unstable-2026-03-29"
+          ]
+        },
+        "git-lfs": {
+          "active": true,
+          "attrPath": "legacyPackages.x86_64-linux.git-lfs",
+          "originalUrl": "flake:nixpkgs",
+          "outputs": null,
+          "priority": 5,
+          "storePaths": [
+            "/nix/store/dlpiark6g61qxxp8na1xybv7ad52jrb1-git-lfs-3.7.1"
+          ],
+          "url": "path:/nix/store/5jyicr39gf79ybcv7bjwlaiqk7h2fhxz-source?lastModified=1787136264&narHash=sha256-sFosWtq21eHGJRnTc/hvf4M1obRgLEUMNm/IzllkHMA%3D"
+        },
+        "omp": {
+          "active": true,
+          "priority": 5,
+          "storePaths": [
+            "/nix/store/bb9446mm6qbvngc0s028hy05p42xbzxc-omp-18.2.4"
+          ]
+        }
+      },
+      "version": 3
+    },
+    "extension_source": "import type { ExtensionAPI } from \"@oh-my-pi/pi-coding-agent\";\n\nexport default function meshModels(pi: ExtensionAPI) {\n\tpi.on(\"session_start\", async (_event, ctx) => {\n\t\t// Mesh membership changes faster than OMP's default 24-hour discovery cache.\n\t\t// Managed timers contain failures and are cleared when the session shuts down.\n\t\tctx.setInterval(() => ctx.modelRegistry.refreshDiscoverableProviders([\"mesh\"], \"online\"), 30_000);\n\t\tawait ctx.modelRegistry.refreshDiscoverableProviders([\"mesh\"], \"online\");\n\t});\n}\n",
+    "extension_sha256": "43ddbdddf78ad6697802b0978669200876f9e10a77b64cc99f56c0fa83bff1e4",
+    "protected_service_invocations": {
+      "mesh-llm-mesh-llm-private-inference.service": "7f8d217a3d8b46ef96d52bc68c17579a",
+      "qwen38-p150x2.service": "035e2d49a6454da8932dcd13d3b151e7"
+    },
+    "activation": "Scoped desktop user Nix profile; no whole-host activation or inference-service restart",
+    "scope": "Desktop default OMP profile; existing sessions must restart once to load the new binary and global extension",
+    "standalone_cli": "Plain omp models listing uses the cache; omp models refresh mesh requests an immediate online refresh",
+    "cleanup": {
+      "removed": [
+        "/tmp/omp-mesh-refresh.4EN0T5",
+        "/home/brittonr/.omp-mesh-refresh-4EN0T5",
+        "/home/brittonr/.cache/omp-mesh-model-discovery"
+      ],
+      "owned_processes_remaining": false,
+      "catalog_listener_remaining": false,
+      "local_staging": "/tmp/omp-mesh-model-refresh",
+      "local_staging_removed": true
+    },
+    "validation": {
+      "formatter": {
+        "command": "nix run path:/home/brittonr/git/onix-core#formatter.x86_64-linux -- -C /home/brittonr/git/onix-core modules/llm-agents/default.nix",
+        "exit_code": 0,
+        "files_processed": 1,
+        "files_changed": 0
+      },
+      "package_checks": {
+        "command": "nix build --no-link --builders \"\" --max-jobs 1 --cores 4 --option eval-cache false --option allow-import-from-derivation true path:/home/brittonr/git/onix-core#checks.x86_64-linux.llm-agents-omp-package-list path:/home/brittonr/git/onix-core#checks.x86_64-linux.llm-agents-omp-smoke",
+        "exit_code": 0
+      },
+      "cairn": {
+        "command": "nix run path:/home/brittonr/git/OnixResearch/cairn#cairn -- validate --root /home/brittonr/git/onix-core --policy /home/brittonr/git/OnixResearch/cairn/cairn-policy/generated/cairn-policy.json",
+        "valid": true,
+        "issues": [],
+        "receipt_hash": "8f4098ff8c2442122f3b00258c4a76648ef0efae0dcf81bd3b88a461d75b2ca9",
+        "scope": {
+          "checkbox_tasks": 9,
+          "kind": "tasks",
+          "malformed_dependency_markers": 0,
+          "path": "/home/brittonr/git/onix-core/.cairn/changes/expose-diffusion-gemma-mesh-llm/tasks.md",
+          "requirement_blocks": 0,
+          "scenario_blocks": 0,
+          "substantive_lines": 9,
+          "substantive_requirement_blocks": 0,
+          "substantive_tasks": 9,
+          "task_done": 9,
+          "task_in_progress": 0,
+          "task_todo": 0
+        },
+        "source_path_note": "/home/brittonr/git/cairn is a symlink; Nix path flakes require its resolved /home/brittonr/git/OnixResearch/cairn checkout"
+      }
+    }
+  }
+}

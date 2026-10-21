@@ -1,0 +1,41 @@
+{
+  "services": {
+    "llamacpp-server-qwen38-flash-next-aspen1.service": {
+      "Id": "llamacpp-server-qwen38-flash-next-aspen1.service",
+      "ActiveState": "inactive",
+      "SubState": "dead",
+      "FragmentPath": "/etc/systemd/system/llamacpp-server-qwen38-flash-next-aspen1.service",
+      "InvocationID": "180e7e7a0f5a4b25b439c0ae1399bd09",
+      "MainPID": "0"
+    },
+    "mesh-llm-mesh-llm-private-inference.service": {
+      "Id": "mesh-llm-mesh-llm-private-inference.service",
+      "ActiveState": "active",
+      "SubState": "running",
+      "FragmentPath": "/etc/systemd/system/mesh-llm-mesh-llm-private-inference.service",
+      "InvocationID": "484c7bafdb044985b6859912b4b5d691",
+      "MainPID": "2203074"
+    },
+    "music-assistant.service": {
+      "Id": "music-assistant.service",
+      "ActiveState": "active",
+      "SubState": "running",
+      "FragmentPath": "/etc/systemd/system/music-assistant.service",
+      "InvocationID": "cda9fe74818b40f4a021d3e4f6d381d0",
+      "MainPID": "2516"
+    },
+    "docker.service": {
+      "Id": "docker.service",
+      "ActiveState": "active",
+      "SubState": "running",
+      "FragmentPath": "/etc/systemd/system/docker.service",
+      "InvocationID": "cd373850b5124d2881d973cc3c9db42a",
+      "MainPID": "2507"
+    }
+  },
+  "bootWantedUnits": [
+    "docker-diffusion-gemma-structured.service",
+    "docker-diffusion-gemma.service"
+  ],
+  "unitInstallation": "Nix profile GC root; persistent system.attached units and target dependencies; system.control mask for the existing Qwen unit"
+}

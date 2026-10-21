@@ -11,9 +11,7 @@
   ...
 }:
 let
-  plugins = self.packages.x86_64-linux.wasm-plugins;
-  wasm = import ../lib/wasm.nix { inherit plugins; };
-  machinesDef = (wasm.evalNickelFile ../inventory/core/machines.ncl).machines;
+  machinesDef = self.lib.machines.definitions;
 
   brittonDesktopName = "britton-desktop";
   requiredAcceleratorTag = "tenstorrent";
@@ -138,7 +136,7 @@ let
     && serviceEnvironmentValue qwenServiceName "TT_CACHE_PATH" == qwenModelPath;
   qwenOwnsBothDevices = lib.all (devicePath: lib.elem devicePath qwenConditionPaths) qwenDevicePaths;
   qwenHasExpectedConflicts = (qwenService.conflicts or [ ]) == qwenExpectedConflicts;
-  qwenStartsAtBoot = lib.elem "multi-user.target" (qwenService.wantedBy or [ ]);
+  qwenIsMasked = !(qwenService.enable or true);
   qwenUsesDeviceGroup = (qwenServiceConfig.Group or null) == "tenstorrent";
   qwenClearsAmbientMesh =
     lib.elem "TT_MESH_GRAPH_DESC_PATH" qwenUnsetEnvironment
@@ -329,8 +327,8 @@ let
       echo "${qwenServiceName} must conflict with both retired accelerator services"
       exit 1
     ''}
-    ${lib.optionalString (!qwenStartsAtBoot) ''
-      echo "${qwenServiceName} must start through multi-user.target"
+    ${lib.optionalString (!qwenIsMasked) ''
+      echo "${qwenServiceName} must stay masked while the P150 devices are paused"
       exit 1
     ''}
     ${lib.optionalString (!qwenUsesDeviceGroup) ''

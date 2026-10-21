@@ -1,0 +1,282 @@
+{
+  "change": "expose-underclass-mesh-llm",
+  "status": "deployed-on-britton-desktop-generation-859",
+  "observed_at": "2026-09-26",
+  "upstream_contracts": {
+    "underclass_revision": "033928363862a1b216e86d59b4c1f1a44c6edf4a",
+    "mesh_llm_version": "0.72.2",
+    "openai_endpoint_version": "0.1.2",
+    "codex_via_underclass": {
+      "chat_completions_non_stream": "HTTP 400 {\"detail\":\"Stream must be set to true\"}",
+      "chat_completions_stream": "HTTP 400 {\"detail\":\"Unsupported parameter: messages\"}",
+      "responses_stream": "HTTP 200 with response.completed",
+      "responses_without_instructions": "HTTP 200",
+      "responses_string_input": "HTTP 400 {\"detail\":\"Input must be a list\"}",
+      "responses_developer_and_system_roles": "HTTP 200",
+      "responses_rejected_parameters": [
+        "temperature",
+        "top_p",
+        "max_output_tokens",
+        "metadata",
+        "user"
+      ],
+      "responses_reasoning_effort_low_and_none": "HTTP 200",
+      "responses_completed_output": "empty array; output must be assembled from streamed events"
+    },
+    "mesh_host": {
+      "endpoint_probe": "unauthenticated GET <url>/models every 15 s, 3 s timeout",
+      "responses_clients": "normalized to /v1/chat/completions before forwarding",
+      "request_rewrites": [
+        "max_completion_tokens and max_output_tokens aliased to max_tokens",
+        "chat_template_kwargs.enable_thinking inserted for reasoning options"
+      ],
+      "plugin_identity": "host passes MESH_LLM_PLUGIN_NAME and rejects a different initialize plugin_id"
+    }
+  },
+  "builds": {
+    "underclass_mesh_gateway": "/nix/store/arwgasr3jcxq1rfk1784ldkqc4b4a2iw-underclass-mesh-gateway-0.1.0",
+    "gateway_tests": "pytest in checkPhase: 19 passed (adds conversation affinity)",
+    "gateway_unit": "/nix/store/bdmvbpk6rcrllcb5fjs40w9snkpsdg3s-unit-underclass-mesh-gateway.service",
+    "mesh_llm_package": "/nix/store/p6fcc2s466djpb8h0wz50yhm5s2gk4dg-mesh-llm-0.72.2",
+    "previous_mesh_llm_package": "/nix/store/555n1s4cvvv48083rpmwsvbdr9x33lj4-mesh-llm-0.72.2",
+    "mesh_llm_binary": "byte-identical between both packages (cmp); only bin/openai-endpoint changed",
+    "desktop_mesh_unit": "/nix/store/bnf6823mns22mhcp3a53p1f89ssd7c78-unit-mesh-llm-mesh-llm-private-inference.service",
+    "desktop_mesh_config": "/nix/store/pwic2521gh54m261s3yny7asbp87lg9v-mesh-llm-mesh-llm-private-inference-config.toml",
+    "checks": {
+      "mesh-llm-sidecars": "/nix/store/5kfvpwrfbpfxlg62v1qhb9d067jp77mm-mesh-llm-sidecars",
+      "llm-agents-omp-package-list": "/nix/store/vs1wyfh7ifvgrw7namqgng61mf428r2a-llm-agents-omp-package-list",
+      "llm-agents-omp-smoke": "/nix/store/7rf2pz089sxscyr7i2qkwq232w5xa86j-llm-agents-omp-smoke"
+    },
+    "lint": "ruff check, ruff format --check, nixfmt --check and nickel format produced no changes on touched files"
+  },
+  "configuration": {
+    "gateway_exec": "underclass-mesh-gateway --listen 127.0.0.1:18081 --upstream http://127.0.0.1:8080/v1 --key-file %d/proxy-key",
+    "gateway_credential": "LoadCredential=proxy-key:/run/secrets/vars/per-machine/britton-desktop/underclass/proxy-key",
+    "gateway_sandbox": [
+      "DynamicUser",
+      "IPAddressAllow=localhost",
+      "IPAddressDeny=any",
+      "RestrictAddressFamilies=AF_INET",
+      "ProtectSystem=strict",
+      "PartOf=underclass.service"
+    ],
+    "desktop_plugins": [
+      "openai-endpoint http://127.0.0.1:8000/v1",
+      "underclass http://127.0.0.1:18081/v1",
+      "research"
+    ],
+    "negative_controls": {
+      "aspen1_plugins": [
+        "openai-endpoint http://127.0.0.1:8000/v1",
+        "spark http://127.0.0.1:18999/v1",
+        "research"
+      ],
+      "aspen2_plugins": [
+        "openai-endpoint http://127.0.0.1:13305/v1",
+        "research"
+      ],
+      "aspen3_plugins": [
+        "openai-endpoint http://127.0.0.1:13305/v1",
+        "research"
+      ],
+      "aspen2_and_aspen3_define_gateway_unit": false,
+      "gateway_without_local_pool": "assertion: llm-agents: underclassMeshGateway serves only a local ompUnderclass pool."
+    }
+  },
+  "direct_gateway_smoke": {
+    "models": [
+      "gpt-5.3-codex-spark",
+      "gpt-5.4",
+      "gpt-5.4-mini",
+      "gpt-5.5",
+      "gpt-5.6-luna",
+      "gpt-5.6-sol",
+      "gpt-5.6-terra",
+      "gpt-6-astra"
+    ],
+    "copilot_entries_filtered": [
+      "gpt-4.1",
+      "gpt-5.4-nano"
+    ],
+    "non_stream": "gpt-5.5 content \"pong\", finish stop, usage with cached and reasoning token details",
+    "stream_with_usage": "\"1 2 3 4 5\", finish chunk, usage chunk, [DONE]",
+    "parallel_tool_calls": "indexes 0 and 1, get_weather Paris and Rome, finish tool_calls",
+    "tool_result_follow_up": "\"The weather in Paris is sunny, 21°C.\"",
+    "temperature": "HTTP 400 {\"detail\":\"Unsupported parameter: temperature\"} relayed unchanged"
+  },
+  "activation": {
+    "restored_runtime_secrets": {
+      "reason": "the 2026-09-25 secrets generation /run/secrets.d/41 no longer contained the underclass directory while underclass.service kept running",
+      "precondition": "decrypted committed proxy key matched the running service's key (compared by digest, not recorded)",
+      "files": {
+        "proxy-key": "brittonr:root 0400",
+        "ui-token": "brittonr:root 0400",
+        "env-file": "root:root 0400"
+      }
+    },
+    "gateway_unit_link": "/run/systemd/system/underclass-mesh-gateway.service (enabled-runtime)",
+    "mesh_override_previous": "/nix/store/z62g3pa3gzwg38gl1jd39jl6a3xl7nrc-unit-mesh-llm-mesh-llm-private-inference.service",
+    "mesh_override_current": "/nix/store/bnf6823mns22mhcp3a53p1f89ssd7c78-unit-mesh-llm-mesh-llm-private-inference.service",
+    "gc_roots": [
+      "~brittonr/.local/state/underclass-mesh/gateway-unit",
+      "~brittonr/.local/state/underclass-mesh/mesh-unit"
+    ],
+    "unpatched_plugin_failure": "Plugin failed to load plugin=underclass error=Plugin 'underclass' identified itself as 'openai-endpoint'",
+    "patched_plugin_endpoint": "underclass healthy: GET http://127.0.0.1:18081/v1/models -> 200 OK, 8 models",
+    "invocation_ids": {
+      "underclass.service": {
+        "before": "a7e735fa83ba49f8b8e942d6938ebffc",
+        "after": "a7e735fa83ba49f8b8e942d6938ebffc"
+      },
+      "mesh-llm-mesh-llm-private-inference-research-http.service": {
+        "before": "587e254341994045a5a3273e2cf4e676",
+        "after": "587e254341994045a5a3273e2cf4e676"
+      },
+      "mesh-llm-mesh-llm-private-inference.service": {
+        "before": "95a76ffa28994f7d9d2729f4ff83c6dd",
+        "after": "ca9535e2efcd4ac9bc66911f1d554eda"
+      },
+      "aspen2 mesh-llm-mesh-llm-private-inference.service": {
+        "before": "93d0483f656346198b2f7164844a799a",
+        "after": "93d0483f656346198b2f7164844a799a"
+      },
+      "underclass-mesh-gateway.service": {
+        "after": "71b9ee0e7c5e432392ae3acddc76b51d"
+      }
+    },
+    "listeners": [
+      "127.0.0.1:18081 gateway",
+      "127.0.0.1:8080 underclass",
+      "127.0.0.1:9337 mesh api",
+      "127.0.0.1:3131 mesh console"
+    ]
+  },
+  "mesh_verification_from_aspen2": {
+    "peer_ids": {
+      "aspen2": "78a2aff7b6",
+      "britton-desktop": "1332e00702"
+    },
+    "models": [
+      "gpt-5.3-codex-spark",
+      "gpt-5.4",
+      "gpt-5.4-mini",
+      "gpt-5.5",
+      "gpt-5.6-luna",
+      "gpt-5.6-sol",
+      "gpt-5.6-terra",
+      "gpt-6-astra",
+      "unsloth/Qwen3-0.6B-GGUF:Q4_K_M",
+      "mesh"
+    ],
+    "chat_non_stream": "gpt-5.5 HTTP 200 \"The capital of France is Paris.\" finish stop",
+    "chat_stream_with_usage": "gpt-6-astra HTTP 200 \"The capital of Japan is Tokyo.\" finish stop, usage chunk, [DONE]",
+    "chat_stream_tool_calls": "gpt-5.5 HTTP 200 two indexed get_weather calls with Paris and Rome arguments, finish tool_calls",
+    "chat_tool_result_follow_up": "gpt-5.5 \"The weather in Paris is rainy, 12°C.\"",
+    "reasoning_effort_high_with_max_completion_tokens": "gpt-5.5 HTTP 200 \"Yes\", 117 reasoning tokens",
+    "responses_non_stream": "gpt-5.5 HTTP 200 status completed \"42\"",
+    "responses_stream": "gpt-5.5 HTTP 200 \"Jupiter\" with response.completed",
+    "temperature": "HTTP 400; mesh error message carries {\"detail\":\"Unsupported parameter: temperature\"}",
+    "after_final_gateway_rebuild": "stream chat \"mesh-underclass-ok\"; gpt-6-astra responses \"responses-ok\""
+  },
+  "unchanged_routes": {
+    "research_ingress": "POST http://100.110.43.11:7997/search returned HTTP 200 arXiv results after the sidecar restart"
+  },
+  "limits": [
+    "Aspen1 was offline and Aspen3 was not connected to this mesh, so only Aspen2 was exercised as a remote peer; the Aspen1 spark endpoint fix is inferred from the same plugin identity check, not observed.",
+    "Copilot catalog entries are not advertised; no Copilot account is enrolled.",
+    "OMP's mesh provider discovery was not exercised; the mesh API it reads was.",
+    "No reboot was performed; persistence across reboot follows from the managed generation, not an observed boot."
+  ],
+  "deployment": {
+    "lineage_branch": "underclass-mesh-desktop",
+    "lineage_parent": "76fdacbac7240c0380cc95455242b28d5aee17c8 (generation 858)",
+    "commits": {
+      "2948cb5a": "vars: update via generator underclass (machine: britton-desktop)",
+      "0348b2d3": "Serve the Underclass pool to Mesh-LLM on the desktop's deployed lineage"
+    },
+    "lock_comparison": {
+      "added": [
+        "underclass"
+      ],
+      "removed": [],
+      "changed": [
+        "root"
+      ]
+    },
+    "unit_parity_with_running_overrides": "underclass, underclass-mesh-gateway, mesh sidecar, research ingress and the mesh TOML identical apart from store paths",
+    "lineage_checks": [
+      "mesh-llm-sidecars",
+      "llm-agents-omp-package-list",
+      "llm-agents-omp-smoke",
+      "package-mesh-llm",
+      "package-mesh-research",
+      "package-underclass-mesh-gateway",
+      "tag-registry-sync"
+    ],
+    "negative_controls": "aspen1, aspen2 and aspen3 evaluate without the gateway, Underclass or extra plugins",
+    "not_deployed_from_working_tree": "a desktop build from the working tree targets nixos 26.11.20260924 with a new kernel and unrelated changes",
+    "generation": {
+      "number": 859,
+      "system": "/nix/store/vghzgpfgdfb4qan5ydllqr7cmm97lm5k-nixos-system-britton-desktop-26.11.20260908.e9b9cbe",
+      "previous": "/nix/store/0szqr3gmzikh04kkkkx3x9czz9cyzldb-nixos-system-britton-desktop-26.11.20260908.e9b9cbe",
+      "configurationRevision": "0348b2d3775880a89cccca758e06688276796504"
+    },
+    "closure_diff": [
+      "mesh-llm research-http conf and research json",
+      "omp-underclass-provider",
+      "onix-mesh-research 0.1.0 +4.0 MiB",
+      "three underclass var files",
+      "underclass 0.1.0 +16.1 MiB",
+      "underclass-config",
+      "underclass-mesh-gateway 0.1.0 +30.2 KiB",
+      "research-http, gateway and underclass units"
+    ],
+    "dry_activate": {
+      "restart": [
+        "kiln-aspen-canary-lattice",
+        "mesh-llm-mesh-llm-private-inference",
+        "polkit"
+      ],
+      "reload": [
+        "dbus-broker",
+        "nftables"
+      ],
+      "restart_user": [
+        "home-manager-brittonr"
+      ]
+    },
+    "removed_overlays": [
+      "/etc/systemd/system.control/mesh-llm-mesh-llm-private-inference.service",
+      "/etc/systemd/system.control/mesh-llm-mesh-llm-private-inference-research-http.service and its wants link",
+      "/run/systemd/system/underclass.service and its wants link",
+      "/run/systemd/system/underclass-mesh-gateway.service and its wants link",
+      "~brittonr/.omp/agent/extensions/underclass manual link",
+      "~brittonr/.local/state/underclass-mesh GC roots"
+    ],
+    "activation": "nix-env --set, then switch-to-configuration switch under systemd-run; exit 4 from pre-existing kache-nix quota snippets and crash-looping celld, celld-site, kiln-aspen-ci-host and collie-serve",
+    "adoption": "underclass and research ingress restarted after the switch to load generation binaries; the gateway restarted through PartOf",
+    "managed_state": {
+      "fragment_paths": "underclass, underclass-mesh-gateway, mesh sidecar and research ingress load from /etc/systemd/system",
+      "running_store_paths": {
+        "underclass": "/nix/store/f93839yp2pxpylshbm4s8wdiq2qvkyia-underclass-0.1.0",
+        "gateway": "/nix/store/arwgasr3jcxq1rfk1784ldkqc4b4a2iw-underclass-mesh-gateway-0.1.0",
+        "research_ingress_nginx": "/nix/store/fhxpg5zzr3f19d1fpcnyk2qc7j7v99qr-nginx-1.30.4",
+        "mesh_llm": "/nix/store/x9537gyalfihg6x4zkm34h91kxsgfa7q-mesh-llm-0.72.2"
+      },
+      "secrets": "/run/secrets.d/42 from sops activation: proxy-key and ui-token brittonr:root 0400, env-file root:root 0400",
+      "home_manager_link": "~brittonr/.omp/agent/extensions/underclass -> home-manager-files -> /nix/store/6r7ha5x2wysz14qh4b7471yyv78s0jq3-omp-underclass-provider",
+      "system_control_overrides": "none",
+      "pool": "three Codex accounts retained across the restart (one healthy, two cooling)"
+    },
+    "post_deploy_from_aspen2": {
+      "models": "eight Underclass Codex models plus the bootstrap and mesh entries",
+      "chat": "gpt-5.5 \"The capital of Italy is Rome.\" finish stop",
+      "stream": "gpt-6-astra \"clan-deployed\"",
+      "tool_call_stream": "get_weather with incremental Oslo arguments",
+      "responses": "gpt-5.5 status completed \"responses-deployed\"",
+      "affinity": "two turns of one keyless conversation: Underclass logged NewBinding then StickyHit on the same account"
+    },
+    "research_ingress": "POST http://100.110.43.11:7997/search HTTP 200 after the switch",
+    "startup_note": "The sidecar's console and API listen only after its join attempt to the offline seed times out, about 100 s after start; it then reconnects to Aspen2."
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "checks": {
+    "command": "nix build --no-link --option eval-cache false --option allow-import-from-derivation true /home/brittonr/git/onix-core#checks.x86_64-linux.builder-no-self /home/brittonr/git/onix-core#checks.x86_64-linux.ssh-host-key-consistency",
+    "exit_code": 0,
+    "outputs": [
+      "/nix/store/d9issf6925q5rgwgpl0v1fygp4wcmakc-builder-no-self-check",
+      "/nix/store/g8l8qjz3h965f74nd26hl8bxbl3mmqzx-ssh-host-key-consistency"
+    ]
+  },
+  "desktop": {
+    "after": "/nix/store/kw0lfm73yyxh0jxq4z1l8aggi9czxqqx-nixos-system-britton-desktop-26.11.20260914.c7def04.drv",
+    "before": "/nix/store/fwiacqn1f4ys7rlqwkb0a187gxpsipqh-nixos-system-britton-desktop-26.11.20260914.c7def04.drv",
+    "changed_leaf": "modules/kiln-aspen-canary/profiles/lattice-workflow.ncl",
+    "derivation_pairs": [
+      {
+        "after": "/nix/store/kw0lfm73yyxh0jxq4z1l8aggi9czxqqx-nixos-system-britton-desktop-26.11.20260914.c7def04.drv",
+        "before": "/nix/store/fwiacqn1f4ys7rlqwkb0a187gxpsipqh-nixos-system-britton-desktop-26.11.20260914.c7def04.drv",
+        "normalized_equal": true,
+        "normalized_sha256": "109d71be553c89f570feb938880c698be9fa24fb03f8cfef3b62a265bf3f684b"
+      },
+      {
+        "after": "/nix/store/g78rgxxgca9hklfzwkl111zarnjcziy0-etc.drv",
+        "before": "/nix/store/ys6szarxh471n8hckzmzdsampda1dz3y-etc.drv",
+        "normalized_equal": true,
+        "normalized_sha256": "02fe27f5db860cf3b986885a24e170956d85194c195b9b654dbe7105598f9bb2"
+      },
+      {
+        "after": "/nix/store/mx4b92sn8ynriwd074mkdw2f4ly5vf9z-system-units.drv",
+        "before": "/nix/store/mscmf7s6dihmphdmj4k7x1yr1307k5g0-system-units.drv",
+        "normalized_equal": true,
+        "normalized_sha256": "7075fdcde50d1668c60e1c9684551adbd75e8e2d4b284dbd3605b283c71c5082"
+      },
+      {
+        "after": "/nix/store/8h3rqw86armbwyf35mxwirwjqyp15j2k-unit-kiln-aspen-canary-lattice.service.drv",
+        "before": "/nix/store/ij8j1s4wwmpasn9d5dcmf7jpgiass50h-unit-kiln-aspen-canary-lattice.service.drv",
+        "normalized_equal": true,
+        "normalized_sha256": "66ff33deb21bf0a43c2283a9dddd443bfb88b7c71fb050ae83283617c14f70ff"
+      },
+      {
+        "after": "/nix/store/l2pj2jcmrdrnivpr0x6pcmjmmdh2rl1q-kiln-aspen-canary-prepare-lattice.drv",
+        "before": "/nix/store/1arjz47a3krx3xf848mcxnjmjybj51m8-kiln-aspen-canary-prepare-lattice.drv",
+        "normalized_equal": true,
+        "normalized_sha256": "02b2069cf5e803810f70a791a3ea576af714c7845a3030dc2a81a5b22dddc7f2"
+      },
+      {
+        "after": "/nix/store/lbmgp5nm0r7fzlz102zslfw4zl22rbbc-activate.drv",
+        "before": "/nix/store/xi67i4syyf8wlqgyb7vq95sa22fvf0s7-activate.drv",
+        "normalized_equal": true,
+        "normalized_sha256": "0da2cab107dc6d3b687f4cc0da3fa146cdd76c82334b4a0fb8be7260e4303156"
+      }
+    ],
+    "evaluation_exit_code": 0,
+    "normalization": "Substitute only repository-source identity and resulting derivation/output addresses; compare all JSON fields recursively.",
+    "retained_baseline_and_current_leaf_sha256": "129e3f883d4cce62b4fd49590c14535c3a7db3a5111d7cd1f49802fb8ce94806",
+    "source_identity_substitution": {
+      "after": "/nix/store/qcywiaqgr6ivm9qcgxka39hqzpwr0y29-source",
+      "before": "/nix/store/8vxw8jxqw238kjrp54vd3mad54lnf4zk-source"
+    }
+  },
+  "format": {
+    "command": "nixfmt /home/brittonr/git/onix-core/flake-outputs/clan.nix /home/brittonr/git/onix-core/inventory/default.nix /home/brittonr/git/onix-core/inventory/core/default.nix /home/brittonr/git/onix-core/flake-outputs/_machine-checks.nix /home/brittonr/git/onix-core/flake-outputs/_builder-checks.nix /home/brittonr/git/onix-core/flake-outputs/_ssh-host-key-checks.nix /home/brittonr/git/onix-core/flake-outputs/_vars-checks.nix /home/brittonr/git/onix-core/inventory/tags/common/wasm-lib.nix",
+    "exit_code": 0
+  },
+  "lifecycle_validation": {
+    "canonical_checkout_note": "The documented /home/brittonr/git/cairn is a symlink; resolve it to /home/brittonr/git/OnixResearch/cairn for nix run path: and the policy path.",
+    "change_issues": [],
+    "command": "nix run path:/home/brittonr/git/OnixResearch/cairn#cairn -- validate --root /home/brittonr/git/onix-core --policy /home/brittonr/git/OnixResearch/cairn/cairn-policy/generated/cairn-policy.json",
+    "exit_code": 0,
+    "receipt_hash": "11787bd55c610810c3066ec70a534c977946caa34f5fb7915db60059c4651cbf",
+    "spec_issues": [],
+    "valid": true
+  },
+  "limits": [
+    "No deployment or service restart performed.",
+    "No full system build or full flake check claimed.",
+    "The baseline already fails x86_64-darwin check enumeration because nixpkgs 26.11 dropped that platform.",
+    "Full desktop derivation addresses differ only transitively through an embedded repository source address.",
+    "Historical unrooted source snapshots may be garbage-collected; the retained pre-edit source snapshot was used to compare workflow file contents."
+  ],
+  "metadata": {
+    "all_12_interleaved_outputs_equal": true,
+    "before_after_output_sha256": "0e53208daac15825dd70354ad29144250f3a6c6e2d69bb4d0447f073dccc4454",
+    "check_counts": {
+      "aarch64-darwin": 108,
+      "aarch64-linux": 141,
+      "x86_64-linux": 210
+    },
+    "machines": 12
+  },
+  "preserved_user_files": {
+    "flake.lock": "972a970905c5c2c47b03474d8b47717e5861bcc21d7406d6af85ea57564776ee",
+    "inventory/home-profiles/brittonr/noctalia/lib/niri-package.nix": "a790da2988510eca8c87766c93c87b5935e7dbe41120707784ad80f0dd5f097f"
+  },
+  "requirements": [
+    "onix.inventory.machine_evaluation.shared",
+    "onix.inventory.machine_evaluation.preserved",
+    "onix.inventory.machine_evaluation.measured"
+  ],
+  "smoke": {
+    "clan_projection_removes_only_system_and_addresses": true,
+    "exit_code": 0,
+    "machine_library_does_not_force_clan": true,
+    "names_and_tag_membership_equal": true,
+    "platform_machine_check_membership_equal": true,
+    "raw_definitions_equal_direct_nickel_export": true,
+    "tag_argument_does_not_force_its_platform_package_set": true,
+    "unknown_machine_tag_is_false": true
+  },
+  "source_sha256": {
+    "flake-outputs/_builder-checks.nix": "ba96005032ffc11dcf098465dce47a9b6156705d151fb4782c6cdcd8d277d9b4",
+    "flake-outputs/_machine-checks.nix": "53ede56496751d8560b920a3b64519ccbe321ab66046da571a847c4c5ed5253c",
+    "flake-outputs/_ssh-host-key-checks.nix": "f25b7f64e6b41d5770cf7dbcc5ab4e8e20653221a588dcd0deb0317a24c84f91",
+    "flake-outputs/_vars-checks.nix": "b76b404d2a61d467bee5701fb7b7f4eb176c258621d6fee75a740af450d0c296",
+    "flake-outputs/clan.nix": "b6a6267ff0ced4fd053fc409bec3cf16475411fbe6cf7a31a97ca69a6d2c6057",
+    "inventory/core/default.nix": "483375ac9e55b02b349e8406ee534dd29159803885f97f2671655199bbfd59e9",
+    "inventory/default.nix": "28d35296d0450790350251066c528b461366062821adfa0f4658a0e277f5a2ef",
+    "inventory/tags/common/wasm-lib.nix": "2fa9eec30722542074cc45955a36dce6152d875c0f4348d23acc7d801c8435d1"
+  }
+}

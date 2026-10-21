@@ -1,0 +1,30 @@
+{
+  node = {
+    address = { type = "string", description = "Tailnet IP used for the worker listener and scheduler advertisement" },
+    schedulerAddress = { type = "string", default = "", description = "Scheduler host:port; empty uses the in-process scheduler" },
+    isScheduler = { type = "bool", default = false, description = "Run the scheduler as well as the local builder" },
+    maxJobs = { type = "number", default = 16, description = "Concurrent local builds, from 1 through 63" },
+    minFree = { type = "string", default = "100G", description = "Stop accepting builds below this free space under /nix" },
+    cacheUrl = { type = "string", default = "http://100.100.103.95:39400", description = "Private niks3 publication and binary cache endpoint" },
+    cacheInstance = { type = "string", default = "nix-cache", description = "Existing niks3 instance supplying API token and public signing key" },
+    allowedClients = { type = "array_string", default = [], description = "Exact machine names authorized as ci- certificate principals" },
+    workerNames = { type = "array_string", default = [], description = "Exact machine names authorized as worker- certificate principals" },
+    balancerNames = { type = "array_string", default = [], description = "Exact machine names authorized as lb- certificate principals and trusted proxies" },
+    port = { type = "number", default = 50052, description = "Worker gRPC port, admitted only on tailscale0" },
+  },
+  balancer = {
+    hostName = { type = "string", default = "aspen1.local", description = "DNS name clients use for the TLS listener" },
+    schedulerAddress = { type = "string", default = "100.100.103.95:50052", description = "Scheduler Tailnet host:port" },
+    systems = { type = "array_string", default = ["x86_64-linux"], description = "Systems advertised by the farm" },
+    port = { type = "number", default = 50051, description = "Client-facing gRPC TLS port" },
+  },
+  client = {
+    hostName = { type = "string", default = "aspen1.local", description = "Farm TLS endpoint DNS name" },
+    hostAddress = { type = "string", default = "", description = "Optional IP pinned to the endpoint name for clients outside its mDNS LAN" },
+    port = { type = "number", default = 50051, description = "Farm TLS endpoint port" },
+    systems = { type = "array_string", default = ["x86_64-linux"], description = "One remote builder entry is generated per system" },
+    supportedFeatures = { type = "array_string", default = ["nixos-test", "big-parallel", "kvm"], description = "Build features provided by the farm" },
+    maxJobs = { type = "number", default = 32, description = "Client's concurrent farm build limit" },
+    cacheUrl = { type = "string", default = "http://100.100.103.95:39400", description = "Farm's signed niks3 binary cache" },
+  },
+}

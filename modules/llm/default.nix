@@ -232,7 +232,6 @@ in
             {
               pkgs,
               lib,
-              inputs,
               ...
             }:
             let
@@ -240,7 +239,7 @@ in
               settings = extendSettings (ms.mkDefaults schema.client);
               inherit (settings) clientType extraPackages defaultServer;
 
-              crwPkg = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.crw;
+              crwPkg = pkgs.crw;
 
               # Client packages based on type
               clientPackages =

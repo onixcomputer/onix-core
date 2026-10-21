@@ -370,6 +370,11 @@ in
                     HSA_OVERRIDE_GFX_VERSION = "11.5.1";
                     HSA_ENABLE_SDMA = "0";
                     PYTORCH_ROCM_ARCH = "gfx1151";
+
+                    # ROCm's code-object compiler (comgr) and the server log write to
+                    # TMPDIR. Keep them on disk: other workloads can fill a tmpfs /tmp,
+                    # and then no model loads.
+                    TMPDIR = "/var/tmp";
                   };
                 };
 
@@ -395,6 +400,7 @@ in
                     HSA_OVERRIDE_GFX_VERSION = "11.5.1";
                     HSA_ENABLE_SDMA = "0";
                     PYTORCH_ROCM_ARCH = "gfx1151";
+                    TMPDIR = "/var/tmp";
                   };
                 };
 

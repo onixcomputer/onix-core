@@ -3,6 +3,7 @@
   lib,
   pkgs,
   config,
+  osConfig ? { },
   ...
 }:
 let
@@ -37,6 +38,8 @@ let
   k = config.keymap;
   lw = config.librewolf;
   ff = config.firefox;
+
+  useOnixSearch = (osConfig.networking.hostName or "") == "aspen3";
 
   configuredFirefox = inputs.wrappers.wrapperModules.firefox.apply {
     inherit pkgs;
@@ -123,16 +126,23 @@ let
 
     extraPolicies = {
       SearchEngines = {
-        Default = "Kagi";
-        Add = [
-          {
-            Name = "Kagi";
-            URLTemplate = "https://kagi.com/search?q={searchTerms}";
+        Default = if useOnixSearch then "Onix Search" else "Kagi";
+        Add =
+          lib.optional useOnixSearch {
+            Name = "Onix Search";
+            URLTemplate = "https://aspen1.bison-tailor.ts.net/search?q={searchTerms}";
             Method = "GET";
-            IconURL = "https://assets.kagi.com/v2/favicon-32x32.png";
-            Description = "Kagi Search";
+            Description = "Private Onix SearXNG search";
           }
-        ];
+          ++ [
+            {
+              Name = "Kagi";
+              URLTemplate = "https://kagi.com/search?q={searchTerms}";
+              Method = "GET";
+              IconURL = "https://assets.kagi.com/v2/favicon-32x32.png";
+              Description = "Kagi Search";
+            }
+          ];
         Remove = [
           "Google"
           "Bing"

@@ -1,0 +1,81 @@
+{% if not kagi_engine_available %} {% set kagi_state = 'unavailable' %} {% elif
+kagi_access_allowed %} {% set kagi_state = 'ready' %} {% elif kagi_has_tokens %}
+{% set kagi_state = 'rejected' %} {% else %} {% set kagi_state = 'missing' %} {%
+endif %} {% if endpoint != 'results' or kagi_state != 'ready' %}
+<fieldset id="kagi-access-status" data-state="{{ kagi_state }}">
+  <legend>Kagi access</legend>
+  {% if kagi_unlock_attempt == 'saved' and kagi_state != 'ready' %}
+  <p role="alert">
+    The server accepted your token, but this browser did not return the saved
+    cookie. Allow cookies for this site, then try again.
+  </p>
+  {% elif kagi_unlock_attempt == 'rejected' %}
+  <p role="alert">
+    The submitted engine token was not accepted. Your existing preferences were
+    not changed.
+  </p>
+  {% endif %} {% if kagi_state == 'ready' %}
+  <p>
+    Kagi is unlocked in this browser. Search with <code>!kg your query</code>.
+  </p>
+  <p>
+    The engine name is <code>kagi-private</code>. It appears under Engines →
+    General → web.
+  </p>
+  {% elif kagi_state == 'missing' %}
+  <p>
+    No engine access token reached this page. This browser has not unlocked
+    Kagi.
+  </p>
+  <p>
+    Save the separate Clan engine access token under Preferences → General →
+    Engine tokens. Do not use the Kagi session token.
+  </p>
+  {% elif kagi_state == 'rejected' %}
+  <p>
+    The engine token that reached this page does not unlock Kagi on this server.
+  </p>
+  <p>
+    Replace it with the current Clan engine access token, then save Preferences.
+    Do not use the Kagi session token.
+  </p>
+  {% else %}
+  <p>
+    The Kagi engine did not load on this server. Other engines remain available.
+  </p>
+  {% endif %} {% if kagi_state in ['missing', 'rejected'] %}
+  <form
+    method="post"
+    action="{{ url_for('kagi_unlock') }}"
+    data-preferences-url="{{ url_for('preferences') }}"
+    autocomplete="off"
+  >
+    <input type="hidden" name="kagi_form_nonce" value="{{ kagi_form_nonce }}" />
+    <p><label for="kagi-engine-token">Clan engine access token</label></p>
+    <p>
+      <input
+        id="kagi-engine-token"
+        name="kagi_engine_token"
+        type="password"
+        autocomplete="off"
+        required
+      />
+    </p>
+    <p><button type="submit">Unlock Kagi</button></p>
+    <p id="kagi-unlock-feedback" role="status"></p>
+    <p>
+      This form preserves your other preferences. It accepts the separate engine
+      access token, not the Kagi session token.
+    </p>
+  </form>
+  <script
+    src="{{ url_for('static', filename='kagi-unlock.js') }}"
+    defer
+  ></script>
+  {% endif %}
+  <p>
+    <a href="{{ url_for('preferences') }}">Open Preferences</a>. Never share a
+    token or Session Link in chat.
+  </p>
+</fieldset>
+{% endif %}

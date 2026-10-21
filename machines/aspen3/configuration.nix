@@ -3,7 +3,6 @@
   inputs,
   lib,
   pkgs,
-  self,
   ...
 }:
 let
@@ -67,10 +66,32 @@ let
     desktopSocket = radicleDesktopSocket;
     nodeListenAddress = radicleDesktopNodeListenAddress;
   };
+  # Serve the ptyZZZ web terminal on the tailscale address only — the page is
+  # a full interactive shell, so it must not touch the LAN interface.
+  ptyzzzListenAddress = "100.108.13.4";
+  ptyzzzPackage = pkgs.ptyzzz;
+  # serve.nu + vendored fonts from the pinned ptyZZZ source; HERE-relative
+  # paths resolve inside this store path. The line-height patch fixes the
+  # demo's row geometry: the CSS used an 18px (1.2857em) line-height while
+  # rows, cursor placement, and the resize fit all assume 1.2em, so the grid
+  # drifted visually once scrollback grew past a screenful.
+  ptyzzzServeEnv =
+    pkgs.runCommand "ptyzzz-serve"
+      {
+        src = pkgs.ptyzzz.src;
+        nativeBuildInputs = [ pkgs.gnused ];
+      }
+      ''
+        mkdir -p $out/share/ptyzzz
+        sed 's|font:14px/18px|font:14px/1.2|' $src/serve.nu > $out/share/ptyzzz/serve.nu
+        chmod +x $out/share/ptyzzz/serve.nu
+        cp -r $src/static $out/share/ptyzzz/static
+      '';
 in
 {
   imports = [
     ./disko.nix
+    ../../modules/pi-branchfs/nixos.nix
     inputs.nixos-hardware.nixosModules.asus-flow-gv302x-amdgpu
   ];
 
@@ -264,7 +285,12 @@ in
     # while still allowing screen dimming and DPMS power-off.
     onix.idle.suspend.enable = false;
 
+    # ptyZZZ web terminal: server-side-emulated shells streamed as HTML over
+    # SSE. ptyZZZ runs the ptys, http-nu (nixpkgs) serves the page and the
+    # single /sse connection, nushell is the service closure the spawner uses.
     home.packages = with pkgs; [
+      # r[impl onix.agentaps.install]
+      agentaps
       easyeffects
       evtest
       helvum
@@ -276,7 +302,41 @@ in
       rnote
       wev
       xournalpp
+      ptyzzz
+      http-nu
+      nushell
     ];
+
+    systemd.user.services.ptyzzz-web = {
+      Unit = {
+        Description = "ptyZZZ web terminal (http-nu + server-side ptys)";
+        After = [ "network.target" ];
+      };
+      Service = {
+        Type = "simple";
+        ExecStart = lib.concatStringsSep " " [
+          "${pkgs.http-nu}/bin/http-nu"
+          "--datastar"
+          "--services"
+          "--store %h/.local/state/ptyzzz/store"
+          "${ptyzzzListenAddress}:5111"
+          "${ptyzzzServeEnv}/share/ptyzzz/serve.nu"
+        ];
+        Restart = "on-failure";
+        RestartSec = 2;
+        ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p %h/.local/state/ptyzzz/store";
+        # serve.nu resolves `ptyZZZ` via PATH, and the xs service closures
+        # spawn `ptyZZZ` and `nu` by name. Keep the system profile appended
+        # so the interactive shells have the usual commands.
+        Environment = "PATH=${
+          lib.makeBinPath [
+            ptyzzzPackage
+            pkgs.nushell
+          ]
+        }:/run/current-system/sw/bin";
+      };
+      Install.WantedBy = [ "default.target" ];
+    };
 
     home.sessionVariables = {
       RAD_HOME = radicleDesktopHome;
@@ -288,12 +348,13 @@ in
 
   environment.systemPackages = with pkgs; [
     alsa-utils
+    branchfs
     nvme-cli
     pciutils
     opentofu
     # Keep the wrapped Herdr base on the accepted llm-agents provider so the
     # interactive terminal gets the same plugin set as britton-desktop.
     # r[impl onix.aspen3.herdr.wrapper.install]
-    self.packages.${pkgs.stdenv.hostPlatform.system}.herdr
+    herdr
   ];
 }

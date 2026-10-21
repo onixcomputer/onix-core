@@ -1,20 +1,25 @@
-# Intel E810 RoCE v2 direct-link setup for Strix Halo inference hosts.
+# Intel E810 RoCE v2 direct-link setup for hosts that carry an E810 network card.
+#
+# This tag needs an RDMA-capable controller and fails closed for a host whose
+# hardware inventory lists none. The Strix Halo unified-memory tuning that used
+# to live here belongs to the gpu-unified-memory tag.
 # Reference: https://github.com/kyuz0/amd-strix-halo-vllm-toolboxes/blob/main/rdma_cluster/setup_guide.md
 {
   config,
   lib,
   pkgs,
+  self,
   ...
 }:
 let
+  rdmaHardware = import ../../lib/rdma-hardware.nix { inherit lib; };
+
   rdmaGroup = "rdma";
   rdmaInterface = "rdma0";
   intelE810Driver = "ice";
   intelE810RdmaDriver = "irdma";
   roceSubnetCidr = "192.168.100.0/30";
   jumboMtuBytes = 9000;
-  strixHaloGttSizeMiB = 126976;
-  strixHaloTtmPagesLimit = 32505856;
   rdmaDeviceMode = "0660";
   unlimitedMemlock = "unlimited";
 
@@ -25,6 +30,7 @@ let
 
   hostname = config.networking.hostName;
   rdmaAddress = rdmaAddresses.${hostname} or null;
+  hasRdmaController = rdmaHardware.hasRdmaController { inherit self hostname; };
 in
 {
   config = lib.mkMerge [
@@ -35,6 +41,14 @@ in
           message = ''
             The rdma-cluster tag requires a static RDMA address mapping for ${hostname}.
             Add ${hostname} to rdmaAddresses in inventory/tags/rdma-cluster.nix before assigning the tag.
+          '';
+        }
+        {
+          assertion = hasRdmaController;
+          message = ''
+            The rdma-cluster tag requires an RDMA-capable network controller, and the
+            hardware inventory in machines/${hostname}/facter.json lists none.
+            Remove the tag for this host, or add the controller before assigning the tag.
           '';
         }
       ];
@@ -50,15 +64,11 @@ in
           "rdma_ucm"
         ];
         kernelParams = [
+          # RoCE performance and link stability for the add-in E810 card.
           "iommu=pt"
           "pci=realloc"
           "pcie_aspm=off"
-          "amdgpu.gttsize=${toString strixHaloGttSizeMiB}"
-          "ttm.pages_limit=${toString strixHaloTtmPagesLimit}"
         ];
-        extraModprobeConfig = lib.mkAfter ''
-          options ttm pages_limit=${toString strixHaloTtmPagesLimit}
-        '';
       };
 
       environment.systemPackages = with pkgs; [

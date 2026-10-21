@@ -1,0 +1,392 @@
+{
+  "schemaVersion": 1,
+  "status": "blocked_before_activation",
+  "recordedAt": "2026-09-24T02:55:12Z",
+  "scope": "Production preparation and attempted staged rollout of the scheduled Nix build farm; isolated integration proof remains in evidence.json.",
+  "liveEffects": {
+    "databaseBackupPerformed": false,
+    "databaseMigrationPerformed": false,
+    "secretsUploaded": false,
+    "systemSwitchesPerformed": [],
+    "buildArtifactsStagedOn": ["aspen2"],
+    "reason": "Aspen1 is inaccessible; backup and primary health gates must pass before changing either worker or any client."
+  },
+  "access": {
+    "aspen1": {
+      "ssh": "unavailable",
+      "lan": "192.168.1.239:22 resets before authentication",
+      "tailnet": "100.100.103.95:22 timeout; peer offline",
+      "viaAspen2": "SSH proxy connection closed via aspen1.local and 10.10.10.1",
+      "initrd": "aspen1.local:2222 timeout",
+      "directFromAspen2": "SSH to 10.10.10.1:22 from Aspen2 resets before authentication; direct remote execution rules out ProxyJump forwarding restrictions.",
+      "tailnetLastSeen": "2026-09-23T20:38:25.1Z",
+      "thunderboltRoute": "Aspen2 route to 10.10.10.1 uses br-tbt with source 10.10.10.2.",
+      "alternativeAccess": {
+        "survivingSshTransports": "No existing SSH process/control transport to Aspen1 found on the desktop, Aspen2, Aspen3, or Bonsai.",
+        "ipv6": "aspen1.local has no usable IPv6 resolution. The EUI-64 link-local candidate derived from its observed LAN MAC (9c:bf:0d:00:e4:c2) also timed out on SSH. The configured Thunderbolt firewall explicitly drops IPv6, and Aspen2 has no br-tbt IPv6 neighbor entry.",
+        "clanDns": "getent ahosts aspen1.clan exited 2 without a result.",
+        "telemetry": "Connections to the configured node-exporter port 9100 failed through both aspen1.local and Aspen2's 10.10.10.1 interconnect route.",
+        "consoleRequested": [
+          "systemctl status sshd.service sshd.socket tailscaled.service --no-pager",
+          "journalctl -b -u sshd.service -u sshd.socket -n 100 --no-pager"
+        ]
+      }
+    },
+    "aspen2": {
+      "ssh": "root@100.82.25.30 succeeded"
+    },
+    "aspen3": {
+      "ssh": "root@100.108.13.4 succeeded"
+    },
+    "bonsai": {
+      "ssh": "root@100.126.162.16 succeeded"
+    },
+    "britton-desktop": {
+      "ssh": "root@britton-desktop succeeded",
+      "sudoWithoutPrompt": false
+    },
+    "britton-fw": {
+      "ssh": "port 22 timeout; Tailnet peer offline; no mDNS LAN result",
+      "tailnetAddress": "100.92.36.3"
+    }
+  },
+  "reachableHostPreflight": [
+    {
+      "machine": "aspen2",
+      "exit": 0,
+      "output": "aspen2\n2026-09-24T00:19:15Z\n/nix/store/6kzypclxhr2r82292awcd3siycrkg0ny-nixos-system-aspen2-26.11.20260908.e9b9cbe\nFilesystem         1B-blocks         Used     Available Use% Mounted on\n/dev/nvme0n1p3 1967329083392 188570824704 1678747860992  11% /nix/store\n192.168.1.239   STREAM aspen1.local\n192.168.1.239   DGRAM  \n192.168.1.239   RAW    \nactive\n",
+      "diagnostic": ""
+    },
+    {
+      "machine": "aspen3",
+      "exit": 0,
+      "output": "aspen3\n2026-09-24T00:19:16Z\n/nix/store/cksnpv3k312llj8k8j6y0ar54mf0462f-nixos-system-aspen3-26.11.20260913.02f5696\nFilesystem        1B-blocks         Used   Available Use% Mounted on\nzroot/nix      225648181248 158839865344 66808315904  71% /nix/store\nactive\n",
+      "diagnostic": ""
+    },
+    {
+      "machine": "bonsai",
+      "exit": 0,
+      "output": "bonsai\n2026-09-24T00:19:16Z\n/nix/store/8d6vg8gd3s6r99lh7m7wkc0b6pnz6in6-nixos-system-bonsai-26.11.20260629.7a1a647\nFilesystem         1B-blocks          Used    Available Use% Mounted on\n/dev/nvme0n1p3 2014586060800 1406992539648 505182670848  74% /nix/store\n192.168.1.239   STREAM aspen1.local\n192.168.1.239   DGRAM  \n192.168.1.239   RAW    \nactive\n",
+      "diagnostic": ""
+    },
+    {
+      "machine": "britton-desktop",
+      "exit": 0,
+      "output": "britton-desktop\n2026-09-24T00:19:16Z\n/nix/store/1gnzz2ki156cmphygjj7pk1mp8p837w2-nixos-system-britton-desktop-26.11.20260908.e9b9cbe\nFilesystem         1B-blocks         Used     Available Use% Mounted on\ndatapool/nix   2025992486912 262810632192 1763181854720  13% /nix/store\n192.168.1.239   STREAM aspen1.local\n192.168.1.239   DGRAM  \n192.168.1.239   RAW    \nactive\n",
+      "diagnostic": ""
+    }
+  ],
+  "productionCredentials": {
+    "result": "generated_and_verified",
+    "ca": "subject=CN=nix-build-farm-ca\nnotAfter=Sep 23 00:17:29 2031 GMT\nsha256 Fingerprint=8B:E6:CB:CA:FE:C0:78:DF:32:E2:C1:A3:75:43:D2:B5:51:1C:8F:73:C4:1E:CE:38:62:EE:09:DD:AE:0B:16:B9",
+    "leaves": [
+      {
+        "machine": "aspen1",
+        "role": "node",
+        "verification": "passed",
+        "publicMetadata": "subject=CN=worker-aspen1\nnotAfter=Sep 24 00:17:30 2027 GMT\nsha256 Fingerprint=9D:91:E1:FD:48:11:9D:D1:C3:7C:88:D9:F8:2E:5A:DD:1A:FD:F5:95:35:8F:F2:86:FB:E3:4D:5E:0B:D3:68:A2"
+      },
+      {
+        "machine": "aspen1",
+        "role": "balancer",
+        "verification": "passed",
+        "publicMetadata": "subject=CN=lb-aspen1\nnotAfter=Sep 24 00:18:29 2027 GMT\nsha256 Fingerprint=AC:AA:4F:52:B3:A8:6A:D8:7A:A0:87:7C:0B:76:96:7B:5F:F9:FC:1B:93:FB:04:C9:1F:55:93:2E:AF:AA:D1:93"
+      },
+      {
+        "machine": "aspen2",
+        "role": "node",
+        "verification": "passed",
+        "publicMetadata": "subject=CN=worker-aspen2\nnotAfter=Sep 24 00:17:31 2027 GMT\nsha256 Fingerprint=7F:53:C3:00:8B:C3:48:CE:FF:66:A1:AB:26:0E:AC:44:AA:B1:C2:DC:7A:BD:60:F3:58:26:6C:5A:B3:24:5E:CF"
+      },
+      {
+        "machine": "aspen3",
+        "role": "client",
+        "verification": "passed",
+        "publicMetadata": "subject=CN=ci-aspen3\nnotAfter=Sep 24 00:17:31 2027 GMT\nsha256 Fingerprint=EB:2C:E5:34:07:B5:57:17:06:67:38:0F:71:02:B9:56:91:48:CD:29:03:9A:39:6B:D0:BC:37:CA:7B:AC:CC:B0"
+      },
+      {
+        "machine": "bonsai",
+        "role": "client",
+        "verification": "passed",
+        "publicMetadata": "subject=CN=ci-bonsai\nnotAfter=Sep 24 00:17:32 2027 GMT\nsha256 Fingerprint=D8:A6:C2:5A:96:62:E7:42:CA:CB:94:60:01:33:A9:D6:79:0A:57:A1:04:D0:A7:AD:52:D4:88:23:5C:2C:46:7D"
+      },
+      {
+        "machine": "britton-desktop",
+        "role": "client",
+        "verification": "passed",
+        "publicMetadata": "subject=CN=ci-britton-desktop\nnotAfter=Sep 24 00:17:33 2027 GMT\nsha256 Fingerprint=2D:39:C3:9F:EB:47:82:E4:66:0F:11:A2:1B:61:9B:E4:12:8E:71:3E:56:63:25:64:7C:41:45:6C:2B:1C:C5:1D"
+      }
+    ],
+    "verification": "OpenSSL verified all seven initially generated leaf chains and client/server purposes, both worker IP SANs, and the aspen1.local ingress DNS SAN. The six retained leaves are unchanged; britton-fw was retired before deployment.",
+    "privateKeys": "The CA and six retained leaf private keys are SOPS-encrypted binary blobs. The CA private key has admins-group recipients only, no machine recipients, and deploy=false. The undeployed britton-fw farm credential directory was removed after the scope change.",
+    "generatorCommands": [
+      "clan vars generate aspen1 aspen2 --generator nix-build-farm-node --flake path:/home/brittonr/git/onix-core",
+      "clan vars generate aspen1 --generator nix-build-farm-balancer --flake path:/home/brittonr/git/onix-core"
+    ],
+    "sideEffect": "Clan re-encrypted the existing shared Niks3 API token for the added Aspen2 recipient; no token rotation was requested.",
+    "versionControl": "CLAN_NO_COMMIT=1; no commits created.",
+    "retiredBeforeDeployment": [
+      {
+        "machine": "britton-fw",
+        "role": "client",
+        "verification": "passed",
+        "publicMetadata": "subject=CN=ci-britton-fw\nnotAfter=Sep 24 00:17:33 2027 GMT\nsha256 Fingerprint=62:CF:83:5C:AB:13:40:47:AE:67:CA:D6:72:A1:EC:83:01:35:F3:45:17:7E:FA:B6:DB:F2:D5:00:97:87:5F:32"
+      }
+    ]
+  },
+  "crossNetworkNameResolution": {
+    "observedFailure": "Live Aspen3 did not resolve aspen1.local through its existing NSS configuration.",
+    "change": "The three admitted clients pin aspen1.local to 100.100.103.95 in their generated hosts files while retaining the existing TLS certificate name.",
+    "proof": {
+      "method": "Actual libc NSS lookup in an isolated private mount namespace using each generated client hosts file; no live host file changed.",
+      "hostsFiles": [
+        "/nix/store/acbp4fz7wlidf5s4pq3v110rc0lk7h0m-hosts",
+        "/nix/store/6dsxgjf9d396rh12my4lp72p92c8v07c-hosts",
+        "/nix/store/7am5paavk8gn4bpb24k6kqyjmlkb76rl-hosts",
+        "/nix/store/b3a4s0yhnm1jhyl2mjp4gs4896b9y40f-hosts"
+      ],
+      "resolvedAddress": "100.100.103.95",
+      "clients": 4,
+      "result": "passed",
+      "scopeNote": "This smoke exercised all four initially generated client hosts files before britton-fw was excluded; the three retained client mappings are unchanged."
+    }
+  },
+  "focusedChecks": {
+    "result": "passed",
+    "command": "nix build --no-link path:/home/brittonr/git/onix-core#checks.x86_64-linux.builder-no-self path:/home/brittonr/git/onix-core#checks.x86_64-linux.module-registry-sync path:/home/brittonr/git/onix-core#checks.x86_64-linux.niks3-generated path:/home/brittonr/git/onix-core#checks.x86_64-linux.niks3-settings path:/home/brittonr/git/onix-core#checks.x86_64-linux.storage-monitoring-generated --option allow-import-from-derivation true -L",
+    "observedOutput": "OK: 6 machines verified, builder reachability guards passed",
+    "exitCode": 0,
+    "admissionCheckDerivation": "/nix/store/5an2nhdjq6p74z2jfk10ak98vlkbdd11-builder-no-self-check.drv",
+    "scope": "Passed after removing britton-fw and updating the independent expected admission list. The check evaluated all six tagged machines and confirmed britton-fw has zero builders."
+  },
+  "closurePrebuild": {
+    "status": "passed_all_five",
+    "machines": ["aspen1", "aspen2", "aspen3", "bonsai", "britton-desktop"],
+    "command": "nix build --json --keep-going --no-link --max-jobs 2 --cores 8 --option allow-import-from-derivation true path:/home/brittonr/git/onix-core#nixosConfigurations.aspen1.config.system.build.toplevel path:/home/brittonr/git/onix-core#nixosConfigurations.aspen2.config.system.build.toplevel path:/home/brittonr/git/onix-core#nixosConfigurations.aspen3.config.system.build.toplevel path:/home/brittonr/git/onix-core#nixosConfigurations.bonsai.config.system.build.toplevel path:/home/brittonr/git/onix-core#nixosConfigurations.britton-desktop.config.system.build.toplevel -L",
+    "commandExit": 0,
+    "environment": {
+      "CLAN_NO_COMMIT": "1",
+      "NIX_CONFIG": "min-free = 0\nmax-free = 0\nsubstituters = https://cache.nixos.org https://nix-community.cachix.org https://devenv.cachix.org\nextra-substituters =\nbuilders ="
+    },
+    "supersededAttempt": "The original six-machine prebuild was cancelled when the user excluded britton-fw.",
+    "initialAttempt": "The five-machine --keep-going build hit its 3600-second command deadline while still compiling the desktop kernel. Its log exposed independent source and Tenstorrent failures. No complete desktop closure was produced.",
+    "completed": {
+      "aspen1": "/nix/store/6avb6w7n92scy99pcxhfhlg5688ijb72-nixos-system-aspen1-26.11.20260914.c7def04",
+      "aspen2": "/nix/store/xzxd7a9c4pn6hcbdg14jh90hwvfqn39l-nixos-system-aspen2-26.11.20260914.c7def04",
+      "aspen3": "/nix/store/jd273rssnbd54mg27nlz9kh733j50n16-nixos-system-aspen3-26.11.20260914.c7def04",
+      "bonsai": "/nix/store/lzf9y6iiskyh28lxjvdjy6kh6qx2h00s-nixos-system-bonsai-26.11.20260914.c7def04",
+      "britton-desktop": "/nix/store/icqqhnyi3f5i9sj6gq9havq371n92jqc-nixos-system-britton-desktop-26.11.20260914.c7def04"
+    },
+    "completedBuildCommands": [
+      "nix build --keep-going --no-link --print-out-paths --max-jobs 2 --cores 12 '/nix/store/nsvnvxqiskcnc3qnpdqr4dni4kig7ymv-nixos-system-aspen2-26.11.20260914.c7def04.drv^*' '/nix/store/g41xvml5m15nilr3mfrlifqy22ldbgsa-nixos-system-aspen3-26.11.20260914.c7def04.drv^*' '/nix/store/0j8yc2xv0l41yc8z4aibxc1pgghpq8pp-nixos-system-bonsai-26.11.20260914.c7def04.drv^*' -L",
+      "nix build --no-link --print-out-paths --max-jobs 2 --cores 12 '/nix/store/wfzg2fh1dqh5i7w5xxw9l17828hcds98-nixos-system-aspen1-26.11.20260914.c7def04.drv^*' -L"
+    ],
+    "sourceRecovery": {
+      "failedUrl": "https://git.onix.computer/z2CpqLFpdP36fZXYUK5ZNWxMibpCo.git",
+      "observedFailure": "HTTP 530 during the bounded-exec-ci-source fetch",
+      "localRepository": "/home/brittonr/git/OnixResearch/bounded-exec",
+      "revision": "29dac88ecded94457572db3fdfaaaab95fa91525",
+      "expectedAndObservedNarHash": "sha256-BVmqyUYyoNpY6LfOABxwPO3DY88ZtXeKNg3TPoGCcL0=",
+      "prefetchCommand": "/nix/store/jrr4k7h4in3b4d1bjxdp08880iypy3ii-nix-prefetch-git-26.11/bin/nix-prefetch-git --url file:///home/brittonr/git/OnixResearch/bounded-exec --rev 29dac88ecded94457572db3fdfaaaab95fa91525 --name bounded-exec-ci-source-29dac88ecded94457572db3fdfaaaab95fa91525",
+      "result": "/nix/store/yc6ghma1vrfmb0jpkn47p8lknxdald27-bounded-exec-ci-source-29dac88ecded94457572db3fdfaaaab95fa91525",
+      "scope": "Repopulated the exact fixed-output store path from the existing immutable local commit. No source URL, revision, expected hash, or local checkout contents changed. Aspen1 then built successfully."
+    },
+    "initialDesktopBuildFailures": {
+      "machine": "britton-desktop",
+      "derivation": "/nix/store/9qgpbdbj0k5j93vgbikad0il743ps34h-nixos-system-britton-desktop-26.11.20260914.c7def04.drv",
+      "failures": [
+        {
+          "derivation": "/nix/store/k542g81n931a8vf187fyp1589wdrl7ij-tt-metal-fetch-queue-diagnostics-0.77.0.drv",
+          "error": "fetch-queue-diagnostics.patch rejects hunks 3, 4, and 5 in tt_metal/impl/dispatch/system_memory_manager.cpp."
+        },
+        {
+          "derivation": "/nix/store/pr9pyb6nfa8awhxnss7avgdxna0jh1c4-rwkv7-p150x2-runtime-0.1.0.drv",
+          "error": "src/main.cpp:1007,1026,1044: ttnn::TensorSpec does not name a type with the installed TT-Metal 0.77.0 headers."
+        },
+        {
+          "derivation": "/nix/store/yycq3ybslykncw0g2s729wnb0vdrr5yp-llama-cpp-metalium-0-unstable-2026-06-30.drv",
+          "error": "ggml-metalium.cpp:1:10: tt-metalium/experimental/tensor/tensor_types.hpp: No such file or directory."
+        }
+      ],
+      "diagnostics": "Reproduce individual build logs with nix log <derivation>. The desktop dependency chain to the diagnostic runtime was confirmed with nix why-depends --derivation.",
+      "scope": "Historical failures from the initial prebuild. The user subsequently authorized their repair; compatibilityRepairs records the completed source fixes without removing packages or changing input revisions."
+    }
+  },
+  "compatibilityRepairs": {
+    "result": "passed",
+    "packageAuthorityRevision": "865d3f3b52dc7d1ccdfb5de168b8ed59b2dce78c",
+    "sdkVersion": "0.77.0",
+    "adapter": "pkgs/tenstorrent-compat/default.nix",
+    "patches": [
+      "pkgs/tenstorrent-compat/fetch-queue-diagnostics.patch",
+      "pkgs/tenstorrent-compat/rwkv-metal-077.patch",
+      "pkgs/tenstorrent-compat/llama-metal-077.patch"
+    ],
+    "consumers": [
+      "inventory/tags/tenstorrent/packages.nix",
+      "machines/britton-desktop/configuration.nix",
+      "modules/llamacpp-server/mk-nixos-config.nix",
+      "flake-outputs/ttwkv7.nix"
+    ],
+    "command": "nix build --impure --keep-going --no-link --print-out-paths --max-jobs 3 --cores 8 --option allow-import-from-derivation true --expr 'let f = builtins.getFlake \"path:/home/brittonr/git/onix-core\"; pkgs = f.nixosConfigurations.britton-desktop.pkgs; p = import /home/brittonr/git/onix-core/pkgs/tenstorrent-compat { inputs = f.inputs; inherit pkgs; }; in [ p.llama-cpp-metalium p.rwkv7-p150x2-runtime p.rwkv7-p150x2-evidence ]' -L",
+    "commandExit": 0,
+    "outputs": {
+      "llama-cpp-metalium": "/nix/store/35hhiq6scj2nvzvyjl7qclas1kvwn0x5-llama-cpp-metalium-0-unstable-2026-06-30",
+      "rwkv7-p150x2-runtime": "/nix/store/cm4r8yz3a0cm16w3i9gf7d0aqjv5h3vb-rwkv7-p150x2-runtime-0.1.0",
+      "rwkv7-p150x2-fetch-queue-diagnostic-runtime": "/nix/store/zgl31gr9d8syx2czrpx13szbdwp0b305-rwkv7-p150x2-fetch-queue-diagnostic-runtime-0.1.0",
+      "rwkv7-p150x2-evidence": "/nix/store/457533q1mpyba4d8gf6qyf3x64khv44g-rwkv7-p150x2-evidence-0.1.0"
+    },
+    "verification": [
+      "The diagnostic patch applies with GNU patch --fuzz=0; the complete patched SDK, diagnostic runtime, and evidence package build with their existing checks enabled.",
+      "Both installed RWKV runtimes return 'rwkv7 P150x2 runtime self-test: PASS'; the diagnostic invocation sets TT_METAL_FETCH_QUEUE_DIAGNOSTICS=1.",
+      "The installed Metalium-linked libllama.so loads with RTLD_NOW and returns 1.0 from ggml_fp16_to_fp32(0x3c00) inside Bubblewrap with no /dev/tenstorrent.",
+      "The complete desktop system.path builds at /nix/store/9xbrs2iplch6mnjvqkydgw2gfgjiwany-system-path.",
+      "The public rwkv7-p150x2-runtime and rwkv7-p150x2-evidence flake packages build to the same repaired outputs consumed by the desktop.",
+      "The repository formatter processed the five changed Nix files."
+    ],
+    "hardwareScope": "No device inference was run and Qwen's P150 ownership was not disturbed. The isolated host API smoke check does not claim model or device admission."
+  },
+  "desktopKernelPrebuild": {
+    "status": "built_and_imported",
+    "host": "aspen2",
+    "derivation": "/nix/store/zrf6xf9gfz8czg8nv13kvd5zdjcldp15-linux-6.18.51.drv",
+    "expectedOutput": "/nix/store/4nssw6rgx1i2mhm5x0apnxmagdkza4a2-linux-6.18.51",
+    "realizedOutputs": [
+      "/nix/store/4fjs1wpb765g2wjw9ydpvrjmszw6scaw-linux-6.18.51-dev",
+      "/nix/store/215m2sqavj6476frxgglzv0vk8agm1lk-linux-6.18.51-modules",
+      "/nix/store/4nssw6rgx1i2mhm5x0apnxmagdkza4a2-linux-6.18.51"
+    ],
+    "buildExit": 0,
+    "importExit": 0,
+    "transport": "Authenticated root SSH with strict host-key checking. Imported this worker build's three unsigned outputs with command-scoped --no-check-sigs; no global signature policy changed and no farm-cache publication was claimed.",
+    "evaluator": "/nix/store/k1855sa2ghrc6fii3aqzfb5xhcyj92d2-nix-2.36.0",
+    "reason": "Aspen2 had approximately 53 GiB available while the desktop was under memory pressure. Copying derivations and building store artifacts does not activate a system generation.",
+    "policy": "One local build job on Aspen2, 12 cores; remote builders and post-build hooks disabled for this invocation; public substituters only."
+  },
+  "preUpgradeBackupAttempt": {
+    "command": "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=8 root@aspen1.local systemctl start postgresqlBackup-niks3.service",
+    "exit": 255,
+    "result": "blocked_before_remote_execution",
+    "diagnostic": "kex_exchange_identification: read: Connection reset by peer; Connection reset by 192.168.1.239 port 22"
+  },
+  "resumeGates": [
+    "Restore root SSH access to Aspen1. LAN port 22 resets before authentication; Tailnet and initrd SSH are unavailable, and SSH from Aspen2 over the dedicated interconnect also resets.",
+    "Create and preserve a verified pre-upgrade Niks3 PostgreSQL backup before activating server 1.13.0; it applies database migrations.",
+    "Deploy Aspen1 and verify Niks3, scheduler, local worker, and mTLS ingress health.",
+    "Deploy Aspen2 and verify authenticated worker registration and bounded automatic publication.",
+    "Deploy and verify Aspen3, Bonsai, and britton-desktop only after primary and worker health pass. britton-fw is excluded and need not be brought online.",
+    "Exercise a real scheduled build and signed-cache reuse against the deployed farm; isolated VM proof is not a substitute for this live acceptance check."
+  ],
+  "clientScope": {
+    "clients": ["aspen3", "bonsai", "britton-desktop"],
+    "workers": ["aspen1", "aspen2"],
+    "excluded": ["britton-fw"],
+    "decision": "User requested Bonsai instead of britton-fw. Bonsai was already admitted, so the client set is deduplicated to three machines.",
+    "verification": {
+      "result": "passed",
+      "evaluatedConfiguration": {
+        "aspen1": {
+          "accessRules": [
+            {
+              "cn": "ci-bonsai",
+              "role": "trusted"
+            },
+            {
+              "cn": "ci-aspen3",
+              "role": "trusted"
+            },
+            {
+              "cn": "ci-britton-desktop",
+              "role": "trusted"
+            },
+            {
+              "cn": "worker-aspen1",
+              "role": "trusted"
+            },
+            {
+              "cn": "worker-aspen2",
+              "role": "trusted"
+            },
+            {
+              "cn": "lb-aspen1",
+              "role": "trusted"
+            }
+          ],
+          "builders": [],
+          "clientCredentialDeclared": false,
+          "grpcEnabled": false,
+          "ingressNames": []
+        },
+        "aspen2": {
+          "accessRules": [
+            {
+              "cn": "ci-bonsai",
+              "role": "trusted"
+            },
+            {
+              "cn": "ci-aspen3",
+              "role": "trusted"
+            },
+            {
+              "cn": "ci-britton-desktop",
+              "role": "trusted"
+            },
+            {
+              "cn": "worker-aspen1",
+              "role": "trusted"
+            },
+            {
+              "cn": "worker-aspen2",
+              "role": "trusted"
+            },
+            {
+              "cn": "lb-aspen1",
+              "role": "trusted"
+            }
+          ],
+          "builders": [],
+          "clientCredentialDeclared": false,
+          "grpcEnabled": false,
+          "ingressNames": []
+        },
+        "aspen3": {
+          "accessRules": [],
+          "builders": [
+            "grpc://aspen1.local:50051?ca-cert=%2Frun%2Fsecrets%2Fvars%2Fper-machine%2Faspen3%2Fnix-build-farm-client%2Fca-cert&client-cert=%2Frun%2Fsecrets%2Fvars%2Fper-machine%2Faspen3%2Fnix-build-farm-client%2Fcert&client-key=%2Frun%2Fsecrets%2Fvars%2Fper-machine%2Faspen3%2Fnix-build-farm-client%2Fkey&system=x86_64-linux",
+            "leviathan.cymric-daggertooth.ts.net"
+          ],
+          "clientCredentialDeclared": true,
+          "grpcEnabled": true,
+          "ingressNames": ["aspen1.local"]
+        },
+        "bonsai": {
+          "accessRules": [],
+          "builders": [
+            "grpc://aspen1.local:50051?ca-cert=%2Frun%2Fsecrets%2Fvars%2Fper-machine%2Fbonsai%2Fnix-build-farm-client%2Fca-cert&client-cert=%2Frun%2Fsecrets%2Fvars%2Fper-machine%2Fbonsai%2Fnix-build-farm-client%2Fcert&client-key=%2Frun%2Fsecrets%2Fvars%2Fper-machine%2Fbonsai%2Fnix-build-farm-client%2Fkey&system=x86_64-linux",
+            "britton-desktop"
+          ],
+          "clientCredentialDeclared": true,
+          "grpcEnabled": true,
+          "ingressNames": ["aspen1.local"]
+        },
+        "britton-desktop": {
+          "accessRules": [],
+          "builders": [
+            "grpc://aspen1.local:50051?ca-cert=%2Frun%2Fsecrets%2Fvars%2Fper-machine%2Fbritton-desktop%2Fnix-build-farm-client%2Fca-cert&client-cert=%2Frun%2Fsecrets%2Fvars%2Fper-machine%2Fbritton-desktop%2Fnix-build-farm-client%2Fcert&client-key=%2Frun%2Fsecrets%2Fvars%2Fper-machine%2Fbritton-desktop%2Fnix-build-farm-client%2Fkey&system=x86_64-linux"
+          ],
+          "clientCredentialDeclared": true,
+          "grpcEnabled": true,
+          "ingressNames": ["aspen1.local"]
+        },
+        "britton-fw": {
+          "accessRules": [],
+          "builders": [],
+          "clientCredentialDeclared": false,
+          "grpcEnabled": false,
+          "ingressNames": []
+        }
+      },
+      "expression": "let\n  flake = builtins.getFlake \"path:/home/brittonr/git/onix-core\";\n  names = [ \"aspen1\" \"aspen2\" \"aspen3\" \"bonsai\" \"britton-desktop\" \"britton-fw\" ];\nin builtins.listToAttrs (map (name: let c = flake.nixosConfigurations.${name}.config; in {\n  inherit name;\n  value = {\n    builders = map (builder: builder.hostName) c.nix.buildMachines;\n    grpcEnabled = c.programs.nix-grpc-store.enable or false;\n    clientCredentialDeclared = builtins.hasAttr \"nix-build-farm-client\" c.clan.core.vars.generators;\n    accessRules = c.services.nix-grpc-daemon.accessRules or [];\n    ingressNames = c.networking.hosts.\"100.100.103.95\" or [];\n  };\n}) names)\n"
+    }
+  }
+}

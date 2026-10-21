@@ -17,6 +17,7 @@ let machine_names = std.record.fields machines_data.machines in
 
 # --- Module registries ---
 let self_modules = [
+  "arxiv-corpus",
   "buildbot",
   "bookshelf",
   "calibre-server",
@@ -35,6 +36,7 @@ let self_modules = [
   "kache-rustfs",
   "kiln-aspen-canary",
   "kiln-aspen-radicle-ci",
+  "laya",
   "lemonade",
   "llamacpp-rpc",
   "llamacpp-server",
@@ -42,6 +44,7 @@ let self_modules = [
   "llm-agents",
   "loki",
   "mesh-llm",
+  "nix-build-farm",
   "nix-gc",
   "niks3",
   "ollama",
@@ -51,6 +54,7 @@ let self_modules = [
   "radicle-node",
   "radicle-seed-replica",
   "rustfs",
+  "searxng",
   "sglang-diffusion",
   "speaches",
   "static-server",

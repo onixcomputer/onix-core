@@ -159,10 +159,6 @@ let
         "*/facter.json"
         "inventory.json"
 
-        # vendored sources mirror their origin repositories byte for byte;
-        # the origin toolchain owns their formatting
-        "pkgs/herdr/vendor/**"
-
         # Recorded evidence is hash-bound to the executed inputs and outputs.
         ".cairn/**/evidence/**"
         "evidence/**"
@@ -292,21 +288,17 @@ in
           packages = [
             clan-cli
             preCommitEval.package
-            (pkgs.python3.withPackages (ps: [
-              ps.pytest
-              ps.vcrpy
-              ps.pytest-vcr
-            ]))
-            self'.packages.nix-eval-warnings
-            self'.packages.dumbpipe
-            self'.packages.sendme
-            self'.packages.verify-deploy
-            self'.packages.claude-md
+            (pkgs.python3.withPackages (ps: [ ps.pytest ]))
+            inputs'.onixpkgs.nix-eval-warnings
+            inputs'.onixpkgs.dumbpipe
+            inputs'.onixpkgs.sendme
+            inputs'.onixpkgs.verify-deploy
+            inputs'.onixpkgs.claude-md
             # Query the nixpkgs-multiverse index and maintain multiverse.lock
             # (offline; see AGENTS.md "Package pinning")
-            inputs'.multiverse.packages.mvs
+            inputs'.multiverse.mvs
           ]
-          ++ lib.optionals (self'.packages ? tracey) [ self'.packages.tracey ]
+          ++ lib.optionals (inputs'.onixpkgs ? tracey) [ inputs'.onixpkgs.tracey ]
           ++ [
             self.inputs.drift.packages.${pkgs.stdenv.hostPlatform.system}.default
           ]
@@ -316,7 +308,7 @@ in
             pkgs.sops
             (pkgs.writeShellApplication {
               name = "eval-warnings";
-              runtimeInputs = [ self'.packages.nix-eval-warnings ];
+              runtimeInputs = [ inputs'.onixpkgs.nix-eval-warnings ];
               text = ''
                 if [ -z "''${1:-}" ]; then
                   echo "Usage: eval-warnings <flake-ref>"

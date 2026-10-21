@@ -15,6 +15,17 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
+    # Shared Onix package overlay. Package definitions live there, not in pkgs/.
+    onixpkgs = {
+      url = "git+ssh://git@github.com/OnixResearch/onixpkgs.git";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        llm-agents.follows = "llm-agents";
+        wrappers.follows = "wrappers";
+        treefmt-nix.follows = "treefmt-nix";
+      };
+    };
+
     devenv = {
       url = "github:cachix/devenv";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -46,6 +57,11 @@
       inputs.flake-parts.follows = "flake-parts";
     };
 
+    nix-grpc-store = {
+      url = "github:Mic92/nix-grpc-store/d3b71ce0c7fa61b7b70e8b1e0b5b1245c54c242c";
+      flake = false;
+    };
+
     onix-wasm = {
       url = "github:onixcomputer/onix-wasm";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -65,6 +81,12 @@
 
     sops-nix = {
       url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Unaudited vault prototype: opt-in only, never a default keyring.
+    factorseal = {
+      url = "github:cachix/factorseal/848c0ceb9f500b7be5d6a15e63d8113ddcde619a";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -120,7 +142,7 @@
       };
     };
     niks3 = {
-      url = "github:Mic92/niks3/v1.8.0";
+      url = "github:Mic92/niks3/e64338d774d97249ce0ace37a59767e72b5b52fb"; # v1.13.0
       inputs = {
         nixpkgs.follows = "nixpkgs";
         treefmt-nix.follows = "treefmt-nix";
@@ -142,6 +164,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     multiverse.url = "github:fzakaria/nixpkgs-multiverse";
+    # Packages only; inventory/tags/omnibin.nix explains why its module is not used.
+    omnibin = {
+      url = "github:fzakaria/omnibin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
@@ -195,6 +222,14 @@
         systems.follows = "systems";
       };
     };
+    underclass = {
+      url = "github:ghuntley/underclass";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        systems.follows = "systems";
+        devenv.follows = "devenv";
+      };
+    };
     tenstorrent-nix = {
       url = "git+ssh://git@github.com/OnixResearch/tenstorrent.nix.git";
       inputs = {
@@ -242,17 +277,13 @@
         treefmt-nix.follows = "treefmt-nix";
       };
     };
-    horizon = {
-      url = "github:peters/horizon";
-      flake = false;
-    };
 
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     drift = {
-      url = "github:brittonr/drift";
+      url = "github:brittonr/drift/bb8c23f97c37bb48775d96699a2a1b8dbe26f8be";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         rust-overlay.follows = "rust-overlay";
@@ -314,6 +345,7 @@
         ./flake-outputs/dev-env.nix # formatter, pre-commit, devShells, MCP
         ./flake-outputs/tools.nix # CLI tools (acl, vars, tags, merge-when-green, etc.)
         ./flake-outputs/ttwkv7.nix # Unfree standalone TT-Metalium operator package
+        ./flake-outputs/factorseal.nix # Opt-in hardware vault prototype
       ];
       flake =
         (import ./flake-outputs/clan.nix {

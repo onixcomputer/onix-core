@@ -1,0 +1,58 @@
+--- a/src/nix-compat.hh
++++ b/src/nix-compat.hh
+@@ -41,6 +41,13 @@
+ #define NIX_COMPAT_TEMPLATED_DRV 1
+ #else
+ #define NIX_COMPAT_TEMPLATED_DRV 0
++#endif
++// The 2.36 release uses templated derivations with grouped FullInputs,
++// before later versions flattened them into a set of SingleDerivedPath.
++#if __has_include(<nix/store/derivation/full-inputs.hh>)
++#define NIX_COMPAT_FULL_INPUTS 1
++#else
++#define NIX_COMPAT_FULL_INPUTS 0
+ #endif
+ #include <nix/store/derivation-options.hh>
+ 
+@@ -277,7 +284,7 @@
+ 
+ // Plain store path inputs of a BasicDerivation.
+ inline auto drvInputs(const nix::BasicDerivation &drv) -> const nix::StorePathSet & {
+-#if NIX_COMPAT_TEMPLATED_DRV
++#if NIX_COMPAT_TEMPLATED_DRV || NIX_COMPAT_FULL_INPUTS
+   return drv.inputs;
+ #else
+   return drv.inputSrcs;
+@@ -309,6 +316,20 @@
+     }
+     return srcs;
+   });
++#elif NIX_COMPAT_FULL_INPUTS
++  auto basic = drv.mapInputs([&](const nix::derivation::FullInputs &inputs) {
++    auto srcs = inputs.srcs;
++    for (const auto &[depPath, node] : inputs.drvs.map) {
++      if (!node.childMap.empty()) {
++        dynamic = true;
++        continue;
++      }
++      for (const auto &output : node.value) {
++        srcs.insert(outputOf(depPath, output));
++      }
++    }
++    return srcs;
++  });
+ #else
+   nix::BasicDerivation basic(static_cast<const nix::BasicDerivation &>(drv));
+   for (const auto &[depPath, node] : drv.inputDrvs.map) {
+@@ -334,6 +355,11 @@
+     if (const auto *built = std::get_if<nix::SingleDerivedPath::Built>(&input.raw())) {
+       visit(built->drvPath->getBaseStorePath());
+     }
++  }
++#elif NIX_COMPAT_FULL_INPUTS
++  for (const auto &[drvPath, node] : drv.inputs.drvs.map) {
++    (void)node;
++    visit(drvPath);
+   }
+ #else
+   for (const auto &[drvPath, node] : drv.inputDrvs.map) {

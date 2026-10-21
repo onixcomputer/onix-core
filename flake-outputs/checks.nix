@@ -7,12 +7,18 @@
   self,
   self',
   inputs',
-  pkgs,
   lib,
   system,
   ...
 }:
 let
+  # Harnesses evaluate modules outside a machine, so give them the same
+  # onixpkgs packages that shared-nix.nix overlays onto every machine.
+  pkgs = import self.inputs.nixpkgs {
+    inherit system;
+    overlays = [ self.inputs.onixpkgs.overlays.default ];
+    config = { };
+  };
   innerArgs = {
     inherit
       self
@@ -36,6 +42,7 @@ let
   helixChecks = (import ./_helix-checks.nix) innerArgs;
   homeManagerChecks = (import ./_home-manager-checks.nix) innerArgs;
   kacheNixRustChecks = (import ./_kache-nix-rust-checks.nix) innerArgs;
+  llmAgentsChecks = (import ./_llm-agents-checks.nix) innerArgs;
   meshLlmChecks = (import ./_mesh-llm-checks.nix) innerArgs;
   dgxSparkPowerChecks = (import ./_dgx-spark-power-checks.nix) innerArgs;
   dgxDevenvChecks = (import ./_dgx-devenv-checks.nix) innerArgs;
@@ -49,9 +56,12 @@ let
   radicleSeedReplicaChecks = (import ./_radicle-seed-replica-checks.nix) innerArgs;
   radicleSourceAdmissionChecks = (import ./_radicle-source-admission-checks.nix) innerArgs;
   seaglassKilnCiChecks = (import ./_seaglass-kiln-ci-checks.nix) innerArgs;
+  desktopTailnetProxyChecks = (import ./_desktop-tailnet-proxy-checks.nix) innerArgs;
   kilnAspenCanaryChecks = (import ./_kiln-aspen-canary-checks.nix) innerArgs;
   kilnAspenRadicleCiChecks = (import ./_kiln-aspen-radicle-ci-checks.nix) innerArgs;
   multiverseChecks = (import ./_multiverse-checks.nix) innerArgs;
+  searxngChecks = (import ./_searxng-checks.nix) innerArgs;
+  driftRustfsChecks = (import ./_drift-rustfs-checks.nix) innerArgs;
 
   packageChecks = lib.mapAttrs' (n: lib.nameValuePair "package-${n}") self'.packages;
   devShellChecks = lib.mapAttrs' (n: lib.nameValuePair "devShell-${n}") self'.devShells;
@@ -70,7 +80,9 @@ in
     // (grafanaChecks.checks or { })
     // (helixChecks.checks or { })
     // (homeManagerChecks.checks or { })
+    // driftRustfsChecks.checks
     // (kacheNixRustChecks.checks or { })
+    // (llmAgentsChecks.checks or { })
     // (meshLlmChecks.checks or { })
     // (dgxSparkPowerChecks.checks or { })
     // (dgxDevenvChecks.checks or { })
@@ -84,9 +96,11 @@ in
     // (radicleSeedReplicaChecks.checks or { })
     // (radicleSourceAdmissionChecks.checks or { })
     // (seaglassKilnCiChecks.checks or { })
+    // (desktopTailnetProxyChecks.checks or { })
     // (kilnAspenCanaryChecks.checks or { })
     // (kilnAspenRadicleCiChecks.checks or { })
     // (multiverseChecks.checks or { })
+    // (searxngChecks.checks or { })
     // packageChecks
     // devShellChecks;
 }
