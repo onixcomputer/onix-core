@@ -107,7 +107,9 @@ let
   };
   lockParsed = builtins.attrNames lockEval.config.multiverse.locked;
   lockInstalled = builtins.length lockEval.config.multiverse.packages;
-  lockOk = lockParsed == [ ] && lockInstalled == 0;
+  # Every pin in the file parses, and with multiverse enabled each one installs.
+  repositoryLockPins = builtins.attrNames (lib.importJSON ../multiverse.lock).pins;
+  lockOk = lockParsed == repositoryLockPins && lockInstalled == builtins.length repositoryLockPins;
 
   # A lock declaring an unknown format version must throw rather than being
   # read as if nothing were wrong.
@@ -148,8 +150,8 @@ in
       ''}
       ${lib.optionalString (!lockOk) ''
         echo "multiverse repository lock did not parse cleanly:"
-        echo "  attrs: ${builtins.toString lockParsed}"
-        echo "  packages installed from it: ${toString lockInstalled}"
+        echo "  attrs: ${builtins.toString lockParsed} (expected: ${builtins.toString repositoryLockPins})"
+        echo "  packages installed from it: ${toString lockInstalled} (expected: ${toString (builtins.length repositoryLockPins)})"
         exit 1
       ''}
       ${lib.optionalString (!badLockOk) ''
