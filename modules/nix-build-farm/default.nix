@@ -169,7 +169,9 @@ in
             path = [ config.nix.package ];
             serviceConfig = {
               SupplementaryGroups = [ "niks3-uploaders" ];
-              ExecStartPre = [ waitForAddress ];
+              # The probe reads tailscale0 over netlink, which the daemon's
+              # RestrictAddressFamilies forbids; "+" runs it unsandboxed.
+              ExecStartPre = [ "+${waitForAddress}" ];
               RestartSec = 5;
             };
           };
@@ -275,6 +277,9 @@ in
               DynamicUser = lib.mkForce false;
               User = "envoy";
               Group = "envoy";
+              # Envoy watches the secret directory for rotation; sops-nix keeps
+              # it root:keys 0751, so listing it needs the keys group.
+              SupplementaryGroups = [ config.users.groups.keys.name ];
               ExecStartPre = [ waitForScheduler ];
               Restart = lib.mkForce "on-failure";
               RestartSec = 5;
