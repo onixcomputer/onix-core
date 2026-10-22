@@ -376,111 +376,115 @@ in
     home = statePath;
   };
 
-  systemd.tmpfiles.rules = [ "Z ${statePath} - ${serviceUser} ${serviceUser} -" ];
+  systemd = {
+    tmpfiles.rules = [ "Z ${statePath} - ${serviceUser} ${serviceUser} -" ];
 
-  systemd.services.${serviceName} = {
-    description = "Private Mesh-LLM sidecar (${instanceName}, ${mode})";
-    wantedBy = [ "multi-user.target" ];
-    wants = [ "network-online.target" ] ++ interfaceUnits ++ backendUnits ++ researchBackendUnits;
-    after = [ "network-online.target" ] ++ interfaceUnits ++ backendUnits ++ researchBackendUnits;
+    services = {
+      ${serviceName} = {
+        description = "Private Mesh-LLM sidecar (${instanceName}, ${mode})";
+        wantedBy = [ "multi-user.target" ];
+        wants = [ "network-online.target" ] ++ interfaceUnits ++ backendUnits ++ researchBackendUnits;
+        after = [ "network-online.target" ] ++ interfaceUnits ++ backendUnits ++ researchBackendUnits;
 
-    environment = {
-      HOME = statePath;
-      LD_LIBRARY_PATH = lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ];
-      MESH_LLM_NO_SELF_UPDATE = "1";
-    }
-    // lib.optionalAttrs hasMeshBindInterface {
-      MESH_LLM_BIND_INTERFACE = meshBindInterface;
+        environment = {
+          HOME = statePath;
+          LD_LIBRARY_PATH = lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ];
+          MESH_LLM_NO_SELF_UPDATE = "1";
+        }
+        // lib.optionalAttrs hasMeshBindInterface {
+          MESH_LLM_BIND_INTERFACE = meshBindInterface;
+        };
+
+        serviceConfig = {
+          Type = "simple";
+          User = serviceUser;
+          Group = serviceUser;
+          StateDirectory = stateDirectory;
+          StateDirectoryMode = "0700";
+          WorkingDirectory = statePath;
+          ExecStart = launchCommand;
+          LoadCredential = map (token: "${token.name}:${token.path}") joinTokens;
+          Restart = "on-failure";
+          RestartSec = restartDelay;
+          TimeoutStopSec = stopTimeout;
+          CapabilityBoundingSet = "";
+          LockPersonality = true;
+          MemoryDenyWriteExecute = false;
+          NoNewPrivileges = true;
+          PrivateDevices = true;
+          PrivateTmp = true;
+          ProtectClock = true;
+          ProtectControlGroups = true;
+          ProtectHome = true;
+          ProtectHostname = true;
+          ProtectKernelLogs = true;
+          ProtectKernelModules = true;
+          ProtectKernelTunables = true;
+          ProtectSystem = "strict";
+          RemoveIPC = true;
+          RestrictAddressFamilies = [
+            "AF_INET"
+            "AF_INET6"
+            "AF_UNIX"
+          ];
+          RestrictNamespaces = true;
+          RestrictRealtime = true;
+          RestrictSUIDSGID = true;
+          SystemCallArchitectures = "native";
+          UMask = "0077";
+        };
+      };
+
+      ${watchdogName} = {
+        description = "Restart ${serviceName} when its API listener disappears or a joiner loses every peer";
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = lib.getExe watchdogScript;
+          RuntimeDirectory = watchdogName;
+          RuntimeDirectoryPreserve = "yes";
+        };
+      };
+
+      ${researchGatewayName} = lib.mkIf researchGatewayEnabled {
+        description = "Private research-only Mesh-LLM HTTP ingress (${instanceName})";
+        wantedBy = [ "multi-user.target" ];
+        wants = [
+          "tailscaled.service"
+          "${serviceName}.service"
+        ];
+        after = [
+          "tailscaled.service"
+          "${serviceName}.service"
+        ];
+        serviceConfig = {
+          ExecStart = "${pkgs.nginx}/bin/nginx -c ${researchGatewayConfig} -p /run/${researchGatewayName}";
+          DynamicUser = true;
+          RuntimeDirectory = researchGatewayName;
+          Restart = "on-failure";
+          RestartSec = "5s";
+          NoNewPrivileges = true;
+          PrivateTmp = true;
+          PrivateDevices = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          RestrictAddressFamilies = [
+            "AF_INET"
+            "AF_UNIX"
+          ];
+          CapabilityBoundingSet = "";
+          UMask = "0077";
+        };
+      };
     };
 
-    serviceConfig = {
-      Type = "simple";
-      User = serviceUser;
-      Group = serviceUser;
-      StateDirectory = stateDirectory;
-      StateDirectoryMode = "0700";
-      WorkingDirectory = statePath;
-      ExecStart = launchCommand;
-      LoadCredential = map (token: "${token.name}:${token.path}") joinTokens;
-      Restart = "on-failure";
-      RestartSec = restartDelay;
-      TimeoutStopSec = stopTimeout;
-      CapabilityBoundingSet = "";
-      LockPersonality = true;
-      MemoryDenyWriteExecute = false;
-      NoNewPrivileges = true;
-      PrivateDevices = true;
-      PrivateTmp = true;
-      ProtectClock = true;
-      ProtectControlGroups = true;
-      ProtectHome = true;
-      ProtectHostname = true;
-      ProtectKernelLogs = true;
-      ProtectKernelModules = true;
-      ProtectKernelTunables = true;
-      ProtectSystem = "strict";
-      RemoveIPC = true;
-      RestrictAddressFamilies = [
-        "AF_INET"
-        "AF_INET6"
-        "AF_UNIX"
-      ];
-      RestrictNamespaces = true;
-      RestrictRealtime = true;
-      RestrictSUIDSGID = true;
-      SystemCallArchitectures = "native";
-      UMask = "0077";
-    };
-  };
-
-  systemd.services.${watchdogName} = {
-    description = "Restart ${serviceName} when its API listener disappears or a joiner loses every peer";
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = lib.getExe watchdogScript;
-      RuntimeDirectory = watchdogName;
-      RuntimeDirectoryPreserve = "yes";
-    };
-  };
-
-  systemd.timers.${watchdogName} = {
-    description = "Check the ${serviceName} API listener every minute";
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnBootSec = "2min";
-      OnUnitActiveSec = "1min";
-      AccuracySec = "10s";
-    };
-  };
-
-  systemd.services.${researchGatewayName} = lib.mkIf researchGatewayEnabled {
-    description = "Private research-only Mesh-LLM HTTP ingress (${instanceName})";
-    wantedBy = [ "multi-user.target" ];
-    wants = [
-      "tailscaled.service"
-      "${serviceName}.service"
-    ];
-    after = [
-      "tailscaled.service"
-      "${serviceName}.service"
-    ];
-    serviceConfig = {
-      ExecStart = "${pkgs.nginx}/bin/nginx -c ${researchGatewayConfig} -p /run/${researchGatewayName}";
-      DynamicUser = true;
-      RuntimeDirectory = researchGatewayName;
-      Restart = "on-failure";
-      RestartSec = "5s";
-      NoNewPrivileges = true;
-      PrivateTmp = true;
-      PrivateDevices = true;
-      ProtectSystem = "strict";
-      ProtectHome = true;
-      RestrictAddressFamilies = [
-        "AF_INET"
-        "AF_UNIX"
-      ];
-      CapabilityBoundingSet = "";
-      UMask = "0077";
+    timers.${watchdogName} = {
+      description = "Check the ${serviceName} API listener every minute";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "2min";
+        OnUnitActiveSec = "1min";
+        AccuracySec = "10s";
+      };
     };
   };
 

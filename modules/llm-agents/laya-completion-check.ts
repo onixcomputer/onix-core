@@ -26,9 +26,7 @@ export interface LayaCompletionCheckInput {
 }
 
 type CompletionAssessment =
-  | "supported"
-  | "conflicting"
-  | "insufficient_evidence";
+  "supported" | "conflicting" | "insufficient_evidence";
 type CompletionResult = LayaCompletionCheckInput["criteria"][number] &
   (
     | { assessment: "missing_evidence"; prediction: null }

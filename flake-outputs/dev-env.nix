@@ -162,6 +162,12 @@ let
         # Recorded evidence is hash-bound to the executed inputs and outputs.
         ".cairn/**/evidence/**"
         "evidence/**"
+        # Cairn writes its JSON records itself, and verification records pin
+        # each other's sha256, so reformatting one breaks those bindings.
+        ".cairn/**/*.json"
+        # The Spark tooling exactly as it ran for the in-progress
+        # deploy-deepseek-v41-flash-1017-spark change, kept as a record.
+        "scripts/deepseek-spark-1017/**"
 
       ];
 

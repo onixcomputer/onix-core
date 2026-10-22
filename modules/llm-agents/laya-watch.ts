@@ -113,8 +113,7 @@ export function registerLayaWatch(
   let errorShown = false;
   let pending = false;
   let flight:
-    | { controller: AbortController; timer: NodeJS.Timeout }
-    | undefined;
+    { controller: AbortController; timer: NodeJS.Timeout } | undefined;
 
   function invalidate(clearNote = true) {
     version++;

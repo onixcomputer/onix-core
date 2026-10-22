@@ -19,9 +19,7 @@ import {
 } from "./laya-predict";
 
 export type EvidenceRelation =
-  | "supports"
-  | "contradicts"
-  | "insufficient_evidence";
+  "supports" | "contradicts" | "insufficient_evidence";
 
 export interface LayaEvidenceMatchInput {
   pairs: readonly {

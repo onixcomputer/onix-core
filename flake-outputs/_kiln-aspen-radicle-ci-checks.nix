@@ -216,8 +216,9 @@ let
     && hostConfig.RestrictAddressFamilies == [ "AF_UNIX" ]
     && latticeConfig.RestrictAddressFamilies == [ "AF_UNIX" ]
     && hostConfig.Restart == "always"
-    && hostConfig.ExecCondition
-    == "${builtins.head (lib.splitString " " hostStartCommand)} --preflight --state-root ${machineHostState}"
+    &&
+      hostConfig.ExecCondition
+      == "${builtins.head (lib.splitString " " hostStartCommand)} --preflight --state-root ${machineHostState}"
     && lib.hasInfix "--state-root ${machineHostState}" hostStartCommand
     && latticeConfig.Restart == "on-failure"
     && builtins.elem latticeUnit hostService.after

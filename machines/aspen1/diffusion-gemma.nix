@@ -49,16 +49,18 @@ let
   };
 in
 {
-  # r[impl onix.diffusion-gemma.isolation]
-  # Keep the retired Qwen unit masked while DiffusionGemma owns this GPU.
-  systemd.services."llamacpp-server-qwen38-flash-next-aspen1".enable = lib.mkForce false;
+  systemd.services = {
+    # r[impl onix.diffusion-gemma.isolation]
+    # Keep the retired Qwen unit masked while DiffusionGemma owns this GPU.
+    "llamacpp-server-qwen38-flash-next-aspen1".enable = lib.mkForce false;
 
-  systemd.services."docker-diffusion-gemma" = unitSettings // {
-    conflicts = [ "llamacpp-server-qwen38-flash-next-aspen1.service" ];
-    wants = [ "docker-diffusion-gemma-structured.service" ];
-  };
-  systemd.services."docker-diffusion-gemma-structured" = unitSettings // {
-    partOf = [ "docker-diffusion-gemma.service" ];
+    "docker-diffusion-gemma" = unitSettings // {
+      conflicts = [ "llamacpp-server-qwen38-flash-next-aspen1.service" ];
+      wants = [ "docker-diffusion-gemma-structured.service" ];
+    };
+    "docker-diffusion-gemma-structured" = unitSettings // {
+      partOf = [ "docker-diffusion-gemma.service" ];
+    };
   };
 
   virtualisation.oci-containers = {

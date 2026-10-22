@@ -120,9 +120,11 @@ in
       # llm-agents-herdr input). That llm-agents revision already stops
       # bundling Zig's runtimes for the GCC 16 link, but its vendored
       # libghostty-vt requires Zig 0.16 and nixpkgs' default zig is now 0.17.
-      herdr-unwrapped = inputs.llm-agents-herdr.packages.${pkgs.stdenv.hostPlatform.system}.herdr.override {
-        zig = prev.zig_0_16;
-      };
+      herdr-unwrapped =
+        inputs.llm-agents-herdr.packages.${pkgs.stdenv.hostPlatform.system}.herdr.override
+          {
+            zig = prev.zig_0_16;
+          };
 
       # onixpkgs pins llama.cpp b9859 but inherits nixpkgs' llama-cpp recipe:
       # its patches target nixpkgs' newer source, and its new test run includes

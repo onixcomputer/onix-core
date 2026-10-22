@@ -9,12 +9,12 @@ if [[ $# -ne 1 ]]; then
 fi
 
 source_dir=$(realpath -e -- "$1")
-script_dir=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+script_dir=$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 package_dir="$script_dir/../pkgs/meshtop"
 destination="$package_dir/source"
 
-if [[ ! -d "$source_dir" ]] || \
-   [[ $(git -C "$source_dir" rev-parse --show-toplevel 2>/dev/null) != "$source_dir" ]]; then
+if [[ ! -d $source_dir ]] ||
+  [[ $(git -C "$source_dir" rev-parse --show-toplevel 2>/dev/null) != "$source_dir" ]]; then
   echo 'expected the root of a meshtop Git checkout' >&2
   exit 1
 fi
@@ -32,14 +32,14 @@ staging=$(mktemp -d "$package_dir/.meshtop-source.XXXXXXXX")
 backup="$package_dir/.meshtop-previous.$$"
 cleanup() {
   rm -rf -- "$staging"
-  if [[ -e "$backup" && ! -e "$destination" ]]; then
+  if [[ -e $backup && ! -e $destination ]]; then
     mv -- "$backup" "$destination"
   fi
 }
 trap cleanup EXIT
 
 for name in Cargo.toml Cargo.lock README.md; do
-  git -C "$source_dir" ls-files --error-unmatch -- "$name" > /dev/null
+  git -C "$source_dir" ls-files --error-unmatch -- "$name" >/dev/null
   cp -- "$source_dir/$name" "$staging/$name"
 done
 mkdir -- "$staging/src"
@@ -51,19 +51,19 @@ if [[ ${#sources[@]} -eq 0 ]]; then
 fi
 for file in "${sources[@]}"; do
   relative="src/${file##*/}"
-  git -C "$source_dir" ls-files --error-unmatch -- "$relative" > /dev/null
+  git -C "$source_dir" ls-files --error-unmatch -- "$relative" >/dev/null
   cp -- "$file" "$staging/$relative"
 done
 
-if [[ -e "$destination" ]]; then
-  if [[ -e "$backup" ]]; then
+if [[ -e $destination ]]; then
+  if [[ -e $backup ]]; then
     echo "refusing to overwrite $backup" >&2
     exit 1
   fi
   mv -- "$destination" "$backup"
 fi
 mv -- "$staging" "$destination"
-printf '%s\n' "$revision" > "$package_dir/SOURCE_REVISION"
-if [[ -e "$backup" ]]; then
+printf '%s\n' "$revision" >"$package_dir/SOURCE_REVISION"
+if [[ -e $backup ]]; then
   rm -rf -- "$backup"
 fi

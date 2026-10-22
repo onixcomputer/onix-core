@@ -71,18 +71,17 @@ let
   # Both the dependency artifacts and the final build list it.
   withoutTypeshareTests = old: {
     nativeBuildInputs = map (
-      input: if (input.pname or null) == "typeshare" then input.overrideAttrs { doCheck = false; } else input
+      input:
+      if (input.pname or null) == "typeshare" then input.overrideAttrs { doCheck = false; } else input
     ) old.nativeBuildInputs;
   };
-  kiEditor =
-    self.inputs.ki-editor.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs
-      (
-        old:
-        withoutTypeshareTests old
-        // {
-          cargoArtifacts = old.cargoArtifacts.overrideAttrs withoutTypeshareTests;
-        }
-      );
+  kiEditor = self.inputs.ki-editor.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs (
+    old:
+    withoutTypeshareTests old
+    // {
+      cargoArtifacts = old.cargoArtifacts.overrideAttrs withoutTypeshareTests;
+    }
+  );
 in
 {
   packages = {
