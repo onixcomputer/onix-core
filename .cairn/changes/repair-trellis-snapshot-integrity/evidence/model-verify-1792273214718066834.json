@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-17T21:40:14.718076+00:00",
+  "argv": [
+    "bash",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-snapshot-integrity-20261017T211824Z/work/scripts/verus.sh",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-snapshot-integrity-20261017T211824Z/work/src/lib.rs",
+    "--verify-module",
+    "snapshot_integrity",
+    "--rlimit",
+    "20",
+    "--triggers-mode",
+    "silent"
+  ],
+  "exit": 0,
+  "changed_sha256": {
+    "src/properties.rs": "715799c856eaa495ffadc0759b1655571d33fcf0eaa69dfe2fdd5a106b8177c2",
+    "src/snapshot_integrity.rs": "682b844fd173d4b40e6d43c9c1c8086c0092005fde25c85c741dd3cb80b24cf6",
+    "src/serialize_inj.rs": "dec7d6be8b3b1f0f23d33378c30770f1891fde66e5957d1041c4cc438dbe9d47"
+  },
+  "frozen_dependencies_unchanged": true,
+  "scope": "snapshot_integrity module; full-library acceptance belongs to parent",
+  "log": "model-verify-1792273214718066834.log"
+}

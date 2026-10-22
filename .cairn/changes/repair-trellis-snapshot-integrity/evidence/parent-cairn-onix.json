@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-17T21:56:27.987Z",
+  "finished_at": "2026-10-17T21:56:28.495Z",
+  "argv": [
+    "nix",
+    "run",
+    "git+file:///home/brittonr/git/OnixResearch/cairn#cairn",
+    "--",
+    "validate",
+    "--root",
+    "/home/brittonr/git/onix-core",
+    "--policy",
+    "/home/brittonr/git/OnixResearch/cairn/cairn-policy/generated/cairn-policy.json"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "stdout_log": "parent-cairn-onix.log",
+  "source_manifest": "final-proof-inputs.json",
+  "summaries": [],
+  "validation_valid": true,
+  "validation_issues": [],
+  "receipt_hash": "5914497e72c07afb3e7fca4ded06c4d83700bde1ed280eedc3c9c5f3faa0362b"
+}

@@ -1,0 +1,8 @@
+{
+  "started_at": "2026-10-17T21:20:41.759648+00:00",
+  "finished_at": "2026-10-17T21:37:46.817092+00:00",
+  "exit": 0,
+  "timed_out": false,
+  "transcript": "transcript.jsonl",
+  "scope": "Actual model worker; parent acceptance still required"
+}

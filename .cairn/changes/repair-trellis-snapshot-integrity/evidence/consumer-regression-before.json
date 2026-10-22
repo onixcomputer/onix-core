@@ -1,0 +1,9 @@
+{
+  "command": "env -u RUST_TOOLCHAIN CARGO_TARGET_DIR=target CARGO_BUILD_JOBS=2 CARGO_INCREMENTAL=0 cargo test --offline --quiet safe_snapshot_replication::tests::rejects_high_bit_component_tampering -- --exact",
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 101,
+  "source_phase": "Before the combiner repair; the new consumer regression is the only parent source change",
+  "observed": "running 1 test; safe_snapshot_replication::tests::rejects_high_bit_component_tampering FAILED at src/safe_snapshot_replication.rs:234:13: assertion failed: matches!(rejected, SafeSnapshotReplicationDecision::RejectCorrupt)",
+  "tests": {"passed": 0, "failed": 1, "filtered_out": 5225},
+  "meaning": "The real replication facade installs a record with a changed high-bit component and the original commitment instead of rejecting it."
+}

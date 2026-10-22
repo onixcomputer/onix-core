@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-17T21:49:19.752Z",
+  "finished_at": "2026-10-17T21:49:20.898Z",
+  "argv": [
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-snapshot-integrity-20261017T211824Z/bin/check-module-index"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "stdout_log": "parent-check-module-index.log",
+  "source_manifest": "accepted-proof-inputs.json",
+  "summaries": [
+    "✓ module maturity index covers 625 public modules"
+  ]
+}

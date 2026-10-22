@@ -1,0 +1,7 @@
+{
+  "resource": "NemotronSnapshotTunnel",
+  "operation": "proc://NemotronSnapshotTunnel/kill",
+  "observed_result": "Stopped NemotronSnapshotTunnel [service] — exited",
+  "scope": "Owned temporary authenticated SSH forwarding only; no persistent Spark configuration change.",
+  "replica_and_original_cluster_restoration": "restoration.json"
+}

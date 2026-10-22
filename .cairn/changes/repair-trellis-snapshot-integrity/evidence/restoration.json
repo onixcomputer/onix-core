@@ -1,0 +1,148 @@
+{
+  "started_at": "2026-10-17T21:38:05.080774+00:00",
+  "starts": [
+    {
+      "host": "spark-a0a0.local",
+      "id": "186945078da3c923db6651041d7de69ce78da5ecbd846518d311a3efdbb48f3c",
+      "at": "2026-10-17T21:38:13.103300+00:00",
+      "output": "186945078da3c923db6651041d7de69ce78da5ecbd846518d311a3efdbb48f3c"
+    },
+    {
+      "host": "192.168.1.233",
+      "id": "9399f8762b505194c63052a284f4e15c4517f899d803fe7253e9b38c242a8a5f",
+      "at": "2026-10-17T21:38:13.019122+00:00",
+      "output": "9399f8762b505194c63052a284f4e15c4517f899d803fe7253e9b38c242a8a5f"
+    },
+    {
+      "host": "spark-e442.local",
+      "id": "d240dfa3f9f058a9e141e4db6e01d5fda71587ab557ada4fea9be1cd00fc6360",
+      "at": "2026-10-17T21:38:13.937571+00:00",
+      "output": "d240dfa3f9f058a9e141e4db6e01d5fda71587ab557ada4fea9be1cd00fc6360"
+    }
+  ],
+  "comparisons": [
+    {
+      "host": "spark-e442.local",
+      "id": "d240dfa3f9f058a9e141e4db6e01d5fda71587ab557ada4fea9be1cd00fc6360",
+      "running": true,
+      "matches": {
+        "Id": true,
+        "Image": true,
+        "Config": true,
+        "HostConfig": true,
+        "Mounts": true
+      }
+    },
+    {
+      "host": "spark-a0a0.local",
+      "id": "186945078da3c923db6651041d7de69ce78da5ecbd846518d311a3efdbb48f3c",
+      "running": true,
+      "matches": {
+        "Id": true,
+        "Image": true,
+        "Config": true,
+        "HostConfig": true,
+        "Mounts": true
+      }
+    },
+    {
+      "host": "192.168.1.233",
+      "id": "9399f8762b505194c63052a284f4e15c4517f899d803fe7253e9b38c242a8a5f",
+      "running": true,
+      "matches": {
+        "Id": true,
+        "Image": true,
+        "Config": true,
+        "HostConfig": true,
+        "Mounts": true
+      }
+    }
+  ],
+  "model_stop": "e25008c5bcec14107094cb9ff9937a866f5ef11d2a488b5c36545c5d88b57749\n",
+  "model_remove": "e25008c5bcec14107094cb9ff9937a866f5ef11d2a488b5c36545c5d88b57749\n",
+  "models": {
+    "object": "list",
+    "data": [
+      {
+        "id": "deepseek-v4.1-flash",
+        "object": "model",
+        "created": 1792273552,
+        "owned_by": "vllm",
+        "root": "/models/DeepSeek-V4.1-Flash-EXL3-TP3-Ablit",
+        "parent": null,
+        "max_model_len": 300000,
+        "permission": [
+          {
+            "id": "modelperm-9ffeeded9a13e03f",
+            "object": "model_permission",
+            "created": 1792273552,
+            "allow_create_engine": false,
+            "allow_sampling": true,
+            "allow_logprobs": true,
+            "allow_search_indices": false,
+            "allow_view": true,
+            "allow_fine_tuning": false,
+            "organization": "*",
+            "group": null,
+            "is_blocking": false
+          }
+        ]
+      }
+    ]
+  },
+  "completion_request": {
+    "model": "deepseek-v4.1-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Compute 6 * 7. Reply with only the integer."
+      }
+    ],
+    "temperature": 0,
+    "max_tokens": 32
+  },
+  "completion_response": {
+    "id": "chatcmpl-950341835bcf6e70",
+    "object": "chat.completion",
+    "created": 1792273552,
+    "model": "deepseek-v4.1-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "42",
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": null
+        },
+        "logprobs": null,
+        "finish_reason": "stop",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.28.1rc1.dev388+g8a728663c-tp3-a4ee40b4",
+    "usage": {
+      "prompt_tokens": 17,
+      "total_tokens": 19,
+      "completion_tokens": 2,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  },
+  "verified": true,
+  "finished_at": "2026-10-17T21:45:55.809458+00:00"
+}

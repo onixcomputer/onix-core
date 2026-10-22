@@ -1,0 +1,19 @@
+--- /home/brittonr/git/OnixResearch/trellis/target/nemotron-snapshot-integrity-20261017T211824Z/original/src/serialize_inj.rs	2026-10-17 17:20:18.186639990 -0400
++++ /home/brittonr/git/OnixResearch/trellis/target/nemotron-snapshot-integrity-20261017T211824Z/work/src/serialize_inj.rs	2026-10-17 17:30:38.736321867 -0400
+@@ -1,9 +1,13 @@
+ //! Verified serialization injectivity for canonical byte encodings.
+ //!
+ //! Proves that canonical byte encodings are injective: equal byte
+-//! sequences imply equal input values. Composes with collision-resistance
+-//! axioms from `chain.rs` and `snapshot_integrity.rs` to give the full
+-//! guarantee: same hash → same structure.
++//! sequences imply equal input values. These byte-encoding injectivity
++//! theorems concern structure only: they are NOT a SnapshotIntegrity wire
++//! codec, and they are not a cryptographic hash/MAC/authentication of
++//! payload bytes. Chain hash field equality additionally relies on the
++//! chain module's collision-resistance assumption; the SnapshotIntegrity
++//! combined commitment is instead exactly injective over its u64 inputs
++//! (no collision axiom needed).
+ //!
+ //! All encode functions operate at the `Seq<u8>` spec level. Exec
+ //! wrappers exist for proptest coverage.

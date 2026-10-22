@@ -1,0 +1,66 @@
+--- /home/brittonr/git/OnixResearch/trellis/target/nemotron-snapshot-integrity-20261017T211824Z/original/src/properties.rs	2026-10-17 17:20:18.185639989 -0400
++++ /home/brittonr/git/OnixResearch/trellis/target/nemotron-snapshot-integrity-20261017T211824Z/work/src/properties.rs	2026-10-17 17:30:17.370298489 -0400
+@@ -6740,7 +6740,7 @@
+     // r[depends properties.snapshot-typed-verify]
+     /// Spec: verify_snapshot returns Some iff verify_integrity holds.
+     pub open spec fn snapshot_typed_verify_prop(
+-        data_hash: u64, meta_hash: u64, combined_hash: u64, chain_hash: u64,
++        data_hash: u64, meta_hash: u64, combined_hash: u128, chain_hash: u64,
+     ) -> bool {
+         let integrity = SnapshotIntegrity { data_hash, meta_hash, combined_hash, chain_hash_at_snapshot: chain_hash };
+         let gs = stamp_spec(integrity);
+@@ -6754,7 +6754,7 @@
+     // r[verify properties.snapshot-typed-verify]
+     /// Proof: typed verification of snapshots agrees with verify_integrity.
+     proof fn prove_snapshot_typed_verify(
+-        data_hash: u64, meta_hash: u64, combined_hash: u64, chain_hash: u64,
++        data_hash: u64, meta_hash: u64, combined_hash: u128, chain_hash: u64,
+     )
+         ensures snapshot_typed_verify_prop(data_hash, meta_hash, combined_hash, chain_hash)
+     {}
+@@ -6811,8 +6811,8 @@
+     use crate::chain::hash_collision_free;
+     use crate::chain::hash_spec;
+     use crate::serialize_inj::*;
+-    use crate::snapshot_integrity::dual_hash_collision_resistant;
+-    use crate::snapshot_integrity::dual_hash_spec;
++    use crate::snapshot_integrity::combine_hashes_injective;
++    use crate::snapshot_integrity::combine_hashes_spec;
+ 
+     verus! {
+ 
+@@ -6848,26 +6848,29 @@
+     }
+ 
+     // r[depends properties.dual-hash-implies-field-equality]
+-    /// Spec: dual hash equality implies both fields are equal.
++    /// Spec: combined hash equality implies both fields are equal.
++    ///
++    /// This is exact pair binding of the u128 commitment, not a
++    /// collision-resistance assumption.
+     pub open spec fn dual_hash_implies_field_equality_prop(
+         a1: u64, b1: u64,
+         a2: u64, b2: u64,
+     ) -> bool {
+-        dual_hash_spec(a1, b1) == dual_hash_spec(a2, b2)
++        combine_hashes_spec(a1, b1) == combine_hashes_spec(a2, b2)
+             ==> (a1 == a2 && b1 == b2)
+     }
+ 
+     // r[impl properties.dual-hash-implies-field-equality]
+     // r[verify properties.dual-hash-implies-field-equality]
+-    /// Proof: dual hash equality → field equality.
++    /// Proof: combined hash equality → field equality via exact injectivity.
+     proof fn prove_dual_hash_implies_field_equality(
+         a1: u64, b1: u64,
+         a2: u64, b2: u64,
+     )
+-        requires dual_hash_spec(a1, b1) == dual_hash_spec(a2, b2)
++        requires combine_hashes_spec(a1, b1) == combine_hashes_spec(a2, b2)
+         ensures a1 == a2 && b1 == b2
+     {
+-        dual_hash_collision_resistant(a1, b1, a2, b2);
++        combine_hashes_injective(a1, b1, a2, b2);
+     }
+ 
+     // r[depends properties.quad-encoding-matches-chain-layout]

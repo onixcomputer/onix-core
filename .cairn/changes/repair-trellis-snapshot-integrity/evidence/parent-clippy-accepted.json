@@ -1,0 +1,18 @@
+{
+  "at": "2026-10-17T21:58:30.123Z",
+  "finished_at": "2026-10-17T21:58:55.095Z",
+  "argv": [
+    "cargo",
+    "clippy",
+    "--offline",
+    "--all-targets",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "stdout_log": "parent-clippy-accepted.log",
+  "source_manifest": "final-proof-inputs.json",
+  "summaries": []
+}

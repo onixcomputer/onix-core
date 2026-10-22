@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-17T21:49:18.643Z",
+  "finished_at": "2026-10-17T21:49:18.886Z",
+  "argv": [
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-snapshot-integrity-20261017T211824Z/bin/check-proof-gap-inventory"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "stdout_log": "parent-check-proof-gap-inventory.log",
+  "source_manifest": "accepted-proof-inputs.json",
+  "summaries": []
+}

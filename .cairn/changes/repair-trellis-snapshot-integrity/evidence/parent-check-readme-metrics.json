@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-17T21:56:27.459Z",
+  "finished_at": "2026-10-17T21:56:27.483Z",
+  "argv": [
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-snapshot-integrity-20261017T211824Z/bin/check-readme-metrics"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "stdout_log": "parent-check-readme-metrics.log",
+  "source_manifest": "final-proof-inputs.json",
+  "summaries": [
+    "✓ README metrics headline static counts are fresh at line 15 (625 modules, 13 trusted/proof-gap boundaries); use --full for command-backed proof/test/requirement counts"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-17T21:49:17.112Z",
+  "finished_at": "2026-10-17T21:49:41.452Z",
+  "argv": [
+    "tracey",
+    "query",
+    "status"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "stdout_log": "parent-tracey-status.log",
+  "source_manifest": "accepted-proof-inputs.json",
+  "summaries": [
+    "Error: Cancelled",
+    "\u001b[2m2026-10-17T21:49:22.197038Z\u001b[0m \u001b[33m WARN\u001b[0m \u001b[2mtracey::daemon::client\u001b[0m\u001b[2m:\u001b[0m daemon client: connect_inner failed \u001b[3melapsed_ms\u001b[0m\u001b[2m=\u001b[0m5057 \u001b[3merror\u001b[0m\u001b[2m=\u001b[0mDaemon failed to start within 5s (last connect error: No such file or directory (os error 2)). Check logs at /home/brittonr/.local/state/tracey/9f6dda0d84519047/daemon.log \u001b[3mcallsite\u001b[0m\u001b[2m=\u001b[0m/home/runner/work/tracey/tracey/crates/tracey/src/daemon/client.rs:50",
+    "\u001b[2m2026-10-17T21:49:37.187681Z\u001b[0m \u001b[33m WARN\u001b[0m \u001b[2mtracey::daemon::client\u001b[0m\u001b[2m:\u001b[0m Daemon PID 3518674 remained alive but socket \"/home/brittonr/.local/state/tracey/9f6dda0d84519047/daemon.sock\" stayed unavailable for 14s (last error: No such file or directory (os error 2))",
+    "\u001b[2m2026-10-17T21:49:37.188934Z\u001b[0m \u001b[33m WARN\u001b[0m \u001b[2mtracey::daemon::client\u001b[0m\u001b[2m:\u001b[0m Daemon PID 3518674 alive but socket unavailable (connect error: No such file or directory (os error 2)); removing endpoint+pid and restarting"
+  ]
+}

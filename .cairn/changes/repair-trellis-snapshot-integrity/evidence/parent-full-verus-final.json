@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-17T21:55:32.324Z",
+  "finished_at": "2026-10-17T21:57:01.467Z",
+  "argv": [
+    "bash",
+    "/home/brittonr/git/OnixResearch/trellis/scripts/verus.sh",
+    "/home/brittonr/git/OnixResearch/trellis/src/lib.rs",
+    "--rlimit",
+    "20",
+    "--triggers-mode",
+    "silent"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "stdout_log": "parent-full-verus-final.log",
+  "source_manifest": "final-proof-inputs.json",
+  "summaries": [
+    "verification results:: 11148 verified, 0 errors"
+  ]
+}

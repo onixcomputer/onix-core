@@ -1,0 +1,13 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--offline"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "source_manifest": "final-proof-inputs.json",
+  "observed": "test safe_snapshot_replication::tests::rejects_high_bit_component_tampering ... ok",
+  "full_log": "parent-full-cargo-test-accepted.log",
+  "meaning": "The real replication facade accepts the original record but rejects independently changed high-bit data and metadata under its original commitment."
+}

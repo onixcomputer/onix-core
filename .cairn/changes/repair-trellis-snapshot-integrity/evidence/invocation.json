@@ -1,0 +1,21 @@
+{
+  "argv": [
+    "/run/current-system/sw/bin/opencode",
+    "run",
+    "--pure",
+    "--dir",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-snapshot-integrity-20261017T211824Z/work",
+    "--title",
+    "snapshot-integrity-real-repair",
+    "--model",
+    "nemotron/nemotron-3.5-super-vl",
+    "--agent",
+    "worker",
+    "--format",
+    "json",
+    "Read context.json, then repair the recorded real snapshot-integrity defect. The intentionally authorized API is an exact allocation-free u128 pair commitment, without the previous trusted bridge or impossible axiom. Migrate direct proof consumers in the allowed files, preserve all meaningful field-binding/tamper contracts, and use existing Verus bit_vector packing proof patterns. Turn the existing discarded tamper outcomes into assertions. Run ./verify, address actual errors, and write findings.md with exact verified scope and limitations. Do not claim cryptographic authentication or full-corpus/runtime acceptance from the module verifier."
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis/target/nemotron-snapshot-integrity-20261017T211824Z/work",
+  "timeout_seconds": 1800,
+  "endpoint": "http://127.0.0.1:18000/v1"
+}

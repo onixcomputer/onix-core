@@ -1,0 +1,7 @@
+{
+  "host": "spark-e442.local",
+  "at": "2026-10-17T21:18:56.505Z",
+  "stdout": "e25008c5bcec14107094cb9ff9937a866f5ef11d2a488b5c36545c5d88b57749\nContainer launched; model loading/compilation is not yet API readiness.\nLogs: docker logs --follow onix-nemotron35\nReadiness: curl --fail http://127.0.0.1:8000/v1/models\n",
+  "stderr": "",
+  "exit": 0
+}

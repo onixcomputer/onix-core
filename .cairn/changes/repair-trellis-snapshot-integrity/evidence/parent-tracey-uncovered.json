@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-17T21:49:41.452Z",
+  "finished_at": "2026-10-17T21:49:41.458Z",
+  "argv": [
+    "tracey",
+    "query",
+    "uncovered"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "stdout_log": "parent-tracey-uncovered.log",
+  "source_manifest": "accepted-proof-inputs.json",
+  "summaries": []
+}

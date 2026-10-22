@@ -1,0 +1,16 @@
+{
+  "at": "2026-10-17T21:49:18.886Z",
+  "finished_at": "2026-10-17T21:49:19.136Z",
+  "argv": [
+    "rustc",
+    "--edition=2021",
+    "/home/brittonr/git/OnixResearch/trellis/scripts/check-module-index.rs",
+    "-o",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-snapshot-integrity-20261017T211824Z/bin/check-module-index"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "stdout_log": "parent-check-module-index-build.log",
+  "source_manifest": "accepted-proof-inputs.json",
+  "summaries": []
+}

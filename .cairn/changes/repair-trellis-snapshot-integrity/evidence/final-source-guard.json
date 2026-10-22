@@ -1,0 +1,16 @@
+{
+  "at": "2026-10-17T22:00:58.602Z",
+  "proof_source_manifest": "final-proof-inputs.json",
+  "checked_inputs": 814,
+  "rust_source_files": 810,
+  "changed_from_baseline": [
+    "src/lib.rs",
+    "src/safe_snapshot_replication.rs",
+    "src/properties.rs",
+    "src/snapshot_integrity.rs",
+    "src/serialize_inj.rs",
+    "src/proof_gap_boundary_audit.rs"
+  ],
+  "changed_after_full_proof": [],
+  "attribution": "Baseline differences are reported, not attributed; existing/intervening changes outside the exact repair edit ranges were retained."
+}

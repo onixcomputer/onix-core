@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-17T21:51:03.856Z",
+  "finished_at": "2026-10-17T21:51:04.090Z",
+  "argv": [
+    "cargo",
+    "run",
+    "--offline",
+    "--quiet",
+    "--manifest-path",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-snapshot-integrity-20261017T211824Z/runtime-smoke/Cargo.toml"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "stdout_log": "parent-runtime-smoke-final.log",
+  "source_manifest": "accepted-proof-inputs.json",
+  "summaries": []
+}

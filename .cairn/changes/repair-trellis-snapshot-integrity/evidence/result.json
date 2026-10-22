@@ -1,0 +1,145 @@
+{
+  "at": "2026-10-17T22:06:10.480Z",
+  "change": "repair-trellis-snapshot-integrity",
+  "outcome": "Accepted after independent correction of the rejected actual model candidate",
+  "implementation": {
+    "source": "src/snapshot_integrity.rs",
+    "combined_hash_type": "u128",
+    "definition": "(data_hash as u128) | ((meta_hash as u128) << 64)",
+    "public_api": [
+      "combine_hashes",
+      "combine_hashes_spec",
+      "combine_hashes_injective"
+    ],
+    "retired_api": "dual_hash*",
+    "snapshot_trust_sites_removed": 2,
+    "remaining_external_body_sites": 13,
+    "remaining_boundary_files": 5,
+    "remaining_exec_bridges": 8,
+    "remaining_proof_assumptions": 5
+  },
+  "model": {
+    "actual_attempt": true,
+    "accepted_autonomous_repair": false,
+    "summary": "model-attempt-summary.json",
+    "raw_transcript": "transcript.jsonl",
+    "model_calls": [
+      {
+        "actor": "actual Nemotron tool call",
+        "receipt": "model-verify-1792272645561558139.json",
+        "exit": 1,
+        "summaries": [
+          "verification results:: 11 verified, 6 errors (partial verification with `--verify-*`)"
+        ]
+      },
+      {
+        "actor": "actual Nemotron tool call",
+        "receipt": "model-verify-1792272763087404940.json",
+        "exit": 1,
+        "summaries": [
+          "verification results:: 11 verified, 8 errors (partial verification with `--verify-*`)"
+        ]
+      }
+    ],
+    "independent_corrected_module_receipt": "model-verify-1792273214718066834.json"
+  },
+  "source": {
+    "baseline": "input-identities.json",
+    "initial_acceptance": "accepted-proof-inputs.json",
+    "final_acceptance": "final-proof-inputs.json",
+    "final_identity_guard": "final-source-guard.json",
+    "checked_inputs": 814,
+    "rust_source_files": 810,
+    "changed_after_acceptance": [],
+    "published_document_identities": "published-inputs.json"
+  },
+  "verification": {
+    "verus": {
+      "verified": 11148,
+      "errors": 0,
+      "receipt": "parent-full-verus-final.json"
+    },
+    "cargo": {
+      "library_tests": 5226,
+      "total_tests_across_reported_targets": 5287,
+      "failed": 0,
+      "summaries": [
+        "test result: ok. 5226 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.83s",
+        "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 58.61s",
+        "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+        "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s"
+      ],
+      "receipt": "parent-full-cargo-test-accepted.json"
+    },
+    "clippy": {
+      "warnings_denied": true,
+      "all_targets": true,
+      "receipt": "parent-clippy-accepted.json"
+    },
+    "tracey": {
+      "requirements": 2270,
+      "uncovered": 0,
+      "untested": 0,
+      "receipts": [
+        "parent-tracey-uncovered.json",
+        "parent-tracey-untested.json"
+      ]
+    },
+    "inventory": "parent-check-proof-gap-inventory.json",
+    "module_catalog": "parent-check-module-index.json",
+    "public_annotation_coverage": "parent-check-coverage.json",
+    "public_postconditions": "parent-check-ensures.json",
+    "readme_static_counts": "parent-check-readme-metrics.json",
+    "native_cairn": {
+      "trellis": "parent-cairn-trellis-final.json",
+      "onix_core": "parent-cairn-onix-final.json",
+      "both_semantically_valid": true
+    }
+  },
+  "runtime": {
+    "observation": {
+      "boundary_pairs": 16,
+      "component_tamper_rejections": 2048,
+      "commitment_tamper_rejections": 2048,
+      "former_collision_rejected": true,
+      "matching_chain_accepted": true,
+      "wrong_chain_rejected": true,
+      "recomputed_record_verifies_without_authentication_claim": true
+    },
+    "driver": "runtime-smoke-source.json",
+    "receipt": "parent-runtime-smoke-final.json",
+    "module_sha256": "7fae4c637d8be9b1d74eac668f2c89ac273563dcc04b19fcf7a861fe2b2acec5",
+    "consumer_regression_before": "consumer-regression-before.json",
+    "consumer_regression_after": "consumer-regression-after.json"
+  },
+  "restoration": {
+    "receipt": "restoration.json",
+    "all_original_container_identities_and_definitions_match": true,
+    "workers_started_before_head": true,
+    "real_completion": "42",
+    "owned_model_removed": true,
+    "owned_tunnel_closed": true,
+    "tunnel_receipt": "resource-cleanup.json"
+  },
+  "preserved_scope": [
+    "Unrelated existing/intervening changes retained; the final proof and runtime-test manifests bind the actual checked working tree.",
+    "Immutable release consumer profile and its locked proof artifacts were not republished or claimed to validate this working tree.",
+    "Historical campaign evidence and rejection records remain historical, not rewritten as accepted model output."
+  ],
+  "limits": [
+    "Exact supplied-hash consistency, not cryptographic collision resistance or payload authentication.",
+    "Recomputing a matching commitment may produce another valid record; the chain entry point only additionally checks the supplied expected chain anchor.",
+    "Remaining architectural trust assumptions and the out-of-model version-comparison fallback are unchanged.",
+    "No training, no permanent Spark service/configuration change, and no claim to reproduce Reasonable benchmark results."
+  ],
+  "recovered_failures": {
+    "initial_cargo_toolchain": "parent-full-cargo-test.json",
+    "initial_strict_lint": "parent-clippy-final.json",
+    "initial_cairn_task_linkage": "parent-cairn-trellis.json",
+    "tracey_daemon_startup": "parent-tracey-status.json"
+  },
+  "cleanup": "scratch-cleanup.json"
+}

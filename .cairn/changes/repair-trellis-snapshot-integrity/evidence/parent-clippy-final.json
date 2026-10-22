@@ -1,0 +1,22 @@
+{
+  "at": "2026-10-17T21:53:46.459Z",
+  "finished_at": "2026-10-17T21:54:32.759Z",
+  "argv": [
+    "cargo",
+    "clippy",
+    "--offline",
+    "--all-targets",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 101,
+  "stdout_log": "parent-clippy-final.log",
+  "source_manifest": "accepted-proof-inputs.json",
+  "summaries": [
+    "error: default numeric fallback might occur",
+    "error: default numeric fallback might occur",
+    "error: could not compile `verified-logic` (lib test) due to 2 previous errors"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "at": "2026-10-17T21:49:20.898Z",
+  "finished_at": "2026-10-17T21:49:21.052Z",
+  "argv": [
+    "rustc",
+    "--edition=2021",
+    "/home/brittonr/git/OnixResearch/trellis/scripts/check-readme-metrics.rs",
+    "-o",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-snapshot-integrity-20261017T211824Z/bin/check-readme-metrics"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "stdout_log": "parent-check-readme-metrics-build.log",
+  "source_manifest": "accepted-proof-inputs.json",
+  "summaries": []
+}

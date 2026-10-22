@@ -1,0 +1,33 @@
+{
+  "at": "2026-10-17T21:27:18.095052+00:00",
+  "response": {
+    "object": "list",
+    "data": [
+      {
+        "id": "nemotron-3.5-super-vl",
+        "object": "model",
+        "created": 1792272438,
+        "owned_by": "vllm",
+        "root": "/models/base",
+        "parent": null,
+        "max_model_len": 65536,
+        "permission": [
+          {
+            "id": "modelperm-8f4220ef7e1f0f62",
+            "object": "model_permission",
+            "created": 1792272438,
+            "allow_create_engine": false,
+            "allow_sampling": true,
+            "allow_logprobs": true,
+            "allow_search_indices": false,
+            "allow_view": true,
+            "allow_fine_tuning": false,
+            "organization": "*",
+            "group": null,
+            "is_blocking": false
+          }
+        ]
+      }
+    ]
+  }
+}

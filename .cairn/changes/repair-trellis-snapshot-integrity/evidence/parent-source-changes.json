@@ -1,0 +1,7 @@
+{
+  "src/safe_snapshot_replication.rs": {
+    "before_sha256": "e2467a61c512c75ee0d953ca6da6cbd670c140416baf5753ce65996390ba69af",
+    "after_sha256": "9361a2e0905ad3f788663c65ebf2d40c5719e841a620cdae51ccc00b405f45cc",
+    "reason": "Permanent failing-before/passing-after consumer regression for independent high-bit data/metadata tampering"
+  }
+}

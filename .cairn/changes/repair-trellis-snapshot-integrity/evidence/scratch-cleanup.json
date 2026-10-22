@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-17T22:05:07.947Z",
+  "root": "/home/brittonr/git/OnixResearch/trellis/target/nemotron-snapshot-integrity-20261017T211824Z",
+  "removed": [
+    "work",
+    "original",
+    "runtime-smoke",
+    "bin",
+    "client-state",
+    "restore-deepseek.py",
+    "run-model.py",
+    "source-bound-verifier.py",
+    "invocation.json",
+    "original-containers-private.json"
+  ],
+  "retained": "tmp/ tool cache only; preserve the temporary-directory parent inherited by the auto-started shared Tracey daemon. No executable repair driver, model worktree, private container backup, or isolated client state remains under this scratch root.",
+  "runtime_and_verifier_sources_preserved_as_data": [
+    "runtime-smoke-source.json",
+    "verifier-wrapper-source.json"
+  ],
+  "baseline_sources": "baseline-source/",
+  "rejected_model_candidate": "model-candidate/"
+}

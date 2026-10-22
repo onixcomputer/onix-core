@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-17T21:48:11.150Z",
+  "finished_at": "2026-10-17T21:49:39.749Z",
+  "argv": [
+    "cargo",
+    "test",
+    "--offline"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 101,
+  "stdout_log": "parent-full-cargo-test.log",
+  "source_manifest": "accepted-proof-inputs.json",
+  "summaries": [
+    "error: linker `clang` not found",
+    "error: could not compile `verified-logic` (bin \"repo-index\" test) due to 1 previous error",
+    "warning: build failed, waiting for other jobs to finish...",
+    "error: could not compile `verified-logic` (lib test) due to 1 previous error"
+  ]
+}

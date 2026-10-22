@@ -1,0 +1,33 @@
+{
+  "at": "2026-10-17T21:56:27.462Z",
+  "finished_at": "2026-10-17T21:56:27.986Z",
+  "argv": [
+    "nix",
+    "run",
+    "git+file:///home/brittonr/git/OnixResearch/cairn#cairn",
+    "--",
+    "validate",
+    "--root",
+    "/home/brittonr/git/OnixResearch/trellis",
+    "--policy",
+    "/home/brittonr/git/OnixResearch/cairn/cairn-policy/generated/cairn-policy.json"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "stdout_log": "parent-cairn-trellis.log",
+  "source_manifest": "final-proof-inputs.json",
+  "summaries": [],
+  "validation_valid": false,
+  "validation_issues": [
+    "cairn.gate.validation: /home/brittonr/git/OnixResearch/trellis/.cairn/changes/repair-snapshot-integrity-commitment/tasks.md: unknown requirement reference r[snapshot-integrity.meta-tamper-detected]",
+    "cairn.gate.validation: /home/brittonr/git/OnixResearch/trellis/.cairn/changes/repair-snapshot-integrity-commitment/tasks.md: unknown requirement reference r[snapshot-integrity.verify-with-chain-hash]",
+    "cairn.gate.validation: /home/brittonr/git/OnixResearch/trellis/.cairn/changes/repair-snapshot-integrity-commitment/tasks.md:14: task missing known requirement reference",
+    "cairn.gate.validation: /home/brittonr/git/OnixResearch/trellis/.cairn/changes/repair-snapshot-integrity-commitment/tasks.md:9: task missing known requirement reference",
+    "cairn.gate.validation: repair-snapshot-integrity-commitment: 6 task(s) missing concurrency markers",
+    "cairn.workflow.profile.artifact: tasks is blocked",
+    "lifecycle_validation.task_substance.linkage: /home/brittonr/git/OnixResearch/trellis/.cairn/changes/repair-snapshot-integrity-commitment/tasks.md:14: lifecycle_validation.task_substance.linkage: checkbox task requires a known r[...] reference or a valid dependency marker",
+    "lifecycle_validation.task_substance.linkage: /home/brittonr/git/OnixResearch/trellis/.cairn/changes/repair-snapshot-integrity-commitment/tasks.md:9: lifecycle_validation.task_substance.linkage: checkbox task requires a known r[...] reference or a valid dependency marker",
+    "repair-snapshot-integrity-commitment: 6 task(s) missing concurrency markers"
+  ],
+  "receipt_hash": "0761763092dbd999f0f12b569e1691bb3f6961e5dba3b08bd383e6811b7362eb"
+}

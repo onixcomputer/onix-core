@@ -1,0 +1,16 @@
+{
+  "at": "2026-10-17T21:49:17.783Z",
+  "finished_at": "2026-10-17T21:49:17.979Z",
+  "argv": [
+    "rustc",
+    "--edition=2021",
+    "/home/brittonr/git/OnixResearch/trellis/scripts/check-ensures.rs",
+    "-o",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-snapshot-integrity-20261017T211824Z/bin/check-ensures"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "stdout_log": "parent-check-ensures-build.log",
+  "source_manifest": "accepted-proof-inputs.json",
+  "summaries": []
+}

@@ -1,0 +1,10 @@
+{
+  "argv": ["nix", "eval", "--raw", ".#verus.outPath", "--no-write-lock-file"],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "environment": {"NIX_CONFIG": "min-free = 0\nmax-free = 0"},
+  "exit": 0,
+  "out_path": "/nix/store/cb02jr7r1a2k8k2hlahmk8c90421czvq-octet-production-verus-0.2026.05.17.e479cce",
+  "matches_model_and_parent_verifier": true,
+  "initial_attempt": "Default workstation min-free triggered auto-GC and waited for the big garbage collector lock; timed out after 180 seconds. Resolving with auto-GC thresholds disabled succeeded.",
+  "compiler_for_runtime_checks": {"cargo": "1.96.0-nightly (cbb9bb8bd 2026-03-13)", "rustc": "1.96.0-nightly (ac7f9ec7d 2026-03-20)"}
+}

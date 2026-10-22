@@ -1,0 +1,121 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "share": "disabled",
+  "autoupdate": false,
+  "snapshot": false,
+  "plugin": [],
+  "mcp": {},
+  "lsp": false,
+  "formatter": false,
+  "instructions": [],
+  "enabled_providers": [
+    "nemotron"
+  ],
+  "model": "nemotron/nemotron-3.5-super-vl",
+  "small_model": "nemotron/nemotron-3.5-super-vl",
+  "default_agent": "worker",
+  "permission": {
+    "*": "deny",
+    "read": {
+      "*": "deny",
+      ".": "allow",
+      "src": "allow",
+      "src/**": "allow",
+      "context.json": "allow",
+      "findings.md": "allow"
+    },
+    "edit": {
+      "*": "deny",
+      "src/snapshot_integrity.rs": "allow",
+      "src/properties.rs": "allow",
+      "src/serialize_inj.rs": "allow",
+      "findings.md": "allow"
+    },
+    "glob": "allow",
+    "grep": "allow",
+    "external_directory": "deny",
+    "bash": {
+      "*": "deny",
+      "./verify": "allow",
+      "bash ./verify": "allow"
+    }
+  },
+  "compaction": {
+    "auto": false
+  },
+  "provider": {
+    "nemotron": {
+      "npm": "@ai-sdk/openai-compatible",
+      "env": [],
+      "name": "Local Nemotron repair",
+      "options": {
+        "baseURL": "http://127.0.0.1:18000/v1",
+        "timeout": 600000
+      },
+      "models": {
+        "nemotron-3.5-super-vl": {
+          "name": "nemotron-3.5-super-vl",
+          "reasoning": true,
+          "interleaved": {
+            "field": "reasoning_content"
+          },
+          "temperature": true,
+          "tool_call": true,
+          "modalities": {
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 65536,
+            "output": 8192
+          },
+          "options": {
+            "chat_template_kwargs": {
+              "enable_thinking": true,
+              "medium_effort": true
+            }
+          }
+        }
+      }
+    }
+  },
+  "agent": {
+    "worker": {
+      "mode": "primary",
+      "prompt": "You are the actual local Nemotron repair worker. Work only in the isolated current snapshot. Read context.json first. Edit only src/snapshot_integrity.rs, src/properties.rs, src/serialize_inj.rs and findings.md. Shell permission allows exactly ./verify or bash ./verify, no arguments or other commands. No new assumption, admission, external_body, unsafe, exemption, attribute, narrower input domain, weakened meaningful postcondition, or fake check result. Do not use other agents/providers/plugins/web. This task intentionally authorizes replacing the impossible narrow combiner API/runtime; it does NOT authorize deleting valid proofs or manufacturing failures. Preserve unrelated source. Use bounded read offsets and existing proof patterns. Run ./verify and report actual output; parent independently decides acceptance.",
+      "temperature": 1,
+      "top_p": 0.95,
+      "steps": 24,
+      "permission": {
+        "*": "deny",
+        "read": {
+          "*": "deny",
+          ".": "allow",
+          "src": "allow",
+          "src/**": "allow",
+          "context.json": "allow",
+          "findings.md": "allow"
+        },
+        "edit": {
+          "*": "deny",
+          "src/snapshot_integrity.rs": "allow",
+          "src/properties.rs": "allow",
+          "src/serialize_inj.rs": "allow",
+          "findings.md": "allow"
+        },
+        "glob": "allow",
+        "grep": "allow",
+        "external_directory": "deny",
+        "bash": {
+          "*": "deny",
+          "./verify": "allow",
+          "bash ./verify": "allow"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-17T21:49:17.359Z",
+  "finished_at": "2026-10-17T21:49:17.782Z",
+  "argv": [
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-snapshot-integrity-20261017T211824Z/bin/check-coverage"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "stdout_log": "parent-check-coverage.log",
+  "source_manifest": "accepted-proof-inputs.json",
+  "summaries": [
+    "✓ all pub fns have r[impl] annotations"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-17T21:38:37.873Z",
+  "sha256": {
+    "src/snapshot_integrity.rs": "9a01e0e5ee659a4e76e9286f929e2bbac08da0974ac9af332479a01d6fb6f463",
+    "src/properties.rs": "b4ed29878720a25c8a6aca31c22d2052351ec159d4f2a1e3e5030adeb9163893",
+    "src/serialize_inj.rs": "dec7d6be8b3b1f0f23d33378c30770f1891fde66e5957d1041c4cc438dbe9d47"
+  },
+  "accepted_without_parent_corrections": false,
+  "reason": "Both actual model verifier calls failed; final candidate changed after the last failed call, omitted Tracey markers, and did not create findings.md."
+}

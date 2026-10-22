@@ -1,0 +1,34 @@
+{
+  "attempt": {
+    "started_at": "2026-10-17T21:20:41.759648+00:00",
+    "finished_at": "2026-10-17T21:37:46.817092+00:00",
+    "exit": 0,
+    "timed_out": false,
+    "transcript": "transcript.jsonl",
+    "scope": "Actual model worker; parent acceptance still required"
+  },
+  "model_calls": [
+    {
+      "actor": "actual Nemotron tool call",
+      "receipt": "model-verify-1792272645561558139.json",
+      "exit": 1,
+      "summaries": [
+        "verification results:: 11 verified, 6 errors (partial verification with `--verify-*`)"
+      ]
+    },
+    {
+      "actor": "actual Nemotron tool call",
+      "receipt": "model-verify-1792272763087404940.json",
+      "exit": 1,
+      "summaries": [
+        "verification results:: 11 verified, 8 errors (partial verification with `--verify-*`)"
+      ]
+    }
+  ],
+  "model_candidate_accepted": false,
+  "candidate_identity_receipt": "model-candidate-identities.json",
+  "final_model_candidate_not_reverified": true,
+  "independent_correction_actor": "Parent assistant, after preserving the rejected model candidate",
+  "independent_corrected_module_receipt": "model-verify-1792273214718066834.json",
+  "note": "The third wrapper receipt retains a model-verify filename but was invoked by the parent only after independently correcting the model proof and restoring required Tracey markers. It is not an additional successful model tool call."
+}

@@ -1,0 +1,15 @@
+Now I have a full picture. Let me rewrite `snapshot_integrity.rs`:
+
+
+
+Now update `properties.rs`:
+
+
+
+The bit_vector proofs need to connect to the combined equality. Let me rewrite the injectivity proof correctly:
+
+
+
+`u128` bit_vector may not be supported. Let me try the alloc_bitmap-style contrapositive with u128 bit_vector:
+
+

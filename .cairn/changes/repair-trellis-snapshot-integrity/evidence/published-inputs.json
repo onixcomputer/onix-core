@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-17T22:05:07.777Z",
+  "root": "/home/brittonr/git/OnixResearch/trellis",
+  "sha256": {
+    "README.md": "3dc93f54a6d6fe7acd05f7b6a5cccf2594969bf32a4afef681d145a1884fdfa4",
+    "CHANGELOG.md": "451186f7942b83697068808f18a2a7d28f97bceb9651c8dadcbe7080198a23e8",
+    "docs/requirements.md": "db329e5c5b9cff579ba6fa3937cd0eac90af4c3c21f2557fb1520c01d481ec4b",
+    "docs/proof-gap-sites.tsv": "2a01e3041865d8fbe23eb13399e929e83130c09a67cc28ba40715900a6c2be8f",
+    "docs/module-index.md": "8bb28eb55fcb0c8921528883dc7497822d08159039469fec2477126c6a42d745",
+    "scripts/check-proof-gap-inventory.rs": "415338512995c1e063e23d664f9a94aecf65551a9eca2705f1708654704ea8e8",
+    ".cairn/specs/composite-primitives/spec.md": "d9ba6d7e4ac3d4afc4211fa7868fd79cfc62615331391a334d04669c007f3d3e",
+    ".cairn/specs/verification-gaps/spec.md": "9bd5a4e46e81b834a9de62bfc8739979a1704375863ed747d4042c475ad2dde9",
+    ".cairn/changes/repair-snapshot-integrity-commitment/proposal.md": "22cc16f64f965c052926891813d64a80bea5cd5f451923c38e10b277c3ebbf1d",
+    ".cairn/changes/repair-snapshot-integrity-commitment/design.md": "76caa02b775f9ec480883d044e9c2e04bfbbcb1ab19790ecace19f6aeb90d43c",
+    ".cairn/changes/repair-snapshot-integrity-commitment/metadata.json": "f1c84c229cb6bb46ec4c6a5a47733891afaf9c5c4827380047a620af2b854521",
+    ".cairn/changes/repair-snapshot-integrity-commitment/tasks.md": "e48eb90e42767d913cc1e6ddb10102bb742872a98b15378330fb11b38f996087",
+    ".cairn/changes/repair-snapshot-integrity-commitment/specs/snapshot-integrity/spec.md": "7f58f5cca9fb1e9823afd02af5026906a1ff8d53b9a625ca44a63c6e871e667b"
+  },
+  "onix_usage_document": {
+    "path": "docs/nemotron-spark.md",
+    "sha256": "29ae745690a76221b55fad8e59869270229a25cad45a567c8a6c5af56d40450b"
+  }
+}
