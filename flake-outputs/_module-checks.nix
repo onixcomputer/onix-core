@@ -442,8 +442,7 @@ let
   niks3SemanticPositiveErrors = niks3SettingsTests.positiveErrors;
   niks3MissingNegativeCases = niks3SettingsTests.missingNegativeCases;
 
-  # Contract validation for the llm-agents `packages` setting
-  # (r[verify onix.hermes_agent.validation.inventory]).
+  # Contract validation for the llm-agents `packages` setting.
   llmAgentsPositiveErrors = llmAgentsValidation.role_positive;
   llmAgentsNegativeErrors = llmAgentsValidation.role_negative;
   expectedLlmAgentsNegativeFields = [
@@ -1100,8 +1099,6 @@ in
       touch $out
     '';
 
-    # r[verify onix.hermes_agent.validation.negative]
-    # r[verify onix.hermes_agent.validation.inventory]
     llm-agents-settings = pkgs.runCommand "llm-agents-settings" { } ''
       ${lib.optionalString (llmAgentsPositiveErrors != [ ]) ''
         echo "Valid llm-agents settings produced unexpected errors:"
