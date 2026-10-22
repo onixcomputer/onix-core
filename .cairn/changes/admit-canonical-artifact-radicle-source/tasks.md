@@ -6,3 +6,5 @@
 - [ ] [serial] Deploy only required authorized serving configurations, synchronize signed public state and reconcile exact sets without node-key changes. r[onix.radicle_source_admission.deployment]
 - [ ] [serial] Verify fresh anonymous exact-object readback and archive identity for both SHAs plus private/unknown/write rejection. r[onix.radicle_source_admission.probes]
 - [ ] [serial] Emit observed typed admission evidence, accept specification and archive only if all deployment/acquisition gates pass. r[onix.radicle_source_admission.evidence]
+
+Progress 2026-10-21: the fleet deploy switched `aspen1` and `aspen3`, both reconcile `desired=11` with no runtime overrides, and fresh anonymous HTTPS probes matched both exact objects and every rejection case (`evidence/fleet-deploy-observations-2026-10-21.json`). Acceptance still needs the `britton-desktop` replica switch, signed-state import verification, and fresh probes at that time.

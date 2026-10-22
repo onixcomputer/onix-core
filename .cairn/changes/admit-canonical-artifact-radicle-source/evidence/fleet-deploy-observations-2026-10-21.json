@@ -1,0 +1,67 @@
+{
+  "schema": "onix.radicle-canonical-artifact.partial-observation.v1",
+  "observed_at": "2026-10-22T03:31:40Z",
+  "status": "partial-deployment-observed",
+  "admission": "not-accepted",
+  "blocker": "britton-desktop replica not switched: the host waits for an owner-approved Kiln gen2 canary maintenance window",
+  "roles": [
+    {
+      "host": "aspen1",
+      "deployment": "switched-2026-10-21",
+      "observed_closure": "/nix/store/w8kgcd8dgb4ad6a4swhs34prcgb3gavg-nixos-system-aspen1-26.11.20261020.5adc508",
+      "runtime_overrides": "absent (/etc/systemd/system.control empty)",
+      "reconcile": "2026-10-21T23:27:59-04:00 reconciled Radicle seeding policy: removed=0, added=0, desired=11",
+      "storage": "rad:z25ySMy8Hh3HpsxP5zcYoYgaMBi99 present"
+    },
+    {
+      "host": "aspen3",
+      "deployment": "switched-2026-10-21",
+      "observed_closure": "/nix/store/6kqnscrabbkrigfgvdyirhhz0v9gv15p-nixos-system-aspen3-26.11.20261020.5adc508",
+      "runtime_overrides": "absent (/etc/systemd/system.control empty)",
+      "reconcile": "2026-10-21T23:30:40-04:00 reconciled Radicle seeding policy: removed=0, added=0, desired=11",
+      "storage": "rad:z25ySMy8Hh3HpsxP5zcYoYgaMBi99 present"
+    },
+    {
+      "host": "britton-desktop",
+      "deployment": "not-performed"
+    }
+  ],
+  "anonymous_https_probes": {
+    "origin": "https://git.onix.computer/z25ySMy8Hh3HpsxP5zcYoYgaMBi99.git",
+    "credentials": "none (credential.helper unset, GIT_TERMINAL_PROMPT=0)",
+    "default_main": "eb85ddcd9d5c782044a81ed980c1824438bb46c1",
+    "objects": [
+      {
+        "revision": "e41340bec587b6d049b5cc518ec7db925dde84be",
+        "fetch": "git fetch --depth=1 <origin> <revision>",
+        "object_type": "commit",
+        "archive": "git archive --format=tar",
+        "archive_bytes": 552960,
+        "archive_blake3": "8fc65f3d7968d76af419f08ac972955514c8256f8aa5ed90815d8bdcced28113"
+      },
+      {
+        "revision": "c932138d880ddf4c2967f4c024b489b5c0022bf1",
+        "fetch": "git fetch --depth=1 <origin> <revision>",
+        "object_type": "commit",
+        "archive": "git archive --format=tar",
+        "archive_bytes": 849920,
+        "archive_blake3": "3878cdb892bfd4a8eac5779023ba32871d61bc3e8ec7c9ef5f7ab790a8acfeb9"
+      }
+    ],
+    "upload_pack_advertisement": "200",
+    "private_rid": "404 (rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg)",
+    "unknown_rid": "404",
+    "unknown_ref": "rejected: upload-pack: not our ref",
+    "receive_pack": "404",
+    "wrong_service": "404",
+    "endpoint_root": "404"
+  },
+  "non_claims": [
+    "admission-accepted",
+    "replica-convergence",
+    "signed-state-import",
+    "britton-desktop-deployment",
+    "artifact-correctness",
+    "indefinite-availability"
+  ]
+}
