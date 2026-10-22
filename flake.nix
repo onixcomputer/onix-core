@@ -183,7 +183,7 @@
       };
     };
     niri = {
-      url = "github:brittonr/niri";
+      url = "github:niri-wm/niri";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     wl-walls = {

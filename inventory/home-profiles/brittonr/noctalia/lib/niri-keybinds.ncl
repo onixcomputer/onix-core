@@ -47,7 +47,6 @@ let valid_actions = [
   "close-window",
   "consume-or-expel-window-left",
   "consume-or-expel-window-right",
-  "fit-workspace-columns",
   "focus-column-left",
   "focus-column-right",
   "focus-monitor-down",
@@ -179,7 +178,6 @@ in
     { key = "%{mod}+%{wm.toggleTabs}", action = "toggle-column-tabbed-display" },
     { key = "%{mod}+%{wm.fullscreen}", action = "fullscreen-window" },
     { key = "%{mod}+%{wm.maxColumn}", action = "maximize-column" },
-    { key = "%{mod}+Shift+%{wm.maxColumn}", action = "fit-workspace-columns" },
     { key = "%{mod}+%{wm.presetWidth}", action = "switch-preset-column-width" },
     { key = "%{mod}+%{wm.overview}", action = "toggle-overview" },
     { key = "%{mod}+Shift+O", action = "power-off-monitors" },
@@ -188,10 +186,6 @@ in
   windowManagementSpawn | Array SpawnBinding = [
     { key = "%{mod}+Y", spawn = ["toggle-sticky-window"] },
     { key = "%{mod}+%{wm.reload}", spawn = ["niri", "msg", "action", "load-config-file"] },
-  ],
-
-  windowManagementRaw | Array RawBinding = [
-    { key = "%{mod}+Control+%{wm.maxColumn}", raw = "fit-workspace-columns grid=true" },
   ],
 
   # --- Focus (vim + arrow variants) ---

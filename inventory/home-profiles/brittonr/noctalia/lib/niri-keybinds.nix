@@ -75,7 +75,6 @@ let
   ];
 
   rawGroups = map (g: data.${g}) [
-    "windowManagementRaw"
     "resize"
   ];
 

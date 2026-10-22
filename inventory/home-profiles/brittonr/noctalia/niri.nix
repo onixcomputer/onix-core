@@ -30,8 +30,7 @@ let
       ;
   };
 
-  # Use niri from our fork with its compatible libdisplay-info version.
-  niriPackage = import ./lib/niri-package.nix { inherit inputs lib pkgs; };
+  niriPackage = inputs.niri.packages.${pkgs.stdenv.hostPlatform.system}.niri;
 
   # Animated mathematical wallpaper (spirographs, attractors, 3D surfaces)
   inherit (inputs.wl-walls.packages.${pkgs.stdenv.hostPlatform.system}) wl-walls wl-walls-ctl;
@@ -177,14 +176,9 @@ let
 
                               prefer-no-csd
 
-                              overview {
-                                  workspace-gap 0.0
-                              }
-
                               layout {
                                   gaps ${toString config.layout.gaps}
                                   center-focused-column "never"
-                                  focus-column-tile "spatial"
                                   preset-column-widths {
                                       ${builtins.concatStringsSep "\n                                  "
                                         (map (w: "proportion ${toString w}") config.layout.presetColumnWidths)

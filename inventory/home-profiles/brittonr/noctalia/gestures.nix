@@ -6,7 +6,7 @@
   ...
 }:
 let
-  niriPackage = import ./lib/niri-package.nix { inherit inputs lib pkgs; };
+  niriPackage = inputs.niri.packages.${pkgs.stdenv.hostPlatform.system}.niri;
   expectedGestureHandlerArgs = 2;
 
   renderLisgdCommand =

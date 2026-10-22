@@ -7,6 +7,7 @@
 }:
 let
   zfsHostId = "81f6943b";
+  niriPackage = inputs.niri.packages.${pkgs.stdenv.hostPlatform.system}.niri;
   amdNpuKernelModule = "amdxdna";
   touchScreenI2cDevice = "i2c-ELAN9008:00";
   hardwareAccessMode = "0666";
@@ -191,9 +192,9 @@ in
       HandleLidSwitchExternalPower = "ignore";
     };
 
-    # Override the greeter tag's Hyprland default with the Niri session used by
-    # the other interactive Niri hosts.
-    greetd.settings.default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd /etc/profiles/per-user/brittonr/bin/niri-session";
+    # Launch the upstream session from the same pinned package used by the
+    # Home Manager compositor service, not a possibly stale user profile.
+    greetd.settings.default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd ${niriPackage}/bin/niri-session";
 
     pipewire.wireplumber.extraConfig = {
       "10-bluez-audio-quality" = {
