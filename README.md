@@ -56,13 +56,18 @@ Unix usernames, or change host-key trust. The implementation is packaged by
 `inventory/home-profiles/brittonr/base/tailscale-ssh-sync.nix`, automatically
 loaded with the existing base Home Manager profile.
 
-The selected artifacts are active on britton-desktop and Aspen3 without a full
-system or Home Manager switch. Each host retains its package GC root and prior
-SSH config target in `~/.local/state/tailscale-ssh-sync/`. A persistent
+Aspen3 runs the feature from its managed generation since the 2026-10-21
+deploy; its temporary drop-in and selected-artifact files were moved to
+`/var/lib/onix-control-handover/20261021-clan-switch/` and
+`~/.local/state/onix-handover-20261021/`.
+
+britton-desktop still runs the selected artifacts without a full system or
+Home Manager switch. It retains the package GC root and prior SSH config
+target in `~/.local/state/tailscale-ssh-sync/`. A persistent
 `home-manager-brittonr.service` drop-in at
 `/etc/systemd/system.control/home-manager-brittonr.service.d/50-tailscale-ssh-sync.conf`
 runs a hash-guarded restore as brittonr after activation of the old generation;
-it leaves newer, custom, or missing configs alone. After a normal managed
+it leaves newer, custom, or missing configs alone. After its next managed
 generation adopts the SSH feature, remove this temporary drop-in, reload the
 system manager, and retire the selected-artifact GC root.
 
