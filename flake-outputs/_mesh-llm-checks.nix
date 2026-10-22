@@ -43,25 +43,17 @@ let
     machineName = "aspen1";
     backendUnit = "docker-diffusion-gemma.service";
   };
-  aspen2QwenServiceName = "llamacpp-server-qwen38-flash-next-aspen2";
-  aspen2QwenBackendUnit = "${aspen2QwenServiceName}.service";
-  aspen2QwenTokenGeneratorName = "${aspen2QwenServiceName}-huggingface";
+  # r[verify onix.mesh_llm.sidecar.research_only]
+  # Aspen2 dropped its Qwen3.8 Flash Next backend and only provides research.
   aspen2Node = mkNode {
     label = "Aspen2";
     machineName = "aspen2";
-
-    backendUnit = aspen2QwenBackendUnit;
+    backendUnit = null;
   };
-  aspen2HasQwenBackend = builtins.hasAttr aspen2QwenServiceName aspen2Node.config.systemd.services;
-  aspen2QwenCommand =
-    if aspen2HasQwenBackend then
-      aspen2Node.config.systemd.services.${aspen2QwenServiceName}.serviceConfig.ExecStart
-    else
-      "";
-  aspen2QwenIsPrivate =
-    lib.hasInfix "--host 127.0.0.1" aspen2QwenCommand && lib.hasInfix "--port 13305" aspen2QwenCommand;
-  aspen2HasQwenTokenGenerator = builtins.hasAttr aspen2QwenTokenGeneratorName aspen2Node.config.clan.core.vars.generators;
-  aspen2LacksLemonade = !(builtins.hasAttr "lemonade" aspen2Node.config.systemd.services);
+  retiredAspen2QwenServiceName = "llamacpp-server-qwen38-flash-next-aspen2";
+  aspen2KeepsRetiredQwen =
+    aspen2Node.config.systemd.services ? ${retiredAspen2QwenServiceName}
+    || aspen2Node.config.clan.core.vars.generators ? "${retiredAspen2QwenServiceName}-huggingface";
   aspen3Node = mkNode {
     label = "Aspen3";
     machineName = "aspen3";
@@ -92,7 +84,19 @@ let
     lib.hasInfix "--model ${proxyActivationModel}" node.command
     && lib.hasInfix "--ctx-size ${toString proxyActivationContextSize}" node.command;
   deniesHostDevices = node: node.service.serviceConfig.PrivateDevices;
-  ordersAfterBackend = node: builtins.elem node.backendUnit node.service.after;
+  ordersAfterBackend =
+    node: node.backendUnit == null || builtins.elem node.backendUnit node.service.after;
+  inferenceNodes = lib.filter (node: node.backendUnit != null) meshNodes;
+  # The rendered plugin configuration, carrying the command's store context.
+  meshConfigFile =
+    node:
+    let
+      words = lib.splitString " " node.command;
+      index = lib.lists.findFirstIndex (word: word == "--config") null words;
+    in
+    lib.addContextFrom node.command (
+      if index == null then "/missing-mesh-llm-config" else builtins.elemAt words (index + 1)
+    );
   invitesGeneratorName = "${serviceName}-invites";
   meshNodeNames = lib.sort lib.lessThan (map (node: node.machineName) meshNodes);
   # A joiner loads an invite for every other node: joiners first, in name order, then the seed.
@@ -111,7 +115,8 @@ let
     lib.hasInfix (lib.concatMapStringsSep " " (peer: "--join-file %d/invite-${peer}") (
       expectedInvitePeers node
     )) node.command
-    && lib.length (lib.splitString "--join-file" node.command) - 1
+    &&
+      lib.length (lib.splitString "--join-file" node.command) - 1
       == lib.length (expectedInvitePeers node);
   hasInviteGenerator =
     node:
@@ -240,6 +245,26 @@ let
   dgxFixtureRejectsMissingBackend = lib.any (
     item: !item.assertion && lib.hasInfix "requires backendUnit" item.message
   ) invalidDgxBackendModuleConfig.assertions;
+  researchOnlyFixtureSettings = dgxFixtureSettings // {
+    endpointUrl = null;
+    backendUnit = null;
+    researchMode = "provider";
+    researchLayaAddress = "127.0.0.1:7999";
+  };
+  researchOnlyFixtureAccepted =
+    lib.filter (
+      item: !item.assertion
+    ) (builtins.head (mkDgxFixtureModuleConfig researchOnlyFixtureSettings).contents).assertions == [ ];
+  rejectsBackendWithoutEndpoint =
+    lib.any (item: !item.assertion && lib.hasInfix "without a local endpoint" item.message)
+      (builtins.head
+        (mkDgxFixtureModuleConfig (
+          researchOnlyFixtureSettings
+          // {
+            backendUnit = dgxFixtureBackendUnit;
+          }
+        )).contents
+      ).assertions;
   shadowedEndpointModuleMerge = mkDgxFixtureModuleConfig (
     dgxFixtureSettings
     // {
@@ -303,6 +328,14 @@ in
             echo "Mesh-LLM accepted an unowned loopback backend" >&2
             exit 1
           ''}
+          ${lib.optionalString (!researchOnlyFixtureAccepted) ''
+            echo "Mesh-LLM rejected a research-only node without a local endpoint" >&2
+            exit 1
+          ''}
+          ${lib.optionalString (!rejectsBackendWithoutEndpoint) ''
+            echo "Mesh-LLM accepted a backend unit on a node without a local endpoint" >&2
+            exit 1
+          ''}
           ${lib.optionalString (!rejectsPrimaryEndpointShadowing) ''
             echo "Mesh-LLM accepted an extra endpoint that replaces its primary backend" >&2
             exit 1
@@ -328,22 +361,24 @@ in
             echo "Mesh-LLM sidecars must start after their local inference backends" >&2
             exit 1
           ''}
-          ${lib.optionalString (!aspen2HasQwenBackend) ''
-            echo "Aspen2 must provide its dedicated Qwen backend" >&2
+          ${lib.optionalString aspen2KeepsRetiredQwen ''
+            echo "Aspen2 must not keep its retired Qwen backend or token generator" >&2
             exit 1
           ''}
-          ${lib.optionalString (!aspen2QwenIsPrivate) ''
-            echo "Aspen2 Qwen must bind only to loopback port 13305" >&2
+          ${lib.concatMapStrings (node: ''
+            if ! grep -Fq 'name = "openai-endpoint"' ${meshConfigFile node}; then
+              echo "${node.label} Mesh-LLM must advertise its local OpenAI endpoint" >&2
+              exit 1
+            fi
+          '') inferenceNodes}
+          if grep -Fq 'name = "openai-endpoint"' ${meshConfigFile aspen2Node}; then
+            echo "Aspen2 Mesh-LLM must not advertise an OpenAI endpoint without a backend" >&2
             exit 1
-          ''}
-          ${lib.optionalString (!aspen2HasQwenTokenGenerator) ''
-            echo "Aspen2 Qwen must use its gated Hugging Face token generator" >&2
+          fi
+          if ! grep -Fq 'name = "research"' ${meshConfigFile aspen2Node}; then
+            echo "Aspen2 Mesh-LLM must keep its research provider" >&2
             exit 1
-          ''}
-          ${lib.optionalString (!aspen2LacksLemonade) ''
-            echo "Aspen2 must not configure Lemonade beside Qwen" >&2
-            exit 1
-          ''}
+          fi
           ${lib.optionalString (!(lib.all loadsInvitesInOrder joinerNodes)) ''
             echo "Mesh-LLM joiners must load an invite for every other node, joiners first and the seed last" >&2
             exit 1

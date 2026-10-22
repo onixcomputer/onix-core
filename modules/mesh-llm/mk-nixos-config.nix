@@ -104,10 +104,13 @@ let
       }
     }
   '';
-  endpointUrls = {
-    "openai-endpoint" = endpointUrl;
-  }
-  // extraEndpoints;
+  # A node without a local inference backend (endpointUrl = null) advertises no
+  # OpenAI endpoint and runs only its other plugins.
+  endpointUrls =
+    lib.optionalAttrs (endpointUrl != null) {
+      "openai-endpoint" = endpointUrl;
+    }
+    // extraEndpoints;
   configFile = pkgs.writeText "${serviceName}-config.toml" (
     "version = 1\n\n"
     + lib.concatStringsSep "\n" (
@@ -327,8 +330,12 @@ in
       message = "${serviceName}: research HTTP ingress requires an enabled plugin, a Tailscale bind address, and a distinct port.";
     }
     {
-      assertion = backendOwned;
+      assertion = endpointUrls == { } || backendOwned;
       message = "${serviceName}: a loopback backend requires backendUnit or explicit external ownership.";
+    }
+    {
+      assertion = endpointUrls != { } || !backendOwned;
+      message = "${serviceName}: a node without a local endpoint must not declare a backend.";
     }
     {
       assertion = !isJoiner || joinTokens != [ ];

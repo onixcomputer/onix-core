@@ -8,7 +8,7 @@ Defines the `mesh-llm-sidecar` capability.
 
 ### Requirement: Local inference endpoints are advertised through sidecars
 
-r[onix.mesh_llm.sidecar] Each selected node MUST run a Nix-managed Mesh-LLM sidecar whose OpenAI endpoint plugin targets that node's declared loopback `/v1` endpoint.
+r[onix.mesh_llm.sidecar] Each selected node MUST run a Nix-managed Mesh-LLM sidecar. A node with a local inference backend MUST point its OpenAI endpoint plugin at that node's declared loopback `/v1` endpoint. A node without one MUST NOT render an OpenAI endpoint plugin or declare a backend unit.
 
 #### Scenario: Aspen nodes advertise their local endpoints
 
@@ -25,6 +25,15 @@ r[onix.mesh_llm.sidecar.desktop]
 - THEN its model list includes `Qwen3.8-27B`
 - AND the sidecar targets `http://127.0.0.1:8000/v1`
 - AND `qwen38-p150x2.service` starts before the sidecar
+
+#### Scenario: Aspen2 provides research without local inference
+
+r[onix.mesh_llm.sidecar.research_only]
+- GIVEN the evaluated `aspen2` NixOS configuration
+- WHEN its Mesh-LLM sidecar configuration is rendered
+- THEN it contains the research plugin for the arXiv corpus and Laya
+- AND it contains no OpenAI endpoint plugin
+- AND no `llamacpp-server-qwen38-flash-next-aspen2` unit or token generator exists
 
 ### Requirement: The sidecars form a private LAN-only mesh
 
@@ -91,5 +100,6 @@ r[onix.mesh_llm.validation] The repository MUST include positive and negative ch
 - GIVEN the current package, module, and service inventory
 - WHEN focused Nix and Nickel checks run
 - THEN required executables exist
-- AND each node renders its declared endpoint and backend ordering
-- AND invalid credentials or missing private bindings fail
+- AND each node with a local backend renders its declared endpoint and backend ordering
+- AND a node without a local endpoint renders no OpenAI endpoint plugin
+- AND invalid credentials, missing private bindings, or a backend without an endpoint fail

@@ -847,15 +847,6 @@ in
       roles.server.machines.aspen1.settings = qwen_flash_settings,
     },
 
-    # r[impl onix.aspen2.qwen_flash.serving]
-    # r[impl onix.aspen2.qwen_flash.exclusivity]
-    # Aspen2 uses the same reviewed artifact plan as Aspen1. Keep its direct
-    # server exclusive and route external requests through mesh-llm.
-    "qwen38-flash-next-aspen2" = {
-      module = { name = "llamacpp-server", input = "self" },
-      roles.server.machines.aspen2.settings = qwen_flash_settings,
-    },
-
     "lemonade-aspen3" = {
       module = { name = "lemonade", input = "self" },
       roles.default.machines.aspen3.settings = {
@@ -1068,9 +1059,11 @@ in
         },
         aspen2.settings = {
           mode = "joiner",
-          endpointUrl = mesh_openai_endpoint_url,
+          # r[impl onix.mesh_llm.sidecar.research_only]
+          # No local inference backend: Qwen3.8 Flash Next needs more memory
+          # than aspen2 has. The node keeps providing research tools.
+          endpointUrl = null,
           meshBindAddress = mesh_aspen2_address,
-          backendUnit = "llamacpp-server-qwen38-flash-next-aspen2.service",
           researchMode = "provider",
           researchArxivAddress = "%{mesh_aspen2_address}:7998",
           researchLayaAddress = "%{mesh_aspen2_address}:7999",

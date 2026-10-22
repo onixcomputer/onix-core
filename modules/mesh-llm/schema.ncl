@@ -5,7 +5,7 @@ let default_proxy_activation_context_size = 512 in
 {
   default = {
     mode = { type = "enum", values = ["seed", "joiner"], default = "seed", description = "Whether this node creates the private mesh or joins with a managed credential" },
-    endpointUrl = { type = "string", default = "http://127.0.0.1:13305/v1", description = "Local OpenAI-compatible endpoint advertised by the openai-endpoint plugin" },
+    endpointUrl = { type = "nullable_string", default = "http://127.0.0.1:13305/v1", description = "Local OpenAI-compatible endpoint advertised by the openai-endpoint plugin; null for a node without a local inference backend" },
     extraEndpoints = { type = "record", default = {}, description = "Additional externally managed loopback OpenAI /v1 endpoints keyed by plugin name; openai-endpoint is reserved for endpointUrl" },
     researchMode = { type = "enum", values = ["disabled", "provider", "forwarder"], default = "disabled", description = "Native research plugin: local provider or authenticated peer-stream forwarder" },
     researchArxivAddress = { type = "nullable_string", default = null, description = "Optional provider-only private arXiv backend IP:port; null disables corpus operations on this peer" },
