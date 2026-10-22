@@ -17,6 +17,7 @@ Read [`docs/bookshelf.md`](docs/bookshelf.md) for the private ebook library endp
 Read [`docs/rustfs-build-caches.md`](docs/rustfs-build-caches.md) for private Kache and niks3 endpoints, authority, operations, and rollback.
 
 Read [`docs/site-celld.md`](docs/site-celld.md) for the private Site fleet, publisher credential boundary, deployment, and activation.
+Read [`docs/meshtop.md`](docs/meshtop.md) for the Aspen3, Bonsai, britton-desktop, and Leviathan monitor, paired identities, CPU/GPU hardware names, live checks, and scoped persistence boundaries.
 
 ## Herdr
 

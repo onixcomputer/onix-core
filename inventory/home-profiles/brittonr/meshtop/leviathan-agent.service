@@ -1,0 +1,15 @@
+[Unit]
+Description=Read-only Meshtop monitoring agent on Leviathan
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/meshtop agent --viewer e4595bca7f97787646d6da8b3eab21f02e88d56759b9ac73d3a2f05c3932af51 --key %h/.local/state/meshtop/agent.key
+StateDirectory=meshtop
+StateDirectoryMode=0700
+UMask=0077
+NoNewPrivileges=true
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=default.target

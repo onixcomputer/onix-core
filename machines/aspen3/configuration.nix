@@ -93,8 +93,14 @@ in
   imports = [
     ./disko.nix
     ../../modules/pi-branchfs/nixos.nix
+    ../../modules/meshtop
     inputs.nixos-hardware.nixosModules.asus-flow-gv302x-amdgpu
   ];
+
+  services.meshtop = {
+    enable = true;
+    viewerId = "e4595bca7f97787646d6da8b3eab21f02e88d56759b9ac73d3a2f05c3932af51";
+  };
 
   networking = {
     hostName = "aspen3";

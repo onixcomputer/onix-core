@@ -15,6 +15,7 @@ let
 in
 {
   imports = [
+    ../../modules/meshtop
     inputs.nixos-hardware.nixosModules.gpd-pocket-4
   ];
 
@@ -89,6 +90,11 @@ in
 
   services = {
     fprintd.enable = true;
+
+    meshtop = {
+      enable = true;
+      viewerId = "e4595bca7f97787646d6da8b3eab21f02e88d56759b9ac73d3a2f05c3932af51";
+    };
 
     # Override greeter session for niri
     greetd.settings.default_session.command = "${pkgs.tuigreet}/bin/tuigreet --time --cmd /etc/profiles/per-user/brittonr/bin/niri-session";

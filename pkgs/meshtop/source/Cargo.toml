@@ -1,0 +1,21 @@
+[package]
+name = "meshtop"
+version = "0.1.0"
+edition = "2024"
+description = "Read-only multi-host terminal system monitor over Iroh"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+crossterm = "0.28"
+iroh = "=1.0.3"
+libc = "0.2"
+ratatui = "0.29"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sysinfo = "0.37"
+tokio = { version = "1", features = ["full"] }
+toml = "0.8"
+
+[dev-dependencies]
+tempfile = "3"

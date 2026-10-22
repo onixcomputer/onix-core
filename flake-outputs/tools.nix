@@ -87,6 +87,7 @@ in
         inherit (nixInput.packages.${system}) nix-store nix-util;
       };
     dgx-machine = dgxMachinePackage;
+    meshtop = pkgs.callPackage ../pkgs/meshtop { };
     inherit (radicleNodePkgs) radicle-node;
     inherit (pkgs) radicle-httpd;
   }

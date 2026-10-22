@@ -120,7 +120,7 @@ let { ValidateUserRefs, .. } = import "user-contracts.ncl" in
         machines.britton-desktop = {},
         settings = {
           username = "brittonr",
-          profiles = ["base", "dev", "noctalia", "creative", "social", "media", "herdr", "radicle"],
+          profiles = ["base", "dev", "noctalia", "creative", "social", "media", "herdr", "radicle", "meshtop"],
           homeStateVersion = "26.05",
         },
       },
