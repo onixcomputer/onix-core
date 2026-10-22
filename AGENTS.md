@@ -2,8 +2,11 @@
 
 ## Cairn lifecycle
 - Use native Cairn lifecycle artifacts under `.cairn/` for planning and change tracking in this repo. Do not create or update OpenSpec artifacts unless the user explicitly asks for migration/compatibility work.
-- Use `/home/brittonr/git/cairn` as the local Cairn source checkout. It should authenticate to the canonical project `https://github.com/OnixResearch/cairn` via the SSH remote `git@github.com:OnixResearch/cairn.git`.
+- Use `/home/brittonr/git/OnixResearch/cairn` as the local Cairn source checkout. It should authenticate to the canonical project `https://github.com/OnixResearch/cairn` via the SSH remote `git@github.com:OnixResearch/cairn.git`.
 - Validate with `nix run path:/home/brittonr/git/OnixResearch/cairn#cairn -- validate --root /home/brittonr/git/onix-core --policy /home/brittonr/git/OnixResearch/cairn/cairn-policy/generated/cairn-policy.json`. Use the canonical checkout path: `/home/brittonr/git/cairn` is a symlink, which `nix run path:` and the cairn policy loader both reject.
+- Run gates with `nix run path:/home/brittonr/git/OnixResearch/cairn#cairn -- gate proposal|design|tasks <change> --root /home/brittonr/git/onix-core --policy /home/brittonr/git/OnixResearch/cairn/cairn-policy/generated/cairn-policy.json`; the `cairn` on brittonr's PATH accepts the same arguments.
+- `cairn change create` fails here with `No such file or directory`. Create `.cairn/changes/<name>/` by hand: `metadata.json` (`{"workflow_profile": {"id": "spec-driven", "source": "change_create", "version": 1}}`), `proposal.md`, `design.md`, `tasks.md`, and `specs/<capability>/spec.md`.
+- `cairn archive <change> --execute` only moves the change to `.cairn/archive/1970-01-01-<change>`; it does not merge spec deltas. Before archiving, apply the ADDED/MODIFIED/REMOVED requirement blocks to `.cairn/specs/<capability>/spec.md` (delete a capability whose requirements are all removed). Afterwards rename the directory to `<archive date>-<change>` and repoint links that named `.cairn/changes/<change>/`.
 
 ## Clan deploys
 - Bare `aspen1` is not reliably resolvable from managed hosts. Use `aspen1.local` for SSH deploy targets and runtime URLs (`root@aspen1.local`, Lemonade API bases) unless a specific network path requires another name. Harmonia's extra substituter is one such exception: use `http://100.100.103.95:5000` so nix-daemon does not depend on mDNS.
