@@ -2,10 +2,10 @@
 
 Aspen1 is the primary native seed and the only public HTTPS Git origin. Two native-only replicas run on `britton-desktop` and `aspen3`.
 
-All three nodes seed these exact repository sets:
+The declared policy for all three nodes contains these exact repository sets (deployment and acquisition require separate live evidence):
 
-- four governed public RIDs
-- one non-secret private pilot RID
+- seven governed public RIDs: Bounded Exec, artifact-auth compatibility, execution-graph, Choregraph, durable-file-publication, koiTerminal fork, and canonical Artifact
+- four separately managed private RIDs; none is admitted to public HTTPS
 
 The replicas have no HTTP, public ingress, delegate, CI, deployment, release, canonical-ref, cache-write, artifact, backup, or signing authority.
 
@@ -83,7 +83,7 @@ ssh -o StrictHostKeyChecking=yes root@aspen3 \
   'systemctl start radicle-policy-reconcile.service && journalctl -u radicle-policy-reconcile.service -n 20 --no-pager'
 ```
 
-The steady-state result is `removed=0, added=0, desired=5`.
+For the seven-public/four-private declared policy, the steady-state reconciler result must be `removed=0, added=0, desired=11`. This is a required post-deployment observation, not evidence that an undeployed role already matches.
 
 List the exact storage set:
 
@@ -92,12 +92,18 @@ ssh -o StrictHostKeyChecking=yes root@aspen3 \
   'find /var/lib/radicle/storage -mindepth 1 -maxdepth 1 -type d -printf "%f\n" | sort'
 ```
 
-Expected RIDs:
+Expected declared RIDs (storage presence alone is not exact policy or signed-ref acquisition proof):
 
 ```text
+z25ySMy8Hh3HpsxP5zcYoYgaMBi99
 z2CpqLFpdP36fZXYUK5ZNWxMibpCo
+z2JQ8ihZZ6wraULQPzFWMh25B29rZ
+z2QJLUqyAZnnHPiZQ1BFjLsX9ush3
 z2oYsb9jGTyp68BKYhzpivY1eK58a
+z3hRCegTsS8jpJVgxYfb9psEzxHpG
 z3t9ykR1HfG9UkyKoQQg5ikkzrTxg
+z3tAR4For7qw8ZirkJzoDw1VNDDLM
+z3xXXCQXCTquvAawh41YYs8yC8xmk
 z4JGYYW7WsesXUq7MXVdx16Fawu2f
 zL2ncTUeASVYwcoGkEXv9JKgGbAF
 ```

@@ -1,0 +1,84 @@
+{
+  "kind": "scoped-hosting-operational-observations",
+  "observed_date": "2026-10-16",
+  "current_cairn_source_validation_observation": {
+    "invocation": "Documented nix run of the existing owner Cairn checkout, validate against existing owner policy and Onix root; min-free/max-free both 0",
+    "observed_execution_state": "cancelled-without-validation-result",
+    "diagnostic": "ignored evaluator-cache SQLite busy",
+    "native_process_observation": "unix_stream_read_generic while connected to the Nix daemon",
+    "shared_cache_observation": "A separate existing Aspen-worktree Cairn invocation also has the evaluator cache open",
+    "source_failure": "not-established",
+    "boundary": "No competing process, evaluator cache, daemon/store state, source input, compiler profile or check changed",
+    "cancellation": "Operator-directed cancellation of only the owned background validation job bg_429; cancellation confirmed by process tool",
+    "gate_verdict": "none; blocked execution is not a validation verdict",
+    "operator_disposition": "No other caller, daemon/store locks, evaluator cache, inputs, trust or check policy may be changed; no daemon restart authorized",
+    "non_claim": "This observation is neither a completed validation receipt nor an accepted store import"
+  },
+  "producer": {
+    "rid": "rad:z25ySMy8Hh3HpsxP5zcYoYgaMBi99",
+    "native_visibility": "public",
+    "identity_revision": "918974c9e5647f38b1381390c2bc4c380c0b823f",
+    "delegate": "did:key:z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx",
+    "threshold": 1,
+    "author_sigrefs": "984e0f72a4e27904beeae05d79563041ef614014",
+    "signed_refs_feature": "parent",
+    "default_main": "eb85ddcd9d5c782044a81ed980c1824438bb46c1",
+    "native_inspection": "rad inspect --identity, --visibility, --sigrefs; all exit0",
+    "local_storage_fsck": "git fsck --full --strict exit0; not anonymous HTTPS acquisition"
+  },
+  "primary": {
+    "observed_closure": "/nix/store/ah5pkjwi2vdglprnxc1s7jpg2x0x39nv-nixos-system-aspen1-26.11.20260908.e9b9cbe",
+    "configuration_revision": "490f597ea6f11c6a2da7ed9371ef1ba3fbaa38bb-dirty",
+    "nixpkgs_revision": "e9b9cbecbf6c25ca26c150d78570e6332694a129",
+    "reported_deriver": "/nix/store/m7r655ya94nm8ya8i9qv3xf8zkhb4iyc-nixos-system-aspen1-26.11.20260908.e9b9cbe.drv",
+    "derivation_inspection": "failed: reported deriver is not a valid store path",
+    "workstation_reported_deriver_retained": false,
+    "workstation_deriver_check": "nix-store --check-validity of the reported active-primary deriver exited 1: path is not valid",
+    "owner_configuration_directory": "empty",
+    "extra_dependencies": "empty",
+    "retained_closure_provenance": {
+      "queries": ["nix-store --query --references /run/current-system", "nix-store --query --references active-etc-output", "nix-store --query --requisites /run/current-system"],
+      "exit": 0,
+      "generic_source_roots_inspected": 20,
+      "observed_source_classes": ["Fish plugin", "Emacs configuration", "Common Lisp libraries", "nixpkgs"],
+      "result": "No evidenced Onix Core deployment source baseline recovered from the retained active closure graph",
+      "redaction": "Only source-class observations retained; unrelated closure entries and credential-path metadata omitted"
+    }, 
+    "node_httpd_policy_timer_nginx": "active",
+    "loaded_public_membership": "original-six-without-canonical-Artifact",
+    "loaded_private_membership": "original-four",
+    "last_policy_result": "success",
+    "last_policy_exit": 0,
+    "last_policy_summary": "removed=0, added=0, desired=10",
+    "last_policy_log_local_time": "Oct 16 18:24:11",
+    "read_only_operator_policy_listing": {
+      "command": "rad seed as managed service user using current pinned binary and existing managed profile",
+      "exit": 1,
+      "diagnostic": "Could not load Radicle profile: ssh keygen: length invalid",
+      "boundary": "Operator process does not inherit systemd service credential mounts; no key inspected or replaced"
+    }
+  },
+  "replicas": [
+    {
+      "host": "britton-desktop",
+      "observed_closure": "/nix/store/0q2rfhnmzvkf807xcrajwqkbhb4b6z11-nixos-system-britton-desktop-26.11.20260908.e9b9cbe",
+      "configuration_revision": "not-reported",
+      "node_policy_timer": "active"
+    },
+    {
+      "host": "aspen3",
+      "observed_closure": "/nix/store/7ifyraxyj86zjj8s52xrv9y27f9raimi-nixos-system-aspen3-26.11.20260929.b6c8664",
+      "configuration_revision": "not-reported",
+      "nixpkgs_revision": "b6c8664de9b6cc07fe5666a29f91884ba81197c4",
+      "node_policy_timer": "active"
+    }
+  ],
+  "deployment": "not-performed",
+  "signed_state_import": "not-performed",
+  "reconcile_mutation": "not-performed",
+  "fresh_https_fetch": "not-repeated-known-failed-probes",
+  "hard_prerequisite": "An evidenced exact currently deployed source baseline, or an existing documented serving-only deployment mechanism that preserves every unrelated live setting",
+  "authority_boundary": "No dirty-tree full switch, inferred HEAD baseline, runtime override, transient credential unit, new bootstrap transport, key generation, source-selection change or governance mutation",
+  "redactions": ["absolute private owner checkout, profile and credential paths omitted"],
+  "non_claims": ["anonymous acquisition", "new catalog deployment", "replica convergence", "consumer readiness", "release eligibility"]
+}

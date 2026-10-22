@@ -1,0 +1,72 @@
+{
+  "kind": "completed-scoped-source-and-receipt-gates",
+  "observed_date": "2026-10-16",
+  "source_freeze": "frozen-source.json",
+  "source_freeze_blake3": "0d4bcfee419ea90cd1b798935a618bf85f1a22958446e1db8aa3bd8517fdb3a1",
+  "implementation_note": "The final receipt predicate explicitly binds observed public visibility. Its consistency and admission rails were both exercised again after that final predicate edit; serving policy, validators, fixtures, producer/source pins and compiler/profile inputs were unchanged.",
+  "results": [
+    {
+      "target": "checks.x86_64-linux.radicle-canonical-artifact-source-evidence",
+      "exit": 0,
+      "output": "/nix/store/4583nsnmxqh13g309d2xgyxgq0wwmv66-radicle-canonical-artifact-source-evidence",
+      "readback": ["evidence=consistent-observation-record", "admission=blocked"],
+      "meaning": "Typed Nickel matches JSON, BLAKE3 sidecar matches, exact source/governance/policy facts are bound, and unobserved deployment cannot be admitted by changing status alone"
+    },
+    {
+      "target": "checks.x86_64-linux.radicle-canonical-artifact-source-admission",
+      "exit": 1,
+      "result": "blocked-as-required",
+      "diagnostic": "canonical Artifact admission blocked: no evidenced deployed baseline or anonymous exact-object acquisition"
+    },
+    {
+      "target": "checks.x86_64-linux.radicle-source-admission",
+      "exit": 0,
+      "output": "/nix/store/dkfgx45ci7kybwj6jvzfgyv7l1miy71p-radicle-source-admission",
+      "readback": ["receipt=accepted", "negative_receipts=rejected", "receipt_blake3=0c2615c70cf6ca4e01cdd0616c930a438361369aebd05980993a4bca1e14e74c"],
+      "scope": "Unchanged historical artifact-auth compatibility admission only; not canonical Artifact acquisition"
+    },
+    {
+      "target": "checks.x86_64-linux.radicle-choregraph-source-admission",
+      "exit": 0,
+      "output": "/nix/store/didyp6jzsalr05vbd9hzz3vw6x8mb3al-radicle-choregraph-source-admission",
+      "readback": ["receipt=accepted", "negative_receipts=rejected", "receipt_blake3=a00da3bb0df614f46b58ec09b71621ee6ef1b2c1e993826c8e9b3f9404208be4"],
+      "scope": "Unchanged historical Choregraph receipt"
+    },
+    {
+      "target": "checks.x86_64-linux.radicle-node-policy",
+      "exit": 1,
+      "result": "nixpkgs-security-evaluation-refusal",
+      "package": "radicle-node-1.10.3",
+      "diagnostic": "Refusing to evaluate package because it is marked as insecure",
+      "security_reason": "Private repositories are insecure: traffic between nodes is not encrypted and not authenticated."
+    },
+    {
+      "target": "checks.x86_64-linux.radicle-seed-replica",
+      "exit": 1,
+      "result": "nixpkgs-security-evaluation-refusal",
+      "package": "radicle-node-1.10.3",
+      "security_reason": "Private repositories are insecure: traffic between nodes is not encrypted and not authenticated."
+    },
+    {
+      "target": "checks.x86_64-linux.radicle-durable-file-publication-source-admission",
+      "exit": 1,
+      "result": "nixpkgs-security-evaluation-refusal-while-evaluating-live-policy-derivation",
+      "package": "radicle-node-1.10.3",
+      "scope": "Historical receipt preserved; current policy dependency blocks the owner rail"
+    }
+  ],
+  "native_cairn": {
+    "execution_provenance": "Installed native Cairn CLI; these are not results from the separately cancelled documented nix-run source invocation",
+    "documented_source_invocation": "Operator-directed cancellation confirmed; no validation result and no gate verdict; see operational-observations.json",
+    "proposal_gate": "PASS",
+    "design_gate": "PASS",
+    "tasks_gate": "PASS",
+    "structural_validate": "valid=true; no issues",
+    "sync": "not-performed",
+    "archive": "not-performed"
+  },
+  "independent_smoke": "policy-smoke.json records forty exercised validator cases, exact generated read-only routes, unchanged private and CI membership, and local exact archive identities",
+  "earlier_interrupted_attempts": "interrupted-gate-attempts.json",
+  "gate_integrity": "No insecure-package allowance, check suppression, compiler/profile/source-input change, deployment, source-selection change, runtime override or producer governance mutation",
+  "non_claims": ["Policy rails blocked by security refusal did not pass", "Receipt consistency is not deployment or anonymous acquisition", "Historical receipts are not new Artifact evidence"]
+}

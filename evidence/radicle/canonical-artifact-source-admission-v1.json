@@ -1,0 +1,128 @@
+{
+  "blockers": [
+    "live-primary-source-is-dirty-and-differs-from-checkout-base",
+    "live-primary-deriver-unavailable-and-source-directory-empty",
+    "replica-source-revisions-not-reported",
+    "no-evidenced-live-source-snapshot-or-documented-serving-only-deployment",
+    "anonymous-exact-object-acquisition-not-established"
+  ],
+  "deployment": {
+    "native_desired_count": 11,
+    "public_https_count": 7,
+    "reconcile": "not-performed",
+    "roles": [
+      {
+        "configuration_revision": "490f597ea6f11c6a2da7ed9371ef1ba3fbaa38bb-dirty",
+        "deployment": "not-performed",
+        "host": "aspen1",
+        "observed_closure": "/nix/store/ah5pkjwi2vdglprnxc1s7jpg2x0x39nv-nixos-system-aspen1-26.11.20260908.e9b9cbe"
+      },
+      {
+        "configuration_revision": "not-reported",
+        "deployment": "not-performed",
+        "host": "britton-desktop",
+        "observed_closure": "/nix/store/0q2rfhnmzvkf807xcrajwqkbhb4b6z11-nixos-system-britton-desktop-26.11.20260908.e9b9cbe"
+      },
+      {
+        "configuration_revision": "not-reported",
+        "deployment": "not-performed",
+        "host": "aspen3",
+        "observed_closure": "/nix/store/7ifyraxyj86zjj8s52xrv9y27f9raimi-nixos-system-aspen3-26.11.20260929.b6c8664"
+      }
+    ],
+    "runtime_overrides": "not-inspected-no-new-overrides",
+    "signed_state_import": "not-performed"
+  },
+  "evidence": [
+    ".cairn/changes/admit-canonical-artifact-radicle-source/proposal.md",
+    ".cairn/changes/admit-canonical-artifact-radicle-source/design.md",
+    "artifact:.cairn/changes/publish-required-artifact-source/evidence/native-publication-and-acquisition.json"
+  ],
+  "non_claims": [
+    "anonymous-acquisition",
+    "deployed-catalog",
+    "replica-convergence",
+    "artifact-correctness",
+    "consumer-correctness",
+    "release-eligibility",
+    "seed-delegate-authority",
+    "indefinite-availability",
+    "whole-stack-correctness"
+  ],
+  "observed_date": "2026-10-16",
+  "policy": {
+    "checkout_base_revision": "9d2f5a52405a22583db2eb174b4d20c50fb227f6",
+    "ci_rids": [
+      "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo"
+    ],
+    "https_rids": [
+      "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+      "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
+      "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a",
+      "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF",
+      "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM",
+      "rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ",
+      "rad:z25ySMy8Hh3HpsxP5zcYoYgaMBi99"
+    ],
+    "private_rids": [
+      "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg",
+      "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk",
+      "rad:z3hRCegTsS8jpJVgxYfb9psEzxHpG",
+      "rad:z2QJLUqyAZnnHPiZQ1BFjLsX9ush3"
+    ],
+    "public_rids": [
+      "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+      "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
+      "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a",
+      "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF",
+      "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM",
+      "rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ",
+      "rad:z25ySMy8Hh3HpsxP5zcYoYgaMBi99"
+    ]
+  },
+  "probes": {
+    "endpoint_root": "not-observed",
+    "exact_https": "not-repeated-known-post-publication-failure",
+    "private_rid": "not-observed",
+    "receive_pack": "not-observed",
+    "unknown_ref": "not-observed",
+    "unknown_rid": "not-observed",
+    "wrong_service": "not-observed"
+  },
+  "producer": {
+    "author_sigrefs": "984e0f72a4e27904beeae05d79563041ef614014",
+    "delegates": [
+      "did:key:z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx"
+    ],
+    "hosting_authority": "operator-authorized-scoped-hosting-deployment",
+    "identity_revision": "918974c9e5647f38b1381390c2bc4c380c0b823f",
+    "publication_authority": "operator-authorized",
+    "signed_refs_feature": "parent",
+    "threshold": 1,
+    "visibility": "public-parent-observed"
+  },
+  "receipt_type": "onix.radicle-canonical-artifact-source-admission.v1",
+  "repository": {
+    "default_main": "eb85ddcd9d5c782044a81ed980c1824438bb46c1",
+    "https_url": "https://git.onix.computer/z25ySMy8Hh3HpsxP5zcYoYgaMBi99.git",
+    "objects": [
+      {
+        "acquisition": "existing-local-signed-storage-not-anonymous-https",
+        "archive_blake3": "8fc65f3d7968d76af419f08ac972955514c8256f8aa5ed90815d8bdcced28113",
+        "archive_bytes": 552960,
+        "object_type": "commit",
+        "revision": "e41340bec587b6d049b5cc518ec7db925dde84be"
+      },
+      {
+        "acquisition": "existing-local-signed-storage-not-anonymous-https",
+        "archive_blake3": "3878cdb892bfd4a8eac5779023ba32871d61bc3e8ec7c9ef5f7ab790a8acfeb9",
+        "archive_bytes": 849920,
+        "object_type": "commit",
+        "revision": "c932138d880ddf4c2967f4c024b489b5c0022bf1"
+      }
+    ],
+    "rid": "rad:z25ySMy8Hh3HpsxP5zcYoYgaMBi99"
+  },
+  "schema_version": 1,
+  "status": "blocked"
+}

@@ -1,0 +1,20 @@
+{
+  "kind": "scoped-admission-source-freeze",
+  "checkout_base_revision": "9d2f5a52405a22583db2eb174b4d20c50fb227f6",
+  "files_blake3": {
+    "inventory/services/services.ncl": "128858f726e1e1283d8877ded8dc6ca18ed87a5a4e922ebf8a9044e16cbf2a1a",
+    "modules/radicle-node/validate-settings.nix": "3b1ca03f22dd0425f5269addf0b19a1e31f04216bc3e7949010d849296ed9d29",
+    "modules/radicle-seed-replica/validate-settings.nix": "1157047e6ae96656e8c7bcad8e4cb235069f128b055f45c90406764a69d6fc6d",
+    "flake-outputs/_radicle-node-checks.nix": "f96d963c1a09711530ca73d3ed88d42f7a851a483aa768e34b91e09779c1a8b1",
+    "flake-outputs/_radicle-seed-replica-checks.nix": "a10bed3adc45aa8889ffab6ca8134ca9f31c9ecb9c8878611bc1717b5af95af7",
+    "flake-outputs/_radicle-canonical-artifact-admission-checks.nix": "f5b644f786ea8a31a37dc6c3531f0f05b0ea59321e9fb86d291add0e777c7af4",
+    "flake-outputs/checks.nix": "d3c0d05db6738d810355fa27c97b4f48ccf07c00e9bf96dec68471e20ae3fa32",
+    "docs/radicle-forge-bootstrap.md": "229130817cb4ca358c27e795d0ebc08bec93887a84a32e7c47a1c96e1ed51c36",
+    "docs/radicle-secondary-seed.md": "f63b04a7e9afbb130313560d31d20dccea4e8dd908d6ca2c7acc5e65e5ae5390",
+    "evidence/radicle/canonical-artifact-source-admission-v1.ncl": "3be7d07637a3bb3832f8d0cb1e2ba5b31d9f656a8afbdb71f8aa74dfc8a95939",
+    "evidence/radicle/canonical-artifact-source-admission-v1.json": "f619608fadfa3eae3a0a026d8032e2d6d7ff3451f82db519006da47477750ff8",
+    "evidence/radicle/canonical-artifact-source-admission-v1.blake3": "b2eb7ecb1632ab2ab3cb948790732408bfb52f066993a5ef37fc32937e6e6d32"
+  },
+  "deployment_authority": "scoped-existing-serving-configurations-only",
+  "deployable_live_baseline": "not-established"
+}

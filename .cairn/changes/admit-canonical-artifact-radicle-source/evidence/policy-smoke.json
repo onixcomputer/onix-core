@@ -1,0 +1,249 @@
+{
+  "kind": "scoped-admission-runtime-smoke-observations",
+  "observed_date": "2026-10-16",
+  "source_freeze": "frozen-source.json",
+  "native_nickel_export": "passed",
+  "role_public_membership": "primary-native/primary-HTTPS/desktop-native/aspen3-native match exact seven ordered RIDs",
+  "private_membership": "all three native settings match four unchanged private RIDs",
+  "ci": "Bounded Exec RID only",
+  "validator_cases": [
+    {
+      "name": "primary-exact",
+      "observed_valid": true,
+      "valid": true
+    },
+    {
+      "name": "primary-missing-rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "primary-missing-rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "primary-missing-rad:z2oYsb9jGTyp68BKYhzpivY1eK58a",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "primary-missing-rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "primary-missing-rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "primary-missing-rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "primary-missing-rad:z25ySMy8Hh3HpsxP5zcYoYgaMBi99",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "primary-duplicate",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "primary-unknown",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "primary-private-exposure",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "desktop-exact",
+      "observed_valid": true,
+      "valid": true
+    },
+    {
+      "name": "desktop-missing-rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "desktop-missing-rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "desktop-missing-rad:z2oYsb9jGTyp68BKYhzpivY1eK58a",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "desktop-missing-rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "desktop-missing-rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "desktop-missing-rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "desktop-missing-rad:z25ySMy8Hh3HpsxP5zcYoYgaMBi99",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "desktop-duplicate",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "desktop-unknown",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "desktop-private-exposure",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "aspen3-exact",
+      "observed_valid": true,
+      "valid": true
+    },
+    {
+      "name": "aspen3-missing-rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "aspen3-missing-rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "aspen3-missing-rad:z2oYsb9jGTyp68BKYhzpivY1eK58a",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "aspen3-missing-rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "aspen3-missing-rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "aspen3-missing-rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "aspen3-missing-rad:z25ySMy8Hh3HpsxP5zcYoYgaMBi99",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "aspen3-duplicate",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "aspen3-unknown",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "aspen3-private-exposure",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "https-missing-rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "https-missing-rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "https-missing-rad:z2oYsb9jGTyp68BKYhzpivY1eK58a",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "https-missing-rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "https-missing-rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "https-missing-rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ",
+      "observed_valid": false,
+      "valid": false
+    },
+    {
+      "name": "https-missing-rad:z25ySMy8Hh3HpsxP5zcYoYgaMBi99",
+      "observed_valid": false,
+      "valid": false
+    }
+  ],
+  "generated_artifact_routes": {
+    "= /z25ySMy8Hh3HpsxP5zcYoYgaMBi99.git/git-upload-pack": {
+      "extraConfig": "if ($args != \"\") { return 404; }\nlimit_except POST { deny all; }\n",
+      "proxyPass": "http://127.0.0.1:8080",
+      "recommendedProxySettings": true
+    },
+    "= /z25ySMy8Hh3HpsxP5zcYoYgaMBi99.git/info/refs": {
+      "extraConfig": "if ($args != \"service=git-upload-pack\") { return 404; }\nlimit_except GET { deny all; }\n",
+      "proxyPass": "http://127.0.0.1:8080",
+      "recommendedProxySettings": true
+    }
+  },
+  "generated_default": {
+    "return": 404
+  },
+  "generated_route_membership": "exactly two smart-HTTP read-only routes per each of seven public RIDs; no other repositories",
+  "local_exact_archive_observations": [
+    {
+      "revision": "e41340bec587b6d049b5cc518ec7db925dde84be",
+      "type": "commit",
+      "archive_bytes": 552960,
+      "archive_blake3": "8fc65f3d7968d76af419f08ac972955514c8256f8aa5ed90815d8bdcced28113",
+      "acquisition": "existing-local-signed-storage-not-anonymous-https"
+    },
+    {
+      "revision": "c932138d880ddf4c2967f4c024b489b5c0022bf1",
+      "type": "commit",
+      "archive_bytes": 849920,
+      "archive_blake3": "3878cdb892bfd4a8eac5779023ba32871d61bc3e8ec7c9ef5f7ab790a8acfeb9",
+      "acquisition": "existing-local-signed-storage-not-anonymous-https"
+    }
+  ],
+  "live_endpoint_claim": "none",
+  "non_claims": [
+    "This exercises native Nickel evaluation, pure Nix validators and existing route generator, not a deployed HTTP endpoint",
+    "Local source archives do not prove anonymous acquisition",
+    "These smoke observations do not substitute for focused Nix checks or target closure gates"
+  ]
+}

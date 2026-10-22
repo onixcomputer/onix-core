@@ -37,6 +37,7 @@ let
   choregraphRepository = "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF";
   durableFilePublicationRepository = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM";
   koiterminalRepository = "rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ";
+  artifactRepository = "rad:z25ySMy8Hh3HpsxP5zcYoYgaMBi99";
   governedRepositories = [
     pilotRepository
     artifactAuthRepository
@@ -44,6 +45,7 @@ let
     choregraphRepository
     durableFilePublicationRepository
     koiterminalRepository
+    artifactRepository
   ];
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   privateSeaglassRepository = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
@@ -302,11 +304,7 @@ let
     {
       name = "missing-bounded-exec-rid";
       settings = positiveSettings // {
-        seedRepositories = [
-          artifactAuthRepository
-          executionGraphRepository
-          choregraphRepository
-        ];
+        seedRepositories = lib.remove pilotRepository governedRepositories;
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
@@ -315,11 +313,7 @@ let
     {
       name = "missing-artifact-auth-rid";
       settings = positiveSettings // {
-        seedRepositories = [
-          pilotRepository
-          executionGraphRepository
-          choregraphRepository
-        ];
+        seedRepositories = lib.remove artifactAuthRepository governedRepositories;
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
@@ -328,11 +322,7 @@ let
     {
       name = "missing-execution-graph-rid";
       settings = positiveSettings // {
-        seedRepositories = [
-          pilotRepository
-          artifactAuthRepository
-          choregraphRepository
-        ];
+        seedRepositories = lib.remove executionGraphRepository governedRepositories;
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
@@ -341,12 +331,7 @@ let
     {
       name = "missing-choregraph-rid";
       settings = positiveSettings // {
-        seedRepositories = [
-          pilotRepository
-          artifactAuthRepository
-          executionGraphRepository
-          durableFilePublicationRepository
-        ];
+        seedRepositories = lib.remove choregraphRepository governedRepositories;
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
@@ -355,12 +340,7 @@ let
     {
       name = "missing-durable-file-publication-rid";
       settings = positiveSettings // {
-        seedRepositories = [
-          pilotRepository
-          artifactAuthRepository
-          executionGraphRepository
-          choregraphRepository
-        ];
+        seedRepositories = lib.remove durableFilePublicationRepository governedRepositories;
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
@@ -369,20 +349,23 @@ let
     {
       name = "missing-koiterminal-rid";
       settings = positiveSettings // {
-        seedRepositories = [
-          pilotRepository
-          artifactAuthRepository
-          executionGraphRepository
-          choregraphRepository
-          durableFilePublicationRepository
-        ];
+        seedRepositories = lib.remove koiterminalRepository governedRepositories;
       };
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
       expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs";
     }
     {
-      name = "undeclared-seventh-rid";
+      name = "missing-canonical-artifact-rid";
+      settings = positiveSettings // {
+        seedRepositories = lib.remove artifactRepository governedRepositories;
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "canonical Artifact RIDs";
+    }
+    {
+      name = "undeclared-eighth-rid";
       settings = positiveSettings // {
         seedRepositories = governedRepositories ++ [ inheritedRepository ];
       };

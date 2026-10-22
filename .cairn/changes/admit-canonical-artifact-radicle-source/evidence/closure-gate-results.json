@@ -1,0 +1,57 @@
+{
+  "kind": "completed-scoped-target-closure-gates",
+  "observed_date": "2026-10-16",
+  "source_freeze": "frozen-source.json",
+  "source_freeze_blake3": "0d4bcfee419ea90cd1b798935a618bf85f1a22958446e1db8aa3bd8517fdb3a1",
+  "results": [
+    {
+      "target": "nixosConfigurations.aspen1.config.system.build.toplevel",
+      "command": "nix build .#nixosConfigurations.aspen1.config.system.build.toplevel --no-link -L --option min-free 0 --option max-free 0",
+      "exit": 1,
+      "phase": "evaluation",
+      "blocker": "nixpkgs refuses radicle-node-1.10.3 as insecure",
+      "security_reason": "Private repositories are insecure: traffic between nodes is not encrypted and not authenticated.",
+      "completed_closure": false,
+      "deployed": false
+    },
+    {
+      "target": "nixosConfigurations.aspen3.config.system.build.toplevel",
+      "command": "nix build .#nixosConfigurations.aspen3.config.system.build.toplevel --no-link -L --option min-free 0 --option max-free 0",
+      "exit": 1,
+      "phase": "dependency-build-check",
+      "failed_derivation": "/nix/store/3nb75b2l1741r4262ww5rzqfqgys5jnk-herdr-plugin-pueue-0.1.0.drv",
+      "failed_dependency_exit": 101,
+      "test_binary": "process_adapter",
+      "observed_test_result": "0 passed; 15 failed; 0 ignored; 0 measured; 0 filtered out",
+      "observed_secondary_diagnostic": "process test lock was poisoned",
+      "target_derivation": "/nix/store/zjq00ki14is01dcfx38fd0x0r6f89lh2-nixos-system-aspen3-26.11.20260929.b6c8664.drv",
+      "unrealized_target_output": "/nix/store/z3mrhlpxjm9jlgrqjlb4ibfkddqyq6wr-nixos-system-aspen3-26.11.20260929.b6c8664",
+      "completed_closure": false,
+      "deployed": false
+    },
+    {
+      "target": "nixosConfigurations.britton-desktop.config.system.build.toplevel",
+      "command": "nix build .#nixosConfigurations.britton-desktop.config.system.build.toplevel --no-link -L --option min-free 0 --option max-free 0",
+      "exit": 1,
+      "phase": "dependency-build-check",
+      "failed_derivation": "/nix/store/3nb75b2l1741r4262ww5rzqfqgys5jnk-herdr-plugin-pueue-0.1.0.drv",
+      "failed_dependency_exit": 101,
+      "test_binary": "process_adapter",
+      "observed_test_result": "0 passed; 15 failed; 0 ignored; 0 measured; 0 filtered out",
+      "observed_secondary_diagnostic": "process test lock was poisoned",
+      "target_derivation": "/nix/store/41y82kd87y806pna8flgx6j2afrcpwdg-nixos-system-britton-desktop-26.11.20260929.b6c8664.drv",
+      "unrealized_target_output": "/nix/store/vc8i4r4lzlx7ji4pjz16p1s5w51v7nxm-nixos-system-britton-desktop-26.11.20260929.b6c8664",
+      "completed_closure": false,
+      "deployed": false
+    }
+  ],
+  "boundaries": [
+    "Timeouts from earlier attempts are retained separately, not reported as source failures or accepted closures",
+    "These are terminal results from unchanged-input continuations; no test rerun to dispute failure",
+    "No insecure-package waiver, compiler/profile/locked-source change, skipped test or unrelated Herdr fix was attempted",
+    "Unrealized output paths are derivation metadata, not completed builds or deployed systems",
+    "The independently missing live source baseline still forbids a broad dirty-tree switch even if build gates are later resolved"
+  ],
+  "deployment": "not-performed",
+  "anonymous_acquisition": "not-established"
+}

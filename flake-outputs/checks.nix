@@ -48,6 +48,7 @@ let
   dgxDevenvChecks = (import ./_dgx-devenv-checks.nix) innerArgs;
   personalRadicleNodeChecks = (import ./_personal-radicle-node-checks.nix) innerArgs;
   radicleCiRunnerChecks = (import ./_radicle-ci-runner-checks.nix) innerArgs;
+  radicleCanonicalArtifactAdmissionChecks = (import ./_radicle-canonical-artifact-admission-checks.nix) innerArgs;
   radicleChoregraphAdmissionChecks = (import ./_radicle-choregraph-admission-checks.nix) innerArgs;
   radicleDurableFilePublicationAdmissionChecks = (import ./_radicle-durable-file-publication-admission-checks.nix) innerArgs;
   radicleExecutionGraphAdmissionChecks = (import ./_radicle-execution-graph-admission-checks.nix) innerArgs;
@@ -88,6 +89,7 @@ in
     // (dgxDevenvChecks.checks or { })
     // (personalRadicleNodeChecks.checks or { })
     // (radicleCiRunnerChecks.checks or { })
+    // (radicleCanonicalArtifactAdmissionChecks.checks or { })
     // (radicleChoregraphAdmissionChecks.checks or { })
     // (radicleDurableFilePublicationAdmissionChecks.checks or { })
     // (radicleExecutionGraphAdmissionChecks.checks or { })

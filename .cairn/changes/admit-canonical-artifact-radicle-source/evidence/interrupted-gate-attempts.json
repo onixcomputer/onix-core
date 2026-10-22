@@ -1,0 +1,43 @@
+{
+  "kind": "interrupted-focused-owner-gate-attempts",
+  "observed_date": "2026-10-16",
+  "source_freeze": "frozen-source.json",
+  "attempts": [
+    {
+      "command": "nix build --accept-flake-config --no-pure-eval -L --no-link .#checks.x86_64-linux.radicle-node-policy .#checks.x86_64-linux.radicle-seed-replica .#checks.x86_64-linux.radicle-canonical-artifact-source-evidence .#checks.x86_64-linux.radicle-choregraph-source-admission .#checks.x86_64-linux.radicle-durable-file-publication-source-admission .#checks.x86_64-linux.radicle-source-admission --option min-free 0 --option max-free 0",
+      "result": "command-deadline-interrupted",
+      "deadline_seconds": 180,
+      "observed_activity": "realizing pinned dependencies; Cargo package phases and cache copies",
+      "pass_claim": false
+    },
+    {
+      "command": "nix build .#nixosConfigurations.aspen1.config.system.build.toplevel --no-link -L --option min-free 0 --option max-free 0",
+      "result": "command-deadline-interrupted",
+      "deadline_seconds": 180,
+      "observed_activity": "realizing pinned dependencies locally and through existing configured Aspen builder",
+      "pass_claim": false
+    },
+    {
+      "command": "nix build .#nixosConfigurations.aspen3.config.system.build.toplevel --no-link -L --option min-free 0 --option max-free 0",
+      "result": "command-deadline-interrupted",
+      "deadline_seconds": 180,
+      "observed_activity": "realizing pinned dependencies locally and through existing configured Aspen builder",
+      "pass_claim": false
+    },
+    {
+      "command": "nix build --accept-flake-config --no-pure-eval -L --no-link .#checks.x86_64-linux.radicle-canonical-artifact-source-admission --option min-free 0 --option max-free 0",
+      "result": "command-deadline-interrupted",
+      "deadline_seconds": 120,
+      "observed_activity": "realizing pinned dependencies before the admission predicate was reached",
+      "pass_claim": false
+    }
+  ],
+  "continuation": "Each interrupted owner gate was continued on unchanged implementation with command deadline disabled; final outcomes belong to a separate observed result record",
+  "tool_identity_caveat": "Concurrent async tool completions swapped the two returned identifiers for replica-closure and admission-gate commands. Commands and observed deadlines, not returned job IDs, identify these attempts. Reported through automated tool QA.",
+  "non_claims": [
+    "A timeout is not a source defect",
+    "A timeout is not an accepted store import, passed check, completed closure or deployable configuration",
+    "No compiler, profile, locked source input or source-selection policy was changed to evade a gate",
+    "Builds use existing configured builders; no live activation or runtime override was performed"
+  ]
+}

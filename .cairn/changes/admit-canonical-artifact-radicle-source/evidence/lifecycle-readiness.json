@@ -1,0 +1,24 @@
+{
+  "kind": "redacted-cairn-readiness-projection",
+  "source_schema": "cairn.readiness.v1",
+  "source_receipt_hash": "51b5815355097e2af7e1f9ff983063c57af21408654ec3ce71fd9a558ed0ea81",
+  "change": "admit-canonical-artifact-radicle-source",
+  "classification": "unavailable",
+  "mutation_authorized": false,
+  "proposal_gate": "PASS",
+  "design_gate": "PASS",
+  "tasks_gate": "PASS",
+  "completion": "unavailable",
+  "archive": "blocked",
+  "remaining_tasks": 3,
+  "blockers": [
+    "tasks not archive-ready (todo: 3, in_progress: 0, unmarked: 0)",
+    "Observation is unavailable"
+  ],
+  "redactions": ["absolute owner checkout and policy paths", "advisory mutation argv"],
+  "non_claims": [
+    "This is an explicitly redacted projection, not the original Cairn receipt",
+    "Structural gate success does not prove deployment, acquisition or release eligibility",
+    "No sync or archive mutation was performed"
+  ]
+}
