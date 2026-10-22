@@ -1,0 +1,6 @@
+CONTAINER ID   IMAGE                                   COMMAND                   CREATED        STATUS                     PORTS     NAMES
+e365ddb7b91c   djev-spark:latest                       "/entrypoint.sh"          2 weeks ago    Exited (143) 13 days ago             dgemma
+d240dfa3f9f0   vllm-dsv41:exl3a                        "vllm serve /models/…"    4 weeks ago    Up 24 hours                          vllm_dsv41
+47afe4b7b4d1   vllm-dsv41:overlay5                     "bash -c '\n  set -eo…"   4 weeks ago    Exited (1) 4 weeks ago               exl3build
+fb53dce18170   vllm-dsv41:overlay1-pre                 "sleep infinity"          4 weeks ago    Exited (137) 4 weeks ago             v41build
+ca08f026a065   ghcr.io/anemll/dspark-vllm-gx10:0.1.1   "bash -lc 'export PA…"    2 months ago   Exited (137) 4 weeks ago             deepseek-v4-flash-vllm-dspark-1
