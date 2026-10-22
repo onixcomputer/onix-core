@@ -18,6 +18,16 @@ Read [`docs/rustfs-build-caches.md`](docs/rustfs-build-caches.md) for private Ka
 
 Read [`docs/site-celld.md`](docs/site-celld.md) for the private Site fleet, publisher credential boundary, deployment, and activation.
 
+## Herdr
+
+`aspen1`, `aspen2`, `aspen3`, `bonsai`, and `britton-desktop` select the same
+wrapped Herdr package with seven immutable bundled plugins. The `brittonr/herdr`
+Home Manager profile supplies `~/.config/herdr/config.toml` and the Neovim
+navigation adapter; the terminal prefix is `Alt+Space`.
+
+Machine additions take effect after the next NixOS/Home Manager activation.
+Activation does not install plugins or restart existing Herdr sessions.
+
 ## Automatic Tailscale SSH hosts
 
 The brittonr base SSH profile includes `~/.ssh/tailscale_hosts`, generated from

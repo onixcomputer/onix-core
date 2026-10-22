@@ -78,12 +78,17 @@ let { ValidateUserRefs, .. } = import "user-contracts.ncl" in
       },
     },
 
-    # Aspen3 also gets the Herdr terminal plugin profile with its generated
-    # config.toml, matching the wired-binary install in the machine config.
-    hm-aspen3-herdr = {
+    # Herdr config and Neovim integration for machines with the wrapped package.
+    # r[impl onix.herdr.fleet.profile]
+    hm-herdr-fleet = {
       module = { name = "home-manager-profiles", input = "self" },
       roles.default = {
-        machines.aspen3 = {},
+        machines = {
+          aspen1 = {},
+          aspen2 = {},
+          aspen3 = {},
+          bonsai = {},
+        },
         settings = {
           username = "brittonr",
           profiles = ["herdr"],

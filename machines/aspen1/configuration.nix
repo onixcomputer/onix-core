@@ -34,6 +34,8 @@
   # Install terraform/tofu for Keycloak terraform integration
   environment.systemPackages = with pkgs; [
     opentofu # OpenTofu (Terraform fork)
+    # r[impl onix.herdr.fleet.aspen1]
+    herdr
   ];
 
   services = {
