@@ -12,12 +12,19 @@
 }:
 let
   privateStateDirectoryMode = "0700";
-  reviewedNodeVersion = "1.9.1";
-  reviewedHttpdVersion = "0.27.0";
+  # Exact release an operator reviewed (accepted 2026-10-21); any other
+  # packaged version fails radicle-node-policy until it is reviewed.
+  reviewedNodeVersion = "1.10.3";
+  # Lowest version the module admits, matching validate-settings.nix.
+  minimumNodeVersion = "1.9.1";
+  # Release recorded by the accepted bootstrap receipt.
+  bootstrapNodeVersion = "1.9.1";
+  # Exact radicle-httpd identity an operator reviewed (accepted 2026-10-21).
+  reviewedHttpdVersion = "0.28.0";
   reviewedHttpdSourceUrl = "https://seed.radicle.dev/z4V1sjrXqjvFdnCUbxPFqd5p4DtH5.git";
-  reviewedHttpdSourceRevision = "refs/tags/releases/0.27.0";
-  reviewedHttpdSourceHash = "sha256-OJrHV5WdFNzoYrOkqpN1ctrJDB3JTJhH54q/C6IV9ZU=";
-  reviewedHttpdCargoHash = "sha256-FjYhw27pAX9Tilgm/Tg18Vkv4/K5kEFJAbhv1mDY0rg=";
+  reviewedHttpdSourceRevision = "refs/tags/releases/0.28.0";
+  reviewedHttpdSourceHash = "sha256-D15u6aU6lKch/bEa1J6PBntb42NMHWYChIgprbJM+4M=";
+  reviewedHttpdCargoHash = "sha256-z/ddTzoitMOsfndleM8Wu2sOn156ZTg8w/3/AJYw8wE=";
   bootstrapHttpdVersion = "0.25.0";
   minimumRejectedNodeVersion = "1.9.0";
   expectedHost = "aspen1";
@@ -264,7 +271,7 @@ let
       settings = positiveSettings;
       packageVersion = minimumRejectedNodeVersion;
       actualHost = expectedHost;
-      expected = "version ${reviewedNodeVersion} or later";
+      expected = "version ${minimumNodeVersion} or later";
     }
     {
       name = "wrong-selected-host";
@@ -1059,9 +1066,9 @@ let
     && receipt.schema_version == bootstrapReceiptSchemaVersion
     && receipt.receipt_type == bootstrapReceiptType
     && receipt.status == bootstrapReceiptStatus
-    && receipt.policy.minimum_node_version == reviewedNodeVersion
+    && receipt.policy.minimum_node_version == bootstrapNodeVersion
     && receipt.policy.minimum_signed_refs_feature == "parent"
-    && receipt.packages.node.version == reviewedNodeVersion
+    && receipt.packages.node.version == bootstrapNodeVersion
     && receipt.packages.httpd.version == bootstrapHttpdVersion
     && receipt.machine.host == expectedHost
     && receipt.machine.deployment_target == deploymentTarget

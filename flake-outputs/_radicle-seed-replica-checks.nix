@@ -11,7 +11,10 @@
   ...
 }:
 let
-  reviewedNodeVersion = "1.9.1";
+  # Lowest version the module admits, matching validate-settings.nix.
+  minimumNodeVersion = "1.9.1";
+  # Release recorded by the accepted replica receipt.
+  receiptNodeVersion = "1.9.1";
   rustEdition = "2021";
   rejectedNodeVersion = "1.9.0";
   reviewedHosts = import ../modules/radicle-seed-replica/reviewed-hosts.nix;
@@ -197,7 +200,7 @@ let
       settings = positiveSettings;
       packageVersion = rejectedNodeVersion;
       actualHost = expectedHost;
-      expected = reviewedNodeVersion;
+      expected = minimumNodeVersion;
     }
     {
       name = "wrong-host";
@@ -781,11 +784,11 @@ let
         (rejectUnless (
           receipt.policy.source_revision == expectedReplicaPolicyRevision
           && receipt.policy.check == "checks.x86_64-linux.radicle-seed-replica"
-          && lib.versionAtLeast receipt.policy.minimum_node_version reviewedNodeVersion
+          && lib.versionAtLeast receipt.policy.minimum_node_version minimumNodeVersion
           && receipt.policy.minimum_signed_refs_feature == "parent"
         ) "replica receipt policy revision, check, package bound, or signed refs is invalid")
         (rejectUnless (
-          receipt.package.node_version == reviewedNodeVersion
+          receipt.package.node_version == receiptNodeVersion
           && receipt.package.node_store_path == expectedNodeStorePath
           && receipt.package.reconciler_store_path == expectedReconcilerStorePath
           && receipt.package.identity_verifier_store_path == expectedIdentityVerifierStorePath
