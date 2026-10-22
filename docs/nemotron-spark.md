@@ -120,7 +120,7 @@ The [native campaign evidence](../.cairn/changes/run-three-nemotron-proof-worker
 - **Claim boundary:** the remaining explicit trusted-boundary count is **13**, down from 15. This commitment binds supplied hashes exactly; it is not a cryptographic hash, payload authenticator, wire codec, or proof that upstream hashes resist collisions. Recomputing a matching commitment can produce another valid record. The version fallback and remaining trust boundaries are unchanged.
 - **Restoration:** the owned replica was stopped and removed, the tunnel was closed, and all three original DeepSeek containers matched their recorded IDs, images, `Config`, `HostConfig` and destination-keyed mounts. The restored head returned `42`. No persistent Spark configuration was changed.
 
-The [native repair evidence](../.cairn/changes/repair-trellis-snapshot-integrity/evidence/) retains the actual model transcript, rejected candidate, failed-before consumer receipt, source identities, runtime/proof results, recovered local-tool failures and restoration proof.
+The [native repair evidence](../.cairn/archive/2026-10-21-repair-trellis-snapshot-integrity/evidence/) retains the actual model transcript, rejected candidate, failed-before consumer receipt, source identities, runtime/proof results, recovered local-tool failures and restoration proof.
 
 ### Unrestricted Nix version comparison (2026-10-17)
 
@@ -131,7 +131,7 @@ The [native repair evidence](../.cairn/changes/repair-trellis-snapshot-integrity
 - **Repository-wide limitation:** the complete verifier command is not green: immutable UCAN manifest/release-profile checks reject existing working-tree identity drift, including the prospective licensing change. Those recorded release identities remain untouched. The successful full production proof run uses the configured `--rlimit 20 --triggers-mode silent` profile; earlier direct invocations and their resource-limit failures remain in the evidence.
 - **Restoration:** the owned replica and tunnel were closed. All three original DeepSeek containers matched their recorded IDs, images, `Config`, `HostConfig` and destination-keyed mounts; the restored head returned `42`. No persistent Spark configuration changed.
 
-The [native Nix repair evidence](../.cairn/changes/repair-trellis-nix-version/evidence/) separates the actual model failure from the independent correction, before/after runtime failures, exact oracle identities and source-bound acceptance. Trellis retains a standalone acceptance bundle in `.cairn/changes/verify-unrestricted-nix-version/evidence/`.
+The [native Nix repair evidence](../.cairn/archive/2026-10-21-repair-trellis-nix-version/evidence/) separates the actual model failure from the independent correction, before/after runtime failures, exact oracle identities and source-bound acceptance. Trellis retains a standalone acceptance bundle in `.cairn/changes/verify-unrestricted-nix-version/evidence/`.
 
 ## Restore DeepSeek after the session, including failure
 
@@ -174,5 +174,5 @@ The documented shorter checkout path is a symlink rejected by the `path:` fetche
 - [OpenCode permissions](https://opencode.ai/docs/permissions/): exact worktree-relative file allowlists, not unrestricted agent approval.
 - Native change and recorded acceptance artifacts: [`.cairn/changes/run-nemotron35-verus-on-spark`](../.cairn/changes/run-nemotron35-verus-on-spark/).
 - Three-worker campaign, frozen inputs, and actual endpoint evidence: [`.cairn/changes/run-three-nemotron-proof-workers`](../.cairn/changes/run-three-nemotron-proof-workers/).
-- Snapshot-integrity repair and independent acceptance: [`.cairn/changes/repair-trellis-snapshot-integrity`](../.cairn/changes/repair-trellis-snapshot-integrity/).
-- Unrestricted Nix comparison and independent acceptance: [`.cairn/changes/repair-trellis-nix-version`](../.cairn/changes/repair-trellis-nix-version/).
+- Snapshot-integrity repair and independent acceptance: [`.cairn/archive/2026-10-21-repair-trellis-snapshot-integrity`](../.cairn/archive/2026-10-21-repair-trellis-snapshot-integrity/).
+- Unrestricted Nix comparison and independent acceptance: [`.cairn/archive/2026-10-21-repair-trellis-nix-version`](../.cairn/archive/2026-10-21-repair-trellis-nix-version/).

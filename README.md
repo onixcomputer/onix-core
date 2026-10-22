@@ -84,7 +84,7 @@ Read [`docs/factorseal.md`](docs/factorseal.md) for the opt-in Factorseal protot
 - [MercuryTechnologies/mercury-cli](https://github.com/MercuryTechnologies/mercury-cli) — upstream flake used for the Mercury terminal banking CLI.
 - [Mic92/fast-nix-gc](https://github.com/Mic92/fast-nix-gc) — upstream fast Nix store garbage collector and optimiser used by store maintenance.
 - [Mic92/niks3](https://github.com/Mic92/niks3) — pinned Nix binary cache, auto-upload hook, read proxy, and NixOS modules used by the private RustFS-backed cache.
-- [niri-wm/niri](https://github.com/niri-wm/niri) — upstream compositor input used by the shared Noctalia profile and Aspen3's greeter; see [the Aspen3 upstream migration](.cairn/changes/use-upstream-niri-on-aspen3/design.md) for removed fork-only settings and rollout scope.
+- [niri-wm/niri](https://github.com/niri-wm/niri) — upstream compositor input used by the shared Noctalia profile and Aspen3's greeter; see [the Aspen3 upstream migration](.cairn/archive/2026-10-21-use-upstream-niri-on-aspen3/design.md) for removed fork-only settings and rollout scope.
 - [OnixResearch/tenstorrent.nix](https://github.com/OnixResearch/tenstorrent.nix) — dedicated flake owning Onix's Tenstorrent Blackhole packages, ttWKV7/RWKV harnesses, and retained evidence validators.
 - [paulbkim-dev/vim-herdr-navigation](https://github.com/paulbkim-dev/vim-herdr-navigation) — pinned Herdr and Neovim adapters used for pane navigation.
 - [RossComputerGuy/tenstorrent.nix](https://github.com/RossComputerGuy/tenstorrent.nix) — original upstream package history retained as the base of the OnixResearch repository.
