@@ -1,0 +1,294 @@
+{
+  "schema": 1,
+  "recorded_at": "2026-10-18T00:38:02.720Z",
+  "status": "accepted-independent-comparison-repair-with-repository-wide-check-limitations",
+  "implementation_attribution": "Independent parent correction; the real bounded model attempt made no source edits.",
+  "source_manifest": "final-source-identities.json",
+  "model": {
+    "outcome": "model-outcome.json",
+    "accepted_autonomous_repair": false,
+    "terminal_error": "ContextOverflowError"
+  },
+  "runtime": {
+    "receipt": "integrated-actual-nix-differential.json",
+    "corpus": "actual-nix-comparison.json",
+    "actual_nix_version": "2.36.0",
+    "native_pairs": 6322,
+    "evaluator_pairs": 3279,
+    "mismatches": 0,
+    "errors": 0,
+    "baseline_failures": [
+      {
+        "case": "pre-release",
+        "before_result": "1",
+        "before_timed_out": false,
+        "actual_nix_result": "-1"
+      },
+      {
+        "case": "int-overflow-boundary",
+        "before_result": "1",
+        "before_timed_out": false,
+        "actual_nix_result": "-1"
+      },
+      {
+        "case": "overflow-lexical",
+        "before_result": "-1",
+        "before_timed_out": false,
+        "actual_nix_result": "1"
+      },
+      {
+        "case": "u64-saturation",
+        "before_result": "0",
+        "before_timed_out": false,
+        "actual_nix_result": "-1"
+      },
+      {
+        "case": "non-progress",
+        "before_result": "",
+        "before_timed_out": true,
+        "actual_nix_result": "0"
+      }
+    ],
+    "claim_boundary": "NUL-containing and non-UTF8 byte strings are deliberately excluded from the ordinary JSON evaluator channel, not from native/runtime comparison. No byte-wide evaluator equivalence is claimed.",
+    "byte_profile_boundary": "All 256 byte values are probed, including equal high bytes and bytes adjacent to digits. This is empirical evidence for these exact binaries/libraries in the C locale, not portable C++ signed-char equivalence. Passing a negative signed char other than EOF to isdigit is undefined by the C standard unless converted to unsigned char; this harness does not establish the upstream cast/compiler details or all libc behavior. ldd identifies resolved dependencies, not a captured live process map. Host getconf libc and native-linked libc can differ; inspect both recorded identities.",
+    "comparator_sha256": "b4a64d68f9bee30bcf5cb25d46d833c13c48a6ab5e6dea20327cd370ad26408e",
+    "comparator_matches_final_source": true,
+    "reproduction_tools": [
+      "tools/compare-against-actual-nix.py",
+      "tools/native-oracle.cpp",
+      "tools/runtime-smoke/Cargo.toml",
+      "tools/runtime-smoke/src/main.rs"
+    ]
+  },
+  "restoration": {
+    "receipt": "restoration.json",
+    "verified": true,
+    "unchanged_original_containers": 3,
+    "restored_completion": "42",
+    "owned_replica_removed": true,
+    "tunnel_closed": true
+  },
+  "current_trust": {
+    "external_body_sites": 12,
+    "source_files": 4,
+    "exec_bridges": 7,
+    "proof_assumptions": 5,
+    "comparison_trusted_fallback_removed": true,
+    "replacement_assumptions": 0
+  },
+  "scope": {
+    "changed_rust_sources": [
+      "src/nix_eval_closure_policy.rs",
+      "src/nix_version.rs",
+      "src/proof_gap_boundary_audit.rs"
+    ],
+    "comparator_source": "src/nix_version.rs",
+    "remaining_own_temporary_files": "None. Only the restricted private original-container inspection record remains in the ignored target directory."
+  },
+  "lifecycle": {
+    "onix": "closeout-onix-cairn-validation-2.json",
+    "trellis": "closeout-trellis-cairn-validation-2.json",
+    "both_exit": 0,
+    "findings": {
+      "onix": [],
+      "trellis": []
+    },
+    "archive_or_publication_claimed": false,
+    "local_source": {
+      "requested": "/home/brittonr/git/cairn",
+      "resolved": "/home/brittonr/git/OnixResearch/cairn",
+      "invocation": "nix run git+file:///home/brittonr/git/OnixResearch/cairn#cairn -- validate",
+      "recovery": "The mandated local path is a symlink rejected by this Nix path: accessor before Cairn runs; the resolved same checkout uses the previously successful git+file: route.",
+      "failed_invocations": [
+        "closeout-onix-cairn-validation.json",
+        "closeout-trellis-cairn-validation.json"
+      ]
+    },
+    "closeout_receipts": {
+      "onix": "closeout-onix-cairn-validation-2.json",
+      "trellis": "closeout-trellis-cairn-validation-2.json"
+    }
+  },
+  "consumer_tests": {
+    "receipt": "final-nix-consumer-regressions-2.json",
+    "passed": 110,
+    "failed": 0,
+    "observed_library_total": 5228,
+    "compiler_path_restored": true,
+    "source_unchanged": true
+  },
+  "proofs": {
+    "receipt": "final-full-production-verus.json",
+    "verified": 11143,
+    "errors": 0,
+    "source_unchanged": true,
+    "normal_pipeline_proof_phase_passed": true
+  },
+  "clippy": {
+    "receipt": "final-strict-clippy.json",
+    "all_targets": true,
+    "warnings_denied": true,
+    "exit": 0,
+    "source_unchanged": true
+  },
+  "tests": {
+    "receipt": "final-all-cargo-tests.json",
+    "library_passed": 5228,
+    "binary_passed": 52,
+    "documentation_passed": 9,
+    "failures": 0,
+    "source_unchanged": true
+  },
+  "prerequisite_recovery": {
+    "download": "pinned-prerequisite-prefetch.json",
+    "first_import": "pinned-prerequisite-import.json",
+    "stale_worker_cleanup": "stale-nix-worker-cleanup.json",
+    "master_daemon_restarted": false,
+    "root_authority": "Existing authenticated SSH; only stale root worker whose client was gone was stopped.",
+    "final_import": "pinned-prerequisite-import-2.json",
+    "pinned_exporter": "pinned-exporter-build.json"
+  },
+  "tracey": {
+    "uncovered": 0,
+    "untested": 0,
+    "rules": 2270,
+    "receipts": [
+      "final-tracey-uncovered.json",
+      "final-tracey-untested.json"
+    ],
+    "first_status_query": {
+      "receipt": "final-tracey-status.json",
+      "accepted_as_status_evidence": false,
+      "diagnostic": "Initial daemon auto-start status query logged Error: Cancelled. Subsequent actual coverage queries independently returned the stated zero counts."
+    }
+  },
+  "verification_capture": "tools/log-command.py",
+  "repository_wide_checks": {
+    "receipt": "final-full-repository-acceptance-4.json",
+    "exit": 1,
+    "source_unchanged": true,
+    "accepted_as_green_pipeline": false,
+    "identity_failures": {
+      "manifest": "docs/proof-artifact-manifest.json",
+      "release_profile": "consumer-profile/profile.ncl",
+      "immutable_release_revision": "1f03111b92cc36aade07359c96773e086908c95f",
+      "unchanged_frozen_inputs": {
+        "Cargo.toml": {
+          "campaign_sha256": "74db101de5cd7a3d825c39fa9c95205cd744e092d615f2b1d36d4d77d569fbdf",
+          "final_sha256": "74db101de5cd7a3d825c39fa9c95205cd744e092d615f2b1d36d4d77d569fbdf",
+          "unchanged": true
+        },
+        "src/lib.rs": {
+          "campaign_sha256": "315e39019b77c2e293de07bdc2569a1c187019ae796ef984f3e25cc21b0589f8",
+          "final_sha256": "315e39019b77c2e293de07bdc2569a1c187019ae796ef984f3e25cc21b0589f8",
+          "unchanged": true
+        },
+        "src/ucan_did.rs": {
+          "campaign_sha256": "b3106a1e4022b4f86b4291b9d042de62ff8f95a17de59b4e57d0d66f206e1f47",
+          "final_sha256": "b3106a1e4022b4f86b4291b9d042de62ff8f95a17de59b4e57d0d66f206e1f47",
+          "unchanged": true
+        }
+      },
+      "licensing_boundary": "The selected MPL-2.0 release profile is intentionally not advanced or relicensed by the existing prospective AGPL preparation; no pre-campaign LICENSE digest was frozen by this campaign."
+    },
+    "proof_invocation_limit": "Earlier forced-VERUS_ROOT/default-rlimit failures remain in the superseded receipt. The complete production profile independently verified 11143 with zero errors, and the final normal pipeline also passed its Verus phase.",
+    "source_derived_bundle": {
+      "regeneration": "final-proof-evidence-regeneration.json",
+      "validation": "final-proof-evidence-validation.json",
+      "records": 8,
+      "dependent_ir_regeneration": "final-proof-evidence-ir-regeneration.json",
+      "superseded_ir_validation": "final-proof-evidence-ir-validation.json",
+      "final_validation": "final-full-repository-acceptance-4.json",
+      "final_ir_records": 8
+    },
+    "superseded_receipt": "final-full-repository-acceptance-3.json",
+    "normal_environment": "Unmodified scripts/verify.rs with forced VERUS_ROOT removed; its normal production Nix proof path passed."
+  },
+  "metadata": {
+    "manifest": "final-metadata-identities.json",
+    "current_artifacts": {
+      "README.md": {
+        "bytes": 62804,
+        "sha256": "72e332e8f79cf9acf43e2b6c2118b7632041bb642ca6b6764a511f50022f30fa"
+      },
+      "docs/requirements.md": {
+        "bytes": 620730,
+        "sha256": "702db75ea1ba4a8853dcd2317894a11ffeeeeb158bda0427e4a59da2c1871281"
+      },
+      "docs/proof-gap-sites.tsv": {
+        "bytes": 2803,
+        "sha256": "c39bc4e4845a00281b01df0ad599885c0c0d98537b24b06ffbc1318c59595735"
+      },
+      "docs/module-index.md": {
+        "bytes": 136682,
+        "sha256": "47478b557ed8eb0df45bb9704fe30baf4180587831a49e5e7d49b7443b840356"
+      },
+      "docs/proof-evidence-bundle.json": {
+        "bytes": 28867,
+        "sha256": "c4147ec81ed4eec8e3af6e0cf47a1008fdc581036df0418bfb397b897be7a228"
+      },
+      "docs/proof-evidence-ir-chain.json": {
+        "bytes": 44011,
+        "sha256": "73171c769992f55197287d61de2b22e954e85bfdc5a0501d49a4c0f8e511395c"
+      },
+      "docs/proof-artifact-manifest.json": {
+        "bytes": 21530,
+        "sha256": "8b1fcf02b5eecfea0b307a3cf1d064e5479be2dd5be459924e0bb5d3263bec40"
+      },
+      "consumer-profile/profile.ncl": {
+        "bytes": 8538,
+        "sha256": "8cbc1105fa8acbc6b4df4b4600d01d1da557e501dffe479726d7a84290f13606"
+      },
+      "LICENSE": {
+        "bytes": 34523,
+        "sha256": "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0"
+      }
+    }
+  },
+  "cleanup": {
+    "at": "2026-10-17T23:45:51.930Z",
+    "source_only_tools_retained": "tools/",
+    "private_docker_inspections_retained_at": "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/original-containers-private.json",
+    "removed": [
+      "client-state",
+      "opencode.json",
+      "model-session.py",
+      "source-bound-verifier.py",
+      "work/verify",
+      "work/liblib.rlib",
+      "independent-nix_version.rs",
+      "seed-cache"
+    ],
+    "retained_frozen_sources": [
+      "native evidence before/src and after/src",
+      "model-candidate/src",
+      "input-identities.json and final-source-identities.json"
+    ],
+    "remote_runtime_cleanup_receipts": [
+      "restoration.json",
+      "tunnel-cleanup.json"
+    ],
+    "verifier_gc_root": "production-verus-root",
+    "superseded_owned_inventory_task_cancelled": true,
+    "post_acceptance_workspace_removed": [
+      "work",
+      "original",
+      "native-oracle",
+      "runtime-smoke",
+      "compare-against-actual-nix.py",
+      "tmp",
+      "log-command.py",
+      "session.json",
+      "production-verus-root"
+    ],
+    "still_in_use": [],
+    "private_record_permissions": {
+      "directory": "0700",
+      "record": "0600",
+      "path": "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/original-containers-private.json"
+    },
+    "verifier_gc_root_removed": true,
+    "completed_at": "2026-10-18T00:38:02.720Z",
+    "only_retained_campaign_file": "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/original-containers-private.json"
+  }
+}

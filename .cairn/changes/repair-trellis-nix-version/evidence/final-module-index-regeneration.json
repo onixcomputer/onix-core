@@ -1,0 +1,18 @@
+{
+  "at": "2026-10-17T23:40:08.460000+00:00",
+  "argv": [
+    "/home/brittonr/git/OnixResearch/trellis/scripts/check-module-index.rs",
+    "--write"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "source_manifest": "integrated-source-identities.json",
+  "deadline_seconds": 240,
+  "stdout_log": "final-module-index-regeneration.log",
+  "exit": 0,
+  "timed_out": false,
+  "elapsed_seconds": 0.6166414089966565,
+  "finished_at": "2026-10-17T23:40:09.076765+00:00",
+  "summaries": [
+    "\u2713 wrote docs/module-index.md"
+  ]
+}

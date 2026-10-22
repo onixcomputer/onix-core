@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-18T00:08:09.232671+00:00",
+  "transport": "Python urllib HTTP/1 client; no TLS or integrity checks disabled",
+  "url": "https://cache.nixos.org/nar/1h4jkfjbdp9y0alp86z38g60mqw7rzx89gn16dbvw8wn2z7r002j.nar.zst",
+  "bytes": 48088061,
+  "elapsed_seconds": 1.9238741740118712,
+  "compressed_sha256_nix32": "1nvyygfmmw036qsv6z143hkf8dsh4fyrxc1a0l4g3lhc8r7xs05q",
+  "matches_signed_cache_metadata": true,
+  "hash_command": [
+    "/run/current-system/sw/bin/nix",
+    "hash",
+    "file",
+    "--type",
+    "sha256",
+    "--base32",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/seed-cache/nar/1h4jkfjbdp9y0alp86z38g60mqw7rzx89gn16dbvw8wn2z7r002j.nar.zst"
+  ],
+  "cache_root": "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/seed-cache"
+}

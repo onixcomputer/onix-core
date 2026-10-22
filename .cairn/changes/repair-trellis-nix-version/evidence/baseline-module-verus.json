@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-17T22:25:36.023Z",
+  "finished_at": "2026-10-17T22:26:17.504Z",
+  "argv": [
+    "bash",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/work/scripts/verus.sh",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/work/src/lib.rs",
+    "--verify-module",
+    "nix_version",
+    "--rlimit",
+    "20",
+    "--triggers-mode",
+    "silent"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/work",
+  "exit": 0,
+  "timed_out": false,
+  "source_manifest": "input-identities.json",
+  "stdout_log": "baseline-module-verus.log",
+  "summaries": [
+    "verification results:: 39 verified, 0 errors (partial verification with `--verify-*`)"
+  ]
+}

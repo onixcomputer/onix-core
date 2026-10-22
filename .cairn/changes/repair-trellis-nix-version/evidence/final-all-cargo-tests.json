@@ -1,0 +1,42 @@
+{
+  "at": "2026-10-18T00:11:53.977142+00:00",
+  "argv": [
+    "/nix/store/gbrj4zlys951xy55wqwr74m0kmiz6xr1-rust-default-1.96.0-nightly-2026-03-21/bin/cargo",
+    "test"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "source_manifest": "final-source-identities.json",
+  "deadline_seconds": 600,
+  "stdout_log": "final-all-cargo-tests.log",
+  "source_manifest_sha256": "a5e4cf2c7cd104923c526627be47d81398e48d20d2cf125b7fe2530d53b72dba",
+  "source_mismatches_before": [],
+  "compiler_path_sha256": "4e574ac2d963b953c9316ec7b0838f85246637f15cc7980c2d6191e3654c3bf8",
+  "exit": 0,
+  "timed_out": false,
+  "elapsed_seconds": 99.07007404300384,
+  "finished_at": "2026-10-18T00:13:33.084152+00:00",
+  "source_mismatches_after": [],
+  "summaries": [
+    "test result::tests::prop_map_ok_map_err_commute ... ok",
+    "test result::tests::test_map_err ... ok",
+    "test result::tests::test_map_ok ... ok",
+    "test result::tests::test_or_else ... ok",
+    "test result::tests::test_unwrap_or ... ok",
+    "test result::tests::test_and_then ... ok",
+    "test result::tests::prop_map_err_preserves_ok ... ok",
+    "test result::tests::prop_map_ok_preserves_err ... ok",
+    "test result::tests::prop_and_then_right_identity ... ok",
+    "test result::tests::prop_and_then_err_propagates ... ok",
+    "test result::tests::prop_unwrap_or_err ... ok",
+    "test result::tests::prop_or_else_err_uses_fallback ... ok",
+    "test result::tests::prop_or_else_ok_unchanged ... ok",
+    "test result::tests::prop_unwrap_or_ok ... ok",
+    "test result: ok. 5228 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.57s",
+    "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+    "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+    "test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 58.25s",
+    "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+    "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+    "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s"
+  ]
+}

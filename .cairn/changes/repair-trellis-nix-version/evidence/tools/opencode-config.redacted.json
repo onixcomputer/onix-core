@@ -1,0 +1,109 @@
+{
+  "original_sha256": "d5fd33d63d6f3972912f95e4eb09d98b47fe4d1eb9e9889b8e3a655f4ad4c774",
+  "config": {
+    "$schema": "https://opencode.ai/config.json",
+    "share": "disabled",
+    "autoupdate": false,
+    "snapshot": false,
+    "plugin": [],
+    "mcp": {},
+    "lsp": false,
+    "formatter": false,
+    "instructions": [],
+    "enabled_providers": [
+      "nemotron"
+    ],
+    "model": "nemotron/nemotron-3.5-super-vl",
+    "small_model": "nemotron/nemotron-3.5-super-vl",
+    "default_agent": "proof",
+    "permission": {
+      "*": "deny",
+      "read": {
+        "*": "deny",
+        "src/**": "allow"
+      },
+      "edit": {
+        "*": "deny",
+        "src/nix_version.rs": "allow",
+        "src/properties.rs": "allow",
+        "findings.md": "allow"
+      },
+      "bash": {
+        "*": "deny",
+        "./verify": "allow",
+        "bash ./verify": "allow"
+      },
+      "external_directory": "deny"
+    },
+    "compaction": {
+      "auto": false
+    },
+    "provider": {
+      "nemotron": {
+        "npm": "@ai-sdk/openai-compatible",
+        "env": [],
+        "name": "Local Nemotron",
+        "options": {
+          "baseURL": "http://127.0.0.1:18000/v1",
+          "timeout": 300000
+        },
+        "models": {
+          "nemotron-3.5-super-vl": {
+            "name": "nemotron-3.5-super-vl",
+            "reasoning": true,
+            "interleaved": {
+              "field": "reasoning_content"
+            },
+            "temperature": true,
+            "tool_call": true,
+            "modalities": {
+              "input": [
+                "text"
+              ],
+              "output": [
+                "text"
+              ]
+            },
+            "limit": {
+              "context": 65536,
+              "output": 8192
+            },
+            "options": {
+              "chat_template_kwargs": {
+                "enable_thinking": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "agent": {
+      "proof": {
+        "mode": "primary",
+        "prompt": "Repair src/nix_version.rs on this isolated real Trellis source. You may edit that file and only the Nix-version-related consumer proof portions of src/properties.rs if necessary. Preserve derivation-name parsing behavior and all unrelated proofs. Remove the finite one-digit admission architecture, the external-body fallback, dead numeric parsing, and obsolete finite-model APIs. Implement correct full-domain Linux C-locale Nix comparison with no new input precondition, no allocation/copy/recursion in executable scans, no trust escape, no assumption, no weakened meaningful ensures, no saturation. All bytes must make progress. Model the real signed-32-bit numeric classification, not arbitrary-precision ordering: digit components are numeric iff their value fits 2147483647, with unlimited leading zeros; overflowing runs are ordinary text compared lexically. Tokenization skips . and - then consumes a maximal digit run or maximal non-digit/non-separator run, including punctuation, NUL and high bytes. Component order is exact pre < empty < other text < numeric, numeric values compare numerically and ordinary text compares unsigned-byte lexically. Missing components are empty. Thus 1.0pre < 1.0; 2147483648 < 3; 9999999999 > 10000000000; 18446744073709551616 < 18446744073709551617; _ compared with _ is zero and terminates. Keep range, reflexivity and antisymmetry proofs, and unconditional public executable/spec equality. Use ordinary Verus proof induction as needed but executable scans must remain iterative. Use read/edit and bash ./verify only. The verifier checks immutable-source hashes and records each exact partial solver result; partial success is not global acceptance. Keep source compilable and run ./verify to repair errors. Finish with a truthful status. If unable to close a proof, preserve the best honest attempt and write findings.md; never claim success without a passing result.",
+        "temperature": 1,
+        "top_p": 0.95,
+        "steps": 24,
+        "permission": {
+          "*": "deny",
+          "read": {
+            "*": "deny",
+            "src/**": "allow"
+          },
+          "edit": {
+            "*": "deny",
+            "src/nix_version.rs": "allow",
+            "src/properties.rs": "allow",
+            "findings.md": "allow"
+          },
+          "bash": {
+            "*": "deny",
+            "./verify": "allow",
+            "bash ./verify": "allow"
+          },
+          "external_directory": "deny"
+        }
+      }
+    }
+  }
+}

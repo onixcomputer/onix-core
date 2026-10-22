@@ -1,0 +1,18 @@
+{
+  "at": "2026-10-17T23:40:09.224577+00:00",
+  "argv": [
+    "/home/brittonr/git/OnixResearch/trellis/scripts/check-invariant-surface-catalog.rs",
+    "--write"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "source_manifest": "integrated-source-identities.json",
+  "deadline_seconds": 240,
+  "stdout_log": "final-invariant-catalog-regeneration.log",
+  "exit": 0,
+  "timed_out": false,
+  "elapsed_seconds": 0.17479848000220954,
+  "finished_at": "2026-10-17T23:40:09.399487+00:00",
+  "summaries": [
+    "\u2713 wrote docs/invariant-surface-catalog.md"
+  ]
+}

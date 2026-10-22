@@ -1,0 +1,27 @@
+{
+  "at": "2026-10-18T00:28:24.937513+00:00",
+  "argv": [
+    "cargo",
+    "run",
+    "--quiet",
+    "--bin",
+    "proof_evidence",
+    "--",
+    "write"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "source_manifest": "final-source-identities.json",
+  "deadline_seconds": 120,
+  "stdout_log": "final-proof-evidence-regeneration.log",
+  "source_manifest_sha256": "a5e4cf2c7cd104923c526627be47d81398e48d20d2cf125b7fe2530d53b72dba",
+  "source_mismatches_before": [],
+  "compiler_path_sha256": "4e574ac2d963b953c9316ec7b0838f85246637f15cc7980c2d6191e3654c3bf8",
+  "exit": 0,
+  "timed_out": false,
+  "elapsed_seconds": 0.21456814600969665,
+  "finished_at": "2026-10-18T00:28:25.170567+00:00",
+  "source_mismatches_after": [],
+  "summaries": [
+    "\u2713 wrote docs/proof-evidence-bundle.json"
+  ]
+}

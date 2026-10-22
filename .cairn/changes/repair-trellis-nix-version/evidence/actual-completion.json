@@ -1,0 +1,59 @@
+{
+  "at": "2026-10-17T22:43:52.639371+00:00",
+  "request": {
+    "model": "nemotron-3.5-super-vl",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Compute 6 * 7. Reply with only the integer."
+      }
+    ],
+    "temperature": 0,
+    "max_tokens": 64,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "response": {
+    "id": "chatcmpl-984b4b8ffa4324dc",
+    "object": "chat.completion",
+    "created": 1792277032,
+    "model": "nemotron-3.5-super-vl",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "42",
+          "refusal": null,
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "reasoning": null
+        },
+        "logprobs": null,
+        "finish_reason": "stop",
+        "stop_reason": null,
+        "token_ids": null,
+        "routed_experts": null
+      }
+    ],
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.32.0rc1.dev190+g3f1bcfd82-b3a2a49c",
+    "usage": {
+      "prompt_tokens": 29,
+      "total_tokens": 32,
+      "completion_tokens": 3,
+      "prompt_tokens_details": null,
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+  }
+}

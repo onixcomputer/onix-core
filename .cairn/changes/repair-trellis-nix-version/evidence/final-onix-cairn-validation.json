@@ -1,0 +1,26 @@
+{
+  "at": "2026-10-17T23:47:11.167202+00:00",
+  "argv": [
+    "nix",
+    "run",
+    "git+file:///home/brittonr/git/OnixResearch/cairn#cairn",
+    "--",
+    "validate",
+    "--root",
+    "/home/brittonr/git/onix-core",
+    "--policy",
+    "/home/brittonr/git/OnixResearch/cairn/cairn-policy/generated/cairn-policy.json"
+  ],
+  "cwd": "/home/brittonr/git/onix-core",
+  "source_manifest": "final-source-identities.json",
+  "deadline_seconds": 600,
+  "stdout_log": "final-onix-cairn-validation.log",
+  "source_manifest_sha256": "a5e4cf2c7cd104923c526627be47d81398e48d20d2cf125b7fe2530d53b72dba",
+  "source_mismatches_before": [],
+  "exit": 0,
+  "timed_out": false,
+  "elapsed_seconds": 0.16443941701436415,
+  "finished_at": "2026-10-17T23:47:11.355376+00:00",
+  "source_mismatches_after": [],
+  "summaries": []
+}

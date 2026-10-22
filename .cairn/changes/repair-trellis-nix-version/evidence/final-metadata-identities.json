@@ -1,0 +1,42 @@
+{
+  "at": "2026-10-18T00:32:12.625Z",
+  "root": "/home/brittonr/git/OnixResearch/trellis",
+  "artifacts": {
+    "README.md": {
+      "bytes": 62804,
+      "sha256": "72e332e8f79cf9acf43e2b6c2118b7632041bb642ca6b6764a511f50022f30fa"
+    },
+    "docs/requirements.md": {
+      "bytes": 620730,
+      "sha256": "702db75ea1ba4a8853dcd2317894a11ffeeeeb158bda0427e4a59da2c1871281"
+    },
+    "docs/proof-gap-sites.tsv": {
+      "bytes": 2803,
+      "sha256": "c39bc4e4845a00281b01df0ad599885c0c0d98537b24b06ffbc1318c59595735"
+    },
+    "docs/module-index.md": {
+      "bytes": 136682,
+      "sha256": "47478b557ed8eb0df45bb9704fe30baf4180587831a49e5e7d49b7443b840356"
+    },
+    "docs/proof-evidence-bundle.json": {
+      "bytes": 28867,
+      "sha256": "c4147ec81ed4eec8e3af6e0cf47a1008fdc581036df0418bfb397b897be7a228"
+    },
+    "docs/proof-evidence-ir-chain.json": {
+      "bytes": 44011,
+      "sha256": "73171c769992f55197287d61de2b22e954e85bfdc5a0501d49a4c0f8e511395c"
+    },
+    "docs/proof-artifact-manifest.json": {
+      "bytes": 21530,
+      "sha256": "8b1fcf02b5eecfea0b307a3cf1d064e5479be2dd5be459924e0bb5d3263bec40"
+    },
+    "consumer-profile/profile.ncl": {
+      "bytes": 8538,
+      "sha256": "8cbc1105fa8acbc6b4df4b4600d01d1da557e501dffe479726d7a84290f13606"
+    },
+    "LICENSE": {
+      "bytes": 34523,
+      "sha256": "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0"
+    }
+  }
+}

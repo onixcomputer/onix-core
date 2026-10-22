@@ -1,0 +1,24 @@
+{
+  "argv": [
+    "/run/current-system/sw/bin/opencode",
+    "run",
+    "--pure",
+    "--dir",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/work",
+    "--model",
+    "nemotron/nemotron-3.5-super-vl",
+    "--agent",
+    "proof",
+    "--format",
+    "json",
+    "Read src/nix_version.rs, replace its incomplete finite comparison/fallback with a faithful unrestricted Nix specification and ordinary verified iterative implementation, and repair the related algebraic proofs. Follow the supplied exact Nix rules. Reproduce no artificial one-digit or length cap. Use ./verify and report the actual result. Source counters and original histories are not acceptance evidence."
+  ],
+  "seconds": 1800,
+  "steps": 24,
+  "endpoint": "http://127.0.0.1:18000/v1",
+  "source_manifest": "input-identities.json",
+  "edit_allowlist": [
+    "src/nix_version.rs",
+    "src/properties.rs"
+  ]
+}

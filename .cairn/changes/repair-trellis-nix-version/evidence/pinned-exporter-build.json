@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-18T00:18:47.019551+00:00",
+  "argv": [
+    "nix",
+    "build",
+    "--no-link",
+    "--print-out-paths",
+    "github:OnixResearch/nickel-export/257fafc1c746f1faf156207043a4c826bfb16d49#nickel-export"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "source_manifest": "final-source-identities.json",
+  "deadline_seconds": 900,
+  "stdout_log": "pinned-exporter-build.log",
+  "source_manifest_sha256": "a5e4cf2c7cd104923c526627be47d81398e48d20d2cf125b7fe2530d53b72dba",
+  "source_mismatches_before": [],
+  "compiler_path_sha256": "4e574ac2d963b953c9316ec7b0838f85246637f15cc7980c2d6191e3654c3bf8",
+  "exit": 0,
+  "timed_out": false,
+  "elapsed_seconds": 1.0665464650082868,
+  "finished_at": "2026-10-18T00:18:48.099034+00:00",
+  "source_mismatches_after": [],
+  "summaries": []
+}

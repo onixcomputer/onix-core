@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-17T22:40:40.713Z",
+  "finished_at": "2026-10-17T22:41:54.955Z",
+  "argv": [
+    "bash",
+    "/home/brittonr/git/OnixResearch/trellis/scripts/verus.sh",
+    "/home/brittonr/git/OnixResearch/trellis/src/lib.rs",
+    "--rlimit",
+    "20",
+    "--triggers-mode",
+    "silent"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "timed_out": false,
+  "source_manifest": "integrated-source-identities.json",
+  "stdout_log": "integrated-full-production-verus.log",
+  "summaries": [
+    "verification results:: 11143 verified, 0 errors"
+  ]
+}

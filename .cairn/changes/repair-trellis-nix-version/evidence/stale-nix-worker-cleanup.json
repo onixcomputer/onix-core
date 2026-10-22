@@ -1,0 +1,14 @@
+{
+  "worker": 337397,
+  "dead_client": 337318,
+  "lock_inode": 4052832,
+  "hostname": "britton-desktop",
+  "signals": [
+    "SIGTERM",
+    "SIGKILL"
+  ],
+  "exit_observed": true,
+  "master_daemon_restarted": false,
+  "at": "2026-10-18T00:18:12.275781+00:00",
+  "authorization": "Existing authenticated root SSH; sudo -n required a password and was not used."
+}

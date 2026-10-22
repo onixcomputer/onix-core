@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-18T00:00:00.097214+00:00",
+  "ownership": "Orphaned exact Nickel checker from the original timed-out full acceptance and its Nix child; checker PPID=1, both cwd=/home/brittonr/git/OnixResearch/trellis; older than the current verifier by 4190.19 seconds.",
+  "signalled_sigterm": [
+    4184836,
+    4182443
+  ],
+  "exit_observed": [
+    4184836,
+    4182443
+  ],
+  "still_running": [],
+  "event_wait": "Linux pidfd readiness, not process polling"
+}

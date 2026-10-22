@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-17T22:46:10.816Z",
+  "finished_at": "2026-10-17T22:46:26.232Z",
+  "argv": [
+    "/home/brittonr/git/OnixResearch/trellis/scripts/check-proof-gap-inventory.rs",
+    "--write-report",
+    "/home/brittonr/git/onix-core/.cairn/changes/repair-trellis-nix-version/evidence/proof-gap-inventory.txt"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "timed_out": false,
+  "source_manifest": "integrated-source-identities.json",
+  "stdout_log": "integrated-proof-gap-inventory.log",
+  "summaries": []
+}

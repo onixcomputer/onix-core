@@ -1,0 +1,22 @@
+{
+  "at": "2026-10-17T22:41:22.821Z",
+  "finished_at": "2026-10-17T22:41:33.516Z",
+  "argv": [
+    "python3",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/compare-against-actual-nix.py",
+    "--runtime",
+    "/home/brittonr/git/OnixResearch/trellis/target/debug/nemotron-nix-version-runtime-20261017t222347z",
+    "--native-oracle",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/native-oracle/compare",
+    "--nix",
+    "/run/current-system/sw/bin/nix",
+    "--output",
+    "/home/brittonr/git/onix-core/.cairn/changes/repair-trellis-nix-version/evidence/actual-nix-comparison.json"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "timed_out": false,
+  "source_manifest": "integrated-source-identities.json",
+  "stdout_log": "integrated-actual-nix-differential.log",
+  "summaries": []
+}

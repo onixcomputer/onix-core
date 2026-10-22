@@ -1,0 +1,22 @@
+{
+  "at": "2026-10-17T23:45:51.930Z",
+  "source_only_tools_retained": "tools/",
+  "private_docker_inspections_retained_at": "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/original-containers-private.json",
+  "removed": [
+    "client-state",
+    "opencode.json",
+    "model-session.py",
+    "source-bound-verifier.py",
+    "work/verify",
+    "work/liblib.rlib",
+    "independent-nix_version.rs"
+  ],
+  "retained_frozen_sources": [
+    "work/src",
+    "original/src"
+  ],
+  "remote_runtime_cleanup_receipts": [
+    "restoration.json",
+    "tunnel-cleanup.json"
+  ]
+}

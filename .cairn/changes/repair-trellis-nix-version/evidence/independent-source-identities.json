@@ -1,0 +1,7 @@
+{
+  "at": "2026-10-17T22:37:09.771Z",
+  "provenance": "parent-independent correction, not model output",
+  "path": "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/independent-nix_version.rs",
+  "sha256": "68d6d9b62770c32e5919c8e9ed53e9b388afdd22fe35dca8c9bc6c0471eed0c5",
+  "frozen_input_manifest": "input-identities.json"
+}

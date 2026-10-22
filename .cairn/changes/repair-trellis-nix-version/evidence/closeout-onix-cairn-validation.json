@@ -1,0 +1,29 @@
+{
+  "at": "2026-10-18T00:35:06.446554+00:00",
+  "argv": [
+    "nix",
+    "run",
+    "path:/home/brittonr/git/cairn#cairn",
+    "--",
+    "validate",
+    "--root",
+    "/home/brittonr/git/onix-core",
+    "--policy",
+    "/home/brittonr/git/cairn/cairn-policy/generated/cairn-policy.json"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "source_manifest": "final-source-identities.json",
+  "deadline_seconds": 300,
+  "stdout_log": "closeout-onix-cairn-validation.log",
+  "source_manifest_sha256": "a5e4cf2c7cd104923c526627be47d81398e48d20d2cf125b7fe2530d53b72dba",
+  "source_mismatches_before": [],
+  "compiler_path_sha256": "4e574ac2d963b953c9316ec7b0838f85246637f15cc7980c2d6191e3654c3bf8",
+  "exit": 1,
+  "timed_out": false,
+  "elapsed_seconds": 0.03214214602485299,
+  "finished_at": "2026-10-18T00:35:06.500333+00:00",
+  "source_mismatches_after": [],
+  "summaries": [
+    "error: file '\u00abpath:/home/brittonr/git/cairn\u00bb' is a symlink"
+  ]
+}

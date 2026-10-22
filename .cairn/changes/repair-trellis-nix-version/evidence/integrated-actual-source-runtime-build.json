@@ -1,0 +1,18 @@
+{
+  "at": "2026-10-17T22:40:40.715Z",
+  "finished_at": "2026-10-17T22:40:44.060Z",
+  "argv": [
+    "cargo",
+    "build",
+    "--offline",
+    "--quiet",
+    "--manifest-path",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/runtime-smoke/Cargo.toml"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "timed_out": false,
+  "source_manifest": "integrated-source-identities.json",
+  "stdout_log": "integrated-actual-source-runtime-build.log",
+  "summaries": []
+}

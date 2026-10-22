@@ -1,0 +1,37 @@
+{
+  "at": "20261017T224545.676036Z",
+  "actor": "parent-check-of-raw-model-final",
+  "scope": [
+    "nix_version",
+    "properties"
+  ],
+  "partial_not_full_acceptance": true,
+  "source_manifest": "input-identities.json",
+  "source_sha256_before": {
+    "src/nix_version.rs": "b86e439da2936b5d3bddeccef9b2d464b7995fd1d7ba6701f6b0d3a56494d2dc",
+    "src/properties.rs": "4b3435273576f02aa29b3782b2025d64fb3f4ffbc12055aad1478e7042edfeb0"
+  },
+  "argv": [
+    "bash",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/work/scripts/verus.sh",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/work/src/lib.rs",
+    "--verify-module",
+    "nix_version",
+    "--verify-module",
+    "properties",
+    "--rlimit",
+    "20",
+    "--triggers-mode",
+    "silent"
+  ],
+  "exit": 1,
+  "timed_out": false,
+  "source_sha256_after": {
+    "src/nix_version.rs": "b86e439da2936b5d3bddeccef9b2d464b7995fd1d7ba6701f6b0d3a56494d2dc",
+    "src/properties.rs": "4b3435273576f02aa29b3782b2025d64fb3f4ffbc12055aad1478e7042edfeb0"
+  },
+  "summaries": [],
+  "raw_log": "verifier-receipts/20261017T224545.676036Z.log",
+  "passed_partial_verification": false,
+  "elapsed_seconds": 16.56259670900181
+}

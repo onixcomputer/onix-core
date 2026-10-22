@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-17T22:27:26.706Z",
+  "finished_at": "2026-10-17T22:27:26.707Z",
+  "argv": [
+    "/home/brittonr/git/OnixResearch/trellis/target/debug/nemotron-nix-version-runtime-20261017t222347z-before",
+    "32313437343833363438",
+    "33"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "timed_out": false,
+  "source_manifest": "input-identities.json",
+  "stdout_log": "before-int-overflow-boundary.log",
+  "summaries": []
+}

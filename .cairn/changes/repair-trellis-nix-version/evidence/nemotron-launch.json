@@ -1,0 +1,6 @@
+{
+  "at": "2026-10-17T22:35:02.504322+00:00",
+  "id": "3a90913e7675076ef7f2cf296a734d0d84fb8d9f3603c600f509cd0af24a2c98",
+  "image": "sha256:9dfef102a162fbe71821683e252a1f30454d183fb5ef7c8f9c45886f7e594f04",
+  "output": "3a90913e7675076ef7f2cf296a734d0d84fb8d9f3603c600f509cd0af24a2c98\nContainer launched; model loading/compilation is not yet API readiness.\nLogs: docker logs --follow onix-nemotron35\nReadiness: curl --fail http://127.0.0.1:8000/v1/models\n"
+}

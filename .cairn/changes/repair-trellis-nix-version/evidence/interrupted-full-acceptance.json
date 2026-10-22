@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-17T23:58:01.939Z",
+  "status": "interrupted-before-complete",
+  "source_manifest": "final-source-identities.json",
+  "raw_log": "final-full-repository-acceptance.log",
+  "completed_stage": "Proof-gap inventory, before standalone Nickel export tool resolution",
+  "reason": "A separately exercised consumer command established that the resumed shell lacked rustc on PATH. The restarted capture restores the original admitted compiler PATH without modifying global Cargo configuration.",
+  "diagnostic_receipt": "final-nix-consumer-regressions.json",
+  "replacement_receipts": [
+    "final-nix-consumer-regressions-2.json",
+    "final-full-repository-acceptance-2.json"
+  ],
+  "partial_not_acceptance": true
+}

@@ -1,0 +1,112 @@
+{
+  "started_at": "2026-10-17T22:46:02.248764+00:00",
+  "owned_replica_id": "3a90913e7675076ef7f2cf296a734d0d84fb8d9f3603c600f509cd0af24a2c98",
+  "model_stop": "3a90913e7675076ef7f2cf296a734d0d84fb8d9f3603c600f509cd0af24a2c98\n",
+  "model_remove": "3a90913e7675076ef7f2cf296a734d0d84fb8d9f3603c600f509cd0af24a2c98\n",
+  "worker_starts": [
+    {
+      "host": "spark-a0a0.local",
+      "output": "186945078da3c923db6651041d7de69ce78da5ecbd846518d311a3efdbb48f3c\n"
+    },
+    {
+      "host": "192.168.1.233",
+      "output": "9399f8762b505194c63052a284f4e15c4517f899d803fe7253e9b38c242a8a5f\n"
+    }
+  ],
+  "head_start": "d240dfa3f9f058a9e141e4db6e01d5fda71587ab557ada4fea9be1cd00fc6360\n",
+  "comparisons": [
+    {
+      "host": "spark-e442.local",
+      "id": "d240dfa3f9f058a9e141e4db6e01d5fda71587ab557ada4fea9be1cd00fc6360",
+      "running": true,
+      "matches": {
+        "Id": true,
+        "Image": true,
+        "Config": true,
+        "HostConfig": true,
+        "Mounts": true
+      }
+    },
+    {
+      "host": "spark-a0a0.local",
+      "id": "186945078da3c923db6651041d7de69ce78da5ecbd846518d311a3efdbb48f3c",
+      "running": true,
+      "matches": {
+        "Id": true,
+        "Image": true,
+        "Config": true,
+        "HostConfig": true,
+        "Mounts": true
+      }
+    },
+    {
+      "host": "192.168.1.233",
+      "id": "9399f8762b505194c63052a284f4e15c4517f899d803fe7253e9b38c242a8a5f",
+      "running": true,
+      "matches": {
+        "Id": true,
+        "Image": true,
+        "Config": true,
+        "HostConfig": true,
+        "Mounts": true
+      }
+    }
+  ],
+  "completion": {
+    "request": {
+      "model": "deepseek-v4.1-flash",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Compute 6 * 7. Reply with only the integer."
+        }
+      ],
+      "temperature": 0,
+      "max_tokens": 32
+    },
+    "response": {
+      "id": "chatcmpl-aef72299d8ab0192",
+      "object": "chat.completion",
+      "created": 1792277620,
+      "model": "deepseek-v4.1-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "42",
+            "refusal": null,
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "reasoning": null
+          },
+          "logprobs": null,
+          "finish_reason": "stop",
+          "stop_reason": null,
+          "token_ids": null,
+          "routed_experts": null
+        }
+      ],
+      "service_tier": null,
+      "system_fingerprint": "vllm-0.28.1rc1.dev388+g8a728663c-tp3-a4ee40b4",
+      "usage": {
+        "prompt_tokens": 17,
+        "total_tokens": 19,
+        "completion_tokens": 2,
+        "prompt_tokens_details": null,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "prompt_logprobs": null,
+      "prompt_token_ids": null,
+      "prompt_text": null,
+      "kv_transfer_params": null,
+      "ec_transfer_params": null,
+      "metrics": null
+    }
+  },
+  "verified": true,
+  "finished_at": "2026-10-17T22:53:41.240068+00:00"
+}

@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-17T22:39:40.706Z",
+  "kind": "parent-independent correction",
+  "model_input_unchanged": "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/work/src/nix_version.rs",
+  "live_source": "src/nix_version.rs",
+  "source_sha256": "b4a64d68f9bee30bcf5cb25d46d833c13c48a6ab5e6dea20327cd370ad26408e",
+  "ordinary_candidate_verus_receipt": "independent-module-verus-2.json",
+  "note": "Removed old finite admission/fallback and its architecture tests; retained derivation parser and meaningful prior behavior tests; added consumer-visible ordering/progress/int32 and long-input regressions. Final integrated acceptance is separate."
+}

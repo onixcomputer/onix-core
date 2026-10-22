@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-17T22:37:22.754Z",
+  "finished_at": "2026-10-17T22:37:23.505Z",
+  "argv": [
+    "bash",
+    "/home/brittonr/git/OnixResearch/trellis/scripts/verus.sh",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/independent-nix_version.rs",
+    "--crate-name",
+    "independent_nix_version",
+    "--rlimit",
+    "20",
+    "--triggers-mode",
+    "silent"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "timed_out": false,
+  "source_manifest": "independent-module-verus-2-source.json",
+  "stdout_log": "independent-module-verus-2.log",
+  "summaries": [
+    "verification results:: 34 verified, 0 errors"
+  ]
+}

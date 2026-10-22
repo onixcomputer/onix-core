@@ -1,0 +1,12 @@
+{
+  "started_at": "2026-10-17T22:34:40.773478+00:00",
+  "actual_model_attempt": true,
+  "exit": 1,
+  "timed_out": false,
+  "raw_model_final_verifier_exit": 1,
+  "raw_model_candidate_sha256": {
+    "src/nix_version.rs": "b86e439da2936b5d3bddeccef9b2d464b7995fd1d7ba6701f6b0d3a56494d2dc",
+    "src/properties.rs": "4b3435273576f02aa29b3782b2025d64fb3f4ffbc12055aad1478e7042edfeb0"
+  },
+  "finished_at": "2026-10-17T22:46:02.245254+00:00"
+}

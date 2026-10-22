@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-17T22:25:36.022Z",
+  "finished_at": "2026-10-17T22:25:36.508Z",
+  "argv": [
+    "/nix/store/kbw2j1vag664b3sj3rjwz9v53cqx87sb-gcc-wrapper-15.2.0/bin/c++",
+    "-std=c++20",
+    "-O2",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/native-oracle/main.cpp",
+    "/nix/store/xs9x9imziz5fz9d089vs64xxahz5v7iy-nix-store-2.36.0/lib/libnixstore.so.2.36.0",
+    "-Wl,-rpath,/nix/store/xs9x9imziz5fz9d089vs64xxahz5v7iy-nix-store-2.36.0/lib",
+    "-o",
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/native-oracle/compare"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "timed_out": false,
+  "source_manifest": "input-identities.json",
+  "stdout_log": "actual-nix-library-adapter-build.log",
+  "summaries": []
+}

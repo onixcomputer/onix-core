@@ -1,0 +1,9 @@
+[package]
+name = "nemotron-nix-version-runtime-20261017t222347z"
+version = "0.0.0"
+edition = "2024"
+
+[workspace]
+
+[dependencies]
+vstd = "=0.0.0-2026-01-25-0057"

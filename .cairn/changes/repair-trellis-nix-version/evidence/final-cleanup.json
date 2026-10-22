@@ -1,0 +1,46 @@
+{
+  "at": "2026-10-17T23:45:51.930Z",
+  "source_only_tools_retained": "tools/",
+  "private_docker_inspections_retained_at": "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/original-containers-private.json",
+  "removed": [
+    "client-state",
+    "opencode.json",
+    "model-session.py",
+    "source-bound-verifier.py",
+    "work/verify",
+    "work/liblib.rlib",
+    "independent-nix_version.rs",
+    "seed-cache"
+  ],
+  "retained_frozen_sources": [
+    "native evidence before/src and after/src",
+    "model-candidate/src",
+    "input-identities.json and final-source-identities.json"
+  ],
+  "remote_runtime_cleanup_receipts": [
+    "restoration.json",
+    "tunnel-cleanup.json"
+  ],
+  "verifier_gc_root": "production-verus-root",
+  "superseded_owned_inventory_task_cancelled": true,
+  "post_acceptance_workspace_removed": [
+    "work",
+    "original",
+    "native-oracle",
+    "runtime-smoke",
+    "compare-against-actual-nix.py",
+    "tmp",
+    "log-command.py",
+    "session.json",
+    "production-verus-root"
+  ],
+  "still_in_use": [],
+  "private_record_permissions": {
+    "directory": "0700",
+    "record": "0600",
+    "path": "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/original-containers-private.json"
+  },
+  "verifier_gc_root_removed": true,
+  "completed_at": "2026-10-18T00:38:02.720Z",
+  "only_retained_campaign_file": "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/original-containers-private.json"
+}

@@ -1,0 +1,64 @@
+{
+  "at": "2026-10-17T22:27:27.745Z",
+  "source_sha256": "b86e439da2936b5d3bddeccef9b2d464b7995fd1d7ba6701f6b0d3a56494d2dc",
+  "caller": "runtime-smoke/src/main.rs",
+  "oracle_library": "/nix/store/xs9x9imziz5fz9d089vs64xxahz5v7iy-nix-store-2.36.0/lib/libnixstore.so.2.36.0",
+  "adapter_uses_actual_nix_function": true,
+  "observations": [
+    {
+      "case": "pre-release",
+      "left": "1.0pre",
+      "right": "1.0",
+      "baseline_exit": 0,
+      "baseline_timed_out": false,
+      "baseline_result": "1",
+      "actual_nix_result": "-1",
+      "baseline_receipt": "before-pre-release.json",
+      "oracle_receipt": "oracle-pre-release.json"
+    },
+    {
+      "case": "int-overflow-boundary",
+      "left": "2147483648",
+      "right": "3",
+      "baseline_exit": 0,
+      "baseline_timed_out": false,
+      "baseline_result": "1",
+      "actual_nix_result": "-1",
+      "baseline_receipt": "before-int-overflow-boundary.json",
+      "oracle_receipt": "oracle-int-overflow-boundary.json"
+    },
+    {
+      "case": "overflow-lexical",
+      "left": "9999999999",
+      "right": "10000000000",
+      "baseline_exit": 0,
+      "baseline_timed_out": false,
+      "baseline_result": "-1",
+      "actual_nix_result": "1",
+      "baseline_receipt": "before-overflow-lexical.json",
+      "oracle_receipt": "oracle-overflow-lexical.json"
+    },
+    {
+      "case": "u64-saturation",
+      "left": "18446744073709551616",
+      "right": "18446744073709551617",
+      "baseline_exit": 0,
+      "baseline_timed_out": false,
+      "baseline_result": "0",
+      "actual_nix_result": "-1",
+      "baseline_receipt": "before-u64-saturation.json",
+      "oracle_receipt": "oracle-u64-saturation.json"
+    },
+    {
+      "case": "non-progress",
+      "left": "_",
+      "right": "_",
+      "baseline_exit": 143,
+      "baseline_timed_out": true,
+      "baseline_result": "",
+      "actual_nix_result": "0",
+      "baseline_receipt": "before-non-progress.json",
+      "oracle_receipt": "oracle-non-progress.json"
+    }
+  ]
+}

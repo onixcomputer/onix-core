@@ -122,6 +122,17 @@ The [native campaign evidence](../.cairn/changes/run-three-nemotron-proof-worker
 
 The [native repair evidence](../.cairn/changes/repair-trellis-snapshot-integrity/evidence/) retains the actual model transcript, rejected candidate, failed-before consumer receipt, source identities, runtime/proof results, recovered local-tool failures and restoration proof.
 
+### Unrestricted Nix version comparison (2026-10-17)
+
+- **Actual model attempt:** the pinned replica served a real bounded OpenCode worker. The client ended with `ContextOverflowError` after oversized source reads, without changing either allowlisted source file. A separate parent check selected the nonexistent `properties` module; that failed invocation is retained but is not evidence about model proof quality. No autonomous repair is credited.
+- **Accepted correction:** the independent implementation accepts arbitrary byte vectors, consumes punctuation/NUL/high bytes, handles exact `pre` precedence, and matches the inspected Linux C-locale Nix profile. Numeric classification uses Nix's signed-32-bit value bound, unlimited leading zeros and lexical overflow behavior—not an input-length cap or saturating parser. The executable remains iterative and allocation-free; finite admission APIs and the trusted fallback are removed.
+- **External runtime evidence:** the actual comparator agreed with the pinned Nix 2.36.0 library on **6,322 byte-vector pairs** and with `builtins.compareVersions` on **3,279 representable pairs**, with no mismatches. NUL/non-UTF8 cases were checked through the native library, not claimed as JSON-evaluator equivalence. This is evidence for the recorded binaries/libraries and C locale, not all C++ signed-char/libc profiles.
+- **Independent acceptance:** final-source production Verus reports **11,143 verified, 0 errors**. Cargo passes **5,228 library tests**, 52 binary tests and 9 documentation tests; strict Clippy passes on all targets. Tracey reports **0 uncovered and 0 untested out of 2,270 requirements**. The current source inventory is **12 trusted sites across four files** (seven executable bridges and five proof assumptions), down from 13, without replacement trust.
+- **Repository-wide limitation:** the complete verifier command is not green: immutable UCAN manifest/release-profile checks reject existing working-tree identity drift, including the prospective licensing change. Those recorded release identities remain untouched. The successful full production proof run uses the configured `--rlimit 20 --triggers-mode silent` profile; earlier direct invocations and their resource-limit failures remain in the evidence.
+- **Restoration:** the owned replica and tunnel were closed. All three original DeepSeek containers matched their recorded IDs, images, `Config`, `HostConfig` and destination-keyed mounts; the restored head returned `42`. No persistent Spark configuration changed.
+
+The [native Nix repair evidence](../.cairn/changes/repair-trellis-nix-version/evidence/) separates the actual model failure from the independent correction, before/after runtime failures, exact oracle identities and source-bound acceptance. Trellis retains a standalone acceptance bundle in `.cairn/changes/verify-unrestricted-nix-version/evidence/`.
+
 ## Restore DeepSeek after the session, including failure
 
 Stop every owned Nemotron replica, then restart the preserved workers before the head. The two additional stop commands apply to three-worker mode:
@@ -164,3 +175,4 @@ The documented shorter checkout path is a symlink rejected by the `path:` fetche
 - Native change and recorded acceptance artifacts: [`.cairn/changes/run-nemotron35-verus-on-spark`](../.cairn/changes/run-nemotron35-verus-on-spark/).
 - Three-worker campaign, frozen inputs, and actual endpoint evidence: [`.cairn/changes/run-three-nemotron-proof-workers`](../.cairn/changes/run-three-nemotron-proof-workers/).
 - Snapshot-integrity repair and independent acceptance: [`.cairn/changes/repair-trellis-snapshot-integrity`](../.cairn/changes/repair-trellis-snapshot-integrity/).
+- Unrestricted Nix comparison and independent acceptance: [`.cairn/changes/repair-trellis-nix-version`](../.cairn/changes/repair-trellis-nix-version/).

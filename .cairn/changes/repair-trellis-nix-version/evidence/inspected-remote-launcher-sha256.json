@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-17T22:34:35.208Z",
+  "finished_at": "2026-10-17T22:34:35.530Z",
+  "argv": [
+    "ssh",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "ConnectTimeout=10",
+    "brittonr@spark-e442.local",
+    "sha256sum /home/brittonr/.local/share/onix-nemotron35/nemotron-spark.sh"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "timed_out": false,
+  "source_manifest": "input-identities.json",
+  "stdout_log": "inspected-remote-launcher-sha256.log",
+  "summaries": []
+}

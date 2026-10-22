@@ -1,0 +1,71 @@
+{
+  "recorded_at": "2026-10-17T23:42:31.254Z",
+  "attempt_receipt": "attempt.json",
+  "transcript": "transcript.jsonl",
+  "invocation": "invocation.json",
+  "actual_model_attempt": true,
+  "client_exit": 1,
+  "timed_out": false,
+  "terminal_error": {
+    "name": "ContextOverflowError",
+    "data": {
+      "message": "This model's maximum context length is 65536 tokens. However, your prompt contains at least 65537 input tokens, which exceeds this limit even without any output tokens. Please reduce the length of the input prompt. (parameter=input_tokens, value=65537)",
+      "responseBody": "{\"error\":{\"message\":\"This model's maximum context length is 65536 tokens. However, your prompt contains at least 65537 input tokens, which exceeds this limit even without any output tokens. Please reduce the length of the input prompt. (parameter=input_tokens, value=65537)\",\"type\":\"BadRequestError\",\"param\":\"input_tokens\",\"code\":400}}"
+    }
+  },
+  "source_files_changed": [],
+  "tool_calls": [
+    {
+      "tool": "read",
+      "status": "error"
+    },
+    {
+      "tool": "read",
+      "status": "completed"
+    },
+    {
+      "tool": "bash",
+      "status": "error"
+    },
+    {
+      "tool": "bash",
+      "status": "error"
+    },
+    {
+      "tool": "read",
+      "status": "error"
+    },
+    {
+      "tool": "read",
+      "status": "error"
+    },
+    {
+      "tool": "read",
+      "status": "completed"
+    },
+    {
+      "tool": "read",
+      "status": "error"
+    },
+    {
+      "tool": "bash",
+      "status": "error"
+    },
+    {
+      "tool": "read",
+      "status": "completed"
+    }
+  ],
+  "final_raw_source_sha256": {
+    "src/nix_version.rs": "b86e439da2936b5d3bddeccef9b2d464b7995fd1d7ba6701f6b0d3a56494d2dc",
+    "src/properties.rs": "4b3435273576f02aa29b3782b2025d64fb3f4ffbc12055aad1478e7042edfeb0"
+  },
+  "final_source_matches_input": true,
+  "parent_raw_check": {
+    "receipt": "verifier-receipts/20261017T224545.676036Z.json",
+    "valid_proof_quality_check": false,
+    "reason": "It selected nonexistent module properties; no verifier acceptance is credited."
+  },
+  "accepted_model_repair": false,
+  "accepted_source_attribution": "Independent parent correction; see integration-provenance.json and final-full-repository-acceptance.json."
+}

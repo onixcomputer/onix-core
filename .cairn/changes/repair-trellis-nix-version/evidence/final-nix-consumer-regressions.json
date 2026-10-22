@@ -1,0 +1,24 @@
+{
+  "at": "2026-10-17T23:55:15.822712+00:00",
+  "argv": [
+    "/nix/store/gbrj4zlys951xy55wqwr74m0kmiz6xr1-rust-default-1.96.0-nightly-2026-03-21/bin/cargo",
+    "test",
+    "nix_",
+    "--",
+    "--nocapture"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "source_manifest": "final-source-identities.json",
+  "deadline_seconds": 900,
+  "stdout_log": "final-nix-consumer-regressions.log",
+  "source_manifest_sha256": "a5e4cf2c7cd104923c526627be47d81398e48d20d2cf125b7fe2530d53b72dba",
+  "source_mismatches_before": [],
+  "exit": 101,
+  "timed_out": false,
+  "elapsed_seconds": 0.04169238999020308,
+  "finished_at": "2026-10-17T23:55:15.880465+00:00",
+  "source_mismatches_after": [],
+  "summaries": [
+    "error: process didn't exit successfully: `/nix/store/2ls9x3qw401xmm332xb5pcvil40anvca-cargo-rustc-kache-wrapper/bin/cargo-rustc-kache-wrapper rustc -vV` (exit status: 1)"
+  ]
+}

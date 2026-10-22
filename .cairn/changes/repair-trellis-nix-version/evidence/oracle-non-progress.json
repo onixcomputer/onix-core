@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-17T22:27:27.736Z",
+  "finished_at": "2026-10-17T22:27:27.745Z",
+  "argv": [
+    "/home/brittonr/git/OnixResearch/trellis/target/nemotron-nix-version-20261017T222347Z/native-oracle/compare",
+    "5f",
+    "5f"
+  ],
+  "cwd": "/home/brittonr/git/OnixResearch/trellis",
+  "exit": 0,
+  "timed_out": false,
+  "source_manifest": "input-identities.json",
+  "stdout_log": "oracle-non-progress.log",
+  "summaries": []
+}

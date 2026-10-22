@@ -1,0 +1,74 @@
+{
+  "recorded_at": "2026-10-17T22:25:36.023Z",
+  "primary_executable": "/run/current-system/sw/bin/nix",
+  "observed_version": "nix (Nix) 2.36.0",
+  "context": "/home/brittonr/git/onix-core",
+  "observations": [
+    {
+      "pairs": [
+        [
+          "1.0pre",
+          "1.0"
+        ],
+        [
+          "1.01",
+          "1.1"
+        ],
+        [
+          "18446744073709551616",
+          "18446744073709551617"
+        ],
+        [
+          "1_0",
+          "1.0"
+        ]
+      ],
+      "results": [
+        -1,
+        0,
+        -1,
+        -1
+      ]
+    },
+    {
+      "pairs": [
+        [
+          "2147483647",
+          "3"
+        ],
+        [
+          "2147483648",
+          "3"
+        ],
+        [
+          "9999999999",
+          "10000000000"
+        ],
+        [
+          "00000000000000000000000000001",
+          "1"
+        ],
+        [
+          "pre",
+          ""
+        ],
+        [
+          "pre!",
+          ""
+        ]
+      ],
+      "results": [
+        1,
+        -1,
+        1,
+        0,
+        -1,
+        1
+      ]
+    }
+  ],
+  "upstream_reference": "https://github.com/NixOS/nix/blob/76490c4068e387c0f1c31350065b4c63900f4493/src/libstore/names.cc",
+  "upstream_identity_limit": "Matching 2.36.0 version marker, not an asserted exact workstation source revision.",
+  "native_library": "/nix/store/xs9x9imziz5fz9d089vs64xxahz5v7iy-nix-store-2.36.0/lib/libnixstore.so.2.36.0",
+  "native_library_sha256": "8c551f0d8ce6eba859eb8ce8e1b4b51171e22de68864a81696a627a813d6746f"
+}

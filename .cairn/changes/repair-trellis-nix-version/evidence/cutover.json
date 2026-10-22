@@ -1,0 +1,81 @@
+{
+  "at": "2026-10-17T22:34:44.071386+00:00",
+  "preflight_completion": {
+    "request": {
+      "model": "deepseek-v4.1-flash",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Compute 6 * 7. Reply with only the integer."
+        }
+      ],
+      "temperature": 0,
+      "max_tokens": 32
+    },
+    "response": {
+      "id": "chatcmpl-aabf8dc4ea620ed3",
+      "object": "chat.completion",
+      "created": 1792276483,
+      "model": "deepseek-v4.1-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "42",
+            "refusal": null,
+            "annotations": null,
+            "audio": null,
+            "function_call": null,
+            "reasoning": null
+          },
+          "logprobs": null,
+          "finish_reason": "stop",
+          "stop_reason": null,
+          "token_ids": null,
+          "routed_experts": null
+        }
+      ],
+      "service_tier": null,
+      "system_fingerprint": "vllm-0.28.1rc1.dev388+g8a728663c-tp3-a4ee40b4",
+      "usage": {
+        "prompt_tokens": 17,
+        "total_tokens": 19,
+        "completion_tokens": 2,
+        "prompt_tokens_details": null,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      },
+      "prompt_logprobs": null,
+      "prompt_token_ids": null,
+      "prompt_text": null,
+      "kv_transfer_params": null,
+      "ec_transfer_params": null,
+      "metrics": null
+    }
+  },
+  "containers": [
+    {
+      "host": "spark-e442.local",
+      "id": "d240dfa3f9f058a9e141e4db6e01d5fda71587ab557ada4fea9be1cd00fc6360",
+      "image": "sha256:de1580fb368afce748227ddd77b3625cf9d628ff384bcc386ea76f20297c2163",
+      "config_sha256": "315deda1e99e53d823a0ea12871261ac2b219303ebe99f51c385697a3ba3e9d5",
+      "host_config_sha256": "f44d3455cac07f33ec1ea82c0f5ba530358fa24cb899a833dcc11531ddaf646f"
+    },
+    {
+      "host": "spark-a0a0.local",
+      "id": "186945078da3c923db6651041d7de69ce78da5ecbd846518d311a3efdbb48f3c",
+      "image": "sha256:de1580fb368afce748227ddd77b3625cf9d628ff384bcc386ea76f20297c2163",
+      "config_sha256": "affbdd424bc7d437862d11c904ae81867a68073d56eb30d750aec3a7dbfb0ac1",
+      "host_config_sha256": "2254940c969f65e045e3e4e99d6abb233296b4873e6aedae9afb69ff4cf9e6ab"
+    },
+    {
+      "host": "192.168.1.233",
+      "id": "9399f8762b505194c63052a284f4e15c4517f899d803fe7253e9b38c242a8a5f",
+      "image": "sha256:008d95698b6828c49f9111e0e5ca7bb789a267e0dea0f2aff818855ee54375c3",
+      "config_sha256": "6505f7b92d0b603c532c4bbfb9566ea1ce66a28d161bba8de00cbe1b1dc55eb0",
+      "host_config_sha256": "5436ca4d883fc6a9334ad18595627578dc4aa93b7dfcc61eca95dcf713fffb35"
+    }
+  ]
+}
