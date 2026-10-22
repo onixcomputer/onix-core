@@ -287,9 +287,22 @@ let
     ownerUnit = qwenUnitName;
     devicePath = ttWkv7DiagnosticDevicePath;
   };
+  # The tenstorrent.nix cbfcab9025869cd9da9c2c204eac430b510ae4a1 diagnostic patch
+  # predates TT-Metal 0.77.0's dispatch changes. Rebase its full instrumentation
+  # only for this evidence runtime; keep the production tt-metal untouched.
+  ttMetalFetchQueueDiagnostics = ttMetalPackage.overrideAttrs (previous: {
+    pname = "${previous.pname}-fetch-queue-diagnostics";
+    patches = (previous.patches or [ ]) ++ [ ../../pkgs/tt-metal-fetch-queue-diagnostics.patch ];
+  });
+  rwkv7P150x2DiagnosticRuntime = tenstorrentPackages.rwkv7-p150x2-runtime.override {
+    tt-metal = ttMetalFetchQueueDiagnostics;
+    fetchQueueDiagnostics = true;
+  };
   # r[impl onix.tenstorrent.native_runtime.rwkv7_p150x2.production_observation]
   rwkv7P150x2Runtime = tenstorrentPackages.rwkv7-p150x2-runtime;
-  rwkv7P150x2Evidence = tenstorrentPackages.rwkv7-p150x2-evidence;
+  rwkv7P150x2Evidence = tenstorrentPackages.rwkv7-p150x2-evidence.override {
+    diagnosticDeviceRuntime = rwkv7P150x2DiagnosticRuntime;
+  };
 in
 {
   imports = [
