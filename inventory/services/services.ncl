@@ -1113,20 +1113,7 @@ in
       module = { name = "llm-agents", input = "self" },
       roles.default = {
         tags."llm-client" = {},
-        # The shared CLI set. hermes-agent stays out of the role list: aspen3
-        # receives the official Hermes Agent (CLI + Hermes Desktop) through the
-        # upstream home-manager module instead, and the other llm-client hosts
-        # keep their prior hermes CLI via the per-machine deltas below. The
-        # list-typed packages setting concatenates role- and machine-level
-        # definitions. r[impl onix.hermes_agent.install]
-        settings.packages = ["pi", "openspec"],
-        # Preserve the prior effective set exactly on every other llm-client
-        # host. r[impl onix.hermes_agent.scope.llm_client]
-        machines = {
-          aspen1.settings.packages = ["hermes-agent"],
-          aspen2.settings.packages = ["hermes-agent"],
-          britton-desktop.settings.packages = ["hermes-agent"],
-        },
+        settings.packages = ["pi", "openspec", "hermes-agent"],
       },
     },
 
