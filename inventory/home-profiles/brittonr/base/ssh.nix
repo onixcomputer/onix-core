@@ -42,6 +42,7 @@ in
     extraConfig = ''
       IdentityFile ${data.identityFile}
       AddressFamily inet
+      Include ~/.ssh/tailscale_hosts
     '';
 
     settings = {

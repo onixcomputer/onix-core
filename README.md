@@ -18,6 +18,43 @@ Read [`docs/rustfs-build-caches.md`](docs/rustfs-build-caches.md) for private Ka
 
 Read [`docs/site-celld.md`](docs/site-celld.md) for the private Site fleet, publisher credential boundary, deployment, and activation.
 
+## Automatic Tailscale SSH hosts
+
+The brittonr base SSH profile includes `~/.ssh/tailscale_hosts`, generated from
+that machine's local `tailscale status --json` inventory. On Tailscale-enabled
+Linux hosts its user timer refreshes five seconds after user-manager startup
+and every minute thereafter;
+new devices do not require a Nix rebuild. Offline devices remain listed. Assigned
+short DNS names and full DNS names select Tailscale IPv4 addresses; ambiguous
+short names are omitted while their full names remain usable.
+
+Keep usernames, identities and intentional routing overrides in
+`inventory/home-profiles/brittonr/base/ssh.ncl`, not the generated file. Earlier
+explicit settings win, including aspen3's root/LAN route and Git login policy.
+Invalid or unavailable discovery preserves the last good mode-0600 file.
+
+```sh
+systemctl --user start tailscale-ssh-sync.service  # refresh now
+systemctl --user status tailscale-ssh-sync.timer
+ssh aspen2-1
+```
+
+Discovery reflects the local Tailscale identity's visible devices, not a shared
+Britton roster. It does not enable SSH servers, grant ACL access, discover remote
+Unix usernames, or change host-key trust. The implementation is packaged by
+`inventory/home-profiles/brittonr/base/tailscale-ssh-sync.nix`, automatically
+loaded with the existing base Home Manager profile.
+
+The selected artifacts are active on britton-desktop and Aspen3 without a full
+system or Home Manager switch. Each host retains its package GC root and prior
+SSH config target in `~/.local/state/tailscale-ssh-sync/`. A persistent
+`home-manager-brittonr.service` drop-in at
+`/etc/systemd/system.control/home-manager-brittonr.service.d/50-tailscale-ssh-sync.conf`
+runs a hash-guarded restore as brittonr after activation of the old generation;
+it leaves newer, custom, or missing configs alone. After a normal managed
+generation adopts the SSH feature, remove this temporary drop-in, reload the
+system manager, and retire the selected-artifact GC root.
+
 Read [`modules/searxng/README.md`](modules/searxng/README.md) for the SearXNG Clan service and its private listener defaults.
 
 Read [`docs/factorseal.md`](docs/factorseal.md) for the opt-in Factorseal prototype and its production-secret restrictions.

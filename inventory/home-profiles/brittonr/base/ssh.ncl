@@ -1,4 +1,5 @@
-# SSH settings — source of truth for SSH host config.
+# SSH settings — source of truth for SSH policy and explicit routing overrides.
+# Tailscale addresses are discovered at runtime by tailscale-ssh-sync.
 #
 # Consumed by: ssh.nix (home-manager programs.ssh.settings)
 # Validated at `ncl export` time — bad hostnames, missing identity
@@ -55,11 +56,9 @@ in
       user = "brittonr",
     },
     "britton-desktop" = {
-      hostname = "britton-desktop",
       user = "brittonr",
     },
     "bonsai" = {
-      hostname = "100.126.162.16",
       user = "brittonr",
     },
     "aspen3" = {
@@ -68,7 +67,6 @@ in
       hostKeyAlias = "aspen3.clan",
     },
     "britton-gpd" = {
-      hostname = "100.126.162.16",
       user = "brittonr",
     },
   },
