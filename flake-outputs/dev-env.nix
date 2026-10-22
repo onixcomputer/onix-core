@@ -272,7 +272,18 @@ let
   onixNix = inputs'.nix.nix.overrideAttrs (_: {
     doCheck = false;
   });
-  clan-cli = inputs'.clan-core.clan-cli.override { nix = onixNix; };
+  # nixpkgs builds Python packages with structuredAttrs now, so makeWrapper
+  # receives each makeWrapperArgs element as one argument. clan-cli and
+  # pexpect-cli pack several words into one element ("--unset FOO"); split
+  # them the way the old space-joined string was split.
+  splitMakeWrapperArgs =
+    package:
+    package.overridePythonAttrs (old: {
+      makeWrapperArgs = lib.concatMap (arg: lib.filter (word: word != "") (lib.splitString " " arg)) (
+        old.makeWrapperArgs or [ ]
+      );
+    });
+  clan-cli = splitMakeWrapperArgs (inputs'.clan-core.clan-cli.override { nix = onixNix; });
 
 in
 {
@@ -365,7 +376,7 @@ in
             inputs'.mics-skills.db-cli
             inputs'.mics-skills.gmaps-cli
             inputs'.mics-skills.kagi-search
-            inputs'.mics-skills.pexpect-cli
+            (splitMakeWrapperArgs inputs'.mics-skills.pexpect-cli)
             inputs'.mics-skills.screenshot-cli
             inputs'.mics-skills.weather-cli
           ];
