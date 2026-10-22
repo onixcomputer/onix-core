@@ -34,6 +34,19 @@ in
             ms = import ../../lib/mk-settings.nix { inherit lib; };
             cfg = extendSettings (ms.mkDefaults schema.default);
             agentPkgs = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
+            # llm-agents pins hermes-agent's prompt_toolkit and Markdown exactly;
+            # nixpkgs carries newer patch releases that fail its runtime check.
+            agentPackage =
+              name:
+              if name == "hermes-agent" then
+                agentPkgs.hermes-agent.overridePythonAttrs (old: {
+                  pythonRelaxDeps = old.pythonRelaxDeps ++ [
+                    "prompt_toolkit"
+                    "markdown"
+                  ];
+                })
+              else
+                agentPkgs.${name};
             researchEndpoints = pkgs.writeText "omp-research-endpoints.json" (
               builtins.toJSON {
                 mesh = cfg.ompResearchUrl;
@@ -68,7 +81,7 @@ in
 
             # OMP 18.2 requires Bun >=1.4; keep upstream's compiler/runtime pairing.
             # r[impl onix.llm_agents.bun_compiler]
-            environment.systemPackages = map (name: agentPkgs.${name}) cfg.packages;
+            environment.systemPackages = map agentPackage cfg.packages;
             # r[impl onix.research-tools.omp]
             system.build.omp-research-tools = lib.mkIf cfg.ompResearchTools researchExtension;
             home-manager.users = lib.mkIf cfg.ompResearchTools {

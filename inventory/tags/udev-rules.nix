@@ -24,6 +24,21 @@ let
   rulesText = builtins.concatStringsSep "\n" (
     builtins.map (dev: "# ${dev.name}\n${mkRule dev}") data.devices
   );
+
+  # nixpkgs' kernel-module aggregator expects a kmodigest certificate
+  # (`<module>.ko.cer`) beside every external module. gcadapter-oc-kmod installs
+  # its module by hand and skips Kbuild's signing step, so certify it after the
+  # fixup phase has stripped it.
+  withModuleCertificates =
+    package:
+    package.overrideAttrs (old: {
+      nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.buildPackages.kmodigest ];
+      postFixup = (old.postFixup or "") + ''
+        find "$out/lib/modules" -name '*.ko' -print0 | while IFS= read -r -d "" module; do
+          test -e "$module.cer" || kmodigest "$module"
+        done
+      '';
+    });
 in
 {
   # Udev packages from nixpkgs (e.g. dolphin-emu controller rules)
@@ -31,7 +46,7 @@ in
 
   # GameCube adapter overclock kernel module
   boot.extraModulePackages = builtins.map (
-    name: config.boot.kernelPackages.${name}
+    name: withModuleCertificates config.boot.kernelPackages.${name}
   ) data.kernel_module_packages;
 
   boot.kernelModules = data.kernel_modules;

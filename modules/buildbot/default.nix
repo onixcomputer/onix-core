@@ -98,7 +98,10 @@ in
               ];
             in
             {
-              imports = [ inputs.buildbot-nix.nixosModules.buildbot-master ];
+              imports = [
+                inputs.buildbot-nix.nixosModules.buildbot-master
+                ./effects-package.nix
+              ];
 
               assertions = [
                 {
@@ -247,7 +250,10 @@ in
               passthroughSettings = builtins.removeAttrs cfg managedAttrs;
             in
             {
-              imports = [ inputs.buildbot-nix.nixosModules.buildbot-worker ];
+              imports = [
+                inputs.buildbot-nix.nixosModules.buildbot-worker
+                ./effects-package.nix
+              ];
 
               services.buildbot-nix.worker = lib.mkMerge [
                 {

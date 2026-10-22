@@ -77,6 +77,10 @@ in
         message = "Publish the Drift S3 migration and update the pinned Drift input before deployment";
       }
     ];
+    # nixpkgs marks the abandoned minio-client insecure; `mc` here only talks to
+    # the fleet's own RustFS endpoints. Permit exactly this version so a new one
+    # needs review.
+    nixpkgs.config.permittedInsecurePackages = [ "minio-client-2025-08-13T08-35-41Z" ];
     services.drift-rustfs.clientConfig = {
       sync_enabled = true;
       user_id = settings.account;

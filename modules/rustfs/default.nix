@@ -296,6 +296,11 @@ in
           {
             inherit (evaluated) assertions;
 
+            # nixpkgs marks the abandoned minio-client insecure; `mc` here only talks to
+            # the fleet's own RustFS endpoints. Permit exactly this version so a new one
+            # needs review.
+            nixpkgs.config.permittedInsecurePackages = [ "minio-client-2025-08-13T08-35-41Z" ];
+
             systemd = {
               tmpfiles.rules = [
                 "d ${settings.targetDir} ${directoryMode} root root - -"

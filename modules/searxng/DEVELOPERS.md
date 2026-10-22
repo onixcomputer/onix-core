@@ -25,10 +25,10 @@ The parser limits response size. As with the Kagi adapter, this does not bound t
 
 Noogle searches locally after initialization. The Nix build fetches the catalog from `https://noogle.dev/api/v1/data` with a fixed content hash.
 Queries do not trigger downloads. Initialization bounds the input size and the number of normalized entries.
-The catalog has 2,124 source records and identifies Nixpkgs revision `6e90d09d59dde7442b03cde4a2682b415f78848c`.
+The catalog has 2,148 source records and identifies Nixpkgs revision `07d363370177d2b7e91f9031e52317c6f72316eb`.
 Names rank before description-only matches. Exact names rank first. Alias results link to the canonical function page.
 
-The Nix fixed-output SHA-256 is `09ad42np1fy42vqvccwch576sh8vj03jbhxb3in70b41kgyw6pls`.
+The Nix fixed-output SHA-256 is `1pbipq5f2d3j7yyz9ffhwqqjsqvjdvd5v2vb5lg8x1v4qp988g0q`.
 SHA-256 is used because this is a Nix fixed-output fetch. No new general-purpose hashing scheme is introduced.
 To update the snapshot, fetch the API again with `nix-prefetch-url`, review its metadata, update the hash, and rerun the packaged catalog tests.
 If upstream changes the catalog and the pinned output is absent from the cache, the fetch fails rather than silently using new data.
@@ -48,4 +48,4 @@ A live search from each engine remains required before a deployment is reported 
 
 - [NixOS Search protocol source](https://github.com/NixOS/nixos-search/tree/3a7f0dcc6d2071602e90616a62422bdea9094e62).
 - [Noogle source and MIT license](https://github.com/nix-community/noogle/tree/bdba2c8085ab4756f3bbb789574c705cab8f42a1).
-- [Nixpkgs catalog revision and license](https://github.com/NixOS/nixpkgs/tree/6e90d09d59dde7442b03cde4a2682b415f78848c).
+- [Nixpkgs catalog revision and license](https://github.com/NixOS/nixpkgs/tree/07d363370177d2b7e91f9031e52317c6f72316eb).

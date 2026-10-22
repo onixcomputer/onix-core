@@ -82,7 +82,14 @@ in
             libolmPackageName = "olm-3.2.16";
 
             agentPkgs = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
-            hermesBasePackage = agentPkgs.hermes-agent;
+            # llm-agents pins hermes-agent's prompt_toolkit and Markdown exactly;
+            # nixpkgs carries newer patch releases that fail its runtime check.
+            hermesBasePackage = agentPkgs.hermes-agent.overridePythonAttrs (old: {
+              pythonRelaxDeps = old.pythonRelaxDeps ++ [
+                "prompt_toolkit"
+                "markdown"
+              ];
+            });
             hermesPackage =
               if settings.enableEncryption then
                 hermesBasePackage.overridePythonAttrs (old: {

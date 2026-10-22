@@ -216,6 +216,18 @@
         systems.follows = "systems";
       };
     };
+    # onixpkgs' static-plugin-registry.patch applies to herdr 0.9.3 but not to
+    # the 0.9.4+ in llm-agents. Take herdr from the last llm-agents revision
+    # with 0.9.3 until onixpkgs ports the patch, then drop this input.
+    llm-agents-herdr = {
+      url = "github:numtide/llm-agents.nix/3a0663dd7292a437e5ff58cc69a7692e0655744f";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+        systems.follows = "systems";
+      };
+    };
     underclass = {
       url = "github:ghuntley/underclass";
       inputs = {
@@ -290,10 +302,14 @@
         rust-overlay.follows = "rust-overlay";
       };
     };
+    # cargo-octet bundles nixpkgs' cargo-llvm-cov, whose test suite fails on
+    # current nixpkgs (Hydra fails it too). Build Octet against the last
+    # nixpkgs where it passes; follow `nixpkgs` again once that is fixed.
+    nixpkgs-octet.url = "github:NixOS/nixpkgs/b6c8664de9b6cc07fe5666a29f91884ba81197c4";
     tigerstyle = {
       url = "github:onixresearch/octet";
       inputs = {
-        nixpkgs.follows = "nixpkgs";
+        nixpkgs.follows = "nixpkgs-octet";
         rust-overlay.follows = "rust-overlay";
       };
     };

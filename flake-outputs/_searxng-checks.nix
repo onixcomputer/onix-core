@@ -116,6 +116,8 @@ let
   kagiPackage = import ../modules/searxng/kagi-package.nix { inherit pkgs; };
   kagiPython = pkgs.python3.withPackages (ps: [
     kagiPackage
+    # test_kagi_session.py raises httpx timeouts; searxng no longer pulls httpx in.
+    ps.httpx
     ps.pytest
   ]);
   kagiTestSettings = (pkgs.formats.yaml { }).generate "kagi-test-settings.yml" {

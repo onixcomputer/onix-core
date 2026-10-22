@@ -115,41 +115,22 @@ in
       ];
     })
     (_final: prev: {
-      # GCC 16 compiles C++ as C++20, which deprecates the volatile-qualified
-      # return type of Fv_Vi in ltrace's demangle test (-Wvolatile). DejaGnu
-      # counts any compiler output as a failed test compile, so all of
-      # demangle.exp fails and ltrace 0.7.91 no longer builds (Hydra build
-      # 347155220). The return type is not part of the mangled name, so the
-      # test still exercises the same symbol. Remove this override once
-      # upstream nixpkgs builds ltrace with GCC 16.
-      ltrace = prev.ltrace.overrideAttrs (old: {
-        postPatch = (old.postPatch or "") + ''
-          substituteInPlace testsuite/ltrace.minor/demangle.cpp \
-            --replace-fail 'extern volatile int Fv_Vi(void);' 'extern int Fv_Vi(void);'
-          substituteInPlace testsuite/ltrace.minor/demangle-lib.cpp \
-            --replace-fail 'volatile int Fv_Vi(void)' 'int Fv_Vi(void)'
-        '';
-      });
-    })
-    (_final: prev: {
-      # The zig 0.16.0 build on nixpkgs' GCC 16 stdenv writes compiler_rt.o
-      # with .eh_frame FDEs against section symbols that have no section
-      # (the previous zig 0.16.0 build did not). libghostty-vt bundles that
-      # compiler_rt into its static archive, so herdr's link carries
-      # zero-address FDEs and ld.bfd fails with ".eh_frame_hdr refers to
-      # overlapping FDEs". Rust already links the compiler builtins, so stop
-      # bundling Zig's runtimes on Linux, as nixpkgs' own herdr does
-      # (NixOS/nixpkgs#568618). onixpkgs wraps this base binary as `herdr`.
-      # Remove this override once llm-agents' herdr carries the same change.
-      herdr-unwrapped = prev.herdr-unwrapped.overrideAttrs (old: {
-        postPatch =
-          (old.postPatch or "")
-          + lib.optionalString prev.stdenv.hostPlatform.isLinux ''
-            substituteInPlace vendor/libghostty-vt/src/build/GhosttyLibVt.zig \
-              --replace-fail 'lib.bundle_compiler_rt = true;' 'lib.bundle_compiler_rt = false;' \
-              --replace-fail 'lib.bundle_ubsan_rt = true;' 'lib.bundle_ubsan_rt = false;'
-          '';
-      });
+      # onixpkgs wraps this base binary as `herdr` and patches it with a static
+      # plugin registry that only applies to herdr 0.9.3 (see the
+      # llm-agents-herdr input). That llm-agents revision already stops
+      # bundling Zig's runtimes for the GCC 16 link, but its vendored
+      # libghostty-vt requires Zig 0.16 and nixpkgs' default zig is now 0.17.
+      herdr-unwrapped = inputs.llm-agents-herdr.packages.${pkgs.stdenv.hostPlatform.system}.herdr.override {
+        zig = prev.zig_0_16;
+      };
+
+      # onixpkgs pins llama.cpp b9859 but inherits nixpkgs' llama-cpp recipe:
+      # its patches target nixpkgs' newer source, and its new test run includes
+      # test-download-model, which needs network access in the sandbox.
+      llamacpp-rocm-rpc = prev.llamacpp-rocm-rpc.overrideAttrs {
+        patches = [ ];
+        doCheck = false;
+      };
     })
   ];
 
@@ -182,8 +163,10 @@ in
       experimental-features = [
         "nix-command"
         "flakes"
-        "wasm-builtin"
-      ];
+      ]
+      # Only NixOS hosts run the wasm-enabled fork (nixVersions.latest above).
+      # Darwin keeps nixpkgs' Nix, whose nix.conf check rejects this feature.
+      ++ lib.optional (_class == "nixos") "wasm-builtin";
       trusted-users = [
         "root"
         "@wheel"

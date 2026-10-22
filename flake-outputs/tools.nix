@@ -65,11 +65,29 @@ let
           lib.replaceStrings [ "--keep-init-func false" ] [ "--keep-init-func=false" ] old.buildCommand;
       });
   });
+
+  # ki-editor builds with nixpkgs' typeshare, whose doctests fail under the
+  # current rustc ("expected item after doc comment"; Hydra fails it too).
+  # Both the dependency artifacts and the final build list it.
+  withoutTypeshareTests = old: {
+    nativeBuildInputs = map (
+      input: if (input.pname or null) == "typeshare" then input.overrideAttrs { doCheck = false; } else input
+    ) old.nativeBuildInputs;
+  };
+  kiEditor =
+    self.inputs.ki-editor.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs
+      (
+        old:
+        withoutTypeshareTests old
+        // {
+          cargoArtifacts = old.cargoArtifacts.overrideAttrs withoutTypeshareTests;
+        }
+      );
 in
 {
   packages = {
     wasm-plugins = wasmPluginsWithHostImports;
-    ki-editor = self.inputs.ki-editor.packages.${pkgs.stdenv.hostPlatform.system}.default;
+    ki-editor = kiEditor;
     mercury-cli = self.inputs.mercury-cli.packages.${pkgs.stdenv.hostPlatform.system}.mercury-cli;
     underclass = self.inputs.underclass.packages.${pkgs.stdenv.hostPlatform.system}.underclass;
   }

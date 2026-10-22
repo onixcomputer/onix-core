@@ -7,7 +7,7 @@
 let
   noogleData = pkgs.fetchurl {
     url = "https://noogle.dev/api/v1/data";
-    sha256 = "09ad42np1fy42vqvccwch576sh8vj03jbhxb3in70b41kgyw6pls";
+    sha256 = "1pbipq5f2d3j7yyz9ffhwqqjsqvjdvd5v2vb5lg8x1v4qp988g0q";
   };
 in
 pkgs.searxng.overrideAttrs (old: {

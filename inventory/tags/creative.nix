@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 let
   # This tag shares the global package set with desktop Home Manager and service
   # modules. Match exact derivation names so evaluation fails again when nixpkgs
@@ -17,8 +17,13 @@ let
     pkg: pkg.name or (if pkg ? pname && pkg ? version then "${pkg.pname}-${pkg.version}" else "");
 in
 {
+  # Nixpkgs ignores permittedInsecurePackages when a predicate exists; compose
+  # the shared creative policy with machine-scoped, exact-version exceptions.
   nixpkgs.config.allowInsecurePredicate =
-    pkg: builtins.elem (packageNameWithVersion pkg) allowedInsecurePackageNames;
+    pkg:
+    builtins.elem (packageNameWithVersion pkg) (
+      allowedInsecurePackageNames ++ (config.nixpkgs.config.permittedInsecurePackages or [ ])
+    );
 
   environment.systemPackages = with pkgs; [
     # 3D CAD/modeling

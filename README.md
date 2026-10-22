@@ -75,7 +75,7 @@ Read [`docs/factorseal.md`](docs/factorseal.md) for the opt-in Factorseal protot
 - [fla-org/flash-linear-attention](https://github.com/fla-org/flash-linear-attention) — pinned v0.3.0 checkpoint naming, cross-layer value mixing, recurrent cache, model normalization, and untied language-model head wiring used to decode and independently compare the Hugging Face model format.
 - [denoland/celld](https://github.com/denoland/celld) — pinned self-hosted Durable Objects runtime used by the private RustFS-backed Celld fleet.
 - [devenv](https://github.com/cachix/devenv) — developer environment framework used by the default flake shell.
-- [Grafana](https://github.com/grafana/grafana) — upstream Grafana 13.0.3 generated email assets retained to repair the package's missing runtime templates.
+- [Grafana](https://github.com/grafana/grafana) — upstream Grafana 13.2.4 generated email assets retained to repair the package's missing runtime templates.
 - [ki-editor/ki-editor](https://github.com/ki-editor/ki-editor) — upstream flake used for the Ki editor package.
 - [kunobi-ninja/kache](https://github.com/kunobi-ninja/kache) — upstream Rust/C/C++ build cache used by the three-node RustFS-backed Kache fleet.
 - [kyuz0/amd-strix-halo-vllm-toolboxes](https://github.com/kyuz0/amd-strix-halo-vllm-toolboxes) — upstream Strix Halo RDMA/vLLM toolbox guide used for the `rdma-cluster` tag.
