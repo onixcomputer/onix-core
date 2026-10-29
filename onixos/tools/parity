@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# Compare a machine's OnixOS build with its Clan build from the same source.
+#
+#   onixos/tools/parity <machine> [flake-dir|flake-ref] [-- <extra nix eval args>...]
+#
+# Evaluates clan.nixosConfigurations.<machine> (Clan's build, also after a
+# machine's nixosConfigurations entry switches to OnixOS) and
+# onixos.nixosConfigurations.<machine> (OnixOS) from the same flake source,
+# so `self` and everything derived from it is identical, then prints both
+# toplevel derivations and, when they differ, `nix-diff` between them. Only
+# derivations are instantiated; nothing is built or deployed.
+#
+# A directory is evaluated as its Git working tree; pass a ref such as
+# `git+file:///path?rev=<commit>` to pin an exact commit. Extra arguments
+# (for example `--override-input onix-modules <ref>`) go to both
+# evaluations.
+#
+# On this workstation, run with NIX_CONFIG=$'min-free = 0\nmax-free = 0' so
+# auto-GC cannot delete freshly instantiated derivations (see AGENTS.md).
+# That does not stop a garbage collection that another process runs, which
+# can delete the first derivation while the second evaluates. Each
+# evaluation therefore writes a store file naming its derivation and
+# registers it as an indirect GC root, <prefix>-clan and <prefix>-onixos,
+# where the prefix is PARITY_GC_ROOT or a temporary directory that is
+# removed on exit. Keep PARITY_GC_ROOT's links to inspect the derivations
+# later; delete them afterwards.
+set -euo pipefail
+
+machine=${1:?usage: onixos/tools/parity <machine> [flake-dir|flake-ref] [-- nix-args...]}
+shift
+flake=.
+if [[ $# -gt 0 && $1 != -- ]]; then
+  flake=$1
+  shift
+fi
+[[ ${1:-} == -- ]] && shift
+if [[ $flake != *://* ]]; then
+  flake="git+file://$(cd "$flake" && pwd)"
+fi
+
+if [[ -n ${PARITY_GC_ROOT:-} ]]; then
+  root_prefix=$PARITY_GC_ROOT
+else
+  root_dir=$(mktemp -d)
+  trap 'rm -rf "$root_dir"' EXIT
+  root_prefix=$root_dir/parity
+fi
+
+# Prints the toplevel derivation of <configs>.<machine>; the derivation
+# stays rooted by <root_prefix>-<name>.
+toplevel() {
+  local name=$1 configs=$2 file
+  shift 2
+  # --no-eval-cache: a cached result does not instantiate the derivation,
+  # which may have been garbage-collected since.
+  file=$(nix eval --raw --no-eval-cache --option allow-import-from-derivation true "$@" \
+    "${flake}#${configs}.${machine}.config.system.build.toplevel" \
+    --apply "toplevel: builtins.toFile \"parity-${name}\" (builtins.unsafeDiscardOutputDependency toplevel.drvPath)")
+  nix-store --add-root "${root_prefix}-${name}" --indirect --realise "$file" >/dev/null
+  cat "$file"
+}
+
+clan=$(toplevel clan clan.nixosConfigurations "$@")
+onixos=$(toplevel onixos onixos.nixosConfigurations "$@")
+
+echo "clan   $clan"
+echo "onixos $onixos"
+if [[ $clan == "$onixos" ]]; then
+  echo "identical"
+  exit 0
+fi
+nix run --inputs-from "$flake" nixpkgs#nix-diff -- --color never "$clan" "$onixos"

@@ -146,6 +146,8 @@ let
         "*/gnupg-home/*"
         "*/sops/secrets/*"
         "vars/*"
+        # Byte-identical copies of vars/ files (docs/onixos-aspen2-pilot.md).
+        "onixos/secrets/*"
         "**/node_modules/*"
         "**/.mypy_cache/*"
 
