@@ -11,7 +11,7 @@ aspen2 can be built by OnixOS as well as by Clan, from the same commit. Every Cl
 | `onixos/services/<name>.ncl` | Typed Nickel service modules with tests |
 | `onixos/services/<name>.nix` | Sidecars: upstream NixOS modules, overlays and modules a service must follow |
 | `onixos/instances/<name>.ncl` | The Clan instances, with the same names and settings |
-| `onixos/nix/` | Tag files, machine files and clan-core base defaults as NixOS modules; vars compatibility; package overlays |
+| `onixos/nix/` | Tag files, machine files and clan-core base defaults as NixOS modules; vars compatibility; package overlays; the check that every sops secret is encrypted to its machine |
 | `onixos/secrets/` | Byte-identical copies of the deployed Clan vars files |
 | `onixos/tools/parity` | Compares a machine's Clan and OnixOS derivations |
 | `flake-outputs/_onixos-checks.nix` | Checks `onixos-services` (Nickel tests) and `onixos-<machine>` (toplevel) |
@@ -61,7 +61,14 @@ The Clan build is unchanged: `nixosConfigurations.aspen2` at the pilot commit an
 
 ## Secrets
 
-Each `onixos/secrets/machines/<machine>/<generator>/<file>` and `onixos/secrets/shared/<generator>/<file>` is a byte-identical copy of `vars/per-machine/<machine>/<generator>/<file>/{secret,value}` or `vars/shared/<generator>/<file>/{secret,value}`, and every secret copy lists the machine's age key (`sops/machines/<machine>/key.json`). sops-nix decrypts them with the existing `/var/lib/sops-nix/key.txt`. Copy a file again after Clan regenerates it:
+Each `onixos/secrets/machines/<machine>/<generator>/<file>` and `onixos/secrets/shared/<generator>/<file>` is a byte-identical copy of `vars/per-machine/<machine>/<generator>/<file>/{secret,value}` or `vars/shared/<generator>/<file>/{secret,value}`. For aspen2 that is 24 files:
+
+- 18 secrets, copies of `secret` files: sops binary files whose data and MAC are AES-256-GCM ciphertext, encrypted with age to aspen2's key (`sops/machines/aspen2/key.json`) and to Clan's admins, user brittonr and machine aspen1. The shared ones are also encrypted to the other machines that use them. sops-nix decrypts them on aspen2 with the existing `/var/lib/sops-nix/key.txt`.
+- 6 public files, copies of `value` files: the SSH public keys of `openssh`, `openssh-ca`, `nix-builder-ssh` and `borgbackup`, the SSH host certificate, and the Nix signing public key. OnixOS reads public artifact files during evaluation, so they stay plaintext, as Clan's `value` files do.
+
+Evaluation fails when a file deployed as a sops secret is not a sops file encrypted to the machine's age key (`onixos/nix/encrypted-secrets.nix`). OnixOS itself only checks that a secret file exists, and sops-nix parses a binary-format file only as JSON, so a plaintext or wrongly encrypted copy would otherwise build, deploy, and fail at activation. The check reads only the sops envelope. It runs after evaluation has copied the flake source, file included, into the local store, so never commit a decrypted file. `onix artifacts status` does not see these modules' artifact declarations and cannot report on them.
+
+Copy a file again after Clan regenerates it, always from the `secret` (or, for public files, `value`) file:
 
 ```console
 install -D -m 0644 vars/per-machine/aspen2/<generator>/<file>/secret onixos/secrets/machines/aspen2/<generator>/<file>
@@ -71,7 +78,7 @@ Clan's `deploy = false` files are not copied, because OnixOS deploys every decla
 
 ## Before the cutover
 
-1. Publish OnixOS branch `onix-core-consumer` (fixes `713d5d15` and `2d23df26`) and relock: `nix flake update onix-modules`.
+1. Land OnixOS branch `onix-core-consumer` (fixes `713d5d15` and `2d23df26`) on OnixOS `main` and relock: `nix flake update onix-modules`. The input tracks OnixOS's default branch, so pushing only the branch is not enough; to relock before the merge, point the input at `git+ssh://git@github.com/onixcomputer/OnixOS.git?ref=onix-core-consumer` instead.
 2. Run the parity tool without `--override-input` and compare its output with the table above. `configurationRevision` now reports the commit on both sides.
 3. Review `parity-evidence.json`, this runbook and the gaps below.
 4. Print the deploy plan from the OnixOS CLI shell (`nix develop .#cli` in the OnixOS checkout, which provides `onix` and the pinned `nickel`; pass `--lib <checkout>/lib` to a CLI built elsewhere). It contacts nothing:

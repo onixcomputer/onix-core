@@ -23,7 +23,7 @@ r[onix.onixos_migration.typed_services] Every Clan service instance that reaches
 
 ### Requirement: Secrets as OnixOS artifacts
 
-r[onix.onixos_migration.secrets] Every vars file that Clan deploys to a ported machine MUST be an OnixOS artifact file with the Clan generator's name and file name, stored under `onixos/secrets/` as a byte-identical copy of the Clan file. Secret copies MUST list the machine's age key as a recipient. Files that Clan does not deploy (`deploy = false`) MUST NOT be declared.
+r[onix.onixos_migration.secrets] Every vars file that Clan deploys to a ported machine MUST be an OnixOS artifact file with the Clan generator's name and file name, stored under `onixos/secrets/` as a byte-identical copy of the Clan file. Secret copies MUST list the machine's age key as a recipient. Evaluation of a ported machine MUST fail when a file it deploys as a sops secret is not a sops file encrypted to the machine's age key, without decrypting anything. Files that Clan does not deploy (`deploy = false`) MUST NOT be declared.
 
 #### Scenario: Ciphertext custody
 
@@ -31,6 +31,12 @@ r[onix.onixos_migration.secrets] Every vars file that Clan deploys to a ported m
 - WHEN it is compared with its Clan vars file and its recipients are listed
 - THEN it is byte-identical to its Clan vars file
 - AND the machine's age public key is one of its recipients
+
+#### Scenario: Unencrypted secret stops evaluation
+
+- GIVEN a file deployed as a sops secret holds plaintext, or a sops file that is not encrypted to the machine's age key
+- WHEN the machine's OnixOS configuration is evaluated
+- THEN evaluation MUST fail with a message naming the secret and the reason
 
 ### Requirement: Explained parity
 

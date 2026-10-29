@@ -3,9 +3,11 @@
 # Each machine gets the same tag and machine files that Clan imports for it,
 # plus the Clan base behaviour onix-core relies on (clan-carryover.nix) and a
 # read-only bridge for the `clan.core.vars` paths those shared files still
-# read (clan-vars-compat.nix). Services are not listed here: they are typed
-# Nickel modules in onixos/services, assigned in onixos/inventory.ncl; only
-# the upstream NixOS modules they configure come from their sidecars.
+# read (clan-vars-compat.nix), and a check that every sops secret is
+# encrypted to the machine (encrypted-secrets.nix). Services are not listed
+# here: they are typed Nickel modules in onixos/services, assigned in
+# onixos/inventory.ncl; only the upstream NixOS modules they configure come
+# from their sidecars.
 {
   self,
   inputs,
@@ -96,6 +98,13 @@ let
         machineName = name;
       })
       ./clan-vars-compat.nix
+      (import ./encrypted-secrets.nix {
+        machineName = name;
+        # The key behind the machine's /var/lib/sops-nix/key.txt; the OnixOS
+        # inventory's age_public_key reads the same file.
+        ageRecipient =
+          (builtins.head (lib.importJSON (../../sops/machines + "/${name}/key.json"))).publickey;
+      })
     ]
     ++ machineFiles name
     ++ tagModules name

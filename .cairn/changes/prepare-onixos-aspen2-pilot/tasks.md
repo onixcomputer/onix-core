@@ -17,13 +17,17 @@
 - [x] [serial] Run the parity diff for aspen2 and record every difference with its reason in `parity-evidence.json`. r[onix.onixos_migration.parity]
 - [x] [serial] Compare Clan's aspen2 derivation at the pilot commit with the base commit. r[onix.onixos_migration.side_by_side]
 - [x] [serial] Compare the sops manifests after renaming and the secret copies with `vars/`. r[onix.onixos_migration.secrets]
+- [x] [serial] Check every `onixos/secrets` file without decrypting it, and scan the unpushed commits of both branches for secret material. r[onix.onixos_migration.secrets]
+  - 2026-10-29: 18 secret copies are sops binary envelopes with AES-256-GCM data and MAC and only age recipients, aspen2 among them; 6 public copies are SSH public keys, the SSH host certificate and the 32-byte Nix signing public key. gitleaks 8.30.1 found nothing in the 2 unpushed onix-core and 2 OnixOS commits, and flagged a throwaway private key in a scratch repository.
+- [x] [serial] Fail evaluation when a deployed sops secret is not encrypted to its machine (`onixos/nix/encrypted-secrets.nix`), and run the commit hooks (treefmt, statix, deadnix) on every changed file. r[onix.onixos_migration.secrets]
+  - 2026-10-29: the check accepts aspen2's 18 secrets and rejects plaintext, unencrypted JSON, plaintext data in a sops envelope, aspen3's ciphertext and a non-JSON format, each with its reason; a scratch commit with one plaintext secret fails evaluation. statix's repeated-key warnings in `clan-carryover.nix` were fixed without changing a value.
 - [x] [serial] Print the deploy plan with `onix deploy --dry-run aspen2` and write the runbook `docs/onixos-aspen2-pilot.md`. r[onix.onixos_migration.cutover]
 - [x] [serial] Run the formatter on the changed files and validate Cairn. r[onix.onixos_migration.parity]
 
 ## Phase 4: Cutover
 
 - [ ] [serial] Operator review of the parity evidence, the runbook and the gaps. r[onix.onixos_migration.cutover]
-- [ ] [serial] Publish OnixOS branch `onix-core-consumer`, relock `onix-modules`, and rerun parity without `--override-input`. r[onix.onixos_migration.parity]
+- [ ] [serial] Land OnixOS branch `onix-core-consumer` on OnixOS `main` (the input tracks the default branch), relock `onix-modules`, and rerun parity without `--override-input`. r[onix.onixos_migration.parity]
 - [ ] [serial] Point `nixosConfigurations.aspen2` at the OnixOS build and deploy it with `onix deploy`, first with `--action test`. r[onix.onixos_migration.cutover]
 
 No host was contacted and no system was built. aspen2 still deploys through Clan.

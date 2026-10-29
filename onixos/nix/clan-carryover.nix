@@ -19,9 +19,11 @@
       environment.ldso32 = null;
       environment.systemPackages = [ pkgs.nixos-facter ];
 
-      nix.daemonCPUSchedPolicy = lib.mkDefault "batch";
-      nix.daemonIOSchedClass = lib.mkDefault "idle";
-      nix.daemonIOSchedPriority = lib.mkDefault 7;
+      nix = {
+        daemonCPUSchedPolicy = lib.mkDefault "batch";
+        daemonIOSchedClass = lib.mkDefault "idle";
+        daemonIOSchedPriority = lib.mkDefault 7;
+      };
     }
   ];
 
@@ -59,10 +61,14 @@
     # The installer and nixos-anywhere hostId, so ZFS pools import cleanly.
     hostId = lib.mkDefault "8425e349";
   };
-  systemd.services.NetworkManager-wait-online.enable = false;
-  systemd.network.wait-online.enable = false;
-  systemd.network.networks."99-ethernet-default-dhcp".networkConfig.MulticastDNS = lib.mkDefault true;
-  systemd.network.networks."99-wireless-client-dhcp".networkConfig.MulticastDNS = lib.mkDefault true;
+  systemd = {
+    services.NetworkManager-wait-online.enable = false;
+    network = {
+      wait-online.enable = false;
+      networks."99-ethernet-default-dhcp".networkConfig.MulticastDNS = lib.mkDefault true;
+      networks."99-wireless-client-dhcp".networkConfig.MulticastDNS = lib.mkDefault true;
+    };
+  };
 
   boot.zfs.forceImportRoot = lib.mkDefault false;
   services.zfs = lib.mkIf config.boot.zfs.enabled {
