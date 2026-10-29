@@ -71,7 +71,9 @@
     # onixos/inventory.ncl with its mkFlake (Nix backend) next to Clan's
     # nixosConfigurations. Its own nixpkgs and onix-wasm pins stay unfollowed:
     # the Nickel WASM plugin is only known to work with OnixOS's toolchain.
-    onix-modules.url = "git+ssh://git@github.com/onixcomputer/OnixOS.git";
+    # The branch carries the two fixes the pilot needs (713d5d15, 2d23df26)
+    # until they land on OnixOS main; then drop `?ref=` and relock.
+    onix-modules.url = "git+ssh://git@github.com/onixcomputer/OnixOS.git?ref=onix-core-consumer";
 
     # OnixOS maps public artifact files to nixos-artifacts' `artifacts.store`
     # options; mkFlake requires the module once any public file is declared.

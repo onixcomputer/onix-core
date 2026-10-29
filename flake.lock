@@ -12073,15 +12073,16 @@
         "tf-ncl": "tf-ncl"
       },
       "locked": {
-        "lastModified": 1793266922,
-        "narHash": "sha256-Hl57Rahsa7Oz5qsDy6Ri+jixZImB+5bg4OP+vkJiJ2E=",
-        "ref": "refs/heads/main",
-        "rev": "539430c382d65c09982b139d3991dc20d822c006",
-        "revCount": 1786,
+        "lastModified": 1793308972,
+        "narHash": "sha256-IGozkFUcipeN0dnGRf3LWE5+2bAOWcjEo0rzzfbVTCc=",
+        "ref": "onix-core-consumer",
+        "rev": "2d23df2625a42473b68966d3bfe6623cceed26be",
+        "revCount": 1788,
         "type": "git",
         "url": "ssh://git@github.com/onixcomputer/OnixOS.git"
       },
       "original": {
+        "ref": "onix-core-consumer",
         "type": "git",
         "url": "ssh://git@github.com/onixcomputer/OnixOS.git"
       }
