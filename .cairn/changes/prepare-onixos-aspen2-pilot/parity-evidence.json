@@ -1,8 +1,8 @@
 {
-  "recordedAt": "2026-10-29T23:00:13Z",
+  "recordedAt": "2026-10-29T23:42:57Z",
   "scope": "Evaluation only: derivations were instantiated and compared; nothing was built except the onixos-services Nickel test check, nothing was deployed, and no host was contacted.",
   "revisions": {
-    "pilot": "043f8c6cf0a1329c911ea49c85d1f05009847978",
+    "pilot": "359b3d2e902042bbedced4326535cfe5ba67d0d0",
     "base": "18864766f19beae7ee822c817b307c0a57c7220e",
     "onixModules": {
       "locked": "539430c382d65c09982b139d3991dc20d822c006",
@@ -34,7 +34,7 @@
     "clanSourcesChanged": []
   },
   "parity": {
-    "command": "onixos/tools/parity aspen2 git+file://<worktree>?rev=043f8c6cf0a1329c911ea49c85d1f05009847978 -- --override-input onix-modules git+file:///home/brittonr/git/onixos-onix-core-consumer-20261029",
+    "command": "onixos/tools/parity aspen2 git+file://<worktree>?rev=359b3d2e902042bbedced4326535cfe5ba67d0d0 -- --override-input onix-modules git+file:///home/brittonr/git/onixos-onix-core-consumer-20261029",
     "clan": "/nix/store/qh91irhawrvis0ich1fg6619d9a5404s-nixos-system-aspen2-26.11.20261020.5adc508.drv",
     "onixos": "/nix/store/ijdq5cwgnalgy1knz8m231jfrdnay9l5-nixos-system-aspen2-26.11.20261020.5adc508.drv",
     "differingDerivations": 52,
@@ -244,7 +244,8 @@
       "niks3-queue-metric-writer": "same script",
       "mesh-llm api watchdog": "same script",
       "tailscale-host-sync": "same script; runtime inputs come from the unit PATH"
-    }
+    },
+    "unchangedSince": "043f8c6cf0a1329c911ea49c85d1f05009847978: same derivations and byte-identical nix-diff output after adding the secret encryption check"
   },
   "secrets": {
     "manifest.json": {
@@ -292,5 +293,96 @@
       "ssh root@100.82.25.30 '<activate $OUT switch safe-mode>'"
     ],
     "note": "The plan builds nixosConfigurations.aspen2, which is still Clan's until the cutover in docs/onixos-aspen2-pilot.md."
+  },
+  "secretsEncryption": {
+    "method": "Read only the sops envelopes and the public files; nothing was decrypted.",
+    "files": {
+      "total": 24,
+      "secret": 18,
+      "public": 6,
+      "failures": 0
+    },
+    "secretEnvelopes": "Every secret copy is a sops binary file whose data and MAC are AES256_GCM ciphertext, with only age recipients (no KMS, PGP, GCP, Azure or Vault key groups), aspen2's key among them, and byte-identical to its vars/.../secret source.",
+    "recipients": {
+      "11 aspen2 machine secrets": [
+        "machine:aspen2",
+        "machine:aspen1",
+        "user:brittonr"
+      ],
+      "shared/berkeley-mono-font/font_data": [
+        "machine:aspen1",
+        "machine:aspen2",
+        "machine:aspen3",
+        "machine:bonsai",
+        "machine:britton-desktop",
+        "machine:britton-fw",
+        "machine:chv-dev1",
+        "machine:chv-dev2",
+        "machine:chv-dev3",
+        "machine:pine",
+        "machine:utm-vm",
+        "user:brittonr"
+      ],
+      "shared/mesh-llm-mesh-llm-private-inference-invites/* (4), shared/niks3-nix-cache-api/api-token": [
+        "machine:aspen1",
+        "machine:aspen2",
+        "machine:aspen3",
+        "machine:britton-desktop",
+        "user:brittonr"
+      ],
+      "shared/tailscale-br-tailnet/auth_key": [
+        "machine:aspen1",
+        "machine:aspen2",
+        "machine:aspen3",
+        "machine:bonsai",
+        "machine:britton-desktop",
+        "machine:britton-fw",
+        "machine:pine",
+        "user:brittonr"
+      ],
+      "note": "Clan's existing policy: the admins group holds user brittonr and machine aspen1; copying kept it unchanged."
+    },
+    "publicFiles": {
+      "machines/aspen2/borgbackup/borgbackup.ssh.pub": "ssh-ed25519 SHA256:Fj+OthQp5CExnRXccuYXO84IKdWSeA1EvZ9iAp8ojbk",
+      "machines/aspen2/nix-builder-ssh/id_ed25519.pub": "ssh-ed25519 SHA256:IvHDi+8aq63N0GmM3bUrbVRmwDJI824dtBdLthBZ3Mo",
+      "machines/aspen2/nix-signing-key/key.pub": "Nix public key aspen2-1, 32 bytes",
+      "machines/aspen2/openssh-cert/ssh.id_ed25519-cert.pub": "ssh-ed25519-cert-v01@openssh.com SHA256:+ELrydxl4Qt/OxCDFBcukmg7nXcja7CNjnTbbu9HJ2c",
+      "machines/aspen2/openssh/ssh.id_ed25519.pub": "ssh-ed25519 SHA256:+ELrydxl4Qt/OxCDFBcukmg7nXcja7CNjnTbbu9HJ2c",
+      "shared/openssh-ca/id_ed25519.pub": "ssh-ed25519 SHA256:78EZn4xJtNc/sFseJo+iaR2Ub7P+gnCDmHj0sIPxf/k",
+      "why": "Copies of Clan value files. OnixOS reads public artifact files during evaluation, so they stay plaintext; none holds a private-key or sops marker."
+    },
+    "leakScan": {
+      "tool": "gitleaks 8.30.1 (nixpkgs 5adc5083), --redact",
+      "onix-core": {
+        "range": "18864766f19beae7ee822c817b307c0a57c7220e..5b59346a (HEAD at scan time)",
+        "commits": 2,
+        "bytes": 1935969,
+        "findings": 0
+      },
+      "OnixOS": {
+        "range": "539430c382d65c09982b139d3991dc20d822c006..2d23df2625a42473b68966d3bfe6623cceed26be",
+        "commits": 2,
+        "bytes": 20022,
+        "findings": 0
+      },
+      "positiveControl": "a throwaway ed25519 private key committed in a scratch repository was reported as private-key"
+    },
+    "existingChecks": {
+      "onixos": "nix/artifacts.nix maps a secret file to sops.secrets after checking only that it exists",
+      "sopsNix": "sops-install-secrets -check-mode=sopsfile only parses a binary-format file as JSON (pkgs/sops-install-secrets/main.go loadSopsFile)",
+      "onixArtifactsStatus": "its static discovery finds none of these modules' artifact declarations, so it cannot report on them"
+    },
+    "evaluationCheck": {
+      "module": "onixos/nix/encrypted-secrets.nix",
+      "realConfiguration": "aspen2's 18 sops secrets pass at 359b3d2e",
+      "rejected": [
+        "plaintext",
+        "unencrypted JSON",
+        "plaintext data in a sops envelope",
+        "aspen3's ciphertext (not encrypted to aspen2)",
+        "yaml format"
+      ],
+      "scratchCommit": "replacing grafana/admin_password with plaintext dummy text fails evaluation: 'grafana/admin_password: …/onixos/secrets/machines/aspen2/grafana/admin_password is not a sops-encrypted file'"
+    }
   }
 }
