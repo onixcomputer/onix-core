@@ -1,0 +1,296 @@
+{
+  "recordedAt": "2026-10-29T23:00:13Z",
+  "scope": "Evaluation only: derivations were instantiated and compared; nothing was built except the onixos-services Nickel test check, nothing was deployed, and no host was contacted.",
+  "revisions": {
+    "pilot": "043f8c6cf0a1329c911ea49c85d1f05009847978",
+    "base": "18864766f19beae7ee822c817b307c0a57c7220e",
+    "onixModules": {
+      "locked": "539430c382d65c09982b139d3991dc20d822c006",
+      "evaluatedWith": "--override-input onix-modules git+file:///home/brittonr/git/onixos-onix-core-consumer-20261029",
+      "evaluatedRevision": "2d23df2625a42473b68966d3bfe6623cceed26be",
+      "branch": "onix-core-consumer",
+      "fixes": {
+        "713d5d155b523f42db422a49d52686c3ba5b3c16": "merge identical shared artifact declarations",
+        "2d23df2625a42473b68966d3bfe6623cceed26be": "accept record-form role machines under builtins.wasm"
+      }
+    },
+    "nixosArtifacts": "7d1d9bffc215d7cefe1c361a6d51cc81d4bd8d0a",
+    "nix": "2.36.0"
+  },
+  "clanUnchanged": {
+    "baseDerivation": "/nix/store/3dw4b0id2s3xc0gwrwjvhavn450f9k2f-nixos-system-aspen2-26.11.20261020.5adc508.drv",
+    "pilotDerivation": "/nix/store/qh91irhawrvis0ich1fg6619d9a5404s-nixos-system-aspen2-26.11.20261020.5adc508.drv",
+    "differences": [
+      "nixos-version: configurationRevision is the base commit at the base and unset at the pilot, because --override-input drops self.rev"
+    ],
+    "flakeLock": {
+      "addedRootInputs": [
+        "nixos-artifacts",
+        "onix-modules"
+      ],
+      "changedInputPaths": 0,
+      "removedInputPaths": 0
+    },
+    "clanSourcesChanged": []
+  },
+  "parity": {
+    "command": "onixos/tools/parity aspen2 git+file://<worktree>?rev=043f8c6cf0a1329c911ea49c85d1f05009847978 -- --override-input onix-modules git+file:///home/brittonr/git/onixos-onix-core-consumer-20261029",
+    "clan": "/nix/store/qh91irhawrvis0ich1fg6619d9a5404s-nixos-system-aspen2-26.11.20261020.5adc508.drv",
+    "onixos": "/nix/store/ijdq5cwgnalgy1knz8m231jfrdnay9l5-nixos-system-aspen2-26.11.20261020.5adc508.drv",
+    "differingDerivations": 52,
+    "withContentDifferences": 31,
+    "method": "Environments compared key by key with store path hashes replaced, so derivations that differ only through a dependency's hash count as cascades.",
+    "reasons": {
+      "secret-path": "Secrets move from /run/secrets/vars/per-machine/aspen2/<generator>/<file> and /run/secrets/vars/shared/<generator>/<file> to /run/secrets/<generator>/<file>.",
+      "unit-script": "ExecStart/ExecStartPre run a NixOS unit script that executes the same command, with its packages in the unit PATH, because Nickel cannot write store paths.",
+      "etc-file": "A file moves from the store to /etc with the same content (the blackbox config is the same JSON pretty-printed); its users reference the /etc path or find programs through PATH.",
+      "path-lookup": "A script finds a program through the unit PATH instead of a store path.",
+      "clan-plumbing-not-ported": "Clan backup-provider plumbing for `clan backups` (borgbackup-create/list/restore, state-commands, no-op pre/post-backup hooks) is not ported.",
+      "onixos-framework": "OnixOS assembly adds /etc/onix/hardening-policy.json and /etc/onix/userland-profile.json.",
+      "order-only": "List order differs; the sets and values are equal."
+    },
+    "derivations": {
+      "etc": [
+        "etc-file",
+        "onixos-framework"
+      ],
+      "system-path": [
+        "clan-plumbing-not-ported",
+        "order-only"
+      ],
+      "borg-job-aspen1-wrapper": [
+        "secret-path"
+      ],
+      "etc-ssh-ssh_config": [
+        "secret-path"
+      ],
+      "nix.conf": [
+        "secret-path",
+        "order-only"
+      ],
+      "sshd.conf-final": [
+        "secret-path"
+      ],
+      "sshd.conf-settings": [
+        "etc-file"
+      ],
+      "unit-arxiv-corpus-arxiv-aspen2.service": [
+        "unit-script"
+      ],
+      "unit-berkeley-mono-font-install.service": [
+        "secret-path"
+      ],
+      "unit-script-berkeley-mono-font-install-start": [
+        "secret-path"
+      ],
+      "unit-borgbackup-job-aspen1.service": [
+        "secret-path",
+        "clan-plumbing-not-ported",
+        "path-lookup"
+      ],
+      "borgbackup-job-aspen1-script": [
+        "path-lookup"
+      ],
+      "config.ini": [
+        "secret-path"
+      ],
+      "unit-laya-laya-aspen2.service": [
+        "unit-script"
+      ],
+      "man-paths": [
+        "clan-plumbing-not-ported",
+        "order-only"
+      ],
+      "unit-mesh-llm-mesh-llm-private-inference-api-watchdog.service": [
+        "unit-script"
+      ],
+      "unit-mesh-llm-mesh-llm-private-inference.service": [
+        "secret-path",
+        "unit-script",
+        "etc-file",
+        "order-only"
+      ],
+      "unit-niks3-auto-upload.service": [
+        "secret-path",
+        "unit-script"
+      ],
+      "unit-niks3-queue-metrics.service": [
+        "unit-script"
+      ],
+      "unit-nix-grpc-daemon.service": [
+        "secret-path",
+        "etc-file"
+      ],
+      "unit-prometheus-blackbox-exporter.service": [
+        "etc-file"
+      ],
+      "unit-sshd-keygen.service": [
+        "secret-path"
+      ],
+      "unit-script-sshd-keygen-start": [
+        "secret-path"
+      ],
+      "unit-tailscale-host-sync.service": [
+        "unit-script"
+      ],
+      "unit-script-tailscaled-autoconnect-start": [
+        "secret-path"
+      ],
+      "unit-tailscalesd.service": [
+        "unit-script"
+      ],
+      "system_fish-completions": [
+        "clan-plumbing-not-ported",
+        "order-only"
+      ],
+      "manifest-for-users.json": [
+        "secret-path"
+      ],
+      "manifest.json": [
+        "secret-path"
+      ],
+      "users-groups.json": [
+        "secret-path"
+      ],
+      "boot.json": [
+        "order-only"
+      ]
+    },
+    "cascadeOnly": [
+      "activate",
+      "dbus-1",
+      "system-units",
+      "unit-accounts-daemon.service",
+      "unit-script-borgbackup-job-aspen1-start",
+      "unit-dbus-broker.service",
+      "X-Restart-Triggers-dbus-broker",
+      "unit-grafana.service",
+      "unit-mandb.service",
+      "unit-script-mandb-start",
+      "unit-nix-daemon.service",
+      "X-Restart-Triggers-nix-daemon",
+      "unit-polkit.service",
+      "X-Restart-Triggers-polkit",
+      "unit-sshd.service",
+      "X-Restart-Triggers-sshd",
+      "unit-tailscaled-autoconnect.service",
+      "borg-job-aspen1-wrapper_fish-completions",
+      "user-units",
+      "check-sshd-config",
+      "dry-activate"
+    ],
+    "inputDerivationsAdded": [
+      "X-Restart-Triggers-mesh-llm-mesh-llm-private-inference",
+      "X-Restart-Triggers-prometheus-blackbox-exporter",
+      "bash-interactive-5.3p20",
+      "curl-8.22.0",
+      "etc-mesh-llm-mesh-llm-private-inference-config.toml",
+      "etc-mesh-llm-mesh-llm-private-inference-research.json",
+      "etc-nix-build-farm-wait-worker-address",
+      "etc-onix-hardening-policy.json",
+      "etc-onix-userland-profile.json",
+      "etc-prometheus-blackbox-storage.yaml",
+      "etc-ssh-ssh.id_ed25519-cert.pub",
+      "iproute2-7.2.0",
+      "jq-1.8.2",
+      "networkmanager-1.58.1",
+      "onix-mesh-research-0.1.0",
+      "sqlite-3.53.3",
+      "tailscale-1.104.1",
+      "unit-script-arxiv-corpus-arxiv-aspen2-pre-start",
+      "unit-script-arxiv-corpus-arxiv-aspen2-start",
+      "unit-script-laya-laya-aspen2-pre-start",
+      "unit-script-laya-laya-aspen2-start",
+      "unit-script-mesh-llm-mesh-llm-private-inference-api-watchdog-start",
+      "unit-script-mesh-llm-mesh-llm-private-inference-start",
+      "unit-script-niks3-auto-upload-pre-start",
+      "unit-script-niks3-queue-metrics-start",
+      "unit-script-tailscale-host-sync-start",
+      "unit-script-tailscalesd-start"
+    ],
+    "inputDerivationsRemoved": [
+      "borgbackup-create",
+      "borgbackup-create_fish-completions",
+      "borgbackup-job-aspen1-post-backup-commands",
+      "borgbackup-job-aspen1-pre-backup-commands",
+      "borgbackup-list",
+      "borgbackup-list_fish-completions",
+      "borgbackup-restore",
+      "borgbackup-restore_fish-completions",
+      "checked-blackbox-exporter.conf",
+      "mesh-llm-mesh-llm-private-inference-api-watchdog",
+      "mesh-llm-mesh-llm-private-inference-config.toml",
+      "networkmanager-1.58.1",
+      "niks3-maintenance-guard",
+      "niks3-queue-metric-writer",
+      "nix-build-farm-wait-worker-address",
+      "state-commands",
+      "state-commands_fish-completions",
+      "tailscale-host-sync"
+    ],
+    "orderOnly": {
+      "system-path": "Same 234 packages after removing the four Clan helpers; framework-tool, opentofu, herdr, tailscale and mesh-llm sit at other positions.",
+      "nix.conf": "trusted-public-keys holds the same 20 keys; onix-niks3-1 comes after the srvos keys instead of before them. substituters are identical.",
+      "boot.json": "Same kernel parameters; one of the two amd_pstate=active entries comes earlier.",
+      "unit-mesh-llm-mesh-llm-private-inference.service": "LoadCredential lines are ordered by machine name; the --join-file order (aspen3, britton-desktop, aspen1) is unchanged."
+    },
+    "relocatedContent": {
+      "mesh-llm research.json": "identical",
+      "mesh-llm config.toml": "plugin command onix-mesh-research by name and research.json under /etc; otherwise identical",
+      "ssh.id_ed25519-cert.pub": "identical to vars/per-machine/aspen2/openssh-cert/ssh.id_ed25519-cert.pub/value",
+      "blackbox config": "same JSON object, pretty-printed",
+      "nix-build-farm-wait-worker-address": "same commands through PATH, #!/bin/sh",
+      "niks3-maintenance-guard": "same two curl checks",
+      "niks3-queue-metric-writer": "same script",
+      "mesh-llm api watchdog": "same script",
+      "tailscale-host-sync": "same script; runtime inputs come from the unit PATH"
+    }
+  },
+  "secrets": {
+    "manifest.json": {
+      "clan": 17,
+      "onixos": 17,
+      "equalAfterRename": true,
+      "compared": "owner, group, mode, format, restartUnits, reloadUnits, neededForUsers, sopsFileHash"
+    },
+    "manifest-for-users.json": {
+      "clan": 1,
+      "onixos": 1,
+      "equalAfterRename": true
+    },
+    "copies": {
+      "files": 24,
+      "byteIdenticalToVars": 24,
+      "secretFiles": 18,
+      "listingAspen2AgeKey": 18,
+      "aspen2AgeKey": "age1yhe47uh…k0jxcn"
+    }
+  },
+  "moduleTests": {
+    "nickel": "1.17.0",
+    "serviceModules": 19,
+    "instances": 21,
+    "passed": true,
+    "check": "/nix/store/n3imv3kdq23qmjk232mlvhpmwmz7gial-onixos-services"
+  },
+  "onixCheck": {
+    "command": "onix check onixos/inventory.ncl --services onixos/services --lib <onix-core-consumer checkout>/lib",
+    "pass": 71,
+    "fail": 24,
+    "warn": 29,
+    "failures": "C012 provider-first lint: raw networking.firewall (10), users.users (6), users.groups (3), systemd.timers (3) and systemd.tmpfiles (2) leaves.",
+    "reason": "The typed providers cannot express interface-scoped firewall ports, relative timers, recursive ownership rules, root's authorized keys, extra groups of an existing user, or a password hash wired from a secret."
+  },
+  "deployDryRun": {
+    "command": "onix deploy --dry-run aspen2 --inventory onixos/inventory.ncl --lib <onix-core-consumer checkout>/lib",
+    "target": "root@100.82.25.30",
+    "action": "switch",
+    "safeMode": "on (300s timeout)",
+    "plan": [
+      "nix build --print-out-paths '.#nixosConfigurations.aspen2.config.system.build.toplevel' --no-link --extra-experimental-features 'nix-command flakes wasm-builtin'",
+      "nix copy --to ssh://root@100.82.25.30 $OUT",
+      "ssh root@100.82.25.30 '<activate $OUT switch safe-mode>'"
+    ],
+    "note": "The plan builds nixosConfigurations.aspen2, which is still Clan's until the cutover in docs/onixos-aspen2-pilot.md."
+  }
+}
