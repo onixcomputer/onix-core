@@ -20,18 +20,17 @@ Only machines listed in `onixos/nix/machines.nix` are assembled; today that is a
 
 ## Evaluate and compare
 
-Until OnixOS branch `onix-core-consumer` is published and `onix-modules` is relocked (see [Before the cutover](#before-the-cutover)), every evaluation needs the local OnixOS checkout:
+`onix-modules` is pinned to OnixOS branch `onix-core-consumer`, which carries the two fixes the pilot needs (`713d5d15`, `2d23df26`), until they are on OnixOS `main` (see [Before the cutover](#before-the-cutover)). Evaluate the OnixOS build directly:
 
 ```console
-override=(--override-input onix-modules git+file:///home/brittonr/git/onixos-onix-core-consumer-20261029)
-nix eval --raw "${override[@]}" .#onixos.nixosConfigurations.aspen2.config.system.build.toplevel.drvPath
+nix eval --raw .#onixos.nixosConfigurations.aspen2.config.system.build.toplevel.drvPath
 ```
 
 Compare the two builds of aspen2. On this workstation keep auto-GC away from the fresh derivations:
 
 ```console
 NIX_CONFIG=$'min-free = 0\nmax-free = 0' \
-  onixos/tools/parity aspen2 "git+file://$PWD?rev=$(git rev-parse HEAD)" -- "${override[@]}"
+  onixos/tools/parity aspen2 "git+file://$PWD?rev=$(git rev-parse HEAD)"
 ```
 
 The tool instantiates `clan.nixosConfigurations.aspen2` and `onixos.nixosConfigurations.aspen2`, roots both derivations, and prints `nix-diff` between them. Set `PARITY_GC_ROOT=<path>` to keep the roots for later inspection, and delete the `<path>-clan` and `<path>-onixos` links afterwards.
@@ -39,7 +38,7 @@ The tool instantiates `clan.nixosConfigurations.aspen2` and `onixos.nixosConfigu
 Run the module tests:
 
 ```console
-nix build "${override[@]}" .#checks.x86_64-linux.onixos-services
+nix build .#checks.x86_64-linux.onixos-services
 ```
 
 ## Parity
@@ -57,7 +56,7 @@ Every difference between the two aspen2 derivations is one of the following; `pa
 
 Everything else that differs only depends on these derivations.
 
-The Clan build is unchanged: `nixosConfigurations.aspen2` at the pilot commit and at its base `18864766` differ only in `nixos-version`'s `configurationRevision`, which `--override-input` leaves unset.
+The Clan build is unchanged: `nixosConfigurations.aspen2` at the pilot commit and at its base `18864766` differ only in `nixos-version`'s `configurationRevision`, the commit each build records. The pilot adds the `onix-modules` and `nixos-artifacts` inputs and changes no other locked input.
 
 ## Secrets
 
@@ -78,8 +77,8 @@ Clan's `deploy = false` files are not copied, because OnixOS deploys every decla
 
 ## Before the cutover
 
-1. Land OnixOS branch `onix-core-consumer` (fixes `713d5d15` and `2d23df26`) on OnixOS `main` and relock: `nix flake update onix-modules`. The input tracks OnixOS's default branch, so pushing only the branch is not enough; to relock before the merge, point the input at `git+ssh://git@github.com/onixcomputer/OnixOS.git?ref=onix-core-consumer` instead.
-2. Run the parity tool without `--override-input` and compare its output with the table above. `configurationRevision` now reports the commit on both sides.
+1. Once the fixes (`713d5d15`, `2d23df26`) are on OnixOS `main`, drop `?ref=onix-core-consumer` from the `onix-modules` URL in `flake.nix` and relock: `nix flake update onix-modules`.
+2. Run the parity tool and compare its output with the table above.
 3. Review `parity-evidence.json`, this runbook and the gaps below.
 4. Print the deploy plan from the OnixOS CLI shell (`nix develop .#cli` in the OnixOS checkout, which provides `onix` and the pinned `nickel`; pass `--lib <checkout>/lib` to a CLI built elsewhere). It contacts nothing:
 

@@ -27,7 +27,9 @@
 ## Phase 4: Cutover
 
 - [ ] [serial] Operator review of the parity evidence, the runbook and the gaps. r[onix.onixos_migration.cutover]
-- [ ] [serial] Land OnixOS branch `onix-core-consumer` on OnixOS `main` (the input tracks the default branch), relock `onix-modules`, and rerun parity without `--override-input`. r[onix.onixos_migration.parity]
+- [x] [serial] Publish OnixOS branch `onix-core-consumer`, pin `onix-modules` to it, and rerun parity without `--override-input`. r[onix.onixos_migration.parity]
+  - 2026-10-29: branch published at `2d23df26`; only the `onix-modules` lock node changed; parity at `09a64d3d` lists the same 31 derivations with the same hash-normalized differences as the run with the override.
+- [ ] [serial] Land the fixes on OnixOS `main` after its full gate, drop `?ref=` from `onix-modules`, relock, and rerun parity. r[onix.onixos_migration.parity]
 - [ ] [serial] Point `nixosConfigurations.aspen2` at the OnixOS build and deploy it with `onix deploy`, first with `--action test`. r[onix.onixos_migration.cutover]
 
 No host was contacted and no system was built. aspen2 still deploys through Clan.

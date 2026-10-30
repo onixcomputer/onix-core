@@ -1,14 +1,15 @@
 {
-  "recordedAt": "2026-10-29T23:42:57Z",
-  "scope": "Evaluation only: derivations were instantiated and compared; nothing was built except the onixos-services Nickel test check, nothing was deployed, and no host was contacted.",
+  "recordedAt": "2026-10-30T00:14:29Z",
+  "scope": "Evaluation only: derivations were instantiated and compared; nothing was built except the onixos-services Nickel test check, nothing was deployed, and no fleet host was contacted.",
   "revisions": {
-    "pilot": "359b3d2e902042bbedced4326535cfe5ba67d0d0",
+    "pilot": "09a64d3d60e3f1a1fd5a0fd8ad251291f3ff143b",
     "base": "18864766f19beae7ee822c817b307c0a57c7220e",
     "onixModules": {
-      "locked": "539430c382d65c09982b139d3991dc20d822c006",
-      "evaluatedWith": "--override-input onix-modules git+file:///home/brittonr/git/onixos-onix-core-consumer-20261029",
-      "evaluatedRevision": "2d23df2625a42473b68966d3bfe6623cceed26be",
-      "branch": "onix-core-consumer",
+      "locked": "2d23df2625a42473b68966d3bfe6623cceed26be",
+      "ref": "onix-core-consumer",
+      "url": "git+ssh://git@github.com/onixcomputer/OnixOS.git?ref=onix-core-consumer",
+      "evaluatedWith": "flake.lock, no --override-input",
+      "published": "branch onix-core-consumer on github.com/onixcomputer/OnixOS; OnixOS main is still 539430c3, the branch's parent",
       "fixes": {
         "713d5d155b523f42db422a49d52686c3ba5b3c16": "merge identical shared artifact declarations",
         "2d23df2625a42473b68966d3bfe6623cceed26be": "accept record-form role machines under builtins.wasm"
@@ -21,7 +22,7 @@
     "baseDerivation": "/nix/store/3dw4b0id2s3xc0gwrwjvhavn450f9k2f-nixos-system-aspen2-26.11.20261020.5adc508.drv",
     "pilotDerivation": "/nix/store/qh91irhawrvis0ich1fg6619d9a5404s-nixos-system-aspen2-26.11.20261020.5adc508.drv",
     "differences": [
-      "nixos-version: configurationRevision is the base commit at the base and unset at the pilot, because --override-input drops self.rev"
+      "nixos-version: configurationRevision, the commit each build records"
     ],
     "flakeLock": {
       "addedRootInputs": [
@@ -29,14 +30,15 @@
         "onix-modules"
       ],
       "changedInputPaths": 0,
-      "removedInputPaths": 0
+      "removedInputPaths": 0,
+      "note": "relocking onix-modules to the published branch changed only the onix-modules node"
     },
     "clanSourcesChanged": []
   },
   "parity": {
-    "command": "onixos/tools/parity aspen2 git+file://<worktree>?rev=359b3d2e902042bbedced4326535cfe5ba67d0d0 -- --override-input onix-modules git+file:///home/brittonr/git/onixos-onix-core-consumer-20261029",
-    "clan": "/nix/store/qh91irhawrvis0ich1fg6619d9a5404s-nixos-system-aspen2-26.11.20261020.5adc508.drv",
-    "onixos": "/nix/store/ijdq5cwgnalgy1knz8m231jfrdnay9l5-nixos-system-aspen2-26.11.20261020.5adc508.drv",
+    "command": "onixos/tools/parity aspen2 git+file://<worktree>?rev=09a64d3d60e3f1a1fd5a0fd8ad251291f3ff143b",
+    "clan": "/nix/store/njgm24bn2ck11smrdk8hz8gkalzr6jfh-nixos-system-aspen2-26.11.20261020.5adc508.drv",
+    "onixos": "/nix/store/f82m30p6n1jd8hkv8xv6r2hmhp444hay-nixos-system-aspen2-26.11.20261020.5adc508.drv",
     "differingDerivations": 52,
     "withContentDifferences": 31,
     "method": "Environments compared key by key with store path hashes replaced, so derivations that differ only through a dependency's hash count as cascades.",
@@ -245,7 +247,7 @@
       "mesh-llm api watchdog": "same script",
       "tailscale-host-sync": "same script; runtime inputs come from the unit PATH"
     },
-    "unchangedSince": "043f8c6cf0a1329c911ea49c85d1f05009847978: same derivations and byte-identical nix-diff output after adding the secret encryption check"
+    "unchangedSince": "Runs at 043f8c6c and 359b3d2e with --override-input onix-modules <local checkout at 2d23df26> produced the same 52 differing derivations; the hash-normalized differences of the 31 with content changes are byte-identical to this run. Only configurationRevision, now set on both sides, changed the derivation hashes."
   },
   "secrets": {
     "manifest.json": {

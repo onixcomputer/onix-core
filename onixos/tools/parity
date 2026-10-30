@@ -12,8 +12,8 @@
 #
 # A directory is evaluated as its Git working tree; pass a ref such as
 # `git+file:///path?rev=<commit>` to pin an exact commit. Extra arguments
-# (for example `--override-input onix-modules <ref>`) go to both
-# evaluations.
+# (for example `--override-input onix-modules <ref>` to try an unpublished
+# OnixOS checkout) go to both evaluations.
 #
 # On this workstation, run with NIX_CONFIG=$'min-free = 0\nmax-free = 0' so
 # auto-GC cannot delete freshly instantiated derivations (see AGENTS.md).

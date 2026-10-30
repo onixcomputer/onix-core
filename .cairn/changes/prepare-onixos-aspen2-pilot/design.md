@@ -34,9 +34,9 @@ OnixOS maps a secret artifact file to `sops.secrets` after checking only that th
 
 clan-core's `clan.core.state` registry, its `state-commands` package, the borg job's pre/post-backup hook runners and the `borgbackup-create`, `borgbackup-list` and `borgbackup-restore` helpers serve the `clan backups` command. No onix-core state defines a hook script, so the runners were no-ops on aspen2. The borg job, its timer, wrapper, paths, excludes and NetworkManager wait are ported unchanged.
 
-### Decision: OnixOS fixes before relocking
+### Decision: Pin the OnixOS fix branch until it is on main
 
-Two OnixOS defects blocked the pilot and are fixed on OnixOS branch `onix-core-consumer`: identical shared artifact declarations from several machines collided (`713d5d15`), and record-form role machines (`machines.<name>.settings`) aborted under `builtins.wasm` (`2d23df26`). Until that branch is published and `onix-modules` relocked, evaluation needs `--override-input onix-modules git+file://<checkout>`.
+Two OnixOS defects blocked the pilot and are fixed on OnixOS branch `onix-core-consumer`: identical shared artifact declarations from several machines collided (`713d5d15`), and record-form role machines (`machines.<name>.settings`) aborted under `builtins.wasm` (`2d23df26`). The branch is published and `onix-modules` is pinned to it with `?ref=onix-core-consumer`, so the pilot evaluates without overrides. Landing the fixes on OnixOS `main` requires OnixOS's full gate; afterwards the input drops `?ref=` and is relocked.
 
 ### Decision: Cutover through nixosConfigurations
 
