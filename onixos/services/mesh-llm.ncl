@@ -418,8 +418,12 @@ fun onix =>
         else
           {}
       in
+      # OnixOS applies a service's appended wirings in one mkMerge inside
+      # systemd.services.<unit>, which the module system merges last-first.
+      # Emitting them seed first loads the credentials in join order, as
+      # Clan's LoadCredential does.
       let wiring =
-        join_peers
+        std.array.reverse join_peers
         |> std.array.map (fun peer =>
           onix.artifact_wiring {
             artifact = invites_artifact,
@@ -581,8 +585,10 @@ fun onix =>
         std.string.contains "exec mesh-llm --config /etc/mesh-llm-mesh-llm-private-inference/config.toml --model Qwen3-0.6B-Q4_K_M --ctx-size 512 --headless --mesh-discovery-mode mdns --bind-ip 100.82.25.30 --bind-port 47916 --port 9337 --console 3131 --mesh-name onix-private-inference --name aspen2 --log-format json" unit.script,
         # Clan join order: joiners first (sorted), the seed last.
         std.string.contains "--join-file \"$CREDENTIALS_DIRECTORY\"/invite-aspen3 --join-file \"$CREDENTIALS_DIRECTORY\"/invite-britton-desktop --join-file \"$CREDENTIALS_DIRECTORY\"/invite-aspen1" unit.script,
-        (joiner.artifact_wiring |> std.array.map (fun w => w.value)) == ["invite-aspen3:__PATH__", "invite-britton-desktop:__PATH__", "invite-aspen1:__PATH__"],
-        (joiner.artifact_wiring |> std.array.map (fun w => w.file)) == ["aspen3", "britton-desktop", "aspen1"],
+        # Wirings are emitted in reverse join order; OnixOS merges them
+        # last-first, so LoadCredential lists the invites in join order.
+        (joiner.artifact_wiring |> std.array.map (fun w => w.value)) == ["invite-aspen1:__PATH__", "invite-britton-desktop:__PATH__", "invite-aspen3:__PATH__"],
+        (joiner.artifact_wiring |> std.array.map (fun w => w.file)) == ["aspen1", "britton-desktop", "aspen3"],
         (std.array.first joiner.artifact_wiring).nixos_option == "systemd.services.%{svc}.serviceConfig.LoadCredential",
         (std.array.first joiner.artifact_wiring).append,
         # The shared invites artifact has one file per node, including this one.

@@ -371,6 +371,8 @@
         ./flake-outputs/factorseal.nix # Opt-in hardware vault prototype
       ];
       flake =
+        # onixos.nix comes last: its nixosConfigurations is Clan's with the
+        # cut-over machines replaced by their OnixOS builds.
         (import ./flake-outputs/clan.nix {
           inherit (inputs) self;
           inherit inputs;

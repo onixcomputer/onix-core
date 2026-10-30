@@ -3,9 +3,13 @@
 # Assembles machines from onixos/inventory.ncl with the onix-modules mkFlake
 # (Nix backend) instead of Clan. Every NixOS machine is declared there, but
 # only the machines with machine modules in onixos/nix/machines.nix are
-# assembled and exposed, as `onixos.nixosConfigurations.<machine>`. Clan's
-# nixosConfigurations remain the deployed systems; `onixos/tools/parity`
-# diffs the two builds of a machine from the same source.
+# assembled and exposed, as `onixos.nixosConfigurations.<machine>`;
+# `onixos/tools/parity` diffs a machine's two builds from the same source.
+#
+# A cut-over machine's `nixosConfigurations` entry is its OnixOS build, which
+# `onix deploy` (and `clan machines update`) then deploy. Clan's build stays at
+# `clan.nixosConfigurations.<machine>` for parity and rollback. Every other
+# machine keeps Clan's build.
 #
 # Called directly from flake.nix, like clan.nix: these are flake-level outputs.
 { self, inputs }:
@@ -59,10 +63,17 @@ let
     extraNixosModules = machineModules;
     overlays = import ../onixos/nix/package-overlays.nix { inherit self inputs; };
   };
+
+  assembled = lib.getAttrs (lib.attrNames machineModules) onixOutputs.nixosConfigurations;
+
+  # Machines deployed from their OnixOS build (docs/onixos-aspen2-pilot.md).
+  cutOverMachines = [ "aspen2" ];
 in
 {
+  nixosConfigurations = self.clan.nixosConfigurations // lib.getAttrs cutOverMachines assembled;
+
   onixos = {
-    nixosConfigurations = lib.getAttrs (lib.attrNames machineModules) onixOutputs.nixosConfigurations;
+    nixosConfigurations = assembled;
     inherit (onixOutputs) _onix;
   };
 }

@@ -16,6 +16,15 @@ let
   meshEndpointUrl = "http://127.0.0.1:13305/v1";
 
   machineConfig = name: self.nixosConfigurations.${name}.config;
+  # Clan's mesh-llm module passes the launch command in ExecStart and invites
+  # as %d/<credential>. The OnixOS build (aspen2) runs the same command from
+  # the unit script with invites under "$CREDENTIALS_DIRECTORY"/. Read either
+  # as one command, so every check below applies to both.
+  launchCommand =
+    service:
+    lib.replaceStrings [ ''"$CREDENTIALS_DIRECTORY"/'' ] [ "%d/" ] (
+      if service.script != "" then service.script else service.serviceConfig.ExecStart
+    );
   mkNode =
     {
       label,
@@ -34,7 +43,7 @@ let
         config
         service
         ;
-      command = service.serviceConfig.ExecStart;
+      command = launchCommand service;
       credentials = service.serviceConfig.LoadCredential or [ ];
     };
 
@@ -53,7 +62,10 @@ let
   retiredAspen2QwenServiceName = "llamacpp-server-qwen38-flash-next-aspen2";
   aspen2KeepsRetiredQwen =
     aspen2Node.config.systemd.services ? ${retiredAspen2QwenServiceName}
-    || aspen2Node.config.clan.core.vars.generators ? "${retiredAspen2QwenServiceName}-huggingface";
+    || aspen2Node.config.clan.core.vars.generators ? "${retiredAspen2QwenServiceName}-huggingface"
+    || lib.any (lib.hasPrefix "${retiredAspen2QwenServiceName}-huggingface/") (
+      lib.attrNames aspen2Node.config.sops.secrets
+    );
   aspen3Node = mkNode {
     label = "Aspen3";
     machineName = "aspen3";
@@ -88,15 +100,19 @@ let
     node: node.backendUnit == null || builtins.elem node.backendUnit node.service.after;
   inferenceNodes = lib.filter (node: node.backendUnit != null) meshNodes;
   # The rendered plugin configuration, carrying the command's store context.
+  # The OnixOS build passes an /etc path; check the file /etc receives.
   meshConfigFile =
     node:
     let
       words = lib.splitString " " node.command;
       index = lib.lists.findFirstIndex (word: word == "--config") null words;
+      path = if index == null then "/missing-mesh-llm-config" else builtins.elemAt words (index + 1);
+      etcName = lib.removePrefix "/etc/" path;
     in
-    lib.addContextFrom node.command (
-      if index == null then "/missing-mesh-llm-config" else builtins.elemAt words (index + 1)
-    );
+    if lib.hasPrefix "/etc/" path && node.config.environment.etc ? ${etcName} then
+      "${node.config.environment.etc.${etcName}.source}"
+    else
+      lib.addContextFrom node.command path;
   invitesGeneratorName = "${serviceName}-invites";
   meshNodeNames = lib.sort lib.lessThan (map (node: node.machineName) meshNodes);
   # A joiner loads an invite for every other node: joiners first, in name order, then the seed.
@@ -118,14 +134,24 @@ let
     &&
       lib.length (lib.splitString "--join-file" node.command) - 1
       == lib.length (expectedInvitePeers node);
-  hasInviteGenerator =
+  # The invite files a node deploys: from Clan's shared generator, or in the
+  # OnixOS build from the same shared artifact, deployed as sops secrets
+  # <generator>/<node> from onixos/secrets/shared.
+  sharedInviteFiles =
     node:
     let
       generators = node.config.clan.core.vars.generators;
+      prefix = "${invitesGeneratorName}/";
+      secretNames = lib.filter (lib.hasPrefix prefix) (lib.attrNames node.config.sops.secrets);
+      shared = name: lib.hasInfix "/shared/" (toString node.config.sops.secrets.${name}.sopsFile);
     in
-    generators ? ${invitesGeneratorName}
-    && generators.${invitesGeneratorName}.share
-    && lib.sort lib.lessThan (lib.attrNames generators.${invitesGeneratorName}.files) == meshNodeNames;
+    if generators ? ${invitesGeneratorName} then
+      lib.optionals generators.${invitesGeneratorName}.share (
+        lib.attrNames generators.${invitesGeneratorName}.files
+      )
+    else
+      map (lib.removePrefix prefix) (lib.filter shared secretNames);
+  hasInviteGenerator = node: lib.sort lib.lessThan (sharedInviteFiles node) == meshNodeNames;
   hasRetiredJoinGenerator = node: node.config.clan.core.vars.generators ? ${generatorName};
   tcpIsPrivate =
     node:
