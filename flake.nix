@@ -242,7 +242,7 @@
       };
     };
     underclass = {
-      url = "github:ghuntley/underclass";
+      url = "github:brittonr/underclass";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         systems.follows = "systems";

@@ -17521,15 +17521,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1792535978,
-        "narHash": "sha256-P95ya/qvhOsg3x5ivMe2DILghIdrvycwZ0dkgbT2zYk=",
-        "owner": "ghuntley",
+        "lastModified": 1793327228,
+        "narHash": "sha256-DLNHw5BtXZx5Zzgl+kkvkCmLDzTk9yuly27qbKloL28=",
+        "owner": "brittonr",
         "repo": "underclass",
-        "rev": "39f5766ccaed61f0748df46b57e5b05bb97e408f",
+        "rev": "773c236d2c12df427a84be7570b900f9353985a7",
         "type": "github"
       },
       "original": {
-        "owner": "ghuntley",
+        "owner": "brittonr",
         "repo": "underclass",
         "type": "github"
       }
