@@ -244,7 +244,7 @@
       "mesh-llm api watchdog": "same script",
       "tailscale-host-sync": "same script; runtime inputs come from the unit PATH"
     },
-    "unchangedSince": "Runs at 043f8c6c and 359b3d2e (--override-input onix-modules <local checkout at 2d23df26>), at 09a64d3d (input pinned to branch onix-core-consumer) and at a2a7d5e5 (OnixOS main) produced the same 52 differing derivations with byte-identical hash-normalized differences. At 974776f3 the mesh-llm port emits its invite wirings so that LoadCredential lists the invites in join order, as Clan does; the four reordered LoadCredential lines are the only change to the hash-normalized differences, and the same 52 derivations differ. Otherwise only configurationRevision, the commit each build records, changes the derivation hashes between runs."
+    "unchangedSince": "Runs at 043f8c6c and 359b3d2e (--override-input onix-modules <local checkout at 2d23df26>), at 09a64d3d (input pinned to branch onix-core-consumer) and at a2a7d5e5 (OnixOS main) produced the same 52 differing derivations with byte-identical hash-normalized differences. At 974776f3 the mesh-llm port emits its invite wirings so that LoadCredential lists the invites in join order, as Clan does; the four reordered LoadCredential lines are the only change to the hash-normalized differences, and the same 52 derivations differ. Otherwise only configurationRevision, the commit each build records, changes the derivation hashes between runs. After merging main (Underclass from the brittonr fork, 9914d811), parity at 14ebd366 has byte-identical hash-normalized differences to 974776f3."
   },
   "secrets": {
     "manifest.json": {
