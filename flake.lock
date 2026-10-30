@@ -12075,14 +12075,13 @@
       "locked": {
         "lastModified": 1793308972,
         "narHash": "sha256-IGozkFUcipeN0dnGRf3LWE5+2bAOWcjEo0rzzfbVTCc=",
-        "ref": "onix-core-consumer",
+        "ref": "refs/heads/main",
         "rev": "2d23df2625a42473b68966d3bfe6623cceed26be",
         "revCount": 1788,
         "type": "git",
         "url": "ssh://git@github.com/onixcomputer/OnixOS.git"
       },
       "original": {
-        "ref": "onix-core-consumer",
         "type": "git",
         "url": "ssh://git@github.com/onixcomputer/OnixOS.git"
       }
