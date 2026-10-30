@@ -443,6 +443,78 @@
     "meshLlmCheck": "Reads the launch command from the unit script when ExecStart runs one, \"$CREDENTIALS_DIRECTORY\"/ as %d/, the plugin configuration through environment.etc, and the shared invites from Clan's generator or the OnixOS artifact's sops secrets. Mutation test at 974776f3: with the invite wiring reversal undone and --headless dropped from the OnixOS launch command, the check's script fails 'joiners first and the seed last' and 'must enforce private headless discovery', while the join-file order and shared-invite conditions still pass.",
     "otherClanBuilds": "Clan's aspen1, aspen2 and britton-desktop toplevels at bf474bc9 and 974776f3 differ only in nixos-version's configurationRevision; every other differing derivation is a hash cascade.",
     "deployPlan": "onix deploy aspen2 --inventory onixos/inventory.ncl (OnixOS main 2d23df26 CLI, build.backend = 'nix): local nix build of the toplevel, nix copy --to ssh://root@100.82.25.30, then switch-to-configuration test; a switch runs in safe mode with a 300 s confirmation timeout. --build-on-target would run nix build .# in root's working directory on aspen2, which holds no copy of the flake.",
-    "deploy": "not yet run"
+    "deploy": {
+      "date": "2026-10-30",
+      "operatorReview": "The operator confirmed the parity evidence and runbook review and chose test, verify, then switch; after the test they chose to persist with --force-activate --no-safe-mode.",
+      "revision": "1cc80590a5021c9e3ec686d1d9fff4ab20154c75",
+      "toplevel": "/nix/store/ahgh4346bc6rm46j4p0aqryhnqnb450d-nixos-system-aspen2-26.11.20261020.5adc508",
+      "cli": "onix from OnixOS main 2d23df26 (/nix/store/168yhs9v89xc8nrbcfxnc79s14k1jipf-onix-0.1.0-alpha.1), run through a copy of its wrapper without the stock Nix 2.31.3 PATH entry, so nix is the host's Nix 2.36.0 with builtins.wasm",
+      "before": {
+        "generation": 14,
+        "system": "/nix/store/mz5i8w7cl189xibz8bwrhj349xl7zzld-nixos-system-aspen2-26.11.20261020.5adc508",
+        "configurationRevision": null,
+        "failedUnits": [
+          "borgbackup-job-aspen1.service",
+          "docker-gc.service"
+        ],
+        "secrets": [
+          "vars"
+        ]
+      },
+      "test": {
+        "command": "onix deploy aspen2 --inventory onixos/inventory.ncl --lib <OnixOS 2d23df26>/lib -y --action test",
+        "copiedPaths": 87,
+        "result": "switch-to-configuration test exited 4: arxiv-corpus-arxiv-aspen2 failed to bind 100.82.25.30:7998 (Errno 99) while activation restarted tailscaled, and its automatic restart was listening seconds later. tailscaled restarted because generation 14 predates main; the Clan and OnixOS builds of one commit have the same tailscaled unit.",
+        "profile": "The direct activation ran nix-env -p /nix/var/nix/profiles/system --set before switch-to-configuration test, creating generation 15 without installing the bootloader; GRUB still defaulted to generation 14."
+      },
+      "persist": {
+        "command": "onix deploy aspen2 --inventory onixos/inventory.ncl --lib <OnixOS 2d23df26>/lib -y --force-activate --no-safe-mode",
+        "why": "After the test, /run/current-system and the profile equal the new system, so safe mode returns 'already deployed' before persisting, and --force-activate only bypasses the earlier check.",
+        "result": "switch-to-configuration switch updated the GRUB menu without restarting system units; GRUB's default entry boots generation 15, and generation 14 remains as the rollback."
+      },
+      "after": {
+        "generation": 15,
+        "configurationRevision": "1cc80590a5021c9e3ec686d1d9fff4ab20154c75",
+        "hostKeyFingerprint": "SHA256:+ELrydxl4Qt/OxCDFBcukmg7nXcja7CNjnTbbu9HJ2c (ED25519), unchanged",
+        "failedUnits": [],
+        "active": [
+          "sshd",
+          "nix-daemon",
+          "nix-grpc-daemon",
+          "tailscaled",
+          "mesh-llm-mesh-llm-private-inference",
+          "mesh-llm-mesh-llm-private-inference-api-watchdog.timer",
+          "laya-laya-aspen2",
+          "arxiv-corpus-arxiv-aspen2",
+          "prometheus",
+          "prometheus-blackbox-exporter",
+          "grafana",
+          "loki",
+          "tailscalesd",
+          "docker"
+        ],
+        "secrets": [
+          "berkeley-mono-font",
+          "borgbackup",
+          "grafana",
+          "mesh-llm-mesh-llm-private-inference-invites",
+          "niks3-nix-cache-api",
+          "nix-builder-ssh",
+          "nix-build-farm-node",
+          "nix-signing-key",
+          "openssh",
+          "tailscale-br-tailnet"
+        ],
+        "secretsForUsers": [
+          "user-password-brittonr"
+        ],
+        "checks": "sshd -t passes; Prometheus ready; Tailscale online at 100.82.25.30; borgbackup-job-aspen1, tailscale-host-sync and niks3-queue-metrics timers scheduled; niks3-auto-upload socket-activated and idle; mesh-llm reports direct peers; arxiv-corpus answers HTTP on 100.82.25.30:7998."
+      },
+      "onixosCliFindings": [
+        "The packaged onix wrapper (OnixOS flake.nix, the onix runCommand's --prefix PATH) puts stock pkgs.nix 2.31.3 first on PATH; it lacks builtins.wasm, so onix deploy --backend nix cannot evaluate onix-core from any shell.",
+        "onix deploy --action test sets the system profile (render_direct_activation_command runs nix-env --set before switch-to-configuration test).",
+        "After a test activation, safe-mode onix deploy reports 'already deployed' without persisting (run_safe_mode_deploy_with_metadata checks is_already_deployed regardless of --force-activate)."
+      ]
+    }
   }
 }

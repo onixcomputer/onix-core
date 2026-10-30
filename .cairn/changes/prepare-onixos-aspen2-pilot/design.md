@@ -44,7 +44,7 @@ Two OnixOS defects blocked the pilot: identical shared artifact declarations fro
 
 ## Risks / Trade-offs
 
-- Secret paths change, so every unit that names a secret restarts on the first OnixOS switch, including sshd and nix-daemon. Safe mode reverts the switch if the deploy SSH session cannot confirm.
+- Secret paths change, so every unit that names a secret restarts on the first OnixOS activation, including sshd and nix-daemon. The cutover activates with `--action test` first, which a reboot undoes; a service that binds the Tailscale address can fail once while tailscaled restarts and comes back through its restart policy.
 - Activation-time secrets and `deploy = false` files still come from Clan. OnixOS cannot yet keep generated but undeployed secrets, upload activation secrets, or order generators by their dependencies, so rotating those secrets needs Clan.
 - OnixOS prompts have no hidden or persist flags, so regenerating a prompted secret behaves differently from Clan.
 - `system.stateVersion` still comes from `vars/per-machine/<machine>/state-version`.

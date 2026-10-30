@@ -90,16 +90,18 @@ Clan's `deploy = false` files are not copied, because OnixOS deploys every decla
 
 ## Cutover
 
+aspen2 was cut over on 2026-10-30 from `1cc80590`: it boots generation 15 (`ahgh4346…`), and generation 14 (`mz5i8w7c…`, Clan's build) is the rollback. `parity-evidence.json` (`cutover.deploy`) records the run.
+
 `onix deploy` builds `nixosConfigurations.<machine>`. `cutOverMachines` in `flake-outputs/onixos.nix` lists the machines whose entry is their OnixOS build, and aspen2 is on it; `clan.nixosConfigurations.aspen2` keeps Clan's build for parity and rollback. The checks that read aspen2's configuration (`mesh-llm-sidecars`, `builder-no-self`, `niks3-*`, `radicle-*-policy`, `nixos-aspen2`) see the OnixOS build; the mesh-llm check reads the launch command, plugin configuration and invites from either build.
 
-`clan machines update aspen2` would build the same entry, but deploy aspen2 with `onix`:
+`clan machines update aspen2` would build the same entry, but deploy aspen2 with `onix`. The packaged `onix` puts stock Nix 2.31.3 first on `PATH`, and that Nix lacks `builtins.wasm`, which this flake needs; run the CLI with a Nix that has it, for example through a copy of the `onix` wrapper without that `PATH` entry.
 
 ```console
 onix deploy aspen2 --inventory onixos/inventory.ncl --action test
-onix deploy aspen2 --inventory onixos/inventory.ncl
+onix deploy aspen2 --inventory onixos/inventory.ncl --force-activate --no-safe-mode
 ```
 
-`--action test` activates without changing the boot default. Every unit that names a secret restarts, including sshd and nix-daemon; the host key and certificate are the same bytes. Check afterwards:
+`--action test` activates the system and also sets the system profile (`nix-env --set`), but leaves the GRUB default alone, so a reboot returns to the previous generation. Every unit that names a secret restarts, including sshd and nix-daemon; the host key and certificate are the same bytes. A service that binds the Tailscale address can fail once while tailscaled restarts, as arxiv-corpus did, and its restart policy brings it back. After the test the running system and the profile already match, so a safe-mode `onix deploy` reports "already deployed" without installing the bootloader; `--force-activate --no-safe-mode` persists it and restarts nothing, because the running configuration does not change. Check after each step:
 
 - `ls /run/secrets` shows the artifact directories, and `systemctl --failed` is empty;
 - the fingerprint from step 4 of [Before the cutover](#before-the-cutover) is unchanged;
@@ -107,7 +109,7 @@ onix deploy aspen2 --inventory onixos/inventory.ncl
 
 ## Rollback
 
-Safe mode reverts a switch that the deploy cannot confirm. After `--action test`, rebooting or reactivating the boot default undoes it: `/nix/var/nix/profiles/system/bin/switch-to-configuration switch`. After a switch, on aspen2:
+Safe mode reverts a switch that the deploy cannot confirm. After `--action test`, rebooting undoes it. Otherwise, after a test or a switch, return to the previous generation (14 is Clan's build) on aspen2:
 
 ```console
 nix-env -p /nix/var/nix/profiles/system --rollback
