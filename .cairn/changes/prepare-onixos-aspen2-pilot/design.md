@@ -40,7 +40,7 @@ Two OnixOS defects blocked the pilot: identical shared artifact declarations fro
 
 ### Decision: Cutover through nixosConfigurations
 
-`onix deploy --backend nix` builds `.#nixosConfigurations.<machine>.config.system.build.toplevel`, so a machine's cutover points that attribute at `onixos.nixosConfigurations.<machine>`. `clan.nixosConfigurations` keeps Clan's build for parity and rollback. The runbook (`docs/onixos-aspen2-pilot.md`) describes the steps.
+`onix deploy --backend nix` builds `.#nixosConfigurations.<machine>.config.system.build.toplevel`, so a machine's cutover points that attribute at `onixos.nixosConfigurations.<machine>`. `cutOverMachines` in `flake-outputs/onixos.nix` lists the cut-over machines; `clan.nixosConfigurations` keeps Clan's build for parity and rollback. Checks that read a cut-over machine's configuration then see its OnixOS build, so the mesh-llm check reads the launch command, plugin configuration and invites from either build. The runbook (`docs/onixos-aspen2-pilot.md`) describes the steps.
 
 ## Risks / Trade-offs
 

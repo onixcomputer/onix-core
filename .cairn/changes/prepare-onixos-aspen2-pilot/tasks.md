@@ -31,6 +31,8 @@
   - 2026-10-29: branch published at `2d23df26`; only the `onix-modules` lock node changed; parity at `09a64d3d` lists the same 31 derivations with the same hash-normalized differences as the run with the override.
 - [x] [serial] Land the fixes on OnixOS `main`, drop `?ref=` from `onix-modules`, relock, and rerun parity. r[onix.onixos_migration.parity]
   - 2026-10-30: 113 of OnixOS's 299 checks passed at `2d23df26`, among them 3,913 CLI cargo tests, 100 WASM eval checks, shim-unit, Nickel, formatting, Cairn and the `onix` package; all 299 evaluate, and the other 186 were not built for lack of disk space on every reachable build host. The operator approved landing on these. OnixOS `main` fast-forwarded from `539430c3` to `2d23df26` without force; `onix-modules` is locked to `main` at `2d23df26`, and parity at `a2a7d5e5` lists the same 31 derivations with the same hash-normalized differences.
-- [ ] [serial] Point `nixosConfigurations.aspen2` at the OnixOS build and deploy it with `onix deploy`, first with `--action test`. r[onix.onixos_migration.cutover]
+- [x] [serial] Point `nixosConfigurations.aspen2` at the OnixOS build and make the checks that read aspen2's configuration pass on it. r[onix.onixos_migration.cutover]
+  - 2026-10-30: `cutOverMachines = [ "aspen2" ]` at `974776f3`; `nixosConfigurations.aspen2` evaluates to the OnixOS toplevel, and `mesh-llm-sidecars`, `niks3-settings`, `niks3-generated`, `radicle-node-policy`, `radicle-ci-runner-policy` and `builder-no-self` build. The mesh-llm port now loads its invites in Clan's order; parity changed only in those four `LoadCredential` lines. Clan's aspen1, aspen2 and britton-desktop builds changed only in `configurationRevision`.
+- [ ] [serial] Deploy aspen2 with `onix deploy`, first with `--action test`. r[onix.onixos_migration.cutover]
 
-No host was contacted and no system was built. aspen2 still deploys through Clan.
+No host was contacted and no system was built: `nixosConfigurations.aspen2` is the OnixOS build, but aspen2 still runs the system Clan deployed.

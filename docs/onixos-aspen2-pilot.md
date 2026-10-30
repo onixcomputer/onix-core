@@ -52,7 +52,7 @@ Every difference between the two aspen2 derivations is one of the following; `pa
 | Files move from the store to `/etc` | mesh-llm `config.toml` and `research.json`, blackbox exporter config, build farm address wait script, SSH host certificate | Same reason. The contents match; the blackbox config is the same JSON pretty-printed with its build-time check off; mesh-llm's plugin and the wait script find their programs through `PATH`. mesh-llm and the blackbox exporter get restart triggers for their moved configs. |
 | `onix/hardening-policy.json` and `onix/userland-profile.json` in `/etc` | `etc` | Added by every OnixOS assembly. |
 | `borgbackup-create`, `borgbackup-list`, `borgbackup-restore`, `state-commands`, and the borg job's no-op pre/post hooks are gone | `system-path`, `unit-borgbackup-job-aspen1.service` | Clan backup-provider plumbing for `clan backups`; use `borg-job-aspen1` and `systemctl start borgbackup-job-aspen1`. |
-| Order only | `environment.systemPackages` (framework-tool, opentofu, herdr, tailscale, mesh-llm), `nix.conf` `trusted-public-keys` (onix-niks3 key), kernel parameters (a duplicate `amd_pstate=active`), mesh-llm `LoadCredential` lines | Module order differs; the sets and values are equal. |
+| Order only | `environment.systemPackages` (framework-tool, opentofu, herdr, tailscale, mesh-llm), `nix.conf` `trusted-public-keys` (onix-niks3 key), kernel parameters (a duplicate `amd_pstate=active`) | Module order differs; the sets and values are equal. |
 
 Everything else that differs only depends on these derivations.
 
@@ -85,36 +85,14 @@ Clan's `deploy = false` files are not copied, because OnixOS deploys every decla
    onix deploy --dry-run aspen2 --inventory onixos/inventory.ncl
    ```
 
-   It builds `.#nixosConfigurations.aspen2.config.system.build.toplevel`, copies it to `root@100.82.25.30`, and switches in safe mode with a 300 s confirmation timeout.
+   It builds `.#nixosConfigurations.aspen2.config.system.build.toplevel` locally, copies it to `root@100.82.25.30` and activates it: `--action test` without safe mode, a switch in safe mode with a 300 s confirmation timeout. The local build needs aspen2's whole closure in the local store. `--build-on-target` does not fit this flake: it runs `nix build .#…` in root's working directory on aspen2, which holds no copy of it.
 4. Record aspen2's SSH host key fingerprint from a client: `ssh-keyscan -t ed25519 100.82.25.30 | ssh-keygen -lf -`.
 
 ## Cutover
 
-`onix deploy` builds `nixosConfigurations.<machine>`, so point aspen2's entry at the OnixOS build in `flake.nix`:
+`onix deploy` builds `nixosConfigurations.<machine>`. `cutOverMachines` in `flake-outputs/onixos.nix` lists the machines whose entry is their OnixOS build, and aspen2 is on it; `clan.nixosConfigurations.aspen2` keeps Clan's build for parity and rollback. The checks that read aspen2's configuration (`mesh-llm-sidecars`, `builder-no-self`, `niks3-*`, `radicle-*-policy`, `nixos-aspen2`) see the OnixOS build; the mesh-llm check reads the launch command, plugin configuration and invites from either build.
 
-```nix
-flake =
-  let
-    clanOutputs = import ./flake-outputs/clan.nix {
-      inherit (inputs) self;
-      inherit inputs;
-    };
-    onixosOutputs = import ./flake-outputs/onixos.nix {
-      inherit (inputs) self;
-      inherit inputs;
-    };
-  in
-  clanOutputs
-  // (import ./flake-outputs/effects.nix { inherit inputs; })
-  // onixosOutputs
-  // {
-    nixosConfigurations = clanOutputs.nixosConfigurations // {
-      inherit (onixosOutputs.onixos.nixosConfigurations) aspen2;
-    };
-  };
-```
-
-`clan.nixosConfigurations.aspen2` keeps Clan's build for parity and rollback. Then deploy with `onix`, not `clan machines update`:
+`clan machines update aspen2` would build the same entry, but deploy aspen2 with `onix`:
 
 ```console
 onix deploy aspen2 --inventory onixos/inventory.ncl --action test
@@ -136,7 +114,7 @@ nix-env -p /nix/var/nix/profiles/system --rollback
 /nix/var/nix/profiles/system/bin/switch-to-configuration switch
 ```
 
-Then revert the `flake.nix` change and deploy aspen2 through Clan again. Clan's secret paths come back with Clan's sops manifest.
+Then remove aspen2 from `cutOverMachines` and deploy it through Clan again. Clan's secret paths come back with Clan's sops manifest.
 
 ## Gaps
 

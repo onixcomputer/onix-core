@@ -2,7 +2,7 @@
   "recordedAt": "2026-10-30T01:48:41Z",
   "scope": "Evaluation only: derivations were instantiated and compared; nothing was built except the onixos-services Nickel test check, nothing was deployed, and no fleet host was contacted.",
   "revisions": {
-    "pilot": "a2a7d5e54bf847add71a31bdb43cb3661d205d78",
+    "pilot": "974776f32aa325868592951a59a550b906577427",
     "base": "18864766f19beae7ee822c817b307c0a57c7220e",
     "onixModules": {
       "locked": "2d23df2625a42473b68966d3bfe6623cceed26be",
@@ -35,9 +35,9 @@
     "clanSourcesChanged": []
   },
   "parity": {
-    "command": "onixos/tools/parity aspen2 git+file://<worktree>?rev=a2a7d5e54bf847add71a31bdb43cb3661d205d78",
-    "clan": "/nix/store/7fa58iiz5jhh5zq4ma2g5avh6p3p8sak-nixos-system-aspen2-26.11.20261020.5adc508.drv",
-    "onixos": "/nix/store/1xihicvx843w5sxdravxy6xa4cjvwf9s-nixos-system-aspen2-26.11.20261020.5adc508.drv",
+    "command": "onixos/tools/parity aspen2 git+file://<worktree>?rev=974776f32aa325868592951a59a550b906577427",
+    "clan": "/nix/store/ni8yfgwx221wfm9w4n5h2z696f16aib8-nixos-system-aspen2-26.11.20261020.5adc508.drv",
+    "onixos": "/nix/store/0kd2vcvbjpi147xx0vwll9fgba6gqi8s-nixos-system-aspen2-26.11.20261020.5adc508.drv",
     "differingDerivations": 52,
     "withContentDifferences": 31,
     "method": "Environments compared key by key with store path hashes replaced, so derivations that differ only through a dependency's hash count as cascades.",
@@ -108,8 +108,7 @@
       "unit-mesh-llm-mesh-llm-private-inference.service": [
         "secret-path",
         "unit-script",
-        "etc-file",
-        "order-only"
+        "etc-file"
       ],
       "unit-niks3-auto-upload.service": [
         "secret-path",
@@ -232,8 +231,7 @@
     "orderOnly": {
       "system-path": "Same 234 packages after removing the four Clan helpers; framework-tool, opentofu, herdr, tailscale and mesh-llm sit at other positions.",
       "nix.conf": "trusted-public-keys holds the same 20 keys; onix-niks3-1 comes after the srvos keys instead of before them. substituters are identical.",
-      "boot.json": "Same kernel parameters; one of the two amd_pstate=active entries comes earlier.",
-      "unit-mesh-llm-mesh-llm-private-inference.service": "LoadCredential lines are ordered by machine name; the --join-file order (aspen3, britton-desktop, aspen1) is unchanged."
+      "boot.json": "Same kernel parameters; one of the two amd_pstate=active entries comes earlier."
     },
     "relocatedContent": {
       "mesh-llm research.json": "identical",
@@ -246,7 +244,7 @@
       "mesh-llm api watchdog": "same script",
       "tailscale-host-sync": "same script; runtime inputs come from the unit PATH"
     },
-    "unchangedSince": "Runs at 043f8c6c and 359b3d2e (--override-input onix-modules <local checkout at 2d23df26>) and at 09a64d3d (input pinned to branch onix-core-consumer) produced the same 52 differing derivations; the hash-normalized differences of the 31 with content changes are byte-identical to this run against OnixOS main. Only configurationRevision, the commit each build records, changes the derivation hashes between runs."
+    "unchangedSince": "Runs at 043f8c6c and 359b3d2e (--override-input onix-modules <local checkout at 2d23df26>), at 09a64d3d (input pinned to branch onix-core-consumer) and at a2a7d5e5 (OnixOS main) produced the same 52 differing derivations with byte-identical hash-normalized differences. At 974776f3 the mesh-llm port emits its invite wirings so that LoadCredential lists the invites in join order, as Clan does; the four reordered LoadCredential lines are the only change to the hash-normalized differences, and the same 52 derivations differ. Otherwise only configurationRevision, the commit each build records, changes the derivation hashes between runs."
   },
   "secrets": {
     "manifest.json": {
@@ -427,5 +425,24 @@
       "approval": "the operator chose to land on the 113 checks"
     },
     "originalCheckout": "/home/brittonr/git/onixos untouched: HEAD 539430c3 on main, clean, index file 1790183 bytes with the same SHA-256 before and after"
+  },
+  "cutover": {
+    "commit": "974776f32aa325868592951a59a550b906577427",
+    "change": "cutOverMachines = [ \"aspen2\" ] in flake-outputs/onixos.nix: nixosConfigurations.aspen2 is the OnixOS build, every other entry and clan.nixosConfigurations stay Clan's.",
+    "nixosConfigurationsAspen2": "/nix/store/0kd2vcvbjpi147xx0vwll9fgba6gqi8s-nixos-system-aspen2-26.11.20261020.5adc508.drv",
+    "equalsOnixosBuild": true,
+    "checksReadingAspen2": {
+      "mesh-llm-sidecars": "/nix/store/b8yc6l03h8vwj9g9bjbinckcdwmq4vh2-mesh-llm-sidecars",
+      "niks3-settings": "/nix/store/kbhm80llzkc7wp6xdwqw7mdh9mh7fr9p-niks3-settings",
+      "niks3-generated": "/nix/store/kji7dsrxgi255gzc5xqmkwic6k4c834m-niks3-generated",
+      "radicle-node-policy": "/nix/store/qfcx7sa4anzm7xgi7cwpq2k2mkzcqxzz-radicle-node-policy",
+      "radicle-ci-runner-policy": "/nix/store/avr3brzvgs1wsp7jw0zqh8351063m34w-radicle-ci-runner-policy",
+      "builder-no-self": "/nix/store/ij9zf2s5hg3m8vh9slh8l350yjvl9rxa-builder-no-self-check",
+      "nixos-aspen2": "evaluates to the OnixOS toplevel derivation above"
+    },
+    "meshLlmCheck": "Reads the launch command from the unit script when ExecStart runs one, \"$CREDENTIALS_DIRECTORY\"/ as %d/, the plugin configuration through environment.etc, and the shared invites from Clan's generator or the OnixOS artifact's sops secrets. Mutation test at 974776f3: with the invite wiring reversal undone and --headless dropped from the OnixOS launch command, the check's script fails 'joiners first and the seed last' and 'must enforce private headless discovery', while the join-file order and shared-invite conditions still pass.",
+    "otherClanBuilds": "Clan's aspen1, aspen2 and britton-desktop toplevels at bf474bc9 and 974776f3 differ only in nixos-version's configurationRevision; every other differing derivation is a hash cascade.",
+    "deployPlan": "onix deploy aspen2 --inventory onixos/inventory.ncl (OnixOS main 2d23df26 CLI, build.backend = 'nix): local nix build of the toplevel, nix copy --to ssh://root@100.82.25.30, then switch-to-configuration test; a switch runs in safe mode with a 300 s confirmation timeout. --build-on-target would run nix build .# in root's working directory on aspen2, which holds no copy of the flake.",
+    "deploy": "not yet run"
   }
 }
