@@ -418,11 +418,42 @@
         "vm-*": 75,
         "onixos-*": 41,
         "other": 62,
-        "note": "all 186 instantiate (nix build --dry-run exit 0) but were not built: about 3,800 builds needing roughly 100 GB or more"
+        "note": "all 186 instantiated (nix build --dry-run exit 0) at landing; the full gate built them on 2026-10-30 (fullGate)"
       },
       "whyNotBuilt": "britton-desktop's root filesystem had 3.3 GB free, this workstation's zroot pool 18-27 GB, and the USB4 NVMe ext4 filesystem was in its error shutdown state",
       "unchangedByTheFixes": "cargo fmt and clippy: no Rust or lock file changed between 539430c3 and 2d23df26",
-      "approval": "the operator chose to land on the 113 checks"
+      "approval": "the operator chose to land on the 113 checks",
+      "fullGate": {
+        "revision": "2d23df2625a42473b68966d3bfe6623cceed26be",
+        "checks": 299,
+        "passed": 299,
+        "passedInPrivateStore": 296,
+        "passedInLandingGateOnly": [
+          "cairn-release-readiness",
+          "cli-hegel",
+          "cli-mantle-no-nix-runtime"
+        ],
+        "missing": [],
+        "mainRun": {
+          "start": "2026-10-30T02:20:36Z",
+          "end": "2026-10-30T04:07:12Z",
+          "exit": 1
+        },
+        "rebuildPass": {
+          "start": "2026-10-30T18:52:40Z",
+          "end": "2026-10-30T19:35:21Z",
+          "exit": 0,
+          "remoteBuildsOnLeviathan": 217,
+          "note": "The 62 missing checks outside the landing gate's groups, built with max-jobs 0 and leviathan as the only builder (8 jobs, 8 cores each), outputs copied back into the private store. Local attempts with 4 x 8, 2 x 4 and 1 x 16 jobs x cores compiled the onix crate under the unit's 30 GiB MemoryHigh and made almost no progress; their logs are kept."
+        },
+        "date": "2026-10-30",
+        "store": "a private chroot store on the USB4 NVMe ext4 filesystem (/mnt/usb4-nvme), with the host's substituters, seeded with every flake input by nix flake archive",
+        "mainRunResult": "4,623 builds; 233 of 299 check outputs in the private store. The 66 missing failed only through three derivations: valence-e822bdf and onix-artifact-e41340b fetch private GitHub repositories over ssh://, which the sandbox cannot reach, and lattice-0.1.0's test shell_command_resolves_upstream_stdout_expression failed with 'bounded local process execution failed'.",
+        "privateFetches": "The valence and onix-artifact fixed-output paths were copied from the host store; Nix checks their content against the fixed hashes.",
+        "lattice": "The same lattice-0.1.0 derivation built through the host daemon on leviathan, its test passing there, and its output was copied in. The failure is specific to the chroot store's builds, which run under the invoking user's own uid.",
+        "copiedFromHostStore": "onix-0.1.0-alpha.1 and the onix wrapper, built from the same derivations on leviathan earlier that day.",
+        "landingGateOnly": "cairn-release-readiness, cli-hegel and cli-mantle-no-nix-runtime passed in the landing gate as the same derivations: the host and the private store evaluate them to the same output paths (checked for cli-integration)."
+      }
     },
     "originalCheckout": "/home/brittonr/git/onixos untouched: HEAD 539430c3 on main, clean, index file 1790183 bytes with the same SHA-256 before and after"
   },
