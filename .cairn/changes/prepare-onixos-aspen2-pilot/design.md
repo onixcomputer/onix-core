@@ -34,9 +34,9 @@ OnixOS maps a secret artifact file to `sops.secrets` after checking only that th
 
 clan-core's `clan.core.state` registry, its `state-commands` package, the borg job's pre/post-backup hook runners and the `borgbackup-create`, `borgbackup-list` and `borgbackup-restore` helpers serve the `clan backups` command. No onix-core state defines a hook script, so the runners were no-ops on aspen2. The borg job, its timer, wrapper, paths, excludes and NetworkManager wait are ported unchanged.
 
-### Decision: Pin the OnixOS fix branch until it is on main
+### Decision: Land the OnixOS fixes on main
 
-Two OnixOS defects blocked the pilot and are fixed on OnixOS branch `onix-core-consumer`: identical shared artifact declarations from several machines collided (`713d5d15`), and record-form role machines (`machines.<name>.settings`) aborted under `builtins.wasm` (`2d23df26`). The branch is published and `onix-modules` is pinned to it with `?ref=onix-core-consumer`, so the pilot evaluates without overrides. Landing the fixes on OnixOS `main` requires OnixOS's full gate; afterwards the input drops `?ref=` and is relocked.
+Two OnixOS defects blocked the pilot: identical shared artifact declarations from several machines collided (`713d5d15`), and record-form role machines (`machines.<name>.settings`) aborted under `builtins.wasm` (`2d23df26`). Both are on OnixOS `main`, fast-forwarded from `539430c3`, and `onix-modules` tracks `main`, so the pilot evaluates without overrides. OnixOS's full gate has 299 checks; 113 ran and passed, covering every check over the changed library, shim and tests: the CLI cargo tests, the WASM eval checks, shim-unit, Nickel, formatting, Cairn and the `onix` package. The other 186 (VM tests, a test kernel, Kani and Verus proofs and other subsystems) evaluate but were not built: no reachable build host had the disk space. The operator approved landing on the 113.
 
 ### Decision: Cutover through nixosConfigurations
 

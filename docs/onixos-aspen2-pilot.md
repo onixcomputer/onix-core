@@ -20,7 +20,7 @@ Only machines listed in `onixos/nix/machines.nix` are assembled; today that is a
 
 ## Evaluate and compare
 
-`onix-modules` is pinned to OnixOS branch `onix-core-consumer`, which carries the two fixes the pilot needs (`713d5d15`, `2d23df26`), until they are on OnixOS `main` (see [Before the cutover](#before-the-cutover)). Evaluate the OnixOS build directly:
+`onix-modules` tracks OnixOS `main`, which carries the two fixes the pilot needs (`713d5d15`, `2d23df26`). Evaluate the OnixOS build directly:
 
 ```console
 nix eval --raw .#onixos.nixosConfigurations.aspen2.config.system.build.toplevel.drvPath
@@ -77,17 +77,16 @@ Clan's `deploy = false` files are not copied, because OnixOS deploys every decla
 
 ## Before the cutover
 
-1. Once the fixes (`713d5d15`, `2d23df26`) are on OnixOS `main`, drop `?ref=onix-core-consumer` from the `onix-modules` URL in `flake.nix` and relock: `nix flake update onix-modules`.
-2. Run the parity tool and compare its output with the table above.
-3. Review `parity-evidence.json`, this runbook and the gaps below.
-4. Print the deploy plan from the OnixOS CLI shell (`nix develop .#cli` in the OnixOS checkout, which provides `onix` and the pinned `nickel`; pass `--lib <checkout>/lib` to a CLI built elsewhere). It contacts nothing:
+1. Run the parity tool and compare its output with the table above. After relocking `onix-modules` to a newer OnixOS, expect differences that the new OnixOS revision explains.
+2. Review `parity-evidence.json`, this runbook and the gaps below.
+3. Print the deploy plan from the OnixOS CLI shell (`nix develop .#cli` in the OnixOS checkout, which provides `onix` and the pinned `nickel`; pass `--lib <checkout>/lib` to a CLI built elsewhere). It contacts nothing:
 
    ```console
    onix deploy --dry-run aspen2 --inventory onixos/inventory.ncl
    ```
 
    It builds `.#nixosConfigurations.aspen2.config.system.build.toplevel`, copies it to `root@100.82.25.30`, and switches in safe mode with a 300 s confirmation timeout.
-5. Record aspen2's SSH host key fingerprint from a client: `ssh-keyscan -t ed25519 100.82.25.30 | ssh-keygen -lf -`.
+4. Record aspen2's SSH host key fingerprint from a client: `ssh-keyscan -t ed25519 100.82.25.30 | ssh-keygen -lf -`.
 
 ## Cutover
 
@@ -125,7 +124,7 @@ onix deploy aspen2 --inventory onixos/inventory.ncl
 `--action test` activates without changing the boot default. Every unit that names a secret restarts, including sshd and nix-daemon; the host key and certificate are the same bytes. Check afterwards:
 
 - `ls /run/secrets` shows the artifact directories, and `systemctl --failed` is empty;
-- the fingerprint from step 5 of [Before the cutover](#before-the-cutover) is unchanged;
+- the fingerprint from step 4 of [Before the cutover](#before-the-cutover) is unchanged;
 - `tailscale status`, `systemctl list-timers 'borgbackup-job-*' tailscale-host-sync.timer`, `curl -s 127.0.0.1:9090/-/ready`, `systemctl status nix-grpc-daemon mesh-llm-mesh-llm-private-inference`.
 
 ## Rollback

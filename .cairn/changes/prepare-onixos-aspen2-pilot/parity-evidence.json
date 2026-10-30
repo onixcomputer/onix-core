@@ -1,15 +1,14 @@
 {
-  "recordedAt": "2026-10-30T00:14:29Z",
+  "recordedAt": "2026-10-30T01:48:41Z",
   "scope": "Evaluation only: derivations were instantiated and compared; nothing was built except the onixos-services Nickel test check, nothing was deployed, and no fleet host was contacted.",
   "revisions": {
-    "pilot": "09a64d3d60e3f1a1fd5a0fd8ad251291f3ff143b",
+    "pilot": "a2a7d5e54bf847add71a31bdb43cb3661d205d78",
     "base": "18864766f19beae7ee822c817b307c0a57c7220e",
     "onixModules": {
       "locked": "2d23df2625a42473b68966d3bfe6623cceed26be",
-      "ref": "onix-core-consumer",
-      "url": "git+ssh://git@github.com/onixcomputer/OnixOS.git?ref=onix-core-consumer",
+      "ref": "refs/heads/main",
+      "url": "git+ssh://git@github.com/onixcomputer/OnixOS.git",
       "evaluatedWith": "flake.lock, no --override-input",
-      "published": "branch onix-core-consumer on github.com/onixcomputer/OnixOS; OnixOS main is still 539430c3, the branch's parent",
       "fixes": {
         "713d5d155b523f42db422a49d52686c3ba5b3c16": "merge identical shared artifact declarations",
         "2d23df2625a42473b68966d3bfe6623cceed26be": "accept record-form role machines under builtins.wasm"
@@ -31,14 +30,14 @@
       ],
       "changedInputPaths": 0,
       "removedInputPaths": 0,
-      "note": "relocking onix-modules to the published branch changed only the onix-modules node"
+      "note": "onix-modules now tracks OnixOS main; relative to the base commit the lock only adds the nixos-artifacts and onix-modules inputs"
     },
     "clanSourcesChanged": []
   },
   "parity": {
-    "command": "onixos/tools/parity aspen2 git+file://<worktree>?rev=09a64d3d60e3f1a1fd5a0fd8ad251291f3ff143b",
-    "clan": "/nix/store/njgm24bn2ck11smrdk8hz8gkalzr6jfh-nixos-system-aspen2-26.11.20261020.5adc508.drv",
-    "onixos": "/nix/store/f82m30p6n1jd8hkv8xv6r2hmhp444hay-nixos-system-aspen2-26.11.20261020.5adc508.drv",
+    "command": "onixos/tools/parity aspen2 git+file://<worktree>?rev=a2a7d5e54bf847add71a31bdb43cb3661d205d78",
+    "clan": "/nix/store/7fa58iiz5jhh5zq4ma2g5avh6p3p8sak-nixos-system-aspen2-26.11.20261020.5adc508.drv",
+    "onixos": "/nix/store/1xihicvx843w5sxdravxy6xa4cjvwf9s-nixos-system-aspen2-26.11.20261020.5adc508.drv",
     "differingDerivations": 52,
     "withContentDifferences": 31,
     "method": "Environments compared key by key with store path hashes replaced, so derivations that differ only through a dependency's hash count as cascades.",
@@ -247,7 +246,7 @@
       "mesh-llm api watchdog": "same script",
       "tailscale-host-sync": "same script; runtime inputs come from the unit PATH"
     },
-    "unchangedSince": "Runs at 043f8c6c and 359b3d2e with --override-input onix-modules <local checkout at 2d23df26> produced the same 52 differing derivations; the hash-normalized differences of the 31 with content changes are byte-identical to this run. Only configurationRevision, now set on both sides, changed the derivation hashes."
+    "unchangedSince": "Runs at 043f8c6c and 359b3d2e (--override-input onix-modules <local checkout at 2d23df26>) and at 09a64d3d (input pinned to branch onix-core-consumer) produced the same 52 differing derivations; the hash-normalized differences of the 31 with content changes are byte-identical to this run against OnixOS main. Only configurationRevision, the commit each build records, changes the derivation hashes between runs."
   },
   "secrets": {
     "manifest.json": {
@@ -386,5 +385,47 @@
       ],
       "scratchCommit": "replacing grafana/admin_password with plaintext dummy text fails evaluation: 'grafana/admin_password: …/onixos/secrets/machines/aspen2/grafana/admin_password is not a sops-encrypted file'"
     }
+  },
+  "onixosLanding": {
+    "published": "OnixOS main fast-forwarded 539430c3..2d23df26 without force on 2026-10-30; branch onix-core-consumer also points at 2d23df26",
+    "gate": {
+      "total": 299,
+      "built": 113,
+      "passed": 113,
+      "groups": [
+        "shim-unit",
+        "nix-format",
+        "nickel-* (7)",
+        "cairn-* (3)",
+        "eval-* (98, includes the onix package)",
+        "cli-* (3)"
+      ],
+      "cliTests": {
+        "cli-integration": {
+          "passed": 3873,
+          "failed": 0,
+          "ignored": 2
+        },
+        "cli-hegel": {
+          "passed": 7,
+          "failed": 0
+        },
+        "cli-mantle-no-nix-runtime": {
+          "passed": 33,
+          "failed": 0
+        }
+      },
+      "cairnReleaseReadiness": "validation, traceability and receipt verdicts pass",
+      "evaluatedOnly": {
+        "vm-*": 75,
+        "onixos-*": 41,
+        "other": 62,
+        "note": "all 186 instantiate (nix build --dry-run exit 0) but were not built: about 3,800 builds needing roughly 100 GB or more"
+      },
+      "whyNotBuilt": "britton-desktop's root filesystem had 3.3 GB free, this workstation's zroot pool 18-27 GB, and the USB4 NVMe ext4 filesystem was in its error shutdown state",
+      "unchangedByTheFixes": "cargo fmt and clippy: no Rust or lock file changed between 539430c3 and 2d23df26",
+      "approval": "the operator chose to land on the 113 checks"
+    },
+    "originalCheckout": "/home/brittonr/git/onixos untouched: HEAD 539430c3 on main, clean, index file 1790183 bytes with the same SHA-256 before and after"
   }
 }

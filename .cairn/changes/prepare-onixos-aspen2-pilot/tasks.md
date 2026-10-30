@@ -29,7 +29,8 @@
 - [ ] [serial] Operator review of the parity evidence, the runbook and the gaps. r[onix.onixos_migration.cutover]
 - [x] [serial] Publish OnixOS branch `onix-core-consumer`, pin `onix-modules` to it, and rerun parity without `--override-input`. r[onix.onixos_migration.parity]
   - 2026-10-29: branch published at `2d23df26`; only the `onix-modules` lock node changed; parity at `09a64d3d` lists the same 31 derivations with the same hash-normalized differences as the run with the override.
-- [ ] [serial] Land the fixes on OnixOS `main` after its full gate, drop `?ref=` from `onix-modules`, relock, and rerun parity. r[onix.onixos_migration.parity]
+- [x] [serial] Land the fixes on OnixOS `main`, drop `?ref=` from `onix-modules`, relock, and rerun parity. r[onix.onixos_migration.parity]
+  - 2026-10-30: 113 of OnixOS's 299 checks passed at `2d23df26`, among them 3,913 CLI cargo tests, 100 WASM eval checks, shim-unit, Nickel, formatting, Cairn and the `onix` package; all 299 evaluate, and the other 186 were not built for lack of disk space on every reachable build host. The operator approved landing on these. OnixOS `main` fast-forwarded from `539430c3` to `2d23df26` without force; `onix-modules` is locked to `main` at `2d23df26`, and parity at `a2a7d5e5` lists the same 31 derivations with the same hash-normalized differences.
 - [ ] [serial] Point `nixosConfigurations.aspen2` at the OnixOS build and deploy it with `onix deploy`, first with `--action test`. r[onix.onixos_migration.cutover]
 
 No host was contacted and no system was built. aspen2 still deploys through Clan.
