@@ -161,7 +161,7 @@ fun onix =>
           },
         ],
       },
-      packages = ["polkit", "modemmanager", "scx=linuxPackages_latest.scx", "logrotate", "util-linux-bin=util-linux.bin", "iproute2", "bash"],
+      packages = ["polkit", "modemmanager", "scx", "logrotate", "util-linux-bin=util-linux.bin", "iproute2", "bash"],
       roles.host = {
         scx_scheduler
           | doc "scx scheduler binary name to run, or \"\" for none (perf-tuning uses scx_bpfland)."
