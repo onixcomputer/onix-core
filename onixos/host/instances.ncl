@@ -59,4 +59,17 @@
       settings.networkmanager_unmanaged = ["driver:thunderbolt-net", "interface-name:br-tbt"],
     },
   },
+
+  host-extra = {
+    service = "host-extra",
+    roles.host = {
+      machines = ["aspen2"],
+      settings = {
+        # inventory/tags/perf-tuning.nix and machines/aspen2/configuration.nix.
+        scx_scheduler = "scx_bpfland",
+        # inventory/core/machines.ncl: the LAN address on enp191s0.
+        static_addresses = [{ interface = "enp191s0", addresses = ["10.10.10.2/24"] }],
+      },
+    },
+  },
 }

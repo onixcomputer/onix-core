@@ -68,11 +68,25 @@ fun onix =>
     instances
       | { _ : onix.Instance }
       =
+        # users, sshd and tailscale place roles by the class tag "nixos", which an
+        # OnixOS host does not carry: those three are placed on aspen2 by name.
         on_aspen2 (
           (import "../instances/users.ncl")
           & (import "../instances/sshd.ncl")
           & (import "../instances/tailscale.ncl")
         )
+        # The services aspen2 keeps select it themselves, by tag or by name, from
+        # the same instance files the NixOS inventory uses.
+        & (import "../instances/arxiv-corpus.ncl")
+        & (import "../instances/berkeley-mono-font.ncl")
+        & (import "../instances/borgbackup.ncl")
+        & (import "../instances/grafana.ncl")
+        & (import "../instances/home-manager-profiles.ncl")
+        & (import "../instances/homepage-dashboard.ncl")
+        & (import "../instances/laya.ncl")
+        & (import "../instances/loki.ncl")
+        & (import "../instances/mesh-llm.ncl")
+        & (import "../instances/prometheus.ncl")
         & { user-brittonr.roles.default.settings = brittonr }
         & (import "instances.ncl"),
   }
