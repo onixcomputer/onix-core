@@ -43,7 +43,7 @@ let
     "e2fsprogs-bin" = pkgs.e2fsprogs.bin;
     kernel = kernelPackages.kernel;
     "kernel-modules" = kernelPackages.kernel.modules;
-    scx = pkgs.scx;
+    scx = pkgs.scx.full;
     polkit = pkgs.polkit;
     modemmanager = pkgs.modemmanager;
     logrotate = pkgs.logrotate;
