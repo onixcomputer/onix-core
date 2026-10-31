@@ -45,7 +45,7 @@ let
     "kernel-modules" = kernelPackages.kernel.modules;
     scx = pkgs.scx.full;
     borgbackup = pkgs.borgbackup;
-    home-manager-activation = cfg.home-manager.users.brittonr.activationPackage;
+    home-manager-activation = cfg.home-manager.users.brittonr.home.activationPackage;
     polkit = pkgs.polkit;
     modemmanager = pkgs.modemmanager;
     logrotate = pkgs.logrotate;
