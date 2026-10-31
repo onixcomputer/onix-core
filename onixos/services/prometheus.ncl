@@ -364,16 +364,20 @@ fun onix =>
               # /etc and the rules in one file, as NixOS writes them.
               host =
                 let prom_config =
+                  # Nickel records are recursive: a field whose value names the
+                  # field itself would refer to itself, so the jobs are bound to
+                  # a different name first.
+                  let jobs = scrape_configs in
                   { global = { "scrape_interval" = "15s", "evaluation_interval" = "15s" } & cfg.global_config }
                   & (if cfg.rules == [] then {} else { rule_files = ["/etc/prometheus/rules.yml"] })
-                  & (if scrape_configs == [] then {} else { scrape_configs = scrape_configs })
+                  & (if jobs == [] then {} else { scrape_configs = jobs })
                 in
                 {
                   users.prometheus = { group = "prometheus", description = "Prometheus daemon user" },
                   groups.prometheus = {},
                   files = {
                     # JSON is YAML 1.2, so Prometheus reads this as its config.
-                    "prometheus/prometheus.yml".text = std.serialize 'Json prom_config,
+                    "prometheus/prometheus.yml".text = std.serialize 'Yaml prom_config,
                     "prometheus/rules.yml".text = (std.string.join "\n" cfg.rules) ++ "\n",
                   },
                   units."prometheus.service" = {
