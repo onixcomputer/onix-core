@@ -29,8 +29,14 @@ fun onix =>
             targets = ["nixos"],
             rationale = "Home Manager's NixOS module, configured through the sidecar adapter",
           },
+          {
+            namespace = "host",
+            targets = ["onixos"],
+            rationale = "OnixOS systemd hosts run the activation package Nix builds for the merged profiles",
+          },
         ],
       },
+      packages = ["home-manager-activation"],
       roles.default = {
         username
           | doc "User the profiles apply to (home-manager.users.<username>). Required."
@@ -67,6 +73,28 @@ fun onix =>
           profiles = cfg.profiles,
           profilesBasePath = cfg.profiles_base_path,
           homeStateVersion = if std.record.has_field "home_state_version" cfg then cfg.home_state_version else null,
+        },
+        # Nix builds the merged profiles into one activation package (the index's
+        # home-manager-activation); a host generation runs it once per user at
+        # boot, before user sessions start, as Home Manager's NixOS module does.
+        output.host = {
+          units."home-manager-%{user_name}.service" = {
+            sections = {
+              Unit = {
+                Description = "Home Manager environment for %{user_name}",
+                Before = "systemd-user-sessions.service",
+                RequiresMountsFor = "/home/%{user_name}",
+              },
+              Service = {
+                Type = "oneshot",
+                User = user_name,
+                Environment = ["HOME=/home/%{user_name}", "HOME_MANAGER_BACKUP_EXT=hm-bak"],
+                ExecStart = "%{args.package_paths."home-manager-activation"}/activate",
+                RemainAfterExit = "yes",
+              },
+            },
+            wanted_by = ["multi-user.target"],
+          },
         },
       },
 

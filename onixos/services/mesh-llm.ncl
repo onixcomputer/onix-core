@@ -514,6 +514,80 @@ fun onix =>
             },
             artifact_wiring = wiring,
           }
+          & (
+          # NixOS runs the sidecar from a generated start script with the invite
+          # tokens as LoadCredential secrets; a host generation keeps the same
+          # script under /etc and the tokens that the artifacts place under
+          # /run/artifacts.
+          {
+            users."%{user}" = { group = user, description = "Mesh-LLM sidecar user", home = state_path },
+            groups."%{user}" = {},
+            packages = [args.package_paths.mesh-llm],
+            tmpfiles = ["Z %{state_path} - %{user} %{user} -"],
+            files =
+              { "%{service_name}/config.toml".text = config_toml, "%{service_name}/start.sh".text = start_script, "%{service_name}/watchdog.sh".text = watchdog_script }
+              & (if research_enabled then { "%{service_name}/research.json".text = research_json } else {}),
+            units."%{service_name}.service" = {
+              sections = {
+                Unit = {
+                  Description = "Private Mesh-LLM sidecar (%{instance}, %{std.to_string cfg.mode})",
+                  After = std.string.join " " unit_deps,
+                  Wants = std.string.join " " unit_deps,
+                },
+                Service = {
+                  Type = "simple",
+                  User = user,
+                  Group = user,
+                  WorkingDirectory = state_path,
+                  StateDirectory = service_name,
+                  StateDirectoryMode = "0700",
+                  Environment = [
+                    "HOME=%{state_path}",
+                    "MESH_LLM_NO_SELF_UPDATE=1",
+                    "MESH_LLM_GCC_LIB=%{args.package_paths.lib}",
+                  ],
+                  LoadCredential = std.array.map (fun peer => "%{credential peer}:/run/artifacts/%{invites_artifact}/%{peer}") join_peers,
+                  ExecStart = "/bin/bash /etc/%{service_name}/start.sh",
+                  Restart = "on-failure",
+                  RestartSec = "10s",
+                  TimeoutStopSec = "30s",
+                  NoNewPrivileges = "true",
+                  PrivateDevices = "true",
+                  PrivateTmp = "true",
+                  ProtectHome = "true",
+                  ProtectSystem = "strict",
+                  RemoveIPC = "true",
+                  RestrictAddressFamilies = ["AF_INET", "AF_INET6", "AF_UNIX"],
+                  RestrictNamespaces = "true",
+                  RestrictRealtime = "true",
+                  RestrictSUIDSGID = "true",
+                  SystemCallArchitectures = "native",
+                  UMask = "0077",
+                },
+              },
+              wanted_by = ["multi-user.target"],
+            },
+            units."%{watchdog_name}.service" = {
+              sections = {
+                Unit = { Description = "Restart %{service_name} when its API listener disappears or a joiner loses every peer" },
+                Service = {
+                  Type = "oneshot",
+                  RuntimeDirectory = watchdog_name,
+                  RuntimeDirectoryPreserve = "yes",
+                  ExecStart = "/bin/bash /etc/%{service_name}/watchdog.sh",
+                },
+              },
+            },
+            units."%{watchdog_name}.timer" = {
+              sections = {
+                Unit = { Description = "Check the %{service_name} API listener every minute" },
+                Timer = { OnBootSec = "2min", OnUnitActiveSec = "1min", AccuracySec = "10s" },
+              },
+              wanted_by = ["timers.target"],
+            },
+            firewall.allowed_udp_ports = [cfg.mesh_port],
+          }
+          )
           & invites,
       },
 
