@@ -245,12 +245,12 @@ fun onix =>
         "fish",
         "systemd",
         "nsncd",
-        "nss-mdns",
+        "nss-mdns=nssmdns",
         "avahi",
         "networkmanager",
         "irqbalance",
-        "kitty-terminfo",
-        "wezterm-terminfo",
+        "kitty-terminfo=kitty.terminfo",
+        "wezterm-terminfo=wezterm.terminfo",
       ],
       roles.host = {
         networkmanager_unmanaged

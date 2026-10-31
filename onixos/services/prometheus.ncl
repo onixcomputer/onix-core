@@ -74,7 +74,7 @@ fun onix =>
           },
         ],
       },
-      packages = ["prometheus", "tailscalesd", "node-exporter", "systemd-exporter", "blackbox"],
+      packages = ["prometheus", "tailscalesd", "node-exporter=prometheus-node-exporter", "systemd-exporter=prometheus-systemd-exporter", "blackbox=prometheus-blackbox-exporter"],
       roles = {
         server = {
           enable_auto_discovery
