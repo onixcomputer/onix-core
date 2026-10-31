@@ -18,6 +18,18 @@ fun onix =>
       fallback
   in
   let non_empty = fun values => std.array.length values > 0 in
+  # lib.generators.toINI, which NixOS uses for grafana.ini: strings verbatim,
+  # lists space-separated, everything else through to_string.
+  let _ini_value = fun value =>
+    if std.is_string value then
+      value
+    else if std.typeof value == 'Enum then
+      std.to_string value
+    else if std.typeof value == 'Array then
+      value |> std.array.map std.to_string |> std.string.join " "
+    else
+      std.to_string value
+  in
   let wire_secret = fun secret_file =>
     onix.artifact_wiring {
       artifact = "grafana",
@@ -146,6 +158,89 @@ fun onix =>
                   {}
               ),
             artifact_wiring = [wire_secret "admin_password", wire_secret "secret_key"],
+            # NixOS renders the settings into an ini file and passes it with
+            # -config; a host generation keeps it in /etc and hands the two
+            # secrets to Grafana through its __FILE variables, as NixOS's
+            # `$__file` does.
+            host =
+              let ini_sections =
+                cfg.settings
+                |> std.record.fields
+                |> std.array.map (fun section_name =>
+                  let section = std.record.get section_name cfg.settings in
+                  "[%{section_name}]\n"
+                  ++ (
+                    section
+                    |> std.record.fields
+                    |> std.array.map (fun key => "%{key} = %{_ini_value (std.record.get key section)}")
+                    |> std.string.join "\n"
+                  )
+                )
+                |> std.string.join "\n\n"
+              in
+              let secrets = ["/run/artifacts/grafana/admin_password", "/run/artifacts/grafana/secret_key"] in
+              {
+                users.grafana = { group = "grafana", description = "Grafana service user" },
+                groups.grafana = {},
+                files =
+                  { "grafana.ini".text = ini_sections ++ "\n" }
+                  & (
+                    if provisioned then
+                      {
+                        "grafana/provisioning/datasources/datasources.yaml".text =
+                          std.serialize 'Yaml (provision_config.datasources.settings)
+                          ++ "",
+                      }
+                      & (
+                        if non_empty cfg.dashboards then
+                          { "grafana/provisioning/dashboards/dashboards.yaml".text = std.serialize 'Yaml provision_config.dashboards.settings }
+                        else
+                          {}
+                      )
+                    else
+                      {}
+                  ),
+                units."grafana.service" = {
+                  sections = {
+                    Unit = {
+                      Description = "Grafana Service Daemon",
+                      After = "network-online.target",
+                      Wants = "network-online.target",
+                    },
+                    Service = {
+                      Type = "simple",
+                      ExecStart = "%{grafana_package}/bin/grafana server -homepath /var/lib/grafana -config /etc/grafana.ini",
+                      ExecStartPre = "/bin/ln -fs %{grafana_package}/share/grafana/conf /var/lib/grafana",
+                      User = "grafana",
+                      Group = "grafana",
+                      WorkingDirectory = "/var/lib/grafana",
+                      StateDirectory = "grafana",
+                      RuntimeDirectory = "grafana",
+                      RuntimeDirectoryMode = "0755",
+                      Environment = [
+                        "GF_SECURITY_ADMIN_PASSWORD__FILE=%{std.array.first secrets}",
+                        "GF_SECURITY_SECRET_KEY__FILE=%{std.array.last secrets}",
+                        "GF_PATHS_PROVISIONING=/etc/grafana/provisioning",
+                      ],
+                      Restart = "on-failure",
+                      PrivateTmp = "true",
+                      ProtectHome = "true",
+                      ProtectSystem = "full",
+                      NoNewPrivileges = "true",
+                      UMask = "0027",
+                      RestrictAddressFamilies = ["AF_INET", "AF_INET6", "AF_UNIX"],
+                    },
+                  },
+                  wanted_by = ["multi-user.target"],
+                },
+                firewall.allowed_tcp_ports = [ini_value cfg.settings "server" "http_port" 3000],
+              }
+              & (
+                if ini_value cfg.settings "server" "protocol" "http" == "https" then
+                  { users.grafana.extra_groups = ["nginx"] }
+                else
+                  {}
+              ),
           }
           & onix.artifact_declaration {
             name = "grafana",

@@ -160,6 +160,62 @@ fun onix =>
             else
               {}
           ),
+        # NixOS validates the configuration into the store and passes it with
+        # --config.file; a host generation keeps it in /etc. Alloy reads its
+        # configuration directory, as NixOS's ConfigurationDirectory does.
+        output.host =
+          {
+            users.loki = { group = "loki", description = "Loki Service User", home = "/var/lib/loki" },
+            groups.loki = {},
+            files."loki/loki.yaml".text = std.serialize 'Yaml cfg.configuration,
+            units."loki.service" = {
+              sections = {
+                Unit = { Description = "Loki Service Daemon", After = "network-online.target", Wants = "network-online.target" },
+                Service = {
+                  Type = "simple",
+                  ExecStart = "%{args.packages.loki}/bin/loki --config.file=/etc/loki/loki.yaml",
+                  User = "loki",
+                  Group = "loki",
+                  WorkingDirectory = "/var/lib/loki",
+                  StateDirectory = "loki",
+                  Restart = "always",
+                  PrivateTmp = "true",
+                  ProtectHome = "true",
+                  ProtectSystem = "full",
+                  NoNewPrivileges = "true",
+                  DevicePolicy = "closed",
+                },
+              },
+              wanted_by = ["multi-user.target"],
+            },
+            firewall.allowed_tcp_ports = [http_listen_port],
+          }
+          & (
+            if cfg.enable_alloy then
+              {
+                files."alloy/config.alloy".text = alloy_config cfg args.machine_name,
+                units."alloy.service" = {
+                  sections = {
+                    Unit = { Description = "Grafana Alloy", After = "network.target" },
+                    Service = {
+                      Type = "simple",
+                      ExecStart = "%{args.packages.grafana-alloy}/bin/alloy run /etc/alloy",
+                      ExecReload = "/bin/kill -SIGHUP $MAINPID",
+                      DynamicUser = "true",
+                      ConfigurationDirectory = "alloy",
+                      StateDirectory = "alloy",
+                      WorkingDirectory = "%S/alloy",
+                      SupplementaryGroups = ["systemd-journal"],
+                      Restart = "always",
+                      RestartSec = "2",
+                    },
+                  },
+                  wanted_by = ["multi-user.target"],
+                },
+              }
+            else
+              {}
+          ),
       },
 
     tests | not_exported =

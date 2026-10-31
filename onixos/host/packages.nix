@@ -57,6 +57,9 @@ let
     ctop = pkgs.ctop;
     "podman-tui" = pkgs.podman-tui;
     prometheus = cfg.services.prometheus.package;
+    loki = cfg.services.loki.package;
+    grafana-alloy = cfg.services.alloy.package;
+    onix-core-grafana = cfg.services.grafana.package;
     tailscalesd = pkgs.tailscalesd;
     "node-exporter" = pkgs.prometheus-node-exporter;
     "systemd-exporter" = pkgs.prometheus-systemd-exporter;
