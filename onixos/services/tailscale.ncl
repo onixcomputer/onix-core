@@ -73,6 +73,11 @@ fun onix =>
             targets = ["nixos"],
             rationale = "configures the NixOS Tailscale service, firewall and the host-sync unit",
           },
+          {
+            namespace = "host",
+            targets = ["onixos"],
+            rationale = "tailscaled, its autoconnect and the host sync on an OnixOS systemd host; exit nodes and freeform options are NixOS-only",
+          },
         ],
       },
       packages = ["tailscale", "jq", "gnused", "coreutils", "gnugrep"],
@@ -151,9 +156,104 @@ fun onix =>
         },
       }
       in
+      # OnixOS systemd host: the package's tailscaled unit with NixOS's drop-in, its
+      # autoconnect script (auth key from the placed artifact) and the host sync.
+      let auth_key = "/run/artifacts/%{artifact_name}/auth_key" in
+      let autoconnect_script =
+        m%"
+          set -o errexit
+          set -o nounset
+          set -o pipefail
+          getState() {
+            tailscale status --json --peers=false | jq -r '.BackendState'
+          }
+          lastState=""
+          while state="$(getState)"; do
+            if [[ "$state" != "$lastState" ]]; then
+              case "$state" in
+                NeedsLogin|NeedsMachineAuth|Stopped)
+                  echo "Server needs authentication, sending auth key"
+                  tailscale up --auth-key "$(cat %{auth_key})" %{std.string.join " " up_flags}
+                  ;;
+                Running)
+                  echo "Tailscale is running"
+                  systemd-notify --ready
+                  exit 0
+                  ;;
+                *)
+                  echo "Waiting for Tailscale State = Running or systemd timeout"
+                  ;;
+              esac
+              echo "State = $state"
+            fi
+            lastState="$state"
+            sleep .5
+          done
+        "%
+        ++ "\n"
+      in
+      let tool_path = std.string.join ":" (std.array.map (fun p => "%{p}/bin") [args.packages.tailscale, args.packages.jq, args.packages.gnused, args.packages.coreutils, args.packages.gnugrep]) in
+      let host_sync_host = {
+        units."tailscale-host-sync.service" = {
+          sections = {
+            Unit = { Description = "Sync Tailscale hostnames to /etc/hosts", After = "tailscaled.service" },
+            Service = {
+              Type = "oneshot",
+              Environment = "PATH=%{tool_path}",
+              ExecStart = "/run/current-system/sw/bin/bash -euo pipefail /etc/tailscale/host-sync.sh",
+            },
+          },
+        },
+        units."tailscale-host-sync.timer" = {
+          sections.Timer = { OnBootSec = "1min", OnUnitActiveSec = "1min" },
+          wanted_by = ["timers.target"],
+        },
+        files."tailscale/host-sync.sh".text = host_sync_script,
+      }
+      in
+      # Exit-node NAT and the freeform NixOS options have no host form yet: without a host
+      # leaf a systemd-host build refuses the unit instead of dropping them.
+      let host_leaf =
+        if cfg.exit_node || cfg.extra_options != {} then
+          {}
+        else
+          {
+            package_units = [{ package = args.packages.tailscale, units = ["tailscaled.service"] }],
+            wants."multi-user.target" = ["tailscaled.service"],
+            dropins."tailscaled.service"."onixos.conf" =
+              m%"
+              [Unit]
+              After=NetworkManager-wait-online.service
+
+              [Service]
+              Environment="PATH=/run/wrappers/bin:%{tool_path}:/run/current-system/sw/bin"
+              Environment=PORT=%{std.to_string tailscale_udp_port}
+              Environment="FLAGS=--tun tailscale0"
+            "%
+              ++ "\n",
+            units."tailscaled-autoconnect.service" = {
+              sections = {
+                Unit = { After = "tailscaled.service", Wants = "tailscaled.service" },
+                Service = {
+                  Type = "notify",
+                  Environment = "PATH=%{tool_path}:/run/current-system/sw/bin",
+                  ExecStart = "/run/current-system/sw/bin/bash /etc/tailscale/autoconnect.sh",
+                },
+              },
+              wanted_by = ["tailscaled.service"],
+            },
+            files."tailscale/autoconnect.sh".text = autoconnect_script,
+            # useRoutingFeatures = both.
+            sysctl = { "net.ipv4.conf.all.forwarding" = "1", "net.ipv6.conf.all.forwarding" = "1" },
+            firewall = { trusted_interfaces = ["tailscale0"], allowed_udp_ports = [tailscale_udp_port], reverse_path = "loose" },
+            packages = [args.packages.tailscale],
+          }
+          & (if cfg.enable_host_aliases then host_sync_host else {})
+      in
       {
         output =
           {
+            host = host_leaf,
             nixos =
               {
                 services.tailscale =
@@ -217,10 +317,19 @@ fun onix =>
       let aspen2 = run { enable_ssh = true, exit_node = false, enable_host_aliases = true } in
       let exit_out = run { exit_node = true, exit_node_external_interface = "eth0" } in
       let no_aliases = run { enable_host_aliases = false } in
+      let host_leaf = aspen2.host in
       let host_sync = aspen2.nixos.systemd.services.tailscale-host-sync in
       let artifact = aspen2.artifacts."tailscale-br-tailnet" in
       let wiring = std.array.first aspen2.artifact_wiring in
       [
+        # OnixOS systemd host: tailscaled from the package with NixOS's drop-in, autoconnect
+        # reading the placed auth key, host sync every minute; exit nodes stay NixOS-only.
+        host_leaf.package_units == [{ package = "tailscale-pkg", units = ["tailscaled.service"] }],
+        std.string.contains "FLAGS=--tun tailscale0" host_leaf.dropins."tailscaled.service"."onixos.conf",
+        std.string.contains "cat /run/artifacts/tailscale-br-tailnet/auth_key)\" --ssh" host_leaf.files."tailscale/autoconnect.sh".text,
+        host_leaf.units."tailscale-host-sync.timer".sections.Timer == { OnBootSec = "1min", OnUnitActiveSec = "1min" },
+        !(std.record.has_field "units" no_aliases.host && std.record.has_field "tailscale-host-sync.service" no_aliases.host.units),
+        exit_out.host == {},
         # Clan defaults: no SSH, no exit node, host aliases on.
         defaults.nixos.services.tailscale.enable,
         defaults.nixos.services.tailscale.extraUpFlags == [],

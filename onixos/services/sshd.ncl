@@ -285,6 +285,108 @@ fun onix =>
         },
       }
   in
+  # OnixOS systemd host: NixOS's sshd configuration for the same settings. The host
+  # places artifact files before services start, so the host key and certificate are
+  # read from their default artifact paths and the known_hosts lines are written at
+  # activation from the placed public keys (no artifact contents at evaluation time).
+  let placed = fun artifact file => "/run/artifacts/%{artifact}/%{file}" in
+  let known_hosts_dir = "/run/onixos/ssh_known_hosts.d" in
+  let server_host = fun args =>
+    let cfg = args.settings in
+    let ssh = args.packages.openssh in
+    let machine = args.machine_name in
+    let search_domains = unique ([cfg.domain] @ cfg.certificate.search_domains) in
+    let key_lines =
+      ["HostKey %{placed "openssh" "ssh.id_ed25519"}"]
+      @ (if cfg.host_keys.rsa.enable then ["HostKey %{placed "openssh-rsa" "ssh.id_rsa"}"] else [])
+      @ (if cfg.certificate.enable then ["HostCertificate %{placed "openssh-cert" "ssh.id_ed25519-cert.pub"}"] else [])
+    in
+    let root_keys = std.record.values cfg.authorized_keys in
+    {
+      units."sshd.service" = {
+        sections = {
+          Unit = { Description = "SSH Daemon", After = "network.target" },
+          Service = {
+            Environment = "PATH=%{ssh}/bin:/run/current-system/sw/bin",
+            ExecStart = "%{ssh}/bin/sshd -D -f /etc/ssh/sshd_config",
+            KillMode = "process",
+            Restart = "always",
+            Type = "notify-reload",
+          },
+        },
+        wanted_by = ["multi-user.target"],
+      },
+      files =
+        {
+          "ssh/sshd_config".text =
+            m%"
+              AllowAgentForwarding yes
+              AuthorizedPrincipalsFile none
+              Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+              GatewayPorts no
+              KbdInteractiveAuthentication no
+              KexAlgorithms mlkem768x25519-sha256,sntrup761x25519-sha512,sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
+              LogLevel INFO
+              Macs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com
+              ModuliFile %{ssh}/etc/ssh/moduli
+              PasswordAuthentication no
+              PermitRootLogin prohibit-password
+              PrintMotd no
+              StreamLocalBindUnlink yes
+              StrictModes yes
+              UseDns no
+              UsePAM yes
+              X11Forwarding no
+              AddressFamily any
+              Port 22
+              Subsystem sftp %{ssh}/libexec/sftp-server
+              AuthorizedKeysFile /etc/ssh/authorized_keys.d/%u
+            "%
+            ++ "\n"
+            ++ (std.string.join "\n" key_lines)
+            ++ "\n",
+        }
+        & (if root_keys == [] then {} else { "ssh/authorized_keys.d/root".text = (std.string.join "\n" root_keys) ++ "\n" }),
+      pam_services.sshd = { unix_auth = false },
+      users.sshd = { group = "sshd", description = "SSH privilege separation user" },
+      groups.sshd = {},
+      packages = [ssh],
+      # services.openssh.openFirewall defaults to true.
+      firewall.allowed_tcp_ports = [22],
+      activation."sshd-known-hosts-server" = m%"
+          mkdir -p %{known_hosts_dir}
+          {
+            if [ -s %{placed "openssh" "ssh.id_ed25519.pub"} ]; then
+              echo "localhost,%{machine},%{machine}.%{cfg.domain} $(cat %{placed "openssh" "ssh.id_ed25519.pub"})"
+            fi
+            if %{if cfg.certificate.enable then "true" else "false"} && [ -s %{placed "openssh-ca" "id_ed25519.pub"} ]; then
+              echo "@cert-authority %{std.string.join "," (wildcards search_domains)} $(cat %{placed "openssh-ca" "id_ed25519.pub"})"
+            fi
+          } > %{known_hosts_dir}/sshd-server
+        "%,
+    }
+  in
+  let client_host = fun args =>
+    let cfg = args.settings in
+    let domains = [cfg.domain] @ unique (cfg.certificate.search_domains @ cfg.server_search_domains) in
+    {
+      files."ssh/ssh_config".text =
+        m%"
+          Host *
+          GlobalKnownHostsFile /etc/ssh/ssh_known_hosts %{known_hosts_dir}/sshd-server %{known_hosts_dir}/sshd-client
+          ForwardX11 no
+        "%
+        ++ "\n",
+      activation."sshd-known-hosts-client" = m%"
+          mkdir -p %{known_hosts_dir}
+          {
+            if %{if cfg.server_certificates then "true" else "false"} && [ -s %{placed "openssh-ca" "id_ed25519.pub"} ]; then
+              echo "@cert-authority %{std.string.join "," (wildcards domains)} $(cat %{placed "openssh-ca" "id_ed25519.pub"})"
+            fi
+          } > %{known_hosts_dir}/sshd-client
+        "%,
+    }
+  in
   ({
     interface = {
       manifest = {
@@ -300,13 +402,25 @@ fun onix =>
             targets = ["nixos"],
             rationale = "NixOS openssh, known_hosts and sops-nix options, as Clan's sshd service sets them",
           },
+          {
+            namespace = "host",
+            targets = ["onixos"],
+            rationale = "the same sshd configuration on an OnixOS systemd host, keys and certificate from placed artifact files",
+          },
         ],
       },
+      # Only the host leaf uses it; NixOS takes services.openssh.package.
+      packages = ["openssh"],
       roles = sshd_roles,
     },
 
     impl = fun args =>
-      { output.nixos = if args.role_name == 'server then server_output args else client_output args },
+      {
+        output = {
+          nixos = if args.role_name == 'server then server_output args else client_output args,
+          host = if args.role_name == 'server then server_host args else client_host args,
+        },
+      },
 
     # Shared with openssh-keys.ncl, which declares the artifacts.
     roles | not_exported = sshd_roles,
@@ -333,6 +447,13 @@ fun onix =>
       in
       let server_defaults = interface.roles.server in
       let client_defaults = interface.roles.client in
+      let openssh_pkg = "/nix/store/00000000000000000000000000000000-openssh" in
+      let run_host = fun role role_settings =>
+        (impl (onix.testing.mock_args { service = "sshd", role_name = role, settings = role_settings, machine_name = "aspen2", packages = { openssh = openssh_pkg } })).output.host
+      in
+      let host_server = run_host 'server server_defaults in
+      let host_server_config = host_server.files."ssh/sshd_config".text in
+      let host_client = run_host 'client (client_defaults & { certificate.search_domains = ["local"] }) in
       let server = run 'server server_defaults full in
       let client = run 'client (client_defaults & { certificate.search_domains = ["local"] }) full in
       let no_cert =
@@ -356,6 +477,15 @@ fun onix =>
           (full & { sshd-root-key = { "id_ed25519.pub" = "ssh-ed25519 AAAAroot root@aspen2\n" } })
       in
       [
+        # OnixOS systemd host: keys and certificate from placed artifacts, known_hosts at activation.
+        std.string.contains "HostKey /run/artifacts/openssh/ssh.id_ed25519\n" host_server_config,
+        std.string.contains "HostCertificate /run/artifacts/openssh-cert/ssh.id_ed25519-cert.pub\n" host_server_config,
+        std.string.contains "Subsystem sftp %{openssh_pkg}/libexec/sftp-server" host_server_config,
+        host_server.units."sshd.service".sections.Service.ExecStart == "%{openssh_pkg}/bin/sshd -D -f /etc/ssh/sshd_config",
+        !(std.string.contains "HostCertificate" (run_host 'server (server_defaults & { certificate.enable = false })).files."ssh/sshd_config".text),
+        std.string.contains "localhost,aspen2,aspen2.clan" host_server.activation."sshd-known-hosts-server",
+        std.string.contains "/run/onixos/ssh_known_hosts.d/sshd-client" host_client.files."ssh/ssh_config".text,
+        std.string.contains "@cert-authority *.clan,*.local" host_client.activation."sshd-known-hosts-client",
         server.services.openssh.enable,
         server.services.openssh.settings.PasswordAuthentication == false,
         server.services.openssh.hostKeys == [{ path = "/run/secrets/openssh/ssh.id_ed25519", type = "ed25519" }],

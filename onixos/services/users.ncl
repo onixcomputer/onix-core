@@ -30,6 +30,11 @@ fun onix =>
             targets = ["nixos"],
             rationale = "NixOS users.users, users.mutableUsers and sops-nix secrets-for-users, as Clan's users service sets them",
           },
+          {
+            namespace = "host",
+            targets = ["onixos"],
+            rationale = "the account on an OnixOS systemd host, its password hash from the artifact placed before users are written",
+          },
         ],
       },
       roles.default = {
@@ -77,6 +82,20 @@ fun onix =>
           | onix.NonEmptyString
           | priority -5
           = "clan",
+        uid
+          | doc "Fixed uid on OnixOS systemd hosts (NixOS takes it from the machine's users configuration). Without one the host allocates it as NixOS does."
+          | std.number.Nat
+          | optional,
+        group
+          | doc "Primary group on OnixOS systemd hosts; a group other than users is created (gid allocated as NixOS does)."
+          | onix.UnixName
+          | priority -5
+          = "users",
+        shell
+          | doc "Login shell on OnixOS systemd hosts."
+          | onix.NonEmptyString
+          | priority -5
+          = "/run/current-system/sw/bin/bash",
       },
     },
 
@@ -125,6 +144,22 @@ fun onix =>
                 restartUnits = if userborn then ["userborn.service"] else [],
               },
             },
+            host =
+              {
+                users."%{user}" =
+                  {
+                    group = cfg.group,
+                    extra_groups = cfg.groups,
+                    home = if user == "root" then "/root" else "/home/%{user}",
+                    shell = cfg.shell,
+                    create_home = user != "root",
+                    # Placed by the host before users are written (default artifact path).
+                    hashed_password_file = "/run/artifacts/%{artifact_name}/user-password-hash",
+                    authorized_keys = cfg.openssh.authorized_keys.keys,
+                  }
+                  & (if std.record.has_field "uid" cfg then { uid = cfg.uid } else {}),
+              }
+              & (if cfg.group == "users" then {} else { groups."%{cfg.group}" = {} }),
             artifact_wiring = [
               onix.artifact_wiring {
                 artifact = artifact_name,
@@ -180,6 +215,7 @@ fun onix =>
       let wiring = std.array.first out.artifact_wiring in
       let unprompted = (run "alice" {} {}).artifacts.user-password-alice in
       let identity_only = run "svc" { user = "svc", system_user = false } {} in
+      let host_out = (run "user-brittonr" { user = "brittonr", uid = 1555, group = "brittonr", shell = "/run/current-system/sw/bin/fish", groups = ["wheel"], openssh.authorized_keys.keys = ["ssh-ed25519 K b"] } {}).host in
       [
         out.nixos.users.mutableUsers == false,
         out.nixos.users.users.brittonr.isNormalUser,
@@ -208,6 +244,17 @@ fun onix =>
         identity_only.nixos == { users.mutableUsers = false },
         !(std.record.has_field "artifacts" identity_only),
         (run "u" { user = "brittonr", identity.main = { groups = ["admins"] } } {}).exports.auth.users.main == { username = "brittonr", email = "brittonr@mail.clan", groups = ["admins"], displayname = "brittonr" },
+        # OnixOS systemd host: the same account, its hash read from the placed artifact.
+        host_out.users.brittonr.uid == 1555,
+        host_out.users.brittonr.group == "brittonr",
+        host_out.users.brittonr.home == "/home/brittonr",
+        host_out.users.brittonr.extra_groups == ["wheel"],
+        host_out.users.brittonr.hashed_password_file == "/run/artifacts/user-password-brittonr/user-password-hash",
+        host_out.users.brittonr.authorized_keys == ["ssh-ed25519 K b"],
+        host_out.groups == { brittonr = {} },
+        !(std.record.has_field "uid" (run "alice" {} {}).host.users.alice),
+        !(std.record.has_field "groups" (run "alice" {} {}).host),
+        !(std.record.has_field "host" identity_only),
       ]
       |> std.test.assert_all,
   }

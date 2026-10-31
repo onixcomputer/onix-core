@@ -9,6 +9,7 @@ fun onix =>
     import "services/grafana.ncl",
     import "services/home-manager-profiles.ncl",
     import "services/homepage-dashboard.ncl",
+    import "services/host-common.ncl",
     import "services/laya.ncl",
     import "services/loki.ncl",
     import "services/mesh-llm.ncl",
@@ -25,7 +26,10 @@ fun onix =>
   ]
   in
   let inventory = ((import "inventory.ncl") onix) | onix.Inventory in
+  # aspen2 as an OnixOS systemd host (onixos/host/inventory.ncl).
+  let host_inventory = ((import "host/inventory.ncl") onix) | onix.Inventory in
   {
     services = service_modules |> std.array.map (fun module => (module onix).tests),
     instances = std.record.fields inventory.instances,
+    host_instances = std.record.fields host_inventory.instances,
   }

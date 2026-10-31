@@ -1,0 +1,50 @@
+{
+  "caches": [
+    {
+      "public_keys": [
+        "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+      ],
+      "url": "https://cache.nixos.org"
+    }
+  ],
+  "packages": {
+    "bash": "/nix/store/kwyi4bq5s2qgwbhz6cs4gjy57c2zdxws-bash-interactive-5.3p20",
+    "busybox-static": "/nix/store/yfcblx3wfc52q8lyrvqdpsnqkqh21wfs-busybox-static-x86_64-unknown-linux-musl-1.37.0",
+    "cacert": "/nix/store/xl2y3kkdjshb2z05y8kfvqj7b628jkgd-nss-cacert-3.126",
+    "coreutils": "/nix/store/cb987zkxvsv0490753ilrvn5yk7ylgxi-coreutils-9.12",
+    "dbus": "/nix/store/f88s1f2rgbz6nnkdry1hy25q0kaidiz1-dbus-1.16.2",
+    "e2fsprogs-bin": "/nix/store/9l2mjms2iidc51mh6sfyjmhzshxa3v8k-e2fsprogs-1.47.4-bin",
+    "findutils": "/nix/store/99v13ig4382mngi6ggf0csqi7rfa04j5-findutils-4.11.0",
+    "fish": "/nix/store/2j65shllya9i591ild4jcl0kdl8hqwmj-fish-4.9.3",
+    "getent": "/nix/store/0vr3l0sxz3arj2jlk44wsp0f0m4b4yli-getent-glibc-2.44-57",
+    "glibc-locales": "/nix/store/6awpfcv4lkmk67qf6ca73m076zcfbczp-glibc-locales-2.44-57",
+    "gnugrep": "/nix/store/c3f45pxlb81gzz4w1nym7lpznfypva7s-gnugrep-3.12",
+    "gnused": "/nix/store/9wc73n5izv0m7ppjbibi4hbr68rba1lj-gnused-4.10",
+    "gnutar": "/nix/store/f9shc46n2300jbm0h60f6s4m69j0smyp-gnutar-1.35",
+    "gzip": "/nix/store/rpswfv0ff4wap9anx7k1224x2m94pfcc-gzip-1.15",
+    "iproute2": "/nix/store/1ww3clwns6md3prwdh4knqpwn785fvzy-iproute2-7.2.0",
+    "iputils": "/nix/store/1n81sbs00pd7i5j7zjsvhcdcgzq4mnfh-iputils-20250605",
+    "jq": "/nix/store/9l0j15jg8634hkb6d4c9y95mpxl0nhrd-jq-1.8.2-bin",
+    "kernel": "/nix/store/sby4x25d1wl7nn915c62jps8nr65sncj-linux-7.3",
+    "kernel-modules": "/nix/store/45qn2fl65npgnlmhcgzaps9hspgxbdq7-linux-7.3-modules",
+    "kmod": "/nix/store/d03jsfz5lq08cc8s9f4bdnnxs91bb40r-kmod-31",
+    "less": "/nix/store/s3mk12jzr2dy37m3cksi3j66gzw60lbq-less-710",
+    "linux-pam": "/nix/store/18ykcs87zl2zxgdvjnl3zdzqcp7r2m44-linux-pam-1.7.2",
+    "nftables": "/nix/store/jw04ymglha5phivzvi9ngv0lkaa74bnm-nftables-1.1.7",
+    "openssh": "/nix/store/cy1kp9s0vklml5di3hddw0x4k38bixv6-openssh-10.6p1",
+    "procps": "/nix/store/y733samykhd49crbck70qzsl315zq3hw-procps-4.0.7",
+    "shadow": "/nix/store/82qxn7mh0g7wdfg7a82ndpnsai03bk5y-shadow-4.20.3",
+    "shadow-su": "/nix/store/92y32awaiyp58scb9dbyvl3p8d0m5gxi-shadow-4.20.3-su",
+    "sops": "/nix/store/sy4hg582vpy8xvf960idvj6yq6z9dyw4-sops-3.13.3",
+    "switch-to-configuration": "/nix/store/xzlvxkp4f9vmsi493p69hg2bzsx2hqis-switch-to-configuration-0.1.0",
+    "systemd": "/nix/store/kzfnrdcqz08ky2m2dvad2lwahlfb4c96-systemd-262",
+    "tailscale": "/nix/store/6y1ggw25afqqclv4x62is94f27hdj38x-tailscale-1.104.1",
+    "tzdata": "/nix/store/fsrw69w5mx838p7xydbdvywhwl6wnbjw-tzdata-2026e",
+    "util-linux-bin": "/nix/store/2lgg8jqyzjp60svh7kmp39kqwnig31p2-util-linux-2.42.4-bin",
+    "util-linux-login": "/nix/store/82spanbs1az551h0wag8z2ryb67n38vz-util-linux-2.42.4-login",
+    "util-linux-mount": "/nix/store/9xzvspslb052smabjvcipmpcsi7vjjb6-util-linux-2.42.4-mount",
+    "which": "/nix/store/bxaddvz98rw7pn24gcrjix69q6np2gq8-which-2.25",
+    "xz": "/nix/store/nflpm51il93hxh2rba6dvz59kaff0i7v-xz-5.8.4-bin"
+  },
+  "schema": "onixos-host-package-index-v1"
+}
