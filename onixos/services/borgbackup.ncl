@@ -100,7 +100,7 @@ fun onix =>
           },
         ],
       },
-      packages = ["networkmanager"],
+      packages = ["networkmanager", "borgbackup"],
       roles.client = {
         server
           | doc "Machine with the borgbackup server role (Clan: roles.server.machines); also the job name."
@@ -241,6 +241,66 @@ fun onix =>
               & (if has_state then jobs else {}),
             artifact_wiring = if has_state then wiring else [],
           }
+          & (
+            # NixOS renders each job from services.borgbackup.jobs; a host
+            # generation spells the same borg invocations, with the passphrase and
+            # SSH key that the artifacts place under /run/artifacts/borgbackup.
+            if !has_state then
+              {}
+            else
+              let job_host = fun job_name =>
+                let dest = all_destinations."%{job_name}" in
+                {
+                  units."borgbackup-job-%{job_name}.service" = {
+                    sections = {
+                      Unit = {
+                        Description = "BorgBackup job %{job_name}",
+                        RequiresMountsFor = std.string.join " " backup_paths,
+                      },
+                      Service = {
+                        Type = "oneshot",
+                        Environment = [
+                          "BORG_REPO=%{dest.repo}",
+                          "BORG_PASSCOMMAND=cat /run/artifacts/borgbackup/borgbackup.repokey",
+                          "BORG_RSH=%{dest.rsh}",
+                          "BORG_RELOCATED_REPO_ACCESS_IS_OK=yes",
+                          "BORG_COMPRESSION=auto,zstd",
+                        ],
+                        ExecStart = [
+                          "%{args.package_paths.borgbackup}/bin/borg create --stats '::{hostname}-{now}' %{std.string.join " " backup_paths}",
+                          "%{args.package_paths.borgbackup}/bin/borg prune --list --keep-within 1d --keep-daily 7 --keep-weekly 4 --keep-monthly 0",
+                        ],
+                        TimeoutStartSec = "infinity",
+                        TimeoutStopSec = "infinity",
+                      },
+                    },
+                  },
+                  units."borgbackup-job-%{job_name}.timer" = {
+                    sections = {
+                      Unit = { Description = "BorgBackup job %{job_name} timer" },
+                      Timer = { OnCalendar = cfg.start_at, Persistent = "true" },
+                    },
+                    wanted_by = ["timers.target"],
+                  },
+                }
+                & (
+                  if cfg.wait_for_unmetered_network then
+                    {
+                      dropins."borgbackup-job-%{job_name}.service"."onixos.conf" = m%"
+                        [Service]
+                        ExecStartPre=+%{args.package_paths.networkmanager}/bin/nm-online --quiet --timeout 60
+                      "%,
+                    }
+                  else
+                    {}
+                )
+              in
+              {
+                host =
+                  { packages = [args.package_paths.borgbackup] }
+                  & (job_names |> std.array.map job_host |> std.array.fold_left (fun acc entry => acc & entry) {}),
+              }
+          )
           & onix.artifact_declaration {
             name = "borgbackup",
             files = {

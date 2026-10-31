@@ -108,6 +108,48 @@ fun onix =>
             },
           },
         },
+        # NixOS runs the service as a DynamicUser with its state in /var/lib;
+        # a host generation keeps the same unit and state directory.
+        output.host = {
+          units."%{name}.service" = {
+            sections = {
+              Unit = {
+                Description = "arXiv Complete metadata search and selective paper text",
+                After = "network-online.target tailscaled.service",
+                Wants = "network-online.target",
+              },
+              Service = {
+                Type = "simple",
+                DynamicUser = "true",
+                StateDirectory = name,
+                StateDirectoryMode = "0700",
+                Environment = [
+                  "HOME=%{state}",
+                  "HF_HOME=%{state}",
+                  "XDG_CACHE_HOME=%{state}/cache",
+                  "HF_HUB_DISABLE_TELEMETRY=1",
+                  "PYTHONUNBUFFERED=1",
+                ],
+                ExecStartPre = "%{args.package_paths."arxiv-corpus"}/bin/arxiv-corpus prepare %{prepare_args}",
+                ExecStart = "%{args.package_paths."arxiv-corpus"}/bin/arxiv-corpus serve %{serve_args}",
+                TimeoutStartSec = "2h",
+                Restart = "on-failure",
+                RestartSec = "5",
+                MemoryMax = "4G",
+                CPUQuota = "200%",
+                NoNewPrivileges = "true",
+                PrivateTmp = "true",
+                PrivateDevices = "true",
+                ProtectHome = "true",
+                ProtectSystem = "strict",
+                RestrictAddressFamilies = ["AF_INET", "AF_INET6", "AF_UNIX"],
+              },
+            },
+            wanted_by = ["multi-user.target"],
+          },
+          firewall.interfaces.tailscale0.allowed_tcp_ports =
+            if cfg.host != "127.0.0.1" then [cfg.port] else [],
+        },
       },
 
     tests | not_exported =

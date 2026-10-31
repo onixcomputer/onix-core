@@ -44,6 +44,7 @@ let
     kernel = kernelPackages.kernel;
     "kernel-modules" = kernelPackages.kernel.modules;
     scx = pkgs.scx.full;
+    borgbackup = pkgs.borgbackup;
     polkit = pkgs.polkit;
     modemmanager = pkgs.modemmanager;
     logrotate = pkgs.logrotate;
@@ -64,6 +65,7 @@ let
     loki = cfg.services.loki.package;
     grafana-alloy = cfg.services.alloy.package;
     onix-core-grafana = cfg.services.grafana.package;
+    homepage-dashboard = cfg.services.homepage-dashboard.package;
     tailscalesd = pkgs.tailscalesd;
     "node-exporter" = pkgs.prometheus-node-exporter;
     "systemd-exporter" = pkgs.prometheus-systemd-exporter;

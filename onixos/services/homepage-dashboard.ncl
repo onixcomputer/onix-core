@@ -20,8 +20,14 @@ fun onix =>
             targets = ["nixos"],
             rationale = "The dashboard runs through the NixOS services.homepage-dashboard module",
           },
+          {
+            namespace = "host",
+            targets = ["onixos"],
+            rationale = "OnixOS systemd hosts run the same package with its configuration directory in /etc",
+          },
         ],
       },
+      packages = ["homepage-dashboard"],
       roles.server = {
         enable
           | doc "Run the homepage dashboard."
@@ -89,6 +95,41 @@ fun onix =>
             bookmarks = cfg.bookmarks,
           }
           & cfg.extra_options,
+        # NixOS renders the four YAML files into the store and points
+        # HOMEPAGE_CONFIG_DIR at them; a host generation keeps them in /etc with
+        # the same directory variable.
+        output.host =
+          {
+            users."homepage-dashboard" = { group = "homepage-dashboard", description = "Homepage dashboard service user" },
+            groups."homepage-dashboard" = {},
+            files =
+              { "homepage-dashboard/settings.yaml".text = std.serialize 'Yaml cfg.settings }
+              & (if cfg.services == [] then {} else { "homepage-dashboard/services.yaml".text = std.serialize 'Yaml cfg.services })
+              & (if cfg.widgets == [] then {} else { "homepage-dashboard/widgets.yaml".text = std.serialize 'Yaml cfg.widgets })
+              & (if cfg.bookmarks == [] then {} else { "homepage-dashboard/bookmarks.yaml".text = std.serialize 'Yaml cfg.bookmarks }),
+            units."homepage-dashboard.service" = {
+              sections = {
+                Unit = { Description = "Homepage Dashboard", After = "network.target" },
+                Service = {
+                  Type = "simple",
+                  ExecStart = "%{args.package_paths."homepage-dashboard"}/bin/homepage",
+                  User = "homepage-dashboard",
+                  Group = "homepage-dashboard",
+                  StateDirectory = "homepage-dashboard",
+                  Environment = [
+                    "HOMEPAGE_ALLOWED_HOSTS=%{cfg.allowed_hosts}",
+                    "HOMEPAGE_CONFIG_DIR=/etc/homepage-dashboard",
+                    "LOG_TARGETS=stdout",
+                    "NIXPKGS_HOMEPAGE_CACHE_DIR=/var/cache/homepage-dashboard",
+                  ],
+                  Restart = "on-failure",
+                },
+              },
+              wanted_by = ["multi-user.target"],
+            },
+            tmpfiles = ["d /var/cache/homepage-dashboard 0755 homepage-dashboard homepage-dashboard -"],
+          }
+          & (if cfg.open_firewall then { firewall.allowed_tcp_ports = [cfg.listen_port] } else {}),
       },
 
     tests | not_exported =
