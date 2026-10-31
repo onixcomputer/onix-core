@@ -74,7 +74,7 @@ fun onix =>
           },
         ],
       },
-      packages = ["prometheus", "tailscalesd"],
+      packages = ["prometheus", "tailscalesd", "node-exporter", "systemd-exporter", "blackbox"],
       roles = {
         server = {
           enable_auto_discovery
@@ -359,6 +359,110 @@ fun onix =>
                   else
                     {}
                 ),
+              # The NixOS module renders prometheus.yml from these same settings
+              # and passes a store path; a host generation keeps the config in
+              # /etc and the rules in one file, as NixOS writes them.
+              host =
+                let prom_config =
+                  { global = { "scrape_interval" = "15s", "evaluation_interval" = "15s" } & cfg.global_config }
+                  & (if cfg.rules == [] then {} else { rule_files = ["/etc/prometheus/rules.yml"] })
+                  & (if scrape_configs == [] then {} else { scrape_configs = scrape_configs })
+                in
+                {
+                  users.prometheus = { group = "prometheus", description = "Prometheus daemon user" },
+                  groups.prometheus = {},
+                  files = {
+                    "prometheus/prometheus.yml".text = std.serialize 'Yaml prom_config,
+                    "prometheus/rules.yml".text = (std.string.join "\n" cfg.rules) ++ "\n",
+                  },
+                  units."prometheus.service" = {
+                    sections = {
+                      Unit = { Description = "Prometheus", After = "network.target" },
+                      Service = {
+                        Type = "simple",
+                        ExecStart =
+                          std.string.join
+                            " "
+                            [
+                              "%{args.packages.prometheus}/bin/prometheus",
+                              "--config.file=/etc/prometheus/prometheus.yml",
+                              "--web.listen-address=0.0.0.0:%{std.to_string cfg.port}",
+                              "--storage.tsdb.path=/var/lib/prometheus2/data/",
+                              "--storage.tsdb.retention.time=%{cfg.retention_time}",
+                            ],
+                        User = "prometheus",
+                        Group = "prometheus",
+                        WorkingDirectory = "/var/lib/prometheus2",
+                        StateDirectory = "prometheus2",
+                        StateDirectoryMode = "0700",
+                        RuntimeDirectory = "prometheus",
+                        RuntimeDirectoryMode = "0700",
+                        Restart = "always",
+                        PrivateTmp = "true",
+                        ProtectHome = "true",
+                        ProtectSystem = "full",
+                        NoNewPrivileges = "true",
+                        MemoryDenyWriteExecute = "true",
+                        RestrictAddressFamilies = ["AF_INET", "AF_INET6", "AF_UNIX"],
+                        SystemCallArchitectures = "native",
+                      },
+                    },
+                    wanted_by = ["multi-user.target"],
+                  },
+                  firewall.allowed_tcp_ports = [cfg.port],
+                }
+                & (
+                  if tailscale_discovery && has_tailscale then
+                    {
+                      units."tailscalesd.service" = {
+                        sections = {
+                          Unit = {
+                            Description = "Tailscale Service Discovery for Prometheus",
+                            After = "network.target tailscaled.service",
+                          },
+                          Service = {
+                            Type = "simple",
+                            ExecStart = "%{args.packages.tailscalesd}/bin/tailscalesd --localapi --localapi_socket /var/run/tailscale/tailscaled.sock",
+                            User = "prometheus",
+                            Group = "prometheus",
+                            SupplementaryGroups = ["tailscale"],
+                            Restart = "always",
+                            RestartSec = "10",
+                          },
+                        },
+                        wanted_by = ["multi-user.target"],
+                      },
+                    }
+                  else
+                    {}
+                )
+                & (
+                  if cfg.http_probe_targets == [] then
+                    {}
+                  else
+                    {
+                      files."prometheus-blackbox-storage.yaml".text = blackbox_config,
+                      units."prometheus-blackbox-exporter.service" = {
+                        sections = {
+                          Unit = { Description = "Prometheus blackbox exporter", After = "network.target" },
+                          Service = {
+                            Type = "simple",
+                            ExecStart = "%{args.packages.blackbox}/bin/blackbox_exporter --web.listen-address 127.0.0.1:%{std.to_string blackbox_port} --config.file /etc/prometheus-blackbox-storage.yaml",
+                            AmbientCapabilities = "CAP_NET_RAW",
+                            DynamicUser = "true",
+                            Group = "blackbox-exporter",
+                            ExecReload = "/bin/kill -HUP $MAINPID",
+                            Restart = "always",
+                            NoNewPrivileges = "true",
+                            PrivateTmp = "true",
+                            ProtectHome = "true",
+                            ProtectSystem = "strict",
+                          },
+                        },
+                        wanted_by = ["multi-user.target"],
+                      },
+                    }
+                ),
               packages = [args.packages.prometheus],
             },
           },
@@ -374,6 +478,69 @@ fun onix =>
                 networking.firewall.allowedTCPPorts = [cfg.port],
               },
               packages = [args.packages.prometheus],
+              # NixOS's exporter modules render these flags; a host generation
+              # spells the two exporters aspen2 runs out of the same settings.
+              host =
+                {
+                  users = if cfg.exporter_type == 'node then { node-exporter = { group = "node-exporter", description = "Prometheus node exporter service user" } } else {},
+                  groups = if cfg.exporter_type == 'node then { node-exporter = {} } else {},
+                  firewall.allowed_tcp_ports = [cfg.port],
+                  tmpfiles = if cfg.exporter_type == 'node then ["d /var/lib/prometheus-node-exporter-text-files 0775 node-exporter node-exporter -"] else [],
+                }
+                & (
+                  if cfg.exporter_type == 'node then
+                    {
+                      units."prometheus-node-exporter.service" = {
+                        sections = {
+                          Unit = { Description = "Prometheus Node Exporter", After = "network.target" },
+                          Service = {
+                            Type = "simple",
+                            ExecStart =
+                              std.string.join
+                                " "
+                                (
+                                  ["%{args.packages."node-exporter"}/bin/node_exporter"]
+                                  @ std.array.map (fun c => "--collector.%{c}") (["systemd", "textfile", "processes", "mountstats", "meminfo", "loadavg", "filesystem", "cpu", "hwmon", "cpufreq", "powersupplyclass", "rapl"])
+                                  @ [
+                                    "--web.listen-address 0.0.0.0:%{std.to_string cfg.port}",
+                                    "--collector.textfile.directory=/var/lib/prometheus-node-exporter-text-files",
+                                  ]
+                                ),
+                            User = "node-exporter",
+                            Group = "node-exporter",
+                            Restart = "always",
+                            PrivateTmp = "true",
+                            ProtectHome = "true",
+                            ProtectSystem = "strict",
+                            NoNewPrivileges = "true",
+                            MemoryDenyWriteExecute = "true",
+                            RestrictAddressFamilies = ["AF_UNIX", "AF_NETLINK", "AF_INET", "AF_INET6"],
+                          },
+                        },
+                        wanted_by = ["multi-user.target"],
+                      },
+                    }
+                  else
+                    {
+                      units."prometheus-systemd-exporter.service" = {
+                        sections = {
+                          Unit = { Description = "Prometheus Systemd Exporter", After = "network.target" },
+                          Service = {
+                            Type = "simple",
+                            ExecStart = "%{args.packages."systemd-exporter"}/bin/systemd_exporter --web.listen-address 0.0.0.0:%{std.to_string cfg.port}",
+                            DynamicUser = "true",
+                            Group = "systemd-exporter",
+                            Restart = "always",
+                            PrivateTmp = "true",
+                            ProtectHome = "true",
+                            ProtectSystem = "strict",
+                            NoNewPrivileges = "true",
+                          },
+                        },
+                        wanted_by = ["multi-user.target"],
+                      },
+                    }
+                ),
             },
           },
       },

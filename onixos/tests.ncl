@@ -6,6 +6,7 @@ fun onix =>
     import "services/arxiv-corpus.ncl",
     import "services/berkeley-mono-font.ncl",
     import "services/borgbackup.ncl",
+    import "services/docker.ncl",
     import "services/grafana.ncl",
     import "services/home-manager-profiles.ncl",
     import "services/homepage-dashboard.ncl",
