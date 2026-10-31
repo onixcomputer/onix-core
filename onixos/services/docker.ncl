@@ -4,7 +4,7 @@
 # expect. AppArmor and the userns allowance belong to the nixos security port.
 fun onix =>
   let host_impl = fun args =>
-    let p = args.packages in
+    let p = args.package_paths in
     let daemon_config = m%"
       {
         "data-root": "/var/lib/docker",

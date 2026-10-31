@@ -293,7 +293,7 @@ fun onix =>
   let known_hosts_dir = "/run/onixos/ssh_known_hosts.d" in
   let server_host = fun args =>
     let cfg = args.settings in
-    let ssh = args.packages.openssh in
+    let ssh = args.package_paths.openssh in
     let machine = args.machine_name in
     let search_domains = unique ([cfg.domain] @ cfg.certificate.search_domains) in
     let key_lines =

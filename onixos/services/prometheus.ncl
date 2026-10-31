@@ -338,7 +338,7 @@ fun onix =>
                         after = ["network.target", "tailscaled.service"],
                         wantedBy = ["multi-user.target"],
                         # Nickel cannot put the package path into ExecStart.
-                        path = [args.packages.tailscalesd],
+                        path = [args.package_paths.tailscalesd],
                         script = "exec tailscalesd --localapi --localapi_socket /var/run/tailscale/tailscaled.sock",
                         serviceConfig = {
                           Restart = "always",
@@ -384,7 +384,7 @@ fun onix =>
                           std.string.join
                             " "
                             [
-                              "%{args.packages.prometheus}/bin/prometheus",
+                              "%{args.package_paths.prometheus}/bin/prometheus",
                               "--config.file=/etc/prometheus/prometheus.yml",
                               "--web.listen-address=0.0.0.0:%{std.to_string cfg.port}",
                               "--storage.tsdb.path=/var/lib/prometheus2/data/",
@@ -422,7 +422,7 @@ fun onix =>
                           },
                           Service = {
                             Type = "simple",
-                            ExecStart = "%{args.packages.tailscalesd}/bin/tailscalesd --localapi --localapi_socket /var/run/tailscale/tailscaled.sock",
+                            ExecStart = "%{args.package_paths.tailscalesd}/bin/tailscalesd --localapi --localapi_socket /var/run/tailscale/tailscaled.sock",
                             User = "prometheus",
                             Group = "prometheus",
                             SupplementaryGroups = ["tailscale"],
@@ -447,7 +447,7 @@ fun onix =>
                           Unit = { Description = "Prometheus blackbox exporter", After = "network.target" },
                           Service = {
                             Type = "simple",
-                            ExecStart = "%{args.packages.blackbox}/bin/blackbox_exporter --web.listen-address 127.0.0.1:%{std.to_string blackbox_port} --config.file /etc/prometheus-blackbox-storage.yaml",
+                            ExecStart = "%{args.package_paths.blackbox}/bin/blackbox_exporter --web.listen-address 127.0.0.1:%{std.to_string blackbox_port} --config.file /etc/prometheus-blackbox-storage.yaml",
                             AmbientCapabilities = "CAP_NET_RAW",
                             DynamicUser = "true",
                             Group = "blackbox-exporter",
@@ -499,7 +499,7 @@ fun onix =>
                               std.string.join
                                 " "
                                 (
-                                  ["%{args.packages."node-exporter"}/bin/node_exporter"]
+                                  ["%{args.package_paths."node-exporter"}/bin/node_exporter"]
                                   @ std.array.map (fun c => "--collector.%{c}") (["systemd", "textfile", "processes", "mountstats", "meminfo", "loadavg", "filesystem", "cpu", "hwmon", "cpufreq", "powersupplyclass", "rapl"])
                                   @ [
                                     "--web.listen-address 0.0.0.0:%{std.to_string cfg.port}",
@@ -527,7 +527,7 @@ fun onix =>
                           Unit = { Description = "Prometheus Systemd Exporter", After = "network.target" },
                           Service = {
                             Type = "simple",
-                            ExecStart = "%{args.packages."systemd-exporter"}/bin/systemd_exporter --web.listen-address 0.0.0.0:%{std.to_string cfg.port}",
+                            ExecStart = "%{args.package_paths."systemd-exporter"}/bin/systemd_exporter --web.listen-address 0.0.0.0:%{std.to_string cfg.port}",
                             DynamicUser = "true",
                             Group = "systemd-exporter",
                             Restart = "always",

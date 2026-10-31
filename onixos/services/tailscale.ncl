@@ -129,11 +129,11 @@ fun onix =>
           description = "Sync Tailscale hostnames to /etc/hosts",
           after = ["tailscaled.service"],
           path = [
-            args.packages.tailscale,
-            args.packages.jq,
-            args.packages.gnused,
-            args.packages.coreutils,
-            args.packages.gnugrep,
+            args.package_paths.tailscale,
+            args.package_paths.jq,
+            args.package_paths.gnused,
+            args.package_paths.coreutils,
+            args.package_paths.gnugrep,
           ],
           enableStrictShellChecks = true,
           script = host_sync_script,
@@ -192,7 +192,7 @@ fun onix =>
         "%
         ++ "\n"
       in
-      let tool_path = std.string.join ":" (std.array.map (fun p => "%{p}/bin") [args.packages.tailscale, args.packages.jq, args.packages.gnused, args.packages.coreutils, args.packages.gnugrep]) in
+      let tool_path = std.string.join ":" (std.array.map (fun p => "%{p}/bin") [args.package_paths.tailscale, args.package_paths.jq, args.package_paths.gnused, args.package_paths.coreutils, args.package_paths.gnugrep]) in
       let host_sync_host = {
         units."tailscale-host-sync.service" = {
           sections = {
@@ -218,7 +218,7 @@ fun onix =>
           {}
         else
           {
-            package_units = [{ package = args.packages.tailscale, units = ["tailscaled.service"] }],
+            package_units = [{ package = args.package_paths.tailscale, units = ["tailscaled.service"] }],
             wants."multi-user.target" = ["tailscaled.service"],
             dropins."tailscaled.service"."onixos.conf" =
               m%"
@@ -246,7 +246,7 @@ fun onix =>
             # useRoutingFeatures = both.
             sysctl = { "net.ipv4.conf.all.forwarding" = "1", "net.ipv6.conf.all.forwarding" = "1" },
             firewall = { trusted_interfaces = ["tailscale0"], allowed_udp_ports = [tailscale_udp_port], reverse_path = "loose" },
-            packages = [args.packages.tailscale],
+            packages = [args.package_paths.tailscale],
           }
           & (if cfg.enable_host_aliases then host_sync_host else {})
       in

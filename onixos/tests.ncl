@@ -11,6 +11,7 @@ fun onix =>
     import "services/home-manager-profiles.ncl",
     import "services/homepage-dashboard.ncl",
     import "services/host-common.ncl",
+    import "services/host-extra.ncl",
     import "services/laya.ncl",
     import "services/loki.ncl",
     import "services/mesh-llm.ncl",

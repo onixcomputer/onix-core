@@ -102,6 +102,7 @@ fun onix =>
     impl = fun args =>
       let cfg = args.settings in
       let grafana_package = args.packages.onix-core-grafana in
+      let grafana_path = args.package_paths."onix-core-grafana" in
       let prometheus_datasource = {
         name = "Prometheus",
         type = "prometheus",
@@ -209,8 +210,8 @@ fun onix =>
                     },
                     Service = {
                       Type = "simple",
-                      ExecStart = "%{grafana_package}/bin/grafana server -homepath /var/lib/grafana -config /etc/grafana.ini",
-                      ExecStartPre = "/bin/ln -fs %{grafana_package}/share/grafana/conf /var/lib/grafana",
+                      ExecStart = "%{grafana_path}/bin/grafana server -homepath /var/lib/grafana -config /etc/grafana.ini",
+                      ExecStartPre = "/bin/ln -fs %{grafana_path}/share/grafana/conf /var/lib/grafana",
                       User = "grafana",
                       Group = "grafana",
                       WorkingDirectory = "/var/lib/grafana",

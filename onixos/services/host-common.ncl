@@ -19,7 +19,7 @@ fun onix =>
   in
   let locale_vars = ["LC_ADDRESS", "LC_IDENTIFICATION", "LC_MEASUREMENT", "LC_MONETARY", "LC_NAME", "LC_NUMERIC", "LC_PAPER", "LC_TELEPHONE", "LC_TIME"] in
   let host_impl = fun args =>
-    let p = args.packages in
+    let p = args.package_paths in
     let cfg = args.settings in
     let nss_path = "%{p.systemd}/lib:%{p."nss-mdns"}/lib" in
     {

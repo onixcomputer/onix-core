@@ -173,7 +173,7 @@ fun onix =>
                 Unit = { Description = "Loki Service Daemon", After = "network-online.target", Wants = "network-online.target" },
                 Service = {
                   Type = "simple",
-                  ExecStart = "%{args.packages.loki}/bin/loki --config.file=/etc/loki/loki.yaml",
+                  ExecStart = "%{args.package_paths.loki}/bin/loki --config.file=/etc/loki/loki.yaml",
                   User = "loki",
                   Group = "loki",
                   WorkingDirectory = "/var/lib/loki",
@@ -199,7 +199,7 @@ fun onix =>
                     Unit = { Description = "Grafana Alloy", After = "network.target" },
                     Service = {
                       Type = "simple",
-                      ExecStart = "%{args.packages.grafana-alloy}/bin/alloy run /etc/alloy",
+                      ExecStart = "%{args.package_paths.grafana-alloy}/bin/alloy run /etc/alloy",
                       ExecReload = "/bin/kill -SIGHUP $MAINPID",
                       DynamicUser = "true",
                       ConfigurationDirectory = "alloy",
