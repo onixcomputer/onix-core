@@ -547,5 +547,78 @@
         "After a test activation, safe-mode onix deploy reports 'already deployed' without persisting (run_safe_mode_deploy_with_metadata checks is_already_deployed regardless of --force-activate)."
       ]
     }
+  },
+  "mantle": {
+    "date": "2026-10-30",
+    "scope": "Build of aspen2's typed services with the Mantle backend and a deploy dry-run, on aspen3, with no host contact. Not a deploy: for a NixOS host the artifact's activate, status and persist entrypoints only run `test -f system/payload-manifest.json`, and rollback is `true`.",
+    "onixosRevision": "9addcea46aa6de9f5fd9ca5c5aaa080cd546a21c",
+    "onixosFix": "OnixOS fix(mantle) 9addcea4: the Mantle impl wrapper passes placement_facts (new library function placement_facts, also used by the Nix shim), binds the instance record under a distinct name instead of `instance = instance`, and keys package handles by the last segment of their attribute path, as the Nix shim does. Change package .cairn/changes/mantle-impl-args-match-nix-shim in OnixOS.",
+    "nixPrograms": "nix, nix-store, nix-build, nix-instantiate, nix-env, nix-shell, nix-copy-closure, nix-daemon and nix-collect-garbage were replaced by stubs first on PATH that log each call and exit 127. The unwrapped onix-cli was used, because the packaged onix wrapper puts Nix first on PATH.",
+    "beforeFix": {
+      "cli": "OnixOS 2d23df26 packaged onix",
+      "units": 24,
+      "evaluated": 20,
+      "failures": {
+        "prometheus/server/monitoring": "missing definition for placement_facts",
+        "nix-build-farm/node/nix-build-farm": "missing definition for placement_facts",
+        "openssh-keys/client/sshd-keys": "missing definition for placement_facts",
+        "mesh-llm/default/mesh-llm-private-inference": "missing field lib (Mantle nested stdenv.cc.cc.lib)",
+        "prometheus/server/monitoring, once placement facts were passed": "infinite recursion at the wrapper's `instance = instance` (prometheus reads args.instance.service)"
+      },
+      "nixCalls": 0
+    },
+    "afterFix": {
+      "cli": "/nix/store/7qp5gjb85fp8p8skkx92h3d60lpkrbv8-onix-0.1.0-alpha.1 (onix-cli at 9addcea4, built by Nix)",
+      "tools": {
+        "mantle": "/nix/store/5nw6xq9xjc4anc0qjnzibndx22gpgxqv-mantle, the OnixOS flake's pinned Mantle 50120c1d with nix/patches/mantle-materialized-input-modes.patch, wrapping /nix/store/4nzzw8m07clbks9nnrflq0857n44h04w-mantle-0.1.0",
+        "sandbox": "bubblewrap 0.11.0 and static BusyBox 1.37.0 from the same wrapper; copies of that BusyBox as busybox (ONIX_MANTLE_BUILD_BUSYBOX) and sh (ONIX_MANTLE_BUILD_SHELL)",
+        "note": "The tools are Nix-built store paths named on the command line; the Mantle commands themselves ran no Nix program. Nix-command-free, not Nix-free."
+      },
+      "lowering": {
+        "units": 24,
+        "evaluated": 24,
+        "nixCalls": 0
+      },
+      "plan": {
+        "status": "planned",
+        "schema": "crunch-build-plan-v1",
+        "reportHash": "d443a93761b815d4b7c9f1ac15b57831c0dbd44543f09ba0707d761419e6611a",
+        "capability": "mantle-build-nixos-privileges-provider-expansion-supported",
+        "nixCalls": 0
+      },
+      "build": {
+        "status": "built",
+        "artifactRef": "mantle://blake3/98d93a3e62bc8af20ee0d13145612b64d5b15b54fc64abaf443db3c6e45d0b7d",
+        "descriptorHash": "ae0197ab49a50b2042df7ec078672cfd71c29dcd62e975ac7c62c84fc2da45da",
+        "buildReportHash": "8ddbb060afc0cfb29275ecf10392008d91b2c891d30607976fb016db36582422",
+        "buildReportSchema": "crunch-build-report-v1",
+        "deployabilityKind": "mantle-onix-activation-closure",
+        "runtimeSupportScope": "supported-runtime",
+        "units": 24,
+        "content": "17 files, 202,957 bytes: bin/onix-{activate,status,persist,rollback} and system/*.json manifests of the units, providers, packages, files, artifacts and their wiring",
+        "reproducible": "A cargo build of the same source produced the same artifact reference and descriptor hash.",
+        "nixCalls": 0
+      },
+      "deployDryRun": {
+        "result": "deployability proof accepted; would export the artifact and copy it to /tmp/onix-mantle-artifacts/aspen2 on the target",
+        "nixCalls": 0
+      }
+    },
+    "activation": "activation-commands.env: ONIX_MANTLE_ACTIVATE_CMD, ONIX_MANTLE_STATUS_CMD and ONIX_MANTLE_PERSIST_CMD are `test -f \"$ONIX_ARTIFACT_ROOT/system/payload-manifest.json\"`; ONIX_MANTLE_ROLLBACK_CMD is `true`.",
+    "notInArtifact": [
+      "kernel, boot, disko and hardware configuration",
+      "Home Manager",
+      "the .nix sidecars (grafana, niks3, nix-build-farm, sshd, home-manager-profiles, nix-gc)",
+      "the Clan machine modules in onixos/nix/machines.nix",
+      "materialized packages: packages.json holds __onix_package references only"
+    ],
+    "check": "onix check --backend mantle reports the same 24 C012 provider-first findings as the Nix backend.",
+    "deploy": "not run, by decision: a real Mantle deploy would change nothing on aspen2 and would replace /run/onix-deploy-status.json with a record of the Mantle artifact",
+    "nixBackendUnchanged": "From onix-core 2180aab2, aspen2's OnixOS toplevel with onix-modules overridden to OnixOS main 893422fd and to the fix 9addcea4 is one derivation (drl5c60m…). Against the locked 2d23df26 (mbdfm1jr…) it differs only in nixos-version, because --override-input leaves configurationRevision unset. The fix and the two OnixOS commits before it do not change aspen2's Nix-backend system.",
+    "onixosLanding": {
+      "main": "OnixOS main fast-forwarded from 893422fd to 0221b388 without force on 2026-10-31: 9addcea4 (the fix), 0492113d (removes the dangling traceability reference bpf_observation_endpoint.authorization that 893422fd introduced) and 0221b388 (gate record).",
+      "gate": "Full flake gate in a private store on the USB4 drive, every build on leviathan: 298 of 300 at 9addcea4, where cairn-release-readiness and cairn-prerelease-readiness failed as they did at 893422fd, on the one dangling reference. Reruns against the same store passed 300 of 300 at 0492113d and at 0221b388.",
+      "leakScan": "gitleaks 8.30.1 over 893422fd..0221b388: 3 commits, no leaks."
+    }
   }
 }

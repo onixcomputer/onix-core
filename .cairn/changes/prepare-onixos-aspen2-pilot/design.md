@@ -42,6 +42,10 @@ Two OnixOS defects blocked the pilot: identical shared artifact declarations fro
 
 `onix deploy --backend nix` builds `.#nixosConfigurations.<machine>.config.system.build.toplevel`, so a machine's cutover points that attribute at `onixos.nixosConfigurations.<machine>`. `cutOverMachines` in `flake-outputs/onixos.nix` lists the cut-over machines; `clan.nixosConfigurations` keeps Clan's build for parity and rollback. Checks that read a cut-over machine's configuration then see its OnixOS build, so the mesh-llm check reads the launch command, plugin configuration and invites from either build. The runbook (`docs/onixos-aspen2-pilot.md`) describes the steps.
 
+### Decision: Mantle builds aspen2's services but does not deploy them
+
+The operator asked to do the cutover with Mantle only. OnixOS's Mantle backend lowers typed service outputs into a `mantle-onix-activation-closure` artifact, but for a NixOS host its activate, status and persist entrypoints only check that the payload manifest exists. Mantle builds whole systems only as OnixOS VMs, which `onix deploy` refuses, and physical installs still use Nix. Kernel, boot, hardware, Home Manager, the `.nix` sidecars and the Clan machine modules have no Mantle path. The operator chose to build aspen2 with Mantle and stop at the deploy dry-run. That needed an OnixOS fix: the Mantle wrapper passed no placement facts, bound `instance = instance` and keyed dotted packages differently from the Nix shim (OnixOS `9addcea4`). With the fix, all 24 typed units lower, the build succeeds with Nix programs stubbed and never called, and the dry run accepts the proof. aspen2 keeps its Nix-backend generation.
+
 ## Risks / Trade-offs
 
 - Secret paths change, so every unit that names a secret restarts on the first OnixOS activation, including sshd and nix-daemon. The cutover activates with `--action test` first, which a reboot undoes; a service that binds the Tailscale address can fail once while tailscaled restarts and comes back through its restart policy.

@@ -57,3 +57,21 @@ r[onix.onixos_migration.cutover] A ported machine MUST NOT be deployed from its 
 - GIVEN the OnixOS inventory
 - WHEN `onix deploy --dry-run aspen2` runs
 - THEN it prints the build, copy and activation plan without contacting aspen2
+
+### Requirement: Mantle build without deploy
+
+r[onix.onixos_migration.mantle_build] The ported machine's typed services MUST build with the Mantle backend without running a Nix program, and the resulting artifact MUST pass a Mantle deploy dry-run. The artifact MUST NOT be deployed to the machine while its activation entrypoints do not apply the services.
+
+#### Scenario: Mantle build with Nix programs stubbed
+
+- GIVEN Nix programs replaced on `PATH` by stubs that log each call and fail
+- WHEN `onix build --backend mantle aspen2` runs with the unwrapped `onix-cli`
+- THEN the build reports `built` with one `mantle-onix-activation-closure` artifact covering all 24 typed units
+- AND no stub was called
+
+#### Scenario: Deploy dry-run accepts the proof
+
+- GIVEN that build report
+- WHEN `onix deploy --dry-run --backend mantle --mantle-build-report <report> aspen2` runs
+- THEN it accepts the deployability proof without contacting aspen2
+- AND the runbook records that the artifact's activation only checks its payload manifest

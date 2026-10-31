@@ -118,8 +118,29 @@ nix-env -p /nix/var/nix/profiles/system --rollback
 
 Then remove aspen2 from `cutOverMachines` and deploy it through Clan again. Clan's secret paths come back with Clan's sops manifest.
 
+## Mantle build
+
+aspen2's typed services also build with Mantle, OnixOS's default backend, without running a Nix command. The result is not deployable in effect, so aspen2 stays on its Nix-backend generation. For a NixOS host, a Mantle deploy copies the artifact to `/tmp/onix-mantle-artifacts/aspen2/<hash>` and runs its entrypoints. Activate, status and persist only run `test -f system/payload-manifest.json`, and rollback is `true`. The system would not change, but `/run/onix-deploy-status.json` would then describe the Mantle artifact instead of the running generation.
+
+The artifact holds manifests of the 24 lowered units of aspen2's typed services: units, providers, packages, files, artifacts and their wiring. Package references are not materialized. Kernel, boot, disko, hardware, Home Manager, the `.nix` sidecars and the Clan machine modules in `onixos/nix/machines.nix` have no Mantle path.
+
+It needs an OnixOS checkout at `main` `0221b388` or later for `--lib` and the CLI. From fix `9addcea4` on, Mantle passes services the same placement facts, instance record and last-segment package handles as the Nix shim. The `onix-modules` lock (`2d23df26`) does not matter here: the Mantle build reads the library through `--lib`. Use the flake's pinned Mantle (`nix build <onixos>#mantle`, which brings bubblewrap and a static BusyBox) and two copies of that BusyBox: `busybox` alone in its directory, and `sh`. Run the unwrapped `onix-cli` package: the packaged `onix` wrapper puts Nix first on `PATH`.
+
+```console
+export PATH=<mantle>/bin:$PATH
+export ONIX_MANTLE_BUILD_BUSYBOX=/path/busybox/busybox ONIX_MANTLE_BUILD_SHELL=/path/sh/sh
+export ONIX_MANTLE_BUILD_STORE_DIR=/path/mantle-store
+onix build --backend mantle --json --inventory onixos/inventory.ncl --lib <onixos>/lib \
+  --services <onixos>/modules --services onixos/services aspen2 > build.json
+onix deploy --dry-run --backend mantle --mantle-build-report build.json \
+  --inventory onixos/inventory.ncl --lib <onixos>/lib aspen2
+```
+
+Never drop `--dry-run` for aspen2. `parity-evidence.json` (`mantle`) records a run with Nix programs replaced by logging stubs: zero calls, and the dry run accepted the proof.
+
 ## Gaps
 
+- Mantle builds only aspen2's typed services, and a Mantle deploy to a NixOS host does not activate them ([Mantle build](#mantle-build)). Moving aspen2 off Nix needs Mantle activation for NixOS hosts in OnixOS, or a Mantle-built system for the rest of the machine.
 - `onix check onixos/inventory.ncl --services onixos/services` reports 24 C012 findings: raw `networking.firewall`, `users`, `systemd.timers` and `systemd.tmpfiles` leaves where OnixOS wants typed providers. The providers cannot express what Clan configures: interface-scoped firewall ports (`tailscale0` for arxiv-corpus, laya and the build farm), relative timers (`OnBootSec`/`OnUnitActiveSec`), recursive ownership (`Z`) rules, root's authorized keys, extra groups of an existing service user, or a password hash wired from a secret. Converting the expressible subset would still leave the check failing.
 - OnixOS cannot keep generated but undeployed secrets, upload activation-time secrets, or order generators by their dependencies, and its prompts have no hidden or persist flags. Regenerating the `deploy = false`, activation and prompted secrets still needs Clan.
 - `system.stateVersion` still comes from `vars/per-machine/<machine>/state-version`.
