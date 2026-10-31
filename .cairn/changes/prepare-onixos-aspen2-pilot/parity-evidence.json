@@ -596,8 +596,8 @@
         "runtimeSupportScope": "supported-runtime",
         "units": 24,
         "content": "17 files, 202,957 bytes: bin/onix-{activate,status,persist,rollback} and system/*.json manifests of the units, providers, packages, files, artifacts and their wiring",
-        "reproducible": "A cargo build of the same source produced the same artifact reference and descriptor hash.",
-        "nixCalls": 0
+        "nixCalls": 0,
+        "secondRun": "A second run with the Nix-built onix-cli at 9addcea4 reported the same descriptor hash and artifact reference. It shared the first run's Mantle output store (ONIX_MANTLE_BUILD_STORE_DIR) and crunch state, so it may have reused the first build: the descriptor hash is a fresh result, but the artifact's reproducibility is not shown."
       },
       "deployDryRun": {
         "result": "deployability proof accepted; would export the artifact and copy it to /tmp/onix-mantle-artifacts/aspen2 on the target",
