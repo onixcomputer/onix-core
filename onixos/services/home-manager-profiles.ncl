@@ -36,7 +36,7 @@ fun onix =>
           },
         ],
       },
-      packages = ["home-manager-activation"],
+      host_packages = ["home-manager-activation"],
       roles.default = {
         username
           | doc "User the profiles apply to (home-manager.users.<username>). Required."
