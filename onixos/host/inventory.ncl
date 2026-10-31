@@ -30,6 +30,43 @@ fun onix =>
         definition
     )
   in
+  # This inventory declares one machine: a role that also names other machines is
+  # narrowed to aspen2, and one that names none of them is dropped. Tags stay, so
+  # tag-placed roles still reach aspen2.
+  let only_aspen2 = fun instances =>
+    instances
+    |> std.record.map (fun _instance definition =>
+      let roles =
+        definition.roles
+        |> std.record.map (fun _role placement =>
+          if !(std.record.has_field "machines" placement) then
+            placement
+          else if std.typeof placement.machines == 'Record then
+            let machines =
+              placement.machines
+              |> std.record.fields
+              |> std.array.filter (fun machine => machine == "aspen2")
+              |> std.array.map (fun machine => { field = machine, value = placement.machines."%{machine}" })
+              |> std.record.from_array
+            in
+            if machines == {} then
+              std.record.remove "machines" placement
+            else
+              std.record.update "machines" machines placement
+          else
+            let machines = placement.machines |> std.array.filter (fun machine => machine == "aspen2") in
+            if machines == [] then
+              std.record.remove "machines" placement
+            else
+              std.record.update "machines" machines placement
+        )
+        |> std.record.filter (fun _role placement =>
+          std.record.has_field "machines" placement || std.record.has_field "tags" placement
+        )
+      in
+      std.record.update "roles" roles definition
+    )
+  in
   # inventory/tags/common/shared-users.nix: brittonr's uid, group, shell and keys (the
   # nix-builder keys it also collects belong to the dropped build role).
   let brittonr = {
@@ -75,18 +112,18 @@ fun onix =>
           & (import "../instances/sshd.ncl")
           & (import "../instances/tailscale.ncl")
         )
-        # The services aspen2 keeps select it themselves, by tag or by name, from
-        # the same instance files the NixOS inventory uses.
-        & (import "../instances/arxiv-corpus.ncl")
-        & (import "../instances/berkeley-mono-font.ncl")
-        & (import "../instances/borgbackup.ncl")
-        & (import "../instances/grafana.ncl")
-        & (import "../instances/home-manager-profiles.ncl")
-        & (import "../instances/homepage-dashboard.ncl")
-        & (import "../instances/laya.ncl")
-        & (import "../instances/loki.ncl")
-        & (import "../instances/mesh-llm.ncl")
-        & (import "../instances/prometheus.ncl")
+        & only_aspen2 (
+          (import "../instances/arxiv-corpus.ncl")
+          & (import "../instances/berkeley-mono-font.ncl")
+          & (import "../instances/borgbackup.ncl")
+          & (import "../instances/grafana.ncl")
+          & (import "../instances/home-manager-profiles.ncl")
+          & (import "../instances/homepage-dashboard.ncl")
+          & (import "../instances/laya.ncl")
+          & (import "../instances/loki.ncl")
+          & (import "../instances/mesh-llm.ncl")
+          & (import "../instances/prometheus.ncl")
+        )
         & { user-brittonr.roles.default.settings = brittonr }
         & (import "instances.ncl"),
   }
