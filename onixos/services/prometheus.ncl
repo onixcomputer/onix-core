@@ -372,7 +372,8 @@ fun onix =>
                   users.prometheus = { group = "prometheus", description = "Prometheus daemon user" },
                   groups.prometheus = {},
                   files = {
-                    "prometheus/prometheus.yml".text = std.serialize 'Yaml prom_config,
+                    # JSON is YAML 1.2, so Prometheus reads this as its config.
+                    "prometheus/prometheus.yml".text = std.serialize 'Json prom_config,
                     "prometheus/rules.yml".text = (std.string.join "\n" cfg.rules) ++ "\n",
                   },
                   units."prometheus.service" = {
