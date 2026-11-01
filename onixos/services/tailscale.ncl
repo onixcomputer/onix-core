@@ -200,7 +200,9 @@ fun onix =>
             Service = {
               Type = "oneshot",
               Environment = "PATH=%{tool_path}",
-              ExecStart = "/run/current-system/sw/bin/bash -euo pipefail /etc/tailscale/host-sync.sh",
+              # NixOS runs this script without errexit: it exits 0 itself when the
+              # node has no peers yet, which errexit would turn into a failure.
+              ExecStart = "/run/current-system/sw/bin/bash /etc/tailscale/host-sync.sh",
             },
           },
         },
