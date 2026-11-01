@@ -156,6 +156,10 @@ fun onix =>
         },
         wants = {
           "multi-user.target" = ["NetworkManager.service", "NetworkManager-dispatcher.service", "irqbalance.service"],
+          # NixOS.s NetworkManager-wait-online.enable, which is what makes
+          # network-online.target mean something on a NetworkManager machine;
+          # services ordered after it otherwise wait on a target nothing brings up.
+          "network-online.target" = ["NetworkManager-wait-online.service"],
         },
         dbus_packages = [p.avahi, p.networkmanager],
         # avahi daemonises into its runtime directory as the avahi user before it
