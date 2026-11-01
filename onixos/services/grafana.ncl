@@ -210,8 +210,10 @@ fun onix =>
                     },
                     Service = {
                       Type = "simple",
-                      ExecStart = "%{grafana_path}/bin/grafana server -homepath /var/lib/grafana -config /etc/grafana.ini",
-                      ExecStartPre = "%{args.package_paths.coreutils}/bin/ln -fs %{grafana_path}/share/grafana/conf /var/lib/grafana",
+                      # No -homepath: Grafana's own homepath is the package's
+                      # share/grafana, where its email templates and public assets
+                      # live; pointing it at /var/lib/grafana matched no templates.
+                      ExecStart = "%{grafana_path}/bin/grafana server -config /etc/grafana.ini",
                       User = "grafana",
                       Group = "grafana",
                       WorkingDirectory = "/var/lib/grafana",
