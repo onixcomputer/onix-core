@@ -27,7 +27,7 @@ fun onix =>
           },
         ],
       },
-      packages = ["homepage-dashboard"],
+      packages = ["homepage-dashboard", "coreutils"],
       roles.server = {
         enable
           | doc "Run the homepage dashboard."
@@ -113,12 +113,17 @@ fun onix =>
                 Service = {
                   Type = "simple",
                   ExecStart = "%{args.package_paths."homepage-dashboard"}/bin/homepage",
+                  # Homepage copies its skeleton configuration into the config
+                  # directory on first start, so that directory has to be
+                  # writable: the read-only /etc files are seeded into the state
+                  # directory before it runs.
+                  ExecStartPre = "+%{args.package_paths.coreutils}/bin/sh -c 'mkdir -p /var/lib/homepage-dashboard/config && cp -n /etc/homepage-dashboard/*.yaml /var/lib/homepage-dashboard/config/ 2>/dev/null || true'",
                   User = "homepage-dashboard",
                   Group = "homepage-dashboard",
                   StateDirectory = "homepage-dashboard",
                   Environment = [
                     "HOMEPAGE_ALLOWED_HOSTS=%{cfg.allowed_hosts}",
-                    "HOMEPAGE_CONFIG_DIR=/etc/homepage-dashboard",
+                    "HOMEPAGE_CONFIG_DIR=/var/lib/homepage-dashboard/config",
                     "HOME=/var/lib/homepage-dashboard",
                     "LOG_TARGETS=stdout",
                     "NIXPKGS_HOMEPAGE_CACHE_DIR=/var/cache/homepage-dashboard",
