@@ -79,36 +79,28 @@ fun onix =>
         # home-manager-activation); a host generation runs it once per user at
         # boot, before user sessions start, as Home Manager's NixOS module does.
         output.host = {
-          # The activation package ends by realising its generation and adding GC
-          # roots with `nix-store --realise … --add-root …`. A systemd host has no
-          # Nix daemon and a read-only store, so the store cannot record validity;
-          # the two operations reduce to "the path is in the store" and "link the
-          # root", which this shim does.
-          files."onixos/bin/nix-store" = {
+          # Home Manager's activate opens the Nix store at two points to realise
+          # its generation and add GC roots. A systemd host has no daemon and a
+          # read-only store, so those two commands cannot run; every other step of
+          # Home Manager's activation is unchanged. The unit therefore runs a copy
+          # of activate with just those commands replaced by `true`, keeping
+          # `--add-root`'s link creation out of the store it cannot write.
+          files."onixos/home-manager-activate.sh" = {
             mode = "0755",
             text = m%"
               #!%{args.package_paths.bash}/bin/bash
+              # Run Home Manager's activation package without its two Nix store
+              # realisations: on this host the store is read-only and there is no
+              # daemon to realise against. Everything else is Home Manager's own
+              # script, executed unchanged.
               set -euo pipefail
-              path=""
-              root=""
-              while [ $# -gt 0 ]; do
-                case "$1" in
-                  --realise) path="$2"; shift 2 ;;
-                  --add-root) root="$2"; shift 2 ;;
-                  *) shift ;;
-                esac
-              done
-              if [ -n "$path" ]; then
-                if [ ! -e "$path" ]; then
-                  echo "nix-store: $path is not in the store" >&2
-                  exit 1
-                fi
-                if [ -n "$root" ]; then
-                  mkdir -p "$(dirname "$root")"
-                  ln -sfn "$path" "$root"
-                fi
-                printf '%s\n' "$path"
-              fi
+              package="$1"
+              user="$2"
+              out="/run/onixos/home-manager-$user.sh"
+              mkdir -p /run/onixos
+              sed -e 's|nix-store --realise|true # nix-store --realise|g' "$package/activate" > "$out"
+              chmod 0755 "$out"
+              exec %{args.package_paths.bash}/bin/bash "$out"
             "%,
           },
           units."home-manager-%{user_name}.service" = {
@@ -121,12 +113,8 @@ fun onix =>
               Service = {
                 Type = "oneshot",
                 User = user_name,
-                Environment = [
-                  "HOME=/home/%{user_name}",
-                  "HOME_MANAGER_BACKUP_EXT=hm-bak",
-                  "PATH=/etc/onixos/bin:/run/current-system/sw/bin:/usr/bin:/bin",
-                ],
-                ExecStart = "%{args.package_paths."home-manager-activation"}/activate",
+                Environment = ["HOME=/home/%{user_name}", "HOME_MANAGER_BACKUP_EXT=hm-bak"],
+                ExecStart = "/etc/onixos/home-manager-activate.sh %{args.package_paths."home-manager-activation"} %{user_name}",
                 RemainAfterExit = "yes",
               },
             },
