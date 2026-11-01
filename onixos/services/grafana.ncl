@@ -215,7 +215,7 @@ fun onix =>
                       # links are needed, because public carries the email templates.
                       # Replaced, not linked into: after one boot the targets exist and
                       # `ln -fs` would write a link inside them.
-                      ExecStartPre = "%{args.package_paths.bash}/bin/bash -c 'rm -rf /var/lib/grafana/conf /var/lib/grafana/public && %{args.package_paths.coreutils}/bin/ln -s %{grafana_path}/share/grafana/conf /var/lib/grafana/conf && %{args.package_paths.coreutils}/bin/ln -s %{grafana_path}/share/grafana/public /var/lib/grafana/public'",
+                      ExecStartPre = "%{args.package_paths.bash}/bin/bash -c '%{args.package_paths.coreutils}/bin/rm -rf /var/lib/grafana/conf /var/lib/grafana/public && %{args.package_paths.coreutils}/bin/ln -s %{grafana_path}/share/grafana/conf /var/lib/grafana/conf && %{args.package_paths.coreutils}/bin/ln -s %{grafana_path}/share/grafana/public /var/lib/grafana/public'",
                       ExecStart = "%{grafana_path}/bin/grafana server -homepath /var/lib/grafana -config /etc/grafana.ini",
                       User = "grafana",
                       Group = "grafana",
