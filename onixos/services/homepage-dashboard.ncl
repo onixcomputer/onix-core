@@ -119,6 +119,7 @@ fun onix =>
                   Environment = [
                     "HOMEPAGE_ALLOWED_HOSTS=%{cfg.allowed_hosts}",
                     "HOMEPAGE_CONFIG_DIR=/etc/homepage-dashboard",
+                    "HOME=/var/lib/homepage-dashboard",
                     "LOG_TARGETS=stdout",
                     "NIXPKGS_HOMEPAGE_CACHE_DIR=/var/cache/homepage-dashboard",
                   ],
