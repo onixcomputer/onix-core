@@ -62,7 +62,7 @@
     "onix-core-grafana": "/nix/store/3cd69s50p6pb3h3qfh0b7sz891ql5r2f-grafana-13.2.4-with-email-templates",
     "openssh": "/nix/store/cy1kp9s0vklml5di3hddw0x4k38bixv6-openssh-10.6p1",
     "podman-tui": "/nix/store/ypkibjyz9csk29hscghy5ycqfkxr0yhg-podman-tui-1.11.3",
-    "polkit": "/nix/store/gd3n664bzcdsrxszf5mzv149368xbmh3-polkit-127-bin",
+    "polkit": "/nix/store/4wlkigblynk0szrhxyvqbr8w2fiyk1ii-polkit-127",
     "procps": "/nix/store/y733samykhd49crbck70qzsl315zq3hw-procps-4.0.7",
     "prometheus": "/nix/store/mjbxjhas7z2ancmadn4f5k3n6ymlqhpn-prometheus-3.15.0",
     "scx": "/nix/store/4v8cb25mpr9qs8wsyx09ig07q4b81i1m-scx_full-1.1.4",

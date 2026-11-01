@@ -58,7 +58,11 @@ fun onix =>
                 NoNewPrivileges = "true",
                 PrivateTmp = "true",
                 ProtectHome = "read-only",
-                ProtectSystem = "strict",
+                # nsncd writes its pid and cache outside /run; keep /usr, /boot and
+                # /efi read-only but leave /var writable, its own directories owned.
+                ProtectSystem = "full",
+                StateDirectory = "nscd",
+                CacheDirectory = "nscd",
                 RemoveIPC = "true",
                 Restart = "always",
                 RestrictSUIDSGID = "true",
