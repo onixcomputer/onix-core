@@ -46,6 +46,14 @@ let
     scx = pkgs.scx.full;
     borgbackup = pkgs.borgbackup;
     home-manager-activation = cfg.home-manager.users.brittonr.home.activationPackage;
+    # onix-core's own packages (the onixpkgs overlay), and the gcc lib output the
+    # mesh-llm start script puts on LD_LIBRARY_PATH.
+    "arxiv-corpus" = pkgs.arxiv-corpus;
+    laya = pkgs.laya;
+    "mesh-llm" = pkgs.mesh-llm;
+    "mesh-research" = pkgs.mesh-research;
+    lib = pkgs.stdenv.cc.cc.lib;
+    curl = pkgs.curl;
     polkit = pkgs.polkit;
     modemmanager = pkgs.modemmanager;
     logrotate = pkgs.logrotate;
