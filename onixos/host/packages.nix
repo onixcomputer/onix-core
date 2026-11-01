@@ -45,6 +45,9 @@ let
     "kernel-modules" = kernelPackages.kernel.modules;
     scx = pkgs.scx.full;
     borgbackup = pkgs.borgbackup;
+    "linux-firmware" = pkgs.linux-firmware;
+    "amd-ucode" = pkgs.amd-ucode;
+    "music-assistant" = pkgs.music-assistant;
     home-manager-activation = cfg.home-manager.users.brittonr.home.activationPackage;
     # onix-core's own packages (the onixpkgs overlay), and the gcc lib output the
     # mesh-llm start script puts on LD_LIBRARY_PATH.

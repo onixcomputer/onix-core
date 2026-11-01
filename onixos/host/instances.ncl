@@ -34,6 +34,9 @@
         boot_loader = { kind = 'grub, esp = "/boot", timeout = 5, generations = 5 },
         # linuxPackages_latest at nixpkgs 5adc508 (the kernel NixOS boots).
         kernel_version = "7.3.0",
+        # nixos-hardware's framework-desktop module: redistributable firmware and
+        # AMD microcode, which the GPU needs.
+        firmware = 'amd,
         console = ["ttyS0,115200", "tty0"],
         kernel_params = [
           "zswap.enabled=1",

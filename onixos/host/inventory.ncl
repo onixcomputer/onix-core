@@ -123,6 +123,7 @@ fun onix =>
           & (import "../instances/loki.ncl")
           & (import "../instances/mesh-llm.ncl")
           & (import "../instances/prometheus.ncl")
+          & (import "../instances/music-assistant.ncl")
         )
         & { user-brittonr.roles.default.settings = brittonr }
         & (import "instances.ncl"),

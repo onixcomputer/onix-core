@@ -15,6 +15,7 @@ fun onix =>
     import "services/laya.ncl",
     import "services/loki.ncl",
     import "services/mesh-llm.ncl",
+    import "services/music-assistant.ncl",
     import "services/niks3.ncl",
     import "services/nix-build-farm.ncl",
     import "services/nix-builder-ssh.ncl",
