@@ -36,7 +36,7 @@ fun onix =>
           },
         ],
       },
-      packages = ["bash"],
+      packages = ["bash", "coreutils", "gnused"],
       host_packages = ["home-manager-activation"],
       roles.default = {
         username
@@ -97,9 +97,9 @@ fun onix =>
               package="$1"
               user="$2"
               out="/run/onixos/home-manager-$user.sh"
-              mkdir -p /run/onixos
-              sed -e 's|nix-store --realise|true # nix-store --realise|g' "$package/activate" > "$out"
-              chmod 0755 "$out"
+              %{args.package_paths.coreutils}/bin/mkdir -p /run/onixos
+              %{args.package_paths.gnused}/bin/sed -e 's|nix-store --realise|true # nix-store --realise|g' "$package/activate" > "$out"
+              %{args.package_paths.coreutils}/bin/chmod 0755 "$out"
               exec %{args.package_paths.bash}/bin/bash "$out"
             "%,
           },
