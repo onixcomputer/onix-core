@@ -98,7 +98,11 @@ fun onix =>
               user="$2"
               out="$HOME/.cache/onixos/home-manager-activate.sh"
               %{args.package_paths.coreutils}/bin/mkdir -p "$HOME/.cache/onixos"
-              %{args.package_paths.gnused}/bin/sed -e 's|nix-store --realise|true # nix-store --realise|g' "$package/activate" > "$out"
+              %{args.package_paths.gnused}/bin/sed \
+                -e 's|nix-store --realise|true # nix-store --realise|g' \
+                -e 's|run nix-env |run ln |' \
+                -e 's|--profile "$genProfilePath" --set "$newGenPath"|--symbolic --force --no-dereference "$newGenPath" "$genProfilePath"|' \
+                "$package/activate" > "$out"
               %{args.package_paths.coreutils}/bin/chmod 0755 "$out"
               exec %{args.package_paths.bash}/bin/bash "$out"
             "%,
