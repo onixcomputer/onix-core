@@ -210,10 +210,14 @@ fun onix =>
                     },
                     Service = {
                       Type = "simple",
-                      # No -homepath: Grafana's own homepath is the package's
-                      # share/grafana, where its email templates and public assets
-                      # live; pointing it at /var/lib/grafana matched no templates.
-                      ExecStart = "%{grafana_path}/bin/grafana server -config /etc/grafana.ini",
+                      # NixOS links the package's conf and public into the data
+                      # directory and runs Grafana with that as its homepath; both
+                      # links are needed, because public carries the email templates.
+                      ExecStartPre = [
+                        "%{args.package_paths.coreutils}/bin/ln -fs %{grafana_path}/share/grafana/conf /var/lib/grafana/conf",
+                        "%{args.package_paths.coreutils}/bin/ln -fs %{grafana_path}/share/grafana/public /var/lib/grafana/public",
+                      ],
+                      ExecStart = "%{grafana_path}/bin/grafana server -homepath /var/lib/grafana -config /etc/grafana.ini",
                       User = "grafana",
                       Group = "grafana",
                       WorkingDirectory = "/var/lib/grafana",
