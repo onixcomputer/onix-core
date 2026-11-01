@@ -12073,11 +12073,11 @@
         "tf-ncl": "tf-ncl"
       },
       "locked": {
-        "lastModified": 1793524829,
-        "narHash": "sha256-FYoLbO9jpZu2b+Fj/GF0fYGRG1ngLk2jXbwDRA40+2U=",
+        "lastModified": 1793528312,
+        "narHash": "sha256-TSUwIaQ+fJkFVEd6Si94HbqPFjMjWgwT3kvw4YNtZ6M=",
         "ref": "refs/heads/onixos-systemd-host",
-        "rev": "2c0f2298fd083249b45664d5bc3aa1889b75beae",
-        "revCount": 1813,
+        "rev": "04d060f7172b2ab82b2a3c7b1c718672633b7e4b",
+        "revCount": 1814,
         "type": "git",
         "url": "file:///home/brittonr/git/onixos-systemd-host"
       },
