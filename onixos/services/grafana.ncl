@@ -56,7 +56,7 @@ fun onix =>
           },
         ],
       },
-      packages = ["onix-core-grafana", "coreutils"],
+      packages = ["onix-core-grafana", "coreutils", "bash"],
       roles.server = {
         enable_prometheus_integration
           | doc "Provision Prometheus as the default datasource."
@@ -213,10 +213,9 @@ fun onix =>
                       # NixOS links the package's conf and public into the data
                       # directory and runs Grafana with that as its homepath; both
                       # links are needed, because public carries the email templates.
-                      ExecStartPre = [
-                        "%{args.package_paths.coreutils}/bin/ln -fs %{grafana_path}/share/grafana/conf /var/lib/grafana/conf",
-                        "%{args.package_paths.coreutils}/bin/ln -fs %{grafana_path}/share/grafana/public /var/lib/grafana/public",
-                      ],
+                      # Replaced, not linked into: after one boot the targets exist and
+                      # `ln -fs` would write a link inside them.
+                      ExecStartPre = "%{args.package_paths.bash}/bin/bash -c 'rm -rf /var/lib/grafana/conf /var/lib/grafana/public && %{args.package_paths.coreutils}/bin/ln -s %{grafana_path}/share/grafana/conf /var/lib/grafana/conf && %{args.package_paths.coreutils}/bin/ln -s %{grafana_path}/share/grafana/public /var/lib/grafana/public'",
                       ExecStart = "%{grafana_path}/bin/grafana server -homepath /var/lib/grafana -config /etc/grafana.ini",
                       User = "grafana",
                       Group = "grafana",
