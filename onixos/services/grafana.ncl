@@ -56,7 +56,7 @@ fun onix =>
           },
         ],
       },
-      packages = ["onix-core-grafana"],
+      packages = ["onix-core-grafana", "coreutils"],
       roles.server = {
         enable_prometheus_integration
           | doc "Provision Prometheus as the default datasource."
@@ -211,7 +211,7 @@ fun onix =>
                     Service = {
                       Type = "simple",
                       ExecStart = "%{grafana_path}/bin/grafana server -homepath /var/lib/grafana -config /etc/grafana.ini",
-                      ExecStartPre = "/bin/ln -fs %{grafana_path}/share/grafana/conf /var/lib/grafana",
+                      ExecStartPre = "%{args.package_paths.coreutils}/bin/ln -fs %{grafana_path}/share/grafana/conf /var/lib/grafana",
                       User = "grafana",
                       Group = "grafana",
                       WorkingDirectory = "/var/lib/grafana",

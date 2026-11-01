@@ -48,7 +48,9 @@
           "loglevel=4",
         ],
         initrd_modules = ["nvme", "ahci", "sd_mod", "virtio_pci", "virtio_blk", "ext4"],
-        kernel_modules = ["amdgpu", "atkbd", "br_netfilter", "bridge", "ctr", "kvm-amd", "loop", "lz4", "lz4_compress", "overlay", "veth", "xt_nat"],
+        # tun is what tailscaled needs; NixOS's tailscale module loads it (aspen2 has it
+        # loaded and /dev/net/tun present).
+        kernel_modules = ["amdgpu", "atkbd", "br_netfilter", "bridge", "ctr", "kvm-amd", "loop", "lz4", "lz4_compress", "overlay", "tun", "veth", "xt_nat"],
         # NetworkManager configures enp191s0; networkd only runs the Thunderbolt bridge.
         dhcp_match = [],
         # NixOS's hosts order with nscd, resolved and nss-mdns (services.avahi.nssmdns4).
