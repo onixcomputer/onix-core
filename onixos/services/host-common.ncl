@@ -158,7 +158,13 @@ fun onix =>
           "multi-user.target" = ["NetworkManager.service", "NetworkManager-dispatcher.service", "irqbalance.service"],
         },
         dbus_packages = [p.avahi, p.networkmanager],
-        tmpfiles = ["d /etc/NetworkManager/system-connections 0700 root root -", "d /var/lib/misc 0755 root root -"],
+        # avahi daemonises into its runtime directory as the avahi user before it
+        # drops privileges; the socket unit's directory is root-owned.
+        tmpfiles = [
+          "d /etc/NetworkManager/system-connections 0700 root root -",
+          "d /var/lib/misc 0755 root root -",
+          "d /run/avahi-daemon 0755 avahi avahi -",
+        ],
         files = {
           "NetworkManager/NetworkManager.conf".text = m%"
             [connection]
