@@ -20,14 +20,6 @@
             fs_type = "vfat",
             options = "umask=0077",
           },
-          # /nix holds the read-only store; Nix state (Home Manager's activation
-          # looks for a store root there) lives on a tmpfs, as there is no daemon.
-          {
-            device = "tmpfs",
-            mount_point = "/nix/var",
-            fs_type = "tmpfs",
-            options = "mode=0755",
-          },
         ],
         # GRUB stays: NixOS installed it for BIOS and removable EFI; OnixOS writes its
         # entries and keeps the NixOS grub.cfg behind a submenu.
