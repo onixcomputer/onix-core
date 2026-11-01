@@ -246,6 +246,9 @@ fun onix =>
             },
             files."tailscale/autoconnect.sh".text = autoconnect_script,
             # useRoutingFeatures = both.
+            # services.tailscale creates this group: tailscalesd reads the socket
+            # through it, as NixOS's tailscale module arranges.
+            groups.tailscale = {},
             sysctl = { "net.ipv4.conf.all.forwarding" = "1", "net.ipv6.conf.all.forwarding" = "1" },
             firewall = { trusted_interfaces = ["tailscale0"], allowed_udp_ports = [tailscale_udp_port], reverse_path = "loose" },
             packages = [args.package_paths.tailscale],
