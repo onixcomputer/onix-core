@@ -36,6 +36,7 @@ fun onix =>
           },
         ],
       },
+      packages = ["bash"],
       host_packages = ["home-manager-activation"],
       roles.default = {
         username
@@ -78,6 +79,38 @@ fun onix =>
         # home-manager-activation); a host generation runs it once per user at
         # boot, before user sessions start, as Home Manager's NixOS module does.
         output.host = {
+          # The activation package ends by realising its generation and adding GC
+          # roots with `nix-store --realise … --add-root …`. A systemd host has no
+          # Nix daemon and a read-only store, so the store cannot record validity;
+          # the two operations reduce to "the path is in the store" and "link the
+          # root", which this shim does.
+          files."onixos/bin/nix-store" = {
+            mode = "0755",
+            text = m%"
+              #!%{args.package_paths.bash}/bin/bash
+              set -euo pipefail
+              path=""
+              root=""
+              while [ $# -gt 0 ]; do
+                case "$1" in
+                  --realise) path="$2"; shift 2 ;;
+                  --add-root) root="$2"; shift 2 ;;
+                  *) shift ;;
+                esac
+              done
+              if [ -n "$path" ]; then
+                if [ ! -e "$path" ]; then
+                  echo "nix-store: $path is not in the store" >&2
+                  exit 1
+                fi
+                if [ -n "$root" ]; then
+                  mkdir -p "$(dirname "$root")"
+                  ln -sfn "$path" "$root"
+                fi
+                printf '%s\n' "$path"
+              fi
+            "%,
+          },
           units."home-manager-%{user_name}.service" = {
             sections = {
               Unit = {
@@ -88,7 +121,11 @@ fun onix =>
               Service = {
                 Type = "oneshot",
                 User = user_name,
-                Environment = ["HOME=/home/%{user_name}", "HOME_MANAGER_BACKUP_EXT=hm-bak"],
+                Environment = [
+                  "HOME=/home/%{user_name}",
+                  "HOME_MANAGER_BACKUP_EXT=hm-bak",
+                  "PATH=/etc/onixos/bin:/run/current-system/sw/bin:/usr/bin:/bin",
+                ],
                 ExecStart = "%{args.package_paths."home-manager-activation"}/activate",
                 RemainAfterExit = "yes",
               },
