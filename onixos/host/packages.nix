@@ -54,7 +54,8 @@ let
     "mesh-research" = pkgs.mesh-research;
     lib = pkgs.stdenv.cc.cc.lib;
     curl = pkgs.curl;
-    polkit = pkgs.polkit;
+    # polkitd lives in the out output; the default is bin (pkaction, pkcheck, pkexec).
+    polkit = pkgs.polkit.out;
     modemmanager = pkgs.modemmanager;
     logrotate = pkgs.logrotate;
     tzdata = pkgs.tzdata;
