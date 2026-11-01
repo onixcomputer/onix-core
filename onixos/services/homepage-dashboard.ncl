@@ -27,7 +27,7 @@ fun onix =>
           },
         ],
       },
-      packages = ["homepage-dashboard", "coreutils"],
+      packages = ["homepage-dashboard", "coreutils", "bash"],
       roles.server = {
         enable
           | doc "Run the homepage dashboard."
@@ -117,7 +117,7 @@ fun onix =>
                   # directory on first start, so that directory has to be
                   # writable: the read-only /etc files are seeded into the state
                   # directory before it runs.
-                  ExecStartPre = "+%{args.package_paths.coreutils}/bin/sh -c 'mkdir -p /var/lib/homepage-dashboard/config && cp -n /etc/homepage-dashboard/*.yaml /var/lib/homepage-dashboard/config/ 2>/dev/null || true'",
+                  ExecStartPre = "+%{args.package_paths.bash}/bin/bash -c 'mkdir -p /var/lib/homepage-dashboard/config && cp -n /etc/homepage-dashboard/*.yaml /var/lib/homepage-dashboard/config/ 2>/dev/null || true'",
                   User = "homepage-dashboard",
                   Group = "homepage-dashboard",
                   StateDirectory = "homepage-dashboard",
