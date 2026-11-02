@@ -174,8 +174,9 @@ fun onix =>
         wrappers.sudo = {
           source = "%{p.sudo}/bin/sudo",
           setuid = true,
+          # NixOS installs sudo as root:wheel with no access for others.
           group = "wheel",
-          permissions = "u+rx,g+x",
+          permissions = "u+rwx,g+x,o-rwx",
         },
         files."sudoers" = {
           mode = "0440",
