@@ -14,6 +14,8 @@
     }
   ],
   "packages": {
+    "apparmor-init": "/nix/store/jnjwq7c1gvhzyi82cxxvnp6v3zq9nr2b-apparmor-init-5.0.2",
+    "apparmor-utils": "/nix/store/d8g9qcx1js15jls1kg3464hl04q6zm6x-apparmor-utils-5.0.2",
     "arxiv-corpus": "/nix/store/n1rs30fr33hwds504bdsy3dn9qrwj942-arxiv-corpus",
     "avahi": "/nix/store/zdi3hvcwrx778xnw7djkwsxi7467qi7q-avahi-0.8",
     "bash": "/nix/store/kwyi4bq5s2qgwbhz6cs4gjy57c2zdxws-bash-interactive-5.3p20",
@@ -77,6 +79,7 @@
     "shadow": "/nix/store/82qxn7mh0g7wdfg7a82ndpnsai03bk5y-shadow-4.20.3",
     "shadow-su": "/nix/store/92y32awaiyp58scb9dbyvl3p8d0m5gxi-shadow-4.20.3-su",
     "sops": "/nix/store/sy4hg582vpy8xvf960idvj6yq6z9dyw4-sops-3.13.3",
+    "sudo": "/nix/store/1x9bnv0f62nxm35z64lcgx13n36ds230-sudo-1.9.17p2",
     "switch-to-configuration": "/nix/store/xzlvxkp4f9vmsi493p69hg2bzsx2hqis-switch-to-configuration-0.1.0",
     "systemd": "/nix/store/kzfnrdcqz08ky2m2dvad2lwahlfb4c96-systemd-262",
     "systemd-exporter": "/nix/store/hsj3wi5ryvyh6fh3h1b1yl4v1d1czwg0-systemd_exporter-0.7.0",
