@@ -109,7 +109,7 @@ in
       # aspen1's Harmonia cache over the tailnet. AGENTS.md prescribes the IP so
       # nix-daemon does not depend on mDNS; signature verification still applies.
       url = "http://100.100.103.95:5000";
-      public_keys = [ "aspen1-1:Q2UfPLC6y4NJ5xT1ZEjEttz/kNP5nMzTFfmrbi4vcql/q+MXKkIry4rk6J1J0xNHbe4JTee8gVeHY3ancXbsCA==" ];
+      public_keys = [ "aspen1-1:hdbOqMbh1N/jLuqHVErDlrI7Wh9Cd/htzF7HUWYjQRc=" ];
     }
   ];
   packages = lib.mapAttrs (_: package: builtins.unsafeDiscardStringContext package.outPath) packages;

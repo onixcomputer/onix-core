@@ -5,6 +5,12 @@
         "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
       ],
       "url": "https://cache.nixos.org"
+    },
+    {
+      "public_keys": [
+        "aspen1-1:Q2UfPLC6y4NJ5xT1ZEjEttz/kNP5nMzTFfmrbi4vcql/q+MXKkIry4rk6J1J0xNHbe4JTee8gVeHY3ancXbsCA=="
+      ],
+      "url": "http://100.100.103.95:5000"
     }
   ],
   "packages": {
