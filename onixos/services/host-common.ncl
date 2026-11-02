@@ -34,7 +34,7 @@ fun onix =>
           nscd = { group = "nscd", description = "nscd user" },
           avahi = { group = "avahi", description = "avahi-daemon privilege separation user" },
         },
-        packages = [p.fish, p.avahi, p.networkmanager, p."kitty-terminfo", p."wezterm-terminfo"],
+        packages = [p.fish, p.avahi, p.networkmanager, p."kitty-terminfo", p."wezterm-terminfo", p.sudo, p."apparmor-utils"],
         environment = {
           LANG = cfg.locale,
           TERMINFO_DIRS = "/run/current-system/sw/share/terminfo",
@@ -169,6 +169,46 @@ fun onix =>
           "d /var/lib/misc 0755 root root -",
           "d /run/avahi-daemon 0755 avahi avahi -",
         ],
+        # security.sudo: the setuid wrapper NixOS installs, and its default
+        # sudoers (root and wheel, with SETENV as NixOS's file grants).
+        wrappers.sudo = {
+          source = "%{p.sudo}/bin/sudo",
+          setuid = true,
+          group = "wheel",
+          permissions = "u+rx,g+x",
+        },
+        files."sudoers" = {
+          mode = "0440",
+          text = m%"
+            # Managed by OnixOS: root and wheel may run commands as any user.
+            root ALL=(ALL:ALL) SETENV: ALL
+            %wheel ALL=(ALL:ALL) SETENV: ALL
+          "%,
+        },
+        # security.apparmor: aspen2's unit loads no policy files, so it tears the
+        # old ones down and waits; the enabled LSM comes from the kernel params.
+        units."apparmor.service" = {
+          sections = {
+            Unit = {
+              Description = "Load AppArmor policies",
+              After = "local-fs.target systemd-journald-audit.socket",
+              Before = "sysinit.target shutdown.target",
+              ConditionSecurity = "apparmor",
+              Conflicts = "shutdown.target",
+              DefaultDependencies = "no",
+            },
+            Service = {
+              Type = "oneshot",
+              RemainAfterExit = "yes",
+              ExecStartPre = "%{p."apparmor-init"}/bin/aa-teardown",
+              ExecReload = "%{p."apparmor-utils"}/bin/aa-remove-unknown",
+              ExecStop = "%{p."apparmor-init"}/bin/aa-teardown",
+              CacheDirectory = ["apparmor", "apparmor/logprof"],
+              CacheDirectoryMode = "0700",
+            },
+          },
+          wanted_by = ["multi-user.target"],
+        },
         files = {
           "NetworkManager/NetworkManager.conf".text = m%"
             [connection]
@@ -256,6 +296,8 @@ fun onix =>
         ],
       },
       packages = [
+        "apparmor-init",
+        "apparmor-utils",
         "fish",
         "systemd",
         "nsncd",
@@ -264,6 +306,7 @@ fun onix =>
         "networkmanager",
         "irqbalance",
         "kitty-terminfo=kitty.terminfo",
+        "sudo",
         "wezterm-terminfo=wezterm.terminfo",
       ],
       roles.host = {
@@ -290,6 +333,9 @@ fun onix =>
         irqbalance = "irq-pkg",
         "kitty-terminfo" = "kitty-ti",
         "wezterm-terminfo" = "wezterm-ti",
+        sudo = "sudo-pkg",
+        "apparmor-init" = "apparmor-init-pkg",
+        "apparmor-utils" = "apparmor-utils-pkg",
       }
       in
       let test_settings = { networkmanager_unmanaged = ["driver:thunderbolt-net", "interface-name:br-tbt"], ntp_servers = ["a", "b"], locale = "en_US.UTF-8" } in
@@ -306,6 +352,12 @@ fun onix =>
         std.string.contains "LC_TIME=en_US.UTF-8" out.files."locale.conf".text,
         out.firewall.enable,
         std.array.elem 5353 out.firewall.allowed_udp_ports,
+        # security.sudo and security.apparmor, as aspen2 has them.
+        out.wrappers.sudo.setuid && out.wrappers.sudo.group == "wheel",
+        out.files."sudoers".mode == "0440",
+        std.string.contains "%wheel ALL=(ALL:ALL) SETENV: ALL" out.files."sudoers".text,
+        out.units."apparmor.service".sections.Service.RemainAfterExit == "yes",
+        std.string.contains "aa-teardown" out.units."apparmor.service".sections.Service.ExecStartPre,
       ]
       |> std.test.assert_all,
   }

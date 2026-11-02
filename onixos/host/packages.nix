@@ -46,6 +46,9 @@ let
     scx = pkgs.scx.full;
     borgbackup = pkgs.borgbackup;
     "linux-firmware" = pkgs.linux-firmware;
+    sudo = pkgs.sudo;
+    "apparmor-init" = pkgs.apparmor-init;
+    "apparmor-utils" = pkgs.apparmor-utils;
     "music-assistant" = pkgs.music-assistant;
     home-manager-activation = cfg.home-manager.users.brittonr.home.activationPackage;
     # onix-core's own packages (the onixpkgs overlay), and the gcc lib output the
