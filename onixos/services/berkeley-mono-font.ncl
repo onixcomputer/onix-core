@@ -15,10 +15,13 @@ fun onix =>
         status = 'portable,
         requires.typed_namespaces = ["artifacts"],
       },
+      packages = ["bash", "gnutar", "fontconfig"],
       roles.default = {},
     },
 
-    impl = fun _args =>
+    impl = fun args =>
+      # The artifact file's default placement, decrypted at activation.
+      let font = "/run/artifacts/berkeley-mono-font/font_data" in
       {
         output =
           onix.artifact_declaration {
@@ -36,6 +39,34 @@ fun onix =>
               cp "$TARBALL" "$out"/font_data
             "%,
             description = "Berkeley Mono font tarball",
+          }
+          # inventory/tags/common/berkeley-mono-font.nix: extract the decrypted
+          # tarball into a directory fontconfig searches, every boot.
+          & {
+            host = {
+              packages = [args.package_paths.fontconfig],
+              files."fonts/local.conf".text = m%"
+                <?xml version="1.0"?>
+                <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+                <fontconfig>
+                  <dir>/var/lib/fonts/berkeley-mono</dir>
+                </fontconfig>
+              "%,
+              units."berkeley-mono-font-install.service" = {
+                sections = {
+                  Unit = {
+                    Description = "Install Berkeley Mono font from the decrypted artifact",
+                    ConditionPathExists = font,
+                  },
+                  Service = {
+                    Type = "oneshot",
+                    RemainAfterExit = "yes",
+                    ExecStart = "%{args.package_paths.bash}/bin/bash -c 'mkdir -p /var/lib/fonts/berkeley-mono && %{args.package_paths.gnutar}/bin/tar xzf %{font} -C /var/lib/fonts/berkeley-mono'",
+                  },
+                },
+                wanted_by = ["multi-user.target"],
+              },
+            },
           },
       },
 

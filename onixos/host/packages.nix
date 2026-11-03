@@ -47,6 +47,7 @@ let
     borgbackup = pkgs.borgbackup;
     "linux-firmware" = pkgs.linux-firmware;
     sudo = pkgs.sudo;
+    fontconfig = pkgs.fontconfig;
     "apparmor-init" = pkgs.apparmor-init;
     "apparmor-utils" = pkgs.apparmor-utils;
     "music-assistant" = pkgs.music-assistant;
