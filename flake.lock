@@ -12073,18 +12073,18 @@
         "tf-ncl": "tf-ncl"
       },
       "locked": {
-        "lastModified": 1793552776,
-        "narHash": "sha256-bdj4GRNORWjN3TZjqeBf1uecEcmakEc7FKGux9u4iAU=",
+        "lastModified": 1793921671,
+        "narHash": "sha256-viFhhVAKkvoJ95NwxyGKhmwCryPXxOYYfeFUCOlP7vo=",
         "ref": "refs/heads/onixos-systemd-host",
-        "rev": "4bbd8b5cf96dab2a7fe1fa316a9df0b4df5b0936",
-        "revCount": 1818,
+        "rev": "a8b537016bbb804cd4e3e1052d66a86b68a1cf8d",
+        "revCount": 1825,
         "type": "git",
-        "url": "file:///home/brittonr/git/onixos-systemd-host"
+        "url": "ssh://git@github.com/onixcomputer/OnixOS.git"
       },
       "original": {
         "ref": "refs/heads/onixos-systemd-host",
         "type": "git",
-        "url": "file:///home/brittonr/git/onixos-systemd-host"
+        "url": "ssh://git@github.com/onixcomputer/OnixOS.git"
       }
     },
     "onix-nixpkgs": {

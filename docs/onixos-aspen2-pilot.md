@@ -243,6 +243,12 @@ repository. The saved read-only FAT diagnostic still exited 1 with dirty-bit,
 durability proof, not a clean-filesystem result or a full retained-service
 lifecycle pass.
 
+For publication, the pilot's `onix-modules` input selects
+`git+ssh://git@github.com/onixcomputer/OnixOS.git?ref=refs/heads/onixos-systemd-host`
+instead of the operator's local worktree. The paired OnixOS revision is
+`a8b53701`; fetching it requires GitHub SSH access. This remains a feature-branch
+dependency, not a main-branch release or a completed landing gate.
+
 The declared Statix/nixfmt and Prettier stages subsequently normalized the
 producer's assignment syntax and the index's JSON layout for commit. The VM
 receipt keeps the executed pre-format byte pins; no VM rerun of those normalized
