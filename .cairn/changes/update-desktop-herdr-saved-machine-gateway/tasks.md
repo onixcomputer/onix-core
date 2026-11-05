@@ -9,12 +9,12 @@
 
 ## Phase 3: Release
 
-- [ ] [serial] Build the exact desktop artifact, reject unsafe activation scope, commit/push the isolated release, and run clan m u britton-desktop through the repository CLI. r[onix.herdr_gateway.release] r[onix.herdr_gateway.preservation]
+- [x] [serial] Build the exact desktop artifact, reject unsafe activation scope, commit/push the isolated release, and run clan m u britton-desktop through the repository CLI. r[onix.herdr_gateway.release] r[onix.herdr_gateway.preservation]
 
 ## Phase 4: Relay Process
 
-- [ ] [serial] Verify a real herdr-iroh process restart onto the new executable, unchanged service identity, and unchanged Herdr/server/agent process identities. SIGHUP alone does not complete this task. r[onix.herdr_gateway.restart] r[onix.herdr_gateway.preservation]
+- [x] [serial] Verify a real herdr-iroh process restart onto the new executable, unchanged service identity, and unchanged Herdr/server/agent process identities. SIGHUP alone does not complete this task. r[onix.herdr_gateway.restart] r[onix.herdr_gateway.preservation]
 
 ## Phase 5: Once-only Probe
 
-- [ ] [serial] Run herdr --machine instant-fill status server exactly once after deployment and report its actual output, exit status, and deployed versions. r[onix.herdr_gateway.probe]
+- [x] [serial] Run herdr --machine instant-fill status server exactly once after deployment and report its actual output, exit status, and deployed versions. r[onix.herdr_gateway.probe]

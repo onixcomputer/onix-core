@@ -50,5 +50,36 @@ record its stdout/stderr/exit status and versions without retrying it.
 
 ## Completion State
 
-Implementation and deployment evidence will be recorded in this change.
-The final saved-machine command has not been run.
+Source commit `878ecb57fe6718e28f15a82bad53db8726d23244` is published. Clan
+completed with exit 0 on generation 879, system
+`6pps2zpn1c6jv804ir6nsy8nmr4nvc05`, using the requested
+`1ee15bf8506a13394de2f253ee6fd8febfca1a64` relay and Herdr CLI 0.9.3.
+The running relay is PID 1203837 on the new executable. Herdr PID 4940 and all
+24 captured PTY children retain their identities/start times; its socket,
+the relay key, and Qwen PID 4054998 are unchanged. The rendered `[notify]`
+section remains absent.
+
+The saved-machine probe ran exactly once. It exited 2 with no stdout and:
+```text
+error: unknown machine 'instant-fill'; use `herdr machine list`
+```
+
+No saved profile was added and the command was not retried.
+
+The operator-approved stuck validation worker was cancelled. A temporary
+deployment-only SSH wrapper passed min-free/max-free=0 to the remote nix-env
+profile command; it was removed after the verified switch. No host Nix
+settings, Herdr lifecycle controls, or unrelated service attachments changed.
+
+Clan accepted the running target after activation reported failed celld-site,
+celld, collie-serve, home-manager-brittonr, and llamacpp-server-supra-router
+units. Home Manager still rejects the foreign meshtop.service link. These
+unrelated failures were not repaired. Canonical proposal/design/tasks gates
+pass; release-worktree validation retains the incomplete Spark-change findings.
+GitHub reported the required buildbot check bypass on the maintainer push;
+the exact desktop build and activation scope were verified locally.
+
+`evidence/preflight.json` records the build/preview; `evidence/rollout.json`
+records the deployed executable, preservation checks, publication, and the
+single probe result. The exact source is retained by the local deployment
+GC root recorded there rather than publishing unrelated baseline source.
