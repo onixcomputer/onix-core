@@ -1,12 +1,13 @@
-# Runs the inline `tests` of every service in onixos/services and checks the
+# Runs service inline `tests` and checks the
 # inventory against the OnixOS contract. `onix check` evaluates only module
 # interfaces, so these tests run here (flake check `onixos-services`).
+# Docker's daemon, socket and pruning behavior require the real replica lane;
+# copied unit strings and package-name assertions do not exercise that behavior.
 fun onix =>
   let service_modules = [
     import "services/arxiv-corpus.ncl",
     import "services/berkeley-mono-font.ncl",
     import "services/borgbackup.ncl",
-    import "services/docker.ncl",
     import "services/grafana.ncl",
     import "services/home-manager-profiles.ncl",
     import "services/homepage-dashboard.ncl",

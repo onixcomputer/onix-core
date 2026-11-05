@@ -77,4 +77,9 @@
       },
     },
   },
+
+  docker = {
+    service = "docker",
+    roles.host.machines = ["aspen2"],
+  },
 }

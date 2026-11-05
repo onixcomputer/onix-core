@@ -159,6 +159,18 @@ rule in `/etc/fonts/conf.d` includes those defaults and adds
 binaries explicitly. The Mesh-LLM launcher and watchdog likewise receive their
 own package PATHs rather than depending on NixOS's service defaults.
 
+The candidate also places `docker/host` directly on aspen2. Its host output in
+`onixos/services/docker.ncl` supplies the daemon, API socket, both weekly pruning
+timers, container sysctls and the existing Docker client tools. The daemon keeps
+overlay2, journald logging, live-restore and the configured address pools. Its
+pre-start commands install `/sbin/apparmor_parser` before daemon initialization:
+containerd's [host-support check](https://github.com/containerd/containerd/blob/main/pkg/apparmor/apparmor_linux.go)
+requires that absolute path and caches a negative result. A parser on `PATH` and
+Docker's reported `docker-default` name alone do not prove kernel confinement;
+the replica checks the actual container PID's AppArmor context. Already-running
+unconfined containers are not retroactively confined by a daemon live-restore;
+they must be recreated or restarted by an OS reboot.
+
 The 2026-11-04 replica recovery built generation
 `ibsayjv84zc4k6329cp93azcxi81sb3q-onixos-system-aspen2` on leviathan. Its direct
 boot accepted the throwaway harness SSH key, preserved brittonr `1555:998`, sshd
@@ -195,10 +207,60 @@ pinned command output. A supplemental offline nixpkgs evaluation timed out while
 unpacking its Git cache; this record does not claim a freshly regenerated full
 package index or a full flake gate.
 
-This is not complete retained-service parity. In particular, the live reference
-has Docker's daemon/socket/maintenance timers, the Thunderbolt bridge and guard,
-zram swap, and the AMD GPU exporter timer; these still need host output and
-appropriate runtime or hardware verification. Dummy tailnet and mesh credentials
+The 2026-11-05 Docker candidate built generation
+`3sss16n8qcip043yf2hvli43rpd9rz7m-onixos-system-aspen2` with 81 package roots.
+Mantle reported one built generation, zero cached or failed generation builds,
+strict hermeticity and no audit events; this does not mean every package closure
+was freshly built. The existing Nickel contract files and consumer inventory
+checks passed separately.
+
+Its real `onix deploy --action switch` selected `system-3-link` and exited 0.
+Switching a socket-activated daemon re-armed `docker.socket`, not the daemon
+itself. Preserve both failed verifier attempts: the first used an unsupported
+`deploy --services` argument; the second incorrectly expected socket re-arming
+to trigger its injected daemon failure. Neither verifier was promoted.
+
+The final VM check booted that generation through firmware and GRUB. For the
+durability regression it removed only the owned current initrd and synced the
+ESP as fixture setup, then ran the actual generated installer (exit 0). A
+runtime-only Docker pre-start failure was explicitly triggered (exit 1), followed
+by abrupt guest stop. All six kernel/initrd references across three retained
+entries matched the built bytes. Two further firmware/GRUB boots passed socket
+activation and access controls, a real BuildKit image build and Compose run,
+bridge HTTP, journald logs, kernel `docker-default (enforce)`, missing-profile
+refusal, reload/live-restore PID preservation and volume persistence. Both pruning
+services removed unused containers, images, networks and anonymous volumes while
+preserving the active workload. Owned containers and QEMU were cleaned up; the
+read-only backing disk stayed byte-identical and recording Nix PATH stubs stayed
+at zero.
+
+Companion OnixOS commit `a8b53701` retains the source-free receipt and
+prior-attempt bindings under
+`.cairn/changes/onixos-systemd-host/evidence/20261105-docker-grub-vm/`, with a
+two-member checksum manifest. Raw scripts, streams and disks remain outside the
+repository. The saved read-only FAT diagnostic still exited 1 with dirty-bit,
+4,697-unused-cluster and free-space-summary warnings; this is a boot-reference
+durability proof, not a clean-filesystem result or a full retained-service
+lifecycle pass.
+
+The declared Statix/nixfmt and Prettier stages subsequently normalized the
+producer's assignment syntax and the index's JSON layout for commit. The VM
+receipt keeps the executed pre-format byte pins; no VM rerun of those normalized
+files is claimed. Sorted compact JSON for the entire index remained identical,
+SHA-256 `c611b2750005fed21402375d633a0debbd21a7a8ac1f3dad591c3f2ad777afb0`.
+The installer, Docker module and host instances remain byte-matched to the VM
+execution pins.
+
+All applicable pinned formatting and lint commands passed directly. Restoring
+the aggregate treefmt wrapper reached its 600-second bound. A separate
+240-second Nix producer re-evaluation timed out while restoring/building
+import-from-derivation toolchain dependencies; it did not establish a regenerated
+index or producer package-map equivalence result. Neither tooling timeout is
+promoted to a pass or changes the earlier frozen VM observations.
+
+This is not complete retained-service parity. In particular, the Thunderbolt
+bridge and guard, zram swap, and the AMD GPU exporter timer still need host output
+and appropriate runtime or hardware verification. Dummy tailnet and mesh credentials
 do not establish authenticated network operation. VM results do not authorize
 physical installation or prove GPU/USB4 behavior, and the OnixOS branch still
 needs its remaining integration coverage and landing gates.

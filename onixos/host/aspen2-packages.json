@@ -7,14 +7,13 @@
       "url": "https://cache.nixos.org"
     },
     {
-      "public_keys": [
-        "aspen1-1:hdbOqMbh1N/jLuqHVErDlrI7Wh9Cd/htzF7HUWYjQRc="
-      ],
+      "public_keys": ["aspen1-1:hdbOqMbh1N/jLuqHVErDlrI7Wh9Cd/htzF7HUWYjQRc="],
       "url": "http://100.100.103.95:5000"
     }
   ],
   "packages": {
     "apparmor-init": "/nix/store/jnjwq7c1gvhzyi82cxxvnp6v3zq9nr2b-apparmor-init-5.0.2",
+    "apparmor-parser": "/nix/store/jkxd2wnbj6zhbf5q2i7klfxdhm7fn9i4-apparmor-parser-5.0.2",
     "apparmor-utils": "/nix/store/d8g9qcx1js15jls1kg3464hl04q6zm6x-apparmor-utils-5.0.2",
     "arxiv-corpus": "/nix/store/n1rs30fr33hwds504bdsy3dn9qrwj942-arxiv-corpus",
     "avahi": "/nix/store/zdi3hvcwrx778xnw7djkwsxi7467qi7q-avahi-0.8",
