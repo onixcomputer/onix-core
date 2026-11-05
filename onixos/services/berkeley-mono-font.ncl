@@ -52,6 +52,9 @@ fun onix =>
                   <dir>/var/lib/fonts/berkeley-mono</dir>
                 </fontconfig>
               "%,
+              # fontconfig reads /etc/fonts/fonts.conf, and conf.d next to it.
+              files."fonts/fonts.conf".link = "%{args.package_paths.fontconfig}/etc/fonts/fonts.conf",
+              files."fonts/conf.d".link = "%{args.package_paths.fontconfig}/etc/fonts/conf.d",
               units."berkeley-mono-font-install.service" = {
                 sections = {
                   Unit = {
