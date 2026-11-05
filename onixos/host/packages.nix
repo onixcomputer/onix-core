@@ -48,6 +48,7 @@ let
     "linux-firmware" = pkgs.linux-firmware;
     sudo = pkgs.sudo;
     fontconfig = pkgs.fontconfig;
+    "fontconfig-data" = pkgs.fontconfig.out;
     "apparmor-init" = pkgs.apparmor-init;
     "apparmor-utils" = pkgs.apparmor-utils;
     "music-assistant" = pkgs.music-assistant;

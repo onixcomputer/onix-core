@@ -1,8 +1,7 @@
 # Shared Berkeley Mono font tarball artifact.
 #
-# Carried over from Clan's shared berkeley-mono-font generator. Until the
-# tag is ported, inventory/tags/common/berkeley-mono-font.nix still installs
-# the font and reads this file through onixos/nix/clan-vars-compat.nix.
+# The NixOS tag installs the artifact through clan-vars-compat.nix. The host
+# leaf installs it directly and makes the directory visible to fontconfig.
 fun onix =>
   ({
     interface = {
@@ -15,7 +14,7 @@ fun onix =>
         status = 'portable,
         requires.typed_namespaces = ["artifacts"],
       },
-      packages = ["bash", "gnutar", "fontconfig"],
+      packages = ["bash", "coreutils", "gnutar", "gzip", "fontconfig", "fontconfig-data=fontconfig.out"],
       roles.default = {},
     },
 
@@ -44,17 +43,18 @@ fun onix =>
           # tarball into a directory fontconfig searches, every boot.
           & {
             host = {
-              packages = [args.package_paths.fontconfig],
-              files."fonts/local.conf".text = m%"
+              packages = [args.package_paths.fontconfig, args.package_paths."fontconfig-data"],
+              # The bin output has no configuration. The stock fonts.conf reads
+              # /etc/fonts/conf.d even when applications use its store path.
+              files."fonts/fonts.conf".link = "%{args.package_paths."fontconfig-data"}/etc/fonts/fonts.conf",
+              files."fonts/conf.d/10-berkeley-mono.conf".text = m%"
                 <?xml version="1.0"?>
                 <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
                 <fontconfig>
+                  <include>%{args.package_paths."fontconfig-data"}/etc/fonts/conf.d</include>
                   <dir>/var/lib/fonts/berkeley-mono</dir>
                 </fontconfig>
               "%,
-              # fontconfig reads /etc/fonts/fonts.conf, and conf.d next to it.
-              files."fonts/fonts.conf".link = "%{args.package_paths.fontconfig}/etc/fonts/fonts.conf",
-              files."fonts/conf.d".link = "%{args.package_paths.fontconfig}/etc/fonts/conf.d",
               units."berkeley-mono-font-install.service" = {
                 sections = {
                   Unit = {
@@ -64,7 +64,7 @@ fun onix =>
                   Service = {
                     Type = "oneshot",
                     RemainAfterExit = "yes",
-                    ExecStart = "%{args.package_paths.bash}/bin/bash -c 'mkdir -p /var/lib/fonts/berkeley-mono && %{args.package_paths.gnutar}/bin/tar xzf %{font} -C /var/lib/fonts/berkeley-mono'",
+                    ExecStart = "%{args.package_paths.bash}/bin/bash -eu -c '%{args.package_paths.coreutils}/bin/mkdir -p /var/lib/fonts/berkeley-mono && %{args.package_paths.gnutar}/bin/tar --use-compress-program=%{args.package_paths.gzip}/bin/gzip -xf %{font} -C /var/lib/fonts/berkeley-mono'",
                   },
                 },
                 wanted_by = ["multi-user.target"],

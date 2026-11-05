@@ -543,6 +543,7 @@ fun onix =>
                     StateDirectory = service_name,
                     StateDirectoryMode = "0700",
                     Environment = [
+                      "PATH=%{args.package_paths.mesh-llm}/bin:%{args.package_paths.mesh-research}/bin:%{args.package_paths.coreutils}/bin:%{args.package_paths.bash}/bin",
                       "HOME=%{state_path}",
                       "MESH_LLM_NO_SELF_UPDATE=1",
                       "MESH_LLM_GCC_LIB=%{args.package_paths.lib}",
@@ -575,6 +576,7 @@ fun onix =>
                     Type = "oneshot",
                     RuntimeDirectory = watchdog_name,
                     RuntimeDirectoryPreserve = "yes",
+                    Environment = "PATH=%{args.package_paths.bash}/bin:%{args.package_paths.coreutils}/bin:%{args.package_paths.curl}/bin:%{args.package_paths.jq}/bin:%{args.package_paths.systemd}/bin",
                     ExecStart = "%{args.package_paths.bash}/bin/bash /etc/%{service_name}/watchdog.sh",
                   },
                 },

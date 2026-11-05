@@ -138,9 +138,74 @@ onix deploy --dry-run --backend mantle --mantle-build-report build.json \
 
 Never drop `--dry-run` for aspen2. `parity-evidence.json` (`mantle`) records a run with Nix programs replaced by logging stubs: zero calls, and the dry run accepted the proof.
 
+## Mantle-built systemd-host candidate
+
+`onixos/host/inventory.ncl` is a separate, experimental candidate for replacing
+NixOS itself. It selects `class = 'onixos` and `onixos.runtime = 'systemd_host`,
+not the NixOS service-manifest build above. `onixos/host/packages.nix` is the
+offline Nix producer; `aspen2-packages.json` pins the signed binary-cache roots
+that Mantle consumes. The candidate has not been installed on physical aspen2.
+Its physical cutover still needs separate operator approval and must keep the
+NixOS generations bootable.
+
+The host inventory retargets the font instance by machine name, as it does users,
+SSH and Tailscale: these instances otherwise select the `nixos` tag, which the
+candidate does not carry. Berkeley Mono's encrypted artifact is installed by
+`berkeley-mono-font-install.service`. Fontconfig's commands and configuration are
+different package outputs: `fontconfig` supplies the commands and
+`fontconfig-data=fontconfig.out` supplies `fonts.conf` and the default rules. A
+rule in `/etc/fonts/conf.d` includes those defaults and adds
+`/var/lib/fonts/berkeley-mono`. Extraction names its coreutils, tar and gzip
+binaries explicitly. The Mesh-LLM launcher and watchdog likewise receive their
+own package PATHs rather than depending on NixOS's service defaults.
+
+The 2026-11-04 replica recovery built generation
+`ibsayjv84zc4k6329cp93azcxi81sb3q-onixos-system-aspen2` on leviathan. Its direct
+boot accepted the throwaway harness SSH key, preserved brittonr `1555:998`, sshd
+`990:987` and the coredump group `986`, and activated the font unit. A valid open
+DejaVu test font, encrypted under the fixture age key, was extracted byte-for-byte
+and discovered by `fc-list` through its default configuration. No licensed font
+or production secret was decrypted for this check.
+
+Preserve the earlier failures separately: the first recovered run omitted its
+root key override, although that guest reached `sshd`. The new generation's
+initial GRUB attempt failed before Linux, with `fsck.fat` reporting only 8,188
+clusters in the 256 MiB FAT32 ESP. The formatter had sized clusters for the
+64 GiB backing disk. The harness now pins 512-byte sectors and one sector per
+cluster for that ESP.
+
+A separate VM-only replay repaired the ESP without rebuilding the generation,
+retaining the failed ESP and firmware logs. `fsck.fat` accepted the replacement
+with 516,190 clusters; all ESP file bytes survived a round-trip comparison. Two
+consecutive firmware → GRUB → Linux boots passed, with boot IDs
+`efb52b5a-9aac-4a4e-979a-4b76d7baee98` and
+`218bc795-71a8-4eb7-861e-71a8f226c17f`. Both repeated the font byte/discovery checks,
+authenticated the host certificate against the throwaway CA, executed Mesh-LLM
+using its unit PATH, and ran the watchdog's inactive-service branch with
+`Result=success` and `ExecMainStatus=0`. The only failed unit at each settled boot
+was `tailscaled-autoconnect.service`, using the deliberately invalid test key.
+The build report stayed byte-identical (SHA-256
+`b5009acbeaf1573afe78d2cc1210d569fd848f627844fc4f39a6a3119fc6f666`), the logging Nix
+stubs recorded zero calls across build and replay, and the owned replay QEMU was
+stopped. The 23 service-module Nickel tests passed separately. This is neither a
+fresh all-service lifecycle run nor an authenticated mesh proof.
+
+The new fontconfig data pin names the existing cache-signed dependency of the
+pinned command output. A supplemental offline nixpkgs evaluation timed out while
+unpacking its Git cache; this record does not claim a freshly regenerated full
+package index or a full flake gate.
+
+This is not complete retained-service parity. In particular, the live reference
+has Docker's daemon/socket/maintenance timers, the Thunderbolt bridge and guard,
+zram swap, and the AMD GPU exporter timer; these still need host output and
+appropriate runtime or hardware verification. Dummy tailnet and mesh credentials
+do not establish authenticated network operation. VM results do not authorize
+physical installation or prove GPU/USB4 behavior, and the OnixOS branch still
+needs its remaining integration coverage and landing gates.
+
 ## Gaps
 
-- Mantle builds only aspen2's typed services, and a Mantle deploy to a NixOS host does not activate them ([Mantle build](#mantle-build)). Moving aspen2 off Nix needs Mantle activation for NixOS hosts in OnixOS, or a Mantle-built system for the rest of the machine.
+- The NixOS inventory's Mantle path remains a service-manifest build, not host activation ([Mantle build](#mantle-build)). The separate [systemd-host candidate](#mantle-built-systemd-host-candidate) supplies a bootable generation, but retained-service and physical-hardware parity still block replacement of aspen2's operating system.
 - `onix check onixos/inventory.ncl --services onixos/services` reports 24 C012 findings: raw `networking.firewall`, `users`, `systemd.timers` and `systemd.tmpfiles` leaves where OnixOS wants typed providers. The providers cannot express what Clan configures: interface-scoped firewall ports (`tailscale0` for arxiv-corpus, laya and the build farm), relative timers (`OnBootSec`/`OnUnitActiveSec`), recursive ownership (`Z`) rules, root's authorized keys, extra groups of an existing service user, or a password hash wired from a secret. Converting the expressible subset would still leave the check failing.
 - OnixOS cannot keep generated but undeployed secrets, upload activation-time secrets, or order generators by their dependencies, and its prompts have no hidden or persist flags. Regenerating the `deploy = false`, activation and prompted secrets still needs Clan.
 - `system.stateVersion` still comes from `vars/per-machine/<machine>/state-version`.

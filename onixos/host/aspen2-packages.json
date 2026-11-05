@@ -36,6 +36,7 @@
     "findutils": "/nix/store/99v13ig4382mngi6ggf0csqi7rfa04j5-findutils-4.11.0",
     "fish": "/nix/store/2j65shllya9i591ild4jcl0kdl8hqwmj-fish-4.9.3",
     "fontconfig": "/nix/store/p7zanfhhr29x98dy5bjd1zlk2k1ab173-fontconfig-2.18.3-bin",
+    "fontconfig-data": "/nix/store/lzj58f3qfpr8dqfmp9iq98hbybxhvz4q-fontconfig-2.18.3",
     "getent": "/nix/store/0vr3l0sxz3arj2jlk44wsp0f0m4b4yli-getent-glibc-2.44-57",
     "glibc-locales": "/nix/store/6awpfcv4lkmk67qf6ca73m076zcfbczp-glibc-locales-2.44-57",
     "gnugrep": "/nix/store/c3f45pxlb81gzz4w1nym7lpznfypva7s-gnugrep-3.12",

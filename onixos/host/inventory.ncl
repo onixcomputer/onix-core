@@ -105,16 +105,16 @@ fun onix =>
     instances
       | { _ : onix.Instance }
       =
-        # users, sshd and tailscale place roles by the class tag "nixos", which an
-        # OnixOS host does not carry: those three are placed on aspen2 by name.
+        # These roles use the class tag "nixos", which an OnixOS host does not
+        # carry. Place the kept roles on aspen2 by name instead.
         on_aspen2 (
           (import "../instances/users.ncl")
           & (import "../instances/sshd.ncl")
           & (import "../instances/tailscale.ncl")
+          & (import "../instances/berkeley-mono-font.ncl")
         )
         & only_aspen2 (
           (import "../instances/arxiv-corpus.ncl")
-          & (import "../instances/berkeley-mono-font.ncl")
           & (import "../instances/borgbackup.ncl")
           & (import "../instances/grafana.ncl")
           & (import "../instances/home-manager-profiles.ncl")
