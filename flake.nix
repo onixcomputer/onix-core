@@ -337,6 +337,11 @@
       url = "github:musnix/musnix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Saved-machine gateway; keep the requested main revision reproducible.
+    herdr-iroh = {
+      url = "github:brittonr/herdr-iroh/1ee15bf8506a13394de2f253ee6fd8febfca1a64";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =

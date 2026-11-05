@@ -91,6 +91,7 @@ let
 in
 {
   imports = [
+    ../../inventory/tags/common/herdr-iroh.nix
     ./disko.nix
     ../../modules/pi-branchfs/nixos.nix
     ../../modules/meshtop
