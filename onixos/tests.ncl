@@ -1,7 +1,7 @@
 # Runs service inline `tests` and checks the
 # inventory against the OnixOS contract. `onix check` evaluates only module
 # interfaces, so these tests run here (flake check `onixos-services`).
-# Docker's daemon, socket and pruning behavior require the real replica lane;
+# Docker and zram behavior require the real replica lane;
 # copied unit strings and package-name assertions do not exercise that behavior.
 fun onix =>
   let service_modules = [

@@ -92,7 +92,8 @@
     "util-linux-mount": "/nix/store/9xzvspslb052smabjvcipmpcsi7vjjb6-util-linux-2.42.4-mount",
     "wezterm-terminfo": "/nix/store/4rgpmcavb3m1xhlz2dpzrrs6c2z4af18-wezterm-terminfo",
     "which": "/nix/store/bxaddvz98rw7pn24gcrjix69q6np2gq8-which-2.25",
-    "xz": "/nix/store/nflpm51il93hxh2rba6dvz59kaff0i7v-xz-5.8.4-bin"
+    "xz": "/nix/store/nflpm51il93hxh2rba6dvz59kaff0i7v-xz-5.8.4-bin",
+    "zram-generator": "/nix/store/5k9x9nvcnfhcz4gp9y2m8686bqywzjwj-zram-generator-1.2.1"
   },
   "schema": "onixos-host-package-index-v1"
 }

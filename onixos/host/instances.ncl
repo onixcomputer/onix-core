@@ -82,4 +82,9 @@
     service = "docker",
     roles.host.machines = ["aspen2"],
   },
+
+  zram = {
+    service = "zram",
+    roles.host.machines = ["aspen2"],
+  },
 }

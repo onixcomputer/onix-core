@@ -72,6 +72,7 @@ let
     inherit (pkgs) getent;
     inherit (pkgs) nftables;
     inherit (pkgs) docker;
+    inherit (pkgs) zram-generator;
     "docker-compose" = pkgs.docker-compose;
     "docker-buildx" = pkgs.docker-buildx;
     "docker-credential-helpers" = pkgs.docker-credential-helpers;

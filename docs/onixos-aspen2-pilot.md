@@ -264,8 +264,44 @@ import-from-derivation toolchain dependencies; it did not establish a regenerate
 index or producer package-map equivalence result. Neither tooling timeout is
 promoted to a pass or changes the earlier frozen VM observations.
 
+Zram now uses the same pinned `zram-generator` 1.2.1 package and setup template
+as aspen2's NixOS configuration. `onixos/services/zram.ncl` installs the generator
+and its configuration: lz4, 87% of RAM, swap priority 100. As upstream NixOS does,
+the setup unit has `X-RestartIfChanged=false`: switching generations must not
+reset live swap. Changed zram policy requires reboot or a safe manual lifecycle.
+The existing index gained its independently resolved pinned package path;
+this is not a fresh complete producer evaluation.
+
+The 2026-11-05 zram lane built A `niysnj5f…` and B `93pnh4hy…`, each with 82
+package roots. The retained B native report is strict, one built, zero cached or
+failed, and no audit events. The outer build SSH deadline lost B's original CLI
+exit status; its later built report and runtime proof do not invent that exit.
+
+The final detached verifier exited 0. It booted A, verified real swap and lz4
+compressed-page counters, stopped/started the public `dev-zram0.swap` unit and
+checked every byte of a 64 MiB anonymous-memory probe after swapoff. An unrelated
+test switch to B preserved the setup invocation, swap UUID and probe data while
+leaving the system profile on A. B was then persisted and booted through GRUB;
+rollback returned to A and its subsequent GRUB boot passed the same swap policy.
+The three boot IDs differ, both backing images remained byte-identical, recording
+Nix PATH stubs stayed at zero and owned QEMU stopped.
+
+The passing verifier is a copy-on-write continuation of the retained A fixture,
+not a fresh single-attempt baseline-to-upgrade proof. Earlier attempts remain
+failed: missing fixture tailnet bind address (remote activation exit 4), a
+canceled explicit reset sequence, and a two-minute probe deadline that expired
+before the slow configuration handoff. The absent-zram baseline and initial
+activation were observed in those earlier attempts, not retroactively promoted.
+The owned guest used a loopback stand-in for service bind addresses; pageout
+probes temporarily disabled zswap and restored it to distinguish real zram
+compression from zswap caching. Only the deliberately invalid tailnet-key unit
+failed at each settled final boot. The companion OnixOS Cairn change retains
+the source-free receipt and checksum under
+`.cairn/changes/onixos-systemd-host/evidence/20261105-zram-vm/`; raw reports,
+scripts and disks remain outside the repositories.
+
 This is not complete retained-service parity. In particular, the Thunderbolt
-bridge and guard, zram swap, and the AMD GPU exporter timer still need host output
+bridge and guard and the AMD GPU exporter timer still need host output
 and appropriate runtime or hardware verification. Dummy tailnet and mesh credentials
 do not establish authenticated network operation. VM results do not authorize
 physical installation or prove GPU/USB4 behavior, and the OnixOS branch still
