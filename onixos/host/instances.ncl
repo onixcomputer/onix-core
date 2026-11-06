@@ -87,4 +87,9 @@
     service = "zram",
     roles.host.machines = ["aspen2"],
   },
+
+  thunderbolt-link = {
+    service = "thunderbolt-link",
+    roles.host.machines = ["aspen2"],
+  },
 }

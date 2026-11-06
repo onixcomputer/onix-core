@@ -15,6 +15,7 @@
 let
   # --- treefmt ---
   treefmtEval = inputs'.treefmt-nix.lib.evalModule pkgs {
+    projectRootFile = "flake.nix";
     programs = {
       # Nix — priority: deadnix (1) → statix (2) → nixfmt (3)
       # deadnix removes unused code, statix catches anti-patterns, nixfmt formats.

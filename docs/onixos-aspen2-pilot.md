@@ -41,6 +41,10 @@ Run the module tests:
 nix build .#checks.x86_64-linux.onixos-services
 ```
 
+The declared formatter finds its root through `flake.nix`, not `.git/config`.
+This supports Git worktrees, where `.git` is a file; the same deadnix, Statix and
+treefmt commit hooks run without a worktree-specific bypass.
+
 ## Parity
 
 Every difference between the two aspen2 derivations is one of the following; `parity-evidence.json` in the Cairn change lists the derivations.
@@ -300,12 +304,55 @@ the source-free receipt and checksum under
 `.cairn/changes/onixos-systemd-host/evidence/20261105-zram-vm/`; raw reports,
 scripts and disks remain outside the repositories.
 
-This is not complete retained-service parity. In particular, the Thunderbolt
-bridge and guard and the AMD GPU exporter timer still need host output
-and appropriate runtime or hardware verification. Dummy tailnet and mesh credentials
+Thunderbolt now has a typed host module, placed directly on aspen2. The NixOS
+tag and `onixos/services/thunderbolt-link.ncl` consume the same
+`inventory/tags/thunderbolt-link.json` policy and
+`inventory/tags/thunderbolt-link-guard.sh` body. They retain `br-tbt`,
+`10.10.10.2/28`, MTU 65520, driver-matched members, configured-peer source
+filtering, IPv6/transit denial, tunnel-event triggers and the periodic guard.
+The link is not trusted: an early nftables table prevents a general port opening
+from widening peer access. Source-address filtering is not peer authentication.
+
+The shared guard also fixes a real hardening defect: dotted sysctl names were
+used literally beneath `/proc/sys`, so the old existence check skipped them.
+It now translates the dots to directory separators. Both rendered guards
+changed real guest redirect/source-route sysctls from 1 to 0 and pinged the
+configured virtual peers successfully.
+
+The 2026-11-06 verifier built generation `bsscgkwb…` from 82 package roots:
+CLI and owner exits 0, native strict report one built/zero cached/failed, no
+audit events. The real CLI switched the disposable guest and its next
+firmware/GRUB boot selected that generation. Virtual-link tests passed peer
+HTTP access, non-peer denial with an open-port and table-removal positive
+control, IPv6 input drops, detached-member denial, bidirectional transit drops,
+address/MTU/qdisc repair, unreachable-peer failure, cooldown suppression,
+expired-marker retry and recovery without another bounce. Missing bridge,
+no carrier and no configured attachment also followed their public skip paths.
+The immutable backing hash, zero recording Nix PATH-stub calls and owned QEMU
+cleanup passed; only the deliberately invalid tailnet-key unit remained failed.
+
+This tests kernel-backed bridge/packets/sysctls and the generated guard, not
+physical USB4. The fixture changes only the member selector to veth and supplies
+attachment labels through a guard-private sysfs bind. Networkd was temporarily
+frozen for detached-member and address/MTU fault injection, then thawed; the
+latter repair used the actual guard in a transient oneshot. IPv6 used explicit
+neighbors and `nodad` addresses to avoid conflating discovery with input drops.
+Four earlier fixture failures remain separate non-passes. The companion OnixOS
+change retains their bindings and the passing source-free receipt/checksum under
+`.cairn/changes/onixos-systemd-host/evidence/20261106-thunderbolt-vm/`.
+Raw scripts, reports and disks remain outside the repositories. The final Nix
+tag changed only its unknown-host diagnostic after the native snapshot;
+re-evaluation preserved its generated guard and network-policy bytes.
+
+This is not complete retained-service parity. The AMD GPU exporter timer still
+needs host output and hardware verification; physical Thunderbolt driver,
+tunnel-event and DMA recovery remain unproved. Dummy tailnet and mesh credentials
 do not establish authenticated network operation. VM results do not authorize
 physical installation or prove GPU/USB4 behavior, and the OnixOS branch still
 needs its remaining integration coverage and landing gates.
+
+
+[Showing lines 304-350 of 357. Use :351 to continue]
 
 ## Gaps
 
