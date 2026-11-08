@@ -8,6 +8,6 @@
 
 ## Phase 3: Release
 
-- [ ] [serial] Rebuild britton-desktop from its recorded deployed source with only the herdr-iroh pin changed, review `diff-closures` and `dry-activate`, and switch only if Herdr itself is not restarted. r[onix.herdr_gateway.pin]
-- [ ] [serial] Verify the relay runs the new executable with its existing endpoint identity, and that `relay.agent_session` reports `supported: true` for a live omp pane through the deployed binary. r[onix.herdr_gateway.agent_info]
-- [ ] [serial] Confirm aspen3's running relay package equals the package built from the published pin. r[onix.herdr_gateway.pin]
+- [x] [serial] Rebuild britton-desktop from its recorded deployed source with only the herdr-iroh pin changed, review `diff-closures` and `dry-activate`, and switch only if Herdr itself is not restarted. r[onix.herdr_gateway.pin]
+- [x] [serial] Verify the relay runs the new executable with its existing endpoint identity, and that `relay.agent_session` reports `supported: true` for a live omp pane through the deployed binary. r[onix.herdr_gateway.agent_info]
+- [x] [serial] Confirm aspen3's running relay package equals the package built from the published pin. r[onix.herdr_gateway.pin]

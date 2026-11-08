@@ -53,3 +53,37 @@ temporary relay that has its own key and allowlist, and require
 `relay.agent_session` to report `supported: true` for a live omp pane. Require
 an unlisted peer to be refused by the production relay. Evaluate aspen3 from
 the published-pin source and compare its relay package with the running one.
+
+## Completion State
+
+herdr-iroh `a342b855` is on `main`; its CI run 42440685146 passed (tests,
+clippy, rustfmt and `nix build`). onix-core `65fbb7d7` published the pin.
+Buildbot's `nix-eval` passed; its `nix-build` checks failed on every system,
+as they did on the parent commit `9c4933c6`.
+
+britton-desktop runs generation 880, system
+`ic2zr0f8syzqsskcai49q6043chcpyp3`, built from the deployed source
+`/nix/store/7lkwa6ddjgisxkdghwvpwnrr5b5b94w4-source` (GC root
+`~/.local/state/onix-core/deployments/880/source`). That source differs from
+generation 879's only in `flake.nix` and `flake.lock`; the copy it was made
+from had generation 879's recorded NAR hash before the edit. The closure
+changed by 17 paths each way: herdr-iroh, its unit, and the system wrappers
+that reference them. `dry-activate` and the switch both stopped and started
+`herdr-iroh.service` and `polkit.service` and reloaded `dbus-broker`. The
+switch exited 4 for `celld`, `celld-site`, `collie-serve`,
+`llamacpp-server-supra-router` and `home-manager-brittonr` (the
+`meshtop.service` clobber check), the units the generation 879 switch also
+reported.
+
+The relay is PID 3083426 on
+`nbrxnkk2ndjm20rrzpzpqg7n52g90d3q-herdr-iroh-0.1.0`, with endpoint
+`fd84a45387385d77e9ce2f5fa92548c42e412bbe54e83c18e441065bea30d115` and an
+unchanged key hash. Herdr server PID 4940 and its 24 children kept their
+identities. The production relay refused an unlisted key. A temporary relay on
+the deployed binary, with its own key and allowlist, read omp pane `wC:pD`
+through britton-desktop's Herdr 0.9.0 server: `supported: true`, 8 messages
+and 12 tool calls.
+
+Evaluating aspen3 from the deployed source with the published pin gives
+`hb0pxkclkn415149h2sqfgkl5aipjbq0`, the system aspen3 already runs as
+generation 104, so aspen3 needs no further switch.
