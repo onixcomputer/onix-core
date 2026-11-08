@@ -250,8 +250,12 @@ lifecycle pass.
 For publication, the pilot's `onix-modules` input selects
 `git+ssh://git@github.com/onixcomputer/OnixOS.git?ref=refs/heads/onixos-systemd-host`
 instead of the operator's local worktree. The paired OnixOS revision is
-`a8b53701`; fetching it requires GitHub SSH access. This remains a feature-branch
-dependency, not a main-branch release or a completed landing gate.
+`7743a771` (relocked from `a8b53701` on 2026-11-08); fetching it requires GitHub
+SSH access. This remains a feature-branch dependency, not a main-branch release
+or a completed landing gate. The relock leaves aspen2's NixOS build alone:
+`onixos.nixosConfigurations.aspen2`'s toplevel at the `f8ff452c` pin differs
+from the `a8b53701` one only through `nixos-version`'s `configurationRevision`
+(`nix-diff`, impure evaluation), and `7743a771` adds only change documentation.
 
 The declared Statix/nixfmt and Prettier stages subsequently normalized the
 producer's assignment syntax and the index's JSON layout for commit. The VM
@@ -527,22 +531,36 @@ the rescue was gone. The source-free receipt is
 in the OnixOS repository; it classifies the 23 earlier attempts above.
 
 Producing an index does not publish its new configuration-profile closures to
-the declared caches. Before a non-fixture build, export/sign those closures in a
-cache the consumer can reach. The replica lane uses a separate loopback cache
-and local test signer; that signer is not upstream provenance or production
-fleet trust. The checked-in index keeps the original fleet/public cache
-declarations and the realized package paths.
+the declared caches. The replica lane uses a separate loopback cache and local
+test signer; that signer is not upstream provenance or production fleet trust.
+The checked-in index keeps the original fleet/public cache declarations and the
+realized package paths, and on 2026-11-08 those caches served its whole
+2,309-path closure: 1,404 paths from cache.nixos.org and 905 fleet-built paths
+from aspen1's Harmonia (`http://100.100.103.95:5000`, key `aspen1-1`). 33 of the
+fleet-built paths (Home Manager configuration, service wrappers, the system
+tools profile, the initrd's static dropbear and e2fsprogs) had reached only the
+test cache, so they were copied into aspen1's store from the producer store.
+Their narinfos as Harmonia serves them carry the NAR hashes the replica
+consumed, and `nix store verify` downloaded and checked each against `aspen1-1`
+alone. A scratch Mantle pull of the committed index, made as `onix build` makes
+it (each root's complete closure from the first declared cache that signs it),
+imported all 2,309 paths: 101 roots from cache.nixos.org and 15 from aspen1. It
+built no generation.
+
+Harmonia serves aspen1's own store, which aspen1's weekly `fast-nix-gc`
+collects. The 15 fleet-built index roots are GC roots on aspen1 under
+`~brittonr/.local/state/onixos-aspen2-host-cache`; delete that directory once
+no build needs this index.
 
 Retained-service parity is shown on the replica only. Real AMD telemetry,
 physical Thunderbolt driver, tunnel-event and DMA recovery, physical Wi-Fi and
 modem behavior remain unproved, and the local Headscale and mesh fixtures do not
-establish production network or mesh authentication. Before cutover, the
-fleet-built closures need a cache aspen2 trusts, and landing on main needs the
+establish production network or mesh authentication. Landing on main needs the
 full flake gate. VM results never authorize physical installation.
 
 ## Gaps
 
-- The NixOS inventory's Mantle path remains a service-manifest build, not host activation ([Mantle build](#mantle-build)). The separate [systemd-host candidate](#mantle-built-systemd-host-candidate) supplies a bootable generation whose retained services passed a complete replica lifecycle; physical-hardware parity, a fleet-trusted cache and operator authorization still block replacing aspen2's operating system.
+- The NixOS inventory's Mantle path remains a service-manifest build, not host activation ([Mantle build](#mantle-build)). The separate [systemd-host candidate](#mantle-built-systemd-host-candidate) supplies a bootable generation whose retained services passed a complete replica lifecycle; physical-hardware parity and operator authorization still block replacing aspen2's operating system.
 - `onix check onixos/inventory.ncl --services onixos/services` reports 24 C012 findings: raw `networking.firewall`, `users`, `systemd.timers` and `systemd.tmpfiles` leaves where OnixOS wants typed providers. The providers cannot express what Clan configures: interface-scoped firewall ports (`tailscale0` for arxiv-corpus, laya and the build farm), relative timers (`OnBootSec`/`OnUnitActiveSec`), recursive ownership (`Z`) rules, root's authorized keys, extra groups of an existing service user, or a password hash wired from a secret. Converting the expressible subset would still leave the check failing.
 - OnixOS cannot keep generated but undeployed secrets, upload activation-time secrets, or order generators by their dependencies, and its prompts have no hidden or persist flags. Regenerating the `deploy = false`, activation and prompted secrets still needs Clan.
 - `system.stateVersion` still comes from `vars/per-machine/<machine>/state-version`.
