@@ -339,7 +339,7 @@
     };
     # Saved-machine gateway; keep the requested main revision reproducible.
     herdr-iroh = {
-      url = "github:brittonr/herdr-iroh/1ee15bf8506a13394de2f253ee6fd8febfca1a64";
+      url = "github:brittonr/herdr-iroh/a342b855dbd6483fe6407baba69d28ecdac71501";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

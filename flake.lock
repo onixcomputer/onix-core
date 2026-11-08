@@ -2929,17 +2929,17 @@
         "rust-overlay": "rust-overlay_9"
       },
       "locked": {
-        "lastModified": 1793901921,
-        "narHash": "sha256-fyZCOTLTZi6sJJd/I4KP9hJvc/JBPvclJi/eO5x/eKU=",
+        "lastModified": 1794101945,
+        "narHash": "sha256-3dySSC3XKNmRbyU0p/WKeg0DTlealDDOp9Xlvqh09mk=",
         "owner": "brittonr",
         "repo": "herdr-iroh",
-        "rev": "1ee15bf8506a13394de2f253ee6fd8febfca1a64",
+        "rev": "a342b855dbd6483fe6407baba69d28ecdac71501",
         "type": "github"
       },
       "original": {
         "owner": "brittonr",
         "repo": "herdr-iroh",
-        "rev": "1ee15bf8506a13394de2f253ee6fd8febfca1a64",
+        "rev": "a342b855dbd6483fe6407baba69d28ecdac71501",
         "type": "github"
       }
     },
