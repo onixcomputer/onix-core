@@ -5,6 +5,7 @@
 }:
 {
   imports = [
+    ../../inventory/tags/common/herdr-iroh.nix
     inputs.nixos-hardware.nixosModules.framework-desktop-amd-ai-max-300-series
   ];
 

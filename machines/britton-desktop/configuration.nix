@@ -306,6 +306,7 @@ let
 in
 {
   imports = [
+    ../../inventory/tags/common/herdr-iroh.nix
     ./build-storage.nix
     ./collie-serve.nix
     ../../modules/pi-branchfs/nixos.nix

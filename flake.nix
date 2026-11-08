@@ -229,7 +229,7 @@
       };
     };
     underclass = {
-      url = "github:ghuntley/underclass";
+      url = "github:brittonr/underclass";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         systems.follows = "systems";
@@ -335,6 +335,11 @@
     };
     musnix = {
       url = "github:musnix/musnix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    # Saved-machine gateway; keep the requested main revision reproducible.
+    herdr-iroh = {
+      url = "github:brittonr/herdr-iroh/a342b855dbd6483fe6407baba69d28ecdac71501";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
