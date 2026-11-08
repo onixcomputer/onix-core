@@ -12,7 +12,8 @@
 #     --services <onixos>/modules --services onixos/services --json
 fun onix =>
   let core = (import "../../inventory/core/machines.ncl").machines.aspen2 in
-  # Tags whose NixOS files only serve dropped roles.
+  # Dropped-role tags and initrd-ssh's NixOS tag: the latter is replaced by
+  # the native recovery instance in host/instances.ncl, not removed as a feature.
   let dropped_tags = ["boot-partition-gc", "minimal-docs", "remote-builders", "initrd-ssh"] in
   # The shared instance files select machines by tag (including the class-like
   # tag nixos); here every kept role is placed on aspen2 by name instead.

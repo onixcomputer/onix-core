@@ -82,6 +82,16 @@ fun onix =>
 
     impl = fun args =>
       let cfg = args.settings in
+      let has_cpu_widget =
+        cfg.widgets
+        |> std.array.any (fun widget =>
+          std.is_record widget
+          && std.record.has_field "resources" widget
+          && std.is_record widget.resources
+          && std.record.has_field "cpu" widget.resources
+          && widget.resources.cpu == true
+        )
+      in
       {
         output.nixos.services.homepage-dashboard =
           {
@@ -100,40 +110,92 @@ fun onix =>
         # the same directory variable.
         output.host =
           {
-            users."homepage-dashboard" = { group = "homepage-dashboard", description = "Homepage dashboard service user" },
-            groups."homepage-dashboard" = {},
-            files =
-              { "homepage-dashboard/settings.yaml".text = std.serialize 'Yaml cfg.settings }
-              & (if cfg.services == [] then {} else { "homepage-dashboard/services.yaml".text = std.serialize 'Yaml cfg.services })
-              & (if cfg.widgets == [] then {} else { "homepage-dashboard/widgets.yaml".text = std.serialize 'Yaml cfg.widgets })
-              & (if cfg.bookmarks == [] then {} else { "homepage-dashboard/bookmarks.yaml".text = std.serialize 'Yaml cfg.bookmarks }),
+            files = {
+              "homepage-dashboard/custom.css".text =
+                if std.record.has_field "customCSS" cfg.extra_options then cfg.extra_options.customCSS else "",
+              "homepage-dashboard/custom.js".text =
+                if std.record.has_field "customJS" cfg.extra_options then cfg.extra_options.customJS else "",
+              "homepage-dashboard/bookmarks.yaml".text = std.serialize 'Yaml cfg.bookmarks,
+              "homepage-dashboard/docker.yaml".text =
+                std.serialize 'Yaml (if std.record.has_field "docker" cfg.extra_options then cfg.extra_options.docker else {}),
+              "homepage-dashboard/kubernetes.yaml".text =
+                std.serialize 'Yaml (if std.record.has_field "kubernetes" cfg.extra_options then cfg.extra_options.kubernetes else {}),
+              "homepage-dashboard/proxmox.yaml".text =
+                std.serialize 'Yaml (if std.record.has_field "proxmox" cfg.extra_options then cfg.extra_options.proxmox else {}),
+              "homepage-dashboard/services.yaml".text = std.serialize 'Yaml cfg.services,
+              "homepage-dashboard/settings.yaml".text = std.serialize 'Yaml cfg.settings,
+              "homepage-dashboard/widgets.yaml".text = std.serialize 'Yaml cfg.widgets,
+            },
             units."homepage-dashboard.service" = {
               sections = {
-                Unit = { Description = "Homepage Dashboard", After = "network.target" },
+                Unit = {
+                  Description = "Homepage Dashboard",
+                  After = "network.target",
+                  X-Restart-Triggers =
+                    std.hash
+                      'Sha256
+                      (
+                        std.serialize
+                          'Json
+                          {
+                            settings = cfg.settings,
+                            services = cfg.services,
+                            widgets = cfg.widgets,
+                            bookmarks = cfg.bookmarks,
+                            extra_options = cfg.extra_options,
+                          }
+                      ),
+                },
                 Service = {
                   Type = "simple",
                   ExecStart = "%{args.package_paths."homepage-dashboard"}/bin/homepage",
-                  # Homepage copies its skeleton configuration into the config
-                  # directory on first start, so that directory has to be
-                  # writable: the read-only /etc files are seeded into the state
-                  # directory before it runs.
-                  ExecStartPre = "+%{args.package_paths.bash}/bin/bash -c 'mkdir -p /var/lib/homepage-dashboard/config && cp -n /etc/homepage-dashboard/*.yaml /var/lib/homepage-dashboard/config/ 2>/dev/null || true'",
-                  User = "homepage-dashboard",
-                  Group = "homepage-dashboard",
+                  # The pinned wrapper defaults PORT to 3000. The NixOS module
+                  # overrides it explicitly and reads live configuration from
+                  # /etc, rather than copying stale files into state.
+                  ExecStartPre = "%{args.package_paths.bash}/bin/bash -c '%{args.package_paths.coreutils}/bin/rm -rf /var/cache/homepage-dashboard/*'",
                   StateDirectory = "homepage-dashboard",
+                  CacheDirectory = "homepage-dashboard",
                   Environment = [
+                    "PORT=%{std.to_string cfg.listen_port}",
                     "HOMEPAGE_ALLOWED_HOSTS=%{cfg.allowed_hosts}",
-                    "HOMEPAGE_CONFIG_DIR=/var/lib/homepage-dashboard/config",
+                    "HOMEPAGE_CONFIG_DIR=/etc/homepage-dashboard",
                     "HOME=/var/lib/homepage-dashboard",
                     "LOG_TARGETS=stdout",
                     "NIXPKGS_HOMEPAGE_CACHE_DIR=/var/cache/homepage-dashboard",
                   ],
                   Restart = "on-failure",
+                  DynamicUser = "true",
+                  DevicePolicy = "closed",
+                  CapabilityBoundingSet = "",
+                  RestrictAddressFamilies = ["AF_INET", "AF_INET6", "AF_UNIX", "AF_NETLINK"],
+                  DeviceAllow = "",
+                  NoNewPrivileges = "true",
+                  PrivateDevices = "true",
+                  PrivateMounts = "true",
+                  PrivateTmp = "true",
+                  PrivateUsers = "true",
+                  ProtectClock = "true",
+                  ProtectControlGroups = "true",
+                  ProtectHome = "true",
+                  ProtectKernelLogs = "true",
+                  ProtectKernelModules = "true",
+                  ProtectKernelTunables = "true",
+                  ProtectSystem = "strict",
+                  LockPersonality = "true",
+                  RemoveIPC = "true",
+                  RestrictNamespaces = "true",
+                  RestrictRealtime = "true",
+                  RestrictSUIDSGID = "true",
+                  SystemCallArchitectures = "native",
+                  SystemCallFilter = ["@system-service", "~@resources"],
+                  ProtectProc = "invisible",
+                  ProtectHostname = "true",
+                  UMask = "0077",
+                  ProcSubset = if has_cpu_widget then "all" else "pid",
                 },
               },
               wanted_by = ["multi-user.target"],
             },
-            tmpfiles = ["d /var/cache/homepage-dashboard 0755 homepage-dashboard homepage-dashboard -"],
           }
           & (if cfg.open_firewall then { firewall.allowed_tcp_ports = [cfg.listen_port] } else {}),
       },

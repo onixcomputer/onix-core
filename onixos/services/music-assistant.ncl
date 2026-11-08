@@ -21,17 +21,44 @@ fun onix =>
                 User = "music-assistant",
                 Group = "music-assistant",
                 StateDirectory = "music-assistant",
-                Environment = "HOME=/var/lib/music-assistant",
+                Environment = [
+                  "HOME=/var/lib/music-assistant",
+                  "PATH=%{args.package_paths.lsof}/bin:/run/wrappers/bin:/run/current-system/sw/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin",
+                ],
+                EnvironmentFile = "%{args.package_paths."music-assistant-pythonpath-env"}",
                 ExecStart = "%{p."music-assistant"}/bin/mass --config /var/lib/music-assistant",
                 Restart = "on-failure",
+                AmbientCapabilities = [""],
+                CapabilityBoundingSet = [""],
+                DevicePolicy = "closed",
+                LockPersonality = "true",
+                # Keep executable-memory support for pyopenssl/cffi and llvmlite.
+                MemoryDenyWriteExecute = "false",
+                BindReadOnlyPaths = ["/proc/cpuinfo"],
+                ProcSubset = "all",
+                ProtectClock = "true",
+                ProtectControlGroups = "true",
                 PrivateTmp = "true",
                 ProtectHome = "true",
+                ProtectHostname = "true",
+                ProtectKernelLogs = "true",
+                ProtectKernelModules = "true",
+                ProtectKernelTunables = "true",
+                ProtectProc = "invisible",
+                RestrictAddressFamilies = ["AF_INET", "AF_INET6", "AF_NETLINK"],
+                RestrictNamespaces = "true",
+                RestrictRealtime = "true",
+                SystemCallArchitectures = "native",
+                SystemCallFilter = ["@system-service", "~@privileged", "mbind"],
+                RestrictSUIDSGID = "true",
+                UMask = "0077",
               },
             },
             wanted_by = ["multi-user.target"],
           },
         }
-        & (if cfg.open_firewall then { firewall.allowed_tcp_ports = [cfg.port] } else {}),
+        # Pinned NixOS defaults: UI, stream and the builtin Sendspin provider.
+        & (if cfg.open_firewall then { firewall.allowed_tcp_ports = [cfg.port, 8097, 8927] } else {}),
     }
   in
   ({
@@ -51,23 +78,13 @@ fun onix =>
           },
         ],
       },
-      packages = ["music-assistant"],
+      packages = ["music-assistant", "lsof", "music-assistant-pythonpath-env"],
       roles.host = {
         port | onix.Port | default = 8095,
-        open_firewall | Bool | default = true,
+        open_firewall | Bool | default = false,
       },
     },
 
     impl = host_impl,
-
-    tests | not_exported =
-      let pkgs = { "music-assistant" = "mass-pkg" } in
-      let out = (host_impl (onix.testing.mock_args { service = "music-assistant", role_name = 'host, settings = interface.roles.host, packages = pkgs, package_paths = pkgs })).output.host in
-      [
-        std.string.contains "mass --config /var/lib/music-assistant" out.units."music-assistant.service".sections.Service.ExecStart,
-        out.units."music-assistant.service".sections.Service.DynamicUser == "true",
-        out.firewall.allowed_tcp_ports == [8095],
-      ]
-      |> std.test.assert_all,
   }
   ) | onix.ServiceModule

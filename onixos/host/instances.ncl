@@ -1,6 +1,11 @@
 # Instances that only the systemd-host inventory places: the OnixOS host base and the
 # typed replacements for aspen2's NixOS tag files. Values follow aspen2's running
 # NixOS configuration (machines/aspen2, inventory/tags) unless a comment says otherwise.
+let host_root_keys = [
+  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILYzh3yIsSTOYXkJMFHBKzkakoDfonm3/RED5rqMqhIO britton@framework",
+  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAX7hNDY0L9JSSIP+NVTbDluJgJ9c/l9nzbuwCNkVxgr britton@cproof.ai",
+]
+in
 {
   host-base = {
     service = "onixos-host-base",
@@ -48,10 +53,7 @@
         # NixOS's hosts order with nscd, resolved and nss-mdns (services.avahi.nssmdns4).
         nss_hosts = ["mymachines", "mdns4_minimal", "[NOTFOUND=return]", "resolve", "[!UNAVAIL=return]", "files", "myhostname", "dns"],
         # inventory/tags/common/shared-users.nix copies wheel users' keys to root.
-        root_authorized_keys = [
-          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILYzh3yIsSTOYXkJMFHBKzkakoDfonm3/RED5rqMqhIO britton@framework",
-          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAX7hNDY0L9JSSIP+NVTbDluJgJ9c/l9nzbuwCNkVxgr britton@cproof.ai",
-        ],
+        root_authorized_keys = host_root_keys,
       },
     },
   },
@@ -90,6 +92,58 @@
 
   thunderbolt-link = {
     service = "thunderbolt-link",
+    roles.host.machines = ["aspen2"],
+  },
+
+  amd-gpu-exporter = {
+    service = "amd-gpu-exporter",
+    roles.host.machines = ["aspen2"],
+  },
+
+  amd-gpu-runtime = {
+    service = "amd-gpu-runtime",
+    roles.host.machines = ["aspen2"],
+  },
+
+  host-policy = {
+    service = "host-policy",
+    roles.host = {
+      machines = ["aspen2"],
+      # machines/aspen2/facter.json: physical RAM, not the replica VM size.
+      settings.ram_gb = 64,
+    },
+  },
+
+  host-tools = {
+    service = "host-tools",
+    roles.host.machines = ["aspen2"],
+  },
+
+  network-extras = {
+    service = "network-extras",
+    roles.host.machines = ["aspen2"],
+  },
+
+  initrd-ssh = {
+    service = "initrd-ssh",
+    roles.host = {
+      machines = ["aspen2"],
+      settings = {
+        port = 2222,
+        interface = "enp191s0",
+        driver_module = "r8169",
+        authorized_keys = host_root_keys,
+      },
+    },
+  },
+
+  fhs-compat = {
+    service = "fhs-compat",
+    roles.host.machines = ["aspen2"],
+  },
+
+  vllm-cluster-network = {
+    service = "vllm-cluster-network",
     roles.host.machines = ["aspen2"],
   },
 }

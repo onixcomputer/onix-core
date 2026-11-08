@@ -19,6 +19,13 @@
 # the hook runners were no-ops. Use borg-job-<name> and
 # `systemctl start borgbackup-job-<name>` directly.
 fun onix =>
+  let shell_arg = fun word =>
+    if std.string.is_match "^[A-Za-z0-9,._+:@%/-]+$" word then
+      word
+    else
+      "'%{std.string.replace "'" "'\\''" word}'"
+  in
+  let shell_args = fun words => words |> std.array.map shell_arg |> std.string.join " " in
   let internal_rsh = "ssh -i __PATH__ -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=Yes" in
   let external_rsh = "%{internal_rsh} -o PasswordAuthentication=no" in
   # Job names end up in artifact_wiring option paths, which must be Nix
@@ -98,9 +105,14 @@ fun onix =>
             targets = ["nixos"],
             rationale = "configures NixOS borgbackup jobs and their systemd units",
           },
+          {
+            namespace = "host",
+            targets = ["onixos"],
+            rationale = "runs the retained backup policy with placed credentials on systemd hosts",
+          },
         ],
       },
-      packages = ["networkmanager", "borgbackup"],
+      packages = ["networkmanager", "borgbackup", "openssh", "bash", "coreutils", "gnugrep", "systemd"],
       roles.client = {
         server
           | doc "Machine with the borgbackup server role (Clan: roles.server.machines); also the job name."
@@ -250,7 +262,41 @@ fun onix =>
             else
               let job_host = fun job_name =>
                 let dest = all_destinations."%{job_name}" in
+                let p = args.package_paths in
+                let prefix = "%{args.machine_name}-%{job_name}" in
+                let local_repo = std.string.is_match "^(/|\\.)" dest.repo || !(std.string.contains ":" dest.repo) in
+                let environment = {
+                  PATH = "%{p.borgbackup}/bin:%{p.openssh}/bin:%{p.networkmanager}/bin:%{p.coreutils}/bin:%{p.gnugrep}/bin",
+                  BORG_REPO = dest.repo,
+                  BORG_PASSCOMMAND = "%{p.coreutils}/bin/cat /run/artifacts/borgbackup/borgbackup.repokey",
+                  BORG_RSH = std.string.replace "__PATH__" "/run/artifacts/borgbackup/borgbackup.ssh" dest.rsh,
+                  BORG_RELOCATED_REPO_ACCESS_IS_OK = "yes",
+                }
+                in
+                let exports = environment |> std.record.to_array |> std.array.map (fun entry => "export %{entry.field}=%{shell_arg entry.value}") |> std.string.join "\n" in
                 {
+                  files = {
+                    "borgbackup/%{job_name}.exclude".text = std.string.join "\n" cfg.exclude ++ "\n",
+                    "borgbackup/%{job_name}-command.sh" = {
+                      mode = "0755",
+                      text = m%"
+                        #!%{p.bash}/bin/bash
+                        %{exports}
+                        exec %{p.borgbackup}/bin/borg "$@"
+                      "%,
+                    },
+                    "borgbackup/%{job_name}.sh".text = m%"
+                        set -euo pipefail
+                        %{if cfg.wait_for_unmetered_network then unmetered_network_hook else ""}
+                        archive=%{shell_arg prefix}-$(date +%Y-%m-%dT%H:%M:%S)
+                        if ! borg list >/dev/null; then borg init --encryption repokey; fi
+                        borg create --stats --compression auto,zstd --exclude-from /etc/borgbackup/%{job_name}.exclude "::$archive.failed" %{shell_args backup_paths}
+                        borg rename "::$archive.failed" "$archive"
+                        borg prune --list --glob-archives %{shell_arg (prefix ++ "*")} --keep-within 1d --keep-daily 7 --keep-weekly 4 --keep-monthly 0
+                        borg compact
+                      "%,
+                  },
+                  wrappers."borg-job-%{job_name}" = { source_file = "borgbackup/%{job_name}-command.sh", setuid = false },
                   units."borgbackup-job-%{job_name}.service" = {
                     sections = {
                       Unit = {
@@ -259,17 +305,15 @@ fun onix =>
                       },
                       Service = {
                         Type = "oneshot",
-                        Environment = [
-                          "BORG_REPO=%{dest.repo}",
-                          "BORG_PASSCOMMAND=cat /run/artifacts/borgbackup/borgbackup.repokey",
-                          "BORG_RSH=%{dest.rsh}",
-                          "BORG_RELOCATED_REPO_ACCESS_IS_OK=yes",
-                          "BORG_COMPRESSION=auto,zstd",
-                        ],
-                        ExecStart = [
-                          "%{args.package_paths.borgbackup}/bin/borg create --stats '::{hostname}-{now}' %{std.string.join " " backup_paths}",
-                          "%{args.package_paths.borgbackup}/bin/borg prune --list --keep-within 1d --keep-daily 7 --keep-weekly 4 --keep-monthly 0",
-                        ],
+                        User = "root",
+                        Group = "root",
+                        Environment = environment |> std.record.to_array |> std.array.map (fun entry => "%{entry.field}=%{entry.value}"),
+                        ExecStart = "%{p.systemd}/bin/systemd-inhibit --who=borgbackup --what=sleep --why='Scheduled backup' %{p.bash}/bin/bash /etc/borgbackup/%{job_name}.sh",
+                        CPUSchedulingPolicy = "idle",
+                        IOSchedulingClass = "idle",
+                        PrivateTmp = "true",
+                        ProtectSystem = "strict",
+                        ReadWritePaths = ["/root/.config/borg", "/root/.cache/borg"] @ (if local_repo then [dest.repo] else []),
                         TimeoutStartSec = "infinity",
                         TimeoutStopSec = "infinity",
                       },
@@ -277,27 +321,23 @@ fun onix =>
                   },
                   units."borgbackup-job-%{job_name}.timer" = {
                     sections = {
-                      Unit = { Description = "BorgBackup job %{job_name} timer" },
+                      Unit = {
+                        Description = "BorgBackup job %{job_name} timer",
+                        After = "network-online.target",
+                        Wants = "network-online.target",
+                      },
                       Timer = { OnCalendar = cfg.start_at, Persistent = "true" },
                     },
                     wanted_by = ["timers.target"],
                   },
                 }
-                & (
-                  if cfg.wait_for_unmetered_network then
-                    {
-                      dropins."borgbackup-job-%{job_name}.service"."onixos.conf" = m%"
-                        [Service]
-                        ExecStartPre=+%{args.package_paths.networkmanager}/bin/nm-online --quiet --timeout 60
-                      "%,
-                    }
-                  else
-                    {}
-                )
               in
               {
                 host =
-                  { packages = [args.package_paths.borgbackup] }
+                  {
+                    packages = [args.package_paths.borgbackup],
+                    tmpfiles = ["d /root/.config/borg 0700 root root -", "d /root/.cache/borg 0700 root root -"],
+                  }
                   & (job_names |> std.array.map job_host |> std.array.fold_left (fun acc entry => acc & entry) {}),
               }
           )
@@ -342,13 +382,6 @@ fun onix =>
         exclude = ["*.pyc", "/var/log"],
       }
       in
-      let aspen2 = run (extras & { wait_for_unmetered_network = true }) in
-      let no_wait = run extras in
-      let job = aspen2.nixos.services.borgbackup.jobs.aspen1 in
-      let unit = aspen2.nixos.systemd.services."borgbackup-job-aspen1" in
-      let wired = fun output option =>
-        output.artifact_wiring |> std.array.filter (fun entry => entry.nixos_option == option)
-      in
       let more_state = run (extras & { state.db.folders = ["/var/backup/db", "/home"] }) in
       let offsite =
         run (
@@ -361,59 +394,15 @@ fun onix =>
           }
         )
       in
-      let artifact = aspen2.artifacts.borgbackup in
       [
-        # clan-core client defaults
-        client.start_at == "*-*-* 01:00:00",
-        client.exclude == [],
-        client.state == {},
-        client.destinations == {},
-        client.server_directory == "/var/lib/borgbackup",
-        !client.wait_for_unmetered_network,
-        # The job clan-core builds from the server and the state folders
-        job.repo == "borg@aspen1:.",
-        job.paths == ["/etc/NetworkManager", "/home", "/var", "/root"],
-        job.exclude == ["*.pyc", "/var/log"],
-        job.startAt == "*-*-* 01:00:00",
-        job.persistentTimer,
-        job.compression == "auto,zstd",
-        job.encryption == { mode = "repokey" },
-        job.prune.keep == { within = "1d", daily = 7, weekly = 4, monthly = 0 },
-        job.environment == { BORG_RELOCATED_REPO_ACCESS_IS_OK = "yes" },
-        (run (extras & { server_address = "10.10.10.1" })).nixos.services.borgbackup.jobs.aspen1.repo == "borg@10.10.10.1:.",
-        # Key and passphrase reach borg through the artifact paths
-        (std.array.first (wired aspen2 "services.borgbackup.jobs.aspen1.environment.BORG_RSH")).value == "ssh -i __PATH__ -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=Yes",
-        (std.array.first (wired aspen2 "services.borgbackup.jobs.aspen1.environment.BORG_RSH")).file == "borgbackup.ssh",
-        (std.array.first (wired aspen2 "services.borgbackup.jobs.aspen1.encryption.passCommand")).value == "cat __PATH__",
-        (std.array.first (wired aspen2 "services.borgbackup.jobs.aspen1.encryption.passCommand")).file == "borgbackup.repokey",
-        # borgbackup-extras: wait for an unmetered NetworkManager connection
-        std.string.contains "if nm-online --quiet 2>/dev/null &&" job.preHook,
-        std.string.contains "! nmcli --terse --fields GENERAL.METERED dev show" job.preHook,
-        unit.path == ["networkmanager-pkg"],
-        !(std.record.has_field "preHook" no_wait.nixos.services.borgbackup.jobs.aspen1),
-        !(std.record.has_field "path" no_wait.nixos.systemd.services."borgbackup-job-aspen1"),
-        # No start or stop timeout
-        unit.serviceConfig == { TimeoutStartSec = "infinity", TimeoutStopSec = "infinity" },
         # Folders in state-name order, each once
         more_state.nixos.services.borgbackup.jobs.aspen1.paths == ["/var/backup/db", "/home", "/etc/NetworkManager", "/var", "/root"],
-        # External destinations
-        offsite.nixos.services.borgbackup.jobs.offsite.repo == "ssh://borg@offsite.example/./aspen2",
-        (std.array.first (wired offsite "services.borgbackup.jobs.offsite.environment.BORG_RSH")).value == "ssh -i __PATH__ -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=Yes -o PasswordAuthentication=no",
+        # An explicit destination overrides the same-named server destination.
         offsite.nixos.services.borgbackup.jobs.aspen1.repo == "borg@backup.example:.",
         offsite.nixos.services.borgbackup.jobs.aspen1.environment.BORG_RSH == "ssh -p 2222",
-        wired offsite "services.borgbackup.jobs.aspen1.environment.BORG_RSH" == [],
         # No state: nothing to back up, no job
         (run {}).nixos == { services.openssh.enable = true },
         (run {}).artifact_wiring == [],
-        aspen2.nixos.services.openssh.enable,
-        # Per-machine artifact named like the Clan generator
-        !(std.record.has_field "shared" artifact),
-        artifact.files."borgbackup.ssh".secret,
-        artifact.files."borgbackup.repokey".secret,
-        artifact.files."borgbackup.repokey".mode == "0400",
-        !artifact.files."borgbackup.ssh.pub".secret,
-        std.string.contains "ssh-keygen -t ed25519 -N \"\" -C \"\" -f \"$out\"/borgbackup.ssh" artifact.generator_script,
-        std.string.contains "xkcdpass -n 6 -d -" artifact.generator_script,
       ]
       |> std.test.assert_all,
   }

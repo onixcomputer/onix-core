@@ -32,12 +32,12 @@ fun onix =>
           {
             namespace = "host",
             targets = ["onixos"],
-            rationale = "OnixOS systemd hosts run the activation package Nix builds for the merged profiles",
+            rationale = "The host producer builds filtered Home Manager profile and activation artifacts; target activation runs without Nix",
           },
         ],
       },
-      packages = ["bash", "coreutils", "gnused"],
-      host_packages = ["home-manager-activation"],
+      packages = ["bash", "coreutils", "systemd"],
+      host_packages = ["home-manager-activation", "home-manager-profile"],
       roles.default = {
         username
           | doc "User the profiles apply to (home-manager.users.<username>). Required."
@@ -75,54 +75,218 @@ fun onix =>
           profilesBasePath = cfg.profiles_base_path,
           homeStateVersion = if std.record.has_field "home_state_version" cfg then cfg.home_state_version else null,
         },
-        # Nix builds the merged profiles into one activation package (the index's
-        # home-manager-activation); a host generation runs it once per user at
-        # boot, before user sessions start, as Home Manager's NixOS module does.
+        # The host producer builds the same filtered Home Manager package set
+        # into both artifacts: activation retains config/unit activation, while
+        # profile is installed at the NixOS useUserPackages path before
+        # activation. Repeated profile instances for one user deliberately emit
+        # identical user-keyed HostOutput fields.
         output.host = {
-          # Home Manager's activate opens the Nix store at two points to realise
-          # its generation and add GC roots. A systemd host has no daemon and a
-          # read-only store, so those two commands cannot run; every other step of
-          # Home Manager's activation is unchanged. The unit therefore runs a copy
-          # of activate with just those commands replaced by `true`, keeping
-          # `--add-root`'s link creation out of the store it cannot write.
+          # NixOS normally links this buildEnv at
+          # /etc/profiles/per-user/<user>. Install that already-built closure
+          # directly; do not claim packages were installed by activation alone.
+          files."onixos/home-manager-profile.sh" = {
+            mode = "0755",
+            text = m%"
+              #!%{args.package_paths.bash}/bin/bash
+              set -euo pipefail
+              profile="$1"
+              user="$2"
+              profile_root="/etc/profiles/per-user"
+              target="$profile_root/$user"
+              if [[ ! -d "$profile/bin" ]]; then
+                echo "Home Manager executable profile is unavailable: $profile" >&2
+                exit 1
+              fi
+              %{args.package_paths.coreutils}/bin/mkdir -p "$profile_root"
+              if [[ -e "$target" && ! -L "$target" ]]; then
+                echo "Refusing to replace unmanaged Home Manager profile path: $target" >&2
+                exit 1
+              fi
+              if [[ -L "$target" ]]; then
+                current="$(%{args.package_paths.coreutils}/bin/readlink "$target")"
+                if [[ "$current" == "$profile" ]]; then
+                  exit 0
+                fi
+                case "$current" in
+                  /nix/store/*) ;;
+                  *)
+                    echo "Refusing to replace non-store Home Manager profile link: $target -> $current" >&2
+                    exit 1
+                    ;;
+                esac
+              fi
+              temporary="$profile_root/.${user}.onixos-$$"
+              trap '"%{args.package_paths.coreutils}/bin/rm" -f "$temporary"' EXIT
+              %{args.package_paths.coreutils}/bin/ln -s "$profile" "$temporary"
+              %{args.package_paths.coreutils}/bin/mv -Tf "$temporary" "$target"
+              trap - EXIT
+            "%,
+          },
+          # The host producer supplies a Nix-command-free activation artifact retaining
+          # the complete Home Manager generation payload.
           files."onixos/home-manager-activate.sh" = {
             mode = "0755",
             text = m%"
               #!%{args.package_paths.bash}/bin/bash
-              # Run Home Manager's activation package without its two Nix store
-              # realisations: on this host the store is read-only and there is no
-              # daemon to realise against. Everything else is Home Manager's own
-              # script, executed unchanged.
               set -euo pipefail
               package="$1"
-              user="$2"
-              out="$HOME/.cache/onixos/home-manager-activate.sh"
-              %{args.package_paths.coreutils}/bin/mkdir -p "$HOME/.cache/onixos"
-              %{args.package_paths.gnused}/bin/sed \
-                -e 's|nix-store --realise|true # nix-store --realise|g' \
-                -e 's|run nix-env |run ln |' \
-                -e 's|--profile "$genProfilePath" --set "$newGenPath"|--symbolic --force --no-dereference "$newGenPath" "$genProfilePath"|' \
-                "$package/activate" > "$out"
-              %{args.package_paths.coreutils}/bin/chmod 0755 "$out"
-              exec %{args.package_paths.bash}/bin/bash "$out"
+              state="$HOME/.local/state/onixos/home-manager"
+              %{args.package_paths.coreutils}/bin/mkdir -p "$state"
+              export newGenPath="$package"
+              export hmStatePath="${XDG_STATE_HOME:-$HOME/.local/state}/home-manager"
+              export hmDataPath="${XDG_DATA_HOME:-$HOME/.local/share}/home-manager"
+              # The producer drops Home Manager's setupVars, which locates the Nix
+              # profile and GC roots. This host keeps neither, so those globals are
+              # defined and empty; activation still reports them under set -u.
+              export genProfilePath="" newGenGcPath="" currentGenGcPath="" legacyGenGcPath=""
+              # This OnixOS pointer tracks old managed home-files only; it is
+              # not a Nix profile or garbage-collection root.
+              if old_generation="$(%{args.package_paths.coreutils}/bin/readlink -e "$state/current-generation")"; then
+                if [[ -d "$old_generation/home-files" ]]; then
+                  export oldGenPath="$old_generation"
+                fi
+              fi
+              "$package/activate" --driver-version 1
+              temporary="$state/.current-generation-$$"
+              trap '"%{args.package_paths.coreutils}/bin/rm" -f "$temporary"' EXIT
+              %{args.package_paths.coreutils}/bin/ln -s "$package" "$temporary"
+              %{args.package_paths.coreutils}/bin/mv -Tf "$temporary" "$state/current-generation"
+              trap - EXIT
             "%,
+          },
+          units."home-manager-profile-%{user_name}.service" = {
+            sections = {
+              Unit = {
+                Description = "Install Home Manager package profile for %{user_name}",
+                Before = "home-manager-%{user_name}.service",
+                RequiresMountsFor = "/nix/store",
+              },
+              Service = {
+                Type = "oneshot",
+                User = "root",
+                ExecStart = "/etc/onixos/home-manager-profile.sh %{args.package_paths."home-manager-profile"} %{user_name}",
+                RemainAfterExit = "yes",
+              },
+            },
+            wanted_by = ["multi-user.target"],
           },
           units."home-manager-%{user_name}.service" = {
             sections = {
               Unit = {
                 Description = "Home Manager environment for %{user_name}",
                 Before = "systemd-user-sessions.service",
-                RequiresMountsFor = "/home/%{user_name}",
+                Requires = "home-manager-profile-%{user_name}.service",
+                After = "home-manager-profile-%{user_name}.service",
+                RequiresMountsFor = "/home/%{user_name} /nix/store",
               },
               Service = {
+                X-StopIfChanged = "false",
                 Type = "oneshot",
                 User = user_name,
-                Environment = ["HOME=/home/%{user_name}", "HOME_MANAGER_BACKUP_EXT=hm-bak"],
-                ExecStart = "/etc/onixos/home-manager-activate.sh %{args.package_paths."home-manager-activation"} %{user_name}",
+                Environment = ["HOME=/home/%{user_name}", "HOME_MANAGER_BACKUP_EXT=hm-bak", "QT_QPA_PLATFORM=offscreen"],
+                ExecStart = "/etc/onixos/home-manager-activate.sh %{args.package_paths."home-manager-activation"}",
                 RemainAfterExit = "yes",
+                SyslogIdentifier = "hm-activate-%{user_name}",
+                TimeoutStartSec = "5m",
               },
             },
             wanted_by = ["multi-user.target"],
+          },
+          user_units."systemd-tmpfiles-setup.service" = {
+            sections = {
+              Unit = {
+                Description = "Create User Files and Directories",
+                Documentation = "man:tmpfiles.d(5) man:systemd-tmpfiles(8)",
+                DefaultDependencies = "no",
+                Conflicts = "shutdown.target",
+                Before = "basic.target shutdown.target",
+                RefuseManualStop = "yes",
+              },
+              Service = {
+                Type = "oneshot",
+                RemainAfterExit = "yes",
+                ExecStart = "%{args.package_paths.systemd}/bin/systemd-tmpfiles --user --create --remove --boot",
+                SuccessExitStatus = "DATAERR",
+              },
+            },
+            wanted_by = ["basic.target"],
+          },
+          user_units."systemd-tmpfiles-clean.service" = {
+            sections = {
+              Unit = {
+                Description = "Cleanup of User's Temporary Files and Directories",
+                Documentation = "man:tmpfiles.d(5) man:systemd-tmpfiles(8)",
+                DefaultDependencies = "no",
+                Conflicts = "shutdown.target",
+                Before = "basic.target shutdown.target",
+              },
+              Service = {
+                Type = "oneshot",
+                ExecStart = "%{args.package_paths.systemd}/bin/systemd-tmpfiles --user --clean",
+                SuccessExitStatus = "DATAERR",
+                IOSchedulingClass = "idle",
+                Slice = "background.slice",
+              },
+            },
+          },
+          user_units."systemd-tmpfiles-clean.timer" = {
+            sections = {
+              Unit = {
+                Description = "Daily Cleanup of User's Temporary Directories",
+                Documentation = "man:tmpfiles.d(5) man:systemd-tmpfiles(8)",
+              },
+              Timer = { OnStartupSec = "5min", OnUnitActiveSec = "1d" },
+            },
+            wanted_by = ["timers.target"],
+          },
+          user_units."capsule@.target" = {
+            sections = {
+              Unit = {
+                Description = "Main Capsule Target for %i",
+                Documentation = "man:systemd.special(7)",
+                Requires = "basic.target",
+                After = "basic.target",
+                AllowIsolate = "yes",
+              },
+            },
+          },
+          units."capsule.slice" = {
+            sections = {
+              Unit = {
+                Description = "Capsule Slice",
+                Documentation = "man:systemd.special(7)",
+                Before = "slices.target",
+              },
+            },
+          },
+          units."capsule@.service" = {
+            sections = {
+              Unit = {
+                Description = "Capsule Service Manager for %i",
+                Documentation = "man:capsule@.service(5)",
+                After = "dbus.service systemd-oomd.service",
+              },
+              Service = {
+                User = "c-%i",
+                DynamicUser = "yes",
+                Type = "notify-reload",
+                ExecStart = "%{args.package_paths.systemd}/lib/systemd/systemd --user --unit=capsule@%i.target",
+                Environment = ["HOME=/var/lib/capsules/%i", "XDG_RUNTIME_DIR=/run/capsules/%i"],
+                StateDirectory = "capsules/%i",
+                RuntimeDirectory = "capsules/%i",
+                LogExtraFields = "CAPSULE=%i",
+                Slice = "capsule.slice",
+                ReloadSignal = "RTMIN+25",
+                KillMode = "mixed",
+                Delegate = ["pids", "memory", "cpu"],
+                DelegateSubgroup = "init.scope",
+                TasksMax = "infinity",
+                TimeoutStopSec = "120s",
+                KeyringMode = "inherit",
+                OOMScoreAdjust = "100",
+                MemoryPressureWatch = "skip",
+              },
+            },
           },
         },
       },

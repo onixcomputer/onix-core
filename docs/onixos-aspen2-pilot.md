@@ -344,19 +344,205 @@ Raw scripts, reports and disks remain outside the repositories. The final Nix
 tag changed only its unknown-host diagnostic after the native snapshot;
 re-evaluation preserved its generated guard and network-policy bytes.
 
-This is not complete retained-service parity. The AMD GPU exporter timer still
-needs host output and hardware verification; physical Thunderbolt driver,
-tunnel-event and DMA recovery remain unproved. Dummy tailnet and mesh credentials
-do not establish authenticated network operation. VM results do not authorize
-physical installation or prove GPU/USB4 behavior, and the OnixOS branch still
-needs its remaining integration coverage and landing gates.
+The AMD exporter now has native host output and a five-second timer. Its collector
+body is shared with the NixOS tag. An isolated data-path smoke checked edge and
+junction temperatures, both supported power fields, and removal of stale metrics
+after missing fields, malformed JSON or collector failure. The native unit also
+checks for PCI vendor `0x1002`: a QEMU graphics card alone must not start ROCm.
+An actual systemd fixture skipped absent/non-AMD cards without a failed unit and
+executed an AMD-vendor positive control as an unprivileged user. These fixtures
+do not exercise an AMD device or establish real telemetry.
 
+The shared-body data-path run is retained in the companion OnixOS change as
+`evidence/20261106-amd-collector-component/receipt.json`, with a relative checksum
+manifest. It binds the formatted collector and controlled producer fixtures,
+not the separate vendor-condition smoke or a complete host lifecycle.
 
-[Showing lines 304-350 of 357. Use :351 to continue]
+The native package producer filters both system and Home Manager packages while
+leaving the ordinary NixOS configuration unchanged. Home Manager's native flag
+also disables the wrapped Helix Nix formatter/server references, rather than
+removing `nil` from the package list while retaining it through generated editor
+configuration. Other language settings remain. An explicit-module `config`
+section fixes evaluation of the filter, and a regression now forces the native
+Prometheus configuration with the fleet's 15-second intervals: caller values
+override its lower-priority defaults while omitted fields keep their defaults.
+
+The offline producer now realizes the 116-package index. Its Home Manager
+wrapper makes the copied store payload's root, `bin` directory and activation
+entrypoint writable before rewriting them; copying the original read-only modes
+previously made the symlink update fail. The realized system profile was also
+checked to exclude Xorg, LightDM, PipeWire/WirePlumber and `nixos-build-vms`,
+alongside the checked Nix/heavy-tool commands. A working shell and executable Git
+and NetworkManager commands remain. Home Manager activation itself
+still requires the owned VM; never run it against the builder's home.
+
+Full CLI lowering also caught a missing separator between the two GPU tmpfiles
+entries and self-recursive PAM helper bindings. Both are corrected. The real
+`--dry-run` now evaluates all selected host implementations and plans 116 roots
+with zero recording Nix PATH-stub calls. Metadata-only tests had not forced those
+outputs; this preflight is not an artifact build or runtime pass.
+
+The complete generation subsequently exposed two additional contract defects:
+the PAM package tag must be `linux_pam`, and Borg's generated command is not a
+store program at `/etc/borgbackup/...`. The caller now uses the runtime tag and
+the wrapper's `source_file` interface, which binds the generated script to its
+own generation. Native `build-r2` remains a failed pre-artifact attempt; neither
+that failure nor the earlier preflight is a completed host lifecycle.
+
+A disjoint `lowering-preflight-r3` now passes both real CLI lowering and complete
+generation JSON serialization with the corrected sources, input hashes unchanged
+and zero recording Nix PATH-stub calls. This forces the nested runtime contracts
+that the original dry-run did not evaluate; it still does not build an artifact
+or establish live service behavior.
+
+The next native build, `build-r3`, failed in the initrd: aspen2's NixOS
+`amd-gpu` tag puts `amdgpu` in the initrd for early KMS, and the pinned driver
+declares 725 firmware files, 38 of which `linux-firmware-20261019` does not
+ship. The initrd had refused any absent declaration. It now packs the 687
+shipped files and logs the rest, as NixOS's module closure does; absent
+firmware declared by the configured rescue NIC driver still fails the build
+(`r8169` declares 29, all shipped). Real Mantle builds of both branches passed
+their expectations, and `build-r4` then built generation `drwzyhvj…` from 116
+signed roots: strict report, one built, none cached or failed, no audit events
+and zero recording Nix PATH-stub calls. A build is not yet a runtime result.
+
+Its first real activation (`consume-a-r1`, a CLI `test` on a fresh baseline
+replica) failed with switch exit 4, so the boot profile stayed unchanged. Home
+Manager activation stopped on `genProfilePath: unbound variable`: the
+Nix-command-free producer rewrite removes Home Manager's `setupVars`, and the
+host wrapper had supplied only some of its globals. `wpa_supplicant` could not
+own `fi.w1.wpa_supplicant1`: the bus had loaded its policies at boot, before
+activation created the `wpa_supplicant` group, and nothing reloaded it; a
+manual bus reload fixed it in the diagnostic. New sysctls stayed unapplied
+(`vm.max_map_count` 65530 against the configured 1048576) because no switch
+trigger restarted `systemd-sysctl`. Physical aspen2 has NixOS's trigger
+drop-ins for sysctl, modules-load, udevd and its bus; OnixOS now renders the
+equivalent drop-ins, and the wrapper defines every `setupVars` global. Three
+ported units also had `X-StopIfChanged=false` in `[Unit]`, where the switcher
+ignores it; aspen2 has it in `[Service]`, as these units now do.
+
+The diagnostic also showed a fixture defect. Once the fixture Headscale
+authenticated the replica (as `100.64.0.1`), Tailscale's anti-spoofing rule
+dropped every loopback packet from the `100.82.25.30` stand-in address (4,782
+matched), so arXiv, Laya and the mesh joiner timed out. On aspen2 that address
+is Tailscale's own and exempt. A fresh fixture control server (`headscale-r3`)
+occupies `.29` of `100.82.25.28/30` with a client-less placeholder and deletes
+it, so the replica's own registration receives `100.82.25.30`; the generation
+no longer carries a loopback stand-in. The probes now accept what aspen2 itself
+shows: envfs as source `envfs`, type `fuse`; Music Assistant's same-origin
+redirect to setup on a fresh install; and Prometheus targets discovered at the
+replica's own tailnet address.
+
+Generation `s065sl19…` (`build-r5`) carried those fixes. Its rehearsal on the
+fresh `headscale-r3` replica (`verification-r3`) refused the planned report,
+then passed the CLI `test`, seven application probes, `switch`, a reboot to a new
+boot ID and seven application probes after it. Four boot-time host probe cases
+(identity, Home Manager environment, network and mesh) failed, from four
+causes:
+
+- `wpa_supplicant` failed at boot with status 226 (`/dev/rfkill: No such file or
+  directory`). The stock `kmod-static-nodes` condition names `/lib/modules`, so
+  no static device nodes existed. aspen2's NixOS conditions it on the booted
+  generation's module tree; OnixOS's base module now does too.
+- The bus could not activate hostnamed: its alias
+  `dbus-org.freedesktop.hostname1.service` was linked absolutely to the
+  package's alias, which systemd refused (`File exists`). Package aliases now
+  keep their relative links, as on NixOS.
+- Fish sessions had an empty `NIX_LD`, and login `PATH` lacked Home Manager's
+  per-user profile. aspen2's `/etc/pam/environment` carries both; OnixOS now
+  renders it, `/etc/profile` and the fish preinit that aspen2's fish sources
+  (`/etc/fish/nixos-env-preinit.fish`) from the same session variables,
+  including NixOS's profile-relative search paths (`XDG_DATA_DIRS`,
+  `TERMINFO_DIRS`, `XDG_CONFIG_DIRS`, `INFOPATH`) over the per-user and system
+  profiles, so `host-common` no longer sets a system-only `TERMINFO_DIRS`.
+- The mesh joiner's handshake failed (`invalid peer certificate:
+  UnknownIssuer`). The fixture seed runs client-only, and Mesh-LLM gives a client
+  a new node identity at every start, so the invite captured at build time went
+  stale when the switch restarted the seed. The production seeds are
+  long-running serving nodes. As a declared fixture step, the probe now
+  re-issues the invite from the running seed and restarts only the joiner, and
+  the seed accepts the replica's tailnet address, which the production joiner
+  binds. Rehearsed on the same replica, the joiner then connected within
+  seconds. The joiner's refusal of the stale identity is the expected
+  authentication behavior.
+
+The first final run (`headscale-r4`, `candidate-r4`, generation `fml5imcd…`
+from `build-r7`) refused the planned report and passed the CLI `test` and seven
+activation probes. Its switch step then failed after 25 minutes with only
+`Broken pipe (os error 32)`: the deploy writes the closure's 2,305 paths to an
+ssh child whose input closed before it read them, and the CLI discarded that
+child's status, so the cause is not recorded. The guest journal shows no
+authenticated session in that window and the boot profile was unchanged; the
+builder was heavily loaded by unrelated jobs, no OOM kill was logged, and a
+later read-only dry run walked the same closure in 6 minutes 16 seconds.
+`onix deploy` now reports such a child's exit status. Resumed on the same
+replica, the switch, a firmware boot, all seven application probes and eight of
+nine host probe cases passed. Apart from a probe defect of its own (`runuser -l`
+starts its shell as `-printenv`, which multicall coreutils rejects), the Home
+Manager case found two host defects:
+
+- `/etc/shells` lacked fish, brittonr's login shell, which aspen2's NixOS lists
+  through `programs.fish`. Host outputs now contribute `shells`, and planning
+  refuses an unlisted login shell.
+- The system profile linked `share/man/man1` from `clinfo` alone, hiding every
+  other package's pages, so `man bash` failed. Package `share` trees are now
+  merged at every depth, as NixOS's `buildEnv` does.
+
+These fixes change the generation, so the final run restarts from fresh
+fixtures.
+
+The second final run (`headscale-r5`, `candidate-r5`, generation `cwbl8rv7…`
+from `build-r8`) refused the planned report and passed the CLI `test`. Its
+first activation probe ran while Prometheus still reported its replica's own
+just-discovered node exporter as `unknown`, so the probe now waits up to 120
+seconds for every target's first scrape; a resume on the unchanged guest (all
+other inputs byte-identical) then passed activation probes, `switch`, a firmware
+boot, seven application probes and all nine host probe cases. The B lifecycle
+passed in full: Docker on A, B `test` (Homepage restarted, swap and container
+preserved), B `switch` and firmware boot with all probes, rollback, and a
+firmware boot back into A with all probes and Docker cleanup. Private initrd
+recovery then failed twice on its harness (aspen2 lists `tty0` as its last
+console, hiding the initrd's messages from the serial log; the builder's ssh
+configuration offered the operator's own authorized key alongside the "wrong"
+fixture key). The third attempt passed the public-image refusal, private
+recovery, wrong-client refusal, failed-fsck recovery and a clean root fsck, then
+hung: stage 1 waited for its interactive recovery shell after SIGTERM, which
+such shells ignore. Stage 1 now kills that shell with SIGKILL. The initrd
+changes the generation, so the lifecycle runs again from fresh fixtures.
+
+The third final run passed end to end on one replica (`headscale-r6`,
+`candidate-r6`). Generation A `jp3zrzp9…` (`build-r10`) and B `j0d1anrc…`
+(`build-r11`) were each one strict Mantle build of 116 signed roots with no
+audit events and zero recording Nix PATH-stub calls. A's planned report was
+refused; the CLI `test`, seven activation probes, `switch` and a firmware boot
+with seven application and nine host probe cases passed without a resume. The
+B lifecycle then passed Docker on A, B `test`/`switch`/firmware boot, rollback
+and a firmware boot back into A, with all probes after each boot. Private
+initrd recovery passed on copy-on-write children of that replica: the public
+image refused rescue; the private image accepted only the pinned rescue
+identity before root, refused a wrong client key, survived a real fsck failure
+with the root unmounted, and retried with the real root into stage 2, where
+the rescue was gone. The source-free receipt is
+`.cairn/changes/onixos-systemd-host/evidence/20261108-aspen2-lifecycle-vm/receipt.json`
+in the OnixOS repository; it classifies the 23 earlier attempts above.
+
+Producing an index does not publish its new configuration-profile closures to
+the declared caches. Before a non-fixture build, export/sign those closures in a
+cache the consumer can reach. The replica lane uses a separate loopback cache
+and local test signer; that signer is not upstream provenance or production
+fleet trust. The checked-in index keeps the original fleet/public cache
+declarations and the realized package paths.
+
+Retained-service parity is shown on the replica only. Real AMD telemetry,
+physical Thunderbolt driver, tunnel-event and DMA recovery, physical Wi-Fi and
+modem behavior remain unproved, and the local Headscale and mesh fixtures do not
+establish production network or mesh authentication. Before cutover, the
+fleet-built closures need a cache aspen2 trusts, and landing on main needs the
+full flake gate. VM results never authorize physical installation.
 
 ## Gaps
 
-- The NixOS inventory's Mantle path remains a service-manifest build, not host activation ([Mantle build](#mantle-build)). The separate [systemd-host candidate](#mantle-built-systemd-host-candidate) supplies a bootable generation, but retained-service and physical-hardware parity still block replacement of aspen2's operating system.
+- The NixOS inventory's Mantle path remains a service-manifest build, not host activation ([Mantle build](#mantle-build)). The separate [systemd-host candidate](#mantle-built-systemd-host-candidate) supplies a bootable generation whose retained services passed a complete replica lifecycle; physical-hardware parity, a fleet-trusted cache and operator authorization still block replacing aspen2's operating system.
 - `onix check onixos/inventory.ncl --services onixos/services` reports 24 C012 findings: raw `networking.firewall`, `users`, `systemd.timers` and `systemd.tmpfiles` leaves where OnixOS wants typed providers. The providers cannot express what Clan configures: interface-scoped firewall ports (`tailscale0` for arxiv-corpus, laya and the build farm), relative timers (`OnBootSec`/`OnUnitActiveSec`), recursive ownership (`Z`) rules, root's authorized keys, extra groups of an existing service user, or a password hash wired from a secret. Converting the expressible subset would still leave the check failing.
 - OnixOS cannot keep generated but undeployed secrets, upload activation-time secrets, or order generators by their dependencies, and its prompts have no hidden or persist flags. Regenerating the `deploy = false`, activation and prompted secrets still needs Clan.
 - `system.stateVersion` still comes from `vars/per-machine/<machine>/state-version`.

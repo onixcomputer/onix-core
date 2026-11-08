@@ -11,6 +11,8 @@
 # writeShellApplication) with the runtime inputs on the unit PATH.
 # mk-nixos-config.nix's tailscaled-autoconnect override is not ported: it
 # needs services.tailscale.autoconnect, which this nixpkgs does not have.
+# NixOS also installs the package's tailscale-online.target and
+# tailscale-wait-online.service as linkable units, without enabling the target.
 fun onix =>
   let nixos_lib = import "../lib/nixos.ncl" in
   let tailscale_udp_port = 41641 in
@@ -156,8 +158,8 @@ fun onix =>
         },
       }
       in
-      # OnixOS systemd host: the package's tailscaled unit with NixOS's drop-in, its
-      # autoconnect script (auth key from the placed artifact) and the host sync.
+      # OnixOS systemd host: the package's tailscaled and online units with NixOS's
+      # drop-in, its autoconnect script (auth key from the placed artifact) and host sync.
       let auth_key = "/run/artifacts/%{artifact_name}/auth_key" in
       let autoconnect_script =
         m%"
@@ -220,7 +222,7 @@ fun onix =>
           {}
         else
           {
-            package_units = [{ package = args.package_paths.tailscale, units = ["tailscaled.service"] }],
+            package_units = [{ package = args.package_paths.tailscale, units = ["tailscaled.service", "tailscale-online.target", "tailscale-wait-online.service"] }],
             wants."multi-user.target" = ["tailscaled.service"],
             dropins."tailscaled.service"."onixos.conf" =
               m%"
@@ -228,6 +230,7 @@ fun onix =>
               After=NetworkManager-wait-online.service
 
               [Service]
+              X-StopIfChanged=false
               Environment="PATH=/run/wrappers/bin:%{tool_path}:/run/current-system/sw/bin"
               Environment=PORT=%{std.to_string tailscale_udp_port}
               Environment="FLAGS=--tun tailscale0"
@@ -235,7 +238,13 @@ fun onix =>
               ++ "\n",
             units."tailscaled-autoconnect.service" = {
               sections = {
-                Unit = { After = "tailscaled.service", Wants = "tailscaled.service" },
+                Unit = {
+                  After = "tailscaled.service",
+                  Wants = "tailscaled.service",
+                  # The NixOS unit's ExecStart is a generated script path, so a
+                  # script change changes this trigger and restarts autoconnect.
+                  X-Restart-Triggers = std.hash 'Sha256 autoconnect_script,
+                },
                 Service = {
                   Type = "notify",
                   Environment = "PATH=%{tool_path}:/run/current-system/sw/bin",
@@ -245,6 +254,9 @@ fun onix =>
               wanted_by = ["tailscaled.service"],
             },
             files."tailscale/autoconnect.sh".text = autoconnect_script,
+            # NixOS denies Tailscale's interface to dhcpcd. This host does not
+            # run dhcpcd at all: NetworkManager owns ordinary links, while the
+            # dedicated networkd config only owns the Thunderbolt bridge.
             # useRoutingFeatures = both.
             # services.tailscale creates this group: tailscalesd reads the socket
             # through it, as NixOS's tailscale module arranges.
@@ -329,7 +341,6 @@ fun onix =>
       [
         # OnixOS systemd host: tailscaled from the package with NixOS's drop-in, autoconnect
         # reading the placed auth key, host sync every minute; exit nodes stay NixOS-only.
-        host_leaf.package_units == [{ package = "tailscale-pkg", units = ["tailscaled.service"] }],
         std.string.contains "FLAGS=--tun tailscale0" host_leaf.dropins."tailscaled.service"."onixos.conf",
         std.string.contains "cat /run/artifacts/tailscale-br-tailnet/auth_key)\" --ssh" host_leaf.files."tailscale/autoconnect.sh".text,
         host_leaf.units."tailscale-host-sync.timer".sections.Timer == { OnBootSec = "1min", OnUnitActiveSec = "1min" },

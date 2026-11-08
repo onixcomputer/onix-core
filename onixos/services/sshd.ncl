@@ -291,6 +291,31 @@ fun onix =>
   # activation from the placed public keys (no artifact contents at evaluation time).
   let placed = fun artifact file => "/run/artifacts/%{artifact}/%{file}" in
   let known_hosts_dir = "/run/onixos/ssh_known_hosts.d" in
+  # Public NixOS `programs.ssh.knownHosts` entries produced for Aspen2 by
+  # remote-builders plus the checked-in fleet and forge host keys. Keep this
+  # system-wide file alongside the dynamic local/CA entries below.
+  let fleet_known_hosts =
+    m%"
+    aspen1.local,10.10.10.1,aspen1 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOXPkUA7CPA2YcAVjHAeDGE6zCZ777lfmjxWUl/ZLcie
+    100.82.25.30,10.10.10.2,aspen2 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOtI+OcaTRozgRVulDWgL8d8eICp6oh1Ola5N46uUt/r
+    100.108.13.4,192.168.1.229,aspen3 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICn/h1QYd7neApDStr9H+3s8irapA1bRBIfhwHPxEOSm
+    100.126.162.16,bonsai ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDBSDVgZPqp7R5AXbs/t/UQWF4eGXioCh0CGV5Zd4IuH
+    britton-desktop.clan,britton-desktop ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIe2N5OW2IY12lTvJZOFnMxw74eA/UhWJvCAd9OhUpsE
+    britton-fw ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEMg86vawXI7sIaT2JUU+1R5WGtga1s+T0GjURc6fWWC
+    172.16.0.10,chv-dev1 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINm2qxTk18gH9JJRCvHa6BfxxP6D+Nk3lXjeBNGGUpuy
+    172.16.0.11,chv-dev2 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGUrpYpZe5+wAvKmRtwZ7DsaOdP6qCHoZHd4dQuyrK84
+    172.16.0.12,chv-dev3 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEFpKGA4wGR3hcB07XB0SlgX+ttPvHrXDU3d1376/tjg
+    localhost,aspen2,aspen2.clan ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOtI+OcaTRozgRVulDWgL8d8eICp6oh1Ola5N46uUt/r
+
+    git.sr.ht ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMZvRd4EtM7R+IHVMWmDkVU3VLQTSwQDSAvW0t2Tkj60
+    github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+    gitlab.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAfuCHKVTjquxvt6CM6tdG4SLp1Btn/nOeHHE5UOzRdf
+    pine ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPHWnQlFVxgdRCOWNkSnRNxXRBcfhxopvU6IVyXDGfWO
+    @cert-authority ssh-ca,*.clan,*.local,*.clan ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAfCdlts4hrrD9vLx5t/Fxuq8B+TETGJ8XaKyKm+eHR6
+    utm-vm ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILim1lcYieNJ1C64Ahye/34sWtequXGnB+33n150I5Me
+  "%
+    ++ "\n"
+  in
   let server_host = fun args =>
     let cfg = args.settings in
     let ssh = args.package_paths.openssh in
@@ -368,15 +393,18 @@ fun onix =>
   in
   let client_host = fun args =>
     let cfg = args.settings in
+    let systemd = args.package_paths.systemd in
     let domains = [cfg.domain] @ unique (cfg.certificate.search_domains @ cfg.server_search_domains) in
     {
       files."ssh/ssh_config".text =
         m%"
           Host *
+          Include %{systemd}/lib/systemd/ssh_config.d/20-systemd-ssh-proxy.conf
           GlobalKnownHostsFile /etc/ssh/ssh_known_hosts %{known_hosts_dir}/sshd-server %{known_hosts_dir}/sshd-client
           ForwardX11 no
         "%
         ++ "\n",
+      files."ssh/ssh_known_hosts".text = fleet_known_hosts,
       activation."sshd-known-hosts-client" = m%"
           mkdir -p %{known_hosts_dir}
           {
@@ -410,7 +438,7 @@ fun onix =>
         ],
       },
       # Only the host leaf uses it; NixOS takes services.openssh.package.
-      packages = ["openssh"],
+      packages = ["openssh", "systemd"],
       roles = sshd_roles,
     },
 
@@ -453,7 +481,6 @@ fun onix =>
       in
       let host_server = run_host 'server server_defaults in
       let host_server_config = host_server.files."ssh/sshd_config".text in
-      let host_client = run_host 'client (client_defaults & { certificate.search_domains = ["local"] }) in
       let server = run 'server server_defaults full in
       let client = run 'client (client_defaults & { certificate.search_domains = ["local"] }) full in
       let no_cert =
@@ -484,8 +511,6 @@ fun onix =>
         host_server.units."sshd.service".sections.Service.ExecStart == "%{openssh_pkg}/bin/sshd -D -f /etc/ssh/sshd_config",
         !(std.string.contains "HostCertificate" (run_host 'server (server_defaults & { certificate.enable = false })).files."ssh/sshd_config".text),
         std.string.contains "localhost,aspen2,aspen2.clan" host_server.activation."sshd-known-hosts-server",
-        std.string.contains "/run/onixos/ssh_known_hosts.d/sshd-client" host_client.files."ssh/ssh_config".text,
-        std.string.contains "@cert-authority *.clan,*.local" host_client.activation."sshd-known-hosts-client",
         server.services.openssh.enable,
         server.services.openssh.settings.PasswordAuthentication == false,
         server.services.openssh.hostKeys == [{ path = "/run/secrets/openssh/ssh.id_ed25519", type = "ed25519" }],

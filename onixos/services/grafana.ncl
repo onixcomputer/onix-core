@@ -179,12 +179,15 @@ fun onix =>
                 )
                 |> std.string.join "\n\n"
               in
+              let ini_config = ini_sections ++ "\n" in
+              let restart_input = ini_config ++ (if provisioned then std.serialize 'Yaml provision_config else "") in
+              let http_port = ini_value cfg.settings "server" "http_port" 3000 in
               let secrets = ["/run/artifacts/grafana/admin_password", "/run/artifacts/grafana/secret_key"] in
               {
                 users.grafana = { group = "grafana", description = "Grafana service user" },
                 groups.grafana = {},
                 files =
-                  { "grafana.ini".text = ini_sections ++ "\n" }
+                  { "grafana.ini".text = ini_config }
                   & (
                     if provisioned then
                       {
@@ -207,6 +210,7 @@ fun onix =>
                       Description = "Grafana Service Daemon",
                       After = "network-online.target",
                       Wants = "network-online.target",
+                      X-Restart-Triggers = std.hash 'Sha256 restart_input,
                     },
                     Service = {
                       Type = "simple",
@@ -235,6 +239,27 @@ fun onix =>
                       NoNewPrivileges = "true",
                       UMask = "0027",
                       RestrictAddressFamilies = ["AF_INET", "AF_INET6", "AF_UNIX"],
+                      CapabilityBoundingSet = if http_port < 1024 then ["CAP_NET_BIND_SERVICE"] else [""],
+                      AmbientCapabilities = if http_port < 1024 then ["CAP_NET_BIND_SERVICE"] else [],
+                      DeviceAllow = [""],
+                      LockPersonality = "true",
+                      PrivateDevices = "true",
+                      ProtectClock = "true",
+                      ProtectControlGroups = "true",
+                      ProtectHostname = "true",
+                      ProtectKernelLogs = "true",
+                      ProtectKernelModules = "true",
+                      ProtectKernelTunables = "true",
+                      ProtectProc = "invisible",
+                      RemoveIPC = "true",
+                      RestrictNamespaces = "true",
+                      RestrictRealtime = "true",
+                      RestrictSUIDSGID = "true",
+                      SystemCallArchitectures = "native",
+                      SystemCallFilter =
+                        ["@system-service", "~@privileged"]
+                        @ (if ini_value cfg.settings "server" "protocol" "http" == "socket" then ["@chown"] else []),
+                      X-RestartIfChanged = "true",
                     },
                   },
                   wanted_by = ["multi-user.target"],

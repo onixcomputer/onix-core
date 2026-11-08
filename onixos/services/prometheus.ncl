@@ -35,6 +35,31 @@ fun onix =>
         },
       }
   in
+  let exporter_hardening = {
+    Restart = "always",
+    PrivateTmp = "true",
+    WorkingDirectory = "/tmp",
+    CapabilityBoundingSet = [""],
+    DeviceAllow = [""],
+    LockPersonality = "true",
+    MemoryDenyWriteExecute = "true",
+    NoNewPrivileges = "true",
+    PrivateDevices = "true",
+    ProtectControlGroups = "true",
+    ProtectHome = "true",
+    ProtectHostname = "true",
+    ProtectKernelLogs = "true",
+    ProtectKernelModules = "true",
+    ProtectKernelTunables = "true",
+    ProtectSystem = "strict",
+    RemoveIPC = "true",
+    RestrictNamespaces = "true",
+    RestrictRealtime = "true",
+    RestrictSUIDSGID = "true",
+    SystemCallArchitectures = "native",
+    UMask = "0077",
+  }
+  in
   let PromDuration =
     std.contract.custom (fun label value =>
       if std.is_string value && std.string.is_match "^(0|([0-9]+(ms|[smhdwy]))+)$" value then
@@ -74,7 +99,7 @@ fun onix =>
           },
         ],
       },
-      packages = ["prometheus", "tailscalesd", "node-exporter=prometheus-node-exporter", "systemd-exporter=prometheus-systemd-exporter", "blackbox=prometheus-blackbox-exporter"],
+      packages = ["prometheus", "tailscalesd", "node-exporter=prometheus-node-exporter", "systemd-exporter=prometheus-systemd-exporter", "blackbox=prometheus-blackbox-exporter", "coreutils"],
       roles = {
         server = {
           enable_auto_discovery
@@ -97,6 +122,11 @@ fun onix =>
             | PromDuration
             | priority -5
             = "30d",
+          alertmanager_notification_queue_capacity
+            | doc "Capacity of the pending Alertmanager notification queue."
+            | std.number.Nat
+            | priority -5
+            = 10000,
           global_config
             | doc "services.prometheus.globalConfig, e.g. { scrape_interval = \"15s\" }."
             | { .. }
@@ -302,6 +332,7 @@ fun onix =>
                       enable = true,
                       port = cfg.port,
                       retentionTime = cfg.retention_time,
+                      alertmanagerNotificationQueueCapacity = cfg.alertmanager_notification_queue_capacity,
                       globalConfig = cfg.global_config,
                       rules = cfg.rules,
                     }
@@ -363,26 +394,41 @@ fun onix =>
               # and passes a store path; a host generation keeps the config in
               # /etc and the rules in one file, as NixOS writes them.
               host =
+                # Nickel records are recursive: bind the jobs separately to
+                # avoid a field referring to itself.
+                let jobs = scrape_configs in
                 let prom_config =
-                  # Nickel records are recursive: a field whose value names the
-                  # field itself would refer to itself, so the jobs are bound to
-                  # a different name first.
-                  let jobs = scrape_configs in
-                  { global = { "scrape_interval" = "15s", "evaluation_interval" = "15s" } & cfg.global_config }
+                  {
+                    global =
+                      {
+                        "scrape_interval" | priority -5 = "1m",
+                        "scrape_timeout" | priority -5 = "10s",
+                        "evaluation_interval" | priority -5 = "1m",
+                      }
+                      & cfg.global_config,
+                  }
                   & (if cfg.rules == [] then {} else { rule_files = ["/etc/prometheus/rules.yml"] })
                   & (if jobs == [] then {} else { scrape_configs = jobs })
+                in
+                let prom_config_text = std.serialize 'Yaml prom_config in
+                let rules_text = (std.string.join "\n" cfg.rules) ++ "\n" in
+                let config_trigger = std.hash 'Sha256 (prom_config_text ++ "\n" ++ rules_text)
                 in
                 {
                   users.prometheus = { group = "prometheus", description = "Prometheus daemon user" },
                   groups.prometheus = {},
                   files = {
                     # JSON is YAML 1.2, so Prometheus reads this as its config.
-                    "prometheus/prometheus.yml".text = std.serialize 'Yaml prom_config,
-                    "prometheus/rules.yml".text = (std.string.join "\n" cfg.rules) ++ "\n",
+                    "prometheus/prometheus.yml".text = prom_config_text,
+                    "prometheus/rules.yml".text = rules_text,
                   },
                   units."prometheus.service" = {
                     sections = {
-                      Unit = { Description = "Prometheus", After = "network.target" },
+                      Unit = {
+                        Description = "Prometheus",
+                        After = "network.target",
+                        X-Restart-Triggers = config_trigger,
+                      },
                       Service = {
                         Type = "simple",
                         ExecStart =
@@ -392,6 +438,7 @@ fun onix =>
                               "%{args.package_paths.prometheus}/bin/prometheus",
                               "--config.file=/etc/prometheus/prometheus.yml",
                               "--web.listen-address=0.0.0.0:%{std.to_string cfg.port}",
+                              "--alertmanager.notification-queue-capacity=%{std.to_string cfg.alertmanager_notification_queue_capacity}",
                               "--storage.tsdb.path=/var/lib/prometheus2/data/",
                               "--storage.tsdb.retention.time=%{cfg.retention_time}",
                             ],
@@ -410,6 +457,25 @@ fun onix =>
                         MemoryDenyWriteExecute = "true",
                         RestrictAddressFamilies = ["AF_INET", "AF_INET6", "AF_UNIX"],
                         SystemCallArchitectures = "native",
+                        CapabilityBoundingSet = [""],
+                        DeviceAllow = ["/dev/null rw"],
+                        DevicePolicy = "strict",
+                        LockPersonality = "true",
+                        PrivateDevices = "true",
+                        PrivateUsers = "true",
+                        ProtectClock = "true",
+                        ProtectControlGroups = "true",
+                        ProtectHostname = "true",
+                        ProtectKernelLogs = "true",
+                        ProtectKernelModules = "true",
+                        ProtectKernelTunables = "true",
+                        ProtectProc = "invisible",
+                        RemoveIPC = "true",
+                        RestrictNamespaces = "true",
+                        RestrictRealtime = "true",
+                        RestrictSUIDSGID = "true",
+                        SystemCallFilter = ["@system-service", "~@privileged"],
+                        X-RestartIfChanged = "true",
                       },
                     },
                     wanted_by = ["multi-user.target"],
@@ -449,20 +515,25 @@ fun onix =>
                       files."prometheus-blackbox-storage.yaml".text = blackbox_config,
                       units."prometheus-blackbox-exporter.service" = {
                         sections = {
-                          Unit = { Description = "Prometheus blackbox exporter", After = "network.target" },
-                          Service = {
-                            Type = "simple",
-                            ExecStart = "%{args.package_paths.blackbox}/bin/blackbox_exporter --web.listen-address 127.0.0.1:%{std.to_string blackbox_port} --config.file /etc/prometheus-blackbox-storage.yaml",
-                            AmbientCapabilities = "CAP_NET_RAW",
-                            DynamicUser = "true",
-                            Group = "blackbox-exporter",
-                            ExecReload = "/bin/kill -HUP $MAINPID",
-                            Restart = "always",
-                            NoNewPrivileges = "true",
-                            PrivateTmp = "true",
-                            ProtectHome = "true",
-                            ProtectSystem = "strict",
+                          Unit = {
+                            Description = "Prometheus blackbox exporter",
+                            After = "network.target",
+                            X-Restart-Triggers = std.hash 'Sha256 blackbox_config,
                           },
+                          Service =
+                            {
+                              Type = "simple",
+                              ExecStart = "%{args.package_paths.blackbox}/bin/blackbox_exporter --web.listen-address 127.0.0.1:%{std.to_string blackbox_port} --config.file /etc/prometheus-blackbox-storage.yaml",
+                              AmbientCapabilities = ["CAP_NET_RAW"],
+                              DynamicUser = "true",
+                              User = "blackbox-exporter",
+                              Group = "blackbox-exporter",
+                              ExecReload = "%{args.package_paths.coreutils}/bin/kill -HUP $MAINPID",
+                              RestrictAddressFamilies = ["AF_INET", "AF_INET6"],
+                              ProtectClock = "true",
+                              X-RestartIfChanged = "true",
+                            }
+                            & exporter_hardening,
                         },
                         wanted_by = ["multi-user.target"],
                       },
@@ -498,29 +569,27 @@ fun onix =>
                       units."prometheus-node-exporter.service" = {
                         sections = {
                           Unit = { Description = "Prometheus Node Exporter", After = "network.target" },
-                          Service = {
-                            Type = "simple",
-                            ExecStart =
-                              std.string.join
-                                " "
-                                (
-                                  ["%{args.package_paths."node-exporter"}/bin/node_exporter"]
-                                  @ std.array.map (fun c => "--collector.%{c}") (["systemd", "textfile", "processes", "mountstats", "meminfo", "loadavg", "filesystem", "cpu", "hwmon", "cpufreq", "powersupplyclass", "rapl"])
-                                  @ [
-                                    "--web.listen-address 0.0.0.0:%{std.to_string cfg.port}",
-                                    "--collector.textfile.directory=/var/lib/prometheus-node-exporter-text-files",
-                                  ]
-                                ),
-                            User = "node-exporter",
-                            Group = "node-exporter",
-                            Restart = "always",
-                            PrivateTmp = "true",
-                            ProtectHome = "true",
-                            ProtectSystem = "strict",
-                            NoNewPrivileges = "true",
-                            MemoryDenyWriteExecute = "true",
-                            RestrictAddressFamilies = ["AF_UNIX", "AF_NETLINK", "AF_INET", "AF_INET6"],
-                          },
+                          Service =
+                            {
+                              Type = "simple",
+                              ExecStart =
+                                std.string.join
+                                  " "
+                                  (
+                                    ["%{args.package_paths."node-exporter"}/bin/node_exporter"]
+                                    @ std.array.map (fun c => "--collector.%{c}") cfg.enabled_collectors
+                                    @ [
+                                      "--web.listen-address 0.0.0.0:%{std.to_string cfg.port}",
+                                      "--collector.textfile.directory=/var/lib/prometheus-node-exporter-text-files",
+                                    ]
+                                  ),
+                              User = "node-exporter",
+                              Group = "node-exporter",
+                              DynamicUser = "false",
+                              RuntimeDirectory = "prometheus-node-exporter",
+                              RestrictAddressFamilies = ["AF_UNIX", "AF_NETLINK", "AF_INET", "AF_INET6"],
+                            }
+                            & exporter_hardening,
                         },
                         wanted_by = ["multi-user.target"],
                       },
@@ -530,17 +599,17 @@ fun onix =>
                       units."prometheus-systemd-exporter.service" = {
                         sections = {
                           Unit = { Description = "Prometheus Systemd Exporter", After = "network.target" },
-                          Service = {
-                            Type = "simple",
-                            ExecStart = "%{args.package_paths."systemd-exporter"}/bin/systemd_exporter --web.listen-address 0.0.0.0:%{std.to_string cfg.port}",
-                            DynamicUser = "true",
-                            Group = "systemd-exporter",
-                            Restart = "always",
-                            PrivateTmp = "true",
-                            ProtectHome = "true",
-                            ProtectSystem = "strict",
-                            NoNewPrivileges = "true",
-                          },
+                          Service =
+                            {
+                              Type = "simple",
+                              ExecStart = "%{args.package_paths."systemd-exporter"}/bin/systemd_exporter --web.listen-address 0.0.0.0:%{std.to_string cfg.port}",
+                              DynamicUser = "true",
+                              User = "systemd-exporter",
+                              Group = "systemd-exporter",
+                              RestrictAddressFamilies = ["AF_INET", "AF_INET6", "AF_UNIX"],
+                              ProtectClock = "true",
+                            }
+                            & exporter_hardening,
                         },
                         wanted_by = ["multi-user.target"],
                       },
@@ -674,6 +743,9 @@ fun onix =>
         full.nixos.networking.firewall.allowedTCPPorts == [9090],
         prom.retentionTime == "30d",
         prom.globalConfig == { scrape_interval = "15s", evaluation_interval = "15s" },
+        # The native renderer must accept the same explicit values while
+        # retaining defaults for global fields the caller omitted.
+        (std.deserialize 'Yaml full.host.files."prometheus/prometheus.yml".text).global == { scrape_interval = "15s", evaluation_interval = "15s", scrape_timeout = "10s" },
         full.packages == ["prometheus-pkg"],
         # The fleet rules reach Prometheus as one YAML document.
         std.array.length fleet_rules == 1,

@@ -136,6 +136,8 @@ fun onix =>
                   "HF_HOME=%{state}",
                   "XDG_CACHE_HOME=%{state}/cache",
                   "HF_HUB_DISABLE_TELEMETRY=1",
+                  "HF_HUB_DOWNLOAD_TIMEOUT=60",
+                  "HF_HUB_ETAG_TIMEOUT=30",
                   "PYTHONUNBUFFERED=1",
                 ],
                 ExecStartPre = "%{args.package_paths.laya}/bin/laya-server prepare %{prepare_args}",

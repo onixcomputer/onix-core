@@ -41,12 +41,45 @@ fun onix =>
     let base_units = {
       "polkit.service" = {
         sections = {
-          Unit = { Description = "Authorization Manager" },
+          Unit = {
+            Description = "Authorization Manager",
+            Documentation = "man:polkit(8)",
+          },
           Service = {
             Type = "notify-reload",
+            BusName = "org.freedesktop.PolicyKit1",
+            CapabilityBoundingSet = ["CAP_SETUID", "CAP_SETGID"],
+            DeviceAllow = "/dev/null rw",
+            DevicePolicy = "strict",
             ExecStart = "%{p.polkit}/lib/polkit-1/polkitd --no-debug --log-level=notice",
             User = "polkituser",
-            Group = "polkituser",
+            LimitMEMLOCK = "0",
+            LockPersonality = "yes",
+            MemoryDenyWriteExecute = "yes",
+            NoNewPrivileges = "yes",
+            PrivateDevices = "yes",
+            PrivateNetwork = "yes",
+            PrivateTmp = "yes",
+            ProtectControlGroups = "yes",
+            ProtectHome = "yes",
+            ProtectKernelModules = "yes",
+            ProtectKernelLogs = "yes",
+            ProtectKernelTunables = "yes",
+            ProtectSystem = "strict",
+            ProtectClock = "yes",
+            ProtectHostname = "yes",
+            RemoveIPC = "yes",
+            RestrictAddressFamilies = ["AF_UNIX"],
+            RestrictNamespaces = "yes",
+            RestrictRealtime = "yes",
+            RestrictSUIDSGID = "yes",
+            SystemCallArchitectures = "native",
+            SystemCallFilter = "@system-service",
+            UMask = "0077",
+            MemoryMax = "32M",
+            MemorySwapMax = "32M",
+            OOMPolicy = "stop",
+            Restart = "on-failure",
           },
         },
         wanted_by = ["multi-user.target"],
@@ -57,12 +90,20 @@ fun onix =>
             Description = "Modem Manager",
             After = "polkit.service",
             Requires = "polkit.service",
+            ConditionVirtualization = "!container",
           },
           Service = {
             Type = "dbus",
             BusName = "org.freedesktop.ModemManager1",
             ExecStart = "%{p.modemmanager}/sbin/ModemManager",
+            StandardError = "null",
             Restart = "on-abort",
+            CapabilityBoundingSet = ["CAP_SYS_ADMIN", "CAP_NET_ADMIN"],
+            ProtectSystem = "true",
+            ProtectHome = "true",
+            PrivateTmp = "true",
+            RestrictAddressFamilies = ["AF_NETLINK", "AF_UNIX", "AF_QIPCRTR"],
+            NoNewPrivileges = "true",
             User = "root",
           },
         },
@@ -70,36 +111,88 @@ fun onix =>
       },
       "fstrim.service" = {
         sections = {
-          Unit = { Description = "Discard unused blocks on filesystems from /etc/fstab" },
+          Unit = {
+            Description = "Discard unused blocks on filesystems from /etc/fstab",
+            Documentation = "man:fstrim(8)",
+            ConditionVirtualization = "!container",
+          },
           Service = {
             Type = "oneshot",
             ExecStart = "%{p."util-linux-bin"}/sbin/fstrim --listed-in /etc/fstab:/proc/self/mountinfo --verbose --quiet-unsupported",
-            PrivateDevices = "true",
-            ProtectSystem = "read-only",
+            PrivateDevices = "no",
+            PrivateNetwork = "yes",
+            PrivateUsers = "no",
+            ProtectKernelTunables = "yes",
+            ProtectKernelModules = "yes",
+            ProtectControlGroups = "yes",
+            MemoryDenyWriteExecute = "yes",
+            SystemCallFilter = "@default @file-system @basic-io @system-service",
           },
         },
       },
       "fstrim.timer" = {
         sections = {
-          Unit = { Description = "Discard unused filesystem blocks once a week" },
-          Timer = { OnCalendar = "weekly", Persistent = "true", RandomizedDelaySec = "1h" },
+          Unit = {
+            Description = "Discard unused filesystem blocks once a week",
+            Documentation = "man:fstrim",
+            ConditionVirtualization = "!container",
+            ConditionPathExists = "!/etc/initrd-release",
+          },
+          Timer = { OnCalendar = "weekly", AccuracySec = "1h", Persistent = "true", RandomizedDelaySec = "100min" },
         },
         wanted_by = ["timers.target"],
       },
       "logrotate-checkconf.service" = {
         sections = {
           Unit = { Description = "Logrotate configuration check" },
-          Service = { Type = "oneshot", ExecStart = "%{p.logrotate}/sbin/logrotate --debug /etc/logrotate.conf" },
+          Service = {
+            Type = "oneshot",
+            RemainAfterExit = "true",
+            ExecStart = "%{p.logrotate}/sbin/logrotate --debug /etc/logrotate.conf",
+          },
         },
+        wanted_by = ["multi-user.target"],
       },
       "logrotate.service" = {
         sections = {
-          Unit = { Description = "Logrotate Service", RequiresMountsFor = "/var/log" },
-          Service = { Type = "oneshot", ExecStart = "%{p.logrotate}/bin/logrotate /etc/logrotate.conf" },
+          Unit = {
+            Description = "Logrotate Service",
+            Documentation = ["man:logrotate(8)", "man:logrotate(5)"],
+          },
+          Service = {
+            Type = "oneshot",
+            ExecStart = "%{p.logrotate}/bin/logrotate /etc/logrotate.conf",
+            Nice = "19",
+            IOSchedulingClass = "best-effort",
+            IOSchedulingPriority = "7",
+            CapabilityBoundingSet = ["CAP_CHOWN", "CAP_DAC_OVERRIDE", "CAP_FOWNER", "CAP_KILL", "CAP_SETUID", "CAP_SETGID"],
+            DevicePolicy = "closed",
+            LockPersonality = "true",
+            MemoryDenyWriteExecute = "true",
+            NoNewPrivileges = "true",
+            PrivateDevices = "true",
+            PrivateTmp = "true",
+            ProcSubset = "pid",
+            ProtectClock = "true",
+            ProtectControlGroups = "true",
+            ProtectHome = "true",
+            ProtectHostname = "true",
+            ProtectKernelLogs = "true",
+            ProtectKernelModules = "true",
+            ProtectKernelTunables = "true",
+            ProtectProc = "invisible",
+            ProtectSystem = "full",
+            RestrictNamespaces = "true",
+            RestrictRealtime = "true",
+            RestrictSUIDSGID = "false",
+            SystemCallArchitectures = "native",
+            SystemCallFilter = ["@system-service", "~@privileged @resources", "@chown @setuid"],
+            UMask = "0027",
+          },
         },
       },
       "logrotate.timer" = {
-        sections.Timer = { OnCalendar = "hourly", Persistent = "true" },
+        sections.Timer = { OnCalendar = "hourly" },
         wanted_by = ["timers.target"],
       },
     }
@@ -111,11 +204,16 @@ fun onix =>
         {
           "scx.service" = {
             sections = {
-              Unit = { Description = "SCX scheduler daemon" },
+              Unit = {
+                Description = "SCX scheduler daemon",
+                ConditionPathIsDirectory = "/sys/kernel/sched_ext",
+                StartLimitIntervalSec = "30",
+                StartLimitBurst = "2",
+              },
               Service = {
                 Type = "simple",
                 Environment = ["SCX_SCHEDULER=%{cfg.scx_scheduler}", "SCX_FLAGS=%{cfg.scx_flags}"],
-                ExecStart = "%{p.bash}/bin/bash -c 'exec %{p.scx}/bin/$SCX_SCHEDULER $SCX_FLAGS'",
+                ExecStart = "%{p.bash}/bin/bash -c 'exec %{p.scx}/bin/${SCX_SCHEDULER_OVERRIDE:-$SCX_SCHEDULER} ${SCX_FLAGS_OVERRIDE:-$SCX_FLAGS}'",
                 Restart = "on-failure",
               },
             },
@@ -126,12 +224,43 @@ fun onix =>
     let address_units = cfg.static_addresses |> std.array.map address_unit |> std.array.fold_left (fun acc entry => acc & entry) {} in
     {
       output.host = {
-        users.polkituser = { group = "polkituser", description = "PolicyKit daemon user" },
-        groups.polkituser = {},
+        users.polkituser = {
+          uid = 28,
+          group = "polkituser",
+          description = "PolKit daemon",
+        },
+        groups.polkituser = { gid = 990 },
+        # NixOS's fixed utmp group is used by its btmp/wtmp logrotate rules.
+        groups.utmp = { gid = 29 },
         packages = [p.polkit, p.modemmanager, p.scx, p.logrotate, p."util-linux-bin"],
         units = base_units & scx_unit & address_units,
+        package_units = [
+          { package = p.polkit, units = ["polkit-agent-helper@.service", "polkit-agent-helper.socket"] },
+        ],
+        wants = { "sockets.target" = ["polkit-agent-helper.socket"] },
+        unit_aliases = { "dbus-org.freedesktop.ModemManager1.service" = "ModemManager.service" },
+        dropins."polkit-agent-helper@.service"."onixos.conf" = m%"
+          [Service]
+          StandardError=journal
+        "%,
+        udev_packages = [p.modemmanager],
         dbus_packages = [p.polkit, p.modemmanager],
-        files."logrotate.conf".text = m%"
+        files = {
+          "polkit-1/rules.d/10-nixos.rules".text = m%"
+            polkit.addAdminRule(function(action, subject) {
+              return ["unix-group:wheel"];
+            });
+
+            polkit.addRule(function(action, subject) {
+              if (
+                subject.isInGroup("networkmanager")
+                && action.id.indexOf("org.freedesktop.ModemManager") == 0
+              )
+                { return polkit.Result.YES; }
+            });
+          "%,
+          "polkit-1/polkitd.conf".text = "[Polkitd]\nExpirationSeconds=300\n",
+          "logrotate.conf".text = m%"
           # Global options for logrotate
           weekly
           notifempty
@@ -140,7 +269,22 @@ fun onix =>
           delaycompress
           rotate 4
           su root root
+
+          /var/log/btmp {
+            create 0660 root utmp
+            frequency monthly
+            minsize 1M
+            rotate 1
+          }
+
+          /var/log/wtmp {
+            create 0664 root utmp
+            frequency monthly
+            minsize 1M
+            rotate 1
+          }
         "%,
+        },
       },
     }
   in

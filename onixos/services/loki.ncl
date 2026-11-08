@@ -98,7 +98,7 @@ fun onix =>
       # `loki` is nixpkgs' C++ Loki library (0.1.7), not Grafana Loki. Clan's
       # perMachine installs it, so it stays for parity; services.loki installs
       # grafana-loki itself.
-      packages = ["loki", "grafana-alloy"],
+      packages = ["loki", "grafana-alloy", "coreutils"],
       roles.server = {
         enable_alloy
           | doc "Run Grafana Alloy next to Loki, shipping the journal and file scrapes to it."
@@ -135,6 +135,8 @@ fun onix =>
 
     impl = fun args =>
       let cfg = args.settings in
+      let loki_config = std.serialize 'Yaml cfg.configuration in
+      let alloy_text = alloy_config cfg args.machine_name in
       let http_listen_port =
         if std.record.has_field "server" cfg.configuration
         && std.record.has_field "http_listen_port" cfg.configuration.server then
@@ -155,7 +157,7 @@ fun onix =>
                 services.alloy.enable = true,
                 # Clan used config.networking.hostName, which equals the
                 # machine name on every onix-core machine.
-                environment.etc."alloy/config.alloy".text = alloy_config cfg args.machine_name,
+                environment.etc."alloy/config.alloy".text = alloy_text,
               }
             else
               {}
@@ -167,10 +169,15 @@ fun onix =>
           {
             users.loki = { group = "loki", description = "Loki Service User", home = "/var/lib/loki" },
             groups.loki = {},
-            files."loki/loki.yaml".text = std.serialize 'Yaml cfg.configuration,
+            files."loki/loki.yaml".text = loki_config,
             units."loki.service" = {
               sections = {
-                Unit = { Description = "Loki Service Daemon", After = "network-online.target", Wants = "network-online.target" },
+                Unit = {
+                  Description = "Loki Service Daemon",
+                  After = "network-online.target",
+                  Wants = "network-online.target",
+                  X-Restart-Triggers = std.hash 'Sha256 loki_config,
+                },
                 Service = {
                   Type = "simple",
                   ExecStart = "%{args.package_paths.loki}/bin/loki --config.file=/etc/loki/loki.yaml",
@@ -184,6 +191,7 @@ fun onix =>
                   ProtectSystem = "full",
                   NoNewPrivileges = "true",
                   DevicePolicy = "closed",
+                  X-RestartIfChanged = "true",
                 },
               },
               wanted_by = ["multi-user.target"],
@@ -193,14 +201,18 @@ fun onix =>
           & (
             if cfg.enable_alloy then
               {
-                files."alloy/config.alloy".text = alloy_config cfg args.machine_name,
+                files."alloy/config.alloy".text = alloy_text,
                 units."alloy.service" = {
                   sections = {
-                    Unit = { Description = "Grafana Alloy", After = "network.target" },
+                    Unit = {
+                      Description = "Grafana Alloy",
+                      After = "network.target",
+                      X-Reload-Triggers = std.hash 'Sha256 alloy_text,
+                    },
                     Service = {
                       Type = "simple",
                       ExecStart = "%{args.package_paths.grafana-alloy}/bin/alloy run /etc/alloy",
-                      ExecReload = "/bin/kill -SIGHUP $MAINPID",
+                      ExecReload = "%{args.package_paths.coreutils}/bin/kill -SIGHUP $MAINPID",
                       DynamicUser = "true",
                       ConfigurationDirectory = "alloy",
                       StateDirectory = "alloy",
@@ -208,6 +220,7 @@ fun onix =>
                       SupplementaryGroups = ["systemd-journal"],
                       Restart = "always",
                       RestartSec = "2",
+                      X-ReloadIfChanged = "true",
                     },
                   },
                   wanted_by = ["multi-user.target"],
