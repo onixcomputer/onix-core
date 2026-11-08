@@ -4,5 +4,5 @@
 
 ## Phase 2: Release
 
-- [ ] [serial] Rebuild britton-desktop and aspen3 from their recorded deployed source with only this change, review the closure, unit and `dry-activate` diffs, and switch. r[onix.herdr_gateway.runtime_dir]
-- [ ] [serial] Verify each relay runs with the variable and its existing endpoint identity, and that forwarded calls to saved machines succeed. r[onix.herdr_gateway.runtime_dir]
+- [x] [serial] Rebuild britton-desktop and aspen3 from their recorded deployed source with only this change, review the closure, unit and `dry-activate` diffs, and switch. r[onix.herdr_gateway.runtime_dir]
+- [x] [serial] Verify each relay runs with the variable and its existing endpoint identity, and that forwarded calls to saved machines succeed. r[onix.herdr_gateway.runtime_dir]
