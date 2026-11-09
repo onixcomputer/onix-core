@@ -507,12 +507,13 @@ preserved), B `switch` and firmware boot with all probes, rollback, and a
 firmware boot back into A with all probes and Docker cleanup. Private initrd
 recovery then failed twice on its harness (aspen2 lists `tty0` as its last
 console, hiding the initrd's messages from the serial log; the builder's ssh
-configuration offered the operator's own authorized key alongside the "wrong"
-fixture key). The third attempt passed the public-image refusal, private
-recovery, wrong-client refusal, failed-fsck recovery and a clean root fsck, then
-hung: stage 1 waited for its interactive recovery shell after SIGTERM, which
-such shells ignore. Stage 1 now kills that shell with SIGKILL. The initrd
-changes the generation, so the lifecycle runs again from fresh fixtures.
+configuration multiplexes connections, so the "wrong key" client reused the
+fixture client's authenticated connection). The third attempt passed the
+public-image refusal, private recovery, wrong-client refusal, failed-fsck
+recovery and a clean root fsck, then hung: stage 1 waited for its interactive
+recovery shell after SIGTERM, which such shells ignore. Stage 1 now kills that
+shell with SIGKILL. The initrd changes the generation, so the lifecycle runs
+again from fresh fixtures.
 
 The third final run passed end to end on one replica (`headscale-r6`,
 `candidate-r6`). Generation A `jp3zrzp9…` (`build-r10`) and B `j0d1anrc…`
@@ -555,8 +556,11 @@ no build needs this index.
 Retained-service parity is shown on the replica only. Real AMD telemetry,
 physical Thunderbolt driver, tunnel-event and DMA recovery, physical Wi-Fi and
 modem behavior remain unproved, and the local Headscale and mesh fixtures do not
-establish production network or mesh authentication. Landing on main needs the
-full flake gate. VM results never authorize physical installation.
+establish production network or mesh authentication. The full OnixOS flake gate
+at `7743a771` passed 298 of 300 checks; its two Cairn readiness checks fail, as
+they did before this work, until the `onixos-systemd-host` change is archived or
+its code markers are neutralized, which landing on main requires. VM results
+never authorize physical installation.
 
 ## Gaps
 
