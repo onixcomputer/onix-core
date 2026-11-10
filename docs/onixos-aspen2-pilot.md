@@ -563,6 +563,39 @@ at `daf99b1d` passed all 300 checks on leviathan (298 at `7743a771`, whose two
 Cairn readiness checks failed on the active change's code markers). VM results
 never authorize physical installation.
 
+## Physical boot entry (2026-11-10, installed; not yet booted)
+
+The real generation was built from the committed inventory and the real sops
+secrets (`onix build aspen2 --inventory onixos/host/inventory.ncl`): generation
+`pp5f3j01…`, 116 signed roots, 140 service units, zero recording Nix-path stub
+calls, 43 minutes on leviathan. Its closure is 2,305 paths; aspen2 already had
+2,278 of them from NixOS, so 27 were relayed from leviathan's export store
+through aspen3 and every one matched Mantle's recorded NAR SHA-256 on arrival.
+
+`onix deploy aspen2 --action boot` then exited 0 with `0 missing`: it created
+`/nix/var/onixos/profiles/system-1-link`, prepared the private initrd from
+`/var/lib/sops-nix/key.txt` (52,757,333 bytes, mode 0700, beside the key-free
+52,757,096-byte store image) and wrote GRUB. `/boot/grub/grub.cfg` now has
+`set default=0`, `menuentry 'OnixOS system-1'` (kernel and initrd under
+`/onixos/`), and a `Previous boot configuration` submenu that loads the backed-up
+`/boot/grub/nixos.cfg` (6 NixOS entries). `BOOTX64.EFI` is unchanged. The ESP
+went from 163 to 227 MiB used (273 MiB free);
+`boot_loader.generations = 2` caps the second generation at ~67 MiB.
+
+The running system was not switched or rebooted: `/run/current-system` is still
+NixOS `3lg3y1ch…`, `sshd`/`tailscaled` stayed active and the only failed unit is
+the pre-existing `borgbackup-job-aspen1`. Booting the entry, verifying OnixOS on
+the hardware and rolling back to the NixOS submenu remain to be done.
+
+Two transport facts from the install. leviathan cannot reach aspen2's tailnet
+(`100.82.25.30:22` times out) and aspen3 has under 15 GiB free, so the deploy ran
+from aspen3 with leviathan's export store mounted read-only over sshfs and the
+92 MiB pathinfo/directory databases copied locally. The first attempt failed: the
+CLI's `tar` cannot read symlinks through sshfs (`Cannot readlink: Operation not
+permitted`), and it left 21 partially extracted paths, which were removed before
+the retry. The retry relayed the missing paths directly and reran the CLI with
+nothing left to transfer.
+
 ## Gaps
 
 - The NixOS inventory's Mantle path remains a service-manifest build, not host activation ([Mantle build](#mantle-build)). The separate [systemd-host candidate](#mantle-built-systemd-host-candidate) supplies a bootable generation whose retained services passed a complete replica lifecycle; physical-hardware parity and operator authorization still block replacing aspen2's operating system.
