@@ -32,7 +32,17 @@ in
         # OnixOS generation is 67 MiB (52.6 initrd + 14.6 kernel), so five would leave
         # no margin and a fill would break NixOS's boot entry too. Two covers the
         # cutover generation and its rollback target.
-        boot_loader = { kind = 'grub, esp = "/boot", timeout = 5, generations = 2 },
+        # A new generation is committed only after a local SSH login with a
+        # generated probe key. An unproven boot selects the committed entry and
+        # reboots: the previous OnixOS generation on a switch, or the previous
+        # boot configuration (NixOS) when installing from another OS.
+        boot_loader = {
+          kind = 'grub,
+          esp = "/boot",
+          timeout = 5,
+          generations = 2,
+          commit = { enable = true, self_ssh = true, timeout = 600 },
+        },
         # linuxPackages_latest at nixpkgs 5adc508 (the kernel NixOS boots).
         kernel_version = "7.3.0",
         # nixos-hardware's framework-desktop module: redistributable firmware and
