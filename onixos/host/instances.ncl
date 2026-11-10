@@ -28,7 +28,11 @@ in
         ],
         # GRUB stays: NixOS installed it for BIOS and removable EFI; OnixOS writes its
         # entries and keeps the NixOS grub.cfg behind a submenu.
-        boot_loader = { kind = 'grub, esp = "/boot", timeout = 5, generations = 5 },
+        # The ESP is 500 MiB with 338 MiB free and NixOS's own kernel lives there; one
+        # OnixOS generation is 67 MiB (52.6 initrd + 14.6 kernel), so five would leave
+        # no margin and a fill would break NixOS's boot entry too. Two covers the
+        # cutover generation and its rollback target.
+        boot_loader = { kind = 'grub, esp = "/boot", timeout = 5, generations = 2 },
         # linuxPackages_latest at nixpkgs 5adc508 (the kernel NixOS boots).
         kernel_version = "7.3.0",
         # nixos-hardware's framework-desktop module: redistributable firmware and
