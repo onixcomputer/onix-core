@@ -250,12 +250,14 @@ lifecycle pass.
 For publication, the pilot's `onix-modules` input selects
 `git+ssh://git@github.com/onixcomputer/OnixOS.git?ref=refs/heads/onixos-systemd-host`
 instead of the operator's local worktree. The paired OnixOS revision is
-`7743a771` (relocked from `a8b53701` on 2026-11-08); fetching it requires GitHub
+`daf99b1d` (relocked from `a8b53701` on 2026-11-08); fetching it requires GitHub
 SSH access. This remains a feature-branch dependency, not a main-branch release
 or a completed landing gate. The relock leaves aspen2's NixOS build alone:
 `onixos.nixosConfigurations.aspen2`'s toplevel at the `f8ff452c` pin differs
 from the `a8b53701` one only through `nixos-version`'s `configurationRevision`
-(`nix-diff`, impure evaluation), and `7743a771` adds only change documentation.
+(`nix-diff`, impure evaluation), and the later commits add only change
+documentation and replace the active change's code traceability markers with
+plain comments.
 
 The declared Statix/nixfmt and Prettier stages subsequently normalized the
 producer's assignment syntax and the index's JSON layout for commit. The VM
@@ -557,9 +559,8 @@ Retained-service parity is shown on the replica only. Real AMD telemetry,
 physical Thunderbolt driver, tunnel-event and DMA recovery, physical Wi-Fi and
 modem behavior remain unproved, and the local Headscale and mesh fixtures do not
 establish production network or mesh authentication. The full OnixOS flake gate
-at `7743a771` passed 298 of 300 checks; its two Cairn readiness checks fail, as
-they did before this work, until the `onixos-systemd-host` change is archived or
-its code markers are neutralized, which landing on main requires. VM results
+at `daf99b1d` passed all 300 checks on leviathan (298 at `7743a771`, whose two
+Cairn readiness checks failed on the active change's code markers). VM results
 never authorize physical installation.
 
 ## Gaps
