@@ -96,6 +96,20 @@ let { ValidateUserRefs, .. } = import "user-contracts.ncl" in
       },
     },
 
+    # The Darwin laptop joins the same Herdr setup. Its Home Manager state
+    # version is in the Home Manager format, not nix-darwin's system version.
+    hm-britton-air-herdr = {
+      module = { name = "home-manager-profiles", input = "self" },
+      roles.default = {
+        machines.britton-air = {},
+        settings = {
+          username = "brittonr",
+          profiles = ["herdr"],
+          homeStateVersion = "26.05",
+        },
+      },
+    },
+
     # Apply the managed Cargo Kache wrapper to every RustFS node. The matching
     # machine-level service owns each daemon, configuration, and credential.
     hm-kache-fleet = {

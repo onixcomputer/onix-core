@@ -5,6 +5,7 @@
   config,
   inputs,
   lib,
+  osClass,
   pkgs,
   ...
 }:
@@ -44,6 +45,8 @@ let
   herdrConfigFile = tomlFormat.generate "herdr-config.toml" herdrConfig;
 in
 {
+  imports = lib.optional (osClass == "darwin") ./darwin-relay.nix;
+
   # r[impl onix.britton-desktop.herdr.workflow_plugins.ghzinga]
   # r[impl onix.britton-desktop.herdr.wrapper.ownership]
   # r[impl onix.britton-desktop.herdr.wrapper.ownership.activation]
@@ -64,13 +67,16 @@ in
   # ~/.config/systemd/user/collie.service, so this profile declares none of them.
   # sd-switch stops a unit that leaves the generation, and the retired 0.24.1
   # unit had the same name, so start Collie's own unit again after the reload.
-  home.activation.startCollie = lib.hm.dag.entryAfter [ "reloadSystemd" ] ''
-    collieUnit="$HOME/.config/systemd/user/collie.service"
-    if [[ -f $collieUnit && ! -L $collieUnit ]]; then
-      if ! run env XDG_RUNTIME_DIR="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}" \
-        ${config.systemd.user.systemctlPath} --user start collie.service; then
-        warnEcho "collie.service did not start; run: collie restart"
+  # Collie supervises a systemd user unit; Darwin has no systemd or collie unit.
+  home.activation.startCollie = lib.mkIf pkgs.stdenv.hostPlatform.isLinux (
+    lib.hm.dag.entryAfter [ "reloadSystemd" ] ''
+      collieUnit="$HOME/.config/systemd/user/collie.service"
+      if [[ -f $collieUnit && ! -L $collieUnit ]]; then
+        if ! run env XDG_RUNTIME_DIR="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}" \
+          ${config.systemd.user.systemctlPath} --user start collie.service; then
+          warnEcho "collie.service did not start; run: collie restart"
+        fi
       fi
-    fi
-  '';
+    ''
+  );
 }

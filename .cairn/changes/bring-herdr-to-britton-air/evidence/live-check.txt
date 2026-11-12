@@ -1,0 +1,18 @@
+HOST=britton-air
+VER=herdr 0.9.3
+APP=herdr-app 0.1.14
+CONFIG=/nix/store/06gg1fy759kzjy49sl9n5jgzw2qqqa7v-herdr-config.toml
+HASH=
+PLUGINS=7 plugins installed:
+AGENT=43896 0 org.nix-community.home.herdr-iroh
+LIST
+5d07ba066a1dec08c59e51d44b61b5d6	britton-desktop	britton-desktop	default	enabled
+e613f13477712171eea1c208e8230b55	cproof-brittonr	cproof-brittonr	default	enabled
+4326a76785bae7240f5e3575596ddb66	instantfill-vm	britton@instantfill-vm	default	enabled
+STATUS
+5d07ba066a1dec08c59e51d44b61b5d6	britton-desktop	reachable
+e613f13477712171eea1c208e8230b55	cproof-brittonr	error
+  remote platform detection failed: ssh: Could not resolve hostname cproof-brittonr.local: nodename nor servname provided, or not known
+4326a76785bae7240f5e3575596ddb66	instantfill-vm	error
+  remote platform detection failed: ssh: Could not resolve hostname instantfill-vm.tailc6809.ts.net: nodename nor servname provided, or not known
+CONFIG_HASH=3896e0418a91c1556717898b13e24ee20720b10b9de6eb3291130b1ad189e251  /Users/brittonr/.config/herdr/config.toml
