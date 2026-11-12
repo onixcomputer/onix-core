@@ -40,8 +40,8 @@ in
   # scx_bpfland: classifies tasks by context-switch rate, interactive tasks
   # get priority queue. Fully in-BPF, no userspace in the hot path.
   # Falls back to stock EEVDF if the scheduler crashes (5s watchdog).
-  services.scx = {
+  services.scx-loader = {
     enable = lib.mkDefault true;
-    scheduler = lib.mkDefault "scx_bpfland";
+    config.default_sched = lib.mkDefault "scx_bpfland";
   };
 }

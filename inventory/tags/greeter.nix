@@ -22,7 +22,6 @@
       theme = lib.mkDefault "bgrt"; # OEM logo with spinner (clean, fast)
     };
     consoleLogLevel = lib.mkDefault 0;
-    initrd.verbose = lib.mkDefault false;
     kernelParams = lib.mkDefault [
       "quiet"
       "splash"
