@@ -19,20 +19,17 @@ let
     "fprint-notify"
     "khal-next"
     "mail-count"
-    "nostr-chat"
     "rbw-provider"
     "ssh-askpass"
   ];
 
   sshAskpassPkg =
     inputs.noctalia-plugins.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-ssh-askpass;
-  nostrChatdPkg = inputs.noctalia-plugins.packages.${pkgs.stdenv.hostPlatform.system}.nostr-chatd;
 in
 {
   # Companion binaries for plugins that need them
   home.packages = [
     sshAskpassPkg
-    nostrChatdPkg
   ];
 
   home.activation = {
