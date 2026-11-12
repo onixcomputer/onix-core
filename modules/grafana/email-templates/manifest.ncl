@@ -19,9 +19,9 @@ let manifest | Manifest = {
   schema_version = 1,
   upstream = {
     project = "Grafana",
-    version = "13.2.4",
+    version = "13.3.0",
     license = "AGPL-3.0-or-later",
-    source = "generated public/emails assets from the reviewed Grafana 13.2.4 package output",
+    source = "generated public/emails assets from the reviewed Grafana 13.3.0 package output",
   },
   files = [
     { name = "alert_notification_example.html", blake3 = "10d4de12bb8036f4849fe1b26df863f599531c25c9f9cd8989b1ed4546714925" },
