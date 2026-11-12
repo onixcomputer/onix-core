@@ -71,6 +71,13 @@ let
   # a full interactive shell, so it must not touch the LAN interface.
   ptyzzzListenAddress = "100.108.13.4";
   ptyzzzPackage = pkgs.ptyzzz;
+  # r[impl onix.aspen3.herdr_app.install]
+  # r[impl onix.aspen3.herdr_app.source]
+  # Herdr's desktop app (herdr-app) and the herdr-core it drives come from the
+  # pinned llm-agents package set. It is a separate Herdr generation from the
+  # wrapped `herdr` terminal multiplexer above, so it keeps its own
+  # ~/.config/herdr-app state and does not load the fleet plugin registry.
+  herdrAppPackage = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.herdr-app;
   # serve.nu + vendored fonts from the pinned ptyZZZ source; HERE-relative
   # paths resolve inside this store path. The line-height patch fixes the
   # demo's row geometry: the CSS used an 18px (1.2857em) line-height while
@@ -302,6 +309,7 @@ in
       easyeffects
       evtest
       helvum
+      herdrAppPackage
       libinput
       libwacom
       pwvucontrol
