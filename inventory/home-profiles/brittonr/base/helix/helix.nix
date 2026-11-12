@@ -59,7 +59,7 @@ in
         bash-language-server
         shfmt
         prettier
-        ltex-ls
+        ltex-ls-plus
         libxml2
         lemminx
       ];
@@ -160,7 +160,7 @@ in
             "asciidoc"
           ];
           auto-format = false;
-          language-servers = [ "ltex-ls" ];
+          language-servers = [ "ltex-ls-plus" ];
         }
         {
           name = "xml";
@@ -263,8 +263,8 @@ in
           command = "${pkgs.bash-language-server}/bin/bash-language-server";
           args = [ "start" ];
         };
-        ltex-ls = {
-          command = "${pkgs.ltex-ls}/bin/ltex-ls";
+        ltex-ls-plus = {
+          command = "${pkgs.ltex-ls-plus}/bin/ltex-ls-plus";
         };
         lemminx = {
           command = "${pkgs.lemminx}/bin/lemminx";
