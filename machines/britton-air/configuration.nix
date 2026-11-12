@@ -121,6 +121,8 @@ in
   environment.systemPackages = [ pkgs.herdr ];
 
   home-manager.users.brittonr = {
+    imports = [ ../../inventory/home-profiles/brittonr/herdr/darwin-relay.nix ];
+
     home.packages = [ herdrAppPackage ];
 
     # Saved-machine targets shared with aspen3. The laptop reaches the two LAN

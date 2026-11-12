@@ -5,7 +5,6 @@
   config,
   inputs,
   lib,
-  osClass,
   pkgs,
   ...
 }:
@@ -45,8 +44,6 @@ let
   herdrConfigFile = tomlFormat.generate "herdr-config.toml" herdrConfig;
 in
 {
-  imports = lib.optional (osClass == "darwin") ./darwin-relay.nix;
-
   # r[impl onix.britton-desktop.herdr.workflow_plugins.ghzinga]
   # r[impl onix.britton-desktop.herdr.wrapper.ownership]
   # r[impl onix.britton-desktop.herdr.wrapper.ownership.activation]
