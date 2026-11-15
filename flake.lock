@@ -6852,11 +6852,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793327228,
-        "narHash": "sha256-DLNHw5BtXZx5Zzgl+kkvkCmLDzTk9yuly27qbKloL28=",
+        "lastModified": 1794703049,
+        "narHash": "sha256-ixlVX9j+ZfBN2oo1qz02gBPsu2ALNCgAykso+i5WlU4=",
         "owner": "brittonr",
         "repo": "underclass",
-        "rev": "773c236d2c12df427a84be7570b900f9353985a7",
+        "rev": "ba72139a1bb3b2a79e25ddd4458b6b1e506ebb26",
         "type": "github"
       },
       "original": {
