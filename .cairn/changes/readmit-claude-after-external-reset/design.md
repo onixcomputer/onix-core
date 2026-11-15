@@ -86,3 +86,10 @@ response; the service journal attributed the three Claude completions to
 weekly window exhausted, and two free Codex accounts remain disabled.
 There were no `codex.reset.account` redemptions; the cooling Pro Codex
 account retained all three banked resets, and no OAuth login was changed.
+
+An advertised `gpt-5.4-mini` probe recorded upstream HTTP 400
+`model_not_found` and produced a pool-level 429 under the existing
+unsupported-model cooldown policy. The next Codex usage poll readmitted
+the account; the subsequent `gpt-6-sol` requests succeeded from all
+three hosts. Catalog presence does not establish entitlement to every
+model on a particular ChatGPT subscription.
