@@ -45,3 +45,44 @@ compare system/unit closures and dry-activation, including the Home Manager
 output; after switching, confirm that only the intended account is readmitted,
 that no reset credit was redeemed, and that a Claude answer is returned through
 OMP from each of the three hosts.
+
+## Completion State
+
+On 2026-11-15, the tested fork revision `ba72139a` and the onix-core
+pin/provider commits `68521462` and `71f63e48` were published to their
+respective `main` branches. Britton generation 884 runs
+`/nix/store/5kas2dkyfy99ckc11gq0r7qaq66dx233-underclass-0.1.0`;
+its exact candidate source is rooted at
+`~/.local/state/onix-core/deployments/884/source` with NAR hash
+`sha256-pZg9DsGiwEpC+A5UNMtqlzOJFZj6PSAaFNPnhRKZ1Pk=`.
+The candidate restored the three unrelated policy files from the running
+generation. Closure comparison found 22 paths added and 22 removed: the
+Underclass package, its Home Manager provider and their generated wrappers;
+the dry activation identified only the corresponding service and Home
+Manager changes, with polkit restart and D-Bus reload as switch side effects.
+The Underclass proxy-key file hash remained
+`c02af49e0f1d7d980fe2e01682753ea2fbda9f6203b6c7e504910d08d86c78f6`;
+`herdr-iroh` retained PID 3508.
+
+The switch command returned 4 because unrelated existing ZFS quota
+activation snippets for `datapool/kache-nix` and
+`datapool/radicle-backup` failed and `celld.service` remained failed.
+The generation link nevertheless points to 884, the managed Underclass unit
+and Home Manager activation are active, and the provider link is now
+Home Manager-owned. Do not interpret the nonzero switch as a successful
+whole-machine activation.
+
+The next Claude usage poll readmitted only `claude@robitzs.ch` (63% weekly
+utilization); `britton@cproof.ai` remained cooling at 100%. OMP returned
+three paid Claude Haiku 5.5 responses, one each from Britton, Aspen3 and
+cproof Mac. Aspen3 initially routed that model to Codex because its
+obsolete static `models.yml` Underclass block overrode the dynamic provider
+with `openai-responses`; removing that block, while preserving
+`models.yml.bak-underclass-dynamic-20261115`, fixed its normal OMP CLI
+without upgrading OMP. Each host also returned a paid Codex `gpt-6-sol`
+response; the service journal attributed the three Claude completions to
+`claude@robitzs.ch` and the three Codex completions to
+`openai@robitzs.ch`. `britton@cproof.ai` Codex remains cooling with its
+weekly window exhausted, and two free Codex accounts remain disabled.
+There were no `codex.reset.account` redemptions; the cooling Pro Codex
+account retained all three banked resets, and no OAuth login was changed.
