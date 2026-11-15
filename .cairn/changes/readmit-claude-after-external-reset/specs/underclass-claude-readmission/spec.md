@@ -31,3 +31,27 @@ The poll MUST NOT redeem a banked reset credit or require a new OAuth login.
 - THEN only Underclass-related runtime paths MAY change
 - AND the listener, state directory, key, SSH tunnels and unrelated services
   MUST remain unchanged
+
+### Requirement: Managed multi-backend OMP provider
+
+r[onix.underclass.claude_omp] The managed Underclass OMP provider MUST
+discover only the pool's Codex, OpenCode Go and Claude models using the
+current per-machine proxy key. It MUST preserve the working Codex and
+OpenCode Go request shapes and use Anthropic Messages with the Claude Code
+request identity and headers for Claude models. It MUST NOT send any
+credential or OAuth token into a Nix store path.
+
+#### Scenario: Multi-backend catalog
+
+- GIVEN the pool advertises a Codex, OpenCode Go and Claude model
+- WHEN OMP refreshes its Underclass model catalog
+- THEN it MUST expose all three with their backend-specific API shapes
+- AND it MUST NOT advertise Copilot-only models through this provider
+
+#### Scenario: Claude subscription request
+
+- GIVEN OMP selects `underclass/claude-haiku-5-5`
+- WHEN it constructs an Anthropic Messages request through the proxy
+- THEN it MUST attach the Claude Code identity and headers
+- AND it MUST use the existing pool key without modifying the direct
+  Anthropic provider login
