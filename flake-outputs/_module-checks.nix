@@ -31,6 +31,7 @@ let
   celldSettingsTests = import ../modules/celld/settings-tests.nix { inherit lib; };
   bookshelfValidation = wasm.evalNickelFile ../inventory/services/fixtures/bookshelf-validation.ncl;
   bookshelfSettingsTests = import ../modules/bookshelf/settings-tests.nix { inherit lib; };
+  calibreSettingsTests = import ../modules/calibre-server/settings-tests.nix { inherit lib; };
   kacheRustfsValidation = wasm.evalNickelFile ../inventory/services/fixtures/kache-rustfs-validation.ncl;
   kacheRustfsSettingsTests = import ../modules/kache-rustfs/settings-tests.nix { inherit lib; };
   niks3Validation = wasm.evalNickelFile ../inventory/services/fixtures/niks3-validation.ncl;
@@ -338,6 +339,12 @@ let
     "openFirewall"
     "firewallInterface"
     "restartDelaySeconds"
+    "intakeEnable"
+    "intakePort"
+    "intakeMaxMegabytes"
+    "intakeCalibreUrl"
+    "intakeCalibreLibraryId"
+    "intakeCalibreSourceAddress"
   ];
   missingBookshelfNegativeFields = builtins.filter (
     field: !(lib.any (error: lib.hasInfix field error) bookshelfNegativeErrors)
@@ -380,6 +387,41 @@ let
   bookshelfPrivateDirectoriesValid =
     builtins.elem "d ${bookshelfSourceDirectory} 0700 bookshelf bookshelf -" bookshelfDesktopConfig.systemd.tmpfiles.rules
     && builtins.elem "d ${bookshelfLibraryDirectory} 0700 bookshelf bookshelf -" bookshelfDesktopConfig.systemd.tmpfiles.rules;
+  bookshelfIntakePort = 39301;
+  bookshelfIntakeTrustedSource = "127.0.0.2";
+  bookshelfSyncCache = "/var/cache/bookshelf-sync";
+  bookshelfSyncLock = "${bookshelfSyncCache}/publish.lock";
+  bookshelfDesktopServices = bookshelfDesktopConfig.systemd.services;
+  bookshelfIntakePresent = builtins.hasAttr "bookshelf-intake" bookshelfDesktopServices;
+  bookshelfIntakeService = bookshelfDesktopServices.bookshelf-intake;
+  bookshelfIntakeEnvironmentValid =
+    bookshelfIntakePresent
+    && bookshelfIntakeService.environment.BOOKSHELF_INTAKE_BIND == bookshelfAddress
+    && bookshelfIntakeService.environment.BOOKSHELF_INTAKE_PORT == toString bookshelfIntakePort
+    && bookshelfIntakeService.environment.BOOKSHELF_SOURCE_DIR == bookshelfSourceDirectory
+    && bookshelfIntakeService.environment.BOOKSHELF_LIBRARY_DIR == bookshelfLibraryDirectory
+    && bookshelfIntakeService.environment.BOOKSHELF_SYNC_LOCK == bookshelfSyncLock
+    && bookshelfIntakeService.environment.CALIBRE_SOURCE_ADDRESS == bookshelfIntakeTrustedSource;
+  bookshelfIntakeSandboxValid =
+    bookshelfIntakePresent
+    && bookshelfIntakeService.serviceConfig.User == "bookshelf"
+    && bookshelfIntakeService.serviceConfig.ProtectSystem == "strict"
+    && bookshelfIntakeService.serviceConfig.CapabilityBoundingSet == ""
+    &&
+      lib.sort lib.lessThan bookshelfIntakeService.serviceConfig.ReadWritePaths == lib.sort lib.lessThan [
+        bookshelfSourceDirectory
+        bookshelfLibraryDirectory
+        bookshelfSyncCache
+      ];
+  bookshelfIntakeFirewallValid =
+    builtins.elem bookshelfIntakePort bookshelfDesktopConfig.networking.firewall.interfaces.tailscale0.allowedTCPPorts
+    && !(builtins.elem bookshelfIntakePort bookshelfDesktopConfig.networking.firewall.allowedTCPPorts);
+  bookshelfPublishLocked = lib.hasInfix "/bin/flock ${bookshelfSyncLock} " bookshelfDesktopServices.bookshelf-publish.serviceConfig.ExecStart;
+  calibreExecStart = bookshelfDesktopServices.calibre-server.serviceConfig.ExecStart;
+  calibreWriteBoundaryValid =
+    lib.hasInfix "--trusted-ips ${bookshelfIntakeTrustedSource}" calibreExecStart
+    && !(lib.hasInfix "127.0.0.1" calibreExecStart)
+    && !(lib.hasInfix "--enable-local-write" calibreExecStart);
 
   kacheRustfsPositiveErrors = kacheRustfsValidation.positive;
   kacheRustfsNegativeErrors = kacheRustfsValidation.negative;
@@ -993,6 +1035,11 @@ in
         printf '%s\n' ${lib.escapeShellArg (builtins.toJSON bookshelfSettingsNegativeErrors)}
         exit 1
       ''}
+      ${lib.optionalString (bookshelfSettingsTests.intakeDisabledErrors != [ ]) ''
+        echo "Bookshelf settings without the upload endpoint produced intake errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" bookshelfSettingsTests.intakeDisabledErrors)}
+        exit 1
+      ''}
       touch $out
     '';
 
@@ -1039,6 +1086,60 @@ in
           echo "Bookshelf fetch command accepted no provider"
           exit 1
         fi
+      ''}
+      touch $out
+    '';
+
+    # r[verify onix.bookshelf.intake]
+    bookshelf-intake-behavior =
+      pkgs.runCommand "bookshelf-intake-behavior"
+        {
+          nativeBuildInputs = [ (pkgs.python3.withPackages (python: [ python.pytest ])) ];
+        }
+        ''
+          export PYTHONDONTWRITEBYTECODE=1
+          export BOOKSHELF_INTAKE_SCRIPT=${../modules/bookshelf/intake.py}
+          python3 -m pytest -q -p no:cacheprovider ${../tests/test_bookshelf_intake.py}
+          touch "$out"
+        '';
+
+    # r[verify onix.bookshelf.intake]
+    # r[verify onix.bookshelf.calibre_write]
+    bookshelf-intake-generated = pkgs.runCommand "bookshelf-intake-generated" { } ''
+      ${lib.optionalString (!bookshelfIntakeEnvironmentValid) ''
+        echo "Bookshelf upload endpoint is missing or lost its reviewed listener, storage, lock or Calibre source address"
+        exit 1
+      ''}
+      ${lib.optionalString (!bookshelfIntakeSandboxValid) ''
+        echo "Bookshelf upload endpoint lost its dedicated account or strict writable-path sandbox"
+        exit 1
+      ''}
+      ${lib.optionalString (!bookshelfIntakeFirewallValid) ''
+        echo "Bookshelf upload port is not restricted to tailscale0"
+        exit 1
+      ''}
+      ${lib.optionalString (!bookshelfPublishLocked) ''
+        echo "bookshelf-publish does not take the lock the upload endpoint holds while publishing"
+        exit 1
+      ''}
+      ${lib.optionalString (!calibreWriteBoundaryValid) ''
+        echo "Calibre must trust writes only from the upload endpoint's dedicated loopback address"
+        exit 1
+      ''}
+      touch $out
+    '';
+
+    # r[verify onix.bookshelf.calibre_write]
+    calibre-settings = pkgs.runCommand "calibre-settings" { } ''
+      ${lib.optionalString (calibreSettingsTests.positiveErrors != [ ]) ''
+        echo "Valid Calibre settings produced semantic errors:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" calibreSettingsTests.positiveErrors)}
+        exit 1
+      ''}
+      ${lib.optionalString (calibreSettingsTests.missingNegativeCases != [ ]) ''
+        echo "Unsafe Calibre trustedIps were accepted:"
+        printf '%s\n' ${lib.escapeShellArg (lib.concatStringsSep "\n" calibreSettingsTests.missingNegativeCases)}
+        exit 1
       ''}
       touch $out
     '';

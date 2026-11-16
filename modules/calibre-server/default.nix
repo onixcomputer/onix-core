@@ -23,13 +23,23 @@ in
             let
               ms = import ../../lib/mk-settings.nix { inherit lib; };
               settings = extendSettings (ms.mkDefaults schema.server);
-              inherit (settings) libraries;
+              settingsLib = import ./settings.nix { inherit lib; };
+              validationErrors = settingsLib.validate settings;
+              inherit (settings) libraries trustedIps;
               filteredSettings = builtins.removeAttrs settings [
                 "libraries"
                 "libraryPath"
+                "trustedIps"
               ];
             in
             {
+              assertions = [
+                {
+                  assertion = validationErrors == [ ];
+                  message = lib.concatStringsSep "; " validationErrors;
+                }
+              ];
+
               services.calibre-server = lib.mkMerge [
                 {
                   enable = true;
@@ -45,6 +55,7 @@ in
                 "d '${libraryPath}' 0755 ${config.services.calibre-server.user} ${config.services.calibre-server.group} -"
               ) libraries;
 
+              # r[impl onix.bookshelf.calibre_write]
               systemd.services.calibre-server.serviceConfig.ExecStart =
                 let
                   pkg = config.services.calibre-server.package;
@@ -61,6 +72,7 @@ in
                       }
                     )
                     ++ [ (lib.optionalString config.services.calibre-server.auth.enable "--enable-auth") ]
+                    ++ lib.optional (trustedIps != [ ]) "--trusted-ips ${lib.concatStringsSep "," trustedIps}"
                     ++ config.services.calibre-server.extraFlags
                   )
                 }";

@@ -170,6 +170,12 @@ let bookshelf_port = 39300 in
 let bookshelf_restart_delay_seconds = 5 in
 let bookshelf_source_dir = "/datapool/bookshelf/source" in
 let bookshelf_library_dir = "/datapool/bookshelf/library" in
+let bookshelf_intake_port = 39301 in
+let bookshelf_intake_max_megabytes = 256 in
+let calibre_port = 6767 in
+# Calibre trusts writes only from this loopback address, which only the
+# Bookshelf upload endpoint binds; local proxies such as Folio's use 127.0.0.1.
+let calibre_intake_source_address = "127.0.0.2" in
 let rustfs_api_port = 39000 in
 let rustfs_console_port = 39001 in
 let rustfs_niks3_api_port = 39500 in
@@ -522,6 +528,7 @@ in
 
     # r[impl onix.bookshelf.storage]
     # r[impl onix.bookshelf.network]
+    # r[impl onix.bookshelf.intake]
     "bookshelf-private" = {
       module = { name = "bookshelf", input = "self" },
       roles.server.machines.britton-desktop.settings = {
@@ -534,6 +541,12 @@ in
         openFirewall = true,
         firewallInterface = "tailscale0",
         restartDelaySeconds = bookshelf_restart_delay_seconds,
+        intakeEnable = true,
+        intakePort = bookshelf_intake_port,
+        intakeMaxMegabytes = bookshelf_intake_max_megabytes,
+        intakeCalibreUrl = "http://127.0.0.1:%{calibre_port}",
+        intakeCalibreLibraryId = "Calibre_Library",
+        intakeCalibreSourceAddress = calibre_intake_source_address,
       },
     },
 
@@ -1260,14 +1273,16 @@ in
       },
     },
 
+    # r[impl onix.bookshelf.calibre_write]
     calibre = {
       module = { name = "calibre-server", input = "self" },
       roles.server.machines.britton-desktop.settings = {
         libraries = ["/home/brittonr/Calibre Library"],
         host = "0.0.0.0",
-        port = 6767,
+        port = calibre_port,
         user = "brittonr",
         group = "brittonr",
+        trustedIps = [calibre_intake_source_address],
       },
     },
 

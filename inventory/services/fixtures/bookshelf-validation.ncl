@@ -1,5 +1,6 @@
 let sc = import "../settings-contracts.ncl" in
 let default_port = 39300 in
+let default_intake_port = 39301 in
 let default_restart_delay_seconds = 5 in
 let invalid_port = 70000 in
 let test_address = "100.110.43.11" in
@@ -18,6 +19,12 @@ let test_address = "100.110.43.11" in
         openFirewall = true,
         firewallInterface = "tailscale0",
         restartDelaySeconds = default_restart_delay_seconds,
+        intakeEnable = true,
+        intakePort = default_intake_port,
+        intakeMaxMegabytes = 256,
+        intakeCalibreUrl = "http://127.0.0.1:6767",
+        intakeCalibreLibraryId = "Calibre_Library",
+        intakeCalibreSourceAddress = "127.0.0.2",
       },
   negative =
     sc.validate_fields
@@ -33,5 +40,11 @@ let test_address = "100.110.43.11" in
         openFirewall = "yes",
         firewallInterface = [],
         restartDelaySeconds = "restart",
+        intakeEnable = "yes",
+        intakePort = invalid_port,
+        intakeMaxMegabytes = "lots",
+        intakeCalibreUrl = 6767,
+        intakeCalibreLibraryId = [],
+        intakeCalibreSourceAddress = { address = "127.0.0.2" },
       },
 }
