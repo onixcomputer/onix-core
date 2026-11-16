@@ -6,6 +6,10 @@
 
 ## Phase 2: Deployment and verification
 
-- [ ] [serial] Build `britton-desktop` from the deployed generation's source plus this change only, and review the closure, unit and dry-activation differences. r[onix.bookshelf.intake] r[onix.bookshelf.calibre_write]
-- [ ] [serial] Activate the generation and upload a real book from the owner's devices into both libraries. r[onix.bookshelf.intake]
-- [ ] [serial] Confirm refusals for foreign hosts and the Folio proxy, and that Calibre still refuses writes relayed from `127.0.0.1`. r[onix.bookshelf.intake] r[onix.bookshelf.calibre_write]
+- [x] [serial] Build `britton-desktop` from the deployed generation's source plus this change only, and review the closure, unit and dry-activation differences. r[onix.bookshelf.intake] r[onix.bookshelf.calibre_write]
+- [x] [serial] Activate the generation and upload a real book from the owner's devices into both libraries. r[onix.bookshelf.intake]
+- [x] [serial] Confirm refusals for foreign hosts and the Folio proxy, and that Calibre still refuses writes relayed from `127.0.0.1`. r[onix.bookshelf.intake] r[onix.bookshelf.calibre_write]
+
+## Completion State
+
+Generation 890 runs the endpoint on `britton-desktop`; see [`evidence/rollout-2026-11-16.md`](evidence/rollout-2026-11-16.md).
