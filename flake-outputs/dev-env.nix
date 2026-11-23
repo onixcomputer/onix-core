@@ -15,6 +15,7 @@
 let
   # --- treefmt ---
   treefmtEval = inputs'.treefmt-nix.lib.evalModule pkgs {
+    projectRootFile = "flake.nix";
     programs = {
       # Nix — priority: deadnix (1) → statix (2) → nixfmt (3)
       # deadnix removes unused code, statix catches anti-patterns, nixfmt formats.
@@ -146,6 +147,8 @@ let
         "*/gnupg-home/*"
         "*/sops/secrets/*"
         "vars/*"
+        # Byte-identical copies of vars/ files (docs/onixos-aspen2-pilot.md).
+        "onixos/secrets/*"
         "**/node_modules/*"
         "**/.mypy_cache/*"
 

@@ -1,0 +1,60 @@
+# Design: Prepare aspen2 to move from Clan to OnixOS
+
+## Context
+
+onix-core assembles every machine with Clan: clan-core's base modules, one importer instance per `inventory/tags/<tag>.nix`, the machine directory, and Clan service instances from `inventory/services/services.ncl` and `inventory/core/users.ncl`, with secrets from `vars/`. OnixOS's `mkFlake` evaluates a Nickel inventory and typed Nickel service modules, assembles NixOS systems with the Nix backend, deploys them with `onix deploy`, and manages secrets as artifacts through sops-nix. The operator chose typed Nickel modules for every Clan service, NixOS hosts built by `mkFlake`, Clan vars turned into OnixOS artifacts, and aspen2 as the first machine.
+
+## Decisions
+
+### Decision: Build OnixOS beside Clan from one source
+
+`flake-outputs/onixos.nix` calls `mkFlake` with `onixos/inventory.ncl` and exposes only the assembled machines as `onixos.nixosConfigurations`. The inventory projects every NixOS machine from `inventory/core/machines.ncl`, so machine data has one source. `nixosConfigurations` stays Clan's, so Clan deploys are unchanged and `onixos/tools/parity` can compare both builds of a machine from the same commit. The pilot adds the inputs `onix-modules` and `nixos-artifacts` and changes no other locked input.
+
+### Decision: Services in onix-core, tags and machines as NixOS modules
+
+The service modules live in `onixos/services/`, not in OnixOS's `modules/`: they encode this fleet's services, and keeping them here avoids an OnixOS release per service change. They replace OnixOS's modules of the same name for onix-core. Each module keeps its Clan instance's settings and defaults, and `tests` cover the aspen2 settings and the module's branches. Tag files, machine files and clan-core's base defaults stay NixOS modules through `extraNixosModules` (`onixos/nix/machines.nix`, `clan-carryover.nix`): they are host configuration rather than services, and reusing them unchanged keeps Clan and OnixOS builds of a machine identical where nothing was ported.
+
+### Decision: Nix-side needs in sidecars
+
+Nickel cannot import NixOS modules, build packages or name store paths, and a module cannot read public artifacts that it declares itself. A service with such needs has a sidecar `onixos/services/<name>.nix` listing upstream NixOS modules, package overlays and the modules it must follow (`onixos/nix/service-sidecars.nix`). Where Clan wrote a store path into a unit or file, the port uses an equivalent that Nickel can express: a unit `script` or `preStart` with the package in `path`, a file under `/etc` referenced by path, or a lookup through `PATH`. Moved configuration files keep a restart trigger.
+
+### Decision: Clan's module order
+
+List-valued options merge in module order, so assembly follows Clan's order where the parity diff showed it matters: tag files sorted by their Clan instance name (`base-settings`, `<tag>-tools`), sidecar modules at the depth where a Clan service imports its upstream modules, and Home Manager profile instances merged in the order Clan's per-instance modules produce. Remaining order differences inside lists are listed in the parity evidence; none changes a set or a setting.
+
+### Decision: Secrets keep their Clan names and ciphertexts
+
+An artifact has the Clan generator's name and file names, and `onixos/secrets/` holds byte-identical copies of the Clan files, so no secret is decrypted or re-encrypted and aspen2's existing age key decrypts them. The runtime path changes from `/run/secrets/vars/per-machine/aspen2/<generator>/<file>` and `/run/secrets/vars/shared/<generator>/<file>` to `/run/secrets/<generator>/<file>`; every consumer follows the new path. `onixos/nix/clan-vars-compat.nix` maps the `clan.core.vars.generators` paths that tag files read to the same sops secrets. Files Clan does not deploy (the SSH CA key, the plaintext user password, the build farm CA key) are not declared, because OnixOS deploys every declared secret.
+
+### Decision: Evaluation checks that secrets are encrypted
+
+OnixOS maps a secret artifact file to `sops.secrets` after checking only that the file exists, and sops-nix validates a binary-format file only by parsing it as JSON. A plaintext copy, or a ciphertext for other recipients, would therefore build and deploy and fail only at activation. `onixos/nix/encrypted-secrets.nix` reads the sops envelope of every `sops.secrets` file during evaluation and fails unless its data and MAC are AES-256-GCM ciphertext and the machine's age key is a recipient. The key comes from `sops/machines/<machine>/key.json`, the file the inventory's `age_public_key` also reads. Nothing is decrypted. The check runs after evaluation has copied the flake source into the local store, so it keeps a committed plaintext file from deploying, not from the store. The six public files (SSH public keys, the host certificate, the Nix signing public key) stay plaintext, because OnixOS reads public artifact files during evaluation.
+
+### Decision: Clan backup-provider plumbing is not ported
+
+clan-core's `clan.core.state` registry, its `state-commands` package, the borg job's pre/post-backup hook runners and the `borgbackup-create`, `borgbackup-list` and `borgbackup-restore` helpers serve the `clan backups` command. No onix-core state defines a hook script, so the runners were no-ops on aspen2. The borg job, its timer, wrapper, paths, excludes and NetworkManager wait are ported unchanged.
+
+### Decision: Land the OnixOS fixes on main
+
+Two OnixOS defects blocked the pilot: identical shared artifact declarations from several machines collided (`713d5d15`), and record-form role machines (`machines.<name>.settings`) aborted under `builtins.wasm` (`2d23df26`). Both are on OnixOS `main`, fast-forwarded from `539430c3`, and `onix-modules` tracks `main`, so the pilot evaluates without overrides. OnixOS's full gate has 299 checks. At landing, 113 ran and passed, covering every check over the changed library, shim and tests: the CLI cargo tests, the WASM eval checks, shim-unit, Nickel, formatting, Cairn and the `onix` package. The other 186 (VM tests, a test kernel, Kani and Verus proofs and other subsystems) evaluated, but no reachable build host had the disk space to build them, and the operator approved landing on the 113. The same day, a private store on the USB4 drive built the full gate at `2d23df26`: all 299 checks pass (`parity-evidence.json`, `onixosLanding.gate.fullGate`).
+
+### Decision: Cutover through nixosConfigurations
+
+`onix deploy --backend nix` builds `.#nixosConfigurations.<machine>.config.system.build.toplevel`, so a machine's cutover points that attribute at `onixos.nixosConfigurations.<machine>`. `cutOverMachines` in `flake-outputs/onixos.nix` lists the cut-over machines; `clan.nixosConfigurations` keeps Clan's build for parity and rollback. Checks that read a cut-over machine's configuration then see its OnixOS build, so the mesh-llm check reads the launch command, plugin configuration and invites from either build. The runbook (`docs/onixos-aspen2-pilot.md`) describes the steps.
+
+### Decision: Mantle builds aspen2's services but does not deploy them
+
+The operator asked to do the cutover with Mantle only. OnixOS's Mantle backend lowers typed service outputs into a `mantle-onix-activation-closure` artifact, but for a NixOS host its activate, status and persist entrypoints only check that the payload manifest exists. Mantle builds whole systems only as OnixOS VMs, which `onix deploy` refuses, and physical installs still use Nix. Kernel, boot, hardware, Home Manager, the `.nix` sidecars and the Clan machine modules have no Mantle path. The operator chose to build aspen2 with Mantle and stop at the deploy dry-run. That needed an OnixOS fix: the Mantle wrapper passed no placement facts, bound `instance = instance` and keyed dotted packages differently from the Nix shim (OnixOS `9addcea4`). With the fix, all 24 typed units lower, the build succeeds with Nix programs stubbed and never called, and the dry run accepts the proof. aspen2 keeps its Nix-backend generation.
+
+## Risks / Trade-offs
+
+- Secret paths change, so every unit that names a secret restarts on the first OnixOS activation, including sshd and nix-daemon. The cutover activates with `--action test` first, which a reboot undoes; a service that binds the Tailscale address can fail once while tailscaled restarts and comes back through its restart policy.
+- Activation-time secrets and `deploy = false` files still come from Clan. OnixOS cannot yet keep generated but undeployed secrets, upload activation secrets, or order generators by their dependencies, so rotating those secrets needs Clan.
+- OnixOS prompts have no hidden or persist flags, so regenerating a prompted secret behaves differently from Clan.
+- `system.stateVersion` still comes from `vars/per-machine/<machine>/state-version`.
+- Roles that run on other machines are not ported: the niks3 server, the build farm scheduler, balancer and clients, the borg server, the mesh-llm seed and forwarder, laya's Vulkan instance and the other Home Manager instances.
+- mesh-llm now starts its research plugin by name through `PATH`; [INFERENCE] mesh-llm spawns plugins with a `PATH` lookup, which no test here exercises.
+
+## Verification
+
+Nickel module tests and the inventory contract (`onixos-services` check), the parity diff of aspen2 with every difference explained (`parity-evidence.json`), the Clan build compared with the base commit, the deploy plan from `onix deploy --dry-run`, the formatter on all changed files, and Cairn validation.

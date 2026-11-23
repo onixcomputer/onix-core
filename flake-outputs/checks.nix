@@ -64,6 +64,7 @@ let
   multiverseChecks = (import ./_multiverse-checks.nix) innerArgs;
   searxngChecks = (import ./_searxng-checks.nix) innerArgs;
   driftRustfsChecks = (import ./_drift-rustfs-checks.nix) innerArgs;
+  onixosChecks = (import ./_onixos-checks.nix) innerArgs;
 
   packageChecks = lib.mapAttrs' (n: lib.nameValuePair "package-${n}") self'.packages;
   devShellChecks = lib.mapAttrs' (n: lib.nameValuePair "devShell-${n}") self'.devShells;
@@ -105,6 +106,7 @@ in
     // (kilnImplementationChecks.checks or { })
     // (multiverseChecks.checks or { })
     // (searxngChecks.checks or { })
+    // onixosChecks.checks
     // packageChecks
     // devShellChecks;
 }

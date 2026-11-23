@@ -15,19 +15,19 @@
   ...
 }:
 let
+  policy = builtins.fromJSON (builtins.readFile ./thunderbolt-link.json);
   # ---- link identity -------------------------------------------------------
-  bridgeName = "br-tbt";
-  bridgeNetdev = "40-thunderbolt-bridge";
-  memberNetwork = "50-thunderbolt-members";
-  bridgeNetwork = "60-thunderbolt-bridge";
-  memberDriver = "thunderbolt-net";
+  inherit (policy)
+    bridgeName
+    bridgeNetdev
+    memberNetwork
+    bridgeNetwork
+    memberDriver
+    ;
 
   # Bridge ports. A host with more than one USB4 controller can carry more than
   # one member, and a missing name is skipped everywhere it is used.
-  linkMembers = [
-    "thunderbolt0"
-    "thunderbolt1"
-  ];
+  inherit (policy) linkMembers;
 
   # Everything that may carry link traffic. Packets that the bridge delivers to
   # the local host still arrive with the bridge as their input interface, but a
@@ -38,47 +38,45 @@ let
   # thunderbolt0 reports maxmtu 65522 and the bridge header costs two bytes, so
   # 65520 is the largest usable MTU. The driver splits every packet into 4 KiB
   # frames, therefore the MTU is what removes per-packet overhead.
-  linkMtuBytes = 65520;
-  subnetPrefixLength = 28;
+  inherit (policy) linkMtuBytes subnetPrefixLength;
 
   # ---- link filter ---------------------------------------------------------
   # Runs before the NixOS firewall input hook (priority filter is 0) so that the
   # peer allow-list cannot be widened by a port opened for another interface,
   # and so that a device that is not a configured peer cannot reach any local
   # service.
-  filterPriority = -180;
-  filterTableName = "thunderbolt-link";
+  inherit (policy) filterPriority filterTableName;
 
   # ---- guard ---------------------------------------------------------------
-  guardPeerPingCount = 1;
-  guardPeerPingTimeoutSeconds = 5;
-  guardPeerPingAttempts = 3;
-  guardPeerPingAttemptIntervalSeconds = 2;
-  guardLinkSettleSeconds = 3;
-  guardRepairWaitAttempts = 10;
-  guardRepairWaitIntervalSeconds = 2;
-  guardRecoveryCooldownSeconds = 300;
-  guardStateDirectory = "/run/thunderbolt-link";
+  inherit (policy)
+    guardPeerPingCount
+    guardPeerPingTimeoutSeconds
+    guardPeerPingAttempts
+    guardPeerPingAttemptIntervalSeconds
+    guardLinkSettleSeconds
+    guardRepairWaitAttempts
+    guardRepairWaitIntervalSeconds
+    guardRecoveryCooldownSeconds
+    guardStateDirectory
+    guardExitUnhealthy
+    ;
   guardRecoveryMarker = "${guardStateDirectory}/last-recovery";
-  guardExitUnhealthy = 1;
   # Every link flap raises two TUNNEL_EVENTs and the guard is cheap and
   # serialized by systemd, so this limit only has to stop an unbounded storm.
   # A tight limit would strand the guard in start-limit-hit while the link is
   # still broken.
-  guardStartLimitIntervalSeconds = 60;
-  guardStartLimitBurst = 30;
-  guardBootDelaySeconds = 300;
-  guardIntervalSeconds = 900;
-  guardTimerAccuracySeconds = 60;
+  inherit (policy)
+    guardStartLimitIntervalSeconds
+    guardStartLimitBurst
+    guardBootDelaySeconds
+    guardIntervalSeconds
+    guardTimerAccuracySeconds
+    ;
 
   # ---- address map ---------------------------------------------------------
   # Every host that may speak on the link. The map is the single source of truth
   # for the static addresses, the input allow-list, and the peer health checks.
-  tbAddresses = {
-    aspen1 = "10.10.10.1";
-    aspen2 = "10.10.10.2";
-    britton-desktop = "10.10.10.3";
-  };
+  inherit (policy) tbAddresses;
 
   hostname = config.networking.hostName;
   address = tbAddresses.${hostname} or null;
@@ -117,201 +115,8 @@ let
       state_dir=${guardStateDirectory}
       recovery_marker=${guardRecoveryMarker}
       exit_unhealthy=${toString guardExitUnhealthy}
-
-      log() {
-        printf 'thunderbolt-link guard: %s\n' "$*"
-      }
-
-      set_sysctl() {
-        local key="$1"
-        local value="$2"
-        local path="/proc/sys/$key"
-        local current
-
-        if [ ! -e "$path" ]; then
-          return 0
-        fi
-
-        current="$(cat "$path")"
-        if [ "$current" != "$value" ]; then
-          printf '%s' "$value" > "$path"
-          log "set $key=$value (was $current)"
-        fi
-      }
-
-      # Keep the link from accepting redirects or source-routed packets from
-      # whatever is plugged into the USB4 port.
-      apply_sysctls() {
-        local iface
-
-        for iface in "''${link_interfaces[@]}"; do
-          if [ ! -e "/sys/class/net/$iface" ]; then
-            continue
-          fi
-          set_sysctl "net.ipv4.conf.$iface.accept_redirects" 0
-          set_sysctl "net.ipv4.conf.$iface.send_redirects" 0
-          set_sysctl "net.ipv4.conf.$iface.accept_source_route" 0
-        done
-      }
-
-      carrier_up() {
-        [ "$(cat "/sys/class/net/$bridge/carrier" 2>/dev/null || echo 0)" = 1 ]
-      }
-
-      address_present() {
-        ip -o -4 addr show dev "$bridge" | grep -qF -- "$address"
-      }
-
-      mtu_matches() {
-        [ "$(cat "/sys/class/net/$bridge/mtu" 2>/dev/null || echo 0)" = "$expected_mtu" ]
-      }
-
-      peer_reachable() {
-        local attached=()
-        local path
-        local name
-        local index
-        local address
-        local attempt
-
-        # Only peers that the kernel reports as attached hosts can be verified.
-        # A configured peer that is not plugged in is not a link failure.
-        for path in /sys/bus/thunderbolt/devices/*/device_name; do
-          if [ ! -e "$path" ]; then
-            continue
-          fi
-          name="$(cat "$path")"
-          for index in "''${!peer_names[@]}"; do
-            if [ "''${peer_names[$index]}" = "$name" ]; then
-              attached+=("''${peer_addresses[$index]}")
-              break
-            fi
-          done
-        done
-
-        if [ "''${#attached[@]}" -eq 0 ]; then
-          log "no configured peer is attached to the USB4 link; nothing to verify"
-          return 0
-        fi
-
-        for address in "''${attached[@]}"; do
-          for attempt in $(seq 1 "$ping_attempts"); do
-            if ping -n -q -c "$ping_count" -W "$ping_timeout" "$address" >/dev/null 2>&1; then
-              break
-            fi
-            if [ "$attempt" = "$ping_attempts" ]; then
-              log "attached peer $address did not answer after $ping_attempts attempts"
-              return 1
-            fi
-            sleep "$ping_attempt_interval_seconds"
-          done
-        done
-      }
-
-      healthy() {
-        carrier_up && address_present && mtu_matches && peer_reachable
-      }
-
-      apply_link_params() {
-        local member
-
-        # Raise the members first: the bridge MTU is capped by its members.
-        for member in "''${link_members[@]}"; do
-          if [ ! -e "/sys/class/net/$member" ]; then
-            continue
-          fi
-          if [ "$(cat "/sys/class/net/$member/mtu")" != "$expected_mtu" ]; then
-            ip link set dev "$member" mtu "$expected_mtu"
-            log "set $member mtu=$expected_mtu"
-          fi
-        done
-
-        if ! mtu_matches; then
-          ip link set dev "$bridge" mtu "$expected_mtu"
-          log "set $bridge mtu=$expected_mtu"
-        fi
-      }
-
-      # A wedged XDomain DMA path leaves the interface up while no frame reaches
-      # the peer. A link cycle rebuilds the ring, the DMA path, and the qdisc,
-      # which is the only host-side repair the driver offers.
-      repair() {
-        local member
-        local attempt
-
-        for member in "''${link_members[@]}"; do
-          if [ ! -e "/sys/class/net/$member" ]; then
-            continue
-          fi
-          log "bouncing $member"
-          ip link set dev "$member" down
-          tc qdisc replace dev "$member" root fq
-          sleep "$settle_seconds"
-          ip link set dev "$member" up
-        done
-
-        for attempt in $(seq 1 "$repair_wait_attempts"); do
-          if ! address_present; then
-            ip addr replace "$address" dev "$bridge"
-          fi
-          if carrier_up && address_present; then
-            log "link members came back on attempt $attempt"
-            break
-          fi
-          sleep "$repair_wait_interval_seconds"
-        done
-
-        apply_link_params
-        apply_sysctls
-      }
-
-      main() {
-        mkdir -p "$state_dir"
-        apply_sysctls
-
-        if [ ! -e "/sys/class/net/$bridge" ]; then
-          log "$bridge does not exist on this host; nothing to verify"
-          exit 0
-        fi
-
-        # No carrier means the cable or the far end is gone. No host-side action
-        # can repair that, and the carrier state alerts on its own.
-        if ! carrier_up; then
-          log "$bridge has no carrier; the USB4 link is down and no host-side repair is possible"
-          exit 0
-        fi
-
-        if healthy; then
-          log "link healthy: $address, mtu $expected_mtu"
-          exit 0
-        fi
-
-        local now last_repair=0
-        now="$(date +%s)"
-        if [ -r "$recovery_marker" ]; then
-          last_repair="$(cat "$recovery_marker" 2>/dev/null || echo 0)"
-        fi
-
-        if [ "$last_repair" -ne 0 ] && [ $((now - last_repair)) -lt "$cooldown_seconds" ]; then
-          log "link unhealthy and the last repair is inside the ''${cooldown_seconds}s cooldown; not bouncing again"
-          exit "$exit_unhealthy"
-        fi
-
-        printf '%s' "$now" > "$recovery_marker"
-        log "link unhealthy (address, mtu, or peer reachability); repairing"
-        repair
-
-        if healthy; then
-          log "link healthy again after repair"
-          exit 0
-        fi
-
-        log "link still unhealthy after repair"
-        exit "$exit_unhealthy"
-      }
-
-      main "$@"
-    '';
+    ''
+    + builtins.readFile ./thunderbolt-link-guard.sh;
   };
 in
 {
@@ -322,7 +127,7 @@ in
           assertion = address != null;
           message = ''
             The thunderbolt-link tag requires a static USB4 address for ${hostname}.
-            Add ${hostname} to tbAddresses in inventory/tags/thunderbolt-link.nix
+            Add ${hostname} to tbAddresses in inventory/tags/thunderbolt-link.json
             before assigning the tag.
           '';
         }

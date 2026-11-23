@@ -10,37 +10,31 @@
 let
   rdmaHardware = import ../../lib/rdma-hardware.nix { inherit lib; };
 
+  policy = builtins.fromJSON (builtins.readFile ./vllm-cluster-network.json);
+  thunderboltPolicy = builtins.fromJSON (builtins.readFile ./thunderbolt-link.json);
   envRelativePath = "vllm-cluster/network.env";
-  envAbsolutePath = "/etc/${envRelativePath}";
-  headHost = "aspen1";
-  rayPort = 6379;
-  rdmaNetworkName = "50-rdma-cluster";
-  thunderboltNetworkName = "60-thunderbolt-bridge";
-  rdmaInterface = "rdma0";
-  thunderboltInterface = "br-tbt";
-  rdmaBackend = "rdma";
-  thunderboltBackend = "thunderbolt";
-  rdmaTransport = "roce";
-  thunderboltTransport = "tcp";
-  rdmaNcclIbDisable = "0";
-  thunderboltNcclIbDisable = "1";
-
-  clusterNodes = {
-    aspen1 = {
-      role = "head";
-      rdmaAddress = "192.168.100.1";
-      thunderboltAddress = "10.10.10.1";
-    };
-    aspen2 = {
-      role = "worker";
-      rdmaAddress = "192.168.100.2";
-      thunderboltAddress = "10.10.10.2";
-    };
-  };
+  inherit (policy)
+    headHost
+    rayPort
+    rdmaNetworkName
+    thunderboltNetworkName
+    rdmaInterface
+    thunderboltInterface
+    rdmaBackend
+    thunderboltBackend
+    rdmaTransport
+    thunderboltTransport
+    rdmaNcclIbDisable
+    thunderboltNcclIbDisable
+    clusterNodes
+    ;
+  clusterNodesWithThunderbolt = builtins.mapAttrs (
+    name: node: node // { thunderboltAddress = thunderboltPolicy.tbAddresses.${name}; }
+  ) clusterNodes;
 
   hostname = config.networking.hostName;
-  node = clusterNodes.${hostname} or null;
-  headNode = clusterNodes.${headHost};
+  node = clusterNodesWithThunderbolt.${hostname} or null;
+  headNode = clusterNodesWithThunderbolt.${headHost};
   hasRdmaNetwork = lib.hasAttrByPath [
     "systemd"
     "network"
@@ -78,7 +72,7 @@ let
   selectedAddress =
     clusterNode:
     if selectedBackend == rdmaBackend then clusterNode.rdmaAddress else clusterNode.thunderboltAddress;
-  workerNodes = lib.filterAttrs (name: _: name != headHost) clusterNodes;
+  workerNodes = lib.filterAttrs (name: _: name != headHost) clusterNodesWithThunderbolt;
   workerAddresses = lib.mapAttrsToList (_: selectedAddress) workerNodes;
   selectedNetwork =
     if node == null || selectedBackend == null then
@@ -143,26 +137,7 @@ let
   vllmClusterEnv = pkgs.writeShellApplication {
     name = "vllm-cluster-env";
     runtimeInputs = [ pkgs.coreutils ];
-    text = ''
-      env_file="${envAbsolutePath}"
-
-      if [ ! -r "$env_file" ]; then
-        echo "missing vLLM cluster env file: $env_file" >&2
-        exit 1
-      fi
-
-      if [ "$#" -eq 0 ]; then
-        cat "$env_file"
-        exit 0
-      fi
-
-      set -a
-      # shellcheck disable=SC1090,SC1091
-      . "$env_file"
-      set +a
-
-      exec "$@"
-    '';
+    text = builtins.readFile ./vllm-cluster-env.sh;
   };
 in
 {

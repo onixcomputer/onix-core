@@ -1,0 +1,624 @@
+{
+  "recordedAt": "2026-10-30T01:48:41Z",
+  "scope": "Evaluation only: derivations were instantiated and compared; nothing was built except the onixos-services Nickel test check, nothing was deployed, and no fleet host was contacted.",
+  "revisions": {
+    "pilot": "974776f32aa325868592951a59a550b906577427",
+    "base": "18864766f19beae7ee822c817b307c0a57c7220e",
+    "onixModules": {
+      "locked": "2d23df2625a42473b68966d3bfe6623cceed26be",
+      "ref": "refs/heads/main",
+      "url": "git+ssh://git@github.com/onixcomputer/OnixOS.git",
+      "evaluatedWith": "flake.lock, no --override-input",
+      "fixes": {
+        "713d5d155b523f42db422a49d52686c3ba5b3c16": "merge identical shared artifact declarations",
+        "2d23df2625a42473b68966d3bfe6623cceed26be": "accept record-form role machines under builtins.wasm"
+      }
+    },
+    "nixosArtifacts": "7d1d9bffc215d7cefe1c361a6d51cc81d4bd8d0a",
+    "nix": "2.36.0"
+  },
+  "clanUnchanged": {
+    "baseDerivation": "/nix/store/3dw4b0id2s3xc0gwrwjvhavn450f9k2f-nixos-system-aspen2-26.11.20261020.5adc508.drv",
+    "pilotDerivation": "/nix/store/qh91irhawrvis0ich1fg6619d9a5404s-nixos-system-aspen2-26.11.20261020.5adc508.drv",
+    "differences": [
+      "nixos-version: configurationRevision, the commit each build records"
+    ],
+    "flakeLock": {
+      "addedRootInputs": [
+        "nixos-artifacts",
+        "onix-modules"
+      ],
+      "changedInputPaths": 0,
+      "removedInputPaths": 0,
+      "note": "onix-modules now tracks OnixOS main; relative to the base commit the lock only adds the nixos-artifacts and onix-modules inputs"
+    },
+    "clanSourcesChanged": []
+  },
+  "parity": {
+    "command": "onixos/tools/parity aspen2 git+file://<worktree>?rev=974776f32aa325868592951a59a550b906577427",
+    "clan": "/nix/store/ni8yfgwx221wfm9w4n5h2z696f16aib8-nixos-system-aspen2-26.11.20261020.5adc508.drv",
+    "onixos": "/nix/store/0kd2vcvbjpi147xx0vwll9fgba6gqi8s-nixos-system-aspen2-26.11.20261020.5adc508.drv",
+    "differingDerivations": 52,
+    "withContentDifferences": 31,
+    "method": "Environments compared key by key with store path hashes replaced, so derivations that differ only through a dependency's hash count as cascades.",
+    "reasons": {
+      "secret-path": "Secrets move from /run/secrets/vars/per-machine/aspen2/<generator>/<file> and /run/secrets/vars/shared/<generator>/<file> to /run/secrets/<generator>/<file>.",
+      "unit-script": "ExecStart/ExecStartPre run a NixOS unit script that executes the same command, with its packages in the unit PATH, because Nickel cannot write store paths.",
+      "etc-file": "A file moves from the store to /etc with the same content (the blackbox config is the same JSON pretty-printed); its users reference the /etc path or find programs through PATH.",
+      "path-lookup": "A script finds a program through the unit PATH instead of a store path.",
+      "clan-plumbing-not-ported": "Clan backup-provider plumbing for `clan backups` (borgbackup-create/list/restore, state-commands, no-op pre/post-backup hooks) is not ported.",
+      "onixos-framework": "OnixOS assembly adds /etc/onix/hardening-policy.json and /etc/onix/userland-profile.json.",
+      "order-only": "List order differs; the sets and values are equal."
+    },
+    "derivations": {
+      "etc": [
+        "etc-file",
+        "onixos-framework"
+      ],
+      "system-path": [
+        "clan-plumbing-not-ported",
+        "order-only"
+      ],
+      "borg-job-aspen1-wrapper": [
+        "secret-path"
+      ],
+      "etc-ssh-ssh_config": [
+        "secret-path"
+      ],
+      "nix.conf": [
+        "secret-path",
+        "order-only"
+      ],
+      "sshd.conf-final": [
+        "secret-path"
+      ],
+      "sshd.conf-settings": [
+        "etc-file"
+      ],
+      "unit-arxiv-corpus-arxiv-aspen2.service": [
+        "unit-script"
+      ],
+      "unit-berkeley-mono-font-install.service": [
+        "secret-path"
+      ],
+      "unit-script-berkeley-mono-font-install-start": [
+        "secret-path"
+      ],
+      "unit-borgbackup-job-aspen1.service": [
+        "secret-path",
+        "clan-plumbing-not-ported",
+        "path-lookup"
+      ],
+      "borgbackup-job-aspen1-script": [
+        "path-lookup"
+      ],
+      "config.ini": [
+        "secret-path"
+      ],
+      "unit-laya-laya-aspen2.service": [
+        "unit-script"
+      ],
+      "man-paths": [
+        "clan-plumbing-not-ported",
+        "order-only"
+      ],
+      "unit-mesh-llm-mesh-llm-private-inference-api-watchdog.service": [
+        "unit-script"
+      ],
+      "unit-mesh-llm-mesh-llm-private-inference.service": [
+        "secret-path",
+        "unit-script",
+        "etc-file"
+      ],
+      "unit-niks3-auto-upload.service": [
+        "secret-path",
+        "unit-script"
+      ],
+      "unit-niks3-queue-metrics.service": [
+        "unit-script"
+      ],
+      "unit-nix-grpc-daemon.service": [
+        "secret-path",
+        "etc-file"
+      ],
+      "unit-prometheus-blackbox-exporter.service": [
+        "etc-file"
+      ],
+      "unit-sshd-keygen.service": [
+        "secret-path"
+      ],
+      "unit-script-sshd-keygen-start": [
+        "secret-path"
+      ],
+      "unit-tailscale-host-sync.service": [
+        "unit-script"
+      ],
+      "unit-script-tailscaled-autoconnect-start": [
+        "secret-path"
+      ],
+      "unit-tailscalesd.service": [
+        "unit-script"
+      ],
+      "system_fish-completions": [
+        "clan-plumbing-not-ported",
+        "order-only"
+      ],
+      "manifest-for-users.json": [
+        "secret-path"
+      ],
+      "manifest.json": [
+        "secret-path"
+      ],
+      "users-groups.json": [
+        "secret-path"
+      ],
+      "boot.json": [
+        "order-only"
+      ]
+    },
+    "cascadeOnly": [
+      "activate",
+      "dbus-1",
+      "system-units",
+      "unit-accounts-daemon.service",
+      "unit-script-borgbackup-job-aspen1-start",
+      "unit-dbus-broker.service",
+      "X-Restart-Triggers-dbus-broker",
+      "unit-grafana.service",
+      "unit-mandb.service",
+      "unit-script-mandb-start",
+      "unit-nix-daemon.service",
+      "X-Restart-Triggers-nix-daemon",
+      "unit-polkit.service",
+      "X-Restart-Triggers-polkit",
+      "unit-sshd.service",
+      "X-Restart-Triggers-sshd",
+      "unit-tailscaled-autoconnect.service",
+      "borg-job-aspen1-wrapper_fish-completions",
+      "user-units",
+      "check-sshd-config",
+      "dry-activate"
+    ],
+    "inputDerivationsAdded": [
+      "X-Restart-Triggers-mesh-llm-mesh-llm-private-inference",
+      "X-Restart-Triggers-prometheus-blackbox-exporter",
+      "bash-interactive-5.3p20",
+      "curl-8.22.0",
+      "etc-mesh-llm-mesh-llm-private-inference-config.toml",
+      "etc-mesh-llm-mesh-llm-private-inference-research.json",
+      "etc-nix-build-farm-wait-worker-address",
+      "etc-onix-hardening-policy.json",
+      "etc-onix-userland-profile.json",
+      "etc-prometheus-blackbox-storage.yaml",
+      "etc-ssh-ssh.id_ed25519-cert.pub",
+      "iproute2-7.2.0",
+      "jq-1.8.2",
+      "networkmanager-1.58.1",
+      "onix-mesh-research-0.1.0",
+      "sqlite-3.53.3",
+      "tailscale-1.104.1",
+      "unit-script-arxiv-corpus-arxiv-aspen2-pre-start",
+      "unit-script-arxiv-corpus-arxiv-aspen2-start",
+      "unit-script-laya-laya-aspen2-pre-start",
+      "unit-script-laya-laya-aspen2-start",
+      "unit-script-mesh-llm-mesh-llm-private-inference-api-watchdog-start",
+      "unit-script-mesh-llm-mesh-llm-private-inference-start",
+      "unit-script-niks3-auto-upload-pre-start",
+      "unit-script-niks3-queue-metrics-start",
+      "unit-script-tailscale-host-sync-start",
+      "unit-script-tailscalesd-start"
+    ],
+    "inputDerivationsRemoved": [
+      "borgbackup-create",
+      "borgbackup-create_fish-completions",
+      "borgbackup-job-aspen1-post-backup-commands",
+      "borgbackup-job-aspen1-pre-backup-commands",
+      "borgbackup-list",
+      "borgbackup-list_fish-completions",
+      "borgbackup-restore",
+      "borgbackup-restore_fish-completions",
+      "checked-blackbox-exporter.conf",
+      "mesh-llm-mesh-llm-private-inference-api-watchdog",
+      "mesh-llm-mesh-llm-private-inference-config.toml",
+      "networkmanager-1.58.1",
+      "niks3-maintenance-guard",
+      "niks3-queue-metric-writer",
+      "nix-build-farm-wait-worker-address",
+      "state-commands",
+      "state-commands_fish-completions",
+      "tailscale-host-sync"
+    ],
+    "orderOnly": {
+      "system-path": "Same 234 packages after removing the four Clan helpers; framework-tool, opentofu, herdr, tailscale and mesh-llm sit at other positions.",
+      "nix.conf": "trusted-public-keys holds the same 20 keys; onix-niks3-1 comes after the srvos keys instead of before them. substituters are identical.",
+      "boot.json": "Same kernel parameters; one of the two amd_pstate=active entries comes earlier."
+    },
+    "relocatedContent": {
+      "mesh-llm research.json": "identical",
+      "mesh-llm config.toml": "plugin command onix-mesh-research by name and research.json under /etc; otherwise identical",
+      "ssh.id_ed25519-cert.pub": "identical to vars/per-machine/aspen2/openssh-cert/ssh.id_ed25519-cert.pub/value",
+      "blackbox config": "same JSON object, pretty-printed",
+      "nix-build-farm-wait-worker-address": "same commands through PATH, #!/bin/sh",
+      "niks3-maintenance-guard": "same two curl checks",
+      "niks3-queue-metric-writer": "same script",
+      "mesh-llm api watchdog": "same script",
+      "tailscale-host-sync": "same script; runtime inputs come from the unit PATH"
+    },
+    "unchangedSince": "Runs at 043f8c6c and 359b3d2e (--override-input onix-modules <local checkout at 2d23df26>), at 09a64d3d (input pinned to branch onix-core-consumer) and at a2a7d5e5 (OnixOS main) produced the same 52 differing derivations with byte-identical hash-normalized differences. At 974776f3 the mesh-llm port emits its invite wirings so that LoadCredential lists the invites in join order, as Clan does; the four reordered LoadCredential lines are the only change to the hash-normalized differences, and the same 52 derivations differ. Otherwise only configurationRevision, the commit each build records, changes the derivation hashes between runs. After merging main (Underclass from the brittonr fork, 9914d811), parity at 14ebd366 has byte-identical hash-normalized differences to 974776f3."
+  },
+  "secrets": {
+    "manifest.json": {
+      "clan": 17,
+      "onixos": 17,
+      "equalAfterRename": true,
+      "compared": "owner, group, mode, format, restartUnits, reloadUnits, neededForUsers, sopsFileHash"
+    },
+    "manifest-for-users.json": {
+      "clan": 1,
+      "onixos": 1,
+      "equalAfterRename": true
+    },
+    "copies": {
+      "files": 24,
+      "byteIdenticalToVars": 24,
+      "secretFiles": 18,
+      "listingAspen2AgeKey": 18,
+      "aspen2AgeKey": "age1yhe47uh…k0jxcn"
+    }
+  },
+  "moduleTests": {
+    "nickel": "1.17.0",
+    "serviceModules": 19,
+    "instances": 21,
+    "passed": true,
+    "check": "/nix/store/n3imv3kdq23qmjk232mlvhpmwmz7gial-onixos-services"
+  },
+  "onixCheck": {
+    "command": "onix check onixos/inventory.ncl --services onixos/services --lib <onix-core-consumer checkout>/lib",
+    "pass": 71,
+    "fail": 24,
+    "warn": 29,
+    "failures": "C012 provider-first lint: raw networking.firewall (10), users.users (6), users.groups (3), systemd.timers (3) and systemd.tmpfiles (2) leaves.",
+    "reason": "The typed providers cannot express interface-scoped firewall ports, relative timers, recursive ownership rules, root's authorized keys, extra groups of an existing user, or a password hash wired from a secret."
+  },
+  "deployDryRun": {
+    "command": "onix deploy --dry-run aspen2 --inventory onixos/inventory.ncl --lib <onix-core-consumer checkout>/lib",
+    "target": "root@100.82.25.30",
+    "action": "switch",
+    "safeMode": "on (300s timeout)",
+    "plan": [
+      "nix build --print-out-paths '.#nixosConfigurations.aspen2.config.system.build.toplevel' --no-link --extra-experimental-features 'nix-command flakes wasm-builtin'",
+      "nix copy --to ssh://root@100.82.25.30 $OUT",
+      "ssh root@100.82.25.30 '<activate $OUT switch safe-mode>'"
+    ],
+    "note": "The plan builds nixosConfigurations.aspen2, which is still Clan's until the cutover in docs/onixos-aspen2-pilot.md."
+  },
+  "secretsEncryption": {
+    "method": "Read only the sops envelopes and the public files; nothing was decrypted.",
+    "files": {
+      "total": 24,
+      "secret": 18,
+      "public": 6,
+      "failures": 0
+    },
+    "secretEnvelopes": "Every secret copy is a sops binary file whose data and MAC are AES256_GCM ciphertext, with only age recipients (no KMS, PGP, GCP, Azure or Vault key groups), aspen2's key among them, and byte-identical to its vars/.../secret source.",
+    "recipients": {
+      "11 aspen2 machine secrets": [
+        "machine:aspen2",
+        "machine:aspen1",
+        "user:brittonr"
+      ],
+      "shared/berkeley-mono-font/font_data": [
+        "machine:aspen1",
+        "machine:aspen2",
+        "machine:aspen3",
+        "machine:bonsai",
+        "machine:britton-desktop",
+        "machine:britton-fw",
+        "machine:chv-dev1",
+        "machine:chv-dev2",
+        "machine:chv-dev3",
+        "machine:pine",
+        "machine:utm-vm",
+        "user:brittonr"
+      ],
+      "shared/mesh-llm-mesh-llm-private-inference-invites/* (4), shared/niks3-nix-cache-api/api-token": [
+        "machine:aspen1",
+        "machine:aspen2",
+        "machine:aspen3",
+        "machine:britton-desktop",
+        "user:brittonr"
+      ],
+      "shared/tailscale-br-tailnet/auth_key": [
+        "machine:aspen1",
+        "machine:aspen2",
+        "machine:aspen3",
+        "machine:bonsai",
+        "machine:britton-desktop",
+        "machine:britton-fw",
+        "machine:pine",
+        "user:brittonr"
+      ],
+      "note": "Clan's existing policy: the admins group holds user brittonr and machine aspen1; copying kept it unchanged."
+    },
+    "publicFiles": {
+      "machines/aspen2/borgbackup/borgbackup.ssh.pub": "ssh-ed25519 SHA256:Fj+OthQp5CExnRXccuYXO84IKdWSeA1EvZ9iAp8ojbk",
+      "machines/aspen2/nix-builder-ssh/id_ed25519.pub": "ssh-ed25519 SHA256:IvHDi+8aq63N0GmM3bUrbVRmwDJI824dtBdLthBZ3Mo",
+      "machines/aspen2/nix-signing-key/key.pub": "Nix public key aspen2-1, 32 bytes",
+      "machines/aspen2/openssh-cert/ssh.id_ed25519-cert.pub": "ssh-ed25519-cert-v01@openssh.com SHA256:+ELrydxl4Qt/OxCDFBcukmg7nXcja7CNjnTbbu9HJ2c",
+      "machines/aspen2/openssh/ssh.id_ed25519.pub": "ssh-ed25519 SHA256:+ELrydxl4Qt/OxCDFBcukmg7nXcja7CNjnTbbu9HJ2c",
+      "shared/openssh-ca/id_ed25519.pub": "ssh-ed25519 SHA256:78EZn4xJtNc/sFseJo+iaR2Ub7P+gnCDmHj0sIPxf/k",
+      "why": "Copies of Clan value files. OnixOS reads public artifact files during evaluation, so they stay plaintext; none holds a private-key or sops marker."
+    },
+    "leakScan": {
+      "tool": "gitleaks 8.30.1 (nixpkgs 5adc5083), --redact",
+      "onix-core": {
+        "range": "18864766f19beae7ee822c817b307c0a57c7220e..5b59346a (HEAD at scan time)",
+        "commits": 2,
+        "bytes": 1935969,
+        "findings": 0
+      },
+      "OnixOS": {
+        "range": "539430c382d65c09982b139d3991dc20d822c006..2d23df2625a42473b68966d3bfe6623cceed26be",
+        "commits": 2,
+        "bytes": 20022,
+        "findings": 0
+      },
+      "positiveControl": "a throwaway ed25519 private key committed in a scratch repository was reported as private-key"
+    },
+    "existingChecks": {
+      "onixos": "nix/artifacts.nix maps a secret file to sops.secrets after checking only that it exists",
+      "sopsNix": "sops-install-secrets -check-mode=sopsfile only parses a binary-format file as JSON (pkgs/sops-install-secrets/main.go loadSopsFile)",
+      "onixArtifactsStatus": "its static discovery finds none of these modules' artifact declarations, so it cannot report on them"
+    },
+    "evaluationCheck": {
+      "module": "onixos/nix/encrypted-secrets.nix",
+      "realConfiguration": "aspen2's 18 sops secrets pass at 359b3d2e",
+      "rejected": [
+        "plaintext",
+        "unencrypted JSON",
+        "plaintext data in a sops envelope",
+        "aspen3's ciphertext (not encrypted to aspen2)",
+        "yaml format"
+      ],
+      "scratchCommit": "replacing grafana/admin_password with plaintext dummy text fails evaluation: 'grafana/admin_password: …/onixos/secrets/machines/aspen2/grafana/admin_password is not a sops-encrypted file'"
+    }
+  },
+  "onixosLanding": {
+    "published": "OnixOS main fast-forwarded 539430c3..2d23df26 without force on 2026-10-30; branch onix-core-consumer also points at 2d23df26",
+    "gate": {
+      "total": 299,
+      "built": 113,
+      "passed": 113,
+      "groups": [
+        "shim-unit",
+        "nix-format",
+        "nickel-* (7)",
+        "cairn-* (3)",
+        "eval-* (98, includes the onix package)",
+        "cli-* (3)"
+      ],
+      "cliTests": {
+        "cli-integration": {
+          "passed": 3873,
+          "failed": 0,
+          "ignored": 2
+        },
+        "cli-hegel": {
+          "passed": 7,
+          "failed": 0
+        },
+        "cli-mantle-no-nix-runtime": {
+          "passed": 33,
+          "failed": 0
+        }
+      },
+      "cairnReleaseReadiness": "validation, traceability and receipt verdicts pass",
+      "evaluatedOnly": {
+        "vm-*": 75,
+        "onixos-*": 41,
+        "other": 62,
+        "note": "all 186 instantiated (nix build --dry-run exit 0) at landing; the full gate built them on 2026-10-30 (fullGate)"
+      },
+      "whyNotBuilt": "britton-desktop's root filesystem had 3.3 GB free, this workstation's zroot pool 18-27 GB, and the USB4 NVMe ext4 filesystem was in its error shutdown state",
+      "unchangedByTheFixes": "cargo fmt and clippy: no Rust or lock file changed between 539430c3 and 2d23df26",
+      "approval": "the operator chose to land on the 113 checks",
+      "fullGate": {
+        "revision": "2d23df2625a42473b68966d3bfe6623cceed26be",
+        "checks": 299,
+        "passed": 299,
+        "passedInPrivateStore": 296,
+        "passedInLandingGateOnly": [
+          "cairn-release-readiness",
+          "cli-hegel",
+          "cli-mantle-no-nix-runtime"
+        ],
+        "missing": [],
+        "mainRun": {
+          "start": "2026-10-30T02:20:36Z",
+          "end": "2026-10-30T04:07:12Z",
+          "exit": 1
+        },
+        "rebuildPass": {
+          "start": "2026-10-30T18:52:40Z",
+          "end": "2026-10-30T19:35:21Z",
+          "exit": 0,
+          "remoteBuildsOnLeviathan": 217,
+          "note": "The 62 missing checks outside the landing gate's groups, built with max-jobs 0 and leviathan as the only builder (8 jobs, 8 cores each), outputs copied back into the private store. Local attempts with 4 x 8, 2 x 4 and 1 x 16 jobs x cores compiled the onix crate under the unit's 30 GiB MemoryHigh and made almost no progress; their logs are kept."
+        },
+        "date": "2026-10-30",
+        "store": "a private chroot store on the USB4 NVMe ext4 filesystem (/mnt/usb4-nvme), with the host's substituters, seeded with every flake input by nix flake archive",
+        "mainRunResult": "4,623 builds; 233 of 299 check outputs in the private store. The 66 missing failed only through three derivations: valence-e822bdf and onix-artifact-e41340b fetch private GitHub repositories over ssh://, which the sandbox cannot reach, and lattice-0.1.0's test shell_command_resolves_upstream_stdout_expression failed with 'bounded local process execution failed'.",
+        "privateFetches": "The valence and onix-artifact fixed-output paths were copied from the host store; Nix checks their content against the fixed hashes.",
+        "lattice": "The same lattice-0.1.0 derivation built through the host daemon on leviathan, its test passing there, and its output was copied in. The failure is specific to the chroot store's builds, which run under the invoking user's own uid.",
+        "copiedFromHostStore": "onix-0.1.0-alpha.1 and the onix wrapper, built from the same derivations on leviathan earlier that day.",
+        "landingGateOnly": "cairn-release-readiness, cli-hegel and cli-mantle-no-nix-runtime passed in the landing gate as the same derivations: the host and the private store evaluate them to the same output paths (checked for cli-integration)."
+      }
+    },
+    "originalCheckout": "/home/brittonr/git/onixos untouched: HEAD 539430c3 on main, clean, index file 1790183 bytes with the same SHA-256 before and after"
+  },
+  "cutover": {
+    "commit": "974776f32aa325868592951a59a550b906577427",
+    "change": "cutOverMachines = [ \"aspen2\" ] in flake-outputs/onixos.nix: nixosConfigurations.aspen2 is the OnixOS build, every other entry and clan.nixosConfigurations stay Clan's.",
+    "nixosConfigurationsAspen2": "/nix/store/0kd2vcvbjpi147xx0vwll9fgba6gqi8s-nixos-system-aspen2-26.11.20261020.5adc508.drv",
+    "equalsOnixosBuild": true,
+    "checksReadingAspen2": {
+      "mesh-llm-sidecars": "/nix/store/b8yc6l03h8vwj9g9bjbinckcdwmq4vh2-mesh-llm-sidecars",
+      "niks3-settings": "/nix/store/kbhm80llzkc7wp6xdwqw7mdh9mh7fr9p-niks3-settings",
+      "niks3-generated": "/nix/store/kji7dsrxgi255gzc5xqmkwic6k4c834m-niks3-generated",
+      "radicle-node-policy": "/nix/store/qfcx7sa4anzm7xgi7cwpq2k2mkzcqxzz-radicle-node-policy",
+      "radicle-ci-runner-policy": "/nix/store/avr3brzvgs1wsp7jw0zqh8351063m34w-radicle-ci-runner-policy",
+      "builder-no-self": "/nix/store/ij9zf2s5hg3m8vh9slh8l350yjvl9rxa-builder-no-self-check",
+      "nixos-aspen2": "evaluates to the OnixOS toplevel derivation above"
+    },
+    "meshLlmCheck": "Reads the launch command from the unit script when ExecStart runs one, \"$CREDENTIALS_DIRECTORY\"/ as %d/, the plugin configuration through environment.etc, and the shared invites from Clan's generator or the OnixOS artifact's sops secrets. Mutation test at 974776f3: with the invite wiring reversal undone and --headless dropped from the OnixOS launch command, the check's script fails 'joiners first and the seed last' and 'must enforce private headless discovery', while the join-file order and shared-invite conditions still pass.",
+    "otherClanBuilds": "Clan's aspen1, aspen2 and britton-desktop toplevels at bf474bc9 and 974776f3 differ only in nixos-version's configurationRevision; every other differing derivation is a hash cascade.",
+    "deployPlan": "onix deploy aspen2 --inventory onixos/inventory.ncl (OnixOS main 2d23df26 CLI, build.backend = 'nix): local nix build of the toplevel, nix copy --to ssh://root@100.82.25.30, then switch-to-configuration test; a switch runs in safe mode with a 300 s confirmation timeout. --build-on-target would run nix build .# in root's working directory on aspen2, which holds no copy of the flake.",
+    "deploy": {
+      "date": "2026-10-30",
+      "operatorReview": "The operator confirmed the parity evidence and runbook review and chose test, verify, then switch; after the test they chose to persist with --force-activate --no-safe-mode.",
+      "revision": "1cc80590a5021c9e3ec686d1d9fff4ab20154c75",
+      "toplevel": "/nix/store/ahgh4346bc6rm46j4p0aqryhnqnb450d-nixos-system-aspen2-26.11.20261020.5adc508",
+      "cli": "onix from OnixOS main 2d23df26 (/nix/store/168yhs9v89xc8nrbcfxnc79s14k1jipf-onix-0.1.0-alpha.1), run through a copy of its wrapper without the stock Nix 2.31.3 PATH entry, so nix is the host's Nix 2.36.0 with builtins.wasm",
+      "before": {
+        "generation": 14,
+        "system": "/nix/store/mz5i8w7cl189xibz8bwrhj349xl7zzld-nixos-system-aspen2-26.11.20261020.5adc508",
+        "configurationRevision": null,
+        "failedUnits": [
+          "borgbackup-job-aspen1.service",
+          "docker-gc.service"
+        ],
+        "secrets": [
+          "vars"
+        ]
+      },
+      "test": {
+        "command": "onix deploy aspen2 --inventory onixos/inventory.ncl --lib <OnixOS 2d23df26>/lib -y --action test",
+        "copiedPaths": 87,
+        "result": "switch-to-configuration test exited 4: arxiv-corpus-arxiv-aspen2 failed to bind 100.82.25.30:7998 (Errno 99) while activation restarted tailscaled, and its automatic restart was listening seconds later. tailscaled restarted because generation 14 predates main; the Clan and OnixOS builds of one commit have the same tailscaled unit.",
+        "profile": "The direct activation ran nix-env -p /nix/var/nix/profiles/system --set before switch-to-configuration test, creating generation 15 without installing the bootloader; GRUB still defaulted to generation 14."
+      },
+      "persist": {
+        "command": "onix deploy aspen2 --inventory onixos/inventory.ncl --lib <OnixOS 2d23df26>/lib -y --force-activate --no-safe-mode",
+        "why": "After the test, /run/current-system and the profile equal the new system, so safe mode returns 'already deployed' before persisting, and --force-activate only bypasses the earlier check.",
+        "result": "switch-to-configuration switch updated the GRUB menu without restarting system units; GRUB's default entry boots generation 15, and generation 14 remains as the rollback."
+      },
+      "after": {
+        "generation": 15,
+        "configurationRevision": "1cc80590a5021c9e3ec686d1d9fff4ab20154c75",
+        "hostKeyFingerprint": "SHA256:+ELrydxl4Qt/OxCDFBcukmg7nXcja7CNjnTbbu9HJ2c (ED25519), unchanged",
+        "failedUnits": [],
+        "active": [
+          "sshd",
+          "nix-daemon",
+          "nix-grpc-daemon",
+          "tailscaled",
+          "mesh-llm-mesh-llm-private-inference",
+          "mesh-llm-mesh-llm-private-inference-api-watchdog.timer",
+          "laya-laya-aspen2",
+          "arxiv-corpus-arxiv-aspen2",
+          "prometheus",
+          "prometheus-blackbox-exporter",
+          "grafana",
+          "loki",
+          "tailscalesd",
+          "docker"
+        ],
+        "secrets": [
+          "berkeley-mono-font",
+          "borgbackup",
+          "grafana",
+          "mesh-llm-mesh-llm-private-inference-invites",
+          "niks3-nix-cache-api",
+          "nix-builder-ssh",
+          "nix-build-farm-node",
+          "nix-signing-key",
+          "openssh",
+          "tailscale-br-tailnet"
+        ],
+        "secretsForUsers": [
+          "user-password-brittonr"
+        ],
+        "checks": "sshd -t passes; Prometheus ready; Tailscale online at 100.82.25.30; borgbackup-job-aspen1, tailscale-host-sync and niks3-queue-metrics timers scheduled; niks3-auto-upload socket-activated and idle; mesh-llm reports direct peers; arxiv-corpus answers HTTP on 100.82.25.30:7998."
+      },
+      "onixosCliFindings": [
+        "The packaged onix wrapper (OnixOS flake.nix, the onix runCommand's --prefix PATH) puts stock pkgs.nix 2.31.3 first on PATH; it lacks builtins.wasm, so onix deploy --backend nix cannot evaluate onix-core from any shell.",
+        "onix deploy --action test sets the system profile (render_direct_activation_command runs nix-env --set before switch-to-configuration test).",
+        "After a test activation, safe-mode onix deploy reports 'already deployed' without persisting (run_safe_mode_deploy_with_metadata checks is_already_deployed regardless of --force-activate)."
+      ]
+    }
+  },
+  "mantle": {
+    "date": "2026-10-30",
+    "scope": "Build of aspen2's typed services with the Mantle backend and a deploy dry-run, on aspen3, with no host contact. Not a deploy: for a NixOS host the artifact's activate, status and persist entrypoints only run `test -f system/payload-manifest.json`, and rollback is `true`.",
+    "onixosRevision": "9addcea46aa6de9f5fd9ca5c5aaa080cd546a21c",
+    "onixosFix": "OnixOS fix(mantle) 9addcea4: the Mantle impl wrapper passes placement_facts (new library function placement_facts, also used by the Nix shim), binds the instance record under a distinct name instead of `instance = instance`, and keys package handles by the last segment of their attribute path, as the Nix shim does. Change package .cairn/changes/mantle-impl-args-match-nix-shim in OnixOS.",
+    "nixPrograms": "nix, nix-store, nix-build, nix-instantiate, nix-env, nix-shell, nix-copy-closure, nix-daemon and nix-collect-garbage were replaced by stubs first on PATH that log each call and exit 127. The unwrapped onix-cli was used, because the packaged onix wrapper puts Nix first on PATH.",
+    "beforeFix": {
+      "cli": "OnixOS 2d23df26 packaged onix",
+      "units": 24,
+      "evaluated": 20,
+      "failures": {
+        "prometheus/server/monitoring": "missing definition for placement_facts",
+        "nix-build-farm/node/nix-build-farm": "missing definition for placement_facts",
+        "openssh-keys/client/sshd-keys": "missing definition for placement_facts",
+        "mesh-llm/default/mesh-llm-private-inference": "missing field lib (Mantle nested stdenv.cc.cc.lib)",
+        "prometheus/server/monitoring, once placement facts were passed": "infinite recursion at the wrapper's `instance = instance` (prometheus reads args.instance.service)"
+      },
+      "nixCalls": 0
+    },
+    "afterFix": {
+      "cli": "/nix/store/7qp5gjb85fp8p8skkx92h3d60lpkrbv8-onix-0.1.0-alpha.1 (onix-cli at 9addcea4, built by Nix)",
+      "tools": {
+        "mantle": "/nix/store/5nw6xq9xjc4anc0qjnzibndx22gpgxqv-mantle, the OnixOS flake's pinned Mantle 50120c1d with nix/patches/mantle-materialized-input-modes.patch, wrapping /nix/store/4nzzw8m07clbks9nnrflq0857n44h04w-mantle-0.1.0",
+        "sandbox": "bubblewrap 0.11.0 and static BusyBox 1.37.0 from the same wrapper; copies of that BusyBox as busybox (ONIX_MANTLE_BUILD_BUSYBOX) and sh (ONIX_MANTLE_BUILD_SHELL)",
+        "note": "The tools are Nix-built store paths named on the command line; the Mantle commands themselves ran no Nix program. Nix-command-free, not Nix-free."
+      },
+      "lowering": {
+        "units": 24,
+        "evaluated": 24,
+        "nixCalls": 0
+      },
+      "plan": {
+        "status": "planned",
+        "schema": "crunch-build-plan-v1",
+        "reportHash": "d443a93761b815d4b7c9f1ac15b57831c0dbd44543f09ba0707d761419e6611a",
+        "capability": "mantle-build-nixos-privileges-provider-expansion-supported",
+        "nixCalls": 0
+      },
+      "build": {
+        "status": "built",
+        "artifactRef": "mantle://blake3/98d93a3e62bc8af20ee0d13145612b64d5b15b54fc64abaf443db3c6e45d0b7d",
+        "descriptorHash": "ae0197ab49a50b2042df7ec078672cfd71c29dcd62e975ac7c62c84fc2da45da",
+        "buildReportHash": "8ddbb060afc0cfb29275ecf10392008d91b2c891d30607976fb016db36582422",
+        "buildReportSchema": "crunch-build-report-v1",
+        "deployabilityKind": "mantle-onix-activation-closure",
+        "runtimeSupportScope": "supported-runtime",
+        "units": 24,
+        "content": "17 files, 202,957 bytes: bin/onix-{activate,status,persist,rollback} and system/*.json manifests of the units, providers, packages, files, artifacts and their wiring",
+        "nixCalls": 0,
+        "secondRun": "A second run with the Nix-built onix-cli at 9addcea4 reported the same descriptor hash and artifact reference. It shared the first run's Mantle output store (ONIX_MANTLE_BUILD_STORE_DIR) and crunch state, so it may have reused the first build: the descriptor hash is a fresh result, but the artifact's reproducibility is not shown."
+      },
+      "deployDryRun": {
+        "result": "deployability proof accepted; would export the artifact and copy it to /tmp/onix-mantle-artifacts/aspen2 on the target",
+        "nixCalls": 0
+      }
+    },
+    "activation": "activation-commands.env: ONIX_MANTLE_ACTIVATE_CMD, ONIX_MANTLE_STATUS_CMD and ONIX_MANTLE_PERSIST_CMD are `test -f \"$ONIX_ARTIFACT_ROOT/system/payload-manifest.json\"`; ONIX_MANTLE_ROLLBACK_CMD is `true`.",
+    "notInArtifact": [
+      "kernel, boot, disko and hardware configuration",
+      "Home Manager",
+      "the .nix sidecars (grafana, niks3, nix-build-farm, sshd, home-manager-profiles, nix-gc)",
+      "the Clan machine modules in onixos/nix/machines.nix",
+      "materialized packages: packages.json holds __onix_package references only"
+    ],
+    "check": "onix check --backend mantle reports the same 24 C012 provider-first findings as the Nix backend.",
+    "deploy": "not run, by decision: a real Mantle deploy would change nothing on aspen2 and would replace /run/onix-deploy-status.json with a record of the Mantle artifact",
+    "nixBackendUnchanged": "From onix-core 2180aab2, aspen2's OnixOS toplevel with onix-modules overridden to OnixOS main 893422fd and to the fix 9addcea4 is one derivation (drl5c60m…). Against the locked 2d23df26 (mbdfm1jr…) it differs only in nixos-version, because --override-input leaves configurationRevision unset. The fix and the two OnixOS commits before it do not change aspen2's Nix-backend system.",
+    "onixosLanding": {
+      "main": "OnixOS main fast-forwarded from 893422fd to 0221b388 without force on 2026-10-31: 9addcea4 (the fix), 0492113d (removes the dangling traceability reference bpf_observation_endpoint.authorization that 893422fd introduced) and 0221b388 (gate record).",
+      "gate": "Full flake gate in a private store on the USB4 drive, every build on leviathan: 298 of 300 at 9addcea4, where cairn-release-readiness and cairn-prerelease-readiness failed as they did at 893422fd, on the one dangling reference. Reruns against the same store passed 300 of 300 at 0492113d and at 0221b388.",
+      "leakScan": "gitleaks 8.30.1 over 893422fd..0221b388: 3 commits, no leaks."
+    }
+  }
+}

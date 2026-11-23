@@ -1,0 +1,24 @@
+{
+  "headHost": "aspen1",
+  "rayPort": 6379,
+  "rdmaNetworkName": "50-rdma-cluster",
+  "thunderboltNetworkName": "60-thunderbolt-bridge",
+  "rdmaInterface": "rdma0",
+  "thunderboltInterface": "br-tbt",
+  "rdmaBackend": "rdma",
+  "thunderboltBackend": "thunderbolt",
+  "rdmaTransport": "roce",
+  "thunderboltTransport": "tcp",
+  "rdmaNcclIbDisable": "0",
+  "thunderboltNcclIbDisable": "1",
+  "clusterNodes": {
+    "aspen1": {
+      "role": "head",
+      "rdmaAddress": "192.168.100.1"
+    },
+    "aspen2": {
+      "role": "worker",
+      "rdmaAddress": "192.168.100.2"
+    }
+  }
+}

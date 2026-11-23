@@ -6,6 +6,7 @@
 }:
 let
   k = config.keymap;
+  nativeHost = config.onixos.nativeHost or false;
   nixfmt-rs = inputs.nixfmt-rs.packages.${pkgs.stdenv.hostPlatform.system}.default;
 
   # Runtime theme overlay: on launch, create a merged config dir that
@@ -82,12 +83,21 @@ in
         };
       };
       languages.language = [
-        {
-          name = "nix";
-          auto-format = true;
-          formatter.command = "${nixfmt-rs}/bin/nixfmt";
-          language-servers = [ "nil" ];
-        }
+        (
+          if nativeHost then
+            {
+              name = "nix";
+              auto-format = false;
+              language-servers = [ ];
+            }
+          else
+            {
+              name = "nix";
+              auto-format = true;
+              formatter.command = "${nixfmt-rs}/bin/nixfmt";
+              language-servers = [ "nil" ];
+            }
+        )
         {
           name = "rust";
           auto-format = true;
@@ -194,95 +204,98 @@ in
         }
       ];
 
-      languages.language-server = {
-        nil = {
-          command = "${pkgs.nil}/bin/nil";
-        };
-        rust-analyzer = {
-          command = "${pkgs.rust-analyzer}/bin/rust-analyzer";
-          config = {
-            check = {
-              command = "clippy";
-            };
-            inlayHints = {
-              bindingModeHints.enable = false;
-              closingBraceHints.minLines = 10;
-              closureReturnTypeHints.enable = "with_block";
-              discriminantHints.enable = "fieldless";
-              lifetimeElisionHints.enable = "skip_trivial";
-              typeHints.hideClosureInitialization = false;
-            };
-            cargo = {
-              allFeatures = true;
-            };
-            procMacro = {
-              enable = true;
-            };
-            rustfmt = {
-              extraArgs = [
-                "--edition"
-                "2021"
-              ];
-            };
-            # Enable support for standalone Rust files (like Rustlings exercises)
-            diagnostics = {
-              enable = true;
-              disabled = [ ];
-              experimental = {
+      languages.language-server =
+        pkgs.lib.optionalAttrs (!nativeHost) {
+          nil = {
+            command = "${pkgs.nil}/bin/nil";
+          };
+        }
+        // {
+          rust-analyzer = {
+            command = "${pkgs.rust-analyzer}/bin/rust-analyzer";
+            config = {
+              check = {
+                command = "clippy";
+              };
+              inlayHints = {
+                bindingModeHints.enable = false;
+                closingBraceHints.minLines = 10;
+                closureReturnTypeHints.enable = "with_block";
+                discriminantHints.enable = "fieldless";
+                lifetimeElisionHints.enable = "skip_trivial";
+                typeHints.hideClosureInitialization = false;
+              };
+              cargo = {
+                allFeatures = true;
+              };
+              procMacro = {
                 enable = true;
               };
-            };
-            files = {
-              excludeDirs = [ ];
+              rustfmt = {
+                extraArgs = [
+                  "--edition"
+                  "2021"
+                ];
+              };
+              # Enable support for standalone Rust files (like Rustlings exercises)
+              diagnostics = {
+                enable = true;
+                disabled = [ ];
+                experimental = {
+                  enable = true;
+                };
+              };
+              files = {
+                excludeDirs = [ ];
+              };
             };
           };
+          ruff = {
+            command = "${pkgs.ruff}/bin/ruff";
+            args = [ "server" ];
+          };
+          jedi-language-server = {
+            command = "${pkgs.python3Packages.jedi-language-server}/bin/jedi-language-server";
+          };
+          taplo = {
+            command = "${pkgs.taplo}/bin/taplo";
+            args = [
+              "lsp"
+              "stdio"
+            ];
+          };
+          yaml-language-server = {
+            command = "${pkgs.yaml-language-server}/bin/yaml-language-server";
+            args = [ "--stdio" ];
+          };
+          vscode-json-language-server = {
+            command = "${pkgs.vscode-langservers-extracted}/bin/vscode-json-language-server";
+            args = [ "--stdio" ];
+          };
+          bash-language-server = {
+            command = "${pkgs.bash-language-server}/bin/bash-language-server";
+            args = [ "start" ];
+          };
+          ltex-ls = {
+            command = "${pkgs.ltex-ls}/bin/ltex-ls";
+          };
+          lemminx = {
+            command = "${pkgs.lemminx}/bin/lemminx";
+          };
+          marksman = {
+            command = "${pkgs.marksman}/bin/marksman";
+            args = [ "server" ];
+          };
+          tinymist = {
+            command = "${pkgs.tinymist}/bin/tinymist";
+          };
+          nls = {
+            command = "${pkgs.nls}/bin/nls";
+          };
+          steel-language-server = {
+            command = "${pkgs.steel-language-server}/bin/steel-language-server";
+          };
         };
-        ruff = {
-          command = "${pkgs.ruff}/bin/ruff";
-          args = [ "server" ];
-        };
-        jedi-language-server = {
-          command = "${pkgs.python3Packages.jedi-language-server}/bin/jedi-language-server";
-        };
-        taplo = {
-          command = "${pkgs.taplo}/bin/taplo";
-          args = [
-            "lsp"
-            "stdio"
-          ];
-        };
-        yaml-language-server = {
-          command = "${pkgs.yaml-language-server}/bin/yaml-language-server";
-          args = [ "--stdio" ];
-        };
-        vscode-json-language-server = {
-          command = "${pkgs.vscode-langservers-extracted}/bin/vscode-json-language-server";
-          args = [ "--stdio" ];
-        };
-        bash-language-server = {
-          command = "${pkgs.bash-language-server}/bin/bash-language-server";
-          args = [ "start" ];
-        };
-        ltex-ls = {
-          command = "${pkgs.ltex-ls}/bin/ltex-ls";
-        };
-        lemminx = {
-          command = "${pkgs.lemminx}/bin/lemminx";
-        };
-        marksman = {
-          command = "${pkgs.marksman}/bin/marksman";
-          args = [ "server" ];
-        };
-        tinymist = {
-          command = "${pkgs.tinymist}/bin/tinymist";
-        };
-        nls = {
-          command = "${pkgs.nls}/bin/nls";
-        };
-        steel-language-server = {
-          command = "${pkgs.steel-language-server}/bin/steel-language-server";
-        };
-      };
 
       # Runtime theme owned by Noctalia: its built-in helix template writes
       # ~/.config/helix/themes/noctalia.toml with the current scheme on every

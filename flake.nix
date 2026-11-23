@@ -67,6 +67,19 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # OnixOS consumer library. flake-outputs/onixos.nix builds the machines in
+    # onixos/inventory.ncl with its mkFlake (Nix backend) next to Clan's
+    # nixosConfigurations. Its own nixpkgs and onix-wasm pins stay unfollowed:
+    # the Nickel WASM plugin is only known to work with OnixOS's toolchain.
+    onix-modules.url = "git+ssh://git@github.com/onixcomputer/OnixOS.git?ref=refs/heads/onixos-systemd-host";
+
+    # OnixOS maps public artifact files to nixos-artifacts' `artifacts.store`
+    # options; mkFlake requires the module once any public file is declared.
+    nixos-artifacts = {
+      url = "github:mrVanDalo/nixos-artifacts";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     srvos = {
       url = "github:nix-community/srvos";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -382,10 +395,16 @@
         ./flake-outputs/kiln-implementation.nix # Opt-in exact-cohort implementer qualification
       ];
       flake =
+        # onixos.nix comes last: its nixosConfigurations is Clan's with the
+        # cut-over machines replaced by their OnixOS builds.
         (import ./flake-outputs/clan.nix {
           inherit (inputs) self;
           inherit inputs;
         })
-        // (import ./flake-outputs/effects.nix { inherit inputs; });
+        // (import ./flake-outputs/effects.nix { inherit inputs; })
+        // (import ./flake-outputs/onixos.nix {
+          inherit (inputs) self;
+          inherit inputs;
+        });
     };
 }

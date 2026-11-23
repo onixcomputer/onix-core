@@ -113,11 +113,7 @@
 
   # Users and groups for GPU access and monitoring
   users = {
-    groups = {
-      render = { };
-      video = { };
-      prometheus-amd-gpu = { };
-    };
+    groups.prometheus-amd-gpu = { };
     users.prometheus-amd-gpu = {
       isSystemUser = true;
       group = "prometheus-amd-gpu";
@@ -125,6 +121,7 @@
       extraGroups = [
         "render"
         "video"
+        "node-exporter"
       ];
     };
   };
@@ -134,7 +131,10 @@
   # gives systemd control over lifecycle, restarts, and resource accounting.
   systemd.services.amd-gpu-exporter = {
     description = "AMD GPU Metrics Exporter for Prometheus";
-    after = [ "network-online.target" ];
+    after = [
+      "network-online.target"
+      "systemd-tmpfiles-setup.service"
+    ];
     wants = [ "network-online.target" ];
 
     serviceConfig = {
@@ -147,11 +147,13 @@
       ProtectSystem = "strict";
       ProtectHome = true;
       PrivateTmp = true;
+      ReadWritePaths = [ "/var/lib/prometheus-node-exporter-text-files" ];
 
       # GPU access permissions
       SupplementaryGroups = [
         "render"
         "video"
+        "node-exporter"
       ];
 
       ExecStart =
@@ -160,42 +162,10 @@
             name = "amd-gpu-exporter";
             runtimeInputs = [
               pkgs.rocmPackages.rocm-smi
+              pkgs.jq
               pkgs.coreutils
             ];
-            text = ''
-                    METRICS_FILE="/tmp/amd_gpu_metrics.prom"
-
-                    collect_once() {
-                      GPU_UTIL=$(rocm-smi --showuse --csv 2>/dev/null | tail -n +2 | cut -d',' -f2 | tr -d '%' || echo "0")
-                      GPU_TEMP=$(rocm-smi --showtemp --csv 2>/dev/null | tail -n +2 | cut -d',' -f2 | tr -d 'c' || echo "0")
-                      GPU_MEM=$(rocm-smi --showmemuse --csv 2>/dev/null | tail -n +2 | cut -d',' -f2 | tr -d '%' || echo "0")
-                      GPU_POWER=$(rocm-smi --showpower --csv 2>/dev/null | tail -n +2 | cut -d',' -f2 | tr -d 'W' || echo "0")
-
-                      cat > "$METRICS_FILE.tmp" << EOF
-              # HELP amd_gpu_utilization_percent AMD GPU utilization percentage
-              # TYPE amd_gpu_utilization_percent gauge
-              amd_gpu_utilization_percent{device="0"} $GPU_UTIL
-
-              # HELP amd_gpu_temperature_celsius AMD GPU temperature in Celsius
-              # TYPE amd_gpu_temperature_celsius gauge
-              amd_gpu_temperature_celsius{device="0"} $GPU_TEMP
-
-              # HELP amd_gpu_memory_utilization_percent AMD GPU memory utilization percentage
-              # TYPE amd_gpu_memory_utilization_percent gauge
-              amd_gpu_memory_utilization_percent{device="0"} $GPU_MEM
-
-              # HELP amd_gpu_power_draw_watts AMD GPU power draw in watts
-              # TYPE amd_gpu_power_draw_watts gauge
-              amd_gpu_power_draw_watts{device="0"} $GPU_POWER
-              EOF
-
-                      mv "$METRICS_FILE.tmp" "$METRICS_FILE"
-                    }
-
-                    # Run one collection so the metrics file exists immediately,
-                    # then let the systemd timer handle the 5s cadence.
-                    collect_once
-            '';
+            text = builtins.readFile ./amd-gpu-exporter.sh;
           };
         in
         lib.getExe script;

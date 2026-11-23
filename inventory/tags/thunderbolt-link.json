@@ -1,0 +1,32 @@
+{
+  "bridgeName": "br-tbt",
+  "bridgeNetdev": "40-thunderbolt-bridge",
+  "memberNetwork": "50-thunderbolt-members",
+  "bridgeNetwork": "60-thunderbolt-bridge",
+  "memberDriver": "thunderbolt-net",
+  "linkMembers": ["thunderbolt0", "thunderbolt1"],
+  "linkMtuBytes": 65520,
+  "subnetPrefixLength": 28,
+  "filterPriority": -180,
+  "filterTableName": "thunderbolt-link",
+  "guardPeerPingCount": 1,
+  "guardPeerPingTimeoutSeconds": 5,
+  "guardPeerPingAttempts": 3,
+  "guardPeerPingAttemptIntervalSeconds": 2,
+  "guardLinkSettleSeconds": 3,
+  "guardRepairWaitAttempts": 10,
+  "guardRepairWaitIntervalSeconds": 2,
+  "guardRecoveryCooldownSeconds": 300,
+  "guardStateDirectory": "/run/thunderbolt-link",
+  "guardExitUnhealthy": 1,
+  "guardStartLimitIntervalSeconds": 60,
+  "guardStartLimitBurst": 30,
+  "guardBootDelaySeconds": 300,
+  "guardIntervalSeconds": 900,
+  "guardTimerAccuracySeconds": 60,
+  "tbAddresses": {
+    "aspen1": "10.10.10.1",
+    "aspen2": "10.10.10.2",
+    "britton-desktop": "10.10.10.3"
+  }
+}

@@ -1,0 +1,423 @@
+# Common settings of onix-core's NixOS machines (inventory/tags/nixos.nix,
+# inventory/tags/common/*) for OnixOS systemd hosts, as a typed module.
+#
+# The groups other modules place users in exist here with NixOS's static ids
+# (docker 131), and the login shells user accounts name are
+# installed. The rest of the nixos tag follows NixOS's rendering of it:
+# networkd and nsncd answering NSS lookups with the systemd
+# and nss-mdns modules, Avahi, irqbalance, a tmpfs /tmp, the tag's sysctls,
+# stop timeout, NTP servers and locale, shell setup and PAM services, and the
+# nftables firewall. Nix-only pieces (nix-daemon settings, gcroot cleanup,
+# nix-index) are not ported:
+# OnixOS hosts run no Nix daemon.
+fun onix =>
+  let locale_vars = ["LC_ADDRESS", "LC_IDENTIFICATION", "LC_MEASUREMENT", "LC_MONETARY", "LC_NAME", "LC_NUMERIC", "LC_PAPER", "LC_TELEPHONE", "LC_TIME"] in
+  let pam_rule = fun pam_facility pam_control pam_package pam_name pam_options =>
+    {
+      facility = pam_facility,
+      control = pam_control,
+      module = { package = pam_package, name = pam_name },
+      options = pam_options,
+    }
+  in
+  let pam_linux = fun facility control name options => pam_rule facility control 'linux_pam name options in
+  let pam_account = [pam_linux 'account "required" "pam_unix.so" []] in
+  let pam_password = [pam_linux 'password "sufficient" "pam_unix.so" ["nullok"]] in
+  let pam_auth = [
+    pam_linux 'auth "sufficient" "pam_unix.so" ["likeauth", "try_first_pass"],
+    pam_linux 'auth "required" "pam_deny.so" [],
+  ]
+  in
+  let pam_session_env = [pam_linux 'session "required" "pam_env.so" ["conffile=/etc/pam/environment", "readenv=0"]] in
+  let pam_session_unix = [pam_linux 'session "required" "pam_unix.so" []] in
+  let pam_session_limits = [pam_linux 'session "required" "pam_limits.so" ["conf=/etc/security/limits.conf"]] in
+  let pam_session_loginuid = [pam_linux 'session "required" "pam_loginuid.so" []] in
+  let pam_session = pam_session_env @ pam_session_unix @ pam_session_limits in
+  let pam_standard = pam_account @ pam_auth @ pam_password @ pam_session in
+  let pam_rootok_auth = [
+    pam_linux 'auth "sufficient" "pam_rootok.so" [],
+    pam_linux 'auth "required" "pam_deny.so" [],
+  ]
+  in
+  let host_impl = fun args =>
+    let p = args.package_paths in
+    let cfg = args.settings in
+    let nss_path = "%{p.systemd}/lib:%{p."nss-mdns"}/lib" in
+    {
+      output.host = {
+        groups = {
+          networkmanager = { gid = 57 },
+          docker = { gid = 131 },
+          nscd = {},
+          avahi = {},
+        },
+        users = {
+          nscd = { group = "nscd", description = "nscd user" },
+          avahi = { group = "avahi", description = "avahi-daemon privilege separation user" },
+        },
+        packages = [p.fish, p.avahi, p."kitty-terminfo", p."wezterm-terminfo", p.sudo, p."apparmor-utils", p.direnv, p."bash-completion"],
+        environment = {
+          LANG = cfg.locale,
+        },
+        # User accounts here log in with fish (as aspen2's programs.fish does).
+        shells = ["/run/current-system/sw/bin/fish"],
+        pam_services = {
+          # These service stacks follow the captured NixOS PAM files. In particular,
+          # sudo's stack authenticates with pam_unix; wheel does not get a password bypass.
+          sudo = { stack = pam_standard },
+          "polkit-1" = { stack = pam_standard },
+          runuser = {
+            stack =
+              pam_account
+              @ pam_rootok_auth
+              @ pam_password
+              @ pam_session_unix
+              @ pam_session_limits,
+          },
+          "runuser-l" = {
+            stack =
+              pam_account
+              @ pam_rootok_auth
+              @ pam_password
+              @ pam_session_env
+              @ pam_session_unix
+              @ pam_session_limits,
+          },
+          "systemd-run0" = {
+            stack =
+              pam_account
+              @ pam_auth
+              @ pam_password
+              @ pam_session_env
+              @ pam_session_unix
+              @ pam_session_loginuid
+              @ pam_session_limits,
+          },
+          chsh = {
+            stack =
+              pam_account
+              @ [pam_linux 'auth "sufficient" "pam_rootok.so" []]
+              @ pam_auth
+              @ pam_password
+              @ pam_session,
+          },
+          chfn = {
+            stack =
+              pam_account
+              @ [pam_linux 'auth "sufficient" "pam_rootok.so" []]
+              @ pam_auth
+              @ pam_password
+              @ pam_session,
+          },
+          vlock = { stack = pam_standard },
+        },
+        units = {
+          "nscd.service" = {
+            sections = {
+              Unit = {
+                Description = "Name Service Cache Daemon (nsncd)",
+                Before = "nss-lookup.target nss-user-lookup.target",
+                Wants = "nss-lookup.target nss-user-lookup.target",
+              },
+              Service = {
+                Environment = ["LD_LIBRARY_PATH=%{nss_path}", "NSNCD_HANDOFF_TIMEOUT=10"],
+                ExecStart = "%{p.nsncd}/bin/nsncd",
+                Type = "notify",
+                User = "nscd",
+                Group = "nscd",
+                RuntimeDirectory = "nscd",
+                PIDFile = "/run/nscd/nscd.pid",
+                NoNewPrivileges = "true",
+                PrivateTmp = "true",
+                ProtectHome = "read-only",
+                # nsncd writes its pid and cache outside /run; keep /usr, /boot and
+                # /efi read-only but leave /var writable, its own directories owned.
+                ProtectSystem = "full",
+                StateDirectory = "nscd",
+                CacheDirectory = "nscd",
+                RemoveIPC = "true",
+                Restart = "always",
+                RestrictSUIDSGID = "true",
+              },
+            },
+            wanted_by = ["multi-user.target"],
+          },
+          "avahi-daemon.socket" = {
+            sections = {
+              Unit = { Description = "Avahi mDNS/DNS-SD Stack Activation Socket", After = "systemd-tmpfiles-setup.service" },
+              Socket.ListenStream = "/run/avahi-daemon/socket",
+            },
+            wanted_by = ["sockets.target"],
+          },
+          "avahi-daemon.service" = {
+            sections = {
+              Unit = {
+                Description = "Avahi mDNS/DNS-SD Stack",
+                Requires = "avahi-daemon.socket",
+              },
+              Service = {
+                Environment = "LD_LIBRARY_PATH=%{nss_path}",
+                BusName = "org.freedesktop.Avahi",
+                CapabilityBoundingSet = ["CAP_SYS_CHROOT", "CAP_SETUID", "CAP_SETGID"],
+                ConfigurationDirectory = "avahi/services",
+                DevicePolicy = "closed",
+                ExecStart = "%{p.avahi}/sbin/avahi-daemon -f /etc/avahi/avahi-daemon.conf",
+                LockPersonality = "true",
+                MemoryDenyWriteExecute = "true",
+                NoNewPrivileges = "true",
+                NotifyAccess = "main",
+                PrivateDevices = "true",
+                PrivateTmp = "true",
+                PrivateUsers = "false",
+                ProcSubset = "pid",
+                ProtectClock = "true",
+                ProtectControlGroups = "true",
+                ProtectHome = "true",
+                ProtectHostname = "true",
+                ProtectKernelLogs = "true",
+                ProtectKernelModules = "true",
+                ProtectKernelTunables = "true",
+                ProtectProc = "invisible",
+                ProtectSystem = "strict",
+                RestrictAddressFamilies = ["AF_INET", "AF_INET6", "AF_NETLINK", "AF_UNIX"],
+                RestrictNamespaces = "true",
+                RestrictRealtime = "true",
+                RestrictSUIDSGID = "true",
+                SystemCallArchitectures = "native",
+                SystemCallFilter = ["@system-service", "~@privileged", "@chown setgroups setresuid"],
+                Type = "dbus",
+                UMask = "0077",
+              },
+            },
+            wanted_by = ["multi-user.target"],
+          },
+          "tmp.mount" = {
+            sections = {
+              Unit = {
+                Description = "Temporary Directory /tmp",
+                ConditionPathIsSymbolicLink = "!/tmp",
+                DefaultDependencies = "no",
+                Conflicts = "umount.target",
+                Before = "local-fs.target umount.target",
+                After = "swap.target",
+              },
+              Mount = {
+                What = "tmpfs",
+                Where = "/tmp",
+                Type = "tmpfs",
+                Options = "mode=1777,strictatime,rw,nosuid,nodev,size=50%,huge=never",
+              },
+            },
+            wanted_by = ["local-fs.target"],
+          },
+        },
+        package_units = [
+          { package = p.irqbalance, units = ["irqbalance.service"] },
+        ],
+        wants = {
+          "multi-user.target" = ["irqbalance.service"],
+        },
+        dbus_packages = [p.avahi],
+        # avahi daemonises into its runtime directory as the avahi user before it
+        # drops privileges; the socket unit's directory is root-owned.
+        tmpfiles = [
+          "d /var/lib/misc 0755 root root -",
+          "d /run/avahi-daemon 0755 avahi avahi -",
+        ],
+        # security.sudo: the setuid wrapper NixOS installs, and its default
+        # sudoers (root and wheel, with SETENV as NixOS's file grants).
+        wrappers.sudo = {
+          source = "%{p.sudo}/bin/sudo",
+          setuid = true,
+          # NixOS installs sudo as root:wheel with no access for others.
+          group = "wheel",
+          permissions = "u+rwx,g+x,o-rwx",
+        },
+        files."sudoers" = {
+          mode = "0440",
+          text = m%"
+            # Managed by OnixOS: wheel retains password-required sudo access.
+            # Do not add NOPASSWD to this policy.
+            root ALL=(ALL:ALL) SETENV: ALL
+            %wheel ALL=(ALL:ALL) SETENV: ALL
+          "%,
+        },
+        # security.apparmor: aspen2's unit loads no policy files, so it tears the
+        # old ones down and waits; the enabled LSM comes from the kernel params.
+        units."apparmor.service" = {
+          sections = {
+            Unit = {
+              Description = "Load AppArmor policies",
+              After = "local-fs.target systemd-journald-audit.socket",
+              Before = "sysinit.target shutdown.target",
+              ConditionSecurity = "apparmor",
+              Conflicts = "shutdown.target",
+              DefaultDependencies = "no",
+            },
+            Service = {
+              Type = "oneshot",
+              RemainAfterExit = "yes",
+              ExecStartPre = "%{p."apparmor-init"}/bin/aa-teardown",
+              ExecReload = "%{p."apparmor-utils"}/bin/aa-remove-unknown",
+              ExecStop = "%{p."apparmor-init"}/bin/aa-teardown",
+              CacheDirectory = ["apparmor", "apparmor/logprof"],
+              CacheDirectoryMode = "0700",
+            },
+          },
+          wanted_by = ["multi-user.target"],
+        },
+        files = {
+          "avahi/avahi-daemon.conf".text = m%"
+            [publish]
+            disable-publishing=yes
+            disable-user-service-publishing=yes
+            publish-addresses=no
+            publish-domain=no
+            publish-hinfo=no
+            publish-workstation=no
+
+            [reflector]
+            enable-reflector=no
+
+            [server]
+            allow-point-to-point=no
+            browse-domains=
+            domain-name=local
+            host-name=%{args.machine_name}
+            use-ipv4=yes
+            use-ipv6=yes
+          "%,
+          "systemd/system.conf.d/host-common.conf".text = m%"
+            [Manager]
+            DefaultTimeoutStopSec=5s
+          "%,
+          "systemd/timesyncd.conf.d/host-common.conf".text = m%"
+            [Time]
+            FallbackNTP=%{std.string.join " " cfg.ntp_servers}
+          "%,
+          "systemd/journald.conf.d/host-common.conf".text = m%"
+            [Journal]
+            Audit=keep
+          "%,
+          "systemd/logind.conf.d/host-common.conf".text = m%"
+            [Login]
+            KillUserProcesses=false
+          "%,
+          "systemd/resolved.conf.d/host-common.conf".text = m%"
+            [Resolve]
+            DNS=
+            DNSOverTLS=false
+            DNSSEC=false
+            Domains=
+          "%,
+          "security/limits.conf".text = "# Captured limits were PipeWire-specific; PipeWire is not retained.\n",
+          "bashrc".text = m%"
+            # Global interactive Bash configuration for login and non-login shells.
+            if [ -n "${PS1:-}" ]; then
+              eval "$(%{p.direnv}/bin/direnv hook bash)"
+              . %{p."bash-completion"}/etc/profile.d/bash_completion.sh
+              set +h
+              alias -- l='ls -alh'
+              alias -- ll='ls -l'
+              alias -- ls='ls --color=tty'
+            fi
+          "%,
+          "fish/conf.d/direnv.fish".text = m%"
+            if status is-interactive
+              %{p.direnv}/bin/direnv hook fish | source
+            end
+          "%,
+          "locale.conf".text =
+            (["LANG=%{cfg.locale}"] @ std.array.map (fun v => "%{v}=%{cfg.locale}") locale_vars |> std.string.join "\n") ++ "\n",
+        },
+        sysctl = {
+          "net.core.default_qdisc" = "fq",
+          "net.ipv4.tcp_congestion_control" = "bbr",
+          "net.ipv4.tcp_fastopen" = "3",
+          "fs.inotify.max_user_watches" = "1048576",
+          "fs.inotify.max_user_instances" = "1024",
+        },
+        firewall = {
+          enable = true,
+          allowed_udp_ports = [5353],
+        },
+      },
+    }
+  in
+  ({
+    interface = {
+      manifest = {
+        name = "onix-core/host-common",
+        description = "The NixOS common tag of onix-core's machines (network, name service, mDNS, IRQ balancing, /tmp, sysctls, locale, login policy, shell setup, firewall) for OnixOS systemd hosts.",
+        categories = ["system"],
+      },
+      portability = {
+        status = 'platform_specific,
+        platform_leaves = [
+          {
+            namespace = "host",
+            targets = ["onixos"],
+            rationale = "OnixOS systemd hosts only; NixOS machines get these from inventory/tags/nixos.nix",
+          },
+        ],
+      },
+      packages = [
+        "apparmor-init",
+        "apparmor-utils",
+        "fish",
+        "systemd",
+        "nsncd",
+        "nss-mdns=nssmdns",
+        "avahi",
+        "irqbalance",
+        "kitty-terminfo=kitty.terminfo",
+        "sudo",
+        "wezterm-terminfo=wezterm.terminfo",
+        "direnv",
+        "bash-completion",
+      ],
+      roles.host = {
+        ntp_servers | Array String | default = ["0.nixos.pool.ntp.org", "1.nixos.pool.ntp.org", "2.nixos.pool.ntp.org", "3.nixos.pool.ntp.org"],
+        locale | String | default = "en_US.UTF-8",
+      },
+    },
+
+    impl = host_impl,
+
+    tests | not_exported =
+      let pkgs = {
+        fish = "fish-pkg",
+        systemd = "systemd-pkg",
+        nsncd = "nsncd-pkg",
+        "nss-mdns" = "mdns-pkg",
+        avahi = "avahi-pkg",
+        irqbalance = "irq-pkg",
+        "kitty-terminfo" = "kitty-ti",
+        "wezterm-terminfo" = "wezterm-ti",
+        "sudo" = "sudo-pkg",
+        "apparmor-init" = "apparmor-init-pkg",
+        "apparmor-utils" = "apparmor-utils-pkg",
+        direnv = "direnv-pkg",
+        "bash-completion" = "bash-completion-pkg",
+      }
+      in
+      let test_settings = { ntp_servers = ["a", "b"], locale = "en_US.UTF-8" } in
+      let out = (host_impl (onix.testing.mock_args { service = "host-common", role_name = 'host, settings = test_settings, packages = pkgs, machine_name = "aspen2" })).output.host in
+      [
+        out.groups.docker.gid == 131,
+        std.array.elem "fish-pkg" out.packages,
+        std.string.contains "host-name=aspen2" out.files."avahi/avahi-daemon.conf".text,
+        std.string.contains "FallbackNTP=a b" out.files."systemd/timesyncd.conf.d/host-common.conf".text,
+        std.string.contains "LC_TIME=en_US.UTF-8" out.files."locale.conf".text,
+        out.firewall.enable,
+        std.array.elem 5353 out.firewall.allowed_udp_ports,
+        # security.sudo and security.apparmor, as aspen2 has them.
+        out.wrappers.sudo.setuid && out.wrappers.sudo.group == "wheel",
+        out.files."sudoers".mode == "0440",
+        std.string.contains "%wheel ALL=(ALL:ALL) SETENV: ALL" out.files."sudoers".text,
+        out.units."apparmor.service".sections.Service.RemainAfterExit == "yes",
+        std.string.contains "aa-teardown" out.units."apparmor.service".sections.Service.ExecStartPre,
+      ]
+      |> std.test.assert_all,
+  }
+  ) | onix.ServiceModule
