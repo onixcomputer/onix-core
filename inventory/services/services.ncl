@@ -1132,6 +1132,8 @@ in
       roles.default = {
         tags."llm-client" = {},
         settings.packages = ["pi", "openspec", "hermes-agent"],
+        # The Antigravity CLI (`agy`) is used on the desktop workstation too.
+        machines.britton-desktop.settings.packages = ["antigravity-cli"],
       },
     },
 
