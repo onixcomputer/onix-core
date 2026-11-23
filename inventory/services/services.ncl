@@ -97,7 +97,12 @@ let radicle_desktop_replica_node_fingerprint = "SHA256:JHQTPqoMr4kLqBsrAPSRNXUuz
 let radicle_aspen3_replica_node_fingerprint = "SHA256:TEuGqHuV/3kGZzGiqUGCkCYG8ITfhV3TvJUjddv8fb0" in
 let radicle_http_port = 8080 in
 let radicle_https_origin_port = 8081 in
+let radicle_aspen3_replica_node_id = "z6MkoHdimfedLwXjNZhxfAadc8H3rW2TMjpn7ATMNcRWieWh" in
 let radicle_pilot_rid = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo" in
+# Bounded Exec successor identity: one delegate, threshold 1, admitted under
+# the OnixOS `bounded-exec-successor-single-delegate-bootstrap` profile pending
+# a three-delegate identity. The pilot RID above stays served read-only.
+let bounded_exec_rid = "rad:zG25DRmacxYQcXzZmLKj8tmgYbEG" in
 let artifact_auth_rid = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f" in
 let execution_graph_rid = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a" in
 let choregraph_rid = "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF" in
@@ -134,6 +139,7 @@ let radicle_source_rids = [
   durable_file_publication_rid,
   koiterminal_rid,
   artifact_rid,
+  bounded_exec_rid,
 ]
 in
 let radicle_private_source_rids = [
@@ -144,15 +150,13 @@ let radicle_private_source_rids = [
 ]
 in
 let radicle_production_seed_node_id = "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8" in
-let radicle_reviewed_commit = "29dac88ecded94457572db3fdfaaaab95fa91525" in
-let radicle_ci_policy_blake3 = "091e57f4409f79db14465ccc26e730bf1181209fe45c28d7dd1259393e93f740" in
+let radicle_reviewed_commit = "9e64b2f429c8f9035a06fe60ace3adbf331c5598" in
+let radicle_ci_policy_blake3 = "ab4e2ae72b22c4c2704aca88852e4e5f036c2ca7501d257d11bec8827af2ebb3" in
 let radicle_ci_bot_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHwhn4nbFZOQxnyj+fRvABe+jU9IOVWY/bPx1PxA3utr" in
 let radicle_ci_bot_node_id = "z6MknopLULJensBT5KGkC8h9KaHTNY5muZ9UffqroErX7Rni" in
 let radicle_ci_bot_fingerprint = "SHA256:U4XxEymH9bpdWtN3Yl7ugkOn+Io1OrQ6H2UjkZC9Rg0" in
 let radicle_delegates = [
   "did:key:z6MksnXbFoE8zkCkGWhHc8zuxpnEUhrJHv2KECRV4GSv9gkx",
-  "did:key:z6MkjCqx5ksRqcDeNeuEnz53udbUHebRLHhddCxecWJu9koE",
-  "did:key:z6MkmkA6sEzzMffaWqKEKJcDh8LjAzgrJLrTNi971KN3X6sh",
 ]
 in
 let radicle_ci_scan_schedule = "*-*-* *:00/15:00" in
@@ -932,7 +936,7 @@ in
       roles.default.machines.aspen1.settings = {
         expectedHost = "aspen1",
         deploymentTarget = "root@aspen1.local",
-        rid = radicle_pilot_rid,
+        rid = bounded_exec_rid,
         signedRefsFeature = "parent",
         productionSeedNodeId = radicle_production_seed_node_id,
         productionSeedAddress = "%{radicle_node_address}:%{radicle_node_port}",
@@ -943,9 +947,9 @@ in
         expectedBotNodeId = radicle_ci_bot_node_id,
         expectedBotFingerprint = radicle_ci_bot_fingerprint,
         delegates = radicle_delegates,
-        cargoTomlBlake3 = "20ff51e3f2c5f9b230e05b797b5dbb1029e738d5f84d25cecce02d49c2d3427e",
-        cargoLockBlake3 = "79c9e70b6cd874aad8e55beb6b4242b47efc24ab344cad4ad1c42a4c3b31cd60",
-        flakeNixBlake3 = "ef1b58422af1f9918554d7a0f78c6c657eded6ac64545e4c6fb3c6e1d7ba9e86",
+        cargoTomlBlake3 = "fbc25f533c51ae38af3b3e5bc24af86bd044fb662f52ca5c2d96d9d5e2339bea",
+        cargoLockBlake3 = "a9698c9d63e41054d9f3fe09b16b1a191c4ce73222ca50f13197ac8ccc166a0a",
+        flakeNixBlake3 = "22dde6af86c05e8d466e9208bbd785d5d503b4d0e796d1c41200b8dc74016e26",
         flakeLockBlake3 = "8f16f066737c44b0447f9bd86b89dca822183909d90563c097765f098e5abae4",
         scanSchedule = radicle_ci_scan_schedule,
       },
@@ -1013,6 +1017,12 @@ in
         nodeFirewallInterface = "tailscale0",
         externalAddress = "%{radicle_desktop_replica_address}:%{radicle_node_port}",
         seedRepositories = radicle_source_rids,
+        # Static peers stop the replica's unbounded dial loop to unreviewed
+        # peers; it keeps sessions to Aspen1 and the Aspen3 replica only.
+        staticPeers = [
+          "%{radicle_production_seed_node_id}@%{radicle_node_address}:%{std.to_string radicle_node_port}",
+          "%{radicle_aspen3_replica_node_id}@%{radicle_aspen3_replica_address}:%{std.to_string radicle_node_port}",
+        ],
         privateSeedRepositories = radicle_private_source_rids,
         stateDirectory = "/var/lib/radicle",
         stateDataset = "datapool/radicle-seed",

@@ -76,6 +76,7 @@ in
                 nodeFirewallInterface
                 seedRepositories
                 privateSeedRepositories
+                staticPeers
                 ;
               httpdEnabled = false;
               httpListenAddress = loopbackAddress;

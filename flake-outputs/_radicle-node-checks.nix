@@ -78,6 +78,7 @@ let
   durableFilePublicationRepository = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM";
   koiterminalRepository = "rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ";
   artifactRepository = "rad:z25ySMy8Hh3HpsxP5zcYoYgaMBi99";
+  boundedExecSuccessorRepository = "rad:zG25DRmacxYQcXzZmLKj8tmgYbEG";
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   privateSeaglassRepository = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
   privateHardenedWasmtimeRepository = "rad:z3hRCegTsS8jpJVgxYfb9psEzxHpG";
@@ -94,6 +95,7 @@ let
     durableFilePublicationRepository
     koiterminalRepository
     artifactRepository
+    boundedExecSuccessorRepository
   ];
   privateRepositories = [
     privatePilotRepository

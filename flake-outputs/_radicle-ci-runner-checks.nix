@@ -11,10 +11,17 @@
 let
   expectedHost = "aspen1";
   unexpectedHost = "aspen2";
+  # The accepted ci-deployment-v1 receipt and the onixpkgs runner's
+  # bounded-exec dependency stay bound to the frozen pilot RID.
   pilotRid = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo";
   artifactAuthRid = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
   reviewedCommit = "29dac88ecded94457572db3fdfaaaab95fa91525";
   policyBlake3 = "091e57f4409f79db14465ccc26e730bf1181209fe45c28d7dd1259393e93f740";
+  # The deployed runner builds the Bounded Exec successor under OnixOS CI
+  # policy v2; the canonical guard is retired for this RID.
+  successorRid = "rad:zG25DRmacxYQcXzZmLKj8tmgYbEG";
+  successorReviewedCommit = "9e64b2f429c8f9035a06fe60ace3adbf331c5598";
+  successorPolicyBlake3 = "ab4e2ae72b22c4c2704aca88852e4e5f036c2ca7501d257d11bec8827af2ebb3";
   checkName = "onix/ci/v1";
   botNodeId = "z6MknopLULJensBT5KGkC8h9KaHTNY5muZ9UffqroErX7Rni";
   productionSeedNodeId = "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8";
@@ -319,7 +326,10 @@ in
         done
 
         actual_policy_hash="$(b3sum ${../modules/radicle-ci-runner/ci-policy-v1.json} | cut -d ' ' -f1)"
-        test "$actual_policy_hash" = ${lib.escapeShellArg policyBlake3}
+        test "$actual_policy_hash" = ${lib.escapeShellArg successorPolicyBlake3}
+        test "$(jq -r .repository.rid ${../modules/radicle-ci-runner/ci-policy-v1.json})" = ${lib.escapeShellArg successorRid}
+        test "$(jq -r .rid ${guardPolicyDir}/generated/profile.json)" = ${lib.escapeShellArg pilotRid}
+        test "$(nickel export --format json --field retired_rids ${guardPolicyDir}/contracts.ncl | jq -r 'keys | join(" ")')" = ${lib.escapeShellArg successorRid}
         actual_receipt_hash="$(b3sum ${deploymentReceiptJsonPath} | cut -d ' ' -f1)"
         test "$actual_receipt_hash" = ${lib.escapeShellArg deploymentReceiptExpectedHash}
         test "$(b3sum ${patchEventPath} | cut -d ' ' -f1)" = ${lib.escapeShellArg deploymentReceiptJson.jobs.patch.event_blake3}
@@ -331,11 +341,11 @@ in
         test "$(b3sum ${boundsProbePath} | cut -d ' ' -f1)" = ${lib.escapeShellArg deploymentReceiptJson.evidence_hashes.bounds_probe_json}
 
         radicle-ci-runner validate-config ${runnerConfigPath}
-        test "$(jq -r .rid ${runnerConfigPath})" = ${lib.escapeShellArg pilotRid}
+        test "$(jq -r .rid ${runnerConfigPath})" = ${lib.escapeShellArg successorRid}
         ! grep -Fq ${lib.escapeShellArg artifactAuthRid} ${runnerConfigPath}
         ! grep -Fq ${lib.escapeShellArg artifactAuthRid} ${../modules/radicle-ci-runner/ci-policy-v1.json}
-        test "$(jq -r .reviewed_commit ${runnerConfigPath})" = ${lib.escapeShellArg reviewedCommit}
-        test "$(jq -r .policy_blake3 ${runnerConfigPath})" = ${lib.escapeShellArg policyBlake3}
+        test "$(jq -r .reviewed_commit ${runnerConfigPath})" = ${lib.escapeShellArg successorReviewedCommit}
+        test "$(jq -r .policy_blake3 ${runnerConfigPath})" = ${lib.escapeShellArg successorPolicyBlake3}
         test "$(jq -r .check_name ${runnerConfigPath})" = ${lib.escapeShellArg checkName}
         test "$(jq -r .bot_node_id ${runnerConfigPath})" = ${lib.escapeShellArg botNodeId}
         test "$(jq -r .production_seed_address ${runnerConfigPath})" = ${lib.escapeShellArg productionSeedAddress}

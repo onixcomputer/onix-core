@@ -41,6 +41,7 @@ let
   durableFilePublicationRepository = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM";
   koiterminalRepository = "rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ";
   artifactRepository = "rad:z25ySMy8Hh3HpsxP5zcYoYgaMBi99";
+  boundedExecSuccessorRepository = "rad:zG25DRmacxYQcXzZmLKj8tmgYbEG";
   governedRepositories = [
     pilotRepository
     artifactAuthRepository
@@ -49,6 +50,7 @@ let
     durableFilePublicationRepository
     koiterminalRepository
     artifactRepository
+    boundedExecSuccessorRepository
   ];
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   privateSeaglassRepository = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
@@ -312,6 +314,37 @@ let
       packageVersion = nodePackage.version;
       actualHost = expectedHost;
       expected = "exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs";
+    }
+    {
+      name = "missing-bounded-exec-successor-rid";
+      settings = positiveSettings // {
+        seedRepositories = lib.remove boundedExecSuccessorRepository governedRepositories;
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "the Bounded Exec successor RID";
+    }
+    {
+      name = "unreviewed-static-peer";
+      settings = positiveSettings // {
+        staticPeers = [ "z6MknSER62unreviewedpeer@[2001:db8::1]:${toString nodePort}" ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "static peers must name only the Aspen1 seed or another reviewed replica";
+    }
+    {
+      name = "self-static-peer";
+      settings = positiveSettings // {
+        staticPeers = [
+          "${reviewedHosts.${expectedHost}.nodeId}@${
+            reviewedHosts.${expectedHost}.nodeAddress
+          }:${toString nodePort}"
+        ];
+      };
+      packageVersion = nodePackage.version;
+      actualHost = expectedHost;
+      expected = "static peers must name only the Aspen1 seed or another reviewed replica";
     }
     {
       name = "missing-artifact-auth-rid";
@@ -589,6 +622,7 @@ let
       config,
       hostName,
       instanceName,
+      expectedStaticPeers,
     }:
     let
       hostFacts = reviewedHosts.${hostName};
@@ -630,6 +664,11 @@ let
         == builtins.unsafeDiscardStringContext expectedProductionPolicyCommand;
       monitoringPresent =
         config.services.prometheus.enable && config.services.prometheus.exporters.systemd.enable;
+      staticPeersExact =
+        (config.services.radicle.settings.node.connect or [ ]) == expectedStaticPeers
+        &&
+          (config.services.radicle.settings.node.peers.type or "dynamic")
+          == (if expectedStaticPeers == [ ] then "dynamic" else "static");
     };
   desktopConfig = self.nixosConfigurations.${expectedHost}.config;
   aspen3Config = self.nixosConfigurations.${aspen3Host}.config;
@@ -678,11 +717,19 @@ let
       config = desktopConfig;
       hostName = expectedHost;
       instanceName = desktopReplicaInstanceName;
+      # The desktop replica keeps sessions to Aspen1 and the Aspen3 replica only.
+      expectedStaticPeers = [
+        "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8@100.100.103.95:${toString nodePort}"
+        "${reviewedHosts.${aspen3Host}.nodeId}@${
+          reviewedHosts.${aspen3Host}.nodeAddress
+        }:${toString nodePort}"
+      ];
     };
     ${aspen3Host} = mkProductionReplicaObservations {
       config = aspen3Config;
       hostName = aspen3Host;
       instanceName = aspen3ReplicaInstanceName;
+      expectedStaticPeers = [ ];
     };
   };
   productionReplicaPolicyValid = builtins.all lib.id (

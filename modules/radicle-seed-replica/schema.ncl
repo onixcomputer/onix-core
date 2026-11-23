@@ -14,6 +14,7 @@ let default_storage_quota_gib = 64 in
     externalAddress = { type = "string", description = "Advertised Radicle host and port" },
     seedRepositories = { type = "array_string", default = [], description = "Exact canonical public RID allowlist" },
     privateSeedRepositories = { type = "array_string", default = [], description = "Exact canonical private RID allowlist admitted only over native Radicle" },
+    staticPeers = { type = "array_string", default = [], description = "Reviewed native peers (NID@address:port); non-empty switches the node to a static peer set" },
     stateDirectory = { type = "string", default = "/var/lib/radicle", description = "Dedicated replica state mount" },
     stateDataset = { type = "string", description = "Dedicated ZFS dataset identity" },
     stateQuotaGiB = { type = "number", default = default_storage_quota_gib, description = "Hard upper storage quota in GiB" },
