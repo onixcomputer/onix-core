@@ -373,13 +373,17 @@ in
     # r[impl onix.aspen3.herdr.wrapper.install]
     herdr
 
-    # Antigravity keeps one Google account per profile directory (the token
-    # and quotas live in state.vscdb). Exec the packaged launcher with its own
-    # --user-data-dir so a second account can stay signed in alongside the
-    # primary window; the store wrapper still supplies the GTK/GIO env.
+    # Antigravity keeps one Google account per profile, and its bundled
+    # language_server scopes the credential through
+    # $XDG_CONFIG_HOME/antigravity/credential-user-scope. A separate
+    # --user-data-dir alone isolates cookies but shares that scope, so the
+    # second window still resolved to the first account. Give it both.
     (writeShellScriptBin "antigravity-second" ''
+      profile="$HOME/.antigravity-second"
+      mkdir -p -m 700 "$profile/data" "$profile/config"
+      export XDG_CONFIG_HOME="$profile/config"
       exec ${inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.antigravity-hub}/bin/antigravity \
-        --user-data-dir="$HOME/.antigravity-second" "$@"
+        --user-data-dir="$profile/data" "$@"
     '')
     (makeDesktopItem {
       name = "antigravity-second";
