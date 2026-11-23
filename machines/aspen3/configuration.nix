@@ -93,6 +93,7 @@ in
   imports = [
     ../../inventory/tags/common/herdr-iroh.nix
     ./disko.nix
+    ./storage.nix
     ../../modules/pi-branchfs/nixos.nix
     ../../modules/meshtop
     inputs.nixos-hardware.nixosModules.asus-flow-gv302x-amdgpu

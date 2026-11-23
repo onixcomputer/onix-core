@@ -1,0 +1,123 @@
+{
+  "change": "aspen3-storage-reserve",
+  "recorded_at_utc": "2026-11-19T18:25:00Z",
+  "status": "complete",
+  "authorization": {
+    "sizes_gib": {
+      "agents_reservation": 40,
+      "nix_headroom": 20,
+      "root_headroom": 15,
+      "emergency_reserve": 10,
+      "cache_quota": 120,
+      "cargo_target_quota": 64,
+      "home_refquota": 650
+    },
+    "busy_directories_move": "next_reboot_scheduled_by_britton",
+    "live_moves": ["cargo-target", "claude"]
+  },
+  "observations": {
+    "pool_before_change": "zroot 952 GiB, 801 GiB allocated (84%), 121.6 GiB usable by datasets",
+    "entry_counts": {
+      "cache": 1173077,
+      "omp": 68203,
+      "config": 46716,
+      "state": 380789,
+      "claude": 15,
+      "cargo_target": 15290
+    },
+    "state_onix_subdir": "6.7 GiB of September VM replay state in ~/.local/state/onix moves with ~/.local/state",
+    "cross_dataset_copy": {
+      "reflink_always": "EXDEV (Invalid cross-device link): FICLONE needs one superblock",
+      "reflink_auto_gnu_cp_9_12": "29386 entries, 1747056662 bytes in 2.3 s; pool free changed by 0.0 MiB (block cloning via copy_file_range, zfs-2.4.4, zfs_bclone_enabled=1)"
+    }
+  },
+  "checks": {
+    "evaluation_and_build": {
+      "status": "passed",
+      "toplevel": "/nix/store/dzqq9d53zls3lvckcnbzc6rkbqd5w5na-nixos-system-aspen3-26.11.20261106.4fe25e1",
+      "diff_against_running_amilpp182": "only this change's scripts, units, mount drop-ins and fstab lines; the initrd differs only in zfs-import-zroot ordering for the new mounts, as for radicle-seed",
+      "shellcheck": "writeShellApplication built all four scripts"
+    },
+    "switch": {
+      "status": "passed",
+      "generation": 126,
+      "exit_code": 0,
+      "migrate_service": "the system is running; directories move only during boot, before anything uses them",
+      "mounts": "all six skipped: unmet ConditionPathExists=/var/lib/aspen3-storage/migrated/<name>",
+      "timers": {
+        "aspen3-storage-cleanup": "daily, next 2026-11-20 00:53 EST",
+        "cargo-target-prune": "weekly, next 2026-11-23 05:42 EST"
+      }
+    },
+    "zfs_properties": {
+      "status": "passed",
+      "zroot/nix": "reservation 162G (used 142G)",
+      "zroot/root": "reservation 106G (used 90.2G)",
+      "zroot/reserved": "refreservation 10G, canmount off",
+      "zroot/home": "refquota 650G",
+      "zroot/cache": "quota 120G, com.sun:auto-snapshot false",
+      "zroot/cargo-target": "quota 64G, com.sun:auto-snapshot false",
+      "zroot/agents": "canmount off, com.sun:auto-snapshot true, reservation pending the omp move",
+      "usable_after": "zroot avail 72.0 GiB; /home 50.6 GiB under its refquota"
+    },
+    "live_move_claude": {
+      "status": "passed",
+      "summary": "15 entries, 1327452 bytes in 29 s",
+      "mount": "/home/brittonr/.claude from zroot/agents/claude",
+      "original": "/home/brittonr/.claude.pre-zfs, diff -r identical"
+    },
+    "live_move_cargo_target": {
+      "status": "refused_as_designed",
+      "reason": "PIDs 1178390 and 1178391 (rust-analyzer-proc-macro-srv, up 26.7 h) map libraries from it; it moves at the next boot"
+    },
+    "cleanup_first_run": {
+      "status": "passed",
+      "gc_roots_removed": 39,
+      "codex_staging_removed": 0,
+      "codex_staging_oldest_mtime": "2026-11-18T07:24:23-0500, under one day old at the run"
+    },
+    "cargo_prune_first_run": {
+      "status": "passed",
+      "removed": ["/home/brittonr/.cargo-target/tmp"]
+    },
+    "gc_after_root_cleanup": {
+      "status": "passed",
+      "nix_store_gc": "14375 store paths deleted, 31.4 GiB freed (NAR size)",
+      "pool_free": "147.6 GiB before, 161.1 GiB after (83% full)",
+      "zroot/nix_used": "142 GiB before, 128.2 GiB after"
+    },
+    "headroom_reapplied_after_gc": {
+      "status": "passed",
+      "zroot/nix": "reservation 162G became 149G for 128.2G used",
+      "zroot/root": "reservation 106G for 90.2G used",
+      "usable_after": "zroot avail 85.0 GiB; /home 50.6 GiB under its refquota"
+    },
+    "boot_migration": {
+      "status": "passed",
+      "boot": "2026-11-19 12:35:18 EST, generation 4222vkq2 (a later deploy carrying this module)",
+      "service": "aspen3-storage-migrate.service ran 12:35:27-12:39:13 EST (3 min 47 s), Result=success; userspace boot took 3 min 59 s",
+      "moves": {
+        "cargo-target": "15289 entries, 6918974780 bytes in 22 s",
+        "config": "46960 entries, 4899126089 bytes in 28 s",
+        "omp": "68298 entries, 24489431958 bytes in 41 s",
+        "state": "380819 entries, 14335722081 bytes in 131 s",
+        "cache": "1152867 entries, 219481218369 bytes in 226 s"
+      },
+      "mounts": "all six from zroot/cache, zroot/cargo-target and zroot/agents/{omp,claude,config,state}; markers present for all six",
+      "zroot/agents": "reservation 40G, 17.0G used",
+      "pool_after": "157.1 GiB free (83%); no failed units; omp agents and herdr-core running again",
+      "originals": "the six .pre-zfs directories exist, are held by no process, and have no file modified after the boot"
+    },
+    "original_cleanup": {
+      "status": "passed",
+      "authorization": "Britton chose delete-now; claim posted to bots.claims directly because Kiln counted #147, #152, #156 and #158 as open (their releases lacked References)",
+      "deleted": [".cache.pre-zfs (27 s)", ".local/state.pre-zfs (11 s)", ".omp.pre-zfs (3 s)", ".config.pre-zfs (1 s)", ".cargo-target.pre-zfs", ".claude.pre-zfs"],
+      "checks_before_each": "mounted from its dataset, marker present, no holder, no file newer than the 12:35 EST boot",
+      "zroot/home_referenced": "596.5 GiB before, 499.4 GiB after",
+      "pool_free": "156.4 GiB before, 155.8 GiB after; the blocks remain shared with the datasets and held by the hourly /home snapshots until they expire"
+    }
+  },
+  "open": [
+    "~/.claude.json stays on /home."
+  ]
+}
