@@ -160,6 +160,13 @@ in
   };
 
   services = {
+    # r[impl onix.backup.no_local_snapshots]
+    # Clan's core module enables ZFS auto-snapshots on every machine. Keep no
+    # local retention: the local window filled zroot/home and pinned deleted
+    # data. Off-machine copies come from Borg (aspen1) and the encrypted
+    # Restic archives on Drive.
+    zfs.autoSnapshot.enable = lib.mkForce false;
+
     meshtop = {
       enable = true;
       viewerId = "e4595bca7f97787646d6da8b3eab21f02e88d56759b9ac73d3a2f05c3932af51";
