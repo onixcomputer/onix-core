@@ -23,10 +23,13 @@ fun onix =>
               RemainAfterExit = "true",
               # Type=oneshot runs one ExecStart per element, in order.
               ExecStart =
-                ["%{p.iproute2}/bin/ip address add %{std.string.join " " entry.addresses} dev %{entry.interface}"]
+                [
+                  "%{p.iproute2}/bin/ip link set dev %{entry.interface} up",
+                  "%{p.iproute2}/bin/ip address add %{std.string.join " " entry.addresses} dev %{entry.interface}",
+                ]
                 @ (
                   if std.record.has_field "gateway" entry then
-                    ["%{p.iproute2}/bin/ip route add default via %{entry.gateway} dev %{entry.interface}"]
+                    ["%{p.iproute2}/bin/ip route replace default via %{entry.gateway} dev %{entry.interface}"]
                   else
                     []
                 ),
@@ -46,7 +49,7 @@ fun onix =>
             Documentation = "man:polkit(8)",
           },
           Service = {
-            Type = "notify-reload",
+            Type = "notify",
             BusName = "org.freedesktop.PolicyKit1",
             CapabilityBoundingSet = ["CAP_SETUID", "CAP_SETGID"],
             DeviceAllow = "/dev/null rw",

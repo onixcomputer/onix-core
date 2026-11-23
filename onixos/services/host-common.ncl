@@ -2,22 +2,15 @@
 # inventory/tags/common/*) for OnixOS systemd hosts, as a typed module.
 #
 # The groups other modules place users in exist here with NixOS's static ids
-# (networkmanager 57, docker 131), and the login shells user accounts name are
+# (docker 131), and the login shells user accounts name are
 # installed. The rest of the nixos tag follows NixOS's rendering of it:
-# NetworkManager next to networkd, nsncd answering NSS lookups with the systemd
+# networkd and nsncd answering NSS lookups with the systemd
 # and nss-mdns modules, Avahi, irqbalance, a tmpfs /tmp, the tag's sysctls,
 # stop timeout, NTP servers and locale, shell setup and PAM services, and the
 # nftables firewall. Nix-only pieces (nix-daemon settings, gcroot cleanup,
 # nix-index) are not ported:
 # OnixOS hosts run no Nix daemon.
 fun onix =>
-  let nm_units = [
-    "NetworkManager.service",
-    "NetworkManager-dispatcher.service",
-    "NetworkManager-wait-online.service",
-    "nm-priv-helper.service",
-  ]
-  in
   let locale_vars = ["LC_ADDRESS", "LC_IDENTIFICATION", "LC_MEASUREMENT", "LC_MONETARY", "LC_NAME", "LC_NUMERIC", "LC_PAPER", "LC_TELEPHONE", "LC_TIME"] in
   let pam_rule = fun pam_facility pam_control pam_package pam_name pam_options =>
     {
@@ -50,34 +43,9 @@ fun onix =>
     let p = args.package_paths in
     let cfg = args.settings in
     let nss_path = "%{p.systemd}/lib:%{p."nss-mdns"}/lib" in
-    let nm_conf = m%"
-      [connection]
-      ethernet.cloned-mac-address=preserve
-      wifi.cloned-mac-address=preserve
-
-      [device]
-      wifi.backend=wpa_supplicant
-      wifi.scan-rand-mac-address=true
-
-      [keyfile]
-      path=/etc/NetworkManager/system-connections
-      unmanaged-devices=%{std.string.join ";" cfg.networkmanager_unmanaged}
-
-      [logging]
-      audit=false
-      level=WARN
-
-      [main]
-      dhcp=internal
-      dns=systemd-resolved
-      plugins=keyfile
-      rc-manager=unmanaged
-    "%
-    in
     {
       output.host = {
         groups = {
-          networkmanager = { gid = 57 },
           docker = { gid = 131 },
           nscd = {},
           avahi = {},
@@ -86,7 +54,7 @@ fun onix =>
           nscd = { group = "nscd", description = "nscd user" },
           avahi = { group = "avahi", description = "avahi-daemon privilege separation user" },
         },
-        packages = [p.fish, p.avahi, p.networkmanager, p."kitty-terminfo", p."wezterm-terminfo", p.sudo, p."apparmor-utils", p.direnv, p."bash-completion"],
+        packages = [p.fish, p.avahi, p."kitty-terminfo", p."wezterm-terminfo", p.sudo, p."apparmor-utils", p.direnv, p."bash-completion"],
         environment = {
           LANG = cfg.locale,
         },
@@ -243,39 +211,15 @@ fun onix =>
           },
         },
         package_units = [
-          { package = p.networkmanager, dir = "etc/systemd/system", units = nm_units },
           { package = p.irqbalance, units = ["irqbalance.service"] },
         ],
-        unit_aliases = {
-          "dbus-org.freedesktop.NetworkManager.service" = "NetworkManager.service",
-          "dbus-org.freedesktop.nm-dispatcher.service" = "NetworkManager-dispatcher.service",
-        },
-        dropins = {
-          "NetworkManager.service"."onixos.conf" = m%"
-            [Unit]
-            X-Restart-Triggers=%{std.hash 'Sha256 nm_conf}
-
-            [Service]
-            StateDirectory=NetworkManager
-            StateDirectoryMode=755
-          "%,
-          "NetworkManager-dispatcher.service"."onixos.conf" = m%"
-            [Unit]
-            X-Restart-Triggers=%{std.hash 'Sha256 nm_conf}
-          "%,
-        },
         wants = {
-          "multi-user.target" = ["NetworkManager.service", "NetworkManager-dispatcher.service", "irqbalance.service"],
-          # NixOS.s NetworkManager-wait-online.enable, which is what makes
-          # network-online.target mean something on a NetworkManager machine;
-          # services ordered after it otherwise wait on a target nothing brings up.
-          "network-online.target" = ["NetworkManager-wait-online.service"],
+          "multi-user.target" = ["irqbalance.service"],
         },
-        dbus_packages = [p.avahi, p.networkmanager],
+        dbus_packages = [p.avahi],
         # avahi daemonises into its runtime directory as the avahi user before it
         # drops privileges; the socket unit's directory is root-owned.
         tmpfiles = [
-          "d /etc/NetworkManager/system-connections 0700 root root -",
           "d /var/lib/misc 0755 root root -",
           "d /run/avahi-daemon 0755 avahi avahi -",
         ],
@@ -322,7 +266,6 @@ fun onix =>
           wanted_by = ["multi-user.target"],
         },
         files = {
-          "NetworkManager/NetworkManager.conf".text = nm_conf,
           "avahi/avahi-daemon.conf".text = m%"
             [publish]
             disable-publishing=yes
@@ -425,7 +368,6 @@ fun onix =>
         "nsncd",
         "nss-mdns=nssmdns",
         "avahi",
-        "networkmanager",
         "irqbalance",
         "kitty-terminfo=kitty.terminfo",
         "sudo",
@@ -434,11 +376,6 @@ fun onix =>
         "bash-completion",
       ],
       roles.host = {
-        networkmanager_unmanaged
-          | doc "NetworkManager keyfile unmanaged-devices entries (e.g. driver:thunderbolt-net)."
-          | Array String
-          | default
-          = [],
         ntp_servers | Array String | default = ["0.nixos.pool.ntp.org", "1.nixos.pool.ntp.org", "2.nixos.pool.ntp.org", "3.nixos.pool.ntp.org"],
         locale | String | default = "en_US.UTF-8",
       },
@@ -453,7 +390,6 @@ fun onix =>
         nsncd = "nsncd-pkg",
         "nss-mdns" = "mdns-pkg",
         avahi = "avahi-pkg",
-        networkmanager = "nm-pkg",
         irqbalance = "irq-pkg",
         "kitty-terminfo" = "kitty-ti",
         "wezterm-terminfo" = "wezterm-ti",
@@ -464,13 +400,11 @@ fun onix =>
         "bash-completion" = "bash-completion-pkg",
       }
       in
-      let test_settings = { networkmanager_unmanaged = ["driver:thunderbolt-net", "interface-name:br-tbt"], ntp_servers = ["a", "b"], locale = "en_US.UTF-8" } in
+      let test_settings = { ntp_servers = ["a", "b"], locale = "en_US.UTF-8" } in
       let out = (host_impl (onix.testing.mock_args { service = "host-common", role_name = 'host, settings = test_settings, packages = pkgs, machine_name = "aspen2" })).output.host in
       [
-        out.groups.networkmanager.gid == 57,
         out.groups.docker.gid == 131,
         std.array.elem "fish-pkg" out.packages,
-        std.string.contains "unmanaged-devices=driver:thunderbolt-net;interface-name:br-tbt" out.files."NetworkManager/NetworkManager.conf".text,
         std.string.contains "host-name=aspen2" out.files."avahi/avahi-daemon.conf".text,
         std.string.contains "FallbackNTP=a b" out.files."systemd/timesyncd.conf.d/host-common.conf".text,
         std.string.contains "LC_TIME=en_US.UTF-8" out.files."locale.conf".text,

@@ -78,8 +78,6 @@ in
     service = "host-common",
     roles.host = {
       machines = ["aspen2"],
-      # inventory/tags/thunderbolt-link.nix leaves the Thunderbolt link to networkd.
-      settings.networkmanager_unmanaged = ["driver:thunderbolt-net", "interface-name:br-tbt"],
     },
   },
 
@@ -90,9 +88,10 @@ in
       settings = {
         # inventory/tags/perf-tuning.nix and machines/aspen2/configuration.nix.
         scx_scheduler = "scx_bpfland",
-        # The LAN is DHCP via networkd (host-base dhcp_match); 10.10.10.2/28
-        # belongs only to the Thunderbolt bridge rendered by thunderbolt-link.
-        static_addresses = [],
+        # Keep the documented LAN address while the DHCP client also holds its
+        # lease for DNS and the default route; 10.10.10.2/28 belongs only to
+        # the Thunderbolt bridge rendered by thunderbolt-link.
+        static_addresses = [{ interface = "enp191s0", addresses = ["192.168.1.130/24"], gateway = "192.168.1.1" }],
       },
     },
   },
@@ -133,11 +132,6 @@ in
 
   host-tools = {
     service = "host-tools",
-    roles.host.machines = ["aspen2"],
-  },
-
-  network-extras = {
-    service = "network-extras",
     roles.host.machines = ["aspen2"],
   },
 

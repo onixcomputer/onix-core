@@ -108,7 +108,7 @@ fun onix =>
                   exit 0
                 fi
                 case "$current" in
-                  /nix/store/*) ;;
+                  /nix/store/* | /etc/static/*) ;;
                   *)
                     echo "Refusing to replace non-store Home Manager profile link: $target -> $current" >&2
                     exit 1
