@@ -32,16 +32,14 @@ in
         # OnixOS generation is 67 MiB (52.6 initrd + 14.6 kernel), so five would leave
         # no margin and a fill would break NixOS's boot entry too. Two covers the
         # cutover generation and its rollback target.
-        # A new generation is committed only after a local SSH login with a
-        # generated probe key. An unproven boot selects the committed entry and
-        # reboots: the previous OnixOS generation on a switch, or the previous
-        # boot configuration (NixOS) when installing from another OS.
+        # A new generation is a one-shot GRUB trial. A peer acknowledges it
+        # only after real, host-key-pinned LAN and Tailscale SSH checks.
         boot_loader = {
           kind = 'grub,
           esp = "/boot",
           timeout = 5,
           generations = 2,
-          commit = { enable = true, self_ssh = true, timeout = 600 },
+          commit = { enable = true, remote_ack = true, timeout = 300, interval = 5 },
         },
         # linuxPackages_latest at nixpkgs 5adc508 (the kernel NixOS boots).
         kernel_version = "7.3.0",
@@ -58,12 +56,16 @@ in
           "apparmor=1",
           "loglevel=4",
         ],
-        initrd_modules = ["nvme", "ahci", "sd_mod", "virtio_pci", "virtio_blk", "ext4"],
+        # r8169's realtek PHY pre-dependency is a softdep, not in modules.dep.
+        # Load it explicitly before the initrd-ssh role appends r8169.
+        initrd_modules = ["nvme", "ahci", "sd_mod", "virtio_pci", "virtio_blk", "ext4", "realtek"],
         # tun is what tailscaled needs; NixOS's tailscale module loads it (aspen2 has it
         # loaded and /dev/net/tun present).
         kernel_modules = ["amdgpu", "atkbd", "br_netfilter", "bridge", "ctr", "kvm-amd", "loop", "lz4", "lz4_compress", "overlay", "tun", "veth", "xt_nat"],
-        # NetworkManager configures enp191s0; networkd only runs the Thunderbolt bridge.
-        dhcp_match = [],
+        # aspen2's LAN is DHCP on enp191s0; the Thunderbolt link keeps its
+        # networkd bridge. NixOS's NetworkManager owns enp191s0, but the OnixOS
+        # host has no NetworkManager, so networkd must run the DHCP client.
+        dhcp_match = ["enp191s0"],
         # NixOS's hosts order with nscd, resolved and nss-mdns (services.avahi.nssmdns4).
         nss_hosts = ["mymachines", "mdns4_minimal", "[NOTFOUND=return]", "resolve", "[!UNAVAIL=return]", "files", "myhostname", "dns"],
         # inventory/tags/common/shared-users.nix copies wheel users' keys to root.
@@ -88,8 +90,9 @@ in
       settings = {
         # inventory/tags/perf-tuning.nix and machines/aspen2/configuration.nix.
         scx_scheduler = "scx_bpfland",
-        # inventory/core/machines.ncl: the LAN address on enp191s0.
-        static_addresses = [{ interface = "enp191s0", addresses = ["10.10.10.2/24"] }],
+        # The LAN is DHCP via networkd (host-base dhcp_match); 10.10.10.2/28
+        # belongs only to the Thunderbolt bridge rendered by thunderbolt-link.
+        static_addresses = [],
       },
     },
   },
