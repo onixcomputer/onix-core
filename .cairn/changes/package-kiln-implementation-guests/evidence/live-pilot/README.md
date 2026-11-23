@@ -21,8 +21,18 @@ retained-guest profiles.
 | Final status | attempts 1, verified 1, published 1, failed 0 | attempts 1, verified 1, published 1, failed 0 |
 | OMP usage (tokens total / cost) | 13,370 / $0.001203 | 14,982 / $0.002635 |
 
-Both guest VMs evaluate from this change's composition commit
-(`fix(kiln-implementer): carry the pilot from dispatch to a published PR`).
+Live run 8 ran the composition at commit 44a41630
+(`fix(kiln-implementer): carry the pilot from dispatch to a published PR`):
+both guest VMs above evaluate from that commit. The commits after it change
+only lint, formatting and module registration (ecbe8632,
+`style(kiln-implementer): register the module and satisfy pre-commit`), so
+the published head's guests are not byte-identical to the ones that ran. The
+published head was re-qualified offline instead: the device-free tests and
+module checks pass, `pilot-boot` passes
+(`/nix/store/ak9ivzcnblx3byj4crqgfjhkglvclkc3-vm-test-run-kiln-implementation-pilot-boot`),
+and `pilot-flow` passes with its cancel subtest, `verified == 1` and
+`published == 0`, and the offline publish stopping at the network
+(`/nix/store/6jknky8bjc8bj1s4va4889f21vrnpqnl-vm-test-run-kiln-implementation-pilot-flow`).
 Kiln does not yet record model usage itself: it records `model_requests:
 "unknown"`; the token and cost figures come from the OMP event log.
 
