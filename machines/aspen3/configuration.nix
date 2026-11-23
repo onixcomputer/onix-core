@@ -372,5 +372,23 @@ in
     # interactive terminal gets the same plugin set as britton-desktop.
     # r[impl onix.aspen3.herdr.wrapper.install]
     herdr
+
+    # Antigravity keeps one Google account per profile directory (the token
+    # and quotas live in state.vscdb). Exec the packaged launcher with its own
+    # --user-data-dir so a second account can stay signed in alongside the
+    # primary window; the store wrapper still supplies the GTK/GIO env.
+    (writeShellScriptBin "antigravity-second" ''
+      exec ${inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.antigravity-hub}/bin/antigravity \
+        --user-data-dir="$HOME/.antigravity-second" "$@"
+    '')
+    (makeDesktopItem {
+      name = "antigravity-second";
+      desktopName = "Antigravity (second account)";
+      comment = "Antigravity with an isolated profile directory";
+      exec = "antigravity-second %U";
+      icon = "antigravity";
+      categories = [ "Development" ];
+      startupWMClass = "Antigravity";
+    })
   ];
 }
