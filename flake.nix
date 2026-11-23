@@ -340,7 +340,7 @@
     # locks (its gate contract is byte-identical to Kiln's vendored
     # verifier import at 15f00875). The receipt is
     # modules/kiln-implementer/compatibility-receipt.json.
-    kiln-implementation.url = "git+https://github.com/OnixResearch/kiln.git?rev=91ad7301bfe1bed52c238d15c7b5e26f2e6db3f4";
+    kiln-implementation.url = "git+https://github.com/OnixResearch/kiln.git?rev=09326e92251c5a3dc690b5e707a586837c3e5202";
     lattice-implementation = {
       url = "git+https://github.com/OnixResearch/lattice.git?rev=7fb6dc473c2cd7ae23282f515c741d398e885fcf";
       inputs.cairn.follows = "cairn-implementation";

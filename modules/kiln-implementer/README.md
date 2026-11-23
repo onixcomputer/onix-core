@@ -551,7 +551,7 @@ or cross-host serving.
 ## Pinned version set
 
 `pinned-cohort.nix` builds the one composition from the rev-pinned inputs Kiln
-`91ad7301` (`kiln-implementation`), Lattice `7fb6dc47`
+`09326e92` (`kiln-implementation`, with the read-only `--sent-request` mode), Lattice `7fb6dc47`
 (`lattice-implementation`), Cairn `47ea1b86` (`cairn-implementation`, the
 revision Lattice locks; its gate contract is byte-identical to Kiln's vendored
 verifier import `15f00875`) and OMP `e325ffc7` (`omp-implementation`, the same
