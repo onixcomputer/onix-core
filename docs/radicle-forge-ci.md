@@ -3,10 +3,15 @@
 ## Scope
 
 Aspen1 runs a dedicated non-delegate Radicle bot and a separate credentialless
-runner for only `rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo`.
+runner for only the Bounded Exec successor `rad:zG25DRmacxYQcXzZmLKj8tmgYbEG`
+at reviewed commit `9e64b2f429c8f9035a06fe60ace3adbf331c5598`. The frozen pilot
+`rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo` is source-serving only.
 
-The portable OnixOS policy is pinned by BLAKE3
-`091e57f4409f79db14465ccc26e730bf1181209fe45c28d7dd1259393e93f740`.
+The portable OnixOS policy (`fixtures/radicle/ci-policy-v2.json`) is pinned by BLAKE3
+`ab4e2ae72b22c4c2704aca88852e4e5f036c2ca7501d257d11bec8827af2ebb3`.
+The successor has one delegate at threshold 1 under the OnixOS
+`bounded-exec-successor-single-delegate-bootstrap` profile, so the canonical
+guard is retired for it and `onix/ci/v1` status is evidence only.
 The runner accepts unchanged `Cargo.toml`, `Cargo.lock`, `flake.nix`, and
 `flake.lock` identities and executes only:
 

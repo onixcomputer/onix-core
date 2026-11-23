@@ -1,0 +1,112 @@
+{
+  "requestedHerdrIrohRevision": "1ee15bf8506a13394de2f253ee6fd8febfca1a64",
+  "notify": "unset",
+  "selectedHerdrCliVersion": "0.9.3",
+  "cliSource": "/nix/store/7j1yf1h30rg8yd50wjxp9lrzb5mfxbf4-source",
+  "baseline": {
+    "rc": 0,
+    "stdout": "/nix/store/mjlm0kyrfyb37d0jlnqw49r13h5qhigp-nixos-system-britton-desktop-26.11.20261028.58deea6\nActiveState=active\nFragmentPath=/etc/systemd/system/herdr-iroh.service\nMainPID=30656\nExecMainStartTimestamp=Thu 2026-11-05 00:12:20 EST\nExecStart={ path=/nix/store/xgaihyh4wxvcwq3layrnj9w0ivmdz307-herdr-iroh-0.1.0/bin/herdr-iroh ; argv[]=/nix/store/xgaihyh4wxvcwq3layrnj9w0ivmdz307-herdr-iroh-0.1.0/bin/herdr-iroh serve --config /nix/store/yhafqa7fjacczgsklizryjzvllp7mfab-herdr-iroh-server.toml --state-dir /var/lib/herdr-iroh ; ignore_errors=no ; start_time=[Thu 2026-11-05 00:12:20 EST] ; stop_time=[n/a] ; pid=30656 ; code=(null) ; status=0/0 }\nExecReload={ path=/nix/store/cb987zkxvsv0490753ilrvn5yk7ylgxi-coreutils-9.12/bin/kill ; argv[]=/nix/store/cb987zkxvsv0490753ilrvn5yk7ylgxi-coreutils-9.12/bin/kill -HUP $MAINPID ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }\n  UNIT               LOAD   ACTIVE SUB     DESCRIPTION\n  herdr-iroh.service loaded active running herdr API over iroh\n\nLegend: LOAD   \u2192 Reflects whether the unit definition was properly loaded.\n        ACTIVE \u2192 The high-level unit activation state, i.e. generalization of SUB.\n        SUB    \u2192 The low-level unit activation state, values depend on unit type.\n\n1 loaded units listed.\nTo show all installed unit files use 'systemctl list-unit-files'.\n   4940       1 Fri Oct 23 13:27:34 2026 herdr\nbrittonr brittonr 600 4328363 /home/brittonr/.config/herdr/herdr.sock\nherdr 0.9.3\n",
+    "stderr": ""
+  },
+  "deployment": {
+    "performed": false,
+    "buildCompleted": true,
+    "sourceSnapshot": "/home/brittonr/git/onix-core-herdr-deploy-1ee15bf",
+    "baselineSource": "/nix/store/72nlf71zz0pnr6mm47yfd8yjnllw1wpp-source",
+    "nixpkgsRevision": "58deea654ec5dd0644f31c840a07c29fa0592528",
+    "system": "/nix/store/6pps2zpn1c6jv804ir6nsy8nmr4nvc05-nixos-system-britton-desktop-26.11.20261028.58deea6",
+    "drvPath": "/nix/store/rdlzbmh15mx68k3kd04yphjfwa44fgz3-nixos-system-britton-desktop-26.11.20261028.58deea6.drv",
+    "frozenSource": "/nix/store/gzmxdll7sbhrdrj4424flncq17vldwkk-source",
+    "sourceNarHash": "sha256-OOcs+FOB+qZD/LPEKP0PvxqtQPkpTjNDEI3P63j1HZ4="
+  },
+  "blockingOutputLock": {
+    "workerPid": 2061462,
+    "clientPid": 2061325,
+    "otherOmpPid": 1972044,
+    "lockDiagnostic": {
+      "rc": 0,
+      "stdout": "    PID COMMAND  TYPE MODE   BLOCKER PATH\n1529685 nix     POSIX READ           /root/.cache/nix/fetcher-cache-v4.sqlite\n1529685 nix     POSIX READ           /root/.cache/nix/fetcher-cache-v4.sqlite-shm\n1529685 nix     POSIX READ           /root/.cache/nix/binary-cache-v8.sqlite\n1529685 nix     POSIX READ           /root/.cache/nix/binary-cache-v8.sqlite-shm\n1529685 nix     FLOCK WRITE* 2061462 /nix/store/0dv57z0lvzh4y0ypz9v3fq3a2h5sci1i-unpack-bootstrap-tools.sh.lock\n1529685 nix     FLOCK WRITE          /nix/var/nix/temproots/1529685\n1529685 nix     FLOCK READ           /nix/var/nix/db/big-lock\n1529685 nix     POSIX READ           /nix/var/nix/db/db.sqlite\n1529685 nix     POSIX READ           /nix/var/nix/db/db.sqlite-shm\n",
+      "stderr": ""
+    },
+    "clientDiagnostic": {
+      "rc": 0,
+      "stdout": "USER         PID    PPID                  STARTED STAT WCHAN  COMMAND\nbrittonr 2061325 1972044 Thu Nov  5 11:34:25 2026 Ssl  unix_s nix run path:/home/brittonr/git/OnixResearch/cairn#cairn -- validate --root . --policy /home/brittonr/git/OnixResearch/cairn/cairn-policy/generated/cairn-policy.json --strict\n",
+      "stderr": ""
+    },
+    "approvedCancellation": {
+      "clientSigterm": 2061325,
+      "workerSigterm": 2061462,
+      "workerSigkill": 2061462,
+      "sigkillResult": {
+        "rc": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    }
+  },
+  "lifecycle": {
+    "proposal": {
+      "valid": true
+    },
+    "design": {
+      "valid": true,
+      "issues": []
+    },
+    "tasks": {
+      "valid": true,
+      "issues": []
+    },
+    "validate": {
+      "valid": false,
+      "issues": [
+        "cairn.gate.validation: integrate-native-spark-fleet: missing delta specs",
+        "cairn.gate.validation: integrate-native-spark-fleet: missing design.md",
+        "cairn.gate.validation: integrate-native-spark-fleet: missing proposal.md",
+        "cairn.gate.validation: integrate-native-spark-fleet: missing tasks.md",
+        "integrate-native-spark-fleet: missing proposal.md",
+        "integrate-native-spark-fleet: missing tasks.md"
+      ]
+    }
+  },
+  "savedMachineProbe": {
+    "attempts": 0,
+    "command": "herdr --machine instant-fill status server"
+  },
+  "renderedConfig": {
+    "path": "/nix/store/ngjd7gfkxr1mmdgqmh5k2d4h5vazykzw-herdr-iroh-server.toml",
+    "gateway": true,
+    "herdrBin": "/nix/store/2w93ri2r8m6iwpdzyv62lh0l7cy6kk5q-herdr/bin/herdr",
+    "notifyPresent": false
+  },
+  "dryActivation": {
+    "rc": 0,
+    "stdout": "",
+    "stderr": "Not checking switch inhibitors (action = dry-activate)\n--- diff to current-system\n<<< /nix/store/mjlm0kyrfyb37d0jlnqw49r13h5qhigp-nixos-system-britton-desktop-26.11.20261028.58deea6\n>>> /nix/store/6pps2zpn1c6jv804ir6nsy8nmr4nvc05-nixos-system-britton-desktop-26.11.20261028.58deea6\n\nPATHS: 5627 -> 5627 (+18, -18)\nSIZE: 61.0 GiB -> 61.0 GiB (+817 KiB)\n\nNOTE: 1 hidden (--full to show)\n---\nwould stop the following units: herdr-iroh.service, polkit.service\nwould activate the configuration...\nwould reload the following units: dbus-broker.service\nwould start the following units: herdr-iroh.service, polkit.service\n"
+  },
+  "qwenUnitByteIdentical": true,
+  "canonicalLifecycle": {
+    "proposal": {
+      "valid": true,
+      "issues": []
+    },
+    "design": {
+      "valid": true,
+      "issues": []
+    },
+    "tasks": {
+      "valid": true,
+      "issues": []
+    },
+    "validate": {
+      "valid": false,
+      "issues": [
+        "cairn.gate.validation: integrate-native-spark-fleet: missing delta specs",
+        "cairn.gate.validation: integrate-native-spark-fleet: missing design.md",
+        "cairn.gate.validation: integrate-native-spark-fleet: missing proposal.md",
+        "cairn.gate.validation: integrate-native-spark-fleet: missing tasks.md",
+        "integrate-native-spark-fleet: missing proposal.md",
+        "integrate-native-spark-fleet: missing tasks.md"
+      ]
+    }
+  }
+}

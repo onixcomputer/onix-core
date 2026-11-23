@@ -91,7 +91,9 @@ let
 in
 {
   imports = [
+    ../../inventory/tags/common/herdr-iroh.nix
     ./disko.nix
+    ./storage.nix
     ../../modules/pi-branchfs/nixos.nix
     ../../modules/meshtop
     inputs.nixos-hardware.nixosModules.asus-flow-gv302x-amdgpu
@@ -158,6 +160,13 @@ in
   };
 
   services = {
+    # r[impl onix.backup.no_local_snapshots]
+    # Clan's core module enables ZFS auto-snapshots on every machine. Keep no
+    # local retention: the local window filled zroot/home and pinned deleted
+    # data. Off-machine copies come from Borg (aspen1) and the encrypted
+    # Restic archives on Drive.
+    zfs.autoSnapshot.enable = lib.mkForce false;
+
     meshtop = {
       enable = true;
       viewerId = "e4595bca7f97787646d6da8b3eab21f02e88d56759b9ac73d3a2f05c3932af51";
@@ -363,5 +372,27 @@ in
     # interactive terminal gets the same plugin set as britton-desktop.
     # r[impl onix.aspen3.herdr.wrapper.install]
     herdr
+
+    # Antigravity keeps one Google account per profile, and its bundled
+    # language_server scopes the credential through
+    # $XDG_CONFIG_HOME/antigravity/credential-user-scope. A separate
+    # --user-data-dir alone isolates cookies but shares that scope, so the
+    # second window still resolved to the first account. Give it both.
+    (writeShellScriptBin "antigravity-second" ''
+      profile="$HOME/.antigravity-second"
+      mkdir -p -m 700 "$profile/data" "$profile/config"
+      export XDG_CONFIG_HOME="$profile/config"
+      exec ${inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.antigravity-hub}/bin/antigravity \
+        --user-data-dir="$profile/data" "$@"
+    '')
+    (makeDesktopItem {
+      name = "antigravity-second";
+      desktopName = "Antigravity (second account)";
+      comment = "Antigravity with an isolated profile directory";
+      exec = "antigravity-second %U";
+      icon = "antigravity";
+      categories = [ "Development" ];
+      startupWMClass = "Antigravity";
+    })
   ];
 }

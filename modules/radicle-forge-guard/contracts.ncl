@@ -32,6 +32,22 @@ let ExpectedGuardNonClaims = [
   "guard execution receipt does not prove CI correctness, seed convergence, replication, release readiness, or post-update durability",
 ]
 in
+# The guard stays bound to the frozen pilot RID. It is retired, not
+# retargeted, for the Bounded Exec successor while that identity has one
+# delegate at threshold 1 (OnixOS profile
+# `bounded-exec-successor-single-delegate-bootstrap`): Radicle then moves
+# canonical main on every delegate push, so a guarded compare-and-swap adds no
+# authority. The CI runner still builds the successor and posts onix/ci/v1
+# status as evidence only. Matches OnixOS `lib/radicle-ci-guard.ncl`.
+let RetiredRids = {
+  "rad:zG25DRmacxYQcXzZmLKj8tmgYbEG" = {
+    governance_profile = "bounded-exec-successor-single-delegate-bootstrap",
+    ci_policy_blake3 = "ab4e2ae72b22c4c2704aca88852e4e5f036c2ca7501d257d11bec8827af2ebb3",
+    reason = "threshold 1 under the single-delegate bootstrap profile: Radicle moves canonical refs/heads/main on every delegate push, so a guarded compare-and-swap adds no authority",
+    reinstate_when = "the repository identity admits the three accepted delegates with a strict-majority threshold of two",
+  },
+}
+in
 let Exact = fun expected => std.contract.from_predicate (fun value => value == expected) in
 let NonEmptyString =
   std.contract.from_predicate (fun value =>
@@ -85,4 +101,5 @@ let GuardPolicyContract = std.contract.from_predicate exact_policy in
     admission_non_claims = ExpectedAdmissionNonClaims,
     required_non_claims = ExpectedGuardNonClaims,
   },
+  retired_rids = RetiredRids,
 }

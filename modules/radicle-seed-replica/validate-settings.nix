@@ -18,6 +18,8 @@ let
   maximumFingerprintPadding = 2;
   requiredSignedRefsFeature = "parent";
   bootstrapNodeFingerprint = "SHA256:zwNJTV2uBfWYcFXeFJs+eAfatqahgK8KKe+4gdGkOSE";
+  bootstrapNodeId = "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8";
+  bootstrapNodeAddress = "100.100.103.95";
   boundedExecRepository = "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo";
   artifactAuthRepository = "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f";
   executionGraphRepository = "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a";
@@ -25,6 +27,7 @@ let
   durableFilePublicationRepository = "rad:z3tAR4For7qw8ZirkJzoDw1VNDDLM";
   koiterminalRepository = "rad:z2JQ8ihZZ6wraULQPzFWMh25B29rZ";
   artifactRepository = "rad:z25ySMy8Hh3HpsxP5zcYoYgaMBi99";
+  boundedExecSuccessorRepository = "rad:zG25DRmacxYQcXzZmLKj8tmgYbEG";
   governedRepositories = [
     boundedExecRepository
     artifactAuthRepository
@@ -33,6 +36,7 @@ let
     durableFilePublicationRepository
     koiterminalRepository
     artifactRepository
+    boundedExecSuccessorRepository
   ];
   privatePilotRepository = "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg";
   privateSeaglassRepository = "rad:z3xXXCQXCTquvAawh41YYs8yC8xmk";
@@ -77,6 +81,24 @@ let
   reviewedFingerprintsAreUnique = lib.unique reviewedFingerprints == reviewedFingerprints;
   reviewedFingerprintsExcludeBootstrap =
     !(builtins.elem bootstrapNodeFingerprint reviewedFingerprints);
+
+  # Static peers may name only the Aspen1 seed and the other reviewed replicas.
+  peerAddress = nodeId: address: "${nodeId}@${address}:${toString expectedNodePort}";
+  reviewedStaticPeers = [
+    (peerAddress bootstrapNodeId bootstrapNodeAddress)
+  ]
+  ++ lib.concatMap (
+    host:
+    let
+      facts = reviewedHosts.${host};
+    in
+    lib.optional (host != settings.expectedHost && (facts.nodeId or null) != null) (
+      peerAddress facts.nodeId facts.nodeAddress
+    )
+  ) (builtins.attrNames reviewedHosts);
+  staticPeers = settings.staticPeers or [ ];
+  staticPeersAreReviewed = builtins.all (peer: builtins.elem peer reviewedStaticPeers) staticPeers;
+  staticPeersAreUnique = lib.unique staticPeers == staticPeers;
 in
 lib.concatLists [
   (rejectUnless (lib.versionAtLeast packageVersion minimumNodeVersion) "radicle-node package must be version ${minimumNodeVersion} or later")
@@ -100,8 +122,10 @@ lib.concatLists [
   (rejectUnless validRepositoryIds "Radicle replica repositories must be canonical public rad:z IDs")
   (rejectUnless uniqueRepositoryIds "Radicle replica repositories must not contain duplicates")
   (rejectUnless (settings.seedRepositories == governedRepositories)
-    "Radicle replica must admit exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs in the public set; it must also admit the durable-file-publication, koiTerminal fork, and canonical Artifact RIDs"
+    "Radicle replica must admit exactly the governed Bounded Exec, artifact-auth, execution-graph, and Choregraph RIDs in the public set; it must also admit the durable-file-publication, koiTerminal fork, canonical Artifact RIDs, and the Bounded Exec successor RID"
   )
+  (rejectUnless staticPeersAreUnique "Radicle replica static peers must not contain duplicates")
+  (rejectUnless staticPeersAreReviewed "Radicle replica static peers must name only the Aspen1 seed or another reviewed replica")
   (rejectUnless validPrivateRepositoryIds "Radicle private seed repositories must be canonical rad:z IDs")
   (rejectUnless uniquePrivateRepositoryIds "Radicle private seed repositories must not contain duplicates")
   (rejectUnless (

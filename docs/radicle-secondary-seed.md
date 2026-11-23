@@ -83,7 +83,9 @@ ssh -o StrictHostKeyChecking=yes root@aspen3 \
   'systemctl start radicle-policy-reconcile.service && journalctl -u radicle-policy-reconcile.service -n 20 --no-pager'
 ```
 
-For the seven-public/four-private declared policy, the steady-state reconciler result must be `removed=0, added=0, desired=11`. This is a required post-deployment observation, not evidence that an undeployed role already matches.
+For the eight-public/four-private declared policy, the steady-state reconciler result must be `removed=0, added=0, desired=12`; the first run after the Bounded Exec successor admission reports `added=1`. This is a required post-deployment observation, not evidence that an undeployed role already matches.
+
+The `britton-desktop` replica uses a static peer set (`staticPeers`): it maintains sessions only to Aspen1 and the Aspen3 replica, which stops its unbounded dial loop to unreviewed peers. Aspen3 keeps the dynamic peer set.
 
 List the exact storage set:
 
@@ -105,6 +107,7 @@ z3t9ykR1HfG9UkyKoQQg5ikkzrTxg
 z3tAR4For7qw8ZirkJzoDw1VNDDLM
 z3xXXCQXCTquvAawh41YYs8yC8xmk
 z4JGYYW7WsesXUq7MXVdx16Fawu2f
+zG25DRmacxYQcXzZmLKj8tmgYbEG
 zL2ncTUeASVYwcoGkEXv9JKgGbAF
 ```
 

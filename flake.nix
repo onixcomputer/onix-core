@@ -346,8 +346,31 @@
       url = "git+ssh://git@github.com/OnixResearch/lattice.git?rev=c513d94d89e901ffa56ae67f375f973e55958e42";
       inputs.octet.follows = "tigerstyle";
     };
+    # Opt-in Kiln implementation cohort (modules/kiln-implementer, Kiln #49).
+    # Separate from the canary/CI pins above, which stay unchanged. Each
+    # producer keeps its own lock so the built executables are the ones its
+    # repository qualifies; only Cairn is shared, at the revision Lattice
+    # locks (its gate contract is byte-identical to Kiln's vendored
+    # verifier import at 15f00875). The receipt is
+    # modules/kiln-implementer/compatibility-receipt.json.
+    kiln-implementation.url = "git+https://github.com/OnixResearch/kiln.git?rev=09326e92251c5a3dc690b5e707a586837c3e5202";
+    lattice-implementation = {
+      url = "git+https://github.com/OnixResearch/lattice.git?rev=7fb6dc473c2cd7ae23282f515c741d398e885fcf";
+      inputs.cairn.follows = "cairn-implementation";
+    };
+    cairn-implementation = {
+      url = "git+https://github.com/OnixResearch/cairn.git?rev=47ea1b867c44b026c030b535f9a1041950c482a0";
+      inputs.artifact.url = "git+https://github.com/OnixResearch/onix-artifact.git?rev=e41340bec587b6d049b5cc518ec7db925dde84be";
+    };
+    # The OMP reference Lattice's JSONL adapter and Kiln's worker contract pin.
+    omp-implementation.url = "github:can1357/oh-my-pi/e325ffc73ab86e03bdd20a91b77d8e2b3964c906";
     musnix = {
       url = "github:musnix/musnix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    # Saved-machine gateway; keep the requested main revision reproducible.
+    herdr-iroh = {
+      url = "github:brittonr/herdr-iroh/a342b855dbd6483fe6407baba69d28ecdac71501";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -369,6 +392,7 @@
         ./flake-outputs/tools.nix # CLI tools (acl, vars, tags, merge-when-green, etc.)
         ./flake-outputs/ttwkv7.nix # Unfree standalone TT-Metalium operator package
         ./flake-outputs/factorseal.nix # Opt-in hardware vault prototype
+        ./flake-outputs/kiln-implementation.nix # Opt-in exact-cohort implementer qualification
       ];
       flake =
         # onixos.nix comes last: its nixosConfigurations is Clan's with the

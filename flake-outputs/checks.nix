@@ -60,6 +60,7 @@ let
   desktopTailnetProxyChecks = (import ./_desktop-tailnet-proxy-checks.nix) innerArgs;
   kilnAspenCanaryChecks = (import ./_kiln-aspen-canary-checks.nix) innerArgs;
   kilnAspenRadicleCiChecks = (import ./_kiln-aspen-radicle-ci-checks.nix) innerArgs;
+  kilnImplementationChecks = (import ./_kiln-implementation-checks.nix) innerArgs;
   multiverseChecks = (import ./_multiverse-checks.nix) innerArgs;
   searxngChecks = (import ./_searxng-checks.nix) innerArgs;
   driftRustfsChecks = (import ./_drift-rustfs-checks.nix) innerArgs;
@@ -102,6 +103,7 @@ in
     // (desktopTailnetProxyChecks.checks or { })
     // (kilnAspenCanaryChecks.checks or { })
     // (kilnAspenRadicleCiChecks.checks or { })
+    // (kilnImplementationChecks.checks or { })
     // (multiverseChecks.checks or { })
     // (searxngChecks.checks or { })
     // onixosChecks.checks

@@ -15,6 +15,7 @@ let
 in
 {
   imports = [
+    ../../inventory/tags/common/herdr-iroh.nix
     ../../modules/meshtop
     inputs.nixos-hardware.nixosModules.gpd-pocket-4
   ];

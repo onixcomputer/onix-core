@@ -306,6 +306,7 @@ let
 in
 {
   imports = [
+    ../../inventory/tags/common/herdr-iroh.nix
     ./build-storage.nix
     ./collie-serve.nix
     ../../modules/pi-branchfs/nixos.nix
@@ -429,6 +430,11 @@ in
   };
 
   services = {
+    # r[impl onix.backup.no_local_snapshots]
+    # No local ZFS snapshot retention: off-machine copies come from Borg
+    # (aspen1) and the encrypted Restic archives on Drive.
+    zfs.autoSnapshot.enable = lib.mkForce false;
+
     chrony.enable = true;
 
     # Override greeter session for niri

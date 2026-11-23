@@ -1,0 +1,4 @@
+Live #49 pilot run 8, feature-8. All stages exited 0 (stages/exit-codes.txt). See dispatch-result.json, omp-usage-summary.json,
+sent-request.json, export-host-receipt.json, capture-candidate.jsonl, ci-enroll-journal.log, verification-receipt.json,
+verification-handoff.json, publication-receipt.json, gh-pr-*.json, pr-*.diff, release-and-status.txt,
+and kiln-pilot-evidence-*.files.b3 (in-guest BLAKE3 manifest) / *.tar.gz.b3.

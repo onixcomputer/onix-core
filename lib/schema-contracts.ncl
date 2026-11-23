@@ -9,7 +9,7 @@
 #
 # Type vocabulary — the closed set of allowed type tags:
 #   bool, string, number, port, array, array_string, record,
-#   nullable_string, nullable_record, enum
+#   nullable_string, nullable_number, nullable_record, enum
 let valid_types = [
   "bool",
   "string",
@@ -19,6 +19,7 @@ let valid_types = [
   "array_string",
   "record",
   "nullable_string",
+  "nullable_number",
   "nullable_record",
   "enum",
 ]
@@ -52,6 +53,8 @@ let type_check = fun type_tag =>
     std.is_record
   else if type_tag == "nullable_string" then
     nullable std.is_string
+  else if type_tag == "nullable_number" then
+    nullable std.is_number
   else if type_tag == "nullable_record" then
     nullable std.is_record
   else if type_tag == "enum" then
@@ -81,6 +84,8 @@ let type_label = fun type_tag =>
     "Record"
   else if type_tag == "nullable_string" then
     "String or null"
+  else if type_tag == "nullable_number" then
+    "Number or null"
   else if type_tag == "nullable_record" then
     "Record or null"
   else if type_tag == "enum" then
@@ -128,7 +133,7 @@ let FieldDescriptor_ =
         else
           type_check fd.type
       in
-      if fd.default == null && (fd.type == "nullable_string" || fd.type == "nullable_record") then
+      if fd.default == null && (fd.type == "nullable_string" || fd.type == "nullable_number" || fd.type == "nullable_record") then
         'Ok
       else if chk fd.default then
         'Ok

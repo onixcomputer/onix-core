@@ -40,6 +40,10 @@ in
             syncCacheDirectory = "bookshelf-sync";
             syncCachePath = "/var/cache/${syncCacheDirectory}";
             syncBuildDirectory = "${syncCachePath}/build";
+            # bookshelf-sync rebuilds its build directory from scratch, so the
+            # publish unit and the upload endpoint take this lock around it.
+            syncLock = "${syncCachePath}/publish.lock";
+            syncCommand = "${bookshelfPackage}/bin/bookshelf-sync";
             configurationDirectory = pkgs.writeTextDir "bookshelf.config.json" (
               builtins.toJSON {
                 input = settings.sourceDir;
@@ -50,6 +54,26 @@ in
                 };
               }
             );
+            mebibyte = 1024 * 1024;
+            intakeEnvironment = {
+              BOOKSHELF_INTAKE_BIND = settings.bindAddress;
+              BOOKSHELF_INTAKE_PORT = toString settings.intakePort;
+              BOOKSHELF_INTAKE_MAX_BYTES = toString (settings.intakeMaxMegabytes * mebibyte);
+              BOOKSHELF_INTAKE_TAILSCALE_SOCKET = "/run/tailscale/tailscaled.sock";
+              BOOKSHELF_SOURCE_DIR = settings.sourceDir;
+              BOOKSHELF_LIBRARY_DIR = settings.libraryDir;
+              BOOKSHELF_SITE_URL = settings.siteUrl;
+              BOOKSHELF_SYNC = syncCommand;
+              BOOKSHELF_SYNC_CONFIG_DIR = "${configurationDirectory}";
+              BOOKSHELF_SYNC_LOCK = syncLock;
+            }
+            // lib.optionalAttrs (settings.intakeCalibreUrl != null) {
+              CALIBRE_URL = settings.intakeCalibreUrl;
+              CALIBRE_SOURCE_ADDRESS = settings.intakeCalibreSourceAddress;
+            }
+            // lib.optionalAttrs (settings.intakeCalibreLibraryId != null) {
+              CALIBRE_LIBRARY_ID = settings.intakeCalibreLibraryId;
+            };
             prepareRuntime = pkgs.writeShellScript "prepare-bookshelf-runtime" ''
               rm -rf ${lib.escapeShellArg runtimeApplication}
               cp -a ${lib.escapeShellArg "${bookshelfPackage}/lib/bookshelf/apps/bookshelf"} ${lib.escapeShellArg runtimeApplication}
@@ -366,7 +390,7 @@ in
                   ];
                   serviceConfig = {
                     Type = "oneshot";
-                    ExecStart = "${bookshelfPackage}/bin/bookshelf-sync";
+                    ExecStart = "${pkgs.util-linux}/bin/flock ${syncLock} ${syncCommand}";
                     User = serviceUser;
                     Group = serviceGroup;
                     UMask = serviceUmask;
@@ -399,11 +423,70 @@ in
                     SystemCallArchitectures = "native";
                   };
                 };
+
+                # r[impl onix.bookshelf.intake]
+                bookshelf-intake = lib.mkIf settings.intakeEnable {
+                  description = "Upload endpoint for the private Bookshelf and Calibre libraries";
+                  wantedBy = [ "multi-user.target" ];
+                  after = [
+                    "network-online.target"
+                    "tailscaled.service"
+                  ];
+                  wants = [ "network-online.target" ];
+                  unitConfig.RequiresMountsFor = [
+                    settings.sourceDir
+                    settings.libraryDir
+                  ];
+                  environment = intakeEnvironment;
+                  serviceConfig = {
+                    ExecStart = "${pkgs.python3}/bin/python3 ${./intake.py}";
+                    User = serviceUser;
+                    Group = serviceGroup;
+                    UMask = serviceUmask;
+                    CacheDirectory = syncCacheDirectory;
+                    CacheDirectoryMode = privateDirectoryMode;
+                    Restart = "on-failure";
+                    RestartSec = settings.restartDelaySeconds;
+                    ReadWritePaths = [
+                      settings.sourceDir
+                      settings.libraryDir
+                      syncCachePath
+                    ];
+                    PrivateDevices = true;
+                    PrivateTmp = true;
+                    ProtectClock = true;
+                    ProtectControlGroups = true;
+                    ProtectHome = true;
+                    ProtectHostname = true;
+                    ProtectKernelLogs = true;
+                    ProtectKernelModules = true;
+                    ProtectKernelTunables = true;
+                    ProtectProc = "invisible";
+                    ProtectSystem = "strict";
+                    CapabilityBoundingSet = "";
+                    AmbientCapabilities = "";
+                    LockPersonality = true;
+                    NoNewPrivileges = true;
+                    # Unix for tailscaled's local API; IP for clients and Calibre.
+                    RestrictAddressFamilies = [
+                      "AF_UNIX"
+                      "AF_INET"
+                      "AF_INET6"
+                    ];
+                    RestrictNamespaces = true;
+                    RestrictRealtime = true;
+                    RestrictSUIDSGID = true;
+                    SystemCallArchitectures = "native";
+                  };
+                };
               };
             };
 
             networking.firewall = lib.mkIf (settings.openFirewall && settings.firewallInterface != null) {
-              interfaces.${settings.firewallInterface}.allowedTCPPorts = [ settings.port ];
+              interfaces.${settings.firewallInterface}.allowedTCPPorts = [
+                settings.port
+              ]
+              ++ lib.optional settings.intakeEnable settings.intakePort;
             };
           };
       };

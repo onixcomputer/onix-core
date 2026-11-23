@@ -54,7 +54,7 @@
   "policy_id": "bounded-exec-pilot-ci",
   "repository": {
     "default_branch": "main",
-    "rid": "rad:z2CpqLFpdP36fZXYUK5ZNWxMibpCo",
+    "rid": "rad:zG25DRmacxYQcXzZmLKj8tmgYbEG",
     "signed_refs_feature": "parent"
   },
   "schema": "onixos.radicle-ci-policy.v1",

@@ -1,0 +1,187 @@
+{
+  "cairn_selection": {
+    "blocker": "47ea1b86 has no `cairn implementation-ready` (introduced on Cairn main at ba68144, which does not descend from 47ea1b86, and Cairn main's gate contract differs from 15f00875). No single Cairn revision satisfies Kiln's vendored verifier, Lattice's lock and the implementation-ready intake together.",
+    "kiln_vendored_gate_contract": "15f00875562025e7ea7e0d1f4af24d1a2e2ac06f",
+    "reason": "Lattice 7fb6dc47 locks this Cairn; its gate contract (crates/cairn-gate-contract, contracts/cairn-gate-contract.ncl, fixtures/cairn-gate-contract) is byte-identical to Kiln 09326e92's vendored verifier import 15f00875562025e7ea7e0d1f4af24d1a2e2ac06f",
+    "selected": "47ea1b867c44b026c030b535f9a1041950c482a0"
+  },
+  "cohorts": {
+    "live": {
+      "executables": {
+        "cairn": {
+          "blake3": "17e48a656d4ce66c037ee18484b4ce187c45f10972da0e7235da377921d3f8a3",
+          "resolved_path": "/nix/store/j5mbcqr4xwadmnbxdd0p6h9iic80kcil-cairn-0.1.0/bin/cairn",
+          "revision": "47ea1b867c44b026c030b535f9a1041950c482a0"
+        },
+        "cairn_intake": {
+          "blake3": "88276f230485140169fd46c45c05e8621ce88452039122c5bff1a0506f95f3ca",
+          "resolved_path": "/nix/store/22yhvmgr6a233q3crmdj1yj777p0vyjq-kiln-0.1.0/bin/kiln-cairn-intake",
+          "revision": "09326e92251c5a3dc690b5e707a586837c3e5202"
+        },
+        "coordinator": {
+          "blake3": "ce86144ffa85145fa0952f75447052645fa57a774a94dc4c6f8b96f24321f3ad",
+          "resolved_path": "/nix/store/22yhvmgr6a233q3crmdj1yj777p0vyjq-kiln-0.1.0/bin/kiln-implementer",
+          "revision": "09326e92251c5a3dc690b5e707a586837c3e5202"
+        },
+        "dispatch": {
+          "blake3": "3ea6f89bfb32023841ca172e6000c3dcf96df9dff410bfe2e484b93cec99b2a2",
+          "resolved_path": "/nix/store/22yhvmgr6a233q3crmdj1yj777p0vyjq-kiln-0.1.0/bin/kiln-lattice-dispatch",
+          "revision": "09326e92251c5a3dc690b5e707a586837c3e5202"
+        },
+        "git": {
+          "blake3": "15bee5b3f3c74fd0f3a0c7f48bf905f5b97006f1959dae6210d8f45ff0d24cc1",
+          "resolved_path": "/nix/store/2k05jnr38sryn0fnvlrmjrshxbphj3jp-git-2.56.0/bin/git",
+          "revision": "5adc50831c259f87faeb09ddf930d43597197473"
+        },
+        "lattice": {
+          "blake3": "477bd84d7c1650670c699c3d5fbcea81df85ef6dbec4c65e0bc840346b55b89c",
+          "resolved_path": "/nix/store/7xa2qg5s2zxprxdjx0a5yryw9vwfimzy-lattice-0.1.0/bin/lattice",
+          "revision": "7fb6dc473c2cd7ae23282f515c741d398e885fcf"
+        },
+        "nix": {
+          "blake3": "b8c232ec6856688fc7d6ce94c42442fd3689e4541e72954b39f9c54c84fa47ec",
+          "resolved_path": "/nix/store/yjirrd8c1wy0ivlx7chhhw5znm6w87qy-nix-2.34.9/bin/nix",
+          "revision": "5adc50831c259f87faeb09ddf930d43597197473"
+        },
+        "relay": {
+          "blake3": "b8e3a6f91077c9cf3a65265e260b969edbdbb99ebcdbb190340df4fa99676f04",
+          "resolved_path": "/nix/store/k562gy1wa1rwyhlp6ma2cp37zlc0mspl-socat-1.8.1.3/bin/socat1",
+          "revision": "5adc50831c259f87faeb09ddf930d43597197473"
+        },
+        "sandbox": {
+          "blake3": "9979941d82a18db70c4fa1bed4cd3d33504c1d8b35b9f08b6784e494abbdcece",
+          "resolved_path": "/nix/store/3hqwbwxij9lxhyrf2amsm2xg24xszmmx-bubblewrap-0.12.0/bin/bwrap",
+          "revision": "5adc50831c259f87faeb09ddf930d43597197473"
+        },
+        "shell": {
+          "blake3": "b58e50f7b093ccf700590e2169d4cc5d53fc1125dbb62ea16f97aed63ec8cae8",
+          "resolved_path": "/nix/store/kwyi4bq5s2qgwbhz6cs4gjy57c2zdxws-bash-interactive-5.3p20/bin/bash",
+          "revision": "5adc50831c259f87faeb09ddf930d43597197473"
+        },
+        "verifier": {
+          "blake3": "ff709a5d30c52d4709553cb8abb98c0dc78e29224339874124d86ed2598e7e00",
+          "resolved_path": "/nix/store/22yhvmgr6a233q3crmdj1yj777p0vyjq-kiln-0.1.0/bin/kiln-web-service",
+          "revision": "09326e92251c5a3dc690b5e707a586837c3e5202"
+        },
+        "worker": {
+          "blake3": "7ee769b6a4161b9d50410b31be252133fedb459e4441c6da4c92f3733a8d135f",
+          "resolved_path": "/nix/store/ii3yn9v4cj6dg87b9kkzycjzxplgf93d-omp-18.18.7/bin/omp",
+          "revision": "e325ffc73ab86e03bdd20a91b77d8e2b3964c906"
+        }
+      },
+      "manifest": "/nix/store/xbjswc0pzhqf4y36hr37834j6zgkrr13-kiln-implementation-cohort",
+      "workflow": "/nix/store/xy4d2m3wqwfylaag63gdv8lqj9p84mp4-source/config/implementation-worker.ncl",
+      "workflow_blake3": "7860a034ea342d5d78746ce49f73c66dfbc565dae0d4ff299f21b8c94b75f00a"
+    },
+    "scripted": {
+      "executables": {
+        "cairn": {
+          "blake3": "17e48a656d4ce66c037ee18484b4ce187c45f10972da0e7235da377921d3f8a3",
+          "resolved_path": "/nix/store/j5mbcqr4xwadmnbxdd0p6h9iic80kcil-cairn-0.1.0/bin/cairn",
+          "revision": "47ea1b867c44b026c030b535f9a1041950c482a0"
+        },
+        "cairn_intake": {
+          "blake3": "901d7d12c1e488f15802ee11e62f928a80b876da8649f84e27cd2c27576f1c0b",
+          "resolved_path": "/nix/store/h27y772g4fc0ylb6c5n28yxwida1qswx-kiln-implementation-fixtures-0.1.0/bin/kiln-cairn-intake",
+          "revision": "09326e92251c5a3dc690b5e707a586837c3e5202"
+        },
+        "coordinator": {
+          "blake3": "605c55f4c4bcabf6c7f19abd25ea5f589ec750c0f6ca72bca14d77f48a3d8723",
+          "resolved_path": "/nix/store/h27y772g4fc0ylb6c5n28yxwida1qswx-kiln-implementation-fixtures-0.1.0/bin/kiln-implementer",
+          "revision": "09326e92251c5a3dc690b5e707a586837c3e5202"
+        },
+        "dispatch": {
+          "blake3": "a26a0ef2221c5400d96e576fb7598361113f8fe2a34dc3b99ee6f8d051a24292",
+          "resolved_path": "/nix/store/h27y772g4fc0ylb6c5n28yxwida1qswx-kiln-implementation-fixtures-0.1.0/bin/kiln-lattice-dispatch",
+          "revision": "09326e92251c5a3dc690b5e707a586837c3e5202"
+        },
+        "git": {
+          "blake3": "15bee5b3f3c74fd0f3a0c7f48bf905f5b97006f1959dae6210d8f45ff0d24cc1",
+          "resolved_path": "/nix/store/2k05jnr38sryn0fnvlrmjrshxbphj3jp-git-2.56.0/bin/git",
+          "revision": "5adc50831c259f87faeb09ddf930d43597197473"
+        },
+        "lattice": {
+          "blake3": "477bd84d7c1650670c699c3d5fbcea81df85ef6dbec4c65e0bc840346b55b89c",
+          "resolved_path": "/nix/store/7xa2qg5s2zxprxdjx0a5yryw9vwfimzy-lattice-0.1.0/bin/lattice",
+          "revision": "7fb6dc473c2cd7ae23282f515c741d398e885fcf"
+        },
+        "nix": {
+          "blake3": "b8c232ec6856688fc7d6ce94c42442fd3689e4541e72954b39f9c54c84fa47ec",
+          "resolved_path": "/nix/store/yjirrd8c1wy0ivlx7chhhw5znm6w87qy-nix-2.34.9/bin/nix",
+          "revision": "5adc50831c259f87faeb09ddf930d43597197473"
+        },
+        "relay": {
+          "blake3": "b8e3a6f91077c9cf3a65265e260b969edbdbb99ebcdbb190340df4fa99676f04",
+          "resolved_path": "/nix/store/k562gy1wa1rwyhlp6ma2cp37zlc0mspl-socat-1.8.1.3/bin/socat1",
+          "revision": "5adc50831c259f87faeb09ddf930d43597197473"
+        },
+        "sandbox": {
+          "blake3": "9979941d82a18db70c4fa1bed4cd3d33504c1d8b35b9f08b6784e494abbdcece",
+          "resolved_path": "/nix/store/3hqwbwxij9lxhyrf2amsm2xg24xszmmx-bubblewrap-0.12.0/bin/bwrap",
+          "revision": "5adc50831c259f87faeb09ddf930d43597197473"
+        },
+        "shell": {
+          "blake3": "b58e50f7b093ccf700590e2169d4cc5d53fc1125dbb62ea16f97aed63ec8cae8",
+          "resolved_path": "/nix/store/kwyi4bq5s2qgwbhz6cs4gjy57c2zdxws-bash-interactive-5.3p20/bin/bash",
+          "revision": "5adc50831c259f87faeb09ddf930d43597197473"
+        },
+        "verifier": {
+          "blake3": "6e072ac2cf814fa6010c6878cb235a0f4e29ba6de60f31d0b8b979209a33f303",
+          "resolved_path": "/nix/store/h27y772g4fc0ylb6c5n28yxwida1qswx-kiln-implementation-fixtures-0.1.0/bin/kiln-web-service",
+          "revision": "09326e92251c5a3dc690b5e707a586837c3e5202"
+        },
+        "worker": {
+          "blake3": "7ee769b6a4161b9d50410b31be252133fedb459e4441c6da4c92f3733a8d135f",
+          "resolved_path": "/nix/store/ii3yn9v4cj6dg87b9kkzycjzxplgf93d-omp-18.18.7/bin/omp",
+          "revision": "e325ffc73ab86e03bdd20a91b77d8e2b3964c906"
+        }
+      },
+      "manifest": "/nix/store/69ac5j4001xl6zrs9mcc1ywfvj7k2lv5-kiln-implementation-cohort",
+      "workflow": "/nix/store/xy4d2m3wqwfylaag63gdv8lqj9p84mp4-source/config/implementation-worker.ncl",
+      "workflow_blake3": "7860a034ea342d5d78746ce49f73c66dfbc565dae0d4ff299f21b8c94b75f00a"
+    }
+  },
+  "inputs": {
+    "cairn-implementation": {
+      "narHash": "sha256-bRjkP/pJdgSRghbQj7UcaM5/+KtzYK7nPp+SARidEY0=",
+      "rev": "47ea1b867c44b026c030b535f9a1041950c482a0",
+      "url": "https://github.com/OnixResearch/cairn.git"
+    },
+    "kiln-implementation": {
+      "narHash": "sha256-vygszBiEekuzIjOvjHu/56WW5OUFlNYxMcLvRHnKc4M=",
+      "rev": "09326e92251c5a3dc690b5e707a586837c3e5202",
+      "url": "https://github.com/OnixResearch/kiln.git"
+    },
+    "lattice-implementation": {
+      "narHash": "sha256-/AbjF8DlzB1PWtJaHH3fCeUNaKRWyiOm3DXWoqxI5rY=",
+      "rev": "7fb6dc473c2cd7ae23282f515c741d398e885fcf",
+      "url": "https://github.com/OnixResearch/lattice.git"
+    },
+    "omp-implementation": {
+      "narHash": "sha256-V6qIjkd/tW+V6CySqUFsjASswdLy039VZmDuBYPzTto=",
+      "rev": "e325ffc73ab86e03bdd20a91b77d8e2b3964c906",
+      "url": "github:can1357/oh-my-pi"
+    }
+  },
+  "issue": "https://github.com/OnixResearch/kiln/issues/49",
+  "qualification": "unqualified",
+  "revisions": {
+    "cairn": "47ea1b867c44b026c030b535f9a1041950c482a0",
+    "kiln": "09326e92251c5a3dc690b5e707a586837c3e5202",
+    "lattice": "7fb6dc473c2cd7ae23282f515c741d398e885fcf",
+    "nixpkgs": "5adc50831c259f87faeb09ddf930d43597197473",
+    "worker": "e325ffc73ab86e03bdd20a91b77d8e2b3964c906"
+  },
+  "schema": "onix.kiln.implementation-compatibility-receipt.v1",
+  "transport": {
+    "kiln_worker_transport": "kiln.lattice-implementation-cli.v2",
+    "lattice_request": "lattice.implementation-attempt-run.v3",
+    "model_broker": "lattice.candidate-model-broker.v1"
+  },
+  "worker": {
+    "adapter": "omp",
+    "derivation": "/nix/store/vw62xh08s0xmiw0dywr7fyf8s757893j-omp-18.18.7.drv",
+    "matches": "Lattice 7fb6dc47 preserve-candidate-worker-observations source-qualification.json build.derivation",
+    "revision": "e325ffc73ab86e03bdd20a91b77d8e2b3964c906"
+  }
+}

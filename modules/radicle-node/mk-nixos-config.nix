@@ -43,6 +43,10 @@ let
   }
   // lib.optionalAttrs (settings.externalAddress != null) {
     externalAddresses = [ settings.externalAddress ];
+  }
+  // lib.optionalAttrs ((settings.staticPeers or [ ]) != [ ]) {
+    connect = settings.staticPeers;
+    peers.type = "static";
   };
   serviceHardening = {
     CapabilityBoundingSet = "";

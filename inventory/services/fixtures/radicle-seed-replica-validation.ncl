@@ -24,6 +24,10 @@ let default_storage_quota_gib = 64 in
           "rad:z4JGYYW7WsesXUq7MXVdx16Fawu2f",
           "rad:z2oYsb9jGTyp68BKYhzpivY1eK58a",
           "rad:zL2ncTUeASVYwcoGkEXv9JKgGbAF",
+          "rad:zG25DRmacxYQcXzZmLKj8tmgYbEG",
+        ],
+        staticPeers = [
+          "z6MkfpHAyrqSqhpiSGayy6AjB6L5UWkKLvsZvLh5hYD7XSu8@100.100.103.95:8776",
         ],
         privateSeedRepositories = [
           "rad:z3t9ykR1HfG9UkyKoQQg5ikkzrTxg",
@@ -51,6 +55,7 @@ let default_storage_quota_gib = 64 in
         externalAddress = 1,
         seedRepositories = [1],
         privateSeedRepositories = [1],
+        staticPeers = [ false ],
         stateDirectory = false,
         stateDataset = 1,
         stateQuotaGiB = "unbounded",

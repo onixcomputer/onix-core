@@ -81,7 +81,20 @@ in
 
             # OMP 18.2 requires Bun >=1.4; keep upstream's compiler/runtime pairing.
             # r[impl onix.llm_agents.bun_compiler]
-            environment.systemPackages = map agentPackage cfg.packages;
+            environment.systemPackages =
+              map agentPackage cfg.packages
+              ++ lib.optional (builtins.elem "antigravity-cli" cfg.packages) (
+                pkgs.writeShellScriptBin "agy-second" ''
+                  # Second Antigravity CLI profile: its own config directory and
+                  # credential scope, so a different Google account can sign in
+                  # without disturbing the primary session.
+                  profile="''${AGY_PROFILE_HOME:-$HOME/.agy-second}"
+                  mkdir -p -m 700 "$profile/config" "$profile/xdg"
+                  export ANTIGRAVITY_CLI_CONFIG_DIR="$profile/config"
+                  export XDG_CONFIG_HOME="$profile/xdg"
+                  exec ${agentPkgs.antigravity-cli}/bin/agy "$@"
+                ''
+              );
             # r[impl onix.research-tools.omp]
             system.build.omp-research-tools = lib.mkIf cfg.ompResearchTools researchExtension;
             home-manager.users = lib.mkIf cfg.ompResearchTools {

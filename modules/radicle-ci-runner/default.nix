@@ -89,9 +89,9 @@ in
             exchangeUmask = "0007";
             pilotSource = pkgs.fetchgit {
               name = "bounded-exec-ci-source-${settings.reviewedCommit}";
-              url = "https://git.onix.computer/z2CpqLFpdP36fZXYUK5ZNWxMibpCo.git";
+              url = "https://git.onix.computer/zG25DRmacxYQcXzZmLKj8tmgYbEG.git";
               rev = settings.reviewedCommit;
-              hash = "sha256-BVmqyUYyoNpY6LfOABxwPO3DY88ZtXeKNg3TPoGCcL0=";
+              hash = "sha256-IPhzd7+GXI2xpqcNWdWW61Lqr3j6tOQ6zpklS7Au2EE=";
             };
             botConfig = pkgs.writeText "radicle-ci-bot-config.json" (
               builtins.toJSON {

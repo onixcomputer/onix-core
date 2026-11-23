@@ -36,6 +36,7 @@ let self_modules = [
   "kache-rustfs",
   "kiln-aspen-canary",
   "kiln-aspen-radicle-ci",
+  "kiln-implementer",
   "laya",
   "lemonade",
   "llamacpp-rpc",

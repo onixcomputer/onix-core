@@ -1,0 +1,8 @@
+{
+  "schema": "kiln.scripted-decision-projection-fixture.v1",
+  "scope": "synthetic-operator-guidance-only-not-native-authority",
+  "decision_id": "scripted-operator-choice",
+  "revision": "fixture-revision-1",
+  "selected_alternative": "write-only-authorized-output",
+  "guidance": "Use only the authorized implementation request and its acceptance checks. This fixture projection is context, not evidence, verification, resource admission, or delivery authority."
+}

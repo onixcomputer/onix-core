@@ -1,0 +1,90 @@
+{
+  "admitted_envelope": "589689691a9f5c3dd7ab71d0dc8586e40f7c0b1e71200aec61331bc490fd92f9",
+  "allow_unchanged": false,
+  "dispatch_plan": "a3fefdd31aaad04e3b93f5add509acdd70b2c9f71c2cb551a58746b2f535695b",
+  "envelope": {
+    "attempt_id": "8fe99105a216ca24e1a58e38f1fc908ac7cf1fcc3b900e4b817627ae369776b8",
+    "base": "f1adb86f6320f2bbb6c02ae077905a6bb8c22955",
+    "budget": {
+      "max_cost_micros": 0,
+      "max_seconds": 1080,
+      "max_turns": 40
+    },
+    "fence": 1,
+    "policy_digest": "eb5394f37d09770418ae38de99ff06d47c7100fd30a5a05370fdb7e66dd6d28e",
+    "readiness_snapshot": "4a89de111e888af5c9d0bf691b0167e6dbe82d8994b86030efd36e0bc81beae1",
+    "repository": "onixresearch/implementer-sandbox",
+    "schema": "lattice.implementation-attempt-envelope.v1",
+    "source_id": "onixresearch/implementer-sandbox#1",
+    "source_kind": "github_issue",
+    "task_spec_digest": "4ae28e272cb67177783a690c2c0c053dfde6bbbc2db4ec16ea74abf864d0c75c",
+    "verification_profile": "58cea6c811f78a9d450beb75d7325c0c86439e9499421c134659ce1af8a76b77",
+    "work_id": "cba814086963068a9d47eed4b7fa49d804a43b1ccf379a401742e6c882f715fd",
+    "work_version": 1795324373000,
+    "worker_profile": "35ced4c655609dadbb1e2541452a115e6288b38dc23a48acc64e581d648b4651",
+    "workspace_id": "8fe99105a216ca24e1a58e38f1fc908ac7cf1fcc3b900e4b817627ae369776b8"
+  },
+  "execution_binding": {
+    "compute": {
+      "kind": "host_local"
+    },
+    "model_routes": {
+      "kind": "routes",
+      "routes": [
+        {
+          "name": "primary",
+          "route_identity": "blake3:69d2750a20e80de93cff170a8d25b63c73cbba1cd8abbe2a27e06c08ac1c423c"
+        }
+      ]
+    },
+    "schema": "lattice.execution-binding.v1"
+  },
+  "expires_at_ms": 1795419464881,
+  "network": false,
+  "omp": {
+    "base_identity": "8f11555f8eb45529644adc82799cd6a303878a9e8dda32697df29c1f08a90e8b",
+    "executable_blake3": "7ee769b6a4161b9d50410b31be252133fedb459e4441c6da4c92f3733a8d135f",
+    "model": "lattice/opencode-go/deepseek-v4.1-flash",
+    "model_broker": {
+      "credential": {
+        "field": null,
+        "key": "KILN_IMPLEMENTATION_MODEL_KEY",
+        "provider": "env"
+      },
+      "endpoint": "http://127.0.0.1:18080/v1/chat/completions",
+      "expires_at_ms": 1795419464881,
+      "max_requests": 64,
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "relay": {
+        "blake3": "b8e3a6f91077c9cf3a65265e260b969edbdbb99ebcdbb190340df4fa99676f04",
+        "path": "/nix/store/k562gy1wa1rwyhlp6ma2cp37zlc0mspl-socat-1.8.1.3/bin/socat1"
+      },
+      "sandbox_blake3": "9979941d82a18db70c4fa1bed4cd3d33504c1d8b35b9f08b6784e494abbdcece",
+      "schema": "lattice.candidate-model-broker.v1",
+      "shell": {
+        "blake3": "b58e50f7b093ccf700590e2169d4cc5d53fc1125dbb62ea16f97aed63ec8cae8",
+        "path": "/nix/store/kwyi4bq5s2qgwbhz6cs4gjy57c2zdxws-bash-interactive-5.3p20/bin/bash"
+      }
+    },
+    "prompt": "Resolve GitHub issue #1 in this Rust crate: \"word_count counts empty words and ignores tabs and newlines\". The acceptance tests are in tests/word_count_whitespace.rs and run with `cargo test --features acceptance --test word_count_whitespace`. Read src/lib.rs, Cargo.toml and that test file, then edit only src/lib.rs so the acceptance tests pass while `cargo test`, `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` stay clean. Keep the code rustfmt-formatted. Do not edit tests, Cargo.toml or Cargo.lock. You cannot run commands; reason from the sources. Reply done when finished.",
+    "revision": "e325ffc73ab86e03bdd20a91b77d8e2b3964c906"
+  },
+  "output_limit_bytes": 4194304,
+  "program": "/nix/store/ii3yn9v4cj6dg87b9kkzycjzxplgf93d-omp-18.18.7/bin/omp",
+  "read_paths": [
+    "src",
+    "tests",
+    "Cargo.toml",
+    "Cargo.lock",
+    "README.md"
+  ],
+  "sandbox_program": "/nix/store/3hqwbwxij9lxhyrf2amsm2xg24xszmmx-bubblewrap-0.12.0/bin/bwrap",
+  "schema": "lattice.implementation-attempt-run.v3",
+  "worker_compute": {
+    "kind": "host_local"
+  },
+  "workspace_root": "/var/lib/kiln-implementation/workspaces/8fe99105a216ca24e1a58e38f1fc908ac7cf1fcc3b900e4b817627ae369776b8",
+  "write_paths": [
+    "src/lib.rs"
+  ],"lineage":{"schema":"lattice.kiln-budget-lineage.v1","root":"29d39fea986728a18e41f866cb8973d176e30f116eb93b47e05dcf9cadfd135b","account":"29d39fea986728a18e41f866cb8973d176e30f116eb93b47e05dcf9cadfd135b","parent":null,"depth":0,"remaining":{"worker_slots":1},"blocker":null,"backpressure":"none"}
+}
