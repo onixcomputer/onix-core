@@ -78,6 +78,7 @@ fun onix =>
               Driver=%{policy.memberDriver}
               [Link]
               MTUBytes=%{std.to_string policy.linkMtuBytes}
+              RequiredForOnline=no
               [Network]
               Bridge=%{policy.bridgeName}
             "%,
