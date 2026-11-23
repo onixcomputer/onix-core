@@ -46,6 +46,7 @@ fun onix =>
     {
       output.host = {
         groups = {
+          networkmanager = { gid = 57 },
           docker = { gid = 131 },
           nscd = {},
           avahi = {},
