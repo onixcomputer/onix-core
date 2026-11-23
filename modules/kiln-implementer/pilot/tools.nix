@@ -5,7 +5,10 @@
 let
   ssh = pkgs.writeShellApplication {
     name = "kiln-pilot-ssh";
-    runtimeInputs = [ pkgs.openssh pkgs.coreutils ];
+    runtimeInputs = [
+      pkgs.openssh
+      pkgs.coreutils
+    ];
     text = ''
       # Usage: kiln-pilot-ssh [--] COMMAND...
       #   KILN_PILOT_SSH_KEY   private key (default ~/.local/state/kiln-pilot-ssh/pilot-ssh)
@@ -56,7 +59,11 @@ let
   };
   collect = pkgs.writeShellApplication {
     name = "kiln-pilot-collect";
-    runtimeInputs = [ ssh pkgs.b3sum pkgs.coreutils ];
+    runtimeInputs = [
+      ssh
+      pkgs.b3sum
+      pkgs.coreutils
+    ];
     text = ''
       # Usage: kiln-pilot-collect DIR
       [ "$#" -eq 1 ] || { echo "usage: kiln-pilot-collect DIR" >&2; exit 2; }

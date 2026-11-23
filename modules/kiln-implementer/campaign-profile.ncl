@@ -1,139 +1,159 @@
 # Typed constructor for one native selected-Cairn campaign drive profile.
 # The caller supplies exact owner/source/provider inputs; executable identity always
 # comes from the explicitly selected immutable cohort manifest.
-let
-  NonEmpty = std.contract.from_predicate (fun value =>
+let NonEmpty =
+  std.contract.from_predicate (fun value =>
     std.is_string value && std.string.length value > 0
-  ) in
-let AbsolutePath = std.contract.from_predicate (fun value =>
+  )
+in
+let AbsolutePath =
+  std.contract.from_predicate (fun value =>
     std.is_string value && std.string.is_match "^/[^\\x00]+$" value
-  ) in
-let
-  Digest = std.contract.from_predicate (fun value =>
+  )
+in
+let Digest =
+  std.contract.from_predicate (fun value =>
     std.is_string value && std.string.is_match "^[0-9a-f]{64}$" value
-  ) in
-let
-  Positive = std.contract.from_predicate (fun value =>
+  )
+in
+let Positive =
+  std.contract.from_predicate (fun value =>
     std.is_number value && value > 0
-  ) in
-let
-  BoundedOperations = std.contract.from_predicate (fun value =>
+  )
+in
+let BoundedOperations =
+  std.contract.from_predicate (fun value =>
     std.is_number value && value >= 1 && value <= 128
-  ) in
-let
-  ExternalRef = {
-    contract_version | std.contract.from_predicate (fun value => value == 1),
-    provider_namespace | NonEmpty,
-    native_kind | NonEmpty,
-    native_id | NonEmpty,
-  } in
-let
-  Entry = { resolved_path | AbsolutePath, blake3 | Digest, .. } in
-let
-  Role = {
-    program | AbsolutePath,
-    arguments | Array String,
-    blake3 | Digest,
-    uid | Positive,
-    gid | Positive,
-  } in
-let
-  Acceptance = { id | NonEmpty, statement | NonEmpty } in
-let
-  ImplementationPolicy = {
-    repository | NonEmpty,
-    project | NonEmpty,
-    base | ExternalRef,
-    actor | NonEmpty,
-    requested_outcome | NonEmpty,
-    acceptance | Array Acceptance,
-    permitted_paths | Array NonEmpty,
-    permitted_effects | Array NonEmpty,
-    verification_profile | Digest,
-    budget | { attempts | Positive, minutes_per_attempt | Positive },
-    terminal_policy | NonEmpty,
-    priority | std.contract.from_predicate (fun value => std.is_number value && value >= 0 && value <= 255),
-  } in
-let
-  GithubInput = {
-    enrollment | AbsolutePath,
-    remote_profile | AbsolutePath,
-    publication_policy | { base_branch | NonEmpty, title | NonEmpty, body | String },
-    landing_policy | { required_checks | Array NonEmpty, required_approvals | std.contract.from_predicate (fun value => std.is_number value && value >= 0 && value <= 16) },
-    lifecycle_action | std.contract.from_predicate (fun value => value == "observe_reviewed_sync" || value == "observe_reviewed_archive"),
-    lifecycle_receipt_template | NonEmpty,
-    repository | AbsolutePath,
-    authoritative_report_directory | AbsolutePath,
-    timeout_ms | std.contract.from_predicate (fun value => std.is_number value && value > 0 && value <= 300000),
-  } in
-let
-  NativeGitInput = {
-    enrollment | AbsolutePath,
-    service_profile | AbsolutePath,
-    review_profile | AbsolutePath,
-    repository_path | AbsolutePath,
-    change_id | NonEmpty,
-    remote | {
+  )
+in
+let ExternalRef = {
+  contract_version | std.contract.from_predicate (fun value => value == 1),
+  provider_namespace | NonEmpty,
+  native_kind | NonEmpty,
+  native_id | NonEmpty,
+}
+in
+let Entry = { resolved_path | AbsolutePath, blake3 | Digest, .. }
+in
+let Role = {
+  program | AbsolutePath,
+  arguments | Array String,
+  blake3 | Digest,
+  uid | Positive,
+  gid | Positive,
+}
+in
+let Acceptance = { id | NonEmpty, statement | NonEmpty }
+in
+let ImplementationPolicy = {
+  repository | NonEmpty,
+  project | NonEmpty,
+  base | ExternalRef,
+  actor | NonEmpty,
+  requested_outcome | NonEmpty,
+  acceptance | Array Acceptance,
+  permitted_paths | Array NonEmpty,
+  permitted_effects | Array NonEmpty,
+  verification_profile | Digest,
+  budget | { attempts | Positive, minutes_per_attempt | Positive },
+  terminal_policy | NonEmpty,
+  priority | std.contract.from_predicate (fun value => std.is_number value && value >= 0 && value <= 255),
+}
+in
+let GithubInput = {
+  enrollment | AbsolutePath,
+  remote_profile | AbsolutePath,
+  publication_policy | { base_branch | NonEmpty, title | NonEmpty, body | String },
+  landing_policy | { required_checks | Array NonEmpty, required_approvals | std.contract.from_predicate (fun value => std.is_number value && value >= 0 && value <= 16) },
+  lifecycle_action | std.contract.from_predicate (fun value => value == "observe_reviewed_sync" || value == "observe_reviewed_archive"),
+  lifecycle_receipt_template | NonEmpty,
+  repository | AbsolutePath,
+  authoritative_report_directory | AbsolutePath,
+  timeout_ms | std.contract.from_predicate (fun value => std.is_number value && value > 0 && value <= 300000),
+}
+in
+let NativeGitInput = {
+  enrollment | AbsolutePath,
+  service_profile | AbsolutePath,
+  review_profile | AbsolutePath,
+  repository_path | AbsolutePath,
+  change_id | NonEmpty,
+  remote
+    | {
       remote_name | NonEmpty,
       remote_url | NonEmpty,
       transport | std.contract.from_predicate (fun value => value == "https" || value == "ssh_strict_host_key"),
       ssh_host_key_sha256 | NonEmpty | optional,
     },
-    provider_profile | NonEmpty,
-    expected_old_target | ExternalRef,
-    target_ref | NonEmpty,
-    authoritative_report_directory | AbsolutePath,
-    lifecycle_action | std.contract.from_predicate (fun value => value == "observe_reviewed_sync" || value == "observe_reviewed_archive"),
-    lifecycle_receipt_template | NonEmpty,
-  } in
-let VerificationRoutes = std.contract.from_predicate (fun value =>
-  std.is_record value
-  && (let entries = std.record.to_array value in
-    std.array.length entries > 0
-    && std.array.length (std.array.filter (fun entry =>
-      std.string.is_match "^[0-9a-f]{64}$" entry.field
-      && std.is_record entry.value
-      && std.record.has_field "ci_service_profile" entry.value
-      && std.record.has_field "verification_profile" entry.value
-      && std.is_string entry.value.ci_service_profile
-      && std.is_string entry.value.verification_profile
-      && std.string.is_match "^/[^\\x00]+$" entry.value.ci_service_profile
-      && std.string.is_match "^/[^\\x00]+$" entry.value.verification_profile
-    ) entries) == std.array.length entries
+  provider_profile | NonEmpty,
+  expected_old_target | ExternalRef,
+  target_ref | NonEmpty,
+  authoritative_report_directory | AbsolutePath,
+  lifecycle_action | std.contract.from_predicate (fun value => value == "observe_reviewed_sync" || value == "observe_reviewed_archive"),
+  lifecycle_receipt_template | NonEmpty,
+}
+in
+let VerificationRoutes =
+  std.contract.from_predicate (fun value =>
+    std.is_record value
+    && (
+      let entries = std.record.to_array value in
+      std.array.length entries > 0
+      && std.array.length (
+        std.array.filter
+          (fun entry =>
+            std.string.is_match "^[0-9a-f]{64}$" entry.field
+            && std.is_record entry.value
+            && std.record.has_field "ci_service_profile" entry.value
+            && std.record.has_field "verification_profile" entry.value
+            && std.is_string entry.value.ci_service_profile
+            && std.is_string entry.value.verification_profile
+            && std.string.is_match "^/[^\\x00]+$" entry.value.ci_service_profile
+            && std.string.is_match "^/[^\\x00]+$" entry.value.verification_profile
+          )
+          entries
+      ) == std.array.length entries
+    )
   )
-) in
-let DeliveryInput = std.contract.from_predicate (fun value =>
-  std.is_record value
-  && std.record.has_field "route" value
-  && std.record.has_field "github" value
-  && std.record.has_field "native_git" value
-  && ((value.route == "github_pull_request" && value.github != null && value.native_git == null)
-    || (value.route == "native_git" && value.github == null && value.native_git != null))
-) in
-let
-  Inputs_ = {
-    campaign_id | NonEmpty,
-    verification_routes | VerificationRoutes,
-    campaign_database | AbsolutePath,
-    implementation_database | AbsolutePath,
-    decision_contexts | { _ : AbsolutePath } | default = {},
-    verifier_authority | AbsolutePath,
-    bound_input_directory | AbsolutePath,
-    candidate_export_directory | AbsolutePath,
-    worker | {
+in
+let DeliveryInput =
+  std.contract.from_predicate (fun value =>
+    std.is_record value
+    && std.record.has_field "route" value
+    && std.record.has_field "github" value
+    && std.record.has_field "native_git" value
+    && (
+      (value.route == "github_pull_request" && value.github != null && value.native_git == null)
+      || (value.route == "native_git" && value.github == null && value.native_git != null)
+    )
+  )
+in
+let Inputs_ = {
+  campaign_id | NonEmpty,
+  verification_routes | VerificationRoutes,
+  campaign_database | AbsolutePath,
+  implementation_database | AbsolutePath,
+  decision_contexts | { _ : AbsolutePath } | default = {},
+  verifier_authority | AbsolutePath,
+  bound_input_directory | AbsolutePath,
+  candidate_export_directory | AbsolutePath,
+  worker
+    | {
       dispatch_plan | AbsolutePath,
       request | AbsolutePath,
       admission_observations | Dyn | default = null,
     },
-    native_cairn | {
+  native_cairn
+    | {
       repository_root | AbsolutePath,
       source | ExternalRef,
       implementation_policy | ImplementationPolicy,
     },
-    delivery | DeliveryInput,
-    claim_lease_ms | Positive,
-    maximum_operations | BoundedOperations,
-    workspace | {
+  delivery | DeliveryInput,
+  claim_lease_ms | Positive,
+  maximum_operations | BoundedOperations,
+  workspace
+    | {
       repository | NonEmpty,
       repository_path | AbsolutePath,
       work_root | AbsolutePath,
@@ -142,7 +162,8 @@ let
       max_file_bytes | Positive,
       max_total_bytes | Positive,
     },
-  } in
+}
+in
 {
   Inputs = Inputs_,
   generate = fun cohort inputs runtime driveContract =>

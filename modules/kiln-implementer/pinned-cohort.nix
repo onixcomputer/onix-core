@@ -2,7 +2,11 @@
 # (kiln-implementation, lattice-implementation, cairn-implementation,
 # omp-implementation). compatibility-receipt.json records the same revisions,
 # narHashes and executable identities; pinned-cohort-receipt checks they agree.
-{ pkgs, lib, inputs }:
+{
+  pkgs,
+  lib,
+  inputs,
+}:
 let
   system = pkgs.stdenv.hostPlatform.system;
   kiln = inputs.kiln-implementation.packages.${system};
@@ -39,8 +43,8 @@ in
 {
   inherit revisions;
   # Live stages: the production Kiln workspace build.
-  cohort = construct (components // { kiln = kiln.kiln; });
-  campaignCohort = campaign (components // { kiln = kiln.kiln; });
+  cohort = construct (components // { inherit (kiln) kiln; });
+  campaignCohort = campaign (components // { inherit (kiln) kiln; });
   # Scripted VM inputs; never selected by a live configuration.
   fixtureCohort = construct (components // { kiln = fixtureKiln; });
   fixtureHelper = kiln.implementation-fixtures;

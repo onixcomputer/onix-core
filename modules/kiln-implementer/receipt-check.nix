@@ -1,12 +1,25 @@
 # Fails when compatibility-receipt.json drifts from the locked inputs or from
 # the executable/workflow identities the pinned cohort actually builds.
-{ pkgs, lib, pinned, inputs }:
+{
+  pkgs,
+  lib,
+  pinned,
+  inputs,
+}:
 let
   receipt = lib.importJSON ./compatibility-receipt.json;
-  locked = lib.mapAttrs (name: _: { rev = inputs.${name}.rev; narHash = inputs.${name}.narHash; }) receipt.inputs;
-  drift = lib.filterAttrs (name: value: value.rev != receipt.inputs.${name}.rev || value.narHash != receipt.inputs.${name}.narHash) locked;
+  locked = lib.mapAttrs (name: _: {
+    rev = inputs.${name}.rev;
+    narHash = inputs.${name}.narHash;
+  }) receipt.inputs;
+  drift = lib.filterAttrs (
+    name: value:
+    value.rev != receipt.inputs.${name}.rev || value.narHash != receipt.inputs.${name}.narHash
+  ) locked;
 in
-assert lib.assertMsg (drift == { }) "compatibility receipt inputs differ from flake.lock: ${builtins.toJSON drift}";
+assert lib.assertMsg (
+  drift == { }
+) "compatibility receipt inputs differ from flake.lock: ${builtins.toJSON drift}";
 pkgs.runCommand "kiln-implementation-compatibility-receipt" { nativeBuildInputs = [ pkgs.jq ]; } ''
   set -eu
   for cohort in live:${pinned.cohort} scripted:${pinned.fixtureCohort}; do

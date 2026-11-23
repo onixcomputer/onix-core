@@ -1,177 +1,291 @@
-{ pkgs, lib, fixture }:
+{
+  pkgs,
+  lib,
+  fixture,
+}:
 let
-  inherit (fixture) cohort campaignCohort configuration attemptBundle ciServiceProfile campaignDriveProfile campaignStartCommand fixtureHelper canonicalCiStatePaths repositories workClasses canonicalCiModule;
+  inherit (fixture)
+    cohort
+    campaignCohort
+    configuration
+    attemptBundle
+    ciServiceProfile
+    campaignDriveProfile
+    campaignStartCommand
+    fixtureHelper
+    canonicalCiStatePaths
+    repositories
+    workClasses
+    canonicalCiModule
+    ;
   root = "/var/lib/kiln-implementation";
   common = "--database ${root}/kiln/work.sqlite --enrollment ${configuration}/enrollment.json";
-  node = scenario: { config, ... }:
+  node =
+    scenario:
+    { config, ... }:
     let
       campaignMode = scenario == "campaign";
       selectedCohort = if campaignMode then campaignCohort else cohort;
     in
     {
-    imports = [ ../modules/kiln-implementer/nixos.nix canonicalCiModule ];
-    system.stateVersion = "26.05";
-    virtualisation = { graphics = false; memorySize = 2048; cores = 2; };
-    services.kiln-implementer = {
-      enable = true;
-      cohort = selectedCohort;
-      inherit configuration attemptBundle ciServiceProfile canonicalCiStatePaths repositories workClasses;
-      intakeCredential = "/run/secrets/kiln-scripted-intake";
-      publisherCredential = "/run/secrets/kiln-scripted-publisher";
-      modelNetworkNamespace = if campaignMode then null else "/run/netns/kiln-scripted-model";
-      selectedCampaignEnable = campaignMode;
-      selectedCampaignProfile = if campaignMode then campaignDriveProfile else null;
-      selectedCampaignId = if campaignMode then "scripted-native-cairn" else null;
-      selectedCampaignDatabase = if campaignMode then "${root}/campaign/campaign.sqlite" else null;
-      selectedImplementationDatabase = if campaignMode then "${root}/kiln/work.sqlite" else null;
-      selectedCampaignBoundInputDirectory = if campaignMode then "${root}/campaign/bound-input" else null;
-      selectedCampaignCandidateExportDirectory = if campaignMode then "${root}/campaign/candidate-export" else null;
-      selectedCampaignWorkspaceRoot = if campaignMode then "${root}/campaign/workspaces" else null;
-      selectedCampaignDataGid = if campaignMode then 931 else null;
-      selectedCampaignNetworkNamespace = if campaignMode then "/run/netns/kiln-scripted-model" else null;
-      selectedCampaignCredentialPath = if campaignMode then "/run/kiln-scripted-campaign-publisher" else null;
-      leaseMilliseconds = if scenario == "stale" then 1000 else 3600000;
-      # The fixture enrollment's actor; claim under an admission policy needs it.
-      localOperator = "operator";
-    };
-    users.groups.kiln-scripted-git = { };
-    users.users = {
-      kiln-scripted-model = { isSystemUser = true; uid = 934; group = "kiln-scripted-model"; };
-      kiln-scripted-forge = { isSystemUser = true; uid = 935; group = "kiln-scripted-git"; };
-    };
-    users.groups.kiln-scripted-model = { };
-    environment.systemPackages = [ pkgs.python3 pkgs.b3sum pkgs.jq pkgs.git pkgs.iproute2 pkgs.procps pkgs.util-linux pkgs.nickel
-      (import ../modules/kiln-implementer/qualification-package.nix { inherit pkgs; }) ];
-    systemd.services = {
-      kiln-scripted-network = {
-        description = "Closed fixture loopback namespace; no interface or external route";
-        wantedBy = [ "multi-user.target" ];
-        serviceConfig = { Type = "oneshot"; RemainAfterExit = true; };
-        script = ''
-          ${pkgs.iproute2}/bin/ip netns add kiln-scripted-model
-          ${pkgs.iproute2}/bin/ip -n kiln-scripted-model link set lo up
-        '';
-        preStop = "${pkgs.iproute2}/bin/ip netns delete kiln-scripted-model";
+      imports = [
+        ../modules/kiln-implementer/nixos.nix
+        canonicalCiModule
+      ];
+      system.stateVersion = "26.05";
+      virtualisation = {
+        graphics = false;
+        memorySize = 2048;
+        cores = 2;
       };
-      kiln-scripted-setup = {
-        description = "Initialize only disposable actual Git/credential fixtures";
-        wantedBy = [ "multi-user.target" ];
-        requires = [ "systemd-tmpfiles-setup.service" ]; after = [ "systemd-tmpfiles-setup.service" ];
-        serviceConfig = { Type = "oneshot"; RemainAfterExit = true; };
-        script = ''
-          install -d -m 0700 /run/secrets
-          printf %s scripted-intake-only > /run/secrets/kiln-scripted-intake
-          printf %s scripted-publisher-only > /run/secrets/kiln-scripted-publisher
-          chmod 0600 /run/secrets/kiln-scripted-intake /run/secrets/kiln-scripted-publisher
-          if ! test -f ${root}/verifier/repository/config; then
-            ${pkgs.git}/bin/git clone --bare --no-hardlinks ${fixture}/repository.git ${root}/verifier/repository
-            chown -R kiln-implementation-verifier:kiln-implementation-ledger ${root}/verifier
-            chmod 0700 ${root}/verifier ${root}/verifier/repository
-          fi
-          install -d -m 0750 -o kiln-implementation-publisher -g kiln-scripted-git ${root}/github
-          if ! test -f ${root}/github/remote.git/config; then
-            ${pkgs.git}/bin/git clone --bare --no-hardlinks ${fixture}/repository.git ${root}/github/remote.git
-            ${pkgs.git}/bin/git -C ${root}/github/remote.git config core.sharedRepository group
-            chown -R kiln-implementation-publisher:kiln-scripted-git ${root}/github/remote.git
-            chmod -R g+rwX ${root}/github/remote.git
-            find ${root}/github/remote.git -type d -exec chmod g+s {} +
-          fi
-        '';
+      services.kiln-implementer = {
+        enable = true;
+        cohort = selectedCohort;
+        inherit
+          configuration
+          attemptBundle
+          ciServiceProfile
+          canonicalCiStatePaths
+          repositories
+          workClasses
+          ;
+        intakeCredential = "/run/secrets/kiln-scripted-intake";
+        publisherCredential = "/run/secrets/kiln-scripted-publisher";
+        modelNetworkNamespace = if campaignMode then null else "/run/netns/kiln-scripted-model";
+        selectedCampaignEnable = campaignMode;
+        selectedCampaignProfile = if campaignMode then campaignDriveProfile else null;
+        selectedCampaignId = if campaignMode then "scripted-native-cairn" else null;
+        selectedCampaignDatabase = if campaignMode then "${root}/campaign/campaign.sqlite" else null;
+        selectedImplementationDatabase = if campaignMode then "${root}/kiln/work.sqlite" else null;
+        selectedCampaignBoundInputDirectory = if campaignMode then "${root}/campaign/bound-input" else null;
+        selectedCampaignCandidateExportDirectory =
+          if campaignMode then "${root}/campaign/candidate-export" else null;
+        selectedCampaignWorkspaceRoot = if campaignMode then "${root}/campaign/workspaces" else null;
+        selectedCampaignDataGid = if campaignMode then 931 else null;
+        selectedCampaignNetworkNamespace = if campaignMode then "/run/netns/kiln-scripted-model" else null;
+        selectedCampaignCredentialPath =
+          if campaignMode then "/run/kiln-scripted-campaign-publisher" else null;
+        leaseMilliseconds = if scenario == "stale" then 1000 else 3600000;
+        # The fixture enrollment's actor; claim under an admission policy needs it.
+        localOperator = "operator";
       };
-      kiln-scripted-campaign-setup = lib.mkIf campaignMode {
-        description = "Initialize disposable selected-Cairn state through canonical owner commands";
-        wantedBy = [ "multi-user.target" ];
-        requires = [ "kiln-scripted-setup.service" "kiln-scripted-network.service" "kiln-implementation-policy-check.service" ];
-        after = [ "kiln-scripted-setup.service" "kiln-scripted-network.service" "kiln-implementation-policy-check.service" ];
-        serviceConfig = { Type = "oneshot"; RemainAfterExit = true; UMask = "0007"; };
-        script = ''
-          set -eu
-          ${pkgs.coreutils}/bin/install -d -m 0755 ${root}/campaign
-          ${pkgs.git}/bin/git clone --no-hardlinks ${fixture}/repository.git ${root}/campaign/source
-          ${pkgs.git}/bin/git --git-dir=${root}/verifier/repository update-ref refs/remotes/origin/main "$(${pkgs.git}/bin/git --git-dir=${root}/verifier/repository rev-parse refs/heads/main)"
-          ${selectedCohort}/environment/bin/kiln-cairn-intake ${common} \
-            --snapshot ${attemptBundle}/cairn-snapshot.json --policy ${configuration}/cairn-policy.json --sequence 1
-          intake="$(${fixtureHelper}/bin/kiln-implementation-fixture prepare-intake \
-            --database ${root}/kiln/work.sqlite --enrollment ${configuration}/enrollment.json)"
-          work="$(printf '%s' "$intake" | ${pkgs.jq}/bin/jq -er .work)"
-          ${selectedCohort}/environment/bin/kiln-implementer prepare-needs ${common} --work "$work" \
-            --needs-file ${fixture}/campaign/work-needs.json --output ${root}/campaign/work-needs.json
-          ${selectedCohort}/environment/bin/kiln-implementer attach-needs ${common} \
-            --needs-file ${root}/campaign/work-needs.json
-          ${pkgs.python3}/bin/python3 ${fixture}/prepare_campaign_plan.py \
-            --template ${fixture}/campaign/dispatch-plan-template.json \
-            --needs ${root}/campaign/work-needs.json --output ${root}/campaign/dispatch-plan-template.json
-          ${selectedCohort}/environment/bin/kiln-implementer admission-status ${common} > ${root}/campaign/admission-status.json
-          ${pkgs.coreutils}/bin/chmod 0400 ${root}/campaign/admission-status.json
-          ${pkgs.python3}/bin/python3 ${fixture}/prepare_campaign_start.py \
-            --template ${campaignStartCommand} --admission-status ${root}/campaign/admission-status.json \
-            --manifest ${fixture}/bundle-manifest.json --repository ${fixture}/repository.git \
-            --workflow ${fixture}/campaign/workflow-profile.json --policy ${configuration}/cairn-policy.json \
-            --integration-policy ${fixture}/campaign/integration-policy.json \
-            --agent-definition ${fixture}/campaign/worker-request-template.json --work "$work" \
-            --output ${root}/campaign/start-command.json
-
-          ${selectedCohort}/environment/bin/kiln-implementer campaign \
-            --database ${root}/campaign/campaign.sqlite --command-file ${root}/campaign/start-command.json
-          ${pkgs.coreutils}/bin/install -m 0444 ${fixture}/campaign/remote-template.json ${root}/campaign/remote-template.json
-          remote_binding="$(${fixtureHelper}/bin/kiln-implementation-fixture prepare-remote --profile ${root}/campaign/remote-template.json)"
-          remote_identity="$(printf '%s' "$remote_binding" | ${pkgs.jq}/bin/jq -er .remote_identity)"
-          ${pkgs.jq}/bin/jq -n --arg repository_path ${root}/verifier/repository \
-            --arg remote_identity "$remote_identity" --slurpfile remote ${root}/campaign/remote-template.json \
-            '{schema:"kiln.github-publication-source.v1",repository_path:$repository_path,remote:$remote[0],remote_identity:$remote_identity,fixture:true}' \
-            > ${root}/campaign/publication-source-profile.json
-          ${pkgs.coreutils}/bin/chmod 0444 ${root}/campaign/publication-source-profile.json
-          printf %s scripted-campaign-only > /run/kiln-scripted-campaign-publisher
-          ${pkgs.coreutils}/bin/chown kiln-implementation-publisher:kiln-implementation-ledger /run/kiln-scripted-campaign-publisher
-          ${pkgs.coreutils}/bin/chmod 0400 /run/kiln-scripted-campaign-publisher
-        '';
-      };
-      kiln-scripted-model = {
-        requires = [ "kiln-scripted-network.service" ]; after = [ "kiln-scripted-network.service" ];
-        serviceConfig = {
-          Type = "simple"; User = "kiln-scripted-model"; Group = "kiln-scripted-model";
-          StateDirectory = "kiln-scripted-model"; StateDirectoryMode = "0700";
-          ProtectSystem = "strict"; ProtectHome = true; NoNewPrivileges = true; PrivateTmp = true;
-          NetworkNamespacePath = "/run/netns/kiln-scripted-model";
-          InaccessiblePaths = [ "/run/secrets" "${root}/kiln" "${root}/verifier" ];
-          ExecStart = "${pkgs.python3}/bin/python3 ${fixture}/model_server.py --scenario ${fixture}/scenario.json --evidence /var/lib/kiln-scripted-model/evidence.json --response-delay-seconds ${if builtins.elem scenario [ "cancel" "timeout" ] then "115" else "2"}";
+      users = {
+        groups.kiln-scripted-git = { };
+        users = {
+          kiln-scripted-model = {
+            isSystemUser = true;
+            uid = 934;
+            group = "kiln-scripted-model";
+          };
+          kiln-scripted-forge = {
+            isSystemUser = true;
+            uid = 935;
+            group = "kiln-scripted-git";
+          };
         };
+        groups.kiln-scripted-model = { };
       };
-      kiln-scripted-forge = {
-        path = [ pkgs.git ];
-        serviceConfig = {
-          Type = "simple"; User = "kiln-scripted-forge"; Group = "kiln-scripted-git";
-          StateDirectory = "kiln-scripted-forge"; StateDirectoryMode = "0700";
-          ProtectSystem = "strict"; ProtectHome = true; NoNewPrivileges = true; PrivateTmp = true;
-          RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" ];
-          ExecStart = toString (pkgs.writeShellScript "kiln-scripted-forge-bound" ''
+      environment.systemPackages = [
+        pkgs.python3
+        pkgs.b3sum
+        pkgs.jq
+        pkgs.git
+        pkgs.iproute2
+        pkgs.procps
+        pkgs.util-linux
+        pkgs.nickel
+        (import ../modules/kiln-implementer/qualification-package.nix { inherit pkgs; })
+      ];
+      systemd.services = {
+        kiln-scripted-network = {
+          description = "Closed fixture loopback namespace; no interface or external route";
+          wantedBy = [ "multi-user.target" ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+          };
+          script = ''
+            ${pkgs.iproute2}/bin/ip netns add kiln-scripted-model
+            ${pkgs.iproute2}/bin/ip -n kiln-scripted-model link set lo up
+          '';
+          preStop = "${pkgs.iproute2}/bin/ip netns delete kiln-scripted-model";
+        };
+        kiln-scripted-setup = {
+          description = "Initialize only disposable actual Git/credential fixtures";
+          wantedBy = [ "multi-user.target" ];
+          requires = [ "systemd-tmpfiles-setup.service" ];
+          after = [ "systemd-tmpfiles-setup.service" ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+          };
+          script = ''
+            install -d -m 0700 /run/secrets
+            printf %s scripted-intake-only > /run/secrets/kiln-scripted-intake
+            printf %s scripted-publisher-only > /run/secrets/kiln-scripted-publisher
+            chmod 0600 /run/secrets/kiln-scripted-intake /run/secrets/kiln-scripted-publisher
+            if ! test -f ${root}/verifier/repository/config; then
+              ${pkgs.git}/bin/git clone --bare --no-hardlinks ${fixture}/repository.git ${root}/verifier/repository
+              chown -R kiln-implementation-verifier:kiln-implementation-ledger ${root}/verifier
+              chmod 0700 ${root}/verifier ${root}/verifier/repository
+            fi
+            install -d -m 0750 -o kiln-implementation-publisher -g kiln-scripted-git ${root}/github
+            if ! test -f ${root}/github/remote.git/config; then
+              ${pkgs.git}/bin/git clone --bare --no-hardlinks ${fixture}/repository.git ${root}/github/remote.git
+              ${pkgs.git}/bin/git -C ${root}/github/remote.git config core.sharedRepository group
+              chown -R kiln-implementation-publisher:kiln-scripted-git ${root}/github/remote.git
+              chmod -R g+rwX ${root}/github/remote.git
+              find ${root}/github/remote.git -type d -exec chmod g+s {} +
+            fi
+          '';
+        };
+        kiln-scripted-campaign-setup = lib.mkIf campaignMode {
+          description = "Initialize disposable selected-Cairn state through canonical owner commands";
+          wantedBy = [ "multi-user.target" ];
+          requires = [
+            "kiln-scripted-setup.service"
+            "kiln-scripted-network.service"
+            "kiln-implementation-policy-check.service"
+          ];
+          after = [
+            "kiln-scripted-setup.service"
+            "kiln-scripted-network.service"
+            "kiln-implementation-policy-check.service"
+          ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            UMask = "0007";
+          };
+          script = ''
             set -eu
-            reference="$(${pkgs.jq}/bin/jq -r .claim ${root}/controller/current.json)"
-            attempt="''${reference%.json}"
-            exec ${pkgs.python3}/bin/python3 ${fixture}/github_fixture.py \
-              --publication-plan "${root}/controller/bindings/$attempt/publication/publication.json" \
-              --bare-repository ${root}/github/remote.git --state-dir /var/lib/kiln-scripted-forge --port 18701 --drop-pr-response-once
-          '');
+            ${pkgs.coreutils}/bin/install -d -m 0755 ${root}/campaign
+            ${pkgs.git}/bin/git clone --no-hardlinks ${fixture}/repository.git ${root}/campaign/source
+            ${pkgs.git}/bin/git --git-dir=${root}/verifier/repository update-ref refs/remotes/origin/main "$(${pkgs.git}/bin/git --git-dir=${root}/verifier/repository rev-parse refs/heads/main)"
+            ${selectedCohort}/environment/bin/kiln-cairn-intake ${common} \
+              --snapshot ${attemptBundle}/cairn-snapshot.json --policy ${configuration}/cairn-policy.json --sequence 1
+            intake="$(${fixtureHelper}/bin/kiln-implementation-fixture prepare-intake \
+              --database ${root}/kiln/work.sqlite --enrollment ${configuration}/enrollment.json)"
+            work="$(printf '%s' "$intake" | ${pkgs.jq}/bin/jq -er .work)"
+            ${selectedCohort}/environment/bin/kiln-implementer prepare-needs ${common} --work "$work" \
+              --needs-file ${fixture}/campaign/work-needs.json --output ${root}/campaign/work-needs.json
+            ${selectedCohort}/environment/bin/kiln-implementer attach-needs ${common} \
+              --needs-file ${root}/campaign/work-needs.json
+            ${pkgs.python3}/bin/python3 ${fixture}/prepare_campaign_plan.py \
+              --template ${fixture}/campaign/dispatch-plan-template.json \
+              --needs ${root}/campaign/work-needs.json --output ${root}/campaign/dispatch-plan-template.json
+            ${selectedCohort}/environment/bin/kiln-implementer admission-status ${common} > ${root}/campaign/admission-status.json
+            ${pkgs.coreutils}/bin/chmod 0400 ${root}/campaign/admission-status.json
+            ${pkgs.python3}/bin/python3 ${fixture}/prepare_campaign_start.py \
+              --template ${campaignStartCommand} --admission-status ${root}/campaign/admission-status.json \
+              --manifest ${fixture}/bundle-manifest.json --repository ${fixture}/repository.git \
+              --workflow ${fixture}/campaign/workflow-profile.json --policy ${configuration}/cairn-policy.json \
+              --integration-policy ${fixture}/campaign/integration-policy.json \
+              --agent-definition ${fixture}/campaign/worker-request-template.json --work "$work" \
+              --output ${root}/campaign/start-command.json
+
+            ${selectedCohort}/environment/bin/kiln-implementer campaign \
+              --database ${root}/campaign/campaign.sqlite --command-file ${root}/campaign/start-command.json
+            ${pkgs.coreutils}/bin/install -m 0444 ${fixture}/campaign/remote-template.json ${root}/campaign/remote-template.json
+            remote_binding="$(${fixtureHelper}/bin/kiln-implementation-fixture prepare-remote --profile ${root}/campaign/remote-template.json)"
+            remote_identity="$(printf '%s' "$remote_binding" | ${pkgs.jq}/bin/jq -er .remote_identity)"
+            ${pkgs.jq}/bin/jq -n --arg repository_path ${root}/verifier/repository \
+              --arg remote_identity "$remote_identity" --slurpfile remote ${root}/campaign/remote-template.json \
+              '{schema:"kiln.github-publication-source.v1",repository_path:$repository_path,remote:$remote[0],remote_identity:$remote_identity,fixture:true}' \
+              > ${root}/campaign/publication-source-profile.json
+            ${pkgs.coreutils}/bin/chmod 0444 ${root}/campaign/publication-source-profile.json
+            printf %s scripted-campaign-only > /run/kiln-scripted-campaign-publisher
+            ${pkgs.coreutils}/bin/chown kiln-implementation-publisher:kiln-implementation-ledger /run/kiln-scripted-campaign-publisher
+            ${pkgs.coreutils}/bin/chmod 0400 /run/kiln-scripted-campaign-publisher
+          '';
         };
-      };
-      kiln-implementation-publish = {
-        environment.KILN_GITHUB_FIXTURE_PUBLICATION_ENDPOINT = "http://127.0.0.1:18701";
-        serviceConfig = {
-          SupplementaryGroups = [ "kiln-scripted-git" ];
-          ReadWritePaths = lib.mkAfter [ "${root}/github" ];
+        kiln-scripted-model = {
+          requires = [ "kiln-scripted-network.service" ];
+          after = [ "kiln-scripted-network.service" ];
+          serviceConfig = {
+            Type = "simple";
+            User = "kiln-scripted-model";
+            Group = "kiln-scripted-model";
+            StateDirectory = "kiln-scripted-model";
+            StateDirectoryMode = "0700";
+            ProtectSystem = "strict";
+            ProtectHome = true;
+            NoNewPrivileges = true;
+            PrivateTmp = true;
+            NetworkNamespacePath = "/run/netns/kiln-scripted-model";
+            InaccessiblePaths = [
+              "/run/secrets"
+              "${root}/kiln"
+              "${root}/verifier"
+            ];
+            ExecStart = "${pkgs.python3}/bin/python3 ${fixture}/model_server.py --scenario ${fixture}/scenario.json --evidence /var/lib/kiln-scripted-model/evidence.json --response-delay-seconds ${
+              if
+                builtins.elem scenario [
+                  "cancel"
+                  "timeout"
+                ]
+              then
+                "115"
+              else
+                "2"
+            }";
+          };
         };
-      };
-      kiln-implementation-cairn-source-change = lib.mkIf (scenario == "sourcechange") {
-        requires = [ "kiln-implementation-policy-check.service" ]; after = [ "kiln-implementation-policy-check.service" ];
-        serviceConfig = config.systemd.services.kiln-implementation-cairn-intake.serviceConfig // {
-          ExecStart = "${selectedCohort}/environment/bin/kiln-cairn-intake ${common} --snapshot ${attemptBundle}/cairn-source-change-snapshot.json --policy ${configuration}/cairn-policy.json --sequence 2";
+        kiln-scripted-forge = {
+          path = [ pkgs.git ];
+          serviceConfig = {
+            Type = "simple";
+            User = "kiln-scripted-forge";
+            Group = "kiln-scripted-git";
+            StateDirectory = "kiln-scripted-forge";
+            StateDirectoryMode = "0700";
+            ProtectSystem = "strict";
+            ProtectHome = true;
+            NoNewPrivileges = true;
+            PrivateTmp = true;
+            RestrictAddressFamilies = [
+              "AF_UNIX"
+              "AF_INET"
+            ];
+            ExecStart = toString (
+              pkgs.writeShellScript "kiln-scripted-forge-bound" ''
+                set -eu
+                reference="$(${pkgs.jq}/bin/jq -r .claim ${root}/controller/current.json)"
+                attempt="''${reference%.json}"
+                exec ${pkgs.python3}/bin/python3 ${fixture}/github_fixture.py \
+                  --publication-plan "${root}/controller/bindings/$attempt/publication/publication.json" \
+                  --bare-repository ${root}/github/remote.git --state-dir /var/lib/kiln-scripted-forge --port 18701 --drop-pr-response-once
+              ''
+            );
+          };
+        };
+        kiln-implementation-publish = {
+          environment.KILN_GITHUB_FIXTURE_PUBLICATION_ENDPOINT = "http://127.0.0.1:18701";
+          serviceConfig = {
+            SupplementaryGroups = [ "kiln-scripted-git" ];
+            ReadWritePaths = lib.mkAfter [ "${root}/github" ];
+          };
+        };
+        kiln-implementation-cairn-source-change = lib.mkIf (scenario == "sourcechange") {
+          requires = [ "kiln-implementation-policy-check.service" ];
+          after = [ "kiln-implementation-policy-check.service" ];
+          serviceConfig = config.systemd.services.kiln-implementation-cairn-intake.serviceConfig // {
+            ExecStart = "${selectedCohort}/environment/bin/kiln-cairn-intake ${common} --snapshot ${attemptBundle}/cairn-source-change-snapshot.json --policy ${configuration}/cairn-policy.json --sequence 2";
+          };
         };
       };
     };
-  };
 in
 assert pkgs.stdenv.hostPlatform.system == "x86_64-linux";
-assert lib.all (value: lib.hasPrefix "/nix/store/" (toString value)) [ fixture cohort campaignCohort configuration attemptBundle ciServiceProfile campaignDriveProfile ];
+assert lib.all (value: lib.hasPrefix "/nix/store/" (toString value)) [
+  fixture
+  cohort
+  campaignCohort
+  configuration
+  attemptBundle
+  ciServiceProfile
+  campaignDriveProfile
+];
 pkgs.testers.runNixOSTest {
   name = "kiln-implementation-scripted-vm";
   nodes = lib.genAttrs [ "machine" "cancel" "timeout" "stale" "sourcechange" "campaign" ] node;
