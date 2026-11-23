@@ -230,6 +230,10 @@ pkgs.testers.runNixOSTest {
         start(node, "cairn-intake")
         assert status(node)["work"] == 1
         start(node, "prepare-fixture-intake")
+        # The registered host-local owner (fixture host-owner.json) admits and
+        # observes before the claim, as on the live pilot.
+        start(node, "host-owner-admit")
+        start(node, "host-owner-observe")
         start(node, "claim")
         actual = claim(node)
         assert actual["claimed_at_ms"] > 0 and actual["lease_until_ms"] > actual["claimed_at_ms"]
@@ -238,6 +242,10 @@ pkgs.testers.runNixOSTest {
 
     def prepare(node):
         actual = intake(node)
+        # A reserved attempt: Kiln sends Lattice the admitted request plus one
+        # budget `lineage`, so recover, export and cancel must name that file.
+        start(node, "host-owner-reserve")
+        start(node, "host-owner-observe")
         start(node, "bind-dispatch")
         bound = dispatch_path(node)
         node.succeed(f"test ! -e {bound}/publication.json")
@@ -277,6 +285,14 @@ pkgs.testers.runNixOSTest {
     assert model["events"][-1] == {"outcome": "completed", "requests": 2}, model
     assert sum("request_sha256" in event for event in model["events"]) == 2, model
     machine.succeed(f"test $(wc -c < {workspace}/src/scripted_model_result.txt) = 41")
+    # Kiln's read-only resolution: the recorded request carries the lineage
+    # that export-candidate and cancel-worker must hand to Lattice.
+    sent = json.loads(machine.succeed(
+        "runuser -u kiln-implementation-executor -g kiln-implementation-ledger -- "
+        f"${cohort}/environment/bin/kiln-lattice-dispatch {common} --worker-request {dispatch_path(machine)}/attempt.json "
+        "--worker-transport-profile ${configuration}/worker-transport-profile.json --sent-request true"))
+    assert sent["schema"] == "kiln.lattice-sent-request.v1" and sent["recorded"] is True, sent
+    assert "lineage" in json.loads(machine.succeed(f"cat {sent['request']}")), sent
     start(machine, "recover-dispatch")
     assert status(machine)["attempts"] == 1
     start(machine, "claim")

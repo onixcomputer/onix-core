@@ -31,12 +31,21 @@ With the default runtime name `kiln-implementation`, the explicit stages are:
    is no deployed direct `-worker` bypass or legacy review/exchange route.
 4. `-recover-dispatch`: the same actual consumer with `--recover true`, refusing
    absent prior transport intent. It does not create a second worker to resolve
-   unknown dispatch. `-cancel-worker` persists cancellation for the exact installed
-   native request; the running owner observes it and performs bounded teardown.
+   unknown dispatch. `-cancel-worker` persists cancellation for the exact request
+   Lattice ran; the running owner observes it and performs bounded teardown.
 5. `-export-candidate`: invokes the actual pinned Lattice `recover` command,
    requires its produced result for the installed envelope/fence, retains the
    native observation and exports a complete group-read-only snapshot/host
    receipt. It does not accept worker success text or mark anything verified.
+
+   After dispatch, Lattice's state is bound to the bytes Kiln sent: the admitted
+   request plus, with a host-owner reservation, one budget `lineage`. Kiln freezes
+   those bytes as `<output_directory>/request-<blake3>.json` and records them, so
+   `export-candidate` and `cancel-worker` never pass the sealed `attempt.json` to
+   Lattice. They ask the cohort's `kiln-lattice-dispatch --sent-request true` for
+   the recorded file and check the claim's attempt and fence, the file's
+   placement, name and hash, and the configured Lattice state root. Only then do
+   they run `recover` or `cancel` on that file.
 6. `-capture-candidate`: the separate verifier UID invokes actual
    `kiln-implementer capture-candidate`. It independently hashes the exported
    bytes against the enrolled Git baseline and native host receipt, then
@@ -571,8 +580,8 @@ build until Lattice and Kiln agree on a Cairn revision that has it.
 
 Opt-in outputs, never swept by CI (`legacyPackages.x86_64-linux.kiln-implementation`):
 `cohort`, `campaignCohort`, `fixtureCohort`, `fixtureHelper`, `scripted-inputs`,
-`scripted-vm`, `receipt`, `pilot-inputs.{bug,feature}`, `pilot-vm.{bug,feature}`
-and `pilot-boot`.
+`scripted-vm`, `receipt`, `pilot-inputs.{bug,feature}`, `pilot-vm.{bug,feature}`,
+`pilot-boot` and `pilot-flow`.
 
 ## Live pilot runbook (local VM only)
 
@@ -699,7 +708,16 @@ Run each with `kiln-pilot-stage NAME` from the host (equivalently
 10. `systemctl start $S-reserve` (idempotent), then `systemctl start $S-dispatch`
     — the live OMP worker. If the dispatcher is lost, `systemctl start
     $S-recover-dispatch`; to stop the worker, `systemctl start $S-cancel-worker`.
-11. `systemctl start $S-export-candidate`, `$S-capture-candidate`, `$S-verify`.
+11. `systemctl start $S-export-candidate`, `$S-capture-candidate`, then
+    `systemctl start $S-ci-enroll`, then `$S-verify`. `-ci-enroll` (after the
+    verifier acquisition in step 2) runs `-ci-credentials` first: a private TLS
+    key/certificate for `localhost:19443` and distinct operator/worker tokens
+    under `/run/$S-ci`, owned by the verifier. It then runs the canonical CI
+    service (`kiln-web-service serve`) on loopback in its own network namespace,
+    enrolls `implementer-sandbox` through the authenticated Projects intake when
+    it is not already enrolled, and stops the service: the service state has a
+    single owner, and `verify` is that owner while it runs. `-verify` requires
+    `-ci-enroll`, and rerunning or rebooting re-enrolls nothing.
 12. `systemctl start $S-bind-publication`, `$S-prepare-publication`, then
     `$S-publish` — the one GitHub write: a branch and one pull request.
 13. `systemctl start $S-host-owner-release` — after the attempt is terminal,
@@ -752,3 +770,20 @@ admits and observes, credential-bearing stages refuse, bound stages refuse
 without a claim, root SSH accepts only the share's key (password login and other
 accounts are refused, and a private key in the share disables SSH), and the
 egress rules hold.
+
+`pilot-flow` covers the stages after dispatch, offline, with two bug guests. It
+uses Kiln's authless scripted model fixture (`model_server.py`), served on each
+guest's loopback and reached through the same relay and bridge as the live
+route. The base is a deterministic root commit of the same reviewed tree
+(`2f2762b7…`), so the verifier store is seeded locally rather than from GitHub.
+Both guests take a host-owner reservation, so Kiln sends Lattice the admitted
+request plus one budget `lineage`. One guest dispatches, then exports from the
+recorded sent request, captures, enrolls the project in the canonical CI
+service (twice, to show the rerun is a no-op) and verifies. It then binds and
+prepares publication and runs `publish` with a placeholder token. Publish must
+pass Kiln's exact remote check and stop at the network: the publication
+remote is Kiln's derivation `https://github.com/<owner>/<name>.git` from the
+lowercase repository key, which `build_pilot.py` also checks at build time.
+The other guest has its worker cancelled mid-flight by `cancel-worker`, and
+export is then refused. Only the base commit, the model route and the absent
+model key differ from the live guest.

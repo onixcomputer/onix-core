@@ -258,6 +258,10 @@ class CandidateExportTests(unittest.TestCase):
         workspace = root / "workspace"
         workspace.mkdir()
         (workspace / "code").write_text("candidate")
+        # A file the worker made executable, in a subdirectory.
+        (workspace / "bin").mkdir()
+        (workspace / "bin/run").write_text("#!/bin/sh\n")
+        (workspace / "bin/run").chmod(0o700)
         output = root / "exports"
         output.mkdir()
         envelope = {"work_id": "work", "attempt_id": "attempt", "workspace_id": "workspace", "fence": 3}
@@ -270,28 +274,36 @@ class CandidateExportTests(unittest.TestCase):
         observation = {"schema": "lattice.implementation-attempt-observation.v1", "envelope": envelope,
                        "result": {"disposition": "produced", "receipt": receipt, "blocker": None}}
         args = SimpleNamespace(state=str(root / "state"), output_parent=str(output))
-        return args, (root, root, cohort, request, workspace), observation
+        binding = {"path": str(root), "attempt": "attempt", "fence": 3}
+        sent = (root / "request-sent.json", {"state_directory": args.state})
+        return args, (root, binding, cohort, request, workspace), observation, sent
 
     def test_produced_native_result_exports_bytes_not_acceptance(self):
         with tempfile.TemporaryDirectory() as directory:
-            args, inputs, observation = self.fixture(directory)
+            args, inputs, observation, sent = self.fixture(directory)
             # Scripted durable native observation only; not worker execution or
             # proof of cross-UID permissions. Actual capture rehashes this tree.
-            with patch.object(qualification, "attempt_inputs", return_value=inputs), patch.object(qualification, "immutable", side_effect=Path), patch.object(qualification, "digest", return_value="a" * 64), patch.object(qualification.subprocess, "check_output", return_value=json.dumps(observation).encode()):
+            with patch.object(qualification, "attempt_inputs", return_value=inputs), patch.object(qualification, "immutable", side_effect=Path), patch.object(qualification, "digest", return_value="a" * 64), patch.object(qualification, "_sent_request", return_value=sent), patch.object(qualification.subprocess, "check_output", return_value=json.dumps(observation).encode()) as lattice:
                 result = qualification.export_candidate(args)
+                # Lattice recovers from the request it ran, not the admitted one.
+                self.assertEqual(lattice.call_args.args[0][2:], ["recover", "--request", str(sent[0]), "--state", args.state])
                 self.assertFalse(result["accepted"])
                 self.assertEqual(result["qualification"], "unqualified")
                 candidate = Path(result["candidate_root"])
                 self.assertEqual((candidate / "code").read_text(), "candidate")
+                # Directories stay 0750 in the capture group; files carry
+                # exactly Git's modes, which Kiln's byte receipt admits.
                 self.assertEqual(candidate.stat().st_mode & 0o777, 0o750)
-                self.assertEqual((candidate / "code").stat().st_mode & 0o777, 0o640)
+                self.assertEqual((candidate / "bin").stat().st_mode & 0o777, 0o750)
+                self.assertEqual((candidate / "code").stat().st_mode & 0o777, 0o644)
+                self.assertEqual((candidate / "bin/run").stat().st_mode & 0o777, 0o755)
                 self.assertEqual(qualification.document(result["host_receipt"]), observation["result"]["receipt"])
                 with self.assertRaises(FileExistsError):
                     qualification.export_candidate(args)
 
     def test_unknown_crossed_or_forged_receipts_never_export(self):
         with tempfile.TemporaryDirectory() as directory:
-            args, inputs, baseline = self.fixture(directory)
+            args, inputs, baseline, sent = self.fixture(directory)
             cases = []
             unknown = copy.deepcopy(baseline)
             unknown["result"]["disposition"] = "unknown"
@@ -306,10 +318,75 @@ class CandidateExportTests(unittest.TestCase):
             crossed["envelope"]["attempt_id"] = "other-attempt"
             cases.append(crossed)
             for observation in cases:
-                with patch.object(qualification, "attempt_inputs", return_value=inputs), patch.object(qualification, "immutable", side_effect=Path), patch.object(qualification, "digest", return_value="a" * 64), patch.object(qualification.subprocess, "check_output", return_value=json.dumps(observation).encode()):
+                with patch.object(qualification, "attempt_inputs", return_value=inputs), patch.object(qualification, "immutable", side_effect=Path), patch.object(qualification, "digest", return_value="a" * 64), patch.object(qualification, "_sent_request", return_value=sent), patch.object(qualification.subprocess, "check_output", return_value=json.dumps(observation).encode()):
                     with self.assertRaises(ValueError):
                         qualification.export_candidate(args)
             self.assertEqual(list(Path(args.output_parent).iterdir()), [])
+
+
+class SentRequestTests(unittest.TestCase):
+    """The request Lattice ran, as Kiln's read-only `--sent-request` mode resolves it."""
+
+    def fixture(self, directory):
+        root = Path(directory)
+        output = root / "lattice/observations"
+        output.mkdir(parents=True)
+        operation = root / "binding"
+        operation.mkdir()
+        (operation / "attempt.json").write_text("{}")
+        sent = output / ("request-" + "e" * 64 + ".json")
+        sent.write_text("{}")
+        configuration = root / "configuration"
+        configuration.mkdir()
+        transport = {"output_directory": str(output), "state_directory": str(root / "lattice/implementation")}
+        (configuration / "worker-transport-profile.json").write_text(json.dumps(transport))
+        (configuration / "enrollment.json").write_text("{}")
+        args = SimpleNamespace(configuration=str(configuration), state_root=str(root), state=transport["state_directory"])
+        cohort = {"entries": {"dispatch": {"resolved_path": "/nix/store/dispatch", "blake3": "e" * 64}}}
+        resolution = {"schema": "kiln.lattice-sent-request.v1", "attempt": "a" * 64, "fence": 1, "recorded": True,
+                      "request": str(sent), "request_blake3": "e" * 64, "state_directory": transport["state_directory"]}
+        return args, cohort, operation, {"attempt": "a" * 64, "fence": 1}, resolution
+
+    def resolve(self, args, cohort, operation, claim, resolution, admitted="e" * 64):
+        digests = lambda path: admitted if Path(path).name == "attempt.json" else "e" * 64
+        with patch.object(qualification, "immutable", side_effect=Path), patch.object(qualification, "digest", side_effect=digests), \
+             patch.object(qualification.subprocess, "check_output", return_value=json.dumps(resolution).encode()) as kiln:
+            request, _ = qualification._sent_request(args, cohort, operation, claim)
+        return request, kiln.call_args.args[0]
+
+    def test_recorded_lineage_request_is_the_profile_frozen_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args, cohort, operation, claim, resolution = self.fixture(directory)
+            request, argv = self.resolve(args, cohort, operation, claim, resolution, admitted="f" * 64)
+            self.assertEqual(request, Path(resolution["request"]))
+            self.assertEqual(argv[-2:], ["--sent-request", "true"])
+            self.assertEqual(argv[argv.index("--worker-request") + 1], str(operation / "attempt.json"))
+            # A legacy launch sent the admitted bytes, and only those.
+            legacy = resolution | {"recorded": False}
+            self.assertEqual(self.resolve(args, cohort, operation, claim, legacy)[0], Path(resolution["request"]))
+            with self.assertRaisesRegex(ValueError, "admitted bytes"):
+                self.resolve(args, cohort, operation, claim, legacy, admitted="f" * 64)
+
+    def test_crossed_misplaced_or_untyped_resolutions_are_refused(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args, cohort, operation, claim, resolution = self.fixture(directory)
+            root = Path(directory)
+            (root / ("request-" + "e" * 64 + ".json")).write_text("{}")
+            for change in ({"attempt": "b" * 64}, {"fence": 2}, {"fence": "1"}, {"recorded": "true"},
+                           {"schema": "kiln.lattice-sent-request.v0"}, {"extra": None},
+                           {"request": str(root / ("request-" + "e" * 64 + ".json"))},
+                           {"request_blake3": "f" * 64},
+                           {"state_directory": str(root / "other")}):
+                with self.subTest(change=change):
+                    with self.assertRaises(ValueError):
+                        self.resolve(args, cohort, operation, claim, resolution | change)
+            with self.assertRaises(ValueError):
+                self.resolve(SimpleNamespace(**vars(args) | {"state": str(root / "other")}), cohort, operation, claim, resolution)
+            sent = Path(resolution["request"])
+            sent.unlink()
+            sent.symlink_to(operation / "attempt.json")
+            with self.assertRaisesRegex(ValueError, "ordinary file"):
+                self.resolve(args, cohort, operation, claim, resolution)
 
 
 class RuntimeBindingTests(unittest.TestCase):

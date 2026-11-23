@@ -57,10 +57,10 @@ in
       # separate paths and are loaded only by their own stage units.
       intakeCredential = "${credentials}/intake";
       publisherCredential = "${credentials}/publisher";
-      modelCredential = "${credentials}/model";
+      modelCredential = if cfg.model.credential then "${credentials}/model" else null;
       modelNetworkNamespace = "/run/netns/${netns}";
       leaseMilliseconds = 3600000;
-      # Kiln local-operator authority for claim, dispatch and host-owner stages.
+      # Kiln local-operator authority for every protected stage (claim through publish).
       localOperator = "brittonr";
       timeoutSeconds = 3600;
     };
@@ -119,6 +119,9 @@ in
         requires = [ "kiln-pilot-model-netns.service" ];
         after = [ "kiln-pilot-model-netns.service" ];
       };
+      # The CI service opens the enrolled repository the acquisition stage
+      # clones; enrollment (and so verify) orders after it.
+      kiln-implementation-ci-enroll.after = [ "kiln-pilot-acquire-verifier-source.service" ];
       # Trusted verifier acquisition of the exact enrolled repository; read-only
       # GitHub access with the intake token, run once by the operator.
       kiln-pilot-acquire-verifier-source = {
@@ -142,7 +145,7 @@ in
           repository=${root}/verifier/repository
           if ! test -f "$repository/HEAD"; then
             git -c credential.helper= -c core.askPass="$GIT_ASKPASS" clone --bare --no-tags \
-              https://github.com/OnixResearch/implementer-sandbox.git "$repository.new"
+              https://github.com/${cfg.repositoryKey}.git "$repository.new"
             rm -rf "$repository"
             mv "$repository.new" "$repository"
           fi

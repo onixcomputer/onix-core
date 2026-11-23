@@ -154,6 +154,31 @@ let common = {
       },
     },
   },
+  # Input to Kiln's config/fair-admission-host-owner.ncl: one registered
+  # host-local owner, so a reserved attempt's dispatch carries Kiln's budget
+  # `lineage` and every post-dispatch stage must name the sent request.
+  host_owner_input = {
+    provider = "kiln-scripted-host",
+    host = "kiln-scripted",
+    generation = 1,
+    capacity = { worker_slots = 1 },
+    observation_ttl_ms = 600000,
+    reservation_ttl_ms = 3600000,
+    campaign = "scripted_qualification",
+    tenant = "kiln_scripted",
+    deadline_ms = 1830297600000,
+    quota = { worker_slots = 4 },
+    per_work = { worker_slots = 1 },
+    limits = {
+      max_items = 8, max_bytes = 1048576, max_wait_ms = 86400000,
+      max_observation_age_ms = 900000, max_retry_after_ms = 60000,
+      max_children = 1, max_active = 1,
+    },
+    repositories = [{
+      repository = repository,
+      classes = [{ name = "bug", project = "qualification", verification_profile = input.verification_identity }],
+    }],
+  },
   ci_service_seed = {
     schema = "kiln.web-service.v1", service_id = "kiln-scripted-canonical-ci",
     listen_address = "127.0.0.1:19443", origin = "https://localhost:19443",

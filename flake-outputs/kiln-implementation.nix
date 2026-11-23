@@ -10,6 +10,7 @@ let
     inherit pkgs lib;
     cohort = pinned.fixtureCohort;
     inherit (pinned) fixtureHelper cairnSource cairnPolicy;
+    hostOwnerContract = "${self.inputs.kiln-implementation}/config/fair-admission-host-owner.ncl";
   };
   pilot = import ../modules/kiln-implementer/pilot { inherit pkgs lib self pinned; };
   # Host-side operator helpers for the pilot guests (ssh, stage, collect).
@@ -30,7 +31,7 @@ in {
       scripted-inputs = scripted.packages.kiln-implementation-scripted-inputs;
       scripted-vm = scripted.checks.kiln-implementation-scripted-vm;
       receipt = import ../modules/kiln-implementer/receipt-check.nix { inherit pkgs lib pinned; inherit (self) inputs; };
-      inherit (pilot) pilot-inputs pilot-parse pilot-resolver pilot-vm pilot-boot;
+      inherit (pilot) pilot-inputs pilot-parse pilot-resolver pilot-vm pilot-boot pilot-flow;
       pilot-tools = pilotTools;
     };
   };

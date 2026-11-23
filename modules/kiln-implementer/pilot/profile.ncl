@@ -25,7 +25,9 @@ let input = raw | {
   spec | {
     name | std.contract.from_predicate (fun value => value == "bug" || value == "feature"),
     case | { issue | Number, title | String, test | String, reproducer | Bool },
-    model | { id | String, endpoint | String, upstream | { address | String, port | Number } },
+    # `credential = false` only for an authless local model fixture: no key is
+    # loaded and the broker sends no Authorization.
+    model | { id | String, endpoint | String, upstream | { address | String, port | Number }, credential | Bool },
     repository | { owner | String, name | String, id | Number, key | String, base | String, remote_url | String },
   },
 } in
@@ -134,7 +136,7 @@ let common = {
             schema = "lattice.candidate-model-broker.v1",
             endpoint = spec.model.endpoint,
             model = spec.model.id,
-            credential = { provider = "env", key = "KILN_IMPLEMENTATION_MODEL_KEY" },
+            credential = if spec.model.credential then { provider = "env", key = "KILN_IMPLEMENTATION_MODEL_KEY" } else null,
             relay = input.relay, shell = input.shell,
             sandbox_blake3 = input.sandbox.blake3,
             expires_at_ms = runtime "expires_at_ms",

@@ -27,6 +27,14 @@ let
   # Kiln's explicit local-operator authority for admission-bound commands.
   operatorArgs = lib.optionals (cfg.localOperator != null) [ "--local-operator" cfg.localOperator ];
   hostOwnerArgs = operatorArgs ++ [ "--profile" (file "host-owner.json") ];
+  # Kiln's implementation authority (Kiln docs/implementation-runbook.md,
+  # "Select implementation authority first"): every command reaching a
+  # protected operation — claim, dispatch, candidate submission, verification
+  # admission, publication — gets the deployment's selection. Script-based
+  # stages end in "$@", so the selection stays visible in ExecStart.
+  protected = unit: lib.recursiveUpdate unit {
+    serviceConfig.ExecStart = lib.concatStringsSep " " ([ unit.serviceConfig.ExecStart ] ++ map lib.escapeShellArg operatorArgs);
+  };
   # Registered host-local owner (Kiln config/fair-admission-host-owner.ncl).
   # Reserve/release bind the exact retained claim, re-read from the owner.
   hostOwnerClaimStage = command: lib.recursiveUpdate (stage command [ ]) {
@@ -35,8 +43,8 @@ let
       current="$(${qualification}/bin/kiln-implementation-qualify current-claim ${lib.escapeShellArgs bindingArgs})"
       attempt="$(printf '%s' "$current" | ${pkgs.jq}/bin/jq -er .attempt)"
       fence="$(printf '%s' "$current" | ${pkgs.jq}/bin/jq -er .fence)"
-      exec ${lib.escapeShellArg executable} ${command} ${lib.escapeShellArgs (commonArgs ++ hostOwnerArgs)} \
-        --attempt "$attempt" --fence "$fence"
+      exec ${lib.escapeShellArg executable} ${command} ${lib.escapeShellArgs (commonArgs ++ [ "--profile" (file "host-owner.json") ])} \
+        --attempt "$attempt" --fence "$fence" "$@"
     '');
   };
   policyCheck = lib.escapeShellArgs ([ "${qualification}/bin/kiln-implementation-qualify" "policy"
@@ -75,7 +83,7 @@ let
     serviceConfig.ExecStart = toString (pkgs.writeShellScript "${name}-${command}-bound" ''
       set -eu
       ${resolveBinding phase}
-      exec ${lib.escapeShellArg executable} ${command} ${lib.escapeShellArgs commonArgs} ${arguments}
+      exec ${lib.escapeShellArg executable} ${command} ${lib.escapeShellArgs commonArgs} ${arguments} "$@"
     '');
   };
   # Each controller unit runs Kiln as the coordinator (User=) and seals
@@ -115,7 +123,7 @@ let
       --profile ${lib.escapeShellArg (toString cfg.ciServiceProfile)} ${lib.escapeShellArgs commonArgs} \
       --attempt "$attempt" --fence "$fence" \
       --verification-profile "$binding/verification-profile.json" \
-      --authority "$binding/verifier-authority.json"
+      --authority "$binding/verifier-authority.json" "$@"
   '';
   captureCommand = pkgs.writeShellScript "${name}-capture-candidate" ''
     set -eu
@@ -126,7 +134,7 @@ let
       --profile "$binding/verification-profile.json" \
       --authority "$binding/verifier-authority.json" \
       --candidate-root "$exported/candidate" --host-receipt "$exported/host-receipt.json" \
-      --handoff-output ${lib.escapeShellArg "${root}/verifier/reports"}/"$attempt-$fence.handoff.json"
+      --handoff-output ${lib.escapeShellArg "${root}/verifier/reports"}/"$attempt-$fence.handoff.json" "$@"
   '';
   verifierStage = command: script: lib.recursiveUpdate (stage command [ ]) {
     serviceConfig = {
@@ -134,6 +142,93 @@ let
       ReadWritePaths = [ "${root}/kiln" "${root}/verifier" ] ++ lib.optionals (command == "verify") cfg.canonicalCiStatePaths; ExecStart = toString script;
     };
   };
+  # Canonical CI service enrollment. Kiln's verification refuses a project the
+  # service state has not enrolled (kiln-web-service engine/verification.rs),
+  # and enrollment exists only as the service's authenticated Projects intake,
+  # POST /api/projects with the operator token (engine/api.rs, docs/operator.md
+  # "Install reviewed profiles and authority"). The service state has one owner
+  # at a time (engine/storage.rs StateLock: "service state already has an
+  # owner"), and verify-implementation opens that same state itself, so
+  # `serve` runs only inside the enrollment step, never beside verify.
+  ciRuntime = "/run/${name}-ci";
+  ciProfile = lib.escapeShellArg (toString cfg.ciServiceProfile);
+  # Private TLS 1.3 key/certificate and distinct operator/worker tokens at the
+  # profile's paths: 64 hex bytes, no newline, owner-only, created atomically
+  # and kept when present (Kiln docs/operator.md token and key rules).
+  ciCredentials = pkgs.writeShellScript "${name}-ci-credentials" ''
+    set -eu
+    export PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.jq pkgs.openssl ]}
+    umask 077
+    runtime=${lib.escapeShellArg ciRuntime}
+    within() {
+      value="$(jq -er "$1" ${ciProfile})"
+      case "$value" in "$runtime"/*) printf '%s' "$value" ;; *) echo "CI service $1 is outside $runtime" >&2; exit 1 ;; esac
+    }
+    certificate="$(within .tls.certificate_path)"
+    key="$(within .tls.private_key_path)"
+    operator="$(within .operator_token_file)"
+    worker="$(within .worker_token_file)"
+    for token in "$operator" "$worker"; do
+      if ! test -s "$token"; then
+        temporary="$(mktemp "$runtime/.token.XXXXXX")"
+        openssl rand -hex 32 | tr -d '\n' > "$temporary"
+        chmod 0600 "$temporary"
+        mv -T "$temporary" "$token"
+      fi
+    done
+    if ! test -s "$certificate" || ! test -s "$key"; then
+      scratch="$(mktemp -d "$runtime/.tls.XXXXXX")"
+      openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes -days 30 \
+        -subj /CN=localhost -addext subjectAltName=DNS:localhost,IP:127.0.0.1 \
+        -keyout "$scratch/key.pem" -out "$scratch/certificate.pem" 2> /dev/null
+      chmod 0600 "$scratch/key.pem" "$scratch/certificate.pem"
+      mv -T "$scratch/key.pem" "$key"
+      mv -T "$scratch/certificate.pem" "$certificate"
+      rmdir "$scratch"
+    fi
+  '';
+  # Idempotent: enroll each allowlisted project only when the service does not
+  # already list it, through the real HTTPS intake (Host/Origin/JSON/bearer as
+  # kiln-web-service server.rs requires), then stop the service.
+  ciEnroll = pkgs.writeShellScript "${name}-ci-enroll" ''
+    set -eu
+    export PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.jq pkgs.curl ]}
+    service=${lib.escapeShellArg "${cfg.cohort}/environment/bin/kiln-web-service"}
+    "$service" check --profile ${ciProfile}
+    origin="$(jq -er .origin ${ciProfile})"
+    host="''${origin#https://}"
+    listen="$(jq -er .listen_address ${ciProfile})"
+    certificate="$(jq -er .tls.certificate_path ${ciProfile})"
+    headers="$(mktemp)"
+    printf 'Authorization: Bearer %s\n' "$(cat "$(jq -er .operator_token_file ${ciProfile})")" > "$headers"
+    api() {
+      curl --silent --show-error --fail-with-body --max-time 10 --cacert "$certificate" \
+        --connect-to "$host:$listen" -H @"$headers" "$@"
+    }
+    enrolled() { printf '%s' "$projects" | jq -e --arg id "$1" 'any(.enrolled[]; .id == $id)' > /dev/null; }
+    "$service" serve --profile ${ciProfile} &
+    server=$!
+    trap 'kill -TERM "$server" 2> /dev/null || true; wait "$server" || true; rm -f "$headers"' EXIT
+    projects=""
+    for _ in $(seq 1 60); do
+      if projects="$(api "https://$host/api/projects" 2> /dev/null)"; then break; fi
+      kill -0 "$server"
+      sleep 1
+    done
+    test -n "$projects"
+    for project in $(jq -r '.projects[].id' ${ciProfile}); do
+      if enrolled "$project"; then
+        echo "$project: already enrolled"
+        continue
+      fi
+      api -X POST -H "Origin: $origin" -H "Content-Type: application/json" \
+        --data "$(jq -cn --arg project "$project" '{request_id: ("onix-enroll-" + $project), project_id: $project}')" \
+        "https://$host/api/projects" > /dev/null
+      echo "$project: enrolled"
+    done
+    projects="$(api "https://$host/api/projects")"
+    for project in $(jq -r '.projects[].id' ${ciProfile}); do enrolled "$project"; done
+  '';
   dispatcher = recovery: {
     description = "Bounded current-grant Kiln dispatch through the actual Lattice OMP executor";
     requires = [ "${name}-policy-check.service" ]; after = [ "${name}-policy-check.service" ];
@@ -170,7 +265,7 @@ let
         exec ${cfg.cohort}/environment/bin/kiln-lattice-dispatch ${lib.escapeShellArgs commonArgs} \
           --worker-request "$binding/attempt.json" --worker-transport-profile ${lib.escapeShellArg (file "worker-transport-profile.json")} \
           --dispatch-plan "$binding/dispatch-plan.json" --admission-observations "$binding/admission-observations.json" \
-          ${lib.escapeShellArgs operatorArgs} ${lib.optionalString recovery "--recover true"}
+          ${lib.optionalString recovery "--recover true"} "$@"
       '');
     } // lib.optionalAttrs (cfg.modelNetworkNamespace != null) { NetworkNamespacePath = cfg.modelNetworkNamespace; }
       // lib.optionalAttrs (cfg.modelCredential != null && !recovery) { LoadCredential = [ "model:${cfg.modelCredential}" ]; };
@@ -210,7 +305,7 @@ in {
     timeoutSeconds = mkOption { type = types.ints.between 1 86400; default = 3600; };
     maximumPages = mkOption { type = types.ints.between 1 20; default = 5; };
     leaseMilliseconds = mkOption { type = types.ints.between 1000 86400000; default = 3600000; };
-    localOperator = mkOption { type = types.nullOr (types.strMatching "[A-Za-z0-9][A-Za-z0-9_.-]{0,63}"); default = null; description = "Kiln local-operator authority passed to the claim, dispatch and host-owner stages"; };
+    localOperator = mkOption { type = types.nullOr (types.strMatching "[A-Za-z0-9][A-Za-z0-9_.-]{0,63}"); default = null; description = "Kiln local-operator authority passed to every stage reaching a protected operation: claim, bind-dispatch, host-owner, dispatch, capture, verify and publication"; };
     cairnSequence = mkOption { type = types.ints.positive; default = 1; };
     modelNetworkNamespace = mkOption { type = types.nullOr (types.strMatching "/run/netns/[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63}"); default = null; description = "Existing endpoint-scoped namespace the dispatcher (Lattice's host-side model broker) joins; the worker itself never has a network device"; };
     modelCredential = mkOption { type = types.nullOr types.str; default = null; description = "Runtime model API key path, loaded only into the dispatch unit and passed to Lattice's host broker as ${modelCredentialEnv}; never visible to the worker"; };
@@ -243,7 +338,10 @@ in {
       "${name}-executor" = { isSystemUser = true; uid = cfg.executorUid; group = "${name}-executor"; };
     };
     systemd.tmpfiles.rules = [
-      "d ${root} 0711 root root -"
+      # Ledger-group readable, traverse-only for others: kiln-web-service walks
+      # every ancestor of its state and repository paths with
+      # O_RDONLY|O_DIRECTORY (worker/files.rs `directory`), which needs read.
+      "d ${root} 0751 root ${name}-ledger -"
       "d ${root}/kiln 0770 ${name}-coordinator ${name}-ledger -"
       "f ${root}/kiln/work.sqlite 0660 ${name}-coordinator ${name}-ledger -"
       "d ${root}/controller 0755 root root -"
@@ -302,22 +400,21 @@ in {
       # bind-dispatch, release only after the attempt is terminal.
       "${name}-host-owner-admit" = stage "host-owner-admit" hostOwnerArgs;
       "${name}-host-owner-observe" = stage "host-owner-observe" hostOwnerArgs;
-      "${name}-host-owner-reserve" = hostOwnerClaimStage "host-owner-reserve";
-      "${name}-host-owner-release" = hostOwnerClaimStage "host-owner-release";
+      "${name}-host-owner-reserve" = protected (hostOwnerClaimStage "host-owner-reserve");
+      "${name}-host-owner-release" = protected (hostOwnerClaimStage "host-owner-release");
       "${name}-reserve" = boundStage "reserve-plan" "dispatch" ''--plan-file "$binding/dispatch-plan.json"'';
-      "${name}-dispatch" = dispatcher false;
-      "${name}-recover-dispatch" = dispatcher true;
+      "${name}-dispatch" = protected (dispatcher false);
+      "${name}-recover-dispatch" = protected (dispatcher true);
       "${name}-cancel-worker" = {
         description = "Persist cancellation for the exact installed native Lattice attempt";
         serviceConfig = hardening // {
           Type = "oneshot"; User = "${name}-executor"; Group = "${name}-ledger";
           ReadWritePaths = [ "${root}/kiln" "${root}/lattice" ];
-          ExecStart = toString (pkgs.writeShellScript "${name}-cancel-bound" ''
-            set -eu
-            ${resolveBinding "dispatch"}
-            exec ${cfg.cohort}/environment/bin/lattice implementation-attempt cancel \
-              --request "$binding/attempt.json" --state ${lib.escapeShellArg "${root}/lattice/implementation"}
-          '');
+          # Lattice binds its intent to the bytes Kiln sent (the admitted
+          # request, possibly plus one budget lineage), so the helper resolves
+          # that recorded file through Kiln before cancelling.
+          ExecStart = lib.escapeShellArgs ([ "${qualification}/bin/kiln-implementation-qualify" "cancel-worker"
+            "--state" "${root}/lattice/implementation" ] ++ bindingArgs);
         };
       };
       "${name}-export-candidate" = {
@@ -332,10 +429,36 @@ in {
             "--output-parent" "${root}/candidate-export" ] ++ bindingArgs ++ credentialArgs);
         };
       };
-      "${name}-capture-candidate" = verifierStage "capture-candidate" captureCommand;
-      "${name}-verify" = verifierStage "verify" verifyCommand;
-      "${name}-prepare-publication" = boundStage "prepare-publication" "publication" ''--publication-file "$binding/publication.json"'';
-      "${name}-publish" = remote cfg.publisherCredential (boundStage "publish" "publication" ''--publication-file "$binding/publication.json" --remote-profile "$binding/publication-source-profile.json" --secret-file "$CREDENTIALS_DIRECTORY/github"'');
+      "${name}-capture-candidate" = protected (verifierStage "capture-candidate" captureCommand);
+      "${name}-ci-credentials" = {
+        description = "Private TLS key, certificate and role tokens for the canonical CI service";
+        serviceConfig = hardening // {
+          Type = "oneshot"; RemainAfterExit = true;
+          User = "${name}-verifier"; Group = "${name}-ledger"; UMask = "0077";
+          RuntimeDirectory = "${name}-ci"; RuntimeDirectoryMode = "0700"; RuntimeDirectoryPreserve = "yes";
+          ExecStart = toString ciCredentials;
+        };
+      };
+      "${name}-ci-enroll" = {
+        description = "Enroll the allowlisted projects through the canonical CI service's Projects intake";
+        requires = [ "${name}-policy-check.service" "${name}-ci-credentials.service" ];
+        after = [ "${name}-policy-check.service" "${name}-ci-credentials.service" ];
+        serviceConfig = hardening // {
+          Type = "oneshot"; RemainAfterExit = true;
+          User = "${name}-verifier"; Group = "${name}-ledger";
+          # The service listens on loopback inside this unit's own private
+          # network namespace; nothing else can reach it.
+          RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" ];
+          ReadWritePaths = cfg.canonicalCiStatePaths;
+          ExecStart = toString ciEnroll;
+        };
+      };
+      "${name}-verify" = lib.recursiveUpdate (protected (verifierStage "verify" verifyCommand)) {
+        requires = [ "${name}-policy-check.service" "${name}-ci-enroll.service" ];
+        after = [ "${name}-policy-check.service" "${name}-ci-enroll.service" ];
+      };
+      "${name}-prepare-publication" = protected (boundStage "prepare-publication" "publication" ''--publication-file "$binding/publication.json"'');
+      "${name}-publish" = remote cfg.publisherCredential (protected (boundStage "publish" "publication" ''--publication-file "$binding/publication.json" --remote-profile "$binding/publication-source-profile.json" --secret-file "$CREDENTIALS_DIRECTORY/github"''));
       "${name}-status" = stage "status" [ ];
       "${name}-cairn-intake" = lib.recursiveUpdate (stage "status" [ ]) {
         serviceConfig.ExecStart = lib.escapeShellArgs ([ "${cfg.cohort}/environment/bin/kiln-cairn-intake" ] ++ commonArgs ++ [ "--snapshot" (template "cairn-snapshot.json") "--policy" (file "cairn-policy.json") "--sequence" (toString cfg.cairnSequence) ]);

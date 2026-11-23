@@ -925,29 +925,95 @@ def runtime_binding(args):
 def attempt_inputs(args):
     bundle = immutable_tree(args.bundle)
     cohort = document(immutable(Path(args.cohort) / "manifest.json"))
-    operation = Path(runtime_binding(args)["path"])
-    request = _owned_document(operation / "attempt.json")
+    binding = runtime_binding(args)
+    request = _owned_document(Path(binding["path"]) / "attempt.json")
     workspace = validate_attempt(request, cohort, args.workspace_parent, args.model_credential_env)
-    return bundle, operation, cohort, request, workspace
+    return bundle, binding, cohort, request, workspace
 
 
 def check_attempt(args):
-    _, operation, _, _, workspace = attempt_inputs(args)
+    _, binding, _, _, workspace = attempt_inputs(args)
     if not workspace.is_dir() or workspace.is_symlink():
         raise ValueError("controller-prepared actual claim workspace is absent or linked")
     return {"schema": "onix.kiln.workspace-preparation.v1", "workspace": str(workspace),
-            "binding": str(operation), "disposition": "request-checked",
+            "binding": binding["path"], "disposition": "request-checked",
             "qualification": "scripted-unqualified", "base_verification": "Lattice native snapshot admission required"}
 
 
-def export_candidate(args):
-    bundle, operation, cohort, request, workspace = attempt_inputs(args)
+SENT_REQUEST_FIELDS = {"schema", "attempt", "fence", "recorded", "request", "request_blake3", "state_directory"}
+
+
+def _sent_request(args, cohort, operation, claim):
+    """The request bytes Lattice actually ran for the canonical claim.
+
+    Kiln's dispatcher may send the admitted request plus one budget `lineage`
+    and records that file (kiln-adapter-lattice worker.rs `sent_request_path`);
+    Lattice binds its persisted intent to those exact bytes, so every
+    post-dispatch Lattice call (recover, cancel) must name it. Kiln's read-only
+    `--sent-request` mode resolves and verifies it; this re-checks the result
+    against the claim and the immutable worker transport profile.
+    """
+    entry = cohort["entries"]["dispatch"]
+    program = immutable(entry["resolved_path"])
+    if digest(program) != entry["blake3"]:
+        raise ValueError("canonical dispatcher executable changed")
+    transport_path = immutable(Path(args.configuration) / "worker-transport-profile.json")
+    transport = document(transport_path)
+    state_root = str(Path(args.state_root))
+    output_directory = Path(transport.get("output_directory", ""))
+    state_directory = transport.get("state_directory")
+    if output_directory != Path(state_root) / "lattice/observations" or state_directory != state_root + "/lattice/implementation" or args.state != state_directory:
+        raise ValueError("worker transport output/state roots differ from the deployment's Lattice state")
+    raw = subprocess.check_output([str(program), "--database", str(Path(args.state_root) / "kiln/work.sqlite"),
+                                   "--enrollment", str(immutable(Path(args.configuration) / "enrollment.json")),
+                                   "--worker-request", str(operation / "attempt.json"),
+                                   "--worker-transport-profile", str(transport_path), "--sent-request", "true"], timeout=60)
+    if len(raw) > MAX_DOCUMENT_BYTES:
+        raise ValueError("sent-request resolution exceeds byte bound")
+    sent = json.loads(raw)
+    if not isinstance(sent, dict) or set(sent) != SENT_REQUEST_FIELDS or sent["schema"] != "kiln.lattice-sent-request.v1":
+        raise ValueError("dispatcher did not return a typed sent-request resolution")
+    if sent["attempt"] != claim["attempt"] or type(sent["fence"]) is not int or sent["fence"] != claim["fence"] or type(sent["recorded"]) is not bool:
+        raise ValueError("sent request belongs to another canonical claim")
+    blake3 = sent["request_blake3"]
+    request = Path(sent["request"])
+    if not isinstance(blake3, str) or not DIGEST.fullmatch(blake3) or request != output_directory / f"request-{blake3}.json":
+        raise ValueError("sent request is not the profile's frozen request file")
+    if not stat.S_ISREG(request.lstat().st_mode) or digest(request) != blake3:
+        raise ValueError("sent request file is not the ordinary file Kiln verified")
+    if not sent["recorded"] and blake3 != digest(operation / "attempt.json"):
+        raise ValueError("an unrecorded launch must have sent the admitted bytes")
+    if sent["state_directory"] != state_directory:
+        raise ValueError("sent request names another Lattice state root")
+    return request, sent
+
+
+def _lattice_attempt(cohort, command, request, state, timeout):
     program = immutable(cohort["entries"]["lattice"]["resolved_path"])
     if digest(program) != cohort["entries"]["lattice"]["blake3"]:
-        raise ValueError("native candidate observer executable changed")
-    raw = subprocess.check_output([str(program), "implementation-attempt", "recover", "--request", str(operation / "attempt.json"), "--state", args.state], timeout=30)
+        raise ValueError("native Lattice executable changed")
+    raw = subprocess.check_output([str(program), "implementation-attempt", command, "--request", str(request), "--state", state], timeout=timeout)
     if len(raw) > MAX_DOCUMENT_BYTES:
-        raise ValueError("native candidate observation exceeds bound")
+        raise ValueError(f"native Lattice {command} output exceeds bound")
+    return raw
+
+
+def cancel_worker(args):
+    """Persist cancellation for the exact request Lattice ran."""
+    cohort = document(immutable(Path(args.cohort) / "manifest.json"))
+    binding = runtime_binding(args)
+    request, sent = _sent_request(args, cohort, Path(binding["path"]), binding)
+    outcome = json.loads(_lattice_attempt(cohort, "cancel", request, sent["state_directory"], 30))
+    if not isinstance(outcome, dict):
+        raise ValueError("native Lattice cancellation output is not an object")
+    return {"schema": "onix.kiln.worker-cancel.v1", "attempt": sent["attempt"], "fence": sent["fence"],
+            "request": str(request), "request_blake3": sent["request_blake3"], "lattice": outcome}
+
+
+def export_candidate(args):
+    _, binding, cohort, request, workspace = attempt_inputs(args)
+    sent_request, sent = _sent_request(args, cohort, Path(binding["path"]), binding)
+    raw = _lattice_attempt(cohort, "recover", sent_request, sent["state_directory"], 30)
     observation = json.loads(raw)
     if observation.get("schema") != "lattice.implementation-attempt-observation.v1" or observation.get("envelope") != request["envelope"]:
         raise ValueError("native recovery substituted the installed attempt envelope")
@@ -967,11 +1033,14 @@ def export_candidate(args):
     exported.mkdir(mode=0o750)
     candidate = exported / "candidate"
     stage_tree(workspace, candidate)
+    # Kiln's capture admits exactly Git's file modes (0644/0755) for its
+    # byte-exact receipt. The 0750 capture-group directories keep the files
+    # away from everyone outside that group.
     for directory, _, files in os.walk(candidate):
         Path(directory).chmod(0o750)
         for name in files:
             path = Path(directory) / name
-            path.chmod(0o750 if path.stat().st_mode & 0o111 else 0o640)
+            path.chmod(0o755 if path.stat().st_mode & 0o111 else 0o644)
     write_document(exported / "host-receipt.json", receipt)
     (exported / "host-receipt.json").chmod(0o640)
     with (exported / "native-observation.json").open("xb") as output:
@@ -1053,7 +1122,7 @@ def main():
     policy.add_argument("--work-class", action="append", required=True)
     policy.add_argument("--state-root", required=True)
     policy.add_argument("--cohort", required=True)
-    for name in ("check-attempt", "export-candidate", "binding-path", "materialize-binding", "claim-attempt", "prepare-fixture-intake", "current-claim"):
+    for name in ("check-attempt", "export-candidate", "cancel-worker", "binding-path", "materialize-binding", "claim-attempt", "prepare-fixture-intake", "current-claim"):
         attempt = commands.add_parser(name)
         for option in ("bundle", "cohort"):
             attempt.add_argument("--" + option, required=True)
@@ -1073,8 +1142,10 @@ def main():
         if name == "claim-attempt":
             attempt.add_argument("--lease-ms", type=int, required=True)
             attempt.add_argument("--phase", choices=("native", "seal"), required=True)
-        if name == "export-candidate":
+        if name in ("export-candidate", "cancel-worker"):
+            # The configured Lattice state root; the sent request must name it.
             attempt.add_argument("--state", required=True)
+        if name == "export-candidate":
             attempt.add_argument("--output-parent", required=True)
     authority = commands.add_parser("verifier-authority")
     for option in ("authority", "root", "cohort"):
@@ -1108,6 +1179,8 @@ def main():
             result = check_attempt(args)
         elif args.command == "export-candidate":
             result = export_candidate(args)
+        elif args.command == "cancel-worker":
+            result = cancel_worker(args)
         elif args.command == "verifier-authority":
             result = validate_verifier_authority(document(args.authority), args.root, args.worker_uid, document(Path(args.cohort) / "manifest.json"))
         elif args.command == "prepare-disks":

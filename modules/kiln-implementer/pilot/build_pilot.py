@@ -95,7 +95,17 @@ def main():
         put(configuration / name, value)
     put(configuration / "work-class.json", {"class": spec["name"] if spec["name"] == "bug" else "bounded-feature",
         "repository": repository["key"], "policy_blake3": blake3(configuration / "github-policy.json")})
-    put(attempt / "runtime-template.json", export(args.profile, inputs, "runtime_template", scratch))
+    template = export(args.profile, inputs, "runtime_template", scratch)
+    # Kiln derives the only publishable remote from the durable lowercase
+    # repository key and compares it as an exact string (kiln-adapter-github
+    # src/publication.rs:605-614 `validate_source_profile`, owner/name split at
+    # :786-808 `repository_parts`); any other spelling is
+    # github_publication_remote_mismatch before any network call.
+    owner, name = repository["key"].split("/")
+    remote = template["publication"]["publication-source-profile.json"]["remote"]["remote_url"]
+    if remote != f"https://github.com/{owner}/{name}.git" or repository["remote_url"] != remote:
+        raise ValueError(f"publication remote {remote} is not Kiln's derivation from {repository['key']}")
+    put(attempt / "runtime-template.json", template)
     # Kiln's typed host-owner registration, exported through its own contract.
     owner_input = scratch / "host-owner-input.json"
     put(owner_input, export(args.profile, inputs, "host_owner_input", scratch))

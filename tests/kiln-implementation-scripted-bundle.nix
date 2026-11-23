@@ -1,5 +1,5 @@
 # Strict constructor: every executed consumer is a required real immutable input.
-{ pkgs, lib, cohort, fixtureHelper, cairnSource, cairnPolicy }:
+{ pkgs, lib, cohort, fixtureHelper, cairnSource, cairnPolicy, hostOwnerContract }:
 let
   immutable = value: lib.hasPrefix "/nix/store/" (toString value);
   campaignCohort = import ../modules/kiln-implementer/campaign-cohort.nix { inherit pkgs lib; } {
@@ -45,6 +45,7 @@ let
       --cairn-policy ${lib.escapeShellArg (toString cairnPolicy)} \
       --python ${pkgs.python3}/bin/python3 \
       --github-fixture ${./kiln-implementation-github-fixture.py} \
+      --host-owner-contract ${lib.escapeShellArg (toString hostOwnerContract)} \
       --fixtures ${./kiln-implementation-fixtures} --output "$out" --scratch "$TMPDIR/construction"
     ${pkgs.python3}/bin/python3 ${./kiln-implementation-fixtures/prepare_campaign_bundle.py} \
       --output "$out" --cohort ${lib.escapeShellArg (toString cohort)} \

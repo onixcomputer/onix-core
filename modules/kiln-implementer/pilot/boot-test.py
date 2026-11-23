@@ -1,8 +1,5 @@
-import hashlib
-import hmac
-import json
+# Appended to offline-intake.py (json, scripted_claim, kiln_status).
 import re
-import shlex
 
 stages = [
     "poll", "cairn-intake", "claim", "prepare-fixture-intake", "bind-dispatch", "bind-publication",
@@ -46,10 +43,15 @@ with subtest("credential-bearing stages refuse without their credential"):
     pilot.fail("systemctl start kiln-pilot-acquire-verifier-source.service")
 
 with subtest("bound stages refuse without a canonical claim"):
-    for stage in ("bind-dispatch", "reserve", "export-candidate", "capture-candidate", "verify", "bind-publication", "prepare-publication"):
+    for stage in ("bind-dispatch", "reserve", "export-candidate", "capture-candidate", "bind-publication", "prepare-publication"):
         pilot.fail(f"systemctl start kiln-implementation-{stage}.service")
         result = pilot.succeed(f"systemctl show kiln-implementation-{stage}.service -p Result --value").strip()
         assert result == "exit-code", (stage, result)
+    # Verify refuses even earlier: it requires the canonical CI enrollment,
+    # which cannot open the verifier repository before its acquisition.
+    pilot.fail("systemctl start kiln-implementation-verify.service")
+    assert pilot.succeed("systemctl show kiln-implementation-ci-enroll.service -p Result --value").strip() == "exit-code"
+    assert pilot.succeed("systemctl show kiln-implementation-verify.service -p ExecMainStartTimestampMonotonic --value").strip() == "0"
     pilot.succeed("systemctl start kiln-implementation-status.service")
     status = json.loads(pilot.succeed("tail -n 1 /var/log/kiln-implementation-coordinator/status.jsonl"))
     print(status)
@@ -93,45 +95,12 @@ with subtest("egress: only the relay account reaches the gateway"):
     pilot.fail("ip netns exec kiln-implementation-model setpriv --reuid=931 --regid=65534 --clear-groups curl -sS -m 3 http://10.0.2.2:8080/v1/models")
 
 with subtest("a scripted issue delivery is claimed and bound offline"):
-    # Kiln's real intake path (`drain`) on one locally signed `issues` delivery
-    # for issue #1: no GitHub call, no credential share, no worker or model.
-    deployment = json.loads(pilot.succeed("cat /etc/kiln-implementation/deployment.json"))
-    cohort, configuration = deployment["cohort"], deployment["configuration"]
-    implementer = f"{cohort}/environment/bin/kiln-implementer"
-    common = f"--database /var/lib/kiln-implementation/kiln/work.sqlite --enrollment {configuration}/enrollment.json"
-    secret = b"kiln-pilot-boot-test-webhook-secret"
-    body = json.dumps({
-        "action": "opened",
-        "repository": {"id": 1467234739, "name": "implementer-sandbox", "owner": {"login": "OnixResearch"}},
-        "sender": {"login": "brittonr"},
-        "issue": {"number": 1, "title": "word_count counts empty words and ignores tabs and newlines",
-                  "body": "scripted boot-test delivery", "state": "open", "updated_at": "2026-11-22T00:00:00Z"},
-    }, sort_keys=True)
-    signature = "sha256=" + hmac.new(secret, body.encode(), hashlib.sha256).hexdigest()
-    spool = "/var/lib/kiln-implementation/kiln/boot-intake"
-    pilot.succeed(f"install -d -m 0700 -o kiln-implementation-coordinator -g kiln-implementation-ledger {spool}")
-    pilot.succeed(f"printf %s {shlex.quote(secret.decode())} > {spool}/secret && chown kiln-implementation-coordinator {spool}/secret && chmod 0400 {spool}/secret")
-    enqueue = ("import sqlite3,sys; c=sqlite3.connect(sys.argv[1]); "
-               "c.execute('CREATE TABLE IF NOT EXISTS implementation_deliveries (delivery_id TEXT PRIMARY KEY, event TEXT NOT NULL, signature TEXT NOT NULL, body BLOB NOT NULL, recorded_at_ms INTEGER NOT NULL)'); "
-               "c.execute('INSERT INTO implementation_deliveries VALUES (?,?,?,?,?)', ('00000000-0000-4000-8000-000000000001','issues',sys.argv[2],sys.argv[3].encode(),1)); c.commit()")
-    pilot.succeed(f"runuser -u kiln-implementation-coordinator -- python3 -c {shlex.quote(enqueue)} {spool}/queue.sqlite {shlex.quote(signature)} {shlex.quote(body)}")
-    drained = pilot.succeed(f"runuser -u kiln-implementation-coordinator -- {implementer} drain {common} --queue {spool}/queue.sqlite "
-                            f"--secret-file {spool}/secret --policy {configuration}/github-policy.json --maximum-deliveries 16 --limit 16")
-    print(drained)
-    pilot.succeed("systemctl start kiln-implementation-status.service")
-    assert json.loads(pilot.succeed("tail -n 1 /var/log/kiln-implementation-coordinator/status.jsonl"))["work"] == 1
-    for stage in ("host-owner-admit", "host-owner-observe", "claim"):
-        pilot.succeed(f"systemctl start kiln-implementation-{stage}.service")
-    reference = json.loads(pilot.succeed("cat /var/lib/kiln-implementation/controller/current.json"))["claim"]
-    claim = json.loads(pilot.succeed(f"cat /var/lib/kiln-implementation/controller/claims/{reference}"))
-    print(claim)
-    assert len(claim["identity"]) == 64 and claim["fence"] >= 1, claim
-    pilot.succeed("test $(stat -c %u /var/lib/kiln-implementation/controller/current.json) = 0")
-    pilot.succeed("systemctl start kiln-implementation-status.service")
-    assert json.loads(pilot.succeed("tail -n 1 /var/log/kiln-implementation-coordinator/status.jsonl"))["attempts"] == 1
+    # Kiln's real intake path on one locally signed delivery for issue #1
+    # (offline-intake.py): no GitHub call, credential share, worker or model.
+    claimed = scripted_claim(pilot)
+    claim, binding = claimed["claim"], claimed["binding"]
     for stage in ("host-owner-reserve", "host-owner-observe", "bind-dispatch"):
         pilot.succeed(f"systemctl start kiln-implementation-{stage}.service")
-    binding = f"/var/lib/kiln-implementation/controller/bindings/{claim['identity']}-{claim['fence']}/dispatch"
     pilot.succeed(f"test $(stat -c %u {binding}/manifest.json) = 0")
     for name in ("attempt.json", "dispatch-plan.json", "admission-observations.json"):
         pilot.succeed(f"runuser -u kiln-implementation-executor -- test -r {binding}/{name}")

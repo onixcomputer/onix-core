@@ -56,13 +56,22 @@ let
     && credentialed."${stem}-publish".serviceConfig.LoadCredential == [ "github:/run/secrets/test-publisher" ]
     && builtins.elem "-/run/secrets" credentialed."${stem}-dispatch".serviceConfig.InaccessiblePaths
     && builtins.elem "-/run/secrets" credentialed."${stem}-verify".serviceConfig.InaccessiblePaths;
+  # Kiln implementation authority (docs/implementation-runbook.md): every unit
+  # reaching a protected operation carries the deployment's local-operator
+  # selection in its own ExecStart; none carries it when none is selected.
+  protectedUnits = [ "claim" "bind-dispatch" "host-owner-admit" "host-owner-observe" "host-owner-reserve"
+    "host-owner-release" "dispatch" "recover-dispatch" "capture-candidate" "verify" "prepare-publication" "publish" ];
+  operated = (evaluate (baseline // { localOperator = "check-operator"; })).systemd.services;
+  operatorScoped =
+    lib.all (unit: lib.hasInfix "--local-operator check-operator" (builtins.toJSON operated."${stem}-${unit}".serviceConfig.ExecStart)) protectedUnits
+    && lib.all (unit: !(lib.hasInfix "--local-operator" (builtins.toJSON units."${stem}-${unit}".serviceConfig.ExecStart))) protectedUnits;
   guestRejects = lib.all (settings: !(builtins.tryEval ((import ../modules/kiln-implementer/guest.nix) ({
     nixpkgs = self.inputs.nixpkgs; cohort = null; vmm = null;
   } // settings))).success) [
     { system = "aarch64-linux"; } { cpus = 0; } { memoryMiB = 128; }
     { memoryBacking = "shared"; } { mergeable = true; }
   ];
-  valid = assertionsPass enabled
+  valid = assertionsPass enabled && operatorScoped
     && !(disabled.systemd.services ? "${stem}-publish")
     && units."${stem}-publish".wantedBy == [ ]
     && units."${stem}-dispatch".wantedBy == [ ]
@@ -102,6 +111,15 @@ let
     && units."${stem}-verify".serviceConfig.User != dispatcher.User
     && units."${stem}-capture-candidate".serviceConfig.User == "${stem}-verifier"
     && units."${stem}-verify".serviceConfig.ReadWritePaths == [ "/var/lib/${stem}/kiln" "/var/lib/${stem}/verifier" "/var/lib/existing-canonical-ci" ]
+    # Verification needs the project enrolled in the canonical CI service
+    # state; enrollment runs as the verifier, loopback-only, after its
+    # private TLS key and tokens exist.
+    && lib.all (field: builtins.elem "${stem}-ci-enroll.service" units."${stem}-verify".${field}) [ "requires" "after" ]
+    && lib.all (field: builtins.elem "${stem}-ci-credentials.service" units."${stem}-ci-enroll".${field}) [ "requires" "after" ]
+    && lib.all (unit: let config = units."${stem}-${unit}".serviceConfig; in
+      config.User == "${stem}-verifier" && config.PrivateNetwork && config.NoNewPrivileges && config.CapabilityBoundingSet == "") [ "ci-credentials" "ci-enroll" ]
+    && units."${stem}-ci-credentials".serviceConfig.RuntimeDirectoryMode == "0700"
+    && units."${stem}-ci-enroll".serviceConfig.ReadWritePaths == [ "/var/lib/existing-canonical-ci" ]
     && lib.hasInfix "policy-check" (builtins.toJSON units."${stem}-dispatch".requires)
     && assertionsPass campaign
     && !campaignDefault

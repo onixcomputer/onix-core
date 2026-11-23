@@ -48,7 +48,7 @@ def export_profile(source, inputs, field, scratch):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    for option in ("cohort", "fixture-helper", "cairn-source", "cairn-policy", "python", "fixtures", "github-fixture", "output", "scratch"):
+    for option in ("cohort", "fixture-helper", "cairn-source", "cairn-policy", "python", "fixtures", "github-fixture", "host-owner-contract", "output", "scratch"):
         parser.add_argument("--" + option, required=True, type=Path)
     args = parser.parse_args()
     output = args.output
@@ -133,6 +133,12 @@ def main():
         put(configuration / name, value)
     put(configuration / "work-class.json", {"class": "bug", "repository": "qualification/disposable",
         "policy_blake3": blake3(configuration / "github-policy.json")})
+    # Kiln's typed host-owner registration, exported through its own contract.
+    owner_input = scratch / "host-owner-input.json"
+    put(owner_input, export_profile(source, inputs, "host_owner_input", scratch))
+    owner_expression = scratch / "host-owner.ncl"
+    owner_expression.write_text(f"(import {json.dumps(str(args.host_owner_contract))}) (import {json.dumps(str(owner_input))})\n")
+    (configuration / "host-owner.json").write_bytes(run("nickel", "export", "--format", "json", owner_expression))
     put(attempt / "runtime-template.json", export_profile(source, inputs, "runtime_template", scratch))
     ci_seed = scratch / "ci-service-seed.json"
     put(ci_seed, export_profile(source, inputs, "ci_service_seed", scratch))
