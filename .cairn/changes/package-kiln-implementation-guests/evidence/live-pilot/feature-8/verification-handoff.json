@@ -1,0 +1,46 @@
+{
+  "schema": "kiln.implementation-candidate-handoff.v1",
+  "work_identity": "fa277c4e0576b620386854b6e0059710f4fc1ad943ffa25e9797339a3968005c",
+  "work_revision": 1795324374000,
+  "attempt_identity": "5e561e403645d9e2c1634b3fa4501ca546c60682ce4b9ed56ecbab9881dcff24",
+  "fence": 1,
+  "repository": "onixresearch/implementer-sandbox",
+  "base": {
+    "contract_version": 1,
+    "provider_namespace": "git",
+    "native_kind": "commit",
+    "native_id": "f1adb86f6320f2bbb6c02ae077905a6bb8c22955"
+  },
+  "candidate": {
+    "contract_version": 1,
+    "provider_namespace": "git",
+    "native_kind": "commit",
+    "native_id": "1867913168d13e312d67e594cebe394d8fbb74ce"
+  },
+  "tree": {
+    "contract_version": 1,
+    "provider_namespace": "git",
+    "native_kind": "tree",
+    "native_id": "d18e3b9198b35a3133b0bc67d2d68d4f90421da8"
+  },
+  "changed_paths": [
+    "src/lib.rs"
+  ],
+  "acceptance_digest": "419515fb143196aaa8537b1b505942f954080e53bf9549c3b5828a8f77fe19a7",
+  "verification_profile": "7ccc34d379a663e2a78c6446dd1f3e19bd660fbca92977a945c2291303529528",
+  "toolchain": "28ffb2ad5e6985cb38ff2ad24b6022c3c56f6f5e1ea223183c1fedab9d32929d",
+  "environment": "b9a327d5fd329ae98922893d9ce82aba0da8e27edf436b6e2530cec2d7d83de7",
+  "evidence": [
+    {
+      "identity": "99b30014642f7567808ba770dbf2215be35460e925dd0a345211173b4dee5f42",
+      "kind": "artifact",
+      "outcome": "unknown",
+      "reference": {
+        "contract_version": 1,
+        "provider_namespace": "kiln",
+        "native_kind": "host-candidate-receipt",
+        "native_id": "99b30014642f7567808ba770dbf2215be35460e925dd0a345211173b4dee5f42"
+      }
+    }
+  ]
+}

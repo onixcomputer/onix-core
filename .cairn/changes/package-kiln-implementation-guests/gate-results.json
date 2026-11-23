@@ -1,0 +1,13 @@
+{
+  "schema": "onix.cairn.prerequisite-gates.v1",
+  "change": "package-kiln-implementation-guests",
+  "root": "/home/brittonr/git/onix-core",
+  "policy": "/home/brittonr/git/OnixResearch/cairn/cairn-policy/generated/cairn-policy.json",
+  "results": {
+    "proposal": "PASS",
+    "design": "PASS",
+    "tasks": "PASS"
+  },
+  "scope": "Observed prerequisite structural gates only, before product edits. Initial missing requirement/GIVEN/task-linkage failures were corrected before these passes.",
+  "product_checks": "not run; parent owns coordinated verification"
+}

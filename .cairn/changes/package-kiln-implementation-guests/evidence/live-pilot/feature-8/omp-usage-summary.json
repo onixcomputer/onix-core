@@ -1,0 +1,10 @@
+{
+  "assistant_messages": 3,
+  "input": 1765,
+  "output": 1697,
+  "cacheRead": 11520,
+  "cacheWrite": 0,
+  "totalTokens": 14982,
+  "reasoningTokens": 980,
+  "cost_total_usd": 0.00263502
+}
