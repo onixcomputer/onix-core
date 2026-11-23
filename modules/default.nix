@@ -57,6 +57,7 @@ let
     "radicle-ci-runner" = import ./radicle-ci-runner (schemaArgs ./radicle-ci-runner);
     "kiln-aspen-canary" = import ./kiln-aspen-canary (schemaArgs ./kiln-aspen-canary);
     "kiln-aspen-radicle-ci" = import ./kiln-aspen-radicle-ci (schemaArgs ./kiln-aspen-radicle-ci);
+    "kiln-implementer" = import ./kiln-implementer (schemaArgs ./kiln-implementer);
     "radicle-node" = import ./radicle-node (schemaArgs ./radicle-node);
     "radicle-seed-replica" = import ./radicle-seed-replica (schemaArgs ./radicle-seed-replica);
     "rustfs" = import ./rustfs (schemaArgs ./rustfs);

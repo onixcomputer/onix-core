@@ -1,0 +1,10 @@
+{
+  "schema": "kiln.scripted-model-scenario.v1",
+  "id": "kiln-implementation-scripted-model",
+  "model": "kiln-scripted/scripted-v1",
+  "task_marker": "KILN_SCRIPTED_TASK: scripted-model-001",
+  "target_path": "src/scripted_model_result.txt",
+  "content": "scripted model fixture changed this file\n",
+  "completion_text": "The requested synthetic repository edit is complete.",
+  "tool_call_id": "kiln-scripted-write-001"
+}

@@ -1,0 +1,100 @@
+{
+  "schema": "onix.kiln.qualification-profiles.v1",
+  "claim_boundary": "Source/package structure only; every runtime scope below remains unqualified until its own real evidence exists.",
+  "profiles": [
+    {
+      "id": "verified-pr-scripted",
+      "requires": [
+        "actual intake/claim/executor/verifier/publisher consumers",
+        "strict immutable cohort/configuration/canonical profile/attempt-bundle input and executable hash/CLI validation",
+        "owner-defined local scripted model and GitHub provider transport/receipt contract",
+        "duplicate/restart/moved-base/effect-before-ack cases through actual consumers",
+        "scripted worker isolation and credential refusal"
+      ],
+      "status": "unqualified",
+      "evidence": []
+    },
+    {
+      "id": "verified-pr-live-omp",
+      "requires": [
+        "exact source cohort and actual worker binary",
+        "approved real bug and bounded feature repositories",
+        "scoped model route and credentials or qualified authless namespace",
+        "independent checks and authorized branch/PR effects"
+      ],
+      "status": "unqualified",
+      "evidence": []
+    },
+    {
+      "id": "guest-boot-restore-memory",
+      "requires": [
+        "built guest/cohort and selected actual CH bytes",
+        "KVM/platform availability",
+        "actual generated command with raw disks and exact memory settings",
+        "filesystem and identity separation tests",
+        "cold boot and restore retained evidence"
+      ],
+      "status": "unqualified",
+      "evidence": []
+    },
+    {
+      "id": "guest-cross-host-precopy",
+      "requires": [
+        "qualified retained Lattice guest/host channel",
+        "fresh Aspen placement/disk/effect fencing",
+        "same verified immutable closure rooted on both hosts",
+        "actual source/receiver CH identities and launch config",
+        "boot/migration/restore memory backing evidence"
+      ],
+      "status": "unqualified",
+      "evidence": []
+    },
+    {
+      "id": "cpu-workers-remote-shared-serving",
+      "requires": [
+        "two independent CPU workspaces/attempts on distinct repositories",
+        "separate execution and serving-deployment reservations",
+        "actual Molten compute and Animus serving observation/admission interfaces",
+        "one exact engine/model/device profile on another host",
+        "per-worker/per-model request/usage and unknown remainder",
+        "queue saturation, generation loss and restart reconciliation scenarios"
+      ],
+      "status": "unqualified",
+      "evidence": []
+    },
+    {
+      "id": "serving-residency-affinity-budgets",
+      "requires": [
+        "exact Inference Lab #11/#5 policy evidence",
+        "existing host artifact preparation and policy admission",
+        "Kiln #61 campaign/child aggregate bounds under saturation",
+        "no substitution of eligibility/model/route"
+      ],
+      "status": "unqualified",
+      "evidence": []
+    },
+    {
+      "id": "dormancy-worker-model-recovery",
+      "requires": [
+        "Lattice #12 application continuation and Molten #19 supported consumer",
+        "Animus #9 obligations and stale incarnation refusal",
+        "separate durable process/session/semantic-attempt counters",
+        "independent worker and shared model crash recovery",
+        "restart policy exhaustion survives supervisor restart"
+      ],
+      "status": "unqualified",
+      "evidence": []
+    },
+    {
+      "id": "revision-prepare-promote-rollback",
+      "requires": [
+        "Lattice #25 immutable revision and pinned session consumer",
+        "Animus #18 exact-profile evidence attachment",
+        "R1 usable during failed R2 preparation; explicit R3 promotion",
+        "late R2 refusal, future-only rollback and current revocation/budget checks"
+      ],
+      "status": "unqualified",
+      "evidence": []
+    }
+  ]
+}

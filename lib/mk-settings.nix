@@ -20,6 +20,7 @@ let
     "array_string" = lib.types.listOf lib.types.str;
     "record" = lib.types.attrsOf lib.types.anything;
     "nullable_string" = lib.types.nullOr lib.types.str;
+    "nullable_number" = lib.types.nullOr lib.types.int;
     "nullable_record" = lib.types.nullOr (lib.types.attrsOf lib.types.anything);
     # "enum" handled separately — needs the values list
   };
