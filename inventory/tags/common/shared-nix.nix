@@ -178,10 +178,13 @@ in
       warn-dirty = false;
       auto-optimise-store = true;
 
-      # Trigger GC mid-build when free space drops below 100 GiB;
-      # stop collecting once 128 GiB is free.
-      min-free = 107374182400;
-      max-free = 137438953472;
+      # Disable synchronous daemon-side auto-GC during builds/copies. On shared
+      # ZFS pools, a 100 GiB min-free threshold causes GC-lock thundering herds
+      # whenever non-Nix datasets lower pool AVAIL and can collect live Clan
+      # vars generator finalScript paths mid-deploy. Scheduled idle-priority
+      # store-maintenance (nix-gc) handles store collection instead.
+      min-free = 0;
+      max-free = 0;
 
       # Caches: flake.nixConfig provides nix-community.cachix.org;
       # additional caches are appended here so all machines share them.

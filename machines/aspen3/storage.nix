@@ -370,11 +370,8 @@ let
         exit 0
       fi
 
-      if pgrep -u ${userName} -x cargo >/dev/null || pgrep -u ${userName} -x rustc >/dev/null; then
-        echo "cargo-target-prune: skipped because a Cargo build is active"
-        exit 0
-      fi
-
+      # Rely on per-directory mtime checks (idle) rather than skipping the whole
+      # pass when an unrelated Cargo build is active on this multi-agent host.
       idle() { [ -z "$(find "$1" -xdev -type f -mtime -"$stale_days" -print -quit)" ]; }
       remove() {
         echo "cargo-target-prune: removing stale build output $1"

@@ -6,7 +6,7 @@
 }:
 let
   cargoTargetDataset = "datapool/cargo-target";
-  cargoTargetQuota = "1500G";
+  cargoTargetQuota = "900G";
   gitDataset = "datapool/git";
   gitRoot = "/home/brittonr/git";
   gitWorkspaceQuota = "800G";
@@ -44,11 +44,8 @@ let
         exit 0
       fi
 
-      if pgrep -u brittonr -x cargo >/dev/null || pgrep -u brittonr -x rustc >/dev/null; then
-        echo "cargo-target-prune: skipped because a Cargo build is active"
-        exit 0
-      fi
-
+      # Rely on per-directory mtime checks (idle) rather than skipping the whole
+      # pass when an unrelated Cargo build is active on this multi-agent host.
       idle() {
         ! find "$1" -xdev -type f -mtime -"$2" -print -quit | grep -q .
       }
@@ -126,6 +123,23 @@ in
     SystemMaxUse = "1G";
     RuntimeMaxUse = "512M";
     MaxRetentionSec = "14day";
+  };
+
+  # Override systemd's 10d /tmp age rule so one-off agent build targets in /tmp
+  # do not accumulate hundreds of GiB on datapool/tmp.
+  systemd.tmpfiles.settings."tmp" = {
+    "/tmp".q = {
+      mode = "1777";
+      user = "root";
+      group = "root";
+      age = "3d";
+    };
+    "/var/tmp".q = {
+      mode = "1777";
+      user = "root";
+      group = "root";
+      age = "14d";
+    };
   };
 
   system.activationScripts.build-storage-zfs-properties = ''

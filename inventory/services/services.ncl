@@ -432,8 +432,8 @@ in
       roles.default = {
         tags.nixos = {},
         settings = {
-          retentionDays = 30,
-          schedule = "weekly",
+          retentionDays = 14,
+          schedule = "daily",
           optimizeStore = true,
           autoOptimise = true,
         },
@@ -1134,6 +1134,18 @@ in
       roles.default = {
         tags."llm-client" = {},
         settings.packages = ["pi", "openspec", "hermes-agent"],
+        # Grok Bot is xAI's Electron desktop agent, so it goes only to aspen3,
+        # brittonr's interactive Niri workstation. The list-typed packages
+        # setting concatenates with the role-level list, so aspen3 keeps the
+        # shared CLI set. r[impl onix.llm_agents.grok_bot.scope]
+        # Google's CLI (agy) and desktop app (antigravity) stay on aspen3.
+        # r[impl onix.llm_agents.antigravity.scope]
+        # r[impl onix.llm_agents.antigravity.source]
+        machines.aspen3.settings.packages = [
+          "grok-bot",
+          "antigravity-cli",
+          "antigravity-hub",
+        ],
         # The Antigravity CLI (`agy`) is used on the desktop workstation too.
         machines.britton-desktop.settings.packages = ["antigravity-cli"],
       },
