@@ -364,8 +364,21 @@
     };
     # The OMP reference Lattice's JSONL adapter and Kiln's worker contract pin.
     omp-implementation.url = "github:can1357/oh-my-pi/e325ffc73ab86e03bdd20a91b77d8e2b3964c906";
+    # Kiln's fleet orchestration (docs/kiln-fleet.md): `kiln-fleet` on the
+    # coordinator, the agent hosts and every swarm member.
+    kiln-fleet = {
+      url = "git+https://github.com/OnixResearch/kiln.git?rev=3cdb0ce385a8f027bd68587f884b44e5f02523f7";
+    };
     musnix = {
       url = "github:musnix/musnix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    # Renews NNTP server over iroh (aspen1 slime + private swarm news).
+    # 40354b5db42c fixes render.rs month sort, skips idle snapshot/HTML rewrites,
+    # adds Open Claims dashboard + capped Authors index + a/index.html, adds MCP
+    # post session / read last / --no-shared-cursor, and adds groupDescriptions.
+    renews = {
+      url = "github:brittonr/renews/40354b5db42cf7a7b85bd340e5367d73118bf196";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # Saved-machine gateway; keep the requested main revision reproducible.

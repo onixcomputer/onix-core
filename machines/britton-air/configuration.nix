@@ -14,7 +14,16 @@
 
     # Package pinning through nixpkgs-multiverse (see AGENTS.md)
     inputs.multiverse.darwinModules.default
+
+    ../../modules/swarm-news/client.nix
   ];
+
+  # A swarm member without clan vars: iroh-news makes its own key, approved
+  # once from britton-desktop (docs/swarm-news.md).
+  onix.swarmNews = {
+    enable = true;
+    username = "britton-air";
+  };
 
   # Per-package pins maintained by `mvs lock`; installs nothing until
   # `multiverse.enable = true` is set (see AGENTS.md "Package pinning").

@@ -40,6 +40,7 @@ let tag_file_tags = [
   "rdma-cluster",
   "remote-builders",
   "ssd-optimization",
+  "swarm-news",
   "taskwarrior",
   "tenstorrent",
   "thunderbolt-link",

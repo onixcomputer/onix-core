@@ -59,8 +59,13 @@ let
       builtins.attrNames traefik.dynamicConfigOptions.http.routers == [
         "home"
         "radicle-ci-reports"
+        "swarm-news-site"
         "traefik-dashboard"
       ];
+    swarmSiteIsTailnetOnly =
+      traefik.dynamicConfigOptions.http.middlewares.swarm-news-site-tailnet-only.ipAllowList.sourceRange
+      == [ "100.64.0.0/10" ]
+      && builtins.elem "swarm-news-site-tailnet-only" traefik.dynamicConfigOptions.http.routers.swarm-news-site.middlewares;
   };
 in
 {

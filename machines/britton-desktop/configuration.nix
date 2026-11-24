@@ -309,6 +309,9 @@ in
     ../../inventory/tags/common/herdr-iroh.nix
     ./build-storage.nix
     ./collie-serve.nix
+    ../../modules/swarm-news/site.nix
+    ../../modules/kiln-fleet/agent-host.nix
+    ../../modules/kiln-fleet/coordinator.nix
     ../../modules/pi-branchfs/nixos.nix
     ../../modules/drift-rustfs/nixos.nix
     inputs.tenstorrent-nix.nixosModules.default

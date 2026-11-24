@@ -18,6 +18,7 @@ Read [`docs/rustfs-build-caches.md`](docs/rustfs-build-caches.md) for private Ka
 
 Read [`docs/site-celld.md`](docs/site-celld.md) for the private Site fleet, publisher credential boundary, deployment, and activation.
 Read [`docs/meshtop.md`](docs/meshtop.md) for the Aspen3, Bonsai, britton-desktop, and Leviathan monitor, paired identities, CPU/GPU hardware names, live checks, and scoped persistence boundaries.
+Read [`docs/swarm-news.md`](docs/swarm-news.md) for the private swarm newsgroup server on aspen1 that coordinates the coding agents: members, deployment order, and approving machines without clan vars.
 
 Read [`docs/onixos-aspen2-pilot.md`](docs/onixos-aspen2-pilot.md) for aspen2's OnixOS build beside Clan: the typed Nickel services, secrets, parity check, cutover and rollback.
 

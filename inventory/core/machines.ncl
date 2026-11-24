@@ -115,6 +115,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "gpu-unified-memory",
         "thunderbolt-link",
         "vllm-cluster-network",
+        "swarm-news",
       ],
       deploy.targetHost = "root@aspen1.local",
       # Build here instead of on the target: the target's root cannot fetch
@@ -190,6 +191,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "syncthing",
         "amd-gpu",
         "gaming",
+        "swarm-news",
       ],
       # aspen3's tailscale device registers as `aspen3-1`; the bare `aspen3`
       # name does not resolve to this host on the deploy LAN. Pin the deploy
@@ -244,6 +246,7 @@ let { Machines, .. } = import "contracts.ncl" in
         "backup",
         "syncthing",
         "thunderbolt-link",
+        "swarm-news",
       ],
       deploy.targetHost = "root@britton-desktop.clan",
     },

@@ -92,6 +92,7 @@ in
 {
   imports = [
     ../../inventory/tags/common/herdr-iroh.nix
+    ../../modules/kiln-fleet/agent-host.nix
     ./disko.nix
     ./storage.nix
     ../../modules/pi-branchfs/nixos.nix
