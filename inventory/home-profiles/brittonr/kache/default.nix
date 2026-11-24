@@ -27,6 +27,11 @@ let
   rustcWrapperMissingArgumentMessage = "cargo-rustc-kache-wrapper: expected rustc path as first argument";
 
   kachePackage = pkgs.kache;
+  defaultKacheCacheDir = "/var/cache/kache-nix/user-brittonr";
+  # Bake content-addressed toolchain store paths at Nix build time so every
+  # rustc invocation avoids `command -v` / `readlink -f` subprocess forks.
+  pinnedCcPath = "${pkgs.stdenv.cc}/bin/cc";
+  pinnedMoldPath = "${pkgs.mold}/bin/mold";
 
   tomlFormat = pkgs.formats.toml { };
 
@@ -47,6 +52,11 @@ let
       real_rustc="$1"
       shift
 
+      # Fast-path explicit bypass before resolving paths or checking the daemon.
+      if [ "''${KACHE_DISABLED:-0}" = 1 ]; then
+        exec "$real_rustc" "$@"
+      fi
+
       resolve_path() {
         candidate="$1"
 
@@ -55,23 +65,22 @@ let
           return 0
         fi
 
+        # Store paths that are not symlinks are already canonical; avoid a fork.
+        case "$candidate" in
+          /nix/store/*)
+            if [ ! -L "$candidate" ]; then
+              printf '%s' "$candidate"
+              return 0
+            fi
+            ;;
+        esac
+
         if resolved="$(readlink -f "$candidate" 2>/dev/null)"; then
           printf '%s' "$resolved"
           return 0
         fi
 
         printf '%s' "$candidate"
-      }
-
-      resolve_command() {
-        command_name="$1"
-
-        if command_path="$(command -v "$command_name" 2>/dev/null)"; then
-          resolve_path "$command_path"
-          return 0
-        fi
-
-        printf '%s' unset
       }
 
       is_cargo_workspace_wrapper_chain() {
@@ -92,7 +101,28 @@ let
         exec "$real_rustc" "$@"
       fi
 
-      toolchain_salt="rustc=$(resolve_path "$real_rustc");cc=$(resolve_command cc);mold=$(resolve_command mold)"
+      # Zero-fork liveness check: when the managed kache-rustfs daemon is not
+      # running, pass straight through to rustc instead of spawning an
+      # unprivileged user daemon without S3 credentials or hitting a wedged store.
+      kache_cache_dir="''${KACHE_CACHE_DIR:-${defaultKacheCacheDir}}"
+      if [ "''${KACHE_LOCAL_ONLY:-0}" != 1 ] && [ ! -S "$kache_cache_dir/daemon.sock" ]; then
+        exec "$real_rustc" "$@"
+      fi
+
+      case "$real_rustc" in
+        /nix/store/*)
+          if [ ! -L "$real_rustc" ]; then
+            resolved_rustc="$real_rustc"
+          else
+            resolved_rustc="$(resolve_path "$real_rustc")"
+          fi
+          ;;
+        *)
+          resolved_rustc="$(resolve_path "$real_rustc")"
+          ;;
+      esac
+
+      toolchain_salt="rustc=$resolved_rustc;cc=${pinnedCcPath};mold=${pinnedMoldPath}"
       user_salt="''${KACHE_KEY_SALT:-}"
 
       if [ -n "$user_salt" ]; then
@@ -110,8 +140,16 @@ let
   cargoConfig = {
     build = {
       inherit jobs;
+      pipelining = true;
       "rustc-wrapper" = lib.getExe cargoRustcWrapper;
       "target-dir" = targetDir;
+    };
+    # Line-tables-only keeps full file:line backtraces while cutting dev/test
+    # compile time, link time, and .cargo-target / Kache disk footprint by ~50%.
+    # Override per-invocation with CARGO_PROFILE_DEV_DEBUG=2 for full DWARF.
+    profile = {
+      dev.debug = "line-tables-only";
+      test.debug = "line-tables-only";
     };
     target.x86_64-unknown-linux-gnu = {
       inherit linker;
@@ -120,6 +158,7 @@ let
         "link-arg=${arg}"
       ]) linkerArgs;
     };
+    registries.crates-io.protocol = "sparse";
     net.retry = netRetry;
     net."git-fetch-with-cli" = true;
     term.quiet = termQuiet;

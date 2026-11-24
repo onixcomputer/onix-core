@@ -11,18 +11,23 @@ manual `RUSTC_WRAPPER` export and no `kache init` run are needed.
 ## Managed defaults
 
 - Cargo target dir stays on `/home/brittonr/.cargo-target`
-- Cargo defaults to `build.jobs = 20` on all three nodes
+- Cargo defaults to `build.jobs = 20` and `build.pipelining = true` on all three nodes
+- Cargo dev and test profiles default to `debug = "line-tables-only"` to shrink
+  compile/link time and target/cache disk usage (override with `CARGO_PROFILE_DEV_DEBUG=2`)
+- Cargo uses the sparse crates.io registry protocol (`registries.crates-io.protocol = "sparse"`)
 - Cargo keeps `net.retry = 3`
 - Cargo keeps `term.quiet = false`
-- Aspen1 and the desktop use `/var/cache/kache-nix/user-brittonr`
-- Aspen3 uses `/mnt/usb4-nvme/kache-nix/user-brittonr`
-- each node caps its local disk cache at 32 GiB
+- All three nodes (Aspen1, Aspen3, and `britton-desktop`) use `/var/cache/kache-nix/user-brittonr`
+- Aspen3 uses Aspen1's always-online RustFS endpoint (`http://100.100.103.95:39000`) instead of its optional USB4-backed local RustFS
+- each node caps its local disk cache at 32 GiB and runs a daily `kache-rustfs-gc` timer
 - kache uses the dedicated `onix-kache` RustFS bucket through the local daemon
 - kache's daemon runs as the declarative NixOS service `kache-rustfs.service`
 - Home Manager does not start a second user daemon
 - kache's daemon idle timeout is disabled so systemd remains the lifecycle owner
-- The wrapper derives `KACHE_KEY_SALT` from the active `rustc`, `cc`, and
-  `mold` store paths, then appends any user-supplied `KACHE_KEY_SALT`
+- The wrapper checks for `$KACHE_CACHE_DIR/daemon.sock` before invoking `kache`
+  so builds pass straight through to `rustc` with zero extra forks when the managed daemon is stopped
+- The wrapper bakes the pinned `cc` and `mold` Nix store paths into `KACHE_KEY_SALT`
+  alongside the resolved `rustc` path, then appends any user-supplied `KACHE_KEY_SALT`
 - Cargo defaults `target.x86_64-unknown-linux-gnu.linker = "cc"`
 - Cargo adds `-fuse-ld=mold` via target-specific rustflags so the compiler
   driver selects mold as the backend linker

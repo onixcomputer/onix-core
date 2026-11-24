@@ -316,7 +316,7 @@ let site_celld_fleet_settings = fun bind_address provision_storage =>
 in
 let kache_cache_max_size = "32GiB" in
 let kache_aspen1_cache_dir = "/var/cache/kache-nix/user-brittonr" in
-let kache_aspen3_cache_dir = "/mnt/usb4-nvme/kache-nix/user-brittonr" in
+let kache_aspen3_cache_dir = "/var/cache/kache-nix/user-brittonr" in
 let kache_britton_desktop_cache_dir = "/var/cache/kache-nix/user-brittonr" in
 let kache_restart_delay_seconds = 5 in
 let kache_remote_settings = fun bind_address cache_dir provision_storage =>
@@ -483,7 +483,9 @@ in
       module = { name = "kache-rustfs", input = "self" },
       roles.client.machines = {
         aspen1.settings = kache_remote_settings rustfs_aspen1_address kache_aspen1_cache_dir false,
-        aspen3.settings = kache_remote_settings rustfs_aspen3_address kache_aspen3_cache_dir false,
+        # Keep aspen3's Kache cache on local root storage backed by aspen1's
+        # always-online RustFS so Rust builds stay cached when the USB4 NVMe is absent.
+        aspen3.settings = kache_remote_settings rustfs_aspen1_address kache_aspen3_cache_dir false,
         britton-desktop.settings = kache_remote_settings rustfs_britton_desktop_address kache_britton_desktop_cache_dir true,
       },
     },

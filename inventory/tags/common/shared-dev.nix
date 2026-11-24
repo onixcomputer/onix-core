@@ -21,6 +21,8 @@ in
       bat
       b3sum
       btop
+      cargo-nextest
+      cargo-sweep
       fd
       gh
       git

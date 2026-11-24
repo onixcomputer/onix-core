@@ -79,9 +79,22 @@ in
                 if lib.hasPrefix "https://" settings.storageEndpoint then "https" else "http"
               }://$RUSTFS_ACCESS_KEY:$RUSTFS_SECRET_KEY@${storageAuthority}"
 
-              ${minioClient} mb --ignore-existing \
-                "rustfs/${settings.bucketName}" \
-                --config-dir "$mc_config_dir"
+              # Wait up to 90s for RustFS to finish binding after boot so a
+              # transient startup race does not fail provisioning permanently.
+              ready=0
+              for _ in $(${pkgs.coreutils}/bin/seq 1 30); do
+                if ${minioClient} mb --ignore-existing \
+                  "rustfs/${settings.bucketName}" \
+                  --config-dir "$mc_config_dir"; then
+                  ready=1
+                  break
+                fi
+                ${pkgs.coreutils}/bin/sleep 3
+              done
+              if [ "$ready" -ne 1 ]; then
+                echo "kache-rustfs-provision-storage: RustFS at ${settings.storageEndpoint} did not become ready" >&2
+                exit 1
+              fi
 
               printf '%s\n%s\n' "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY" \
                 | ${minioClient} admin user add rustfs --config-dir "$mc_config_dir"
@@ -207,9 +220,12 @@ in
                   wants = [
                     "network-online.target"
                     "tailscaled.service"
-                  ];
-                  requires = lib.optional settings.provisionStorage "kache-rustfs-storage-provision.service";
-                  unitConfig.RequiresMountsFor = [ settings.cacheDir ];
+                  ]
+                  ++ lib.optional settings.provisionStorage "kache-rustfs-storage-provision.service";
+                  unitConfig = {
+                    RequiresMountsFor = [ settings.cacheDir ];
+                    StartLimitIntervalSec = 0;
+                  };
                   environment = {
                     KACHE_CONFIG = systemConfigPath;
                     KACHE_CACHE_DIR = settings.cacheDir;
@@ -247,6 +263,33 @@ in
                     RestrictRealtime = true;
                     RestrictSUIDSGID = true;
                     SystemCallArchitectures = "native";
+                  };
+                };
+
+                # Enforce local_max_size proactively so bursty multi-agent builds
+                # cannot fill the cache dataset to ENOSPC and wedge SQLite index.db.
+                kache-rustfs-gc = {
+                  description = "Garbage-collect local Kache store";
+                  after = [ "kache-rustfs.service" ];
+                  startAt = "daily";
+                  unitConfig.RequiresMountsFor = [ settings.cacheDir ];
+                  environment = {
+                    KACHE_CONFIG = systemConfigPath;
+                    KACHE_CACHE_DIR = settings.cacheDir;
+                  };
+                  serviceConfig = {
+                    Type = "oneshot";
+                    ExecStart = "${lib.getExe kachePackage} gc";
+                    User = settings.serviceUser;
+                    Group = "users";
+                    Nice = 19;
+                    IOSchedulingClass = "idle";
+                    UMask = serviceUmask;
+                    ReadWritePaths = [ settings.cacheDir ];
+                    NoNewPrivileges = true;
+                    PrivateTmp = true;
+                    ProtectHome = true;
+                    ProtectSystem = "strict";
                   };
                 };
               };

@@ -25,6 +25,18 @@
     username = "britton-air";
   };
 
+  # Fast macOS Rust dev/test builds: unpacked split-debuginfo skips slow
+  # dsymutil bundling on every link, and line-tables-only shrinks artifacts.
+  environment.variables = {
+    CARGO_BUILD_PIPELINING = "true";
+    CARGO_NET_GIT_FETCH_WITH_CLI = "true";
+    CARGO_PROFILE_DEV_DEBUG = "line-tables-only";
+    CARGO_PROFILE_DEV_SPLIT_DEBUGINFO = "unpacked";
+    CARGO_PROFILE_TEST_DEBUG = "line-tables-only";
+    CARGO_PROFILE_TEST_SPLIT_DEBUGINFO = "unpacked";
+    CARGO_REGISTRIES_CRATES_IO_PROTOCOL = "sparse";
+  };
+
   # Per-package pins maintained by `mvs lock`; installs nothing until
   # `multiverse.enable = true` is set (see AGENTS.md "Package pinning").
   multiverse.lock = ../../multiverse.lock;

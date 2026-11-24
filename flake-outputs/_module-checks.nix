@@ -506,8 +506,8 @@ let
       endpoint = "http://100.100.103.95:39000";
     };
     aspen3 = {
-      cacheDir = "/mnt/usb4-nvme/kache-nix/user-brittonr";
-      endpoint = "http://100.108.13.4:39000";
+      cacheDir = "/var/cache/kache-nix/user-brittonr";
+      endpoint = "http://100.100.103.95:39000";
     };
     britton-desktop = {
       cacheDir = "/var/cache/kache-nix/user-brittonr";

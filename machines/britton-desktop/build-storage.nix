@@ -11,9 +11,10 @@ let
   gitRoot = "/home/brittonr/git";
   gitWorkspaceQuota = "800G";
   kacheDataset = "datapool/kache-nix";
-  kacheQuota = "64G";
+  kacheQuota = "128G";
   userHome = "/home/brittonr";
-  staleTargetDays = 21;
+  staleTargetDays = 7;
+  staleWorktreeTargetDays = 3;
   zfs = "${config.boot.zfs.package}/bin/zfs";
 
   cargoTargetPruner = pkgs.writeShellApplication {
@@ -31,7 +32,9 @@ let
 
       git_root=${lib.escapeShellArg gitRoot}
       user_home=${lib.escapeShellArg userHome}
+      shared_target="$user_home/.cargo-target"
       stale_days=${toString staleTargetDays}
+      stale_worktree_days=${toString staleWorktreeTargetDays}
       lock_file="$user_home/.local/state/cargo-target-prune.lock"
 
       mkdir -p "$(dirname "$lock_file")"
@@ -46,9 +49,19 @@ let
         exit 0
       fi
 
+      idle() {
+        ! find "$1" -xdev -type f -mtime -"$2" -print -quit | grep -q .
+      }
+
+      remove_dir() {
+        echo "cargo-target-prune: removing stale build output $1"
+        rm -rf --one-file-system -- "$1"
+      }
+
       prune_target() {
         target_dir="$1"
         require_git_ignore="$2"
+        max_days="$3"
 
         if [ ! -f "$target_dir/CACHEDIR.TAG" ]; then
           return 0
@@ -58,23 +71,53 @@ let
           return 0
         fi
 
-        if find "$target_dir" -xdev -type f -mtime -"$stale_days" -print -quit | grep -q .; then
+        if ! idle "$target_dir" "$max_days"; then
           return 0
         fi
 
-        echo "cargo-target-prune: removing stale build output $target_dir"
-        rm -rf --one-file-system -- "$target_dir"
+        remove_dir "$target_dir"
       }
 
       while IFS= read -r -d "" target_dir; do
-        prune_target "$target_dir" 1
+        prune_target "$target_dir" 1 "$stale_days"
       done < <(find "$git_root" -xdev -type d -name target -prune -print0)
 
       for target_dir in "$user_home"/.cargo-target-*; do
         if [ -d "$target_dir" ]; then
-          prune_target "$target_dir" 0
+          prune_target "$target_dir" 0 "$stale_days"
         fi
       done
+
+      for worktree_root in "$user_home/.gemini/antigravity-cli/worktrees" "$user_home/.herdr/worktrees"; do
+        if [ -d "$worktree_root" ]; then
+          while IFS= read -r -d "" target_dir; do
+            prune_target "$target_dir" 0 "$stale_worktree_days"
+          done < <(find "$worktree_root" -xdev -type d -name target -prune -print0)
+        fi
+      done
+
+      if [ -f "$shared_target/CACHEDIR.TAG" ]; then
+        for entry in "$shared_target"/*/; do
+          entry=''${entry%/}
+          [ -d "$entry" ] || continue
+          case "$(basename "$entry")" in
+            producer-work | repo-targets | worktrees)
+              for child in "$entry"/*/; do
+                child=''${child%/}
+                [ -d "$child" ] || continue
+                if idle "$child" "$stale_days"; then
+                  remove_dir "$child"
+                fi
+              done
+              ;;
+            *)
+              if idle "$entry" "$stale_days"; then
+                remove_dir "$entry"
+              fi
+              ;;
+          esac
+        done
+      fi
     '';
   };
 in
@@ -114,12 +157,12 @@ in
   };
 
   systemd.timers.cargo-target-prune = {
-    description = "Weekly stale Cargo target cleanup";
+    description = "Daily stale Cargo target cleanup";
     wantedBy = [ "timers.target" ];
     timerConfig = {
-      OnCalendar = "weekly";
+      OnCalendar = "daily";
       Persistent = true;
-      RandomizedDelaySec = "6h";
+      RandomizedDelaySec = "2h";
       Unit = "cargo-target-prune.service";
     };
   };

@@ -22,7 +22,8 @@ let
   cargoTargetQuotaGib = 64;
   homeRefquotaGib = 650;
 
-  staleTargetDays = 21;
+  staleTargetDays = 7;
+  staleWorktreeTargetDays = 3;
   staleRootDays = 14;
   codexStagingMinutes = 24 * 60;
 
@@ -344,8 +345,8 @@ let
   };
 
   # r[impl onix.aspen3.storage.cargo_cleanup]
-  # The britton-desktop cleanup rules (CACHEDIR.TAG, Git-ignored, 21 idle
-  # days, no active build), plus idle profile directories of the shared target.
+  # The britton-desktop cleanup rules (CACHEDIR.TAG, Git-ignored, 7 idle
+  # days, 3 days for worktrees, no active build), plus idle profile directories of the shared target.
   cargoTargetPruner = pkgs.writeShellApplication {
     name = "prune-stale-cargo-targets";
     runtimeInputs = with pkgs; [
@@ -389,6 +390,17 @@ let
       for target_dir in "$user_home"/.cargo-target-*; do
         [ -f "$target_dir/CACHEDIR.TAG" ] || continue
         if idle "$target_dir"; then remove "$target_dir"; fi
+      done
+
+      for worktree_root in "$user_home/.gemini/antigravity-cli/worktrees" "$user_home/.herdr/worktrees"; do
+        if [ -d "$worktree_root" ]; then
+          while IFS= read -r -d "" target_dir; do
+            [ -f "$target_dir/CACHEDIR.TAG" ] || continue
+            if [ -z "$(find "$target_dir" -xdev -type f -mtime -${toString staleWorktreeTargetDays} -print -quit)" ]; then
+              remove "$target_dir"
+            fi
+          done < <(find "$worktree_root" -xdev -type d -name target -prune -print0)
+        fi
       done
 
       if [ -f "$shared_target/CACHEDIR.TAG" ]; then
@@ -564,12 +576,12 @@ in
 
     timers = {
       cargo-target-prune = {
-        description = "Weekly stale Cargo target cleanup";
+        description = "Daily stale Cargo target cleanup";
         wantedBy = [ "timers.target" ];
         timerConfig = {
-          OnCalendar = "weekly";
+          OnCalendar = "daily";
           Persistent = true;
-          RandomizedDelaySec = "6h";
+          RandomizedDelaySec = "2h";
         };
       };
 
