@@ -1446,6 +1446,123 @@ in
       },
     },
 
+    # Primary off-site encrypted Restic backups on gemini@robitzs.ch (30 TiB, drive.file scope).
+    "gdrive-backup-primary" = {
+      module = { name = "gdrive-backup", input = "self" },
+      roles.default = {
+        settings = {
+          remoteName = "google-drive",
+          repoPrefix = "Onix-Restic-Fleet",
+        },
+        machines = {
+          aspen1.settings = {
+            schedule = "*-*-* 03:15:00",
+            paths = [
+              "/var/lib/vaultwarden",
+              "/var/backups/renews-swarm",
+              "/var/backup/niks3",
+              "/var/lib/calibre-server",
+              "/var/lib/audiobookshelf-main",
+              "/var/lib/radicle",
+            ],
+          },
+          britton-desktop.settings = {
+            schedule = "*-*-* 03:45:00",
+            paths = [
+              "/home/brittonr/Documents",
+              "/home/brittonr/Pictures",
+              "/home/brittonr/Calibre Library",
+              "/datapool/bookshelf",
+              "/datapool/rustfs-authority-backup",
+              "/var/lib/radicle-backup",
+              "/home/brittonr/.omp/agent/sessions",
+              "/home/brittonr/.pi/agent/sessions",
+            ],
+          },
+          aspen3.settings = {
+            schedule = "*-*-* 04:15:00",
+            paths = [
+              "/home/brittonr/Documents",
+              "/home/brittonr/Pictures",
+              "/home/brittonr/.omp/agent/sessions",
+              "/home/brittonr/.pi/agent/sessions",
+            ],
+          },
+        },
+      },
+    },
+
+    # Independent second-account off-site mirror + bulk cold vault on brittonrobitzsch@gmail.com (30 TiB, drive.file scope).
+    # Mirrors crown-jewel data to a second Google failure domain and provides `rclone-google-drive-personal`
+    # / `restic-gdrive-backup-personal` CLIs for cold model weights, media archives, and dataset offloads.
+    "gdrive-backup-personal" = {
+      module = { name = "gdrive-backup", input = "self" },
+      roles.default = {
+        settings = {
+          remoteName = "google-drive-personal",
+          repoPrefix = "Onix-Restic-Personal",
+        },
+        machines = {
+          aspen1.settings = {
+            schedule = "*-*-* 04:45:00",
+            paths = [
+              "/var/lib/vaultwarden",
+              "/var/backups/renews-swarm",
+              "/var/backup/niks3",
+              "/var/lib/calibre-server",
+              "/var/lib/audiobookshelf-main",
+            ],
+          },
+          britton-desktop.settings = {
+            schedule = "*-*-* 05:15:00",
+            paths = [
+              "/home/brittonr/Documents",
+              "/home/brittonr/Pictures",
+              "/datapool/bookshelf",
+              "/datapool/rustfs-authority-backup",
+              "/var/lib/radicle-backup",
+            ],
+          },
+          aspen3.settings = {
+            schedule = "*-*-* 05:45:00",
+            paths = [
+              "/home/brittonr/Documents",
+              "/home/brittonr/Pictures",
+            ],
+          },
+        },
+      },
+    },
+
+    # Unified 60 TiB client-side encrypted vault across both Google Drive accounts.
+    # Mounted as a regular FUSE filesystem at /mnt/gdrive-vault on aspen1, britton-desktop,
+    # and aspen3, and exposed as a Tailscale-only cold S3 gateway on aspen1:39100.
+    "gdrive-vault" = {
+      module = { name = "gdrive-backup", input = "self" },
+      roles.vault = {
+        settings = {
+          primaryGenerator = "gdrive-backup-primary",
+          primaryRemote = "google-drive",
+          personalGenerator = "gdrive-backup-personal",
+          personalRemote = "google-drive-personal",
+          vaultFolder = "Onix-Vault",
+          mountEnable = true,
+          mountPoint = "/mnt/gdrive-vault",
+          vfsCacheMaxSize = "20G",
+        },
+        machines = {
+          aspen1.settings = {
+            s3Enable = true,
+            s3ListenAddress = "100.100.103.95",
+            s3Port = 39100,
+            s3AccessKeyId = "onix-gdrive-vault",
+          },
+          britton-desktop.settings = {},
+          aspen3.settings = {},
+        },
+      },
+    },
+
     matrix-synapse = {
       module = { name = "matrix-synapse", input = "clan-core" },
       roles.default.machines.aspen1.settings = {

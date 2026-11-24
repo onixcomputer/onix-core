@@ -39,6 +39,7 @@ let
     "vaultwarden" = import ./vaultwarden (schemaArgs ./vaultwarden);
     "homepage-dashboard" = import ./homepage-dashboard (schemaArgs ./homepage-dashboard);
     "cloudflare-tunnel" = import ./cloudflare-tunnel (schemaArgs ./cloudflare-tunnel);
+    "gdrive-backup" = import ./gdrive-backup (schemaArgs ./gdrive-backup);
     "calibre-server" = import ./calibre-server (schemaArgs ./calibre-server);
     "celld" = import ./celld (schemaArgs ./celld);
     "llm" = import ./llm (schemaArgs ./llm);

@@ -24,6 +24,7 @@ let self_modules = [
   "celld",
   "cloud-hypervisor-vm",
   "cloudflare-tunnel",
+  "gdrive-backup",
   "grafana",
   "harmonia",
   "hermes-gateway",

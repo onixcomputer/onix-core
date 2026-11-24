@@ -17,6 +17,7 @@ let schemas = {
   "celld" = import "../../modules/celld/schema.ncl",
   "cloud-hypervisor-vm" = import "../../modules/cloud-hypervisor-vm/schema.ncl",
   "cloudflare-tunnel" = import "../../modules/cloudflare-tunnel/schema.ncl",
+  "gdrive-backup" = import "../../modules/gdrive-backup/schema.ncl",
   "grafana" = import "../../modules/grafana/schema.ncl",
   "harmonia" = import "../../modules/harmonia/schema.ncl",
   "hermes-gateway" = import "../../modules/hermes-gateway/schema.ncl",
