@@ -171,5 +171,15 @@
       default = true,
       description = "Allow s3Port on tailscale0 when s3Enable is true",
     },
+    s3Endpoint = {
+      type = "string",
+      default = "http://100.100.103.95:39100",
+      description = "Cold S3 gateway URL used by vault-s3, vault-model, vault-duckdb, and vault-archive CLIs",
+    },
+    installVaultTools = {
+      type = "bool",
+      default = true,
+      description = "Install vault-s3, vault-model, vault-duckdb, and vault-archive operator CLIs",
+    },
   },
 }

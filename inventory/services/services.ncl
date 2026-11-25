@@ -1549,6 +1549,7 @@ in
           mountEnable = true,
           mountPoint = "/mnt/gdrive-vault",
           vfsCacheMaxSize = "20G",
+          s3Endpoint = "http://100.100.103.95:39100",
         },
         machines = {
           aspen1.settings = {

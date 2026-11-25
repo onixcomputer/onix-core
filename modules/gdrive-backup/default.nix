@@ -374,6 +374,194 @@ in
               '';
             };
 
+            vaultS3Cli = pkgs.writeShellApplication {
+              name = "vault-s3";
+              runtimeInputs = [
+                pkgs.coreutils
+                pkgs.rclone
+              ];
+              text = ''
+                set -euo pipefail
+                umask 077
+                secret_file=${lib.escapeShellArg s3SecretPath}
+                if [ ! -r "$secret_file" ]; then
+                  echo "vault-s3: cannot read $secret_file (root or wheel membership required)" >&2
+                  exit 1
+                fi
+                scratch=$(mktemp -d)
+                trap 'rm -rf -- "$scratch"' EXIT
+                s3_secret=$(cat "$secret_file")
+                cat > "$scratch/s3.conf" <<EOF
+                [vault]
+                type = s3
+                provider = Other
+                access_key_id = ${cfg.s3AccessKeyId}
+                secret_access_key = $s3_secret
+                endpoint = ${cfg.s3Endpoint}
+                EOF
+                chmod 600 "$scratch/s3.conf"
+                rc=0
+                rclone --config "$scratch/s3.conf" "$@" || rc=$?
+                exit "$rc"
+              '';
+            };
+
+            vaultModelCli = pkgs.writeShellApplication {
+              name = "vault-model";
+              runtimeInputs = [
+                pkgs.coreutils
+                vaultS3Cli
+              ];
+              text = ''
+                set -euo pipefail
+                cmd="''${1:-help}"
+                shift || true
+                case "$cmd" in
+                  ls)
+                    sub="''${1:-}"
+                    exec vault-s3 lsd "vault:models/''${sub#/}"
+                    ;;
+                  push)
+                    if [ "$#" -lt 2 ]; then
+                      echo "Usage: vault-model push <local-dir-or-file> <category/name>" >&2
+                      echo "  Categories: gguf, safetensors, tt-metal, engines, checkpoints" >&2
+                      exit 2
+                    fi
+                    src="$1"
+                    dst="vault:models/''${2#/}"
+                    vault-s3 copy "$src" "$dst" --links --transfers 4 --checkers 8 --progress
+                    vault-s3 check "$src" "$dst" --size-only --links --checkers 8
+                    ;;
+                  pull)
+                    if [ "$#" -lt 2 ]; then
+                      echo "Usage: vault-model pull <category/name> <local-dir>" >&2
+                      exit 2
+                    fi
+                    src="vault:models/''${1#/}"
+                    dst="$2"
+                    mkdir -p "$dst"
+                    vault-s3 copy "$src" "$dst" --links --transfers 4 --checkers 8 --progress
+                    ;;
+                  *)
+                    cat <<'USAGE'
+                vault-model — Private 60 TiB model & compiled-engine registry (s3://models)
+
+                Commands:
+                  vault-model ls [subdir]                      List model buckets/directories
+                  vault-model push <local-path> <cat/name>     Upload & size-verify weights or TT-Metal/vLLM caches
+                  vault-model pull <cat/name> <local-dir>      Pull weights or compiled engines to local NVMe
+
+                Standard categories: gguf, safetensors, tt-metal, engines, checkpoints
+                USAGE
+                    ;;
+                esac
+              '';
+            };
+
+            vaultArchiveCli = pkgs.writeShellApplication {
+              name = "vault-archive";
+              runtimeInputs = [
+                pkgs.coreutils
+                pkgs.gnutar
+                pkgs.zstd
+                vaultS3Cli
+              ];
+              text = ''
+                set -euo pipefail
+                cmd="''${1:-help}"
+                shift || true
+                host=${lib.escapeShellArg config.networking.hostName}
+                case "$cmd" in
+                  ls)
+                    sub="''${1:-$host}"
+                    exec vault-s3 lsl "vault:archives/''${sub#/}"
+                    ;;
+                  push)
+                    if [ "$#" -lt 2 ]; then
+                      echo "Usage: vault-archive push <local-dir> <archive-name>" >&2
+                      exit 2
+                    fi
+                    src="$1"
+                    name="$2"
+                    if [ ! -d "$src" ]; then
+                      echo "vault-archive: directory not found: $src" >&2
+                      exit 1
+                    fi
+                    dst="vault:archives/$host/$name.tar.zst"
+                    echo "Streaming tar+zstd of $src -> $dst ..."
+                    tar --zstd -cf - -C "$(dirname "$src")" "$(basename "$src")" \
+                      | vault-s3 rcat "$dst"
+                    echo "Uploaded:"
+                    vault-s3 lsl "$dst"
+                    ;;
+                  pull)
+                    if [ "$#" -lt 2 ]; then
+                      echo "Usage: vault-archive pull <host/archive-name.tar.zst> <dest-dir>" >&2
+                      exit 2
+                    fi
+                    src="vault:archives/''${1#/}"
+                    dst="$2"
+                    mkdir -p "$dst"
+                    vault-s3 cat "$src" | tar --zstd -xf - -C "$dst"
+                    ;;
+                  *)
+                    cat <<'USAGE'
+                vault-archive — Fast single-stream .tar.zst archival to 60 TiB vault (s3://archives)
+
+                Commands:
+                  vault-archive ls [host]                          List archived tarballs
+                  vault-archive push <local-dir> <archive-name>    Stream tar.zst archive at full link speed
+                  vault-archive pull <host/name.tar.zst> <dest>    Extract archived tarball to <dest>
+                USAGE
+                    ;;
+                esac
+              '';
+            };
+
+            vaultDuckdbCli = pkgs.writeShellApplication {
+              name = "vault-duckdb";
+              runtimeInputs = [
+                pkgs.coreutils
+                pkgs.duckdb
+              ];
+              text = ''
+                set -euo pipefail
+                umask 077
+                secret_file=${lib.escapeShellArg s3SecretPath}
+                if [ ! -r "$secret_file" ]; then
+                  echo "vault-duckdb: cannot read $secret_file (root or wheel membership required)" >&2
+                  exit 1
+                fi
+                scratch=$(mktemp -d)
+                trap 'rm -rf -- "$scratch"' EXIT
+                s3_secret=$(cat "$secret_file")
+                endpoint_url=${lib.escapeShellArg cfg.s3Endpoint}
+                use_ssl=false
+                case "$endpoint_url" in
+                  https://*) use_ssl=true ;;
+                esac
+                endpoint_host="''${endpoint_url#http://}"
+                endpoint_host="''${endpoint_host#https://}"
+                endpoint_host="''${endpoint_host%/}"
+                cat > "$scratch/init.sql" <<EOF
+                INSTALL httpfs;
+                LOAD httpfs;
+                CREATE SECRET gdrive_vault (
+                  TYPE s3,
+                  KEY_ID '${cfg.s3AccessKeyId}',
+                  SECRET '$s3_secret',
+                  ENDPOINT '$endpoint_host',
+                  URL_STYLE 'path',
+                  USE_SSL $use_ssl
+                );
+                EOF
+                chmod 600 "$scratch/init.sql"
+                rc=0
+                duckdb -init "$scratch/init.sql" "$@" || rc=$?
+                exit "$rc"
+              '';
+            };
+
             mountRunner = pkgs.writeShellApplication {
               name = "run-${instanceName}-mount";
               runtimeInputs = [
@@ -471,7 +659,15 @@ in
               '';
             };
 
-            environment.systemPackages = [ vaultCli ];
+            environment.systemPackages = [
+              vaultCli
+            ]
+            ++ lib.optionals cfg.installVaultTools [
+              vaultS3Cli
+              vaultModelCli
+              vaultArchiveCli
+              vaultDuckdbCli
+            ];
 
             programs.fuse.userAllowOther = lib.mkIf cfg.mountEnable true;
 

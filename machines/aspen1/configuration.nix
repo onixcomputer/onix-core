@@ -53,6 +53,13 @@ in
     herdr
   ];
 
+  # Ensure Music Assistant starts after the 60 TiB encrypted Drive vault mount so
+  # libraries under /mnt/gdrive-vault/media/music are immediately visible on boot.
+  systemd.services.music-assistant = {
+    after = [ "gdrive-vault-mount.service" ];
+    wants = [ "gdrive-vault-mount.service" ];
+  };
+
   services = {
     # Music Assistant - Music library and streaming service
     music-assistant = {

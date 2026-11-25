@@ -38,6 +38,14 @@
           exit 0
         fi
       '';
+      # Local Borg on aspen1 keeps a compact 2-week fast-restore window now that
+      # dual-account encrypted Restic on Google Drive retains 7d/4w/6m off-site.
+      prune.keep = lib.mkForce {
+        within = "1d";
+        daily = 5;
+        weekly = 2;
+        monthly = 0;
+      };
       exclude = [
         "*.pyc"
         "*.o"
@@ -45,6 +53,8 @@
         "/home/*/.direnv"
         "/home/*/.cache"
         "/home/*/.cargo"
+        "/home/*/.cargo-target"
+        "/home/*/.cargo-target-*"
         "/home/*/.npm"
         "/home/*/.m2"
         "/home/*/.gradle"
@@ -53,8 +63,15 @@
         "/home/*/.local/share/Steam"
         "/home/*/.config/chromium"
         "/home/*/.mozilla/firefox/*/storage"
+        "/mnt/gdrive-vault"
         "/var/lib/docker/"
         "/var/lib/containerd"
+        "/var/lib/lemonade"
+        "/var/lib/llamacpp"
+        "/var/lib/diffusion-gemma"
+        "/var/lib/private/ollama"
+        "/var/lib/qwen38-p150x2"
+        "/var/lib/rustfs*"
         "/var/log/journal"
         "/var/lib/systemd"
         "/var/cache"
