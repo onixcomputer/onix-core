@@ -94,7 +94,10 @@ kiln-fleet cancel --attempt <id> --reason 'superseded'
    - `clan vars generate britton-desktop --generator kiln-fleet-ssh`
    - `clan vars generate britton-desktop --generator swarm-news-identity-kiln`
    - `clan vars generate britton-desktop --generator swarm-news-password-kiln` (shared with aspen1)
+   - `clan vars generate britton-desktop --generator kiln-fleet-github-token` (read-only GitHub PAT for `kiln-fleet-github-poll.timer`)
 2. Deploy aspen1, which enrolls the `kiln` swarm account. Then deploy aspen3 and britton-desktop.
+   - `kiln-fleet-cairn-intake.timer` periodically admits `cairn implementation-ready` snapshots for `observedRepositories` in `modules/kiln-fleet/lib.nix` into `/var/lib/kiln-fleet/implementation.sqlite` without granting automatic dispatch placement (which stays scoped to `repositories`).
+   - `kiln-fleet-github-poll.timer` periodically runs `kiln-implementer poll` for `observedRepositories` with a `githubId` once `kiln-fleet-github-token` is generated.
 3. On britton-desktop, save aspen3's `kiln` session as a herdr machine once: `herdr machine add brittonr@aspen3-1 --label aspen3-kiln --remote-session kiln`. If no `kiln` server is running, `machine add` starts one on aspen3 by hand, so run it only after `herdr-kiln` is up there. If `herdr-kiln` fails with `herdr server is already running`, stop that server (`herdr --session kiln server stop` as `brittonr`) and restart the unit.
 4. `systemctl status kiln-fleet herdr-kiln`, `kiln-fleet claims`, and from aspen3 `kiln-fleet work`.
 

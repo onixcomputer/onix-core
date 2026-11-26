@@ -32,9 +32,13 @@ let
 
   kilnPackages = inputs.kiln-fleet.packages.${pkgs.stdenv.hostPlatform.system};
   kilnFleet = kilnPackages.kiln-fleet;
+  kilnCairn = kilnPackages.cairn;
+  kilnCairnIntake = kilnPackages.kiln-cairn-intake;
+  kilnImplementer = kilnPackages.kiln;
   agentAccount = config.users.users.${fleet.user};
   agentRuntimeDir = "/run/user/${toString agentAccount.uid}";
   stateDir = "/var/lib/${fleet.serviceUser}";
+  stockSopsPlaceholder = "Welcome to SOPS! Edit this file as you please!";
 
   # herdr as the agents' account, with the environment their sessions use.
   # Kiln runs it from its own state directory, which that account cannot
@@ -58,10 +62,109 @@ let
     exec ${lib.getExe pkgs.git} "$@"
   '';
 
+  # Read-only Cairn snapshot helper run as the agents' account over a static
+  # allowlist of declared repository checkouts. Outputs JSON on stdout only.
+  cairnReadyCases = lib.concatStringsSep "\n" (
+    lib.mapAttrsToList (
+      name: spec:
+      let
+        policyArg =
+          if (spec.cairnPolicy or null) != null then
+            ''if [ -f ${lib.escapeShellArg "${spec.checkout}/${spec.cairnPolicy}"} ]; then policy_args=(--policy ${lib.escapeShellArg "${spec.checkout}/${spec.cairnPolicy}"}); fi''
+          else
+            "";
+      in
+      ''
+        ${lib.escapeShellArg name})
+          repo_root=${lib.escapeShellArg spec.checkout}
+          ${policyArg}
+          ;;
+      ''
+    ) fleet.observedRepositories
+  );
+  cairnReadyAsAgents = pkgs.writeShellScript "kiln-fleet-cairn-ready-as-${fleet.user}" ''
+    set -euo pipefail
+    repo="''${1:-}"
+    repo_root=""
+    policy_args=()
+    case "$repo" in
+    ${cairnReadyCases}
+      *)
+        echo "kiln-fleet-cairn-ready: repository not allowlisted: $repo" >&2
+        exit 64
+        ;;
+    esac
+    if [ ! -d "$repo_root/.cairn/changes" ]; then
+      exit 3
+    fi
+    exec ${kilnCairn}/bin/cairn implementation-ready --root "$repo_root" "''${policy_args[@]}"
+  '';
+
+  allEnrolledRepositories = lib.unique (
+    lib.attrNames fleet.repositories ++ lib.attrNames fleet.observedRepositories
+  );
+
   enrollment = json.generate "kiln-fleet-enrollment.json" {
-    repositories = lib.attrNames fleet.repositories;
-    actors = [ "operator" ];
+    repositories = lib.unique (map lib.toLower allEnrolledRepositories);
+    actors = fleet.enrolledActors;
   };
+
+  slugFor = name: lib.replaceStrings [ "/" ] [ "__" ] name;
+
+  cairnPolicyFor =
+    name: spec:
+    json.generate "kiln-cairn-policy-${slugFor name}.json" {
+      repository = lib.toLower name;
+      project = spec.project;
+      actor = "operator";
+      requested_outcome = "Observe and track Cairn changes for ${name}";
+      acceptance = [
+        {
+          id = "cairn-verified";
+          statement = "Verified against exact candidate and repository gates";
+        }
+      ];
+      permitted_paths = [ ];
+      permitted_effects = [ "write_source" ];
+      verification_profile = builtins.hashString "sha256" "kiln-fleet-cairn-intake:${name}";
+      budget = {
+        attempts = 2;
+        minutes_per_attempt = 60;
+      };
+      terminal_policy = "verified_pull_request";
+      priority = 1;
+    };
+
+  githubIssuePolicyFor =
+    name: spec:
+    let
+      parts = lib.splitString "/" name;
+    in
+    json.generate "kiln-github-policy-${slugFor name}.json" {
+      repository = {
+        owner = builtins.elemAt parts 0;
+        repository = builtins.elemAt parts 1;
+        repository_id = spec.githubId;
+      };
+      project = spec.project;
+      requested_outcome = "Observe and track GitHub issues for ${name}";
+      acceptance = [
+        {
+          id = "github-issue-verified";
+          statement = "Verified against exact candidate and repository gates";
+        }
+      ];
+      dependencies = [ ];
+      permitted_paths = [ ];
+      permitted_effects = [ "write_source" ];
+      verification_profile = builtins.hashString "sha256" "kiln-fleet-github-poll:${name}";
+      budget = {
+        attempts = 2;
+        minutes_per_attempt = 60;
+      };
+      terminal_policy = "verified_pull_request";
+      priority = 1;
+    };
 
   inventory = json.generate "kiln-fleet-inventory.json" {
     schema = "kiln.fleet-inventory.v1";
@@ -119,6 +222,7 @@ let
   fleetConfig = json.generate "kiln-fleet.json" {
     schema = "kiln.fleet.v1";
     machine = fleet.coordinator;
+    console_url = fleet.consoleUrl;
     listen = [
       "127.0.0.1:${toString fleet.port}"
       "${fleet.coordinatorAddress}:${toString fleet.port}"
@@ -207,6 +311,10 @@ in
           command = "${herdrAsAgents}";
           options = [ "NOPASSWD" ];
         }
+        {
+          command = "${cairnReadyAsAgents}";
+          options = [ "NOPASSWD" ];
+        }
       ];
     }
   ];
@@ -222,6 +330,23 @@ in
       runtimeInputs = [ pkgs.openssh ];
       script = ''
         ssh-keygen -q -t ed25519 -N "" -C "kiln-fleet@${fleet.coordinator}" -f "$out/id_ed25519"
+      '';
+    };
+    # Optional read-only GitHub PAT for polling open issues of enrolled
+    # repositories into /var/lib/kiln-fleet/implementation.sqlite.
+    kiln-fleet-github-token = {
+      files.token = {
+        owner = fleet.serviceUser;
+        mode = "0400";
+      };
+      prompts.token = {
+        description = "Read-only GitHub PAT (Issues/Metadata read) for kiln-fleet issue polling";
+        type = "hidden";
+        persist = true;
+      };
+      runtimeInputs = [ pkgs.coreutils ];
+      script = ''
+        tr -d '\r\n' < "$prompts/token" > "$out/token"
       '';
     };
     ${swarm.serviceIdentityGenerator "kiln"} = swarm.mkKeyGenerator {
@@ -287,6 +412,138 @@ in
       ExecStart = "${lib.getExe kilnFleet} run --config ${fleetConfig}";
       Restart = "on-failure";
       RestartSec = 5;
+    };
+  };
+
+  # Periodic Cairn implementation-ready intake for enrolled observed
+  # repositories into the shared /var/lib/kiln-fleet/implementation.sqlite.
+  systemd.services.kiln-fleet-cairn-intake = {
+    description = "Kiln Fleet Cairn snapshot intake for enrolled repositories";
+    after = [ "kiln-fleet.service" ];
+    wants = [ "kiln-fleet.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      User = fleet.serviceUser;
+      Group = fleet.serviceUser;
+      RuntimeDirectory = "kiln-fleet-cairn-intake";
+      RuntimeDirectoryMode = "0700";
+      UMask = "0077";
+      ExecStart = pkgs.writeShellScript "kiln-fleet-cairn-intake-run" ''
+        set -uo pipefail
+        seq_base="$(${pkgs.coreutils}/bin/date +%s)"
+        idx=0
+        ${lib.concatStringsSep "\n" (
+          lib.mapAttrsToList (
+            name: spec:
+            let
+              slug = slugFor name;
+              policyFile = cairnPolicyFor name spec;
+            in
+            ''
+              idx=$((idx + 1))
+              snap="$RUNTIME_DIRECTORY/${slug}.json"
+              if /run/wrappers/bin/sudo -n -u ${fleet.user} ${cairnReadyAsAgents} ${lib.escapeShellArg name} > "$snap" 2>"$RUNTIME_DIRECTORY/${slug}.err"; then
+                if ! ${kilnCairnIntake}/bin/kiln-cairn-intake \
+                  --database ${stateDir}/implementation.sqlite \
+                  --enrollment ${enrollment} \
+                  --policy ${policyFile} \
+                  --snapshot "$snap" \
+                  --sequence "$((seq_base * 100 + idx))"; then
+                  echo "kiln-fleet-cairn-intake: intake skipped/failed for ${name}" >&2
+                fi
+              else
+                rc=$?
+                if [ "$rc" -ne 3 ]; then
+                  echo "kiln-fleet-cairn-intake: snapshot failed for ${name} (rc=$rc): $(${pkgs.coreutils}/bin/head -c 240 "$RUNTIME_DIRECTORY/${slug}.err")" >&2
+                fi
+              fi
+              rm -f "$snap" "$RUNTIME_DIRECTORY/${slug}.err"
+            ''
+          ) fleet.observedRepositories
+        )}
+      '';
+    };
+  };
+
+  systemd.timers.kiln-fleet-cairn-intake = {
+    description = "Periodically admit Cairn snapshots into Kiln Fleet";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "2min";
+      OnUnitActiveSec = "5min";
+      Persistent = true;
+    };
+  };
+
+  # Periodic GitHub issue polling for enrolled repositories with a githubId
+  # into /var/lib/kiln-fleet/implementation.sqlite. Skips cleanly if the Clan
+  # prompt token has not been provisioned yet.
+  systemd.services.kiln-fleet-github-poll = {
+    description = "Kiln Fleet GitHub issue polling for enrolled repositories";
+    after = [
+      "network-online.target"
+      "kiln-fleet.service"
+    ];
+    wants = [
+      "network-online.target"
+      "kiln-fleet.service"
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      User = fleet.serviceUser;
+      Group = fleet.serviceUser;
+      UMask = "0077";
+      LoadCredential = "github-token:${generators.kiln-fleet-github-token.files.token.path}";
+      ExecStartPre = pkgs.writeShellScript "kiln-fleet-github-policy-check" ''
+        set -euo pipefail
+        ${lib.concatStringsSep "\n" (
+          lib.mapAttrsToList (
+            name: spec:
+            lib.optionalString ((spec.githubId or null) != null) ''
+              ${kilnImplementer}/bin/kiln-implementer policy-check --enrollment ${enrollment} --policy ${githubIssuePolicyFor name spec} >/dev/null
+            ''
+          ) fleet.observedRepositories
+        )}
+      '';
+      ExecStart = pkgs.writeShellScript "kiln-fleet-github-poll-run" ''
+        set -uo pipefail
+        token_file="$CREDENTIALS_DIRECTORY/github-token"
+        if [ ! -s "$token_file" ]; then
+          echo "kiln-fleet-github-poll: token credential empty; skipping" >&2
+          exit 0
+        fi
+        token_val="$(${pkgs.coreutils}/bin/tr -d '\r\n' < "$token_file")"
+        if [ -z "$token_val" ] || [ "$token_val" = ${lib.escapeShellArg stockSopsPlaceholder} ]; then
+          echo "kiln-fleet-github-poll: Clan var kiln-fleet-github-token unset; skipping" >&2
+          exit 0
+        fi
+        ${lib.concatStringsSep "\n" (
+          lib.mapAttrsToList (
+            name: spec:
+            lib.optionalString ((spec.githubId or null) != null) ''
+              if ! ${kilnImplementer}/bin/kiln-implementer poll \
+                --database ${stateDir}/implementation.sqlite \
+                --enrollment ${enrollment} \
+                --policy ${githubIssuePolicyFor name spec} \
+                --secret-file "$token_file" \
+                --max-pages 10 \
+                --timeout-ms 30000; then
+                echo "kiln-fleet-github-poll: poll failed for ${name}" >&2
+              fi
+            ''
+          ) fleet.observedRepositories
+        )}
+      '';
+    };
+  };
+
+  systemd.timers.kiln-fleet-github-poll = {
+    description = "Periodically poll GitHub issues into Kiln Fleet";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "3min";
+      OnUnitActiveSec = "5min";
+      Persistent = true;
     };
   };
 }

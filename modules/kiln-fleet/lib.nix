@@ -20,7 +20,12 @@ rec {
   coordinatorAddress = swarm.siteTailnetAddress;
   port = 8095;
   serverUrl = "http://${coordinatorAddress}:${toString port}";
+  consoleUrl = "https://${coordinator}.bison-tailor.ts.net:9443";
   inherit (swarm) user;
+  enrolledActors = [
+    "operator"
+    user
+  ];
 
   # Machines whose herdr `kiln` session runs dispatched agents. Each needs the
   # agent kinds below and a checkout of every repository it may take work for.
@@ -63,6 +68,80 @@ rec {
     "brittonr/kiln-fleet-sandbox".checkouts = lib.genAttrs agentHosts (
       host: "${homes.${host}}/git/kiln-fleet-sandbox"
     );
+  };
+
+  # Repositories enrolled for read-only Cairn snapshot intake and GitHub issue
+  # polling into the Fleet implementation ledger without granting automatic
+  # agent dispatch placement (they have no checkouts in inventory.json until
+  # explicitly promoted to `repositories`).
+  observedRepositories = {
+    "OnixResearch/kiln" = {
+      project = "kiln";
+      checkout = "${homes.${coordinator}}/git/OnixResearch/kiln";
+      cairnPolicy = "cairn-policy/generated/cairn-policy.json";
+      githubId = 1421187104;
+    };
+    "OnixResearch/mantle" = {
+      project = "mantle";
+      checkout = "${homes.${coordinator}}/git/OnixResearch/mantle";
+      githubId = 1201634195;
+    };
+    "OnixResearch/mneme" = {
+      project = "mneme";
+      checkout = "${homes.${coordinator}}/git/OnixResearch/mneme";
+      githubId = 1453167197;
+    };
+    "OnixResearch/lattice" = {
+      project = "lattice";
+      checkout = "${homes.${coordinator}}/git/OnixResearch/lattice";
+      githubId = 1310001165;
+    };
+    "OnixResearch/valence" = {
+      project = "valence";
+      checkout = "${homes.${coordinator}}/git/OnixResearch/valence";
+      githubId = 1292615383;
+    };
+    "OnixResearch/cairn" = {
+      project = "cairn";
+      checkout = "${homes.${coordinator}}/git/OnixResearch/cairn";
+      cairnPolicy = "cairn-policy/generated/cairn-policy.json";
+      githubId = 1242548311;
+    };
+    "OnixResearch/noble-lang" = {
+      project = "noble-lang";
+      checkout = "${homes.${coordinator}}/git/OnixResearch/noble-lang";
+      githubId = 1375233933;
+    };
+    "OnixResearch/octet" = {
+      project = "octet";
+      checkout = "${homes.${coordinator}}/git/OnixResearch/octet";
+      githubId = 1189448989;
+    };
+    "OnixResearch/bounded-exec" = {
+      project = "bounded-exec";
+      checkout = "${homes.${coordinator}}/git/OnixResearch/bounded-exec";
+      githubId = 1310004939;
+    };
+    "OnixResearch/onix-artifact" = {
+      project = "onix-artifact";
+      checkout = "${homes.${coordinator}}/git/OnixResearch/artifact";
+      githubId = 1305844778;
+    };
+    "onixcomputer/onix-core" = {
+      project = "onix-core";
+      checkout = "${homes.${coordinator}}/git/onix-core";
+      githubId = 1022760605;
+    };
+    "onixcomputer/onix-modules" = {
+      project = "onixos";
+      checkout = "${homes.${coordinator}}/git/OnixResearch/onixos";
+      githubId = 1198850128;
+    };
+    "brittonr/aspen" = {
+      project = "aspen";
+      checkout = "${homes.${coordinator}}/git/OnixResearch/aspen";
+      githubId = 816931615;
+    };
   };
 
   # Tailscale node names the fleet API accepts, mapped to machine labels.

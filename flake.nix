@@ -367,7 +367,7 @@
     # Kiln's fleet orchestration (docs/kiln-fleet.md): `kiln-fleet` on the
     # coordinator, the agent hosts and every swarm member.
     kiln-fleet = {
-      url = "git+https://github.com/OnixResearch/kiln.git?rev=3cdb0ce385a8f027bd68587f884b44e5f02523f7";
+      url = "git+https://github.com/OnixResearch/kiln.git?rev=5c9cc1820a1abccac5bd608cedc6a4ac9d7970ed";
     };
     musnix = {
       url = "github:musnix/musnix";
